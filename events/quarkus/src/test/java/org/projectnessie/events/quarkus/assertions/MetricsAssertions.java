@@ -28,8 +28,6 @@ import static org.projectnessie.events.api.EventType.TRANSPLANT;
 import static org.projectnessie.events.quarkus.assertions.EventAssertions.TIMEOUT;
 import static org.projectnessie.events.quarkus.collector.QuarkusMetricsResultCollector.NESSIE_RESULTS_REJECTED;
 import static org.projectnessie.events.quarkus.collector.QuarkusMetricsResultCollector.NESSIE_RESULTS_TOTAL;
-import static org.projectnessie.events.quarkus.config.EventMetricsConfigurer.APPLICATION_TAG_NAME;
-import static org.projectnessie.events.quarkus.config.EventMetricsConfigurer.APPLICATION_TAG_VALUE;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.DeliveryStatus.FAILED;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.DeliveryStatus.REJECTED;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.DeliveryStatus.SUCCESSFUL;
@@ -181,7 +179,6 @@ public class MetricsAssertions {
       assertThat(timer).isNull();
     } else {
       assertThat(timer).isNotNull();
-      assertThat(timer.getId().getTag(APPLICATION_TAG_NAME)).isEqualTo(APPLICATION_TAG_VALUE);
       assertThat(timer.count()).isEqualTo(expected);
     }
   }
@@ -193,7 +190,6 @@ public class MetricsAssertions {
       assertThat(counter).isNull();
     } else {
       assertThat(counter).isNotNull();
-      assertThat(counter.getId().getTag(APPLICATION_TAG_NAME)).isEqualTo(APPLICATION_TAG_VALUE);
       assertThat(counter.count()).isEqualTo(expected);
     }
   }
@@ -201,7 +197,6 @@ public class MetricsAssertions {
   private void assertResultCounters() {
     Counter total = registry.get().find(NESSIE_RESULTS_TOTAL).counter();
     assertThat(total).isNotNull();
-    assertThat(total.getId().getTag(APPLICATION_TAG_NAME)).isEqualTo(APPLICATION_TAG_VALUE);
     assertThat(total.count()).isEqualTo(1);
     Counter rejected = registry.get().find(NESSIE_RESULTS_REJECTED).counter();
     assertThat(rejected).isNull();
