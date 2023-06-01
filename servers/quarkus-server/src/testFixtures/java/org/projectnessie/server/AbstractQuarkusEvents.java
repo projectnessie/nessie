@@ -51,8 +51,9 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeResponse;
-import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.UDF;
 import org.projectnessie.server.events.fixtures.MockEventSubscriber;
 
 @SuppressWarnings("resource")
@@ -60,8 +61,8 @@ import org.projectnessie.server.events.fixtures.MockEventSubscriber;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractQuarkusEvents {
 
-  private final Operation.Put put =
-      Operation.Put.of(ContentKey.of("key1"), IcebergTable.of("somewhere", 1, 1, 3, 4));
+  private final Put putInitial = Put.of(ContentKey.of("foo"), UDF.of("foo", "bar"));
+  private final Put put = Put.of(ContentKey.of("key1"), IcebergTable.of("somewhere", 1, 1, 3, 4));
   private final CommitMeta commitMeta = CommitMeta.fromMessage("test commit");
 
   private URI clientUri;
@@ -446,9 +447,14 @@ public abstract class AbstractQuarkusEvents {
       throws NessieNotFoundException, NessieConflictException {
     Branch source = createBranch("source" + System.nanoTime());
     // common ancestor
-    source = api.commitMultipleOperations().branch(source).commitMeta(commitMeta).commit();
+    source =
+        api.commitMultipleOperations()
+            .branch(source)
+            .commitMeta(commitMeta)
+            .operation(putInitial)
+            .commit();
     if (eventsEnabled()) {
-      subscriber().awaitEvents(1);
+      subscriber().awaitEvents(2);
       reset();
     }
     Branch target = createBranch("target" + System.nanoTime(), source);
