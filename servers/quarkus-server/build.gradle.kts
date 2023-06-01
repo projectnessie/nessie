@@ -104,7 +104,6 @@ dependencies {
   testFixturesApi("io.quarkus:quarkus-rest-client")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
-  testFixturesApi("io.quarkus:quarkus-jacoco")
   testFixturesImplementation(libs.guava)
   testFixturesImplementation(libs.microprofile.openapi)
   testFixturesImplementation(libs.awaitility)
