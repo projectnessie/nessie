@@ -33,7 +33,6 @@ import org.immutables.value.Value;
  * @see ReferenceDeletedEvent
  * @see ContentStoredEvent
  * @see ContentRemovedEvent
- * @see GenericEvent
  */
 public interface Event {
 
@@ -45,6 +44,12 @@ public interface Event {
    * about the version of the UUID.
    */
   UUID getId();
+
+  /** The id of the event, as a string for convenience. */
+  @Value.Lazy
+  default String getIdAsText() {
+    return getId().toString();
+  }
 
   /**
    * The id of the repository. This is configured on a per-instance basis.

@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.runtime.Startup;
 import java.io.IOError;
+import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
@@ -28,7 +29,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.versioned.EventsVersionStore;
 import org.projectnessie.versioned.MetricsVersionStore;
+import org.projectnessie.versioned.Result;
 import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -53,6 +56,7 @@ public class ConfigurableVersionStoreFactory {
   private final Instance<Persist> persist;
   private final Instance<Tracer> opentelemetryTracer;
   private final Instance<MeterRegistry> meterRegistry;
+  private final Instance<Consumer<Result>> resultConsumer;
 
   /**
    * Configurable version store factory.
@@ -65,12 +69,14 @@ public class ConfigurableVersionStoreFactory {
       @Any Instance<Tracer> opentelemetryTracer,
       @Any Instance<MeterRegistry> meterRegistry,
       @Any Instance<DatabaseAdapter> databaseAdapter,
-      @Any Instance<Persist> persist) {
+      @Any Instance<Persist> persist,
+      @Any Instance<Consumer<Result>> resultConsumer) {
     this.storeConfig = storeConfig;
     this.opentelemetryTracer = opentelemetryTracer;
     this.meterRegistry = meterRegistry;
     this.databaseAdapter = databaseAdapter;
     this.persist = persist;
+    this.resultConsumer = resultConsumer;
   }
 
   /** Version store producer. */
@@ -88,6 +94,9 @@ public class ConfigurableVersionStoreFactory {
         versionStore = databaseAdapterVersionStore();
       }
 
+      if (storeConfig.isEventsEnabled() && resultConsumer.isResolvable()) {
+        versionStore = new EventsVersionStore(versionStore, resultConsumer.get());
+      }
       if (storeConfig.isTracingEnabled()) {
         if (opentelemetryTracer.isUnsatisfied()) {
           LOGGER.warn(

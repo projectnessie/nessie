@@ -70,6 +70,15 @@ public interface VersionStoreConfig {
   @WithDefault("true")
   boolean isMetricsEnabled();
 
+  /**
+   * Whether events for the version-store are enabled (enabled by default). In order for events to
+   * be published, it's not enough to enable them in the configuration; you also need to provide at
+   * least one implementation of Nessie's EventListener SPI.
+   */
+  @WithName("events.enable")
+  @WithDefault("true")
+  boolean isEventsEnabled();
+
   @StaticInitSafe
   @ConfigMapping(prefix = "nessie.version.store.rocks")
   interface RocksVersionStoreConfig {

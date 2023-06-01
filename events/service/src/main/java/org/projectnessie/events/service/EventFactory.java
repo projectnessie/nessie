@@ -19,6 +19,7 @@ import jakarta.annotation.Nullable;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
@@ -59,118 +60,100 @@ public class EventFactory {
   protected Event newCommitEvent(
       Commit commit, BranchName targetBranch, String repositoryId, @Nullable Principal user) {
     org.projectnessie.model.CommitMeta commitMeta = commit.getCommitMeta();
-    ImmutableCommitEvent.Builder builder =
-        ImmutableCommitEvent.builder()
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .reference(ReferenceMapping.map(targetBranch))
-            .hashBefore(Objects.requireNonNull(commit.getParentHash()).asString())
-            .hashAfter(commit.getHash().asString())
-            .commitMeta(
-                ImmutableCommitMeta.builder()
-                    .committer(Objects.requireNonNull(commitMeta.getCommitter()))
-                    .authors(commitMeta.getAllAuthors())
-                    .allSignedOffBy(commitMeta.getAllSignedOffBy())
-                    .message(commitMeta.getMessage())
-                    .commitTimestamp(Objects.requireNonNull(commitMeta.getCommitTime()))
-                    .authorTimestamp(Objects.requireNonNull(commitMeta.getAuthorTime()))
-                    .allProperties(commitMeta.getAllProperties())
-                    .build());
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableCommitEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(targetBranch))
+        .hashBefore(Objects.requireNonNull(commit.getParentHash()).asString())
+        .hashAfter(commit.getHash().asString())
+        .commitMeta(
+            ImmutableCommitMeta.builder()
+                .committer(Objects.requireNonNull(commitMeta.getCommitter()))
+                .authors(commitMeta.getAllAuthors())
+                .allSignedOffBy(commitMeta.getAllSignedOffBy())
+                .message(commitMeta.getMessage())
+                .commitTimestamp(Objects.requireNonNull(commitMeta.getCommitTime()))
+                .authorTimestamp(Objects.requireNonNull(commitMeta.getAuthorTime()))
+                .allProperties(commitMeta.getAllProperties())
+                .build())
+        .build();
   }
 
   protected Event newMergeEvent(
       MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
     assert result.getResultType() == ResultType.MERGE;
     String commonAncestorHash = Objects.requireNonNull(result.getCommonAncestor()).asString();
-    ImmutableMergeEvent.Builder builder =
-        ImmutableMergeEvent.builder()
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .sourceReference(ReferenceMapping.map(result.getSourceRef()))
-            .targetReference(ReferenceMapping.map(result.getTargetBranch()))
-            .hashBefore(result.getEffectiveTargetHash().asString())
-            .hashAfter(Objects.requireNonNull(result.getResultantTargetHash()).asString())
-            .commonAncestorHash(commonAncestorHash);
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableMergeEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .sourceReference(ReferenceMapping.map(result.getSourceRef()))
+        .targetReference(ReferenceMapping.map(result.getTargetBranch()))
+        .hashBefore(result.getEffectiveTargetHash().asString())
+        .hashAfter(Objects.requireNonNull(result.getResultantTargetHash()).asString())
+        .commonAncestorHash(commonAncestorHash)
+        .build();
   }
 
   protected Event newTransplantEvent(
       MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
     assert result.getResultType() == ResultType.TRANSPLANT;
-    ImmutableTransplantEvent.Builder builder =
-        ImmutableTransplantEvent.builder()
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .sourceReference(ReferenceMapping.map(result.getSourceRef()))
-            .targetReference(ReferenceMapping.map(result.getTargetBranch()))
-            .hashBefore(result.getEffectiveTargetHash().asString())
-            .hashAfter(Objects.requireNonNull(result.getResultantTargetHash()).asString());
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableTransplantEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .sourceReference(ReferenceMapping.map(result.getSourceRef()))
+        .targetReference(ReferenceMapping.map(result.getTargetBranch()))
+        .hashBefore(result.getEffectiveTargetHash().asString())
+        .hashAfter(Objects.requireNonNull(result.getResultantTargetHash()).asString())
+        .build();
   }
 
   protected Event newReferenceCreatedEvent(
       ReferenceCreatedResult result, String repositoryId, @Nullable Principal user) {
-    ImmutableReferenceCreatedEvent.Builder builder =
-        ImmutableReferenceCreatedEvent.builder()
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .reference(ReferenceMapping.map(result.getNamedRef()))
-            .hashAfter(result.getHash().asString());
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableReferenceCreatedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getNamedRef()))
+        .hashAfter(result.getHash().asString())
+        .build();
   }
 
   protected Event newReferenceUpdatedEvent(
       ReferenceAssignedResult result, String repositoryId, @Nullable Principal user) {
-    ImmutableReferenceUpdatedEvent.Builder builder =
-        ImmutableReferenceUpdatedEvent.builder()
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .reference(ReferenceMapping.map(result.getNamedRef()))
-            .hashBefore(result.getPreviousHash().asString())
-            .hashAfter(result.getCurrentHash().asString());
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableReferenceUpdatedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getNamedRef()))
+        .hashBefore(result.getPreviousHash().asString())
+        .hashAfter(result.getCurrentHash().asString())
+        .build();
   }
 
   protected Event newReferenceDeletedEvent(
       ReferenceDeletedResult result, String repositoryId, @Nullable Principal user) {
-    ImmutableReferenceDeletedEvent.Builder builder =
-        ImmutableReferenceDeletedEvent.builder()
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .reference(ReferenceMapping.map(result.getNamedRef()))
-            .hashBefore(result.getHash().asString());
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableReferenceDeletedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getNamedRef()))
+        .hashBefore(result.getHash().asString())
+        .build();
   }
 
   protected Event newContentStoredEvent(
@@ -181,22 +164,19 @@ public class EventFactory {
       Content content,
       String repositoryId,
       @Nullable Principal user) {
-    ImmutableContentStoredEvent.Builder builder =
-        ImmutableContentStoredEvent.builder()
-            .type(EventType.CONTENT_STORED)
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .reference(ReferenceMapping.map(branch))
-            .hash(hash.asString())
-            .contentKey(contentKey)
-            .content(content)
-            .commitCreationTimestamp(commitTimestamp);
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableContentStoredEvent.builder()
+        .type(EventType.CONTENT_STORED)
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(branch))
+        .hash(hash.asString())
+        .contentKey(contentKey)
+        .content(content)
+        .commitCreationTimestamp(commitTimestamp)
+        .build();
   }
 
   protected Event newContentRemovedEvent(
@@ -206,20 +186,23 @@ public class EventFactory {
       ContentKey contentKey,
       String repositoryId,
       @Nullable Principal user) {
-    ImmutableContentRemovedEvent.Builder builder =
-        ImmutableContentRemovedEvent.builder()
-            .type(EventType.CONTENT_REMOVED)
-            .id(config.getIdGenerator().get())
-            .eventCreationTimestamp(config.getClock().instant())
-            .repositoryId(repositoryId)
-            .properties(config.getStaticProperties())
-            .reference(ReferenceMapping.map(branch))
-            .hash(hash.asString())
-            .contentKey(contentKey)
-            .commitCreationTimestamp(commitTimestamp);
-    if (user != null) {
-      builder.eventInitiator(user.getName());
-    }
-    return builder.build();
+    return ImmutableContentRemovedEvent.builder()
+        .type(EventType.CONTENT_REMOVED)
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(branch))
+        .hash(hash.asString())
+        .contentKey(contentKey)
+        .commitCreationTimestamp(commitTimestamp)
+        .build();
+  }
+
+  private static Optional<String> extractName(@Nullable Principal user) {
+    return user == null || user.getName() == null || user.getName().isEmpty()
+        ? Optional.empty()
+        : Optional.of(user.getName());
   }
 }

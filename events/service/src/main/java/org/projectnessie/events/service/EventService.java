@@ -18,23 +18,15 @@ package org.projectnessie.events.service;
 import jakarta.annotation.Nullable;
 import java.security.Principal;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.projectnessie.events.api.CommitEvent;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
-import org.projectnessie.events.api.ContentRemovedEvent;
 import org.projectnessie.events.api.ContentStoredEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
-import org.projectnessie.events.api.MergeEvent;
 import org.projectnessie.events.api.ReferenceCreatedEvent;
-import org.projectnessie.events.api.ReferenceDeletedEvent;
-import org.projectnessie.events.api.ReferenceUpdatedEvent;
-import org.projectnessie.events.api.TransplantEvent;
 import org.projectnessie.events.service.util.ContentMapping;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
@@ -67,6 +59,7 @@ import org.slf4j.MDC;
 public class EventService implements AutoCloseable {
 
   public static final String SUBSCRIPTION_ID_MDC_KEY = "nessie.events.subscription.id";
+  public static final String EVENT_ID_MDC_KEY = "nessie.events.event.id";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventService.class);
 
@@ -75,7 +68,6 @@ public class EventService implements AutoCloseable {
   protected final EventSubscribers subscribers;
 
   private volatile boolean started;
-  private Map<String, EventSubscriber> subscriptions;
   private boolean hasContentSubscribers;
   private boolean hasCommitSubscribers;
 
@@ -88,18 +80,12 @@ public class EventService implements AutoCloseable {
   /** Starts event delivery by activating the subscribers. */
   public synchronized void start() {
     if (!started) {
-      Map<String, EventSubscriber> subscriptions = new HashMap<>();
       subscribers.start(
-          subscriber -> {
-            EventSubscription subscription =
-                ImmutableEventSubscription.builder()
-                    .id(config.getIdGenerator().get())
-                    .systemConfiguration(config.getSystemConfiguration())
-                    .build();
-            subscriptions.put(subscription.getId().toString(), subscriber);
-            return subscription;
-          });
-      this.subscriptions = Collections.unmodifiableMap(subscriptions);
+          eventSubscriber ->
+              ImmutableEventSubscription.builder()
+                  .id(config.getIdGenerator().get())
+                  .systemConfiguration(config.getSystemConfiguration())
+                  .build());
       hasContentSubscribers =
           subscribers.hasSubscribersFor(EventType.CONTENT_STORED)
               || subscribers.hasSubscribersFor(EventType.CONTENT_REMOVED);
@@ -111,7 +97,7 @@ public class EventService implements AutoCloseable {
 
   /** Closes the event service by deactivating the subscribers. */
   @Override
-  public synchronized void close() throws Exception {
+  public synchronized void close() {
     subscribers.close();
   }
 
@@ -256,19 +242,22 @@ public class EventService implements AutoCloseable {
    */
   protected void fireEvent(Event event) {
     LOGGER.debug("Firing {} event: {}", event.getType(), event);
-    for (Map.Entry<String, EventSubscriber> entry : subscriptions.entrySet()) {
-      String subscriptionId = entry.getKey();
+    for (Map.Entry<EventSubscription, EventSubscriber> entry :
+        subscribers.getSubscriptions().entrySet()) {
+      EventSubscription subscription = entry.getKey();
       EventSubscriber subscriber = entry.getValue();
-      deliverEvent(event, subscriptionId, subscriber);
+      deliverEvent(event, subscriber, subscription);
     }
   }
 
-  protected void deliverEvent(Event event, String subscriptionId, EventSubscriber subscriber) {
-    MDC.put(SUBSCRIPTION_ID_MDC_KEY, subscriptionId);
+  protected void deliverEvent(
+      Event event, EventSubscriber subscriber, EventSubscription subscription) {
+    MDC.put(SUBSCRIPTION_ID_MDC_KEY, subscription.getIdAsText());
+    MDC.put(EVENT_ID_MDC_KEY, event.getIdAsText());
     try {
       if (subscriber.accepts(event)) {
         LOGGER.debug("Delivering event to subscriber {}: {}", subscriber, event);
-        invokeSubscriberMethod(subscriber, event);
+        subscriber.onEvent(event);
         LOGGER.debug("Event successfully delivered: {}", event);
       } else {
         LOGGER.debug("Subscriber rejected event: {}", event);
@@ -277,37 +266,7 @@ public class EventService implements AutoCloseable {
       LOGGER.error("Event could not be delivered: {}", event, e);
     } finally {
       MDC.remove(SUBSCRIPTION_ID_MDC_KEY);
-    }
-  }
-
-  protected void invokeSubscriberMethod(EventSubscriber subscriber, Event event) {
-    switch (event.getType()) {
-      case COMMIT:
-        subscriber.onCommit((CommitEvent) event);
-        break;
-      case MERGE:
-        subscriber.onMerge((MergeEvent) event);
-        break;
-      case TRANSPLANT:
-        subscriber.onTransplant((TransplantEvent) event);
-        break;
-      case REFERENCE_CREATED:
-        subscriber.onReferenceCreated((ReferenceCreatedEvent) event);
-        break;
-      case REFERENCE_UPDATED:
-        subscriber.onReferenceUpdated((ReferenceUpdatedEvent) event);
-        break;
-      case REFERENCE_DELETED:
-        subscriber.onReferenceDeleted((ReferenceDeletedEvent) event);
-        break;
-      case CONTENT_STORED:
-        subscriber.onContentStored((ContentStoredEvent) event);
-        break;
-      case CONTENT_REMOVED:
-        subscriber.onContentRemoved((ContentRemovedEvent) event);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown event type: " + event.getType());
+      MDC.remove(EVENT_ID_MDC_KEY);
     }
   }
 }

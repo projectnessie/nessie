@@ -19,7 +19,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -65,6 +67,8 @@ public class EventSubscribers implements AutoCloseable {
   // guarded by this
   private boolean closed;
 
+  private Map<EventSubscription, EventSubscriber> subscriptions;
+
   public EventSubscribers(EventSubscriber... subscribers) {
     this(Arrays.asList(subscribers));
   }
@@ -83,17 +87,25 @@ public class EventSubscribers implements AutoCloseable {
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(ResultType.class)));
   }
 
+  /**
+   * Starts all subscribers.
+   *
+   * @param subscriptionFactory a function that creates a subscription for a subscriber
+   */
   public synchronized void start(Function<EventSubscriber, EventSubscription> subscriptionFactory) {
     if (!started) {
       LOGGER.info("Starting subscribers...");
+      Map<EventSubscription, EventSubscriber> subscriptions = new HashMap<>();
       for (EventSubscriber subscriber : subscribers) {
         try {
           EventSubscription subscription = subscriptionFactory.apply(subscriber);
           subscriber.onSubscribe(subscription);
+          subscriptions.put(subscription, subscriber);
         } catch (Exception e) {
           throw new RuntimeException("Error starting subscriber", e);
         }
       }
+      this.subscriptions = Collections.unmodifiableMap(subscriptions);
       LOGGER.info("Done starting subscribers.");
       started = true;
     }
@@ -119,6 +131,19 @@ public class EventSubscribers implements AutoCloseable {
       LOGGER.info("Done closing subscribers.");
       closed = true;
     }
+  }
+
+  /** Returns an unmodifiable list of all subscribers. */
+  public List<EventSubscriber> getSubscribers() {
+    return subscribers;
+  }
+
+  /**
+   * Returns an unmodifiable map of all active subscriptions with their subscribers. Returns null if
+   * {@link #start(Function)} has not been called yet.
+   */
+  public Map<EventSubscription, EventSubscriber> getSubscriptions() {
+    return subscriptions;
   }
 
   /** Returns {@code true} if there are any subscribers for the given {@link EventType}. */

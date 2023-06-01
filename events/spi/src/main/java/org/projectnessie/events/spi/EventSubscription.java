@@ -32,6 +32,12 @@ public interface EventSubscription {
   /** The unique identifier of this subscription. */
   UUID getId();
 
+  /** The unique identifier of this subscription, as a string for convenience. */
+  @Value.Lazy
+  default String getIdAsText() {
+    return getId().toString();
+  }
+
   /** The system configuration of the Nessie server that this subscription is connected to. */
   EventSystemConfiguration getSystemConfiguration();
 }
