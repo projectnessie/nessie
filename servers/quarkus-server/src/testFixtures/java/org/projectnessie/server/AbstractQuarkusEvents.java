@@ -39,7 +39,6 @@ import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.events.api.CommitEvent;
-import org.projectnessie.events.api.CommittingEvent;
 import org.projectnessie.events.api.ContentStoredEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.MergeEvent;
@@ -250,35 +249,58 @@ public abstract class AbstractQuarkusEvents {
   private void checkCommitEvent(
       List<Event> events, Branch branch, String hashBefore, String hashAfter) {
     CommitEvent commitEvent = findEvent(events, CommitEvent.class);
-    checkCommittingEvent(commitEvent, branch, branch, hashBefore, hashAfter);
+    assertThat(commitEvent)
+        .isNotNull()
+        .extracting(
+            CommitEvent::getRepositoryId,
+            e -> e.getEventInitiator().orElse(null),
+            CommitEvent::getProperties,
+            CommitEvent::getHashBefore,
+            CommitEvent::getHashAfter,
+            e -> e.getReference().getFullName().orElse(null))
+        .containsExactly(
+            TEST_REPO_ID,
+            eventInitiator(),
+            ImmutableMap.of("foo", "bar"),
+            hashBefore,
+            hashAfter,
+            "refs/heads/" + branch.getName());
   }
 
   private void checkMergeEvent(
       List<Event> events, Branch source, Branch target, String hashBefore, String hashAfter) {
     MergeEvent mergeEvent = findEvent(events, MergeEvent.class);
-    checkCommittingEvent(mergeEvent, source, target, hashBefore, hashAfter);
+    assertThat(mergeEvent)
+        .isNotNull()
+        .extracting(
+            MergeEvent::getRepositoryId,
+            e -> e.getEventInitiator().orElse(null),
+            MergeEvent::getProperties,
+            MergeEvent::getHashBefore,
+            MergeEvent::getHashAfter,
+            e -> e.getSourceReference().getFullName().orElse(null),
+            e -> e.getTargetReference().getFullName().orElse(null))
+        .containsExactly(
+            TEST_REPO_ID,
+            eventInitiator(),
+            ImmutableMap.of("foo", "bar"),
+            hashBefore,
+            hashAfter,
+            "refs/heads/" + source.getName(),
+            "refs/heads/" + target.getName());
   }
 
   private void checkTransplantEvent(
       List<Event> events, Branch source, Branch target, String hashBefore, String hashAfter) {
     TransplantEvent transplantEvent = findEvent(events, TransplantEvent.class);
-    checkCommittingEvent(transplantEvent, source, target, hashBefore, hashAfter);
-  }
-
-  private void checkCommittingEvent(
-      CommittingEvent commitEvent,
-      Branch source,
-      Branch target,
-      String hashBefore,
-      String hashAfter) {
-    assertThat(commitEvent)
+    assertThat(transplantEvent)
         .isNotNull()
         .extracting(
-            CommittingEvent::getRepositoryId,
+            TransplantEvent::getRepositoryId,
             e -> e.getEventInitiator().orElse(null),
-            CommittingEvent::getProperties,
-            CommittingEvent::getHashBefore,
-            CommittingEvent::getHashAfter,
+            TransplantEvent::getProperties,
+            TransplantEvent::getHashBefore,
+            TransplantEvent::getHashAfter,
             e -> e.getSourceReference().getFullName().orElse(null),
             e -> e.getTargetReference().getFullName().orElse(null))
         .containsExactly(
