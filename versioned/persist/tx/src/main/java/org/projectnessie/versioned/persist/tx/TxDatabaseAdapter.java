@@ -67,6 +67,7 @@ import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferExceptio
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommitResult;
@@ -717,6 +718,10 @@ public abstract class TxDatabaseAdapter
    */
   protected Hash hashOnRef(ConnectionWrapper conn, NamedRef reference, Optional<Hash> hashOnRef)
       throws ReferenceNotFoundException {
+    if (DetachedRef.INSTANCE.equals(reference)) {
+      return hashOnRef.orElseThrow(
+          () -> new IllegalArgumentException("Must supply 'hashOnReference' for DETACHED"));
+    }
     return hashOnRef(conn, reference, hashOnRef, fetchNamedRefHead(conn, reference));
   }
 

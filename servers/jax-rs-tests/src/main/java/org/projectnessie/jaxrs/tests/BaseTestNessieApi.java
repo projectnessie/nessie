@@ -27,16 +27,20 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -88,6 +92,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
@@ -1555,5 +1560,121 @@ public abstract class BaseTestNessieApi {
         .containsExactlyInAnyOrder(
             immutableEntry(a, Content.Type.ICEBERG_TABLE),
             immutableEntry(b, Content.Type.ICEBERG_VIEW));
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void relativeCommitLocations() throws BaseNessieClientServerException {
+    Branch main = api().getDefaultBranch();
+
+    assumeTrue(fullPagingSupport());
+
+    int numCommits = 3;
+
+    Branch branch =
+        createReference(Branch.of("relativeCommitLocations", main.getHash()), main.getName());
+    ContentKey key = ContentKey.of("foo");
+    ImmutableIcebergTable content =
+        (ImmutableIcebergTable) IcebergTable.of("here", numCommits - 1, 2, 3, 4);
+
+    List<String> hashes = new ArrayList<>();
+
+    for (int i = 0; i < numCommits; i++) {
+      CommitResponse commitResponse =
+          api.commitMultipleOperations()
+              .branch(branch)
+              .operation(Put.of(key, content))
+              .operation(
+                  Put.of(ContentKey.of("other-" + i), IcebergTable.of("other-" + i, 1, 2, 3, 4)))
+              .commitMeta(fromMessage("commit " + i))
+              .commitWithResponse();
+      content =
+          commitResponse
+              .contentWithAssignedId(key, content)
+              .withSnapshotId(content.getSnapshotId() - 1);
+      branch = commitResponse.getTargetBranch();
+      hashes.add(branch.getHash());
+    }
+    Collections.reverse(hashes);
+
+    List<LogEntry> commits =
+        api().getCommitLog().reference(branch).stream().collect(Collectors.toList());
+
+    String headCommit = commits.get(0).getCommitMeta().getHash();
+
+    for (int i = 1; i < numCommits; i++) {
+      CommitMeta refCommit = commits.get(i - 1).getCommitMeta();
+
+      String[] relativeCommitSpecs =
+          new String[] {
+            // n-th predecessor
+            "~" + i,
+            headCommit + "~" + i,
+            // timestamp
+            "*" + refCommit.getCommitTime().minus(1, ChronoUnit.NANOS),
+            headCommit + "*" + refCommit.getCommitTime().minus(1, ChronoUnit.NANOS)
+          };
+
+      String branchName = branch.getName();
+      int i2 = i;
+
+      for (String relativeCommitSpec : relativeCommitSpecs) {
+
+        // Check commit-log
+        soft.assertThatCode(
+                () ->
+                    assertThat(
+                            api()
+                                .getCommitLog()
+                                .refName(branchName)
+                                .hashOnRef(relativeCommitSpec)
+                                .maxRecords(1)
+                                .stream()
+                                .findFirst())
+                        .map(LogEntry::getCommitMeta)
+                        .map(CommitMeta::getHash)
+                        .isEqualTo(Optional.of(hashes.get(i2))))
+            .describedAs(
+                "commit-log - %s - relative-commit-spec %s - ref-commit: %s %s",
+                i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime())
+            .doesNotThrowAnyException();
+
+        // Check get-entries
+        soft.assertThatCode(
+                () -> {
+                  assertThat(
+                          api()
+                              .getEntries()
+                              .refName(branchName)
+                              .hashOnRef(relativeCommitSpec)
+                              .stream()
+                              .map(Entry::getName)
+                              .count())
+                      .isEqualTo(1 + numCommits - i2);
+                })
+            .describedAs(
+                "get-entries - %s - relative-commit-spec %s - ref-commit: %s %s",
+                i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime())
+            .doesNotThrowAnyException();
+
+        // Check get-content
+        soft.assertThatCode(
+                () -> {
+                  ContentResponse cr =
+                      api()
+                          .getContent()
+                          .refName(branchName)
+                          .hashOnRef(relativeCommitSpec)
+                          .getSingle(key);
+                  assertThat(cr.getEffectiveReference().getHash())
+                      .isEqualTo(hashes.get(i2))
+                      .isEqualTo(commits.get(i2).getCommitMeta().getHash());
+                  assertThat(((IcebergTable) cr.getContent()).getSnapshotId()).isEqualTo(i2);
+                })
+            .describedAs(
+                "get-content - %s - relative-commit-spec %s - ref-commit: %s %s",
+                i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime());
+      }
+    }
   }
 }

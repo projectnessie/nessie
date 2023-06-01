@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.util.Streams.stream;
 import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BARE;
 import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META;
@@ -67,7 +68,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
   public void createAndDeleteBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
-    final Hash hash = store().hashOnReference(branch, Optional.empty());
+    final Hash hash = store().hashOnReference(branch, Optional.empty(), emptyList());
     soft.assertThat(hash).isNotNull();
 
     final BranchName anotherBranch = BranchName.of("bar");
@@ -110,7 +111,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThat(referenceDeletedResult.getHash()).isEqualTo(hash);
     soft.assertThat(referenceDeletedResult.getNamedRef()).isEqualTo(branch);
 
-    soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty()))
+    soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty(), emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
     try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
@@ -137,7 +138,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
-    final Hash initialHash = store().hashOnReference(branch, Optional.empty());
+    final Hash initialHash = store().hashOnReference(branch, Optional.empty(), emptyList());
     final Hash commitHash = commit("Some commit").toBranch(branch);
 
     final TagName tag = TagName.of("tag");
@@ -153,8 +154,10 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThatThrownBy(() -> store().create(tag, Optional.of(initialHash)))
         .isInstanceOf(ReferenceAlreadyExistsException.class);
 
-    soft.assertThat(store().hashOnReference(tag, Optional.empty())).isEqualTo(initialHash);
-    soft.assertThat(store().hashOnReference(anotherTag, Optional.empty())).isEqualTo(commitHash);
+    soft.assertThat(store().hashOnReference(tag, Optional.empty(), emptyList()))
+        .isEqualTo(initialHash);
+    soft.assertThat(store().hashOnReference(anotherTag, Optional.empty(), emptyList()))
+        .isEqualTo(commitHash);
 
     List<ReferenceInfo<CommitMeta>> namedRefs;
     try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
@@ -177,7 +180,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThat(referenceDeletedResult.getHash()).isEqualTo(initialHash);
     soft.assertThat(referenceDeletedResult.getNamedRef()).isEqualTo(tag);
 
-    soft.assertThatThrownBy(() -> store().hashOnReference(tag, Optional.empty()))
+    soft.assertThatThrownBy(() -> store().hashOnReference(tag, Optional.empty(), emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
     try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
@@ -195,7 +198,8 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
   void getNamedRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("getNamedRef");
     Hash hashFromCreate = store().create(branch, Optional.empty()).getHash();
-    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(hashFromCreate);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
+        .isEqualTo(hashFromCreate);
 
     final Hash firstCommitHash = commit("First Commit").toBranch(branch);
 

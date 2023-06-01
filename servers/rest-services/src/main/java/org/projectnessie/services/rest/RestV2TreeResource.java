@@ -16,7 +16,6 @@
 package org.projectnessie.services.rest;
 
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
-import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElementWithDefaultBranch;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
@@ -92,9 +91,14 @@ public class RestV2TreeResource implements HttpTreeApi {
     this.diffService = diffService;
   }
 
-  private ParsedReference resolveRef(String refPathString) {
-    return resolveReferencePathElementWithDefaultBranch(
-        refPathString, () -> configService.getConfig().getDefaultBranch());
+  private ParsedReference parseRefPathString(String refPathString) {
+    return parseRefPathString(refPathString, Reference.ReferenceType.BRANCH);
+  }
+
+  private ParsedReference parseRefPathString(
+      String refPathString, Reference.ReferenceType referenceType) {
+    return resolveReferencePathElement(
+        refPathString, referenceType, () -> configService.getConfig().getDefaultBranch());
   }
 
   private TreeService tree() {
@@ -159,7 +163,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse getReferenceByName(GetReferenceParams params)
       throws NessieNotFoundException {
-    ParsedReference reference = resolveRef(params.getRef());
+    ParsedReference reference = parseRefPathString(params.getRef());
     return SingleReferenceResponse.builder()
         .reference(tree().getReferenceByName(reference.name(), params.fetchOption()))
         .build();
@@ -169,13 +173,13 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public EntriesResponse getEntries(String ref, EntriesParams params)
       throws NessieNotFoundException {
-    ParsedReference reference = resolveRef(ref);
+    ParsedReference reference = parseRefPathString(ref);
     Integer maxRecords = params.maxRecords();
     ImmutableEntriesResponse.Builder builder = EntriesResponse.builder();
     return tree()
         .getEntries(
             reference.name(),
-            reference.hash(),
+            reference.hashWithRelativeSpec(),
             null,
             params.filter(),
             params.pageToken(),
@@ -208,14 +212,14 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
-    ParsedReference reference = resolveRef(ref);
+    ParsedReference reference = parseRefPathString(ref);
     Integer maxRecords = params.maxRecords();
     return tree()
         .getCommitLog(
             reference.name(),
             params.fetchOption(),
             params.startHash(),
-            reference.hash(),
+            reference.hashWithRelativeSpec(),
             params.filter(),
             params.pageToken(),
             new PagedCountingResponseHandler<LogResponse, LogEntry>(
@@ -244,15 +248,15 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
     Integer maxRecords = params.maxRecords();
-    ParsedReference from = resolveRef(params.getFromRef());
-    ParsedReference to = resolveRef(params.getToRef());
+    ParsedReference from = parseRefPathString(params.getFromRef());
+    ParsedReference to = parseRefPathString(params.getToRef());
     ImmutableDiffResponse.Builder builder = DiffResponse.builder();
     return diff()
         .getDiff(
             from.name(),
-            from.hash(),
+            from.hashWithRelativeSpec(),
             to.name(),
-            to.hash(),
+            to.hashWithRelativeSpec(),
             params.pageToken(),
             new PagedCountingResponseHandler<DiffResponse, DiffEntry>(maxRecords) {
               @Override
@@ -285,9 +289,11 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse assignReference(
       Reference.ReferenceType type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    ParsedReference reference = resolveReferencePathElement(ref, type);
+    ParsedReference reference = parseRefPathString(ref, type);
     Reference updated =
-        tree().assignReference(reference.type(), reference.name(), reference.hash(), assignTo);
+        tree()
+            .assignReference(
+                reference.type(), reference.name(), reference.hashWithRelativeSpec(), assignTo);
     return SingleReferenceResponse.builder().reference(updated).build();
   }
 
@@ -295,9 +301,10 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
-    ParsedReference reference = resolveReferencePathElement(ref, type);
+    ParsedReference reference = parseRefPathString(ref, type);
     Reference deleted =
-        tree().deleteReference(reference.type(), reference.name(), reference.hash());
+        tree()
+            .deleteReference(reference.type(), reference.name(), reference.hashWithRelativeSpec());
     return SingleReferenceResponse.builder().reference(deleted).build();
   }
 
@@ -305,8 +312,9 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public ContentResponse getContent(ContentKey key, String ref, boolean withDocumentation)
       throws NessieNotFoundException {
-    ParsedReference reference = resolveRef(ref);
-    return content().getContent(key, reference.name(), reference.hash(), withDocumentation);
+    ParsedReference reference = parseRefPathString(ref);
+    return content()
+        .getContent(key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation);
   }
 
   @JsonView(Views.V2.class)
@@ -323,17 +331,20 @@ public class RestV2TreeResource implements HttpTreeApi {
   public GetMultipleContentsResponse getMultipleContents(
       String ref, GetMultipleContentsRequest request, boolean withDocumentation)
       throws NessieNotFoundException {
-    ParsedReference reference = resolveRef(ref);
+    ParsedReference reference = parseRefPathString(ref);
     return content()
         .getMultipleContents(
-            reference.name(), reference.hash(), request.getRequestedKeys(), withDocumentation);
+            reference.name(),
+            reference.hashWithRelativeSpec(),
+            request.getRequestedKeys(),
+            withDocumentation);
   }
 
   @JsonView(Views.V2.class)
   @Override
   public MergeResponse transplantCommitsIntoBranch(String branch, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    ParsedReference ref = resolveRef(branch);
+    ParsedReference ref = parseRefPathString(branch);
 
     String msg = transplant.getMessage();
     CommitMeta meta = CommitMeta.fromMessage(msg == null ? "" : msg);
@@ -341,7 +352,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return tree()
         .transplantCommitsIntoBranch(
             ref.name(),
-            ref.hash(),
+            ref.hashWithRelativeSpec(),
             meta,
             transplant.getHashesToTransplant(),
             transplant.getFromRefName(),
@@ -357,7 +368,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public MergeResponse mergeRefIntoBranch(String branch, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    ParsedReference ref = resolveRef(branch);
+    ParsedReference ref = parseRefPathString(branch);
 
     @SuppressWarnings("deprecation")
     String msg = merge.getMessage();
@@ -376,7 +387,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return tree()
         .mergeRefIntoBranch(
             ref.name(),
-            ref.hash(),
+            ref.hashWithRelativeSpec(),
             merge.getFromRefName(),
             merge.getFromHash(),
             false,
@@ -392,7 +403,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public CommitResponse commitMultipleOperations(String branch, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    ParsedReference ref = resolveRef(branch);
-    return tree().commitMultipleOperations(ref.name(), ref.hash(), operations);
+    ParsedReference ref = parseRefPathString(branch);
+    return tree().commitMultipleOperations(ref.name(), ref.hashWithRelativeSpec(), operations);
   }
 }

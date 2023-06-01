@@ -61,10 +61,14 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+  public Hash hashOnReference(
+      NamedRef namedReference,
+      Optional<Hash> hashOnReference,
+      List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException {
     return delegate1Ex(
-        "hashonreference", () -> delegate.hashOnReference(namedReference, hashOnReference));
+        "hashonreference",
+        () -> delegate.hashOnReference(namedReference, hashOnReference, relativeLookups));
   }
 
   @Nonnull

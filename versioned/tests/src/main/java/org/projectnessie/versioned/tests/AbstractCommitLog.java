@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
@@ -72,7 +73,9 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
               .getValue(
                   store()
                       .hashOnReference(
-                          branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1])),
+                          branch,
+                          Optional.of(i == 0 ? createHash : commitHashes[i - 1]),
+                          emptyList()),
                   key);
       Put op =
           value != null

@@ -50,6 +50,20 @@ public class DiffParams extends KeyRangeParams<DiffParams> {
       examples = {
         @ExampleObject(ref = "ref"),
         @ExampleObject(ref = "refWithHash"),
+        @ExampleObject(
+            ref = "refWithTimestampMillisSinceEpoch",
+            description =
+                "The commit 'valid for' the timestamp 1685185847230 in ms since epoch on main"),
+        @ExampleObject(
+            ref = "refWithTimestampInstant",
+            description = "The commit 'valid for' the given ISO-8601 instant on main"),
+        @ExampleObject(
+            ref = "refWithNthPredecessor",
+            description = "The 10th commit from HEAD of main"),
+        @ExampleObject(
+            ref = "refWithMergeParent",
+            description =
+                "References the merge-parent of commit 2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d on main"),
         @ExampleObject(ref = "refDefault"),
         @ExampleObject(ref = "refDetached"),
       })

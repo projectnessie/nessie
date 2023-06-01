@@ -15,7 +15,10 @@
  */
 package org.projectnessie.services.spi;
 
-import static org.projectnessie.api.v1.params.DiffParams.HASH_OPTIONAL_REGEX;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_REGEX;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -25,7 +28,6 @@ import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
-import org.projectnessie.model.Validation;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.WithHash;
 
@@ -39,31 +41,35 @@ public interface DiffService {
   <R> R getDiff(
       @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String fromRef,
       @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = HASH_OPTIONAL_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String fromHash,
       @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String toRef,
       @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = HASH_OPTIONAL_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String toHash,
       @Nullable @jakarta.annotation.Nullable String pagingToken,
       PagedResponseHandler<R, DiffEntry> pagedResponseHandler,

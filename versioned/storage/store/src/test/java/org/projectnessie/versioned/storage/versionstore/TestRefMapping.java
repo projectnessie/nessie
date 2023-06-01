@@ -15,11 +15,17 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static java.time.Instant.ofEpochSecond;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.versioned.RelativeCommitSpec.Type.N_TH_PARENT;
+import static org.projectnessie.versioned.RelativeCommitSpec.Type.N_TH_PREDECESSOR;
+import static org.projectnessie.versioned.RelativeCommitSpec.Type.TIMESTAMP_MILLIS_EPOCH;
+import static org.projectnessie.versioned.RelativeCommitSpec.relativeCommitSpec;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.CONTENT_ID_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_DOES_NOT_EXIST;
@@ -31,6 +37,8 @@ import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newC
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
@@ -39,17 +47,25 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.NO_ANC
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.REFS_HEADS;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.REFS_TAGS;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.asBranchName;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.commitCreatedTimestamp;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.createdTimestampMatches;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.hashNotFound;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.objectNotFound;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceAlreadyExists;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.COMMIT_TIME;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.instantToHeaderValue;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -60,6 +76,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Hash;
@@ -82,6 +99,105 @@ public class TestRefMapping {
   @NessiePersist protected static Persist persist;
 
   @InjectSoftAssertions protected SoftAssertions soft;
+
+  @Test
+  public void createdTimestampChecks() {
+    Instant fourtyTwo = ofEpochSecond(42);
+    Instant fourtyThree = ofEpochSecond(43);
+    Instant fourtyOne = ofEpochSecond(41);
+    long fourtyTwoMicros = MILLISECONDS.toMicros(fourtyTwo.toEpochMilli());
+    Instant someInstant = Instant.parse("2021-04-07T14:42:25.534748Z");
+
+    BiFunction<String, Long, CommitObj> commit =
+        (commitTimeHdr, created) ->
+            commitBuilder()
+                .id(EMPTY_OBJ_ID)
+                .addTail(EMPTY_OBJ_ID)
+                .incrementalIndex(ByteString.empty())
+                .message("commit")
+                .headers(
+                    commitTimeHdr == null
+                        ? EMPTY_COMMIT_HEADERS
+                        : newCommitHeaders().add(COMMIT_TIME, commitTimeHdr).build())
+                .created(created)
+                .seq(0)
+                .build();
+
+    // Invalid "Created-At" commit header value, fall back to internal "CommitObj.created()"
+    soft.assertThat(commitCreatedTimestamp(commit.apply("not a timestamp", fourtyTwoMicros)))
+        .isEqualTo(fourtyTwo);
+    // No "Created-At" commit header, fall back to internal "CommitObj.created()"
+    soft.assertThat(commitCreatedTimestamp(commit.apply(null, fourtyTwoMicros)))
+        .isEqualTo(fourtyTwo);
+    // Valid "Created-At" commit header
+    soft.assertThat(commitCreatedTimestamp(commit.apply(someInstant.toString(), fourtyTwoMicros)))
+        .isEqualTo(someInstant);
+
+    soft.assertThat(createdTimestampMatches(commit.apply(null, fourtyTwoMicros), fourtyTwo))
+        .isEqualTo(true);
+    soft.assertThat(createdTimestampMatches(commit.apply(null, fourtyTwoMicros), fourtyThree))
+        .isEqualTo(true);
+    soft.assertThat(createdTimestampMatches(commit.apply(null, fourtyTwoMicros), fourtyOne))
+        .isEqualTo(false);
+  }
+
+  @Test
+  public void relativeSpec() throws Exception {
+    RefMapping refMapping = new RefMapping(persist);
+
+    // Commit in creation-order
+    List<CommitObj> commits =
+        generateCommits("foo").stream()
+            .map(
+                id -> {
+                  try {
+                    return persist.fetchTypedObj(id, COMMIT, CommitObj.class);
+                  } catch (ObjNotFoundException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.toList());
+
+    // Commit by distance from HEAD
+    IntFunction<CommitObj> commit = i -> commits.get(commits.size() - 1 - i);
+
+    CommitObj head = commit.apply(0);
+
+    soft.assertThat(refMapping.relativeSpec(head, emptyList())).isEqualTo(head);
+    soft.assertThat(
+            refMapping.relativeSpec(head, singletonList(relativeCommitSpec(N_TH_PARENT, "1"))))
+        .isEqualTo(commit.apply(1));
+    soft.assertThat(
+            refMapping.relativeSpec(head, singletonList(relativeCommitSpec(N_TH_PREDECESSOR, "3"))))
+        .isEqualTo(commit.apply(3));
+
+    soft.assertThat(
+            refMapping.relativeSpec(
+                head,
+                singletonList(
+                    relativeCommitSpec(TIMESTAMP_MILLIS_EPOCH, ofEpochSecond(-1).toString()))))
+        .isNull();
+    soft.assertThat(
+            refMapping.relativeSpec(
+                head,
+                singletonList(
+                    relativeCommitSpec(TIMESTAMP_MILLIS_EPOCH, ofEpochSecond(10).toString()))))
+        .isEqualTo(head);
+    soft.assertThat(
+            refMapping.relativeSpec(
+                head,
+                singletonList(
+                    relativeCommitSpec(
+                        TIMESTAMP_MILLIS_EPOCH, String.valueOf(ofEpochSecond(3).toEpochMilli())))))
+        .isEqualTo(commits.get(3));
+    soft.assertThat(
+            refMapping.relativeSpec(
+                head,
+                singletonList(
+                    relativeCommitSpec(
+                        TIMESTAMP_MILLIS_EPOCH, String.valueOf(ofEpochSecond(3).toEpochMilli())))))
+        .isEqualTo(commits.get(3));
+  }
 
   static Stream<Arguments> exceptions() {
     return Stream.of(
@@ -341,12 +457,15 @@ public class TestRefMapping {
       soft.assertThat(commit).isNotNull();
       soft.assertThat(
               refMapping.commitInChain(
-                  BranchName.of("branch"), commit, Optional.of(objIdToHash(testId))))
+                  BranchName.of("branch"), commit, Optional.of(objIdToHash(testId)), emptyList()))
           .isNotNull();
-      soft.assertThat(refMapping.commitInChain(BranchName.of("branch"), commit, Optional.empty()))
+      soft.assertThat(
+              refMapping.commitInChain(
+                  BranchName.of("branch"), commit, Optional.empty(), emptyList()))
           .isSameAs(commit);
       soft.assertThat(
-              refMapping.commitInChain(BranchName.of("branch"), commit, Optional.of(NO_ANCESTOR)))
+              refMapping.commitInChain(
+                  BranchName.of("branch"), commit, Optional.of(NO_ANCESTOR), emptyList()))
           .isNull();
     }
     for (ObjId testId : commits2) {
@@ -371,7 +490,10 @@ public class TestRefMapping {
                 newCommitBuilder()
                     .parentCommitId(head)
                     .message("commit " + msg + " " + i)
-                    .headers(EMPTY_COMMIT_HEADERS)
+                    .headers(
+                        newCommitHeaders()
+                            .add(COMMIT_TIME, instantToHeaderValue(ofEpochSecond(i)))
+                            .build())
                     .build(),
                 emptyList()));
   }

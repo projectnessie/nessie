@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -160,10 +162,10 @@ public class CommitBuilder {
       throws ReferenceNotFoundException, ReferenceConflictException {
     Optional<Hash> reference =
         fromLatest
-            ? Optional.of(store.hashOnReference(branchName, Optional.empty()))
+            ? Optional.of(store.hashOnReference(branchName, Optional.empty(), emptyList()))
             : referenceHash;
     Hash commitHash = store.commit(branchName, reference, metadata, operations).getCommitHash();
-    Hash storeHash = store.hashOnReference(branchName, Optional.empty());
+    Hash storeHash = store.hashOnReference(branchName, Optional.empty(), emptyList());
     Assertions.assertEquals(storeHash, commitHash);
     return commitHash;
   }

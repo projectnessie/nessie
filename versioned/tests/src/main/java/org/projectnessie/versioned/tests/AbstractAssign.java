@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.util.Lists.newArrayList;
 
 import java.util.Optional;
@@ -50,7 +51,7 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
   public void assign() throws VersionStoreException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
-    final Hash initialHash = store().hashOnReference(branch, Optional.empty());
+    final Hash initialHash = store().hashOnReference(branch, Optional.empty(), emptyList());
 
     final Hash commit = commit("Some commit").toBranch(branch);
     store().create(BranchName.of("bar"), Optional.of(commit));

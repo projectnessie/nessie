@@ -15,12 +15,18 @@
  */
 package org.projectnessie.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_PATTERN;
 
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestReference {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   @ParameterizedTest
   @CsvSource({
@@ -29,8 +35,14 @@ class TestReference {
     "a/b,11223344,a/b@11223344",
     "a/b,,a/b@",
     ",11223344,@11223344",
+    "test,~10,test~10",
+    "test,*123456,test*123456",
+    "test/path,~10,test/path@~10",
+    "test,deadbeef,test@deadbeef",
+    ",deadbeef,@deadbeef",
   })
   void toPathString(String name, String hash, String expectedResult) {
-    assertThat(Reference.toPathString(name, hash)).isEqualTo(expectedResult);
+    soft.assertThat(Reference.toPathString(name, hash)).isEqualTo(expectedResult);
+    soft.assertThat(REF_NAME_PATH_ELEMENT_PATTERN.matcher(expectedResult).matches()).isTrue();
   }
 }

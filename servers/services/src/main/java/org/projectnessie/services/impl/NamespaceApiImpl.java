@@ -18,6 +18,7 @@ package org.projectnessie.services.impl;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
+import static org.projectnessie.model.Validation.validateHash;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import com.google.common.base.Preconditions;
@@ -158,6 +159,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   public Namespace getNamespace(String refName, String hashOnRef, Namespace namespace)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     try {
+      if (hashOnRef != null) {
+        validateHash(hashOnRef);
+      }
       return getNamespace(namespace, namedRefWithHashOrThrow(refName, hashOnRef).getHash());
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
@@ -193,6 +197,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   @Override
   public GetNamespacesResponse getNamespaces(String refName, String hashOnRef, Namespace namespace)
       throws NessieReferenceNotFoundException {
+    if (hashOnRef != null) {
+      validateHash(hashOnRef);
+    }
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, hashOnRef);
     try {
       // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)

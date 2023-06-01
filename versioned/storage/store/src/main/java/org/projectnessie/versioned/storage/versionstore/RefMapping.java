@@ -18,19 +18,26 @@ package org.projectnessie.versioned.storage.versionstore;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.COMMIT_TIME;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.headerValueToInstant;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.ContentKey;
@@ -41,6 +48,7 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RelativeCommitSpec;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -291,7 +299,10 @@ public class RefMapping {
   }
 
   public CommitObj commitInChain(
-      NamedRef namedRef, CommitObj startCommit, Optional<Hash> hashOnReference)
+      NamedRef namedRef,
+      CommitObj startCommit,
+      Optional<Hash> hashOnReference,
+      List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException {
     ObjId commitId = startCommit != null ? startCommit.id() : EMPTY_OBJ_ID;
 
@@ -300,15 +311,126 @@ public class RefMapping {
       if (NO_ANCESTOR.equals(hash)) {
         return null;
       }
-      ObjId verifyId = hashToObjId(hash);
-      CommitObj current = commitInChain(commitId, verifyId);
-      if (current != null) {
-        return current;
+
+      startCommit = commitInChain(commitId, hashToObjId(hash));
+      if (startCommit == null) {
+        throw hashNotFound(namedRef, hash);
       }
-      throw hashNotFound(namedRef, hash);
     }
 
+    startCommit = relativeSpec(startCommit, relativeLookups);
+
     return startCommit;
+  }
+
+  @VisibleForTesting
+  CommitObj relativeSpec(CommitObj startCommit, List<RelativeCommitSpec> relativespecs)
+      throws ReferenceNotFoundException {
+    CommitLogic commitLogic = commitLogic(persist);
+    for (RelativeCommitSpec spec : relativespecs) {
+      if (startCommit == null) {
+        break;
+      }
+
+      switch (spec.type()) {
+        case TIMESTAMP_MILLIS_EPOCH:
+          startCommit = findWithSmallerTimestamp(startCommit, commitLogic, spec.instantValue());
+          break;
+        case N_TH_PREDECESSOR:
+          startCommit = findNthPredecessor(startCommit, commitLogic, (int) spec.longValue());
+          break;
+        case N_TH_PARENT:
+          startCommit = findNthParent(startCommit, commitLogic, (int) spec.longValue());
+          break;
+        default:
+          throw new IllegalArgumentException("Unknown lookup type " + spec.type());
+      }
+    }
+    return startCommit;
+  }
+
+  @Nullable
+  private static CommitObj findWithSmallerTimestamp(
+      CommitObj startCommit, CommitLogic commitLogic, Instant timestampMillisEpoch) {
+    if (createdTimestampMatches(startCommit, timestampMillisEpoch)) {
+      return startCommit;
+    }
+    PagedResult<CommitObj, ObjId> log =
+        commitLogic.commitLog(commitLogQuery(startCommit.directParent()));
+    while (log.hasNext()) {
+      CommitObj commit = log.next();
+      if (createdTimestampMatches(commit, timestampMillisEpoch)) {
+        return commit;
+      }
+    }
+    return null;
+  }
+
+  @VisibleForTesting
+  static boolean createdTimestampMatches(CommitObj commit, Instant timestampMillisEpoch) {
+    Instant commitCreated = commitCreatedTimestamp(commit);
+    return commitCreated.compareTo(timestampMillisEpoch) <= 0;
+  }
+
+  @VisibleForTesting
+  static Instant commitCreatedTimestamp(CommitObj commit) {
+    String hdr = commit.headers().getFirst(COMMIT_TIME);
+    Instant commitCreated = null;
+    if (hdr != null) {
+      try {
+        commitCreated = headerValueToInstant(hdr);
+      } catch (Exception ignore) {
+        // ignore
+      }
+    }
+    if (commitCreated == null) {
+      long created = commit.created();
+      long seconds = MICROSECONDS.toSeconds(created);
+      long nanos = MICROSECONDS.toNanos(created) % SECONDS.toNanos(1);
+      commitCreated = Instant.ofEpochSecond(seconds, nanos);
+    }
+    return commitCreated;
+  }
+
+  @Nullable
+  private static CommitObj findNthParent(
+      CommitObj startCommit, CommitLogic commitLogic, int nthParent)
+      throws ReferenceNotFoundException {
+    ObjId id;
+    if (nthParent == 1) {
+      id = startCommit.directParent();
+    } else {
+      List<ObjId> secondaryParents = startCommit.secondaryParents();
+      int secondary = nthParent - 2;
+      if (secondaryParents.size() <= secondary) {
+        return null;
+      }
+      id = secondaryParents.get(secondary);
+    }
+    try {
+      return commitLogic.fetchCommit(id);
+    } catch (ObjNotFoundException e) {
+      throw referenceNotFound(e);
+    }
+  }
+
+  @Nullable
+  private static CommitObj findNthPredecessor(
+      CommitObj startCommit, CommitLogic commitLogic, int nthPredecessor)
+      throws ReferenceNotFoundException {
+    PagedResult<ObjId, ObjId> log =
+        commitLogic.commitIdLog(commitLogQuery(startCommit.directParent()));
+    while (log.hasNext()) {
+      ObjId id = log.next();
+      if (--nthPredecessor == 0) {
+        try {
+          return commitLogic.fetchCommit(id);
+        } catch (ObjNotFoundException e) {
+          throw referenceNotFound(e);
+        }
+      }
+    }
+    return null;
   }
 
   public CommitObj commitInChain(ObjId commitId, ObjId verifyId) throws ReferenceNotFoundException {

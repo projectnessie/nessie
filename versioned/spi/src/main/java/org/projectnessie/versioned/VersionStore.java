@@ -54,7 +54,10 @@ public interface VersionStore {
    * @throws ReferenceNotFoundException if {@code namedReference} does not exist or {@code
    *     hashOnReference}, if present, is not reachable from that reference
    */
-  Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+  Hash hashOnReference(
+      NamedRef namedReference,
+      Optional<Hash> hashOnReference,
+      List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException;
 
   /**
@@ -294,8 +297,8 @@ public interface VersionStore {
    * Resolve the given {@link NamedRef} and return information about it, which at least contains the
    * current HEAD commit hash plus, optionally, additional information.
    *
-   * <p>This is a functionally equivalent to {@link #hashOnReference(NamedRef, Optional)
-   * hashOnReference(ref, Optional.empty())}.
+   * <p>This is a functionally equivalent to {@link #hashOnReference(NamedRef, Optional, List)
+   * hashOnReference(ref, Optional.empty(), Collections.emptyList())}.
    *
    * @param ref The branch or tag to lookup.
    * @param params options that control which information shall be returned in {@link

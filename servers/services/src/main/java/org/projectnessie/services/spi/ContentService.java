@@ -15,6 +15,11 @@
  */
 package org.projectnessie.services.spi;
 
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_REGEX;
+
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -24,7 +29,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.Validation;
 
 /**
  * Server-side interface to services managing the loading of content objects.
@@ -40,19 +44,21 @@ public interface ContentService {
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String namedRef,
       @Valid
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
       boolean withDocumentation)
       throws NessieNotFoundException;
@@ -62,19 +68,21 @@ public interface ContentService {
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String namedRef,
       @Valid
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
       @Valid @jakarta.validation.Valid @Size @jakarta.validation.constraints.Size(min = 1)
           List<ContentKey> keys,

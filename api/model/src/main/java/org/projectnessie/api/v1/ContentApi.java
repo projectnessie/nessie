@@ -62,10 +62,12 @@ public interface ContentApi {
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef)
       throws NessieNotFoundException;
 
@@ -99,10 +101,12 @@ public interface ContentApi {
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
       @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
           GetMultipleContentsRequest request)

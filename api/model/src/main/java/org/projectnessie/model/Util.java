@@ -15,8 +15,6 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.api.v2.params.ReferenceResolver.REF_HASH_SEPARATOR;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -39,6 +37,7 @@ final class Util {
   public static final char GROUP_SEPARATOR = '\u001D';
   public static final char URL_PATH_SEPARATOR = '/';
   public static final String DOT_STRING = ".";
+  public static final char REF_HASH_SEPARATOR = '@';
 
   /**
    * Convert from path encoded string to normal string.
@@ -65,7 +64,7 @@ final class Util {
 
   public static String toPathStringRef(String name, String hash) {
     StringBuilder builder = new StringBuilder();
-    boolean separatorRequired = hash != null;
+    boolean separatorRequired = hash != null && !hash.isEmpty() && isHexChar(hash.charAt(0));
     if (name != null) {
       builder.append(name);
       separatorRequired |= name.indexOf(URL_PATH_SEPARATOR) >= 0;
@@ -80,6 +79,10 @@ final class Util {
     }
 
     return builder.toString();
+  }
+
+  private static boolean isHexChar(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'F' && c <= 'F');
   }
 
   static final class ContentTypeDeserializer extends JsonDeserializer<Content.Type> {

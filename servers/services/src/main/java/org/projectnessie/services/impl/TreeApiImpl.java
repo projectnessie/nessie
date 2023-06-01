@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.function.Function.identity;
 import static org.projectnessie.model.CommitResponse.AddedContent.addedContent;
+import static org.projectnessie.model.Validation.validateHash;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canReadEntries;
 import static org.projectnessie.services.authz.Check.canViewReference;
@@ -576,6 +577,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       BranchName targetBranch = BranchName.of(branchName);
       String lastHash = hashesToTransplant.get(hashesToTransplant.size() - 1);
+      validateHash(lastHash);
       WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(fromRefName, lastHash);
 
       startAccessCheck()

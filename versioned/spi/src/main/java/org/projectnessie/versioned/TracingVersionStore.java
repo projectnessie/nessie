@@ -90,7 +90,10 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+  public Hash hashOnReference(
+      NamedRef namedReference,
+      Optional<Hash> hashOnReference,
+      List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException {
     return callWithOneException(
         tracer,
@@ -98,7 +101,7 @@ public class TracingVersionStore implements VersionStore {
         b ->
             b.setAttribute(TAG_REF, safeRefName(namedReference))
                 .setAttribute(TAG_HASH, safeToString(hashOnReference)),
-        () -> delegate.hashOnReference(namedReference, hashOnReference));
+        () -> delegate.hashOnReference(namedReference, hashOnReference, relativeLookups));
   }
 
   @Nonnull

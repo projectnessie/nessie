@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -235,7 +236,8 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                             .fromRef(BranchName.of("source"))
                             .toBranch(BranchName.of("this-one-should-not-exist"))
                             .addSequenceToTransplant(
-                                s.hashOnReference(BranchName.of("main"), Optional.empty()))
+                                s.hashOnReference(
+                                    BranchName.of("main"), Optional.empty(), emptyList()))
                             .updateCommitMetadata(metadataRewriter)
                             .build())),
         new ReferenceNotFoundFunction("transplant/hash/empty")

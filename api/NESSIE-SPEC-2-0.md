@@ -22,6 +22,21 @@ well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
+# 2.1.0
+
+* Released with Nessie version 0.61.0.
+* The following REST v2 API functions now support "reference at hash" with relative parameters that
+  allow looking up commits by timestamp, n-th predecessor or direct/merge parent.
+  See `org.projectnessie.model.Validation.HASH_TIMESTAMP_PARENT_RAW_REGEX` for the syntax.
+  * get-entries
+  * get-content + get-contents
+  * get-commit-log
+  * get-diff
+  * create-reference
+  * assign-reference
+  * merge / from-hash/ref
+  * commit
+
 # 2.0.0
 
 * Released with Nessie version 0.59.0.

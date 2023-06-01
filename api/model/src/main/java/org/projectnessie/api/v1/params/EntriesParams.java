@@ -35,10 +35,12 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Nullable
   @jakarta.annotation.Nullable
-  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @Pattern(
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
       description = "a particular hash on the given ref",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})

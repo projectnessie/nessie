@@ -15,29 +15,35 @@
  */
 package org.projectnessie.client.api;
 
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_REGEX;
+
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Validation;
 
 /** Base interface for requests against a branch. */
 public interface OnBranchBuilder<R extends OnBranchBuilder<R>> {
   R branchName(
       @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String branchName);
 
   R hash(
       @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hash);
 
   /**
