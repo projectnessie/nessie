@@ -53,7 +53,6 @@ dependencies {
   implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-rocksdb"))
-  implementation(project(":nessie-versioned-storage-telemetry"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))

@@ -15,8 +15,6 @@
  */
 package org.projectnessie.server;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.ext.NessieApiVersion;
@@ -46,44 +44,44 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractQuarkusRest
     String body = getMetrics();
     // Do not query JVM metrics in tests, see
     // https://github.com/quarkusio/quarkus/issues/24210#issuecomment-1064833013
-    assertThat(body).contains("process_cpu_usage");
-    assertThat(body)
+    soft.assertThat(body).contains("process_cpu_usage");
+    soft.assertThat(body)
         // also assert that VersionStore metrics have the global tag application="Nessie"
         .containsPattern("nessie_versionstore_request_seconds_max\\{.*application=\"Nessie\".*}");
-    assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
-    assertThat(body).contains("nessie_versionstore_request_seconds_count");
-    assertThat(body).contains("nessie_versionstore_request_seconds_sum");
-    assertThat(body).contains("http_server_connections_seconds_max");
-    assertThat(body).contains("http_server_connections_seconds_active_count");
+    soft.assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
+    soft.assertThat(body).contains("nessie_versionstore_request_seconds_count");
+    soft.assertThat(body).contains("nessie_versionstore_request_seconds_sum");
+    soft.assertThat(body).contains("http_server_connections_seconds_max");
+    soft.assertThat(body).contains("http_server_connections_seconds_active_count");
   }
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V1)
   void smokeHttpApiV1Metrics() {
     String body = getMetrics();
-    assertThat(body).contains("/api/v1/diffs/{diff_params}");
-    assertThat(body).contains("/api/v1/trees/{referenceType}/{ref}");
-    assertThat(body).contains("/api/v1/trees/branch/{branchName}/commit");
-    assertThat(body).contains("/api/v1/trees/branch/{branchName}/transplant");
-    assertThat(body).contains("/api/v1/trees/branch/{branchName}/merge");
-    assertThat(body).contains("/api/v1/trees/branch/{ref}");
-    assertThat(body).contains("/api/v1/trees/tree/{ref}/entries");
-    assertThat(body).contains("/api/v1/namespaces/{ref}");
-    assertThat(body).contains("/api/v1/namespaces/namespace/{ref}/{name}");
+    soft.assertThat(body).contains("/api/v1/diffs/{diff_params}");
+    soft.assertThat(body).contains("/api/v1/trees/{referenceType}/{ref}");
+    soft.assertThat(body).contains("/api/v1/trees/branch/{branchName}/commit");
+    soft.assertThat(body).contains("/api/v1/trees/branch/{branchName}/transplant");
+    soft.assertThat(body).contains("/api/v1/trees/branch/{branchName}/merge");
+    soft.assertThat(body).contains("/api/v1/trees/branch/{ref}");
+    soft.assertThat(body).contains("/api/v1/trees/tree/{ref}/entries");
+    soft.assertThat(body).contains("/api/v1/namespaces/{ref}");
+    soft.assertThat(body).contains("/api/v1/namespaces/namespace/{ref}/{name}");
   }
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void smokeHttpApiV2Metrics() {
     String body = getMetrics();
-    assertThat(body).contains("/api/v2/config");
-    assertThat(body).contains("/api/v2/trees/{ref}");
-    assertThat(body).contains("/api/v2/trees/{ref}/contents");
-    assertThat(body).contains("/api/v2/trees/{ref}/entries");
-    assertThat(body).contains("/api/v2/trees/{ref}/history");
-    assertThat(body).contains("/api/v2/trees/{ref}/history/commit");
-    assertThat(body).contains("/api/v2/trees/{ref}/history/merge");
-    assertThat(body).contains("/api/v2/trees/{ref}/history/transplant");
-    assertThat(body).contains("/api/v2/trees/{from-ref}/diff/{to-ref}");
+    soft.assertThat(body).contains("/api/v2/config");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}/contents");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}/entries");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}/history");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}/history/commit");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}/history/merge");
+    soft.assertThat(body).contains("/api/v2/trees/{ref}/history/transplant");
+    soft.assertThat(body).contains("/api/v2/trees/{from-ref}/diff/{to-ref}");
   }
 }

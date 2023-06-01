@@ -35,13 +35,6 @@ dependencies {
 
   implementation(libs.guava)
 
-  implementation(platform(libs.opentelemetry.instrumentation.bom.alpha))
-  implementation("io.opentelemetry:opentelemetry-api")
-  implementation("io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5")
-  implementation(libs.micrometer.core)
-  testImplementation("io.opentelemetry:opentelemetry-exporter-common")
-  testImplementation("io.opentelemetry:opentelemetry-sdk")
-
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.javax.validation.api)

@@ -15,9 +15,6 @@
  */
 package org.projectnessie.quarkus.providers.versionstore;
 
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.api.trace.Tracer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
@@ -28,11 +25,10 @@ import java.io.IOError;
 import java.util.function.Consumer;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.quarkus.providers.NotObserved;
 import org.projectnessie.quarkus.providers.WIthInitializedRepository;
 import org.projectnessie.versioned.EventsVersionStore;
-import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.Result;
-import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
@@ -54,8 +50,6 @@ public class ConfigurableVersionStoreFactory {
   private final VersionStoreConfig storeConfig;
   private final Instance<DatabaseAdapter> databaseAdapter;
   private final Instance<Persist> persist;
-  private final Instance<Tracer> opentelemetryTracer;
-  private final Instance<MeterRegistry> meterRegistry;
   private final Instance<Consumer<Result>> resultConsumer;
 
   /**
@@ -66,14 +60,10 @@ public class ConfigurableVersionStoreFactory {
   @Inject
   public ConfigurableVersionStoreFactory(
       VersionStoreConfig storeConfig,
-      @Any Instance<Tracer> opentelemetryTracer,
-      @Any Instance<MeterRegistry> meterRegistry,
       @Any Instance<DatabaseAdapter> databaseAdapter,
       @Any Instance<Persist> persist,
       @Any Instance<Consumer<Result>> resultConsumer) {
     this.storeConfig = storeConfig;
-    this.opentelemetryTracer = opentelemetryTracer;
-    this.meterRegistry = meterRegistry;
     this.databaseAdapter = databaseAdapter;
     this.persist = persist;
     this.resultConsumer = resultConsumer;
@@ -82,6 +72,7 @@ public class ConfigurableVersionStoreFactory {
   /** Version store producer. */
   @Produces
   @Singleton
+  @NotObserved
   public VersionStore getVersionStore() {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
@@ -95,22 +86,6 @@ public class ConfigurableVersionStoreFactory {
 
       if (storeConfig.isEventsEnabled() && resultConsumer.isResolvable()) {
         versionStore = new EventsVersionStore(versionStore, resultConsumer.get());
-      }
-      if (storeConfig.isTracingEnabled()) {
-        if (opentelemetryTracer.isUnsatisfied()) {
-          LOGGER.warn(
-              "OpenTelemetry is enabled, but not available, forgot to add quarkus-opentelemetry?");
-        } else {
-          Tracer t = opentelemetryTracer.get();
-          versionStore = new TracingVersionStore(t, versionStore);
-        }
-      }
-      if (storeConfig.isMetricsEnabled()) {
-        if (meterRegistry.isUnsatisfied()) {
-          LOGGER.warn("Metrics are enabled, but not available, forgot to add quarkus-micrometer?");
-        } else {
-          versionStore = new MetricsVersionStore(versionStore, meterRegistry.get(), Clock.SYSTEM);
-        }
       }
       return versionStore;
     } catch (RuntimeException | IOError e) {
@@ -133,7 +108,7 @@ public class ConfigurableVersionStoreFactory {
 
   private VersionStore databaseAdapterVersionStore() {
     try {
-      DatabaseAdapter da = databaseAdapter.select().get();
+      DatabaseAdapter da = databaseAdapter.select(WIthInitializedRepository.Literal.INSTANCE).get();
 
       return new PersistVersionStore(da);
     } catch (RuntimeException | IOError e) {

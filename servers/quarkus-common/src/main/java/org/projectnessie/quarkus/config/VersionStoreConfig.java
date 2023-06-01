@@ -59,19 +59,6 @@ public interface VersionStoreConfig {
   VersionStoreType getVersionStoreType();
 
   /**
-   * Whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger),
-   * enabled by default.
-   */
-  @WithName("trace.enable")
-  @WithDefault("true")
-  boolean isTracingEnabled();
-
-  /** Whether metrics for the version-store are enabled (enabled by default). */
-  @WithName("metrics.enable")
-  @WithDefault("true")
-  boolean isMetricsEnabled();
-
-  /**
    * Whether events for the version-store are enabled (enabled by default). In order for events to
    * be published, it's not enough to enable them in the configuration; you also need to provide at
    * least one implementation of Nessie's EventListener SPI.

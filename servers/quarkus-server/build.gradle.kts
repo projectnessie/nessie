@@ -76,15 +76,13 @@ dependencies {
   }
 
   implementation(libs.guava)
-  implementation("io.opentelemetry:opentelemetry-opentracing-shim")
-  implementation("io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5")
-  implementation(libs.opentracing.util)
 
   openapiSource(project(":nessie-model", "openapiSource"))
 
   testFixturesApi(project(":nessie-client"))
   testFixturesApi(project(":nessie-client-testextension"))
   testFixturesApi(project(":nessie-jaxrs-tests"))
+  testFixturesApi(project(":nessie-quarkus-common"))
   testFixturesApi(project(":nessie-quarkus-tests"))
   testFixturesApi(project(":nessie-events-api"))
   testFixturesApi(project(":nessie-events-spi"))
