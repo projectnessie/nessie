@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -1566,9 +1567,7 @@ public abstract class BaseTestNessieApi {
   public void relativeCommitLocations() throws BaseNessieClientServerException {
     Branch main = api().getDefaultBranch();
 
-    if (!fullPagingSupport()) {
-      return;
-    }
+    assumeTrue(fullPagingSupport());
 
     int numCommits = 3;
 
