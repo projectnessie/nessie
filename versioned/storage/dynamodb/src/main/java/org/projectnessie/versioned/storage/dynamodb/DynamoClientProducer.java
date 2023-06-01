@@ -18,7 +18,7 @@ package org.projectnessie.versioned.storage.dynamodb;
 import java.net.URI;
 import org.immutables.value.Value;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
@@ -39,7 +39,7 @@ public abstract class DynamoClientProducer {
   public DynamoDbClient createClient() {
     DynamoDbClientBuilder clientBuilder =
         DynamoDbClient.builder()
-            .httpClient(UrlConnectionHttpClient.create())
+            .httpClientBuilder(ApacheHttpClient.builder())
             .region(Region.of(region()));
 
     AwsCredentialsProvider credentialsProvider = credentialsProvider();
