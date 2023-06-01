@@ -25,18 +25,18 @@ import org.projectnessie.events.spi.EventSubscriber;
  * A {@link RetriableEventDelivery} that executes delivery attempts on a Vert.x worker thread pool,
  * thus not blocking the Vert.x event loop. Suitable for blocking subscribers.
  */
-public class BlockingEventDelivery extends StandardEventDelivery {
+class BlockingEventDelivery extends StandardEventDelivery {
 
   private final Vertx vertx;
 
-  public BlockingEventDelivery(
+  BlockingEventDelivery(
       Event event, EventSubscriber subscriber, QuarkusEventConfig.RetryConfig config, Vertx vertx) {
     super(event, subscriber, config, vertx);
     this.vertx = vertx;
   }
 
   @Override
-  public void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
+  void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
     vertx.<Void>executeBlocking(
         promise -> {
           try {

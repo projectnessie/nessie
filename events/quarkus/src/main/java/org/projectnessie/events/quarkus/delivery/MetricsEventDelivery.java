@@ -53,7 +53,7 @@ public class MetricsEventDelivery extends DelegatingEventDelivery {
 
   private Timer.Sample sample;
 
-  public MetricsEventDelivery(
+  MetricsEventDelivery(
       RetriableEventDelivery delegate, Event event, MeterRegistry registry, Clock clock) {
     super(delegate);
     this.registry = registry;
@@ -69,7 +69,7 @@ public class MetricsEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliverySuccessful(int lastAttempt) {
+  void deliverySuccessful(int lastAttempt) {
     super.deliverySuccessful(lastAttempt);
     sample.stop(totalTimer(DeliveryStatus.SUCCESSFUL));
     registry.counter(NESSIE_EVENTS_SUCCESSFUL, tags).increment();
@@ -79,7 +79,7 @@ public class MetricsEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliveryFailed(int lastAttempt, Throwable error) {
+  void deliveryFailed(int lastAttempt, Throwable error) {
     super.deliveryFailed(lastAttempt, error);
     sample.stop(totalTimer(DeliveryStatus.FAILED));
     registry.counter(NESSIE_EVENTS_FAILED, tags).increment();
@@ -89,7 +89,7 @@ public class MetricsEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliveryRejected() {
+  void deliveryRejected() {
     super.deliveryRejected();
     sample.stop(totalTimer(DeliveryStatus.REJECTED));
     registry.counter(NESSIE_EVENTS_REJECTED, tags).increment();

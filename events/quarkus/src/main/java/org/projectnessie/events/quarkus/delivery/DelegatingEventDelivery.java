@@ -17,11 +17,11 @@ package org.projectnessie.events.quarkus.delivery;
 
 import java.time.Duration;
 
-public abstract class DelegatingEventDelivery extends RetriableEventDelivery {
+abstract class DelegatingEventDelivery extends RetriableEventDelivery {
 
   private final RetriableEventDelivery delegate;
 
-  protected DelegatingEventDelivery(RetriableEventDelivery delegate) {
+  DelegatingEventDelivery(RetriableEventDelivery delegate) {
     this.delegate = delegate;
   }
 
@@ -31,47 +31,47 @@ public abstract class DelegatingEventDelivery extends RetriableEventDelivery {
   }
 
   @Override
-  protected void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
+  void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
     delegate.startAttempt(currentAttempt, nextDelay, previousError);
   }
 
   @Override
-  protected void tryDeliver(int currentAttempt) {
+  void tryDeliver(int currentAttempt) {
     delegate.tryDeliver(currentAttempt);
   }
 
   @Override
-  protected void deliverySuccessful(int lastAttempt) {
+  void deliverySuccessful(int lastAttempt) {
     delegate.deliverySuccessful(lastAttempt);
   }
 
   @Override
-  protected void deliveryFailed(int lastAttempt, Throwable error) {
+  void deliveryFailed(int lastAttempt, Throwable error) {
     delegate.deliveryFailed(lastAttempt, error);
   }
 
   @Override
-  protected void deliveryRejected() {
+  void deliveryRejected() {
     delegate.deliveryRejected();
   }
 
   @Override
-  protected void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error) {
+  void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error) {
     delegate.attemptFailed(lastAttempt, nextDelay, error);
   }
 
   @Override
-  protected void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
+  void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
     delegate.scheduleRetry(lastAttempt, nextDelay, lastError);
   }
 
   @Override
-  protected final RetriableEventDelivery getSelf() {
+  final RetriableEventDelivery getSelf() {
     return delegate.getSelf();
   }
 
   @Override
-  protected final void setSelf(RetriableEventDelivery self) {
+  final void setSelf(RetriableEventDelivery self) {
     delegate.setSelf(self);
   }
 }

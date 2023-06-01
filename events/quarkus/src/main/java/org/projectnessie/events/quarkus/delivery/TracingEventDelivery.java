@@ -58,7 +58,7 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   private Span deliverySpan;
   private Span attemptSpan;
 
-  public TracingEventDelivery(
+  TracingEventDelivery(
       RetriableEventDelivery delegate,
       Event event,
       EventSubscription subscription,
@@ -82,7 +82,7 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
+  void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
     attemptSpan = newAttemptSpan(currentAttempt);
     try (Scope ignored = attemptSpan.makeCurrent()) {
       super.startAttempt(currentAttempt, nextDelay, previousError);
@@ -90,14 +90,14 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void tryDeliver(int currentAttempt) {
+  void tryDeliver(int currentAttempt) {
     try (Scope ignored = attemptSpan.makeCurrent()) {
       super.tryDeliver(currentAttempt);
     }
   }
 
   @Override
-  protected void deliverySuccessful(int lastAttempt) {
+  void deliverySuccessful(int lastAttempt) {
     try (Scope ignored = deliverySpan.makeCurrent()) {
       super.deliverySuccessful(lastAttempt);
       if (lastAttempt > 1) {
@@ -113,7 +113,7 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliveryFailed(int lastAttempt, Throwable error) {
+  void deliveryFailed(int lastAttempt, Throwable error) {
     try (Scope ignored = deliverySpan.makeCurrent()) {
       super.deliveryFailed(lastAttempt, error);
       if (lastAttempt > 1) {
@@ -130,7 +130,7 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliveryRejected() {
+  void deliveryRejected() {
     try (Scope ignored = deliverySpan.makeCurrent()) {
       super.deliveryRejected();
       Instant end = clock.instant();
@@ -142,7 +142,7 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error) {
+  void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error) {
     try (Scope ignored = attemptSpan.makeCurrent()) {
       attemptSpan.setStatus(ERROR);
       attemptSpan.recordException(error);
@@ -152,7 +152,7 @@ public class TracingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
+  void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
     attemptSpan.end();
     super.scheduleRetry(lastAttempt, nextDelay, lastError);
   }

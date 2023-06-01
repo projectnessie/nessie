@@ -25,7 +25,7 @@ import org.projectnessie.events.spi.EventSubscriber;
  * A Non-blocking {@link RetriableEventDelivery} that executes delivery attempts directly on Vert.x
  * event loop. Suitable only for subscribers that do not block the event loop.
  */
-public class StandardEventDelivery extends RetriableEventDelivery {
+class StandardEventDelivery extends RetriableEventDelivery {
 
   private final Event event;
   private final EventSubscriber subscriber;
@@ -33,7 +33,7 @@ public class StandardEventDelivery extends RetriableEventDelivery {
   private final Vertx vertx;
   private RetriableEventDelivery self = this;
 
-  public StandardEventDelivery(
+  StandardEventDelivery(
       Event event, EventSubscriber subscriber, QuarkusEventConfig.RetryConfig config, Vertx vertx) {
     this.event = event;
     this.subscriber = subscriber;
@@ -51,7 +51,7 @@ public class StandardEventDelivery extends RetriableEventDelivery {
   }
 
   @Override
-  protected void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
+  void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
     try {
       self.tryDeliver(currentAttempt);
       self.deliverySuccessful(currentAttempt);
@@ -61,12 +61,12 @@ public class StandardEventDelivery extends RetriableEventDelivery {
   }
 
   @Override
-  protected void tryDeliver(int currentAttempt) {
+  void tryDeliver(int currentAttempt) {
     subscriber.onEvent(event);
   }
 
   @Override
-  protected void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error) {
+  void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error) {
     if (lastAttempt < config.getMaxAttempts()) {
       self.scheduleRetry(lastAttempt, nextDelay, error);
     } else {
@@ -75,23 +75,23 @@ public class StandardEventDelivery extends RetriableEventDelivery {
   }
 
   @Override
-  protected void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
+  void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
     vertx.setTimer(
         nextDelay.toMillis(),
         id -> self.startAttempt(lastAttempt + 1, config.getNextDelay(nextDelay), lastError));
   }
 
   @Override
-  protected final void setSelf(RetriableEventDelivery self) {
+  final void setSelf(RetriableEventDelivery self) {
     this.self = self;
   }
 
   @Override
-  protected final RetriableEventDelivery getSelf() {
+  final RetriableEventDelivery getSelf() {
     return self;
   }
 
-  protected static Throwable addSuppressed(Throwable current, Throwable previous) {
+  static Throwable addSuppressed(Throwable current, Throwable previous) {
     if (previous != null) {
       current.addSuppressed(previous);
     }

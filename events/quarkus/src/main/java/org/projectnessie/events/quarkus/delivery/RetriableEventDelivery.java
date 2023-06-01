@@ -29,7 +29,7 @@ import org.projectnessie.events.spi.EventSubscriber;
  * <p>Other implementations use the delegate pattern to inject additional behavior: {@link
  * LoggingEventDelivery}, {@link TracingEventDelivery}, and {@link MetricsEventDelivery}.
  */
-public abstract class RetriableEventDelivery implements EventDelivery {
+abstract class RetriableEventDelivery implements EventDelivery {
 
   /**
    * Starts the delivery.
@@ -50,8 +50,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    *     #deliverySuccessful(int)} or, if the attempt failed, {@link #attemptFailed(int, Duration,
    *     Throwable)}.
    */
-  protected abstract void startAttempt(
-      int currentAttempt, Duration nextDelay, Throwable previousError);
+  abstract void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError);
 
   /**
    * Tries to deliver the event to the subscriber.
@@ -59,14 +58,14 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    * @implSpec Implementers should call {@link EventSubscriber#onEvent(Event)}.
    * @param currentAttempt The current delivery attempt, starting at 1.
    */
-  protected abstract void tryDeliver(int currentAttempt);
+  abstract void tryDeliver(int currentAttempt);
 
   /**
    * Called when the event was successfully delivered. Called at most once per event delivery.
    *
    * @param lastAttempt The last delivery attempt, starting at 1.
    */
-  protected void deliverySuccessful(int lastAttempt) {
+  void deliverySuccessful(int lastAttempt) {
     // no-op
   }
 
@@ -77,7 +76,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    * @param lastAttempt The last delivery attempt, starting at 1.
    * @param error The error that caused the delivery to fail.
    */
-  protected void deliveryFailed(int lastAttempt, Throwable error) {
+  void deliveryFailed(int lastAttempt, Throwable error) {
     // no-op
   }
 
@@ -85,7 +84,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    * Called when the event delivery was rejected by the subscriber's event filter. Called at most
    * once per event delivery.
    */
-  protected void deliveryRejected() {
+  void deliveryRejected() {
     // no-op
   }
 
@@ -99,7 +98,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    *     #deliveryFailed(int, Throwable)}. Otherwise, they should call {@link #scheduleRetry(int,
    *     Duration, Throwable)}.
    */
-  protected abstract void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error);
+  abstract void attemptFailed(int lastAttempt, Duration nextDelay, Throwable error);
 
   /**
    * Schedules a retry of the event delivery.
@@ -108,7 +107,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    * @param nextDelay The delay to wait before retrying.
    * @param lastError The error that caused the attempt to fail.
    */
-  protected abstract void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError);
+  abstract void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError);
 
   /**
    * Returns the {@link RetriableEventDelivery} instance to use as a receiver. Enables proper
@@ -117,7 +116,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    * @implSpec Implementations should never use {@code this} to call instance methods of this class,
    *     but always the instance returned by this method.
    */
-  protected abstract RetriableEventDelivery getSelf();
+  abstract RetriableEventDelivery getSelf();
 
   /**
    * Sets the {@link RetriableEventDelivery} instance to use as a receiver. Enables proper
@@ -126,5 +125,5 @@ public abstract class RetriableEventDelivery implements EventDelivery {
    * @implSpec Implementations based on {@link DelegatingEventDelivery} MUST call {@code
    *     delegate.setSelf(this)} inside their constructors.
    */
-  protected abstract void setSelf(RetriableEventDelivery self);
+  abstract void setSelf(RetriableEventDelivery self);
 }

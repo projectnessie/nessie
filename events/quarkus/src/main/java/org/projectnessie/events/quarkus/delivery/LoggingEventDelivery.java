@@ -25,11 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-public class LoggingEventDelivery extends DelegatingEventDelivery {
+class LoggingEventDelivery extends DelegatingEventDelivery {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventDelivery.class);
 
-  public static boolean isLoggingEnabled() {
+  static boolean isLoggingEnabled() {
     return LOGGER.isDebugEnabled();
   }
 
@@ -38,12 +38,12 @@ public class LoggingEventDelivery extends DelegatingEventDelivery {
 
   private final Logger logger;
 
-  public LoggingEventDelivery(
+  LoggingEventDelivery(
       RetriableEventDelivery delegate, Event event, EventSubscription subscription) {
     this(delegate, event, subscription, LOGGER);
   }
 
-  public LoggingEventDelivery(
+  LoggingEventDelivery(
       RetriableEventDelivery delegate, Event event, EventSubscription subscription, Logger logger) {
     super(delegate);
     this.event = event;
@@ -64,7 +64,7 @@ public class LoggingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliverySuccessful(int lastAttempt) {
+  void deliverySuccessful(int lastAttempt) {
     mdcPut();
     logger.debug("Event delivered successfully");
     try {
@@ -75,7 +75,7 @@ public class LoggingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliveryFailed(int lastAttempt, Throwable error) {
+  void deliveryFailed(int lastAttempt, Throwable error) {
     mdcPut();
     logger.debug("Event delivery failed", error);
     try {
@@ -86,7 +86,7 @@ public class LoggingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void deliveryRejected() {
+  void deliveryRejected() {
     mdcPut();
     logger.debug("Subscriber rejected event, aborting delivery");
     try {
@@ -97,7 +97,7 @@ public class LoggingEventDelivery extends DelegatingEventDelivery {
   }
 
   @Override
-  protected void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
+  void scheduleRetry(int lastAttempt, Duration nextDelay, Throwable lastError) {
     mdcPut();
     logger.debug(
         "Event delivery attempt {} failed, retrying in {}", lastAttempt, nextDelay, lastError);
