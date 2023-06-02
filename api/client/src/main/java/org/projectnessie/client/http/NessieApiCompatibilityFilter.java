@@ -68,11 +68,13 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
     int minServerApiVersion =
         config.hasNonNull(MIN_API_VERSION) ? config.get(MIN_API_VERSION).asInt() : 1;
     int maxServerApiVersion = config.get(MAX_API_VERSION).asInt();
+    // Note: assuming v1 here will cause troubles for Nessie versions between [0.47.0,0.59.0[,
+    // since v2 only accurately reports its actual version starting with 0.59.0.
     int actualServerApiVersion =
-        config.hasNonNull(ACTUAL_API_VERSION) ? config.get(ACTUAL_API_VERSION).asInt() : 0;
+        config.hasNonNull(ACTUAL_API_VERSION) ? config.get(ACTUAL_API_VERSION).asInt() : 1;
     if (clientApiVersion < minServerApiVersion
         || clientApiVersion > maxServerApiVersion
-        || (actualServerApiVersion > 0 && clientApiVersion != actualServerApiVersion)) {
+        || clientApiVersion != actualServerApiVersion) {
       throw new NessieApiCompatibilityException(
           clientApiVersion, minServerApiVersion, maxServerApiVersion, actualServerApiVersion);
     }

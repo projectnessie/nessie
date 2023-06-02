@@ -48,24 +48,14 @@ public class ITOlderServers extends AbstractCompatibilityTests {
   }
 
   @Test
-  @VersionCondition(minVersion = "0.47.0")
+  @VersionCondition(minVersion = "0.59.0")
   @Override
   void getConfigV2() {
     NessieConfiguration config = apiV2.getConfig();
     assertThat(config.getDefaultBranch()).isEqualTo("main");
     assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
     assertThat(config.getMaxSupportedApiVersion()).isEqualTo(2);
-    if (version.isLessThan(Version.ACTUAL_VERSION_IN_CONFIG_V2)) {
-      assertThat(config.getActualApiVersion()).isEqualTo(0);
-    } else {
-      assertThat(config.getActualApiVersion()).isEqualTo(2);
-    }
-    if (version.isLessThan(Version.SPEC_VERSION_IN_CONFIG_V2)) {
-      assertThat(config.getSpecVersion()).isNull();
-    } else if (version.isLessThan(Version.SPEC_VERSION_IN_CONFIG_V2_SEMVER)) {
-      assertThat(config.getSpecVersion()).isEqualTo("2.0-beta.1");
-    } else {
-      assertThat(config.getSpecVersion()).isEqualTo("2.0.0-beta.1");
-    }
+    assertThat(config.getActualApiVersion()).isEqualTo(2);
+    assertThat(config.getSpecVersion()).isEqualTo("2.0.0");
   }
 }
