@@ -112,8 +112,8 @@ final class ImportDatabaseAdapter extends ImportCommon {
     int keyListDistance =
         requireNonNull(importer.databaseAdapter()).getConfig().getKeyListDistance();
 
-    try (BatchWriter<CommitLogEntry> commitBatchWriter =
-        BatchWriter.commitBatchWriter(importer.commitBatchSize(), importer.databaseAdapter())) {
+    try (Batcher<CommitLogEntry> commitBatcher =
+        Batcher.commitBatchWriter(importer.commitBatchSize(), importer.databaseAdapter())) {
 
       for (String fileName : exportMeta.getCommitsFilesList()) {
         try (InputStream input = importFiles.newFileInput(fileName)) {
@@ -173,7 +173,7 @@ final class ImportDatabaseAdapter extends ImportCommon {
                       }
                     });
 
-            commitBatchWriter.add(logEntry.build());
+            commitBatcher.add(logEntry.build());
             commitCount++;
 
             importer.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);

@@ -27,14 +27,13 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
  * Buffers a configurable amount of objects and passes those as batches to a consumer, should be
  * used in a <em>try-with-resource</em>.
  */
-final class BatchWriter<T> implements AutoCloseable {
+final class Batcher<T> implements AutoCloseable {
   private final Set<T> buffer;
   private final int capacity;
   private final Consumer<List<T>> flush;
 
-  static BatchWriter<CommitLogEntry> commitBatchWriter(
-      int batchSize, DatabaseAdapter databaseAdapter) {
-    return new BatchWriter<>(
+  static Batcher<CommitLogEntry> commitBatchWriter(int batchSize, DatabaseAdapter databaseAdapter) {
+    return new Batcher<>(
         batchSize,
         entries -> {
           try {
@@ -47,7 +46,7 @@ final class BatchWriter<T> implements AutoCloseable {
         });
   }
 
-  BatchWriter(int capacity, Consumer<List<T>> flush) {
+  Batcher(int capacity, Consumer<List<T>> flush) {
     this.capacity = capacity;
     this.flush = flush;
     this.buffer = Sets.newLinkedHashSetWithExpectedSize(capacity);

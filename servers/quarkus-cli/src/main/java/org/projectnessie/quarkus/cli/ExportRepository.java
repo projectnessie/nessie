@@ -47,6 +47,7 @@ public class ExportRepository extends BaseCommand {
   static final String OUTPUT_BUFFER_SIZE = "--output-buffer-size";
   static final String SINGLE_BRANCH = "--single-branch-current-content";
   static final String CONTENT_BATCH_SIZE = "--content-batch-size";
+  static final String COMMIT_BATCH_SIZE = "--commit-batch-size";
 
   enum Format {
     ZIP,
@@ -116,6 +117,14 @@ public class ExportRepository extends BaseCommand {
       })
   private Integer contentsBatchSize;
 
+  @CommandLine.Option(
+      names = COMMIT_BATCH_SIZE,
+      description =
+          "Batch size when reading commits and their associated contents, defaults to "
+              + ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE
+              + ".")
+  private Integer commitBatchSize;
+
   @Override
   protected Integer callWithDatabaseAdapter() throws Exception {
     return export(
@@ -159,6 +168,9 @@ public class ExportRepository extends BaseCommand {
       }
       if (contentsBatchSize != null) {
         builder.contentsBatchSize(contentsBatchSize);
+      }
+      if (commitBatchSize != null) {
+        builder.commitBatchSize(commitBatchSize);
       }
 
       PrintWriter out = spec.commandLine().getOut();
