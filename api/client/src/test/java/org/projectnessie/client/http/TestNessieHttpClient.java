@@ -206,11 +206,9 @@ class TestNessieHttpClient {
   @Test
   void testApiCompatibility() {
     // Good cases
-    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 0, true))
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 1, true))
         .doesNotThrowAnyException();
-    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 0, true))
-        .doesNotThrowAnyException();
-    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 0, true))
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 1, true))
         .doesNotThrowAnyException();
     soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 2, true))
         .doesNotThrowAnyException();

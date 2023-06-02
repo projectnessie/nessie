@@ -105,7 +105,7 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @Test
-  @VersionCondition(minVersion = "0.47.0")
+  @VersionCondition(minVersion = "0.59.0")
   void getDefaultBranchV2() throws Exception {
     Branch defaultBranch = apiV2.getDefaultBranch();
     assertThat(defaultBranch).extracting(Branch::getName).isEqualTo("main");
