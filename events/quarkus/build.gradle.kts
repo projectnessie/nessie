@@ -16,7 +16,6 @@
 
 plugins {
   `java-library`
-  jacoco
   `maven-publish`
   signing
   alias(libs.plugins.quarkus)
@@ -50,7 +49,6 @@ dependencies {
   testImplementation("io.quarkus:quarkus-micrometer-registry-prometheus")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
-  testImplementation("io.quarkus:quarkus-jacoco")
 
   testImplementation("io.opentelemetry:opentelemetry-sdk-trace")
 
