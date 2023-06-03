@@ -27,7 +27,7 @@
     "http-proxy-middleware": "^2.0.6",
     "identity-obj-proxy": "3.0.0",
     "moment": "^2.29.4",
-    "postcss": "8.4.23",
+    "postcss": "8.4.24",
     "postcss-flexbugs-fixes": "5.0.2",
     "postcss-loader": "7.3.0",
     "postcss-normalize": "10.0.1",
