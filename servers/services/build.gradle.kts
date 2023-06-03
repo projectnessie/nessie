@@ -27,7 +27,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
-  implementation(libs.slf4j.api)
+  implementation(libs.slf4j.api) { version { require(libs.versions.slf4j.compat.get()) } }
 
   implementation(platform(libs.cel.bom))
   implementation("org.projectnessie.cel:cel-standalone")
