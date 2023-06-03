@@ -21,7 +21,9 @@ import static java.util.Collections.binarySearch;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.findPositionAfterKey;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
+import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
@@ -38,7 +40,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.util.Ser;
 
 /**
  * Implementation of {@link StoreIndex} that implements "version 1 serialization" of
@@ -111,6 +112,9 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
    * "add" var-ints.
    */
   private static final int ASSUMED_PER_ENTRY_OVERHEAD = 2 + 2;
+
+  private static final boolean SERIALIZE_V2 =
+      !Boolean.getBoolean("nessie.internal.store-index-old-format");
 
   public static final Comparator<StoreIndexElement<?>> KEY_COMPARATOR =
       Comparator.comparing(StoreIndexElement::key);
@@ -430,7 +434,12 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     ByteBuffer target = ByteBuffer.allocate(estimatedSerializedSize());
 
     // Serialized segment index version
-    target.put((byte) 1);
+    if (SERIALIZE_V2) {
+      target.put((byte) 2);
+      putVarInt(target, elementCount());
+    } else {
+      target.put((byte) 1);
+    }
 
     ByteBuffer previousKey = null;
 
@@ -479,17 +488,20 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
   static <V> StoreIndex<V> deserializeStoreIndex(ByteBuffer serialized, ElementSerializer<V> ser) {
     byte version = serialized.get();
-    checkArgument(version == 1, "Unsupported serialized representation of KeyIndexSegment");
+    checkArgument(
+        version == 1 || version == 2, "Unsupported serialized representation of KeyIndexSegment");
 
     int posPre = serialized.position();
+
+    List<StoreIndexElement<V>> elements =
+        version >= 2 ? new ArrayList<>(readVarInt(serialized)) : new ArrayList<>();
 
     // This buffer holds the previous key, reused.
     ByteBuffer previousKey = newKeyBuffer();
 
-    List<StoreIndexElement<V>> elements = new ArrayList<>();
     boolean first = true;
     while (serialized.remaining() > 0) {
-      int strip = first ? 0 : Ser.readVarInt(serialized);
+      int strip = first ? 0 : readVarInt(serialized);
       first = false;
 
       // strip
@@ -497,7 +509,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
       previousKey.limit(MAX_KEY_BYTES);
       // add
       int limitSave = serialized.limit();
-      previousKey.put(serialized.limit(StoreKey.findPositionAfterKey(serialized)));
+      previousKey.put(serialized.limit(findPositionAfterKey(serialized)));
       serialized.limit(limitSave);
       // read key
       previousKey.flip();

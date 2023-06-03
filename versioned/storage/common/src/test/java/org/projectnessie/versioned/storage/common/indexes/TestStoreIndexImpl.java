@@ -34,6 +34,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 import static org.projectnessie.versioned.storage.common.util.Util.asHex;
 import static org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.basicIndexTestSet;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -103,7 +104,7 @@ public class TestStoreIndexImpl {
     StoreKey keyExC = key("e", "x", "C");
     StoreKey keyNotExist = key("does", "not", "exist");
 
-    String serializationFormatVersion = "01";
+    String serializationFormatVersion = "02";
 
     String serializedA =
         "61007800410000"
@@ -149,35 +150,52 @@ public class TestStoreIndexImpl {
     Function<StoreIndex<ObjId>, StoreIndex<ObjId>> reSerialize =
         seg -> deserializeStoreIndex(seg.serialize(), OBJ_ID_SERIALIZER);
 
-    soft.assertThat(asHex(segment.serialize())).isEqualTo(serializationFormatVersion);
+    Function<StoreIndex<ObjId>, StoreIndex<ObjId>> reSerializeFromV1 =
+        seg -> {
+          byte[] serializedV2 = seg.serialize().toByteArray();
+          byte[] serializedV1 = new byte[serializedV2.length - 1];
+          serializedV1[0] = 1;
+          System.arraycopy(serializedV2, 2, serializedV1, 1, serializedV2.length - 2);
+          return StoreIndexImpl.deserializeStoreIndex(
+              ByteBuffer.wrap(serializedV1), OBJ_ID_SERIALIZER);
+        };
+
+    soft.assertThat(asHex(segment.serialize())).isEqualTo(serializationFormatVersion + "00");
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).isEmpty();
     soft.assertThat(segment.elementCount()).isEqualTo(0);
 
     soft.assertThat(segment.add(indexElement(keyD, id4))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).containsExactly(keyD);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "01"
                 + serializedD);
 
     soft.assertThat(segment.add(indexElement(keyB, id2))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).containsExactly(keyB, keyD);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "02"
                 + serializedB
                 + "07" // strip
                 + serializedD);
 
     soft.assertThat(segment.add(indexElement(keyC, id3))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).containsExactly(keyB, keyC, keyD);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "03"
                 + serializedB
                 + "07" // strip
                 + serializedC
@@ -186,10 +204,12 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.add(indexElement(keyE, id1))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).containsExactly(keyB, keyC, keyD, keyE);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "04"
                 + serializedB
                 + "07" // strip
                 + serializedC
@@ -200,10 +220,12 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.add(indexElement(keyA, id1))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).containsExactly(keyA, keyB, keyC, keyD, keyE);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "05"
                 + serializedA
                 + "07" // strip
                 + serializedB
@@ -216,10 +238,12 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.add(indexElement(keyExB, id2))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).containsExactly(keyA, keyB, keyC, keyD, keyE, keyExB);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "06"
                 + serializedA
                 + "07" // strip
                 + serializedB
@@ -234,11 +258,13 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.add(indexElement(keyExD, id3))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList())
         .containsExactly(keyA, keyB, keyC, keyD, keyE, keyExB, keyExD);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "07"
                 + serializedA
                 + "07" // strip
                 + serializedB
@@ -255,11 +281,13 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.add(indexElement(keyEyC, id4))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList())
         .containsExactly(keyA, keyB, keyC, keyD, keyE, keyExB, keyExD, keyEyC);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "08"
                 + serializedA
                 + "07" // add
                 + serializedB
@@ -278,11 +306,13 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.add(indexElement(keyExC, id1))).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList())
         .containsExactly(keyA, keyB, keyC, keyD, keyE, keyExB, keyExC, keyExD, keyEyC);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "09"
                 + serializedA
                 + "07" // add
                 + serializedB
@@ -305,11 +335,13 @@ public class TestStoreIndexImpl {
     // Re-add with a BIGGER serialized object-id
     soft.assertThat(segment.add(indexElement(keyExC, id2))).isFalse();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList())
         .containsExactly(keyA, keyB, keyC, keyD, keyE, keyExB, keyExC, keyExD, keyEyC);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "09"
                 + serializedA
                 + "07" // add
                 + serializedB
@@ -331,16 +363,19 @@ public class TestStoreIndexImpl {
 
     soft.assertThat(segment.remove(keyNotExist)).isFalse();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList())
         .containsExactly(keyA, keyB, keyC, keyD, keyE, keyExB, keyExC, keyExD, keyEyC);
     soft.assertThat(segment.contains(keyNotExist)).isFalse();
 
     soft.assertThat(segment.remove(keyD)).isTrue();
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
+    soft.assertThat(reSerializeFromV1.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.elementCount()).isEqualTo(8);
     soft.assertThat(asHex(segment.serialize()))
         .isEqualTo(
             serializationFormatVersion //
+                + "08"
                 + serializedA
                 + "07" // add
                 + serializedB
