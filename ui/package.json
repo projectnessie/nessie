@@ -19,7 +19,7 @@
     "@types/react-router-dom": "^5.3.3",
     "bfj": "^7.0.2",
     "bootstrap": "^5.2.3",
-    "camelcase": "^6.3.0",
+    "camelcase": "^7.0.0",
     "css-loader": "6.8.1",
     "dotenv": "16.0.3",
     "dotenv-expand": "10.0.0",
