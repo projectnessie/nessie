@@ -196,7 +196,11 @@ public final class TypeMapping {
     // Note: the relative values of outer and inner (key elements) separators affect the correctness
     // of StoreKey comparisons WRT to ContentKey comparisons. The inner separator must be greater
     // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
-    StringBuilder sb = new StringBuilder();
+    int len = 4;
+    for (String element : keyElements) {
+      len += element.length() + 1;
+    }
+    StringBuilder sb = new StringBuilder(len);
     sb.append(MAIN_UNIVERSE);
     int num = keyElements.size();
     if (num > 0) {

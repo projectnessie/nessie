@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import static java.lang.String.format;
 import static org.projectnessie.model.Util.DOT_STRING;
 import static org.projectnessie.model.Util.FIRST_ALLOWED_KEY_CHAR;
 
@@ -165,21 +166,34 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   @Value.Check
   protected void validate() {
     List<String> elements = getElements();
+    int sum = 0;
     for (String e : elements) {
       if (e == null) {
         throw new IllegalArgumentException(
-            String.format("Content key '%s' must not contain a null element.", elements));
+            format("Content key '%s' must not contain a null element.", elements));
       }
-      if (e.isEmpty()) {
+      int l = e.length();
+      sum += l;
+      if (l == 0) {
         throw new IllegalArgumentException(
-            String.format("Content key '%s' must not contain an empty element.", elements));
+            format("Content key '%s' must not contain an empty element.", elements));
       }
-      if (e.chars().anyMatch(i -> i < FIRST_ALLOWED_KEY_CHAR)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Content key '%s' must not contain characters less than 0x%2h.",
-                elements, FIRST_ALLOWED_KEY_CHAR));
+      for (int i = 0; i < l; i++) {
+        char c = e.charAt(i);
+        if (c < FIRST_ALLOWED_KEY_CHAR) {
+          throw new IllegalArgumentException(
+              format(
+                  "Content key '%s' must not contain characters less than 0x%2h.",
+                  elements, FIRST_ALLOWED_KEY_CHAR));
+        }
       }
+    }
+    if (sum > MAX_LENGTH) {
+      throw new IllegalStateException("Key too long, max allowed length: " + MAX_LENGTH);
+    }
+    if (elements.size() > MAX_ELEMENTS) {
+      throw new IllegalStateException(
+          "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
     }
   }
 
@@ -229,16 +243,5 @@ public abstract class ContentKey implements Comparable<ContentKey> {
     }
 
     return a.size() - b.size();
-  }
-
-  @Value.Check
-  protected void check() {
-    if (getElements().stream().mapToInt(String::length).sum() > MAX_LENGTH) {
-      throw new IllegalStateException("Key too long, max allowed length: " + MAX_LENGTH);
-    }
-    if (getElementCount() > MAX_ELEMENTS) {
-      throw new IllegalStateException(
-          "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
-    }
   }
 }
