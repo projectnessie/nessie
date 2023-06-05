@@ -58,7 +58,7 @@ attributes:
     "alis"<blob>="Nessie"
 ```
 
-Note: to remove the certificate from the system keychain when you are donne with this guide, run the following command:
+Note: to remove the certificate from the system keychain when you are done with this guide, run the following command:
 
 ```shell
 sudo security delete-certificate -c Nessie -t /Library/Keychains/System.keychain
