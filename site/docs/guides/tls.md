@@ -122,7 +122,7 @@ ip` as well.
 
 ## Activating minikube's SSH tunnel
 
-For macOS users only, an extra step is required. Run the following command after installing the ingress:
+For macOS users only, an extra step is required. Run the following command after installing the Nessie helm chart:
 
 ```shell
 minikube tunnel
@@ -143,7 +143,7 @@ You should see something like below:
 Password:
 ```
 
-Input your password, and do not close the terminal until you are donne with the guide.
+Input your password, and do not close the terminal until you are done with the guide.
 
 ## Modifying /etc/hosts
 
@@ -153,7 +153,7 @@ Add an entry in the local hosts file (e.g. `/etc/hosts`) mapping the ingress IP 
 192.168.49.2	nessie.local
 ```
 
-For macOS users, or using having executed the `minikube tunnel` step: you should use 127.0.0.1 instead:
+For macOS users, or users having executed the `minikube tunnel` step: you should use 127.0.0.1 instead:
 
 ```
 127.0.0.1  nessie.local
