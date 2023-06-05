@@ -20,3 +20,17 @@ are not supported and must be avoided.
 Older releases than 0.18.0 are not supported.
 
 See [Releases](releases.md) for release notes.
+
+## Rolling upgrades target version notes
+
+### Nessie 0.61.0
+
+The serialized format of internal key-indexes got bumped. For a rolling-upgrade to version 0.61.0 or newer, follow these
+steps.
+
+1. Deploy Nessie with the system property `nessie.internal.store-index-format-version` set to `1`
+2. Perform the rolling upgrade to 0.61.0 or newer
+3. Remove the system property `nessie.internal.store-index-format-version` (or set it to `2`)
+4. Perform a rolling restart
+
+Alternatively you can also stop all Nessie instances, upgrade those and just restart.
