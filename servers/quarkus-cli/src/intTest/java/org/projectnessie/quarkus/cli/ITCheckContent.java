@@ -18,6 +18,7 @@ package org.projectnessie.quarkus.cli;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.projectnessie.quarkus.cli.BaseCommand.EXIT_CODE_CONTENT_ERROR;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -75,7 +76,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
             CheckContentEntry::getErrorMessage)
         .containsExactly(
             ContentKey.of("namespace123", "unknown12345"), "ERROR", null, "Missing content");
-    assertThat(result.exitCode()).isEqualTo(2);
+    assertThat(result.exitCode()).isEqualTo(EXIT_CODE_CONTENT_ERROR);
   }
 
   @Test
@@ -108,7 +109,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
                     && e.getExceptionStackTrace()
                         .contains("Protocol message contained an invalid tag"))
         .containsExactly(ContentKey.of("table123"), "ERROR", null, "Failure parsing data", true);
-    assertThat(result.exitCode()).isEqualTo(2);
+    assertThat(result.exitCode()).isEqualTo(EXIT_CODE_CONTENT_ERROR);
   }
 
   @ParameterizedTest
@@ -140,7 +141,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
             tuple(ContentKey.of("test_namespace", "table_222"), "ERROR", true, true),
             tuple(ContentKey.of("test_namespace", "table_333"), "ERROR", true, true),
             tuple(ContentKey.of("test_namespace", "table_444"), "ERROR", true, true));
-    assertThat(result.exitCode()).isEqualTo(2);
+    assertThat(result.exitCode()).isEqualTo(EXIT_CODE_CONTENT_ERROR);
     assertThat(result.getOutputStream())
         .contains(format("Detected %d errors in 5 keys.", batchSize > 1 ? 5 : 4));
   }

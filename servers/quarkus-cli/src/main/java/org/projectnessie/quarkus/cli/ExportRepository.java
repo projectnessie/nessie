@@ -131,7 +131,7 @@ public class ExportRepository extends BaseCommand {
   protected Integer callWithPersist() throws Exception {
     if (!repositoryLogic(persist).repositoryExists()) {
       spec.commandLine().getErr().println("Nessie repository does not exist");
-      return 1;
+      return EXIT_CODE_REPO_DOES_NOT_EXIST;
     }
 
     return export(

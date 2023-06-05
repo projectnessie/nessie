@@ -90,7 +90,7 @@ public class NessieInfo extends BaseCommand {
 
     if (!repositoryLogic(persist).repositoryExists()) {
       spec.commandLine().getErr().println("Nessie repository does not exist");
-      return 1;
+      return EXIT_CODE_REPO_DOES_NOT_EXIST;
     }
 
     ReferenceLogic referenceLogic = referenceLogic(persist);

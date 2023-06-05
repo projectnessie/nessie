@@ -42,6 +42,11 @@ public abstract class BaseCommand implements Callable<Integer> {
 
   @Spec CommandSpec spec;
 
+  public static final Integer EXIT_CODE_GENERIC_ERROR = 1;
+  public static final Integer EXIT_CODE_CONTENT_ERROR = 3;
+  public static final Integer EXIT_CODE_REPO_DOES_NOT_EXIST = 4;
+  public static final Integer EXIT_CODE_REPO_ALREADY_EXISTS = 100;
+
   @Override
   public final Integer call() throws Exception {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
@@ -64,7 +69,7 @@ public abstract class BaseCommand implements Callable<Integer> {
                     "Command '"
                         + spec.name()
                         + "' is not (yet) supported for new Nessie storage."));
-    return 1;
+    return EXIT_CODE_GENERIC_ERROR;
   }
 
   protected Integer callWithDatabaseAdapter() throws Exception {
@@ -77,7 +82,7 @@ public abstract class BaseCommand implements Callable<Integer> {
                     "Command '"
                         + spec.name()
                         + "' is not (yet) supported for old Nessie storage."));
-    return 1;
+    return EXIT_CODE_GENERIC_ERROR;
   }
 
   protected void warnOnInMemory() {

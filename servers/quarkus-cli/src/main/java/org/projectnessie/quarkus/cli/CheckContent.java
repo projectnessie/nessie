@@ -121,7 +121,7 @@ public class CheckContent extends BaseCommand {
           .printf("Detected %d errors in %d keys.%n", errorDetected.get(), keysProcessed.get());
     }
 
-    return errorDetected.get() == 0 ? 0 : 2;
+    return errorDetected.get() == 0 ? 0 : EXIT_CODE_CONTENT_ERROR;
   }
 
   private void check(PrintWriter out) throws Exception {
