@@ -166,6 +166,10 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   @Value.Check
   protected void validate() {
     List<String> elements = getElements();
+    if (elements.size() > MAX_ELEMENTS) {
+      throw new IllegalStateException(
+          "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
+    }
     int sum = 0;
     for (String e : elements) {
       if (e == null) {
@@ -173,7 +177,6 @@ public abstract class ContentKey implements Comparable<ContentKey> {
             format("Content key '%s' must not contain a null element.", elements));
       }
       int l = e.length();
-      sum += l;
       if (l == 0) {
         throw new IllegalArgumentException(
             format("Content key '%s' must not contain an empty element.", elements));
@@ -187,13 +190,10 @@ public abstract class ContentKey implements Comparable<ContentKey> {
                   elements, FIRST_ALLOWED_KEY_CHAR));
         }
       }
+      sum += l;
     }
     if (sum > MAX_LENGTH) {
       throw new IllegalStateException("Key too long, max allowed length: " + MAX_LENGTH);
-    }
-    if (elements.size() > MAX_ELEMENTS) {
-      throw new IllegalStateException(
-          "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
     }
   }
 
