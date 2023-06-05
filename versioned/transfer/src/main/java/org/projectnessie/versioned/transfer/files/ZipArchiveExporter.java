@@ -47,7 +47,10 @@ public abstract class ZipArchiveExporter implements ExportFileSupplier {
 
   @Value.Lazy
   ZipOutputStream zipOutput() throws IOException {
-    createDirectories(outputFile().getParent());
+    Path parent = outputFile().getParent();
+    if (parent != null) {
+      createDirectories(parent);
+    }
     return new ZipOutputStream(new BufferedOutputStream(newOutputStream(outputFile())));
   }
 
