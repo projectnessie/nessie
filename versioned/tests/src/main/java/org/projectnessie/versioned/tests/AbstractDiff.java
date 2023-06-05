@@ -19,13 +19,13 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -41,6 +41,7 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.KeyRestrictions;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.testworker.OnRefOnly;
@@ -156,68 +157,104 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     // Key restrictions
     if (store().getClass().getName().endsWith("VersionStoreImpl")) {
       soft.assertThat(
-              diffAsList(initial, secondCommit, ContentKey.of("k"), ContentKey.of("l"), null, null))
+              diffAsList(
+                  initial,
+                  secondCommit,
+                  KeyRestrictions.builder()
+                      .minKey(ContentKey.of("k"))
+                      .maxKey(ContentKey.of("l"))
+                      .build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .containsExactlyInAnyOrder(
               tuple(null, ik1), tuple(null, ik2), tuple(null, ik3), tuple(null, ik1a));
 
-      soft.assertThat(diffAsList(initial, secondCommit, ContentKey.of("k"), null, null, null))
+      soft.assertThat(
+              diffAsList(
+                  initial,
+                  secondCommit,
+                  KeyRestrictions.builder().minKey(ContentKey.of("k")).build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .containsExactlyInAnyOrder(
               tuple(null, ik1), tuple(null, ik2), tuple(null, ik3), tuple(null, ik1a));
 
-      soft.assertThat(diffAsList(initial, secondCommit, null, k2, null, null))
+      soft.assertThat(
+              diffAsList(initial, secondCommit, KeyRestrictions.builder().maxKey(k2).build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .containsExactlyInAnyOrder(tuple(null, ik1), tuple(null, ik2), tuple(null, ik1a));
 
-      soft.assertThat(diffAsList(initial, secondCommit, k1a, k2, null, null))
+      soft.assertThat(
+              diffAsList(
+                  initial, secondCommit, KeyRestrictions.builder().minKey(k1a).maxKey(k2).build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .containsExactlyInAnyOrder(tuple(null, ik1a), tuple(null, ik2));
 
-      soft.assertThat(diffAsList(initial, secondCommit, k2, k2, null, null))
+      soft.assertThat(
+              diffAsList(
+                  initial, secondCommit, KeyRestrictions.builder().minKey(k2).maxKey(k2).build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .containsExactlyInAnyOrder(tuple(null, ik2));
 
       soft.assertThat(
               diffAsList(
-                  initial, secondCommit, ContentKey.of("k4"), ContentKey.of("l"), null, null))
+                  initial,
+                  secondCommit,
+                  KeyRestrictions.builder()
+                      .minKey(ContentKey.of("k4"))
+                      .maxKey(ContentKey.of("l"))
+                      .build()))
           .isEmpty();
 
       // prefix
 
-      soft.assertThat(diffAsList(initial, secondCommit, null, null, ContentKey.of("k1"), null))
+      soft.assertThat(
+              diffAsList(
+                  initial,
+                  secondCommit,
+                  KeyRestrictions.builder().prefixKey(ContentKey.of("k1")).build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .containsExactlyInAnyOrder(tuple(null, ik1));
 
-      soft.assertThat(diffAsList(initial, secondCommit, null, null, ContentKey.of("k"), null))
+      soft.assertThat(
+              diffAsList(
+                  initial,
+                  secondCommit,
+                  KeyRestrictions.builder().prefixKey(ContentKey.of("k")).build()))
           .extracting(Diff::getFromKey, Diff::getToKey)
           .isEmpty();
 
-      soft.assertThat(diffAsList(initial, secondCommit, null, null, ContentKey.of("x"), null))
+      soft.assertThat(
+              diffAsList(
+                  initial,
+                  secondCommit,
+                  KeyRestrictions.builder().prefixKey(ContentKey.of("x")).build()))
           .isEmpty();
     }
     soft.assertThat(
-            diffAsList(initial, secondCommit, null, null, null, k -> k1.equals(k) || k3.equals(k)))
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder()
+                    .contentKeyPredicate(k -> k1.equals(k) || k3.equals(k))
+                    .build()))
         .extracting(Diff::getFromKey, Diff::getToKey)
         .containsExactlyInAnyOrder(tuple(null, ik1), tuple(null, ik3));
 
-    soft.assertThat(diffAsList(initial, secondCommit, null, null, null, k -> false)).isEmpty();
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder().contentKeyPredicate(k -> false).build()))
+        .isEmpty();
   }
 
   private List<Diff> diffAsList(Hash initial, Hash secondCommit) throws ReferenceNotFoundException {
-    return diffAsList(initial, secondCommit, null, null, null, null);
+    return diffAsList(initial, secondCommit, NO_KEY_RESTRICTIONS);
   }
 
-  private List<Diff> diffAsList(
-      Hash initial,
-      Hash secondCommit,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> keyPredicate)
+  private List<Diff> diffAsList(Hash initial, Hash secondCommit, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     try (PaginationIterator<Diff> diffStream =
-        store().getDiffs(initial, secondCommit, null, minKey, maxKey, prefixKey, keyPredicate)) {
+        store().getDiffs(initial, secondCommit, null, keyRestrictions)) {
       List<Diff> r = new ArrayList<>();
       diffStream.forEachRemaining(r::add);
       return r;

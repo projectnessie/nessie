@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.hash.Hasher;
 import java.util.ArrayList;
@@ -91,7 +93,7 @@ final class ExportContents extends ExportCommon {
 
     long seq = 0;
     try (PaginationIterator<KeyEntry> entries =
-        store.getKeys(ref.getNamedRef(), null, false, null, null, null, null)) {
+        store.getKeys(ref.getNamedRef(), null, false, NO_KEY_RESTRICTIONS)) {
       while (true) {
         List<KeyEntry> batch = take(exporter.contentsBatchSize(), entries);
         if (batch.isEmpty()) {

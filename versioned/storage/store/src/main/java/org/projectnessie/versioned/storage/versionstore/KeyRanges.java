@@ -24,14 +24,18 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyTo
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.versioned.VersionStore.KeyRestrictions;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.PagingToken;
 
 @Value.Immutable
 abstract class KeyRanges {
-  static KeyRanges keyRanges(
-      String pagingToken, ContentKey minKey, ContentKey maxKey, ContentKey prefixKey) {
-    return ImmutableKeyRanges.of(pagingToken, minKey, maxKey, prefixKey);
+  static KeyRanges keyRanges(String pagingToken, KeyRestrictions keyRestrictions) {
+    return ImmutableKeyRanges.of(
+        pagingToken,
+        keyRestrictions.minKey(),
+        keyRestrictions.maxKey(),
+        keyRestrictions.prefixKey());
   }
 
   @Value.Parameter(order = 1)

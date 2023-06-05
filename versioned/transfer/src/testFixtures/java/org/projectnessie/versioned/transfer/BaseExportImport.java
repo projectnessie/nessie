@@ -17,6 +17,7 @@ package org.projectnessie.versioned.transfer;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
@@ -329,7 +330,7 @@ public abstract class BaseExportImport {
 
   List<KeyEntry> keys(VersionStore versionStore, Hash hash) {
     try (PaginationIterator<KeyEntry> keys =
-        versionStore.getKeys(hash, null, false, null, null, null, null)) {
+        versionStore.getKeys(hash, null, false, NO_KEY_RESTRICTIONS)) {
       return newArrayList(keys);
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.versioned.ContentResult.contentResult;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -232,7 +233,7 @@ class TestTracingVersionStore {
             new TestedTracingStoreInvocation<VersionStore>("GetKeys.stream", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "Hash cafe4242")
                 .function(
-                    vs -> vs.getKeys(Hash.of("cafe4242"), null, false, null, null, null, null),
+                    vs -> vs.getKeys(Hash.of("cafe4242"), null, false, NO_KEY_RESTRICTIONS),
                     () -> PaginationIterator.of(ContentKey.of("hello", "world"))),
             new TestedTracingStoreInvocation<VersionStore>("GetNamedRefs.stream", runtimeThrows)
                 .function(
@@ -274,10 +275,7 @@ class TestTracingVersionStore {
                             BranchName.of("mock-branch"),
                             BranchName.of("foo-branch"),
                             null,
-                            null,
-                            null,
-                            null,
-                            null),
+                            NO_KEY_RESTRICTIONS),
                     PaginationIterator::empty));
 
     return TestedTracingStoreInvocation.toArguments(versionStoreFunctions);

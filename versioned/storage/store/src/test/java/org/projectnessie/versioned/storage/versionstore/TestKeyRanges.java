@@ -29,6 +29,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.versioned.VersionStore.KeyRestrictions;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestKeyRanges {
@@ -38,15 +39,36 @@ public class TestKeyRanges {
   public void entriesWrongParameters() {
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
-            () -> keyRanges(null, ContentKey.of("foo"), ContentKey.of("foo"), ContentKey.of("foo")))
+            () ->
+                keyRanges(
+                    null,
+                    KeyRestrictions.builder()
+                        .minKey(ContentKey.of("foo"))
+                        .maxKey(ContentKey.of("foo"))
+                        .prefixKey(ContentKey.of("foo"))
+                        .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> keyRanges(null, null, ContentKey.of("foo"), ContentKey.of("foo")))
+        .isThrownBy(
+            () ->
+                keyRanges(
+                    null,
+                    KeyRestrictions.builder()
+                        .maxKey(ContentKey.of("foo"))
+                        .prefixKey(ContentKey.of("foo"))
+                        .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> keyRanges(null, ContentKey.of("foo"), null, ContentKey.of("foo")))
+        .isThrownBy(
+            () ->
+                keyRanges(
+                    null,
+                    KeyRestrictions.builder()
+                        .minKey(ContentKey.of("foo"))
+                        .prefixKey(ContentKey.of("foo"))
+                        .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
   }
@@ -56,11 +78,13 @@ public class TestKeyRanges {
     String token =
         pagingToken(copyFromUtf8(keyToStoreKey(ContentKey.of("foo")).rawString())).asString();
 
-    soft.assertThat(keyRanges(token, ContentKey.of("bar"), null, null))
+    soft.assertThat(
+            keyRanges(token, KeyRestrictions.builder().minKey(ContentKey.of("bar")).build()))
         .extracting(KeyRanges::beginStoreKey)
         .isEqualTo(keyToStoreKey(ContentKey.of("foo")));
 
-    soft.assertThat(keyRanges(token, null, null, ContentKey.of("bar")))
+    soft.assertThat(
+            keyRanges(token, KeyRestrictions.builder().prefixKey(ContentKey.of("bar")).build()))
         .extracting(KeyRanges::beginStoreKey)
         .isEqualTo(keyToStoreKey(ContentKey.of("foo")));
   }
@@ -68,7 +92,7 @@ public class TestKeyRanges {
   @Test
   public void max() {
     ContentKey bar = ContentKey.of("bar");
-    KeyRanges keyRange = keyRanges(null, null, bar, null);
+    KeyRanges keyRange = keyRanges(null, KeyRestrictions.builder().maxKey(bar).build());
 
     soft.assertThat(keyRange.endStoreKey()).isGreaterThan(keyToStoreKey(bar));
     soft.assertThat(keyRange.endStoreKey()).isGreaterThan(keyToStoreKeyVariant(bar, "Z"));

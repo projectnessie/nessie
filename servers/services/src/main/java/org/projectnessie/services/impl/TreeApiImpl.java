@@ -839,10 +839,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   refWithHash.getHash(),
                   pagingToken,
                   withContent,
-                  minKey,
-                  maxKey,
-                  prefixKey,
-                  contentKeyPredicate)) {
+                  VersionStore.KeyRestrictions.builder()
+                      .minKey(minKey)
+                      .maxKey(maxKey)
+                      .prefixKey(prefixKey)
+                      .contentKeyPredicate(contentKeyPredicate)
+                      .build())) {
 
         AuthzPaginationIterator<KeyEntry> authz =
             new AuthzPaginationIterator<KeyEntry>(
