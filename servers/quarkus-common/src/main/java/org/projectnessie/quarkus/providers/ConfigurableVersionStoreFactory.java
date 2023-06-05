@@ -18,7 +18,6 @@ package org.projectnessie.quarkus.providers;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.trace.Tracer;
-import io.quarkus.runtime.Startup;
 import java.io.IOError;
 import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
@@ -82,7 +81,6 @@ public class ConfigurableVersionStoreFactory {
   /** Version store producer. */
   @Produces
   @Singleton
-  @Startup
   public VersionStore getVersionStore() {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
@@ -122,7 +120,7 @@ public class ConfigurableVersionStoreFactory {
 
   private VersionStore persistVersionStore() {
     try {
-      Persist p = persist.select().get();
+      Persist p = persist.select(WIthInitializedRepository.Literal.INSTANCE).get();
 
       return new VersionStoreImpl(p);
     } catch (RuntimeException | IOError e) {

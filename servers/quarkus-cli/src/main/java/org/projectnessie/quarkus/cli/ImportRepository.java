@@ -184,7 +184,10 @@ public class ImportRepository extends BaseCommand {
         builder.commitBatchSize(commitBatchSize);
       }
 
-      if (!erase && repositoryLogic(persist).repositoryExists()) {
+      if (erase) {
+        spec.commandLine().getOut().println("Erasing repository...");
+        persist.erase();
+      } else if (repositoryLogic(persist).repositoryExists()) {
         spec.commandLine()
             .getErr()
             .println(

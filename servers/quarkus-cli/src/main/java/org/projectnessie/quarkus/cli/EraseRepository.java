@@ -48,6 +48,11 @@ public class EraseRepository extends BaseCommand {
   protected Integer callWithPersist() {
     warnOnInMemory();
 
+    if (!repositoryLogic(persist).repositoryExists()) {
+      spec.commandLine().getErr().println("Nessie repository does not exist");
+      return 1;
+    }
+
     String code = getConfirmationCode(persist);
     if (!code.equals(confirmationCode)) {
       spec.commandLine()

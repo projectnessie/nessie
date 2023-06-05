@@ -19,6 +19,7 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
 
 import java.util.concurrent.Callable;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
@@ -45,7 +46,7 @@ public abstract class BaseCommand implements Callable<Integer> {
   public final Integer call() throws Exception {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
     if (versionStoreType.isNewStorage()) {
-      persist = persistInstance.get();
+      persist = persistInstance.select(Default.Literal.INSTANCE).get();
       return callWithPersist();
     } else {
       databaseAdapter = databaseAdapterInstance.get();

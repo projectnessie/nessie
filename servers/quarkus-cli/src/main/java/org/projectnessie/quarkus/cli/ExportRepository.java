@@ -15,6 +15,8 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
+
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -127,6 +129,11 @@ public class ExportRepository extends BaseCommand {
 
   @Override
   protected Integer callWithPersist() throws Exception {
+    if (!repositoryLogic(persist).repositoryExists()) {
+      spec.commandLine().getErr().println("Nessie repository does not exist");
+      return 1;
+    }
+
     return export(
         b -> {
           b.persist(persist);
