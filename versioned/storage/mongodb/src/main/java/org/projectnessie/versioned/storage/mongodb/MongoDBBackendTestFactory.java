@@ -35,6 +35,11 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
   private MongoDBContainer container;
   private String connectionString;
 
+  @Override
+  public String getName() {
+    return MongoDBBackendFactory.NAME;
+  }
+
   /**
    * Starts MongoDB with an optional Docker network ID and a flag to turn off all output to stdout
    * and stderr.

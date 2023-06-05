@@ -25,6 +25,11 @@ public class InmemoryBackendTestFactory implements BackendTestFactory {
   }
 
   @Override
+  public String getName() {
+    return InmemoryBackendFactory.NAME;
+  }
+
+  @Override
   public void start() {}
 
   @Override

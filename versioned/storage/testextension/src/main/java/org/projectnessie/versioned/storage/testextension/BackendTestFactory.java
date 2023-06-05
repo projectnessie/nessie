@@ -23,4 +23,6 @@ public interface BackendTestFactory {
   void start() throws Exception;
 
   void stop() throws Exception;
+
+  String getName();
 }

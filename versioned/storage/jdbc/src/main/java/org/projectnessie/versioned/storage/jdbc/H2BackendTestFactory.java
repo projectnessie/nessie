@@ -18,6 +18,11 @@ package org.projectnessie.versioned.storage.jdbc;
 public final class H2BackendTestFactory extends AbstractJdbcBackendTestFactory {
 
   @Override
+  public String getName() {
+    return JdbcBackendFactory.NAME + "-H2";
+  }
+
+  @Override
   protected String jdbcUrl() {
     return "jdbc:h2:mem:nessie;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH";
   }
