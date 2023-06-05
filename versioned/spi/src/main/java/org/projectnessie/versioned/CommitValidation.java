@@ -18,6 +18,7 @@ package org.projectnessie.versioned;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.model.IdentifiedContentKey;
+import org.projectnessie.versioned.Operation.OperationType;
 
 @Value.Immutable
 public interface CommitValidation {
@@ -33,10 +34,10 @@ public interface CommitValidation {
     IdentifiedContentKey identifiedKey();
 
     @Value.Parameter(order = 2)
-    Operation operation();
+    OperationType operation();
 
     static CommitOperation commitOperation(
-        IdentifiedContentKey identifiedKey, Operation operation) {
+        IdentifiedContentKey identifiedKey, OperationType operation) {
       return ImmutableCommitOperation.of(identifiedKey, operation);
     }
   }
