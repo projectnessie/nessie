@@ -18,6 +18,7 @@ package org.projectnessie.services;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,7 +118,7 @@ public class ContentOpsBench {
   @Benchmark
   public void getKeys(BenchmarkParam param, Blackhole bh) throws Exception {
     PaginationIterator<KeyEntry> iter =
-        param.versionStore.getKeys(param.ref.getNamedRef(), null, false, null, null, null, null);
+        param.versionStore.getKeys(param.ref.getNamedRef(), null, false, NO_KEY_RESTRICTIONS);
     while (iter.hasNext()) {
       bh.consume(iter.next());
     }
