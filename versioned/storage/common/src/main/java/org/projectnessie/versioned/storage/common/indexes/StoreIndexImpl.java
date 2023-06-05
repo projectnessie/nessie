@@ -113,8 +113,10 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
    */
   private static final int ASSUMED_PER_ENTRY_OVERHEAD = 2 + 2;
 
-  private static final boolean SERIALIZE_V2 =
-      !Boolean.getBoolean("nessie.internal.store-index-old-format");
+  private static final int CURRENT_STORE_INDEX_VERSION = 2;
+
+  private static final int SERIALIZE_VERSION =
+      Integer.getInteger("nessie.internal.store-index-format-version", CURRENT_STORE_INDEX_VERSION);
 
   public static final Comparator<StoreIndexElement<?>> KEY_COMPARATOR =
       Comparator.comparing(StoreIndexElement::key);
@@ -434,7 +436,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     ByteBuffer target = ByteBuffer.allocate(estimatedSerializedSize());
 
     // Serialized segment index version
-    if (SERIALIZE_V2) {
+    if (SERIALIZE_VERSION >= CURRENT_STORE_INDEX_VERSION) {
       target.put((byte) 2);
       putVarInt(target, elementCount());
     } else {
