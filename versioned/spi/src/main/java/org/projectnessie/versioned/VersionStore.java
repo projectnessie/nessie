@@ -26,6 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
@@ -165,6 +166,11 @@ public interface VersionStore {
     @Value.Default
     default boolean fetchAdditionalInfo() {
       return false;
+    }
+
+    @Value.Default
+    default CommitValidator validator() {
+      return commitValidation -> {};
     }
   }
 
@@ -334,27 +340,46 @@ public interface VersionStore {
   PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException;
 
+  @Value.Immutable
+  interface KeyRestrictions {
+    KeyRestrictions NO_KEY_RESTRICTIONS = KeyRestrictions.builder().build();
+
+    /** Optional, if not {@code null}: the minimum key to return. */
+    @Nullable
+    @jakarta.annotation.Nullable
+    ContentKey minKey();
+
+    /** Optional, if not {@code null}: the maximum key to return. */
+    @Nullable
+    @jakarta.annotation.Nullable
+    ContentKey maxKey();
+
+    /** Optional, if not {@code null}: the prefix of the keys to return. */
+    @Nullable
+    @jakarta.annotation.Nullable
+    ContentKey prefixKey();
+
+    /** Filter predicate, can be {@code null}. */
+    @Nullable
+    @jakarta.annotation.Nullable
+    Predicate<ContentKey> contentKeyPredicate();
+
+    static ImmutableKeyRestrictions.Builder builder() {
+      return ImmutableKeyRestrictions.builder();
+    }
+  }
+
   /**
    * Get a stream of all available keys for the given ref.
    *
    * @param ref The ref to get keys for.
    * @param pagingToken paging token to start at
    * @param withContent whether to populate {@link KeyEntry#getContent()}
-   * @param minKey optional, if not {@code null}: the minimum key to return
-   * @param maxKey optional, if not {@code null}: the maximum key to return
-   * @param prefixKey optional, if not {@code null}: the prefix of the keys to return
-   * @param contentKeyPredicate filter predicate, can be {@code null}
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
   PaginationIterator<KeyEntry> getKeys(
-      Ref ref,
-      String pagingToken,
-      boolean withContent,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException;
 
   List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys)
@@ -387,20 +412,10 @@ public interface VersionStore {
    * @param from The from part of the diff.
    * @param to The to part of the diff.
    * @param pagingToken paging token to start at
-   * @param minKey optional, if not {@code null}: the minimum key to return
-   * @param maxKey optional, if not {@code null}: the maximum key to return
-   * @param prefixKey optional, if not {@code null}: the prefix of the keys to return
-   * @param contentKeyPredicate filter predicate, can be {@code null}
    * @return A stream of values that are different.
    */
   PaginationIterator<Diff> getDiffs(
-      Ref from,
-      Ref to,
-      String pagingToken,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException;
 
   /**

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.versioned.ContentResult.contentResult;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import io.micrometer.core.instrument.AbstractTimer;
 import io.micrometer.core.instrument.Clock;
@@ -220,7 +221,7 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
-                vs -> vs.getKeys(Hash.of("cafe4242"), null, false, null, null, null, null),
+                vs -> vs.getKeys(Hash.of("cafe4242"), null, false, NO_KEY_RESTRICTIONS),
                 () -> PaginationIterator.of(ContentKey.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
@@ -264,10 +265,7 @@ class TestMetricsVersionStore {
                         BranchName.of("mock-branch"),
                         BranchName.of("foo-branch"),
                         null,
-                        null,
-                        null,
-                        null,
-                        null),
+                        NO_KEY_RESTRICTIONS),
                 PaginationIterator::empty,
                 refNotFoundThrows));
 

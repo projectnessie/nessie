@@ -266,7 +266,7 @@ class CommitImpl extends BaseCommitHelper {
             contentToStore,
             commitRetryState,
             deleted,
-            newContent::put,
+            newContent,
             commitValidation);
       } else if (operation instanceof Delete) {
         // handled above
@@ -352,8 +352,9 @@ class CommitImpl extends BaseCommitHelper {
                     contentKey,
                     expectedIndex,
                     contentTypeForPayload(payload),
-                    existingContentID != null ? existingContentID.toString() : null),
-                operation));
+                    existingContentID != null ? existingContentID.toString() : null,
+                    x -> null),
+                operation.getType()));
       }
     }
 
@@ -376,7 +377,7 @@ class CommitImpl extends BaseCommitHelper {
       Consumer<Obj> contentToStore,
       CommitRetryState commitRetryState,
       Map<UUID, StoreKey> deleted,
-      BiConsumer<ContentKey, Content> newContent,
+      Map<ContentKey, Content> newContent,
       ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException {
     Content putValue = put.getValue();
@@ -429,12 +430,12 @@ class CommitImpl extends BaseCommitHelper {
       checkArgument(
           putValueId == null, "New value for key '%s' must not have a content ID", putKey);
 
-      newContent.accept(putKey, putValue);
-
       putValueId =
           commitRetryState.generatedContentIds.computeIfAbsent(
               putKey, x -> UUID.randomUUID().toString());
       putValue = putValue.withId(putValueId);
+
+      newContent.put(putKey, putValue);
     }
 
     checkState(
@@ -455,8 +456,12 @@ class CommitImpl extends BaseCommitHelper {
                 putKey,
                 expectedIndex,
                 contentTypeForPayload(payload),
-                contentId != null ? contentId.toString() : null),
-            put));
+                contentId != null ? contentId.toString() : null,
+                elements -> {
+                  Content content = newContent.get(ContentKey.of(elements));
+                  return content != null ? contentIdMaybe(content.getId()) : null;
+                }),
+            put.getType()));
   }
 
   private String contentIdFromContent(@Nonnull @jakarta.annotation.Nonnull ObjId contentValueId)

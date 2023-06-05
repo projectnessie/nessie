@@ -18,11 +18,11 @@ package org.projectnessie.versioned.tests;
 import static com.google.common.collect.Lists.newArrayList;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -37,6 +37,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.KeyRestrictions;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -56,10 +57,11 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
             () ->
                 keysAsList(
                     store().noAncestorHash(),
-                    ContentKey.of("foo"),
-                    ContentKey.of("foo"),
-                    ContentKey.of("foo"),
-                    null))
+                    KeyRestrictions.builder()
+                        .minKey(ContentKey.of("foo"))
+                        .maxKey(ContentKey.of("foo"))
+                        .prefixKey(ContentKey.of("foo"))
+                        .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
@@ -67,10 +69,10 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
             () ->
                 keysAsList(
                     store().noAncestorHash(),
-                    null,
-                    ContentKey.of("foo"),
-                    ContentKey.of("foo"),
-                    null))
+                    KeyRestrictions.builder()
+                        .maxKey(ContentKey.of("foo"))
+                        .prefixKey(ContentKey.of("foo"))
+                        .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
@@ -78,10 +80,10 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
             () ->
                 keysAsList(
                     store().noAncestorHash(),
-                    ContentKey.of("foo"),
-                    null,
-                    ContentKey.of("foo"),
-                    null))
+                    KeyRestrictions.builder()
+                        .minKey(ContentKey.of("foo"))
+                        .prefixKey(ContentKey.of("foo"))
+                        .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
   }
@@ -116,45 +118,47 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
             .put(key3, newOnRef("v3"))
             .toBranch(branch);
 
-    soft.assertThat(keysAsList(initialCommit, null, null, null, null))
+    soft.assertThat(keysAsList(initialCommit, NO_KEY_RESTRICTIONS))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(
             key1, key2, key2a, key2b, key2c, key2d, key23, key23a, key23b, key3);
-    soft.assertThat(keysAsList(initialCommit, key23, null, null, null))
+    soft.assertThat(keysAsList(initialCommit, KeyRestrictions.builder().minKey(key23).build()))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(key23, key23a, key23b, key3, key2c);
-    soft.assertThat(keysAsList(initialCommit, null, null, key23, null))
+    soft.assertThat(keysAsList(initialCommit, KeyRestrictions.builder().prefixKey(key23).build()))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(key23, key23a, key23b);
-    soft.assertThat(keysAsList(initialCommit, null, key23, null, null))
+    soft.assertThat(keysAsList(initialCommit, KeyRestrictions.builder().maxKey(key23).build()))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(key1, key2, key2a, key2b, key2d, key23);
-    soft.assertThat(keysAsList(initialCommit, key23, key23a, null, null))
+    soft.assertThat(
+            keysAsList(
+                initialCommit, KeyRestrictions.builder().minKey(key23).maxKey(key23a).build()))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(key23, key23a);
-    soft.assertThat(keysAsList(initialCommit, null, null, ContentKey.of("k"), null)).isEmpty();
-    soft.assertThat(keysAsList(initialCommit, null, ContentKey.of("k"), null, null)).isEmpty();
-    soft.assertThat(keysAsList(initialCommit, null, null, ContentKey.of("x"), null)).isEmpty();
+    soft.assertThat(
+            keysAsList(
+                initialCommit, KeyRestrictions.builder().prefixKey(ContentKey.of("k")).build()))
+        .isEmpty();
+    soft.assertThat(
+            keysAsList(initialCommit, KeyRestrictions.builder().maxKey(ContentKey.of("k")).build()))
+        .isEmpty();
+    soft.assertThat(
+            keysAsList(
+                initialCommit, KeyRestrictions.builder().prefixKey(ContentKey.of("x")).build()))
+        .isEmpty();
     soft.assertThat(
             keysAsList(
                 initialCommit,
-                null,
-                null,
-                null,
-                k -> k.toPathString().startsWith(key2.toPathString())))
+                KeyRestrictions.builder()
+                    .contentKeyPredicate(k -> k.toPathString().startsWith(key2.toPathString()))
+                    .build()))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(key2, key2a, key2b, key2c, key2d, key23, key23a, key23b);
   }
 
-  List<KeyEntry> keysAsList(
-      Ref ref,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
-      throws Exception {
-    try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(ref, null, false, minKey, maxKey, prefixKey, contentKeyPredicate)) {
+  List<KeyEntry> keysAsList(Ref ref, KeyRestrictions keyRestrictions) throws Exception {
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(ref, null, false, keyRestrictions)) {
       return newArrayList(keys);
     }
   }
@@ -181,7 +185,7 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
     ContentResult content23a = store().getValue(commit, key23a);
 
     try (PaginationIterator<KeyEntry> iter =
-        store.getKeys(commit, null, false, null, null, null, null)) {
+        store.getKeys(commit, null, false, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(iter)
           .toIterable()
           .extracting(KeyEntry::getKey)

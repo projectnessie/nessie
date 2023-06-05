@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.quarkus.cli.ImportRepository.ERASE_BEFORE_IMPORT;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -305,7 +306,7 @@ public class ITExportImportPersist {
       throws ReferenceNotFoundException {
     VersionStoreImpl store = new VersionStoreImpl(persist);
     ReferenceInfo<CommitMeta> main = store.getNamedRef(ref, GetNamedRefsParams.DEFAULT);
-    soft.assertThat(store.getKeys(main.getHash(), null, true, null, null, null, null))
+    soft.assertThat(store.getKeys(main.getHash(), null, true, NO_KEY_RESTRICTIONS))
         .toIterable()
         .extracting(e -> e.getKey().contentKey(), KeyEntry::getContent)
         .containsExactly(tuple(key, value));

@@ -23,6 +23,11 @@ import org.projectnessie.model.ContentKey;
 @Value.Immutable
 public interface Delete extends Operation {
 
+  @Override
+  default OperationType getType() {
+    return OperationType.DELETE;
+  }
+
   /**
    * Creates a delete operation for the given key.
    *

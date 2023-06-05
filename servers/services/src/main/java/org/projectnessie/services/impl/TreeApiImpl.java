@@ -124,6 +124,8 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.CommitValidator;
+import org.projectnessie.versioned.VersionStore.MergeOp;
 import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.paging.PaginationIterator;
@@ -622,6 +624,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))
                       .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
+                      .validator(createCommitValidator(targetBranch))
                       .build());
       return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
@@ -668,7 +671,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .merge(
-                  VersionStore.MergeOp.builder()
+                  MergeOp.builder()
                       .fromRef(namedRefWithHash.getValue())
                       .fromHash(toHash(fromRefName, fromHash))
                       .toBranch(targetBranch)
@@ -689,6 +692,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))
                       .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
+                      .validator(createCommitValidator(targetBranch))
                       .build());
       return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
@@ -839,10 +843,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   refWithHash.getHash(),
                   pagingToken,
                   withContent,
-                  minKey,
-                  maxKey,
-                  prefixKey,
-                  contentKeyPredicate)) {
+                  VersionStore.KeyRestrictions.builder()
+                      .minKey(minKey)
+                      .maxKey(maxKey)
+                      .prefixKey(prefixKey)
+                      .contentKeyPredicate(contentKeyPredicate)
+                      .build())) {
 
         AuthzPaginationIterator<KeyEntry> authz =
             new AuthzPaginationIterator<KeyEntry>(
@@ -981,21 +987,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   Optional.ofNullable(expectedHash).map(Hash::of),
                   commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
                   ops,
-                  validation -> {
-                    BatchAccessChecker check =
-                        startAccessCheck().canCommitChangeAgainstReference(branchName);
-                    validation
-                        .operations()
-                        .forEach(
-                            op -> {
-                              if (op.operation() instanceof Put) {
-                                check.canUpdateEntity(branchName, op.identifiedKey());
-                              } else {
-                                check.canDeleteEntity(branchName, op.identifiedKey());
-                              }
-                            });
-                    check.checkAndThrow();
-                  },
+                  createCommitValidator(branchName),
                   (key, cid) -> {
                     commitResponse.addAddedContents(addedContent(key, cid));
                   })
@@ -1007,6 +999,29 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }
+  }
+
+  private CommitValidator createCommitValidator(BranchName branchName) {
+    return validation -> {
+      BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
+      validation
+          .operations()
+          .forEach(
+              op -> {
+                switch (op.operation()) {
+                  case PUT:
+                    check.canUpdateEntity(branchName, op.identifiedKey());
+                    break;
+                  case DELETE:
+                    check.canDeleteEntity(branchName, op.identifiedKey());
+                    break;
+                  default:
+                    throw new UnsupportedOperationException(
+                        "Unknown operation type " + op.operation());
+                }
+              });
+      check.checkAndThrow();
+    };
   }
 
   private Hash toHash(String referenceName, String hashOnReference)

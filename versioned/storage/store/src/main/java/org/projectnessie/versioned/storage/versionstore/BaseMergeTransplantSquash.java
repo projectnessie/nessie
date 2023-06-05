@@ -97,6 +97,9 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     // It's okay to do the fetchCommit() here and not complicate the surrounding logic (think:
     // local cache)
     StoreIndex<CommitOp> headIndex = indexesLogic(persist).buildCompleteIndexOrEmpty(head);
+
+    validateMergeTransplantCommit(createCommit, mergeTransplantOpBase.validator(), headIndex);
+
     verifyMergeTransplantCommitPolicies(headIndex, mergeCommit);
 
     mergeBehaviors.postValidate();

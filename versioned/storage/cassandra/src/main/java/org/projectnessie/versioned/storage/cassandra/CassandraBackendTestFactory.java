@@ -31,6 +31,11 @@ public class CassandraBackendTestFactory extends AbstractCassandraBackendTestFac
   }
 
   @Override
+  public String getName() {
+    return CassandraBackendFactory.NAME;
+  }
+
+  @Override
   protected void configureContainer(CassandraContainer<?> c) {
     c.withEnv("JVM_OPTS", JVM_OPTS_TEST);
   }

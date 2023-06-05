@@ -20,6 +20,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.model.Validation.validateHash;
 import static org.projectnessie.services.impl.RefUtil.toReference;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -133,7 +134,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Delete delete = Delete.of(namespace.toContentKey());
 
       try (PaginationIterator<KeyEntry> keys =
-          getStore().getKeys(refWithHash.getHash(), null, false, null, null, null, null)) {
+          getStore().getKeys(refWithHash.getHash(), null, false, NO_KEY_RESTRICTIONS)) {
         while (keys.hasNext()) {
           KeyEntry k = keys.next();
           if (Namespace.of(k.getKey().contentKey().getElements())
@@ -291,8 +292,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Hash hash,
       Predicate<KeyEntry> earlyFilterPredicate)
       throws ReferenceNotFoundException {
-    PaginationIterator<KeyEntry> iter =
-        getStore().getKeys(hash, null, false, null, null, null, null);
+    PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null, false, NO_KEY_RESTRICTIONS);
     return stream(spliteratorUnknownSize(iter, 0), false)
         .onClose(iter::close)
         .filter(earlyFilterPredicate)
@@ -377,10 +377,16 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                   .operations()
                   .forEach(
                       op -> {
-                        if (op.operation() instanceof org.projectnessie.versioned.Put) {
-                          check.canUpdateEntity(branch, op.identifiedKey());
-                        } else {
-                          check.canDeleteEntity(branch, op.identifiedKey());
+                        switch (op.operation()) {
+                          case PUT:
+                            check.canUpdateEntity(branch, op.identifiedKey());
+                            break;
+                          case DELETE:
+                            check.canDeleteEntity(branch, op.identifiedKey());
+                            break;
+                          default:
+                            throw new UnsupportedOperationException(
+                                "Unknown operation type " + op.operation());
                         }
                       });
               check.checkAndThrow();

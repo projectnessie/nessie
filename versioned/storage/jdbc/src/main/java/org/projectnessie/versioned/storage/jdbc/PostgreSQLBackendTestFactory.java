@@ -21,6 +21,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
 
+  @Override
+  public String getName() {
+    return JdbcBackendFactory.NAME + "-Postgres";
+  }
+
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override

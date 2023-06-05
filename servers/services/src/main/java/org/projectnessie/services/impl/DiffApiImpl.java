@@ -43,6 +43,7 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.KeyRestrictions;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
@@ -100,10 +101,12 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
                   from.getHash(),
                   to.getHash(),
                   pagingToken,
-                  minKey,
-                  maxKey,
-                  prefixKey,
-                  contentKeyPredicate)) {
+                  KeyRestrictions.builder()
+                      .minKey(minKey)
+                      .maxKey(maxKey)
+                      .prefixKey(prefixKey)
+                      .contentKeyPredicate(contentKeyPredicate)
+                      .build())) {
 
         AuthzPaginationIterator<Diff> authz =
             new AuthzPaginationIterator<Diff>(

@@ -2,7 +2,7 @@
 
 [versions]
 antlr4 = "4.13.0"
-awssdk = "2.20.77"
+awssdk = "2.20.78"
 bouncycastle = "1.70"
 checkstyle = "10.12.0"
 errorprone = "2.19.1"
@@ -23,7 +23,7 @@ nessieClientVersion = "0.59.0" # Must be in sync with Nessie version in the Iceb
 opentelemetry = "1.26.0"
 opentelemetryAlpha = "1.25.0-alpha"
 opentracing = "0.33.0"
-picocli = "4.7.3"
+picocli = "4.7.4"
 protobuf = "3.23.2"
 quarkus = "2.16.7.Final"
 slf4j = "1.7.36"
@@ -155,8 +155,8 @@ spark-sql-v32-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { s
 spark-sql-v32-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.2, 3.3[", prefer = "3.2.4"}}
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.2"}}
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.2"}}
-spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.4, 3.4[", prefer = "3.4.0"}}
-spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.4[", prefer = "3.4.0"}}
+spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.4, 3.5[", prefer = "3.4.0"}}
+spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.5[", prefer = "3.4.0"}}
 testcontainers-cassandra = { module = "org.testcontainers:cassandra", version.ref = "testcontainers" }
 testcontainers-cockroachdb = { module = "org.testcontainers:cockroachdb", version.ref = "testcontainers" }
 testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }

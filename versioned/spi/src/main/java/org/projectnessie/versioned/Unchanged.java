@@ -27,6 +27,10 @@ import org.projectnessie.model.ContentKey;
  */
 @Value.Immutable
 public interface Unchanged extends Operation {
+  @Override
+  default OperationType getType() {
+    return OperationType.UNCHANGED;
+  }
 
   @Override
   default boolean shouldMatchHash() {

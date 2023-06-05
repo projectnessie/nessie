@@ -36,6 +36,11 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
   private String endpointURI;
 
   @Override
+  public String getName() {
+    return DynamoDBBackendFactory.NAME;
+  }
+
+  @Override
   public DynamoDBBackend createNewBackend() {
     return new DynamoDBBackend(buildNewClient(), true);
   }

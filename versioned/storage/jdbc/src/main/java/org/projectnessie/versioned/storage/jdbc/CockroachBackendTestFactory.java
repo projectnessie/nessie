@@ -21,6 +21,11 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 public class CockroachBackendTestFactory extends PostgreSQLBackendTestFactory {
 
+  @Override
+  public String getName() {
+    return JdbcBackendFactory.NAME + "-Cockroach";
+  }
+
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
