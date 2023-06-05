@@ -36,9 +36,13 @@ dependencies {
   implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-storage-testextension"))
 
+  // 'implementation' is necessary here, becasue of the `jmhCompileGeneratedClasses` task
+  implementation(libs.microprofile.openapi)
+  implementation(platform(libs.jackson.bom))
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+
   jmhImplementation(libs.jmh.core)
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
-  jmhCompileOnly(libs.microprofile.openapi)
   jmhRuntimeOnly(project(":nessie-versioned-storage-inmemory"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-cassandra"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-rocksdb"))
