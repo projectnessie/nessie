@@ -17,8 +17,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  `java-library`
-  `nessie-conventions`
+  id("nessie-conventions-unpublished-tool")
   id("com.github.johnrengelman.shadow")
   alias(libs.plugins.jmh)
 }
