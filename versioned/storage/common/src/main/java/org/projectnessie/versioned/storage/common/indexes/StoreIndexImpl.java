@@ -42,7 +42,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 /**
- * Implementation of {@link StoreIndex} that implements "version 1 serialization" of
+ * Implementation of {@link StoreIndex} that implements "version 1 + 2 serialization" of
  * key-index-segments.
  *
  * <p>"Version 1" uses a diff-like encoding to compress keys and a custom var-int encoding. {@link
