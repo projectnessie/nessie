@@ -20,7 +20,7 @@ import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
   alias(libs.plugins.nessie.reflectionconfig)
-  id("nessie-conventions-server")
+  id("nessie-conventions-server8")
   alias(libs.plugins.protobuf)
 }
 
