@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
-import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ContentKey;

@@ -15,9 +15,7 @@
  */
 package org.projectnessie.client.http.v2api;
 
-import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.CommitLogParams;
-import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.builder.BaseGetCommitLogBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -60,12 +58,5 @@ final class HttpGetCommitLog extends BaseGetCommitLogBuilder<CommitLogParams> {
         .unwrap(NessieNotFoundException.class)
         .get()
         .readEntity(LogResponse.class);
-  }
-
-  @Override
-  public Stream<LogResponse.LogEntry> stream() throws NessieNotFoundException {
-    CommitLogParams p = params();
-    return StreamingUtil.generateStream(
-        LogResponse::getLogEntries, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

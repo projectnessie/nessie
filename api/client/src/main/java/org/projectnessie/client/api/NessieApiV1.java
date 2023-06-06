@@ -57,8 +57,6 @@ public interface NessieApiV1 extends NessieApi {
    * and, if {@code true}, pass the value of {@link EntriesResponse#getToken()
    * EntriesResponse.getToken()} in the next invocation of {@code getEntries()} as the {@code
    * pageToken} parameter.
-   *
-   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   GetEntriesBuilder getEntries();
 
@@ -76,8 +74,6 @@ public interface NessieApiV1 extends NessieApi {
    * <p>To implement paging, check {@link LogResponse#isHasMore() LogResponse.isHasMore()} and, if
    * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()} in the
    * next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.
-   *
-   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   GetCommitLogBuilder getCommitLog();
 
@@ -121,8 +117,6 @@ public interface NessieApiV1 extends NessieApi {
    * and, if {@code true}, pass the value of {@link RefLogResponse#getToken()
    * RefLogResponse.getToken()} in the next invocation of {@code getRefLog()} as the {@code
    * pageToken} parameter.
-   *
-   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   @Deprecated
   GetRefLogBuilder getRefLog();
