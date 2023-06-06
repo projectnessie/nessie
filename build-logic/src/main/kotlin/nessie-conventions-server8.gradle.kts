@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
+// Java project, non-client facing, server component, Java 8 (11 for tests)
+
 plugins {
-  id("nessie-conventions-server8")
-  id("nessie-jacoco")
+  `java-library`
+  `maven-publish`
+  signing
+  id("nessie-common-base")
+  id("nessie-common-src")
+  id("nessie-java")
+  id("nessie-testing")
 }
 
-extra["maven.name"] = "Nessie - Versioned - Persist - Rocks/test-support"
-
-dependencies {
-  implementation(project(":nessie-versioned-persist-adapter"))
-  implementation(project(":nessie-versioned-persist-non-transactional"))
-  implementation(project(":nessie-versioned-persist-rocks"))
-  implementation(project(":nessie-versioned-persist-testextension"))
-  implementation(project(":nessie-versioned-persist-non-transactional-test"))
+tasks.withType<JavaCompile>().configureEach {
+  options.release.set(if (this.name == "compileJava") 8 else 11)
 }

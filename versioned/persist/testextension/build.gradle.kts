@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server") }
+plugins { id("nessie-conventions-server8") }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Testextension"
 

@@ -17,7 +17,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-server8")
   id("nessie-shadow-jar")
 }
 
