@@ -83,6 +83,8 @@ dependencies {
 
   intTestRuntimeOnly(libs.h2)
 
+  testCompileOnly(libs.microprofile.openapi)
+
   // javax/jakarta
   testFixturesImplementation(libs.jakarta.annotation.api)
 
