@@ -166,9 +166,6 @@ Once this is done you can run your image with `docker run -p 19120:19120 quay.io
 environment variables, if any. Environment variables names must follow MicroProfile Config's [mapping
 rules](https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules).
 
-### AWS Lambda
-You can also deploy to AWS lambda function by following the steps in `servers/lambda/README.md`
-
 ## Nessie related repositories
 
 * [Nessie Demos](https://github.com/projectnessie/nessie-demos): Demos for Nessie
