@@ -15,11 +15,8 @@
  */
 
 plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-quarkus")
+  id("nessie-jacoco")
 }
 
 extra["maven.name"] = "Nessie - Quarkus Common"
@@ -74,5 +71,3 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 }
-
-buildForJava11()

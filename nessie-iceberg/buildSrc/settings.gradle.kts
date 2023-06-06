@@ -1,1 +1,0 @@
-../../buildSrc/settings.gradle.kts

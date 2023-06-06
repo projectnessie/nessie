@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  `nessie-conventions`
-}
+plugins { id("nessie-conventions-quarkus") }
 
 extra["maven.name"] = "Nessie - Quarkus Tests"
 
@@ -60,5 +55,3 @@ dependencies {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
   }
 }
-
-buildForJava11()

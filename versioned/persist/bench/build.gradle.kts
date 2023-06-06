@@ -17,13 +17,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-server")
+  id("nessie-shadow-jar")
 }
-
-apply<NessieShadowJarPlugin>()
 
 dependencies {
   implementation(project(":nessie-model"))

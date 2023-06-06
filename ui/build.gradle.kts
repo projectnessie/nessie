@@ -22,18 +22,23 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.internal.file.FileOperations
 
 plugins {
+  alias(libs.plugins.node.gradle)
   // The ':nessie-ui' module is technically not a Java library, but declaring it as such provides
-  // all
-  // the "essential" side effects: pre-configured "basic" tasks (clean, test, check, jar) plus
+  // all the "essential" side effects: pre-configured "basic" tasks (clean, test, check, jar) plus
   // Maven publications.
   `java-library`
   `maven-publish`
   signing
-  alias(libs.plugins.node.gradle)
-  `nessie-conventions`
+  id("nessie-common-base")
+  id("nessie-common-src")
+  id("nessie-java")
 }
 
 val dotGradle = rootProject.rootDir.resolve(".gradle")
+
+// Need to tell the build a Java target release.
+// There's only this project using node, so no need for a specialized convention script.
+tasks.withType<JavaCompile>().configureEach { options.release.set(11) }
 
 node {
   download.set(true)

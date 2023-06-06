@@ -19,15 +19,11 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.apache.tools.ant.util.NullOutputStream
 
 plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
   id("com.github.johnrengelman.shadow")
-  `nessie-conventions`
+  id("nessie-conventions-iceberg")
+  id("nessie-jacoco")
+  id("nessie-shadow-jar")
 }
-
-apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
 

@@ -15,9 +15,7 @@
  */
 
 plugins {
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-root")
   alias(libs.plugins.nexus.publish.plugin)
 }
 

@@ -16,7 +16,6 @@
 
 import com.github.vlsi.jandex.JandexProcessResources
 import java.io.File
-import java.io.FileInputStream
 import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.Action
@@ -31,7 +30,7 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.LogLevel
-import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.resources.TextResource
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -50,17 +49,6 @@ import org.gradle.kotlin.dsl.module
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
-
-/**
- * Configures the `JavaPluginExtension` to use Java 11, or a newer Java version explicitly
- * configured for testing.
- */
-fun Project.buildForJava11() {
-  extensions.findByType<JavaPluginExtension>()!!.run {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-}
 
 /**
  * Apply the given `sparkVersion` as a `strictly` version constraint and [withSparkExcludes] on the
@@ -174,6 +162,10 @@ fun DependencyHandlerScope.nessieProject(
   }
 }
 
+fun loadNessieProjects(root: Project) {
+  NessieProjects.load(root.resources.text.fromFile("gradle/projects.iceberg.properties"))
+}
+
 private class NessieProjects {
   companion object {
     fun groupIdForArtifact(artifactId: String): String {
@@ -181,17 +173,13 @@ private class NessieProjects {
       else "org.projectnessie.nessie"
     }
 
-    private val integrationsProjects: Set<String> = loadIntegrationsArtifactIds()
+    private var integrationsProjects: Set<String> = emptySet()
 
-    private fun loadIntegrationsArtifactIds(): Set<String> {
-      val f =
-        File(
-          "${System.getProperty("root-project.nessie-build")}/gradle/projects.iceberg.properties"
-        )
-      FileInputStream(f).use {
+    fun load(icebergProjects: TextResource) {
+      icebergProjects.asReader().use {
         val props = Properties()
         props.load(it)
-        return props.keys.map { k -> k.toString() }.toSet()
+        integrationsProjects = props.keys.map { k -> k.toString() }.toSet()
       }
     }
   }

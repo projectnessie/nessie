@@ -17,14 +17,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  id("org.projectnessie.buildsupport.reflectionconfig")
-  `nessie-conventions`
+  alias(libs.plugins.nessie.reflectionconfig)
+  id("nessie-conventions-server")
+  id("nessie-shadow-jar")
 }
-
-apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - Relocated Protobuf ${libs.protobuf.java.get().version}"
 

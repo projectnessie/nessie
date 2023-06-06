@@ -31,7 +31,6 @@ dependencies {
   implementation(baselibs.idea.ext)
   implementation(baselibs.shadow)
   implementation(baselibs.errorprone)
-  implementation(baselibs.nessie.buildsupport.reflectionconfig)
 
   testImplementation(platform(baselibs.junit.bom))
   testImplementation(baselibs.assertj.core)

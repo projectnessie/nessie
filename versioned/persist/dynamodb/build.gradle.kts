@@ -17,11 +17,8 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-server")
+  id("nessie-jacoco")
 }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - DynamoDB"

@@ -18,11 +18,9 @@ import io.quarkus.gradle.tasks.QuarkusBuild
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
   alias(libs.plugins.quarkus)
-  `nessie-conventions`
+  id("nessie-conventions-quarkus")
+  id("nessie-jacoco")
 }
 
 extra["maven.name"] = "Nessie - Quarkus Server"
@@ -113,8 +111,6 @@ dependencies {
 
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
 }
-
-buildForJava11()
 
 val pullOpenApiSpec by
   tasks.registering(Sync::class) {

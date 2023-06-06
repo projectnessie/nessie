@@ -15,10 +15,9 @@
  */
 
 plugins {
-  `java-library`
-  jacoco
+  id("nessie-conventions-iceberg")
+  id("nessie-jacoco")
   alias(libs.plugins.nessie.run)
-  `nessie-conventions`
 }
 
 extra["maven.name"] = "Nessie - GC - Integration tests"
