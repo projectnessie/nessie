@@ -18,6 +18,9 @@ package org.projectnessie.versioned.transfer.files;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.deleteIfExists;
+import static java.nio.file.Files.isRegularFile;
+import static java.nio.file.Files.move;
 import static java.nio.file.Files.newOutputStream;
 
 import java.io.BufferedOutputStream;
@@ -46,12 +49,18 @@ public abstract class ZipArchiveExporter implements ExportFileSupplier {
   abstract Path outputFile();
 
   @Value.Lazy
+  Path tempOutputFile() {
+    Path out = outputFile();
+    return out.resolveSibling("." + out.getFileName().toString() + ".tmp");
+  }
+
+  @Value.Lazy
   ZipOutputStream zipOutput() throws IOException {
     Path parent = outputFile().getParent();
     if (parent != null) {
       createDirectories(parent);
     }
-    return new ZipOutputStream(new BufferedOutputStream(newOutputStream(outputFile())));
+    return new ZipOutputStream(new BufferedOutputStream(newOutputStream(tempOutputFile())));
   }
 
   @Override
@@ -80,7 +89,14 @@ public abstract class ZipArchiveExporter implements ExportFileSupplier {
 
   @Override
   public void close() throws Exception {
-    zipOutput().close();
+    try {
+      zipOutput().close();
+    } finally {
+      deleteIfExists(outputFile());
+      if (isRegularFile(tempOutputFile())) {
+        move(tempOutputFile(), outputFile());
+      }
+    }
   }
 
   private static final class NonClosingOutputStream extends OutputStream {
