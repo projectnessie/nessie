@@ -85,6 +85,12 @@ public abstract class NessieExporter {
 
     Builder contentsBatchSize(int batchSize);
 
+    /**
+     * Optional, specify the number of commit log entries to be written at once, defaults to {@value
+     * ExportImportConstants#DEFAULT_COMMIT_BATCH_SIZE}.
+     */
+    Builder commitBatchSize(int commitBatchSize);
+
     NessieExporter build();
   }
 
@@ -165,6 +171,11 @@ public abstract class NessieExporter {
   @Value.Default
   int expectedCommitCount() {
     return ExportImportConstants.DEFAULT_EXPECTED_COMMIT_COUNT;
+  }
+
+  @Value.Default
+  int commitBatchSize() {
+    return ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE;
   }
 
   abstract ExportFileSupplier exportFileSupplier();
