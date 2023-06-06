@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Java project, non-client facing, server component, Java 11
+// Java project, non-client facing, server component, Java 8
 
 plugins {
   `java-library`
