@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
+import static com.google.cloud.bigtable.data.v2.models.Filters.FILTERS;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.protobuf.ByteString.copyFromUtf8;
 import static java.util.Objects.requireNonNull;
@@ -173,10 +174,9 @@ final class BigTableBackend implements Backend {
     BulkMutation bulkDelete = BulkMutation.create(tableId);
 
     Query.QueryPaginator paginator = Query.create(tableId).createPaginator(100);
-    ByteString lastKey;
-    Iterator<Row> rows = dataClient.readRows(paginator.getNextQuery()).iterator();
+    Iterator<Row> rows = dataClient.readRows(nextQuery(paginator)).iterator();
     while (true) {
-      lastKey = null;
+      ByteString lastKey = null;
       while (rows.hasNext()) {
         Row row = rows.next();
         lastKey = row.getKey();
@@ -193,7 +193,7 @@ final class BigTableBackend implements Backend {
         break;
       }
       paginator.advance(lastKey);
-      rows = dataClient.readRows(paginator.getNextQuery()).iterator();
+      rows = dataClient.readRows(nextQuery(paginator)).iterator();
     }
 
     if (bulkDelete.getEntryCount() > 0) {
@@ -201,9 +201,13 @@ final class BigTableBackend implements Backend {
     }
   }
 
+  private static Query nextQuery(Query.QueryPaginator paginator) {
+    return paginator.getNextQuery().filter(FILTERS.limit().cellsPerRow(1));
+  }
+
   @Override
   public String configInfo() {
-    return "";
+    return this.tableAdminClient != null ? "" : " (no admin client)";
   }
 
   static RuntimeException apiException(ApiException e) {

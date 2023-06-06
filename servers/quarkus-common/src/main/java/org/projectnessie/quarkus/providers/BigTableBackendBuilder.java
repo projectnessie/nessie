@@ -38,19 +38,14 @@ import org.slf4j.LoggerFactory;
 
 @StoreType(BIGTABLE)
 @Dependent
-// Disable the whole bean in native images
 public class BigTableBackendBuilder implements BackendBuilder {
   private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackendBuilder.class);
 
   @Inject QuarkusBigTableConfig bigTableConfig;
 
-  @Inject
-  // Needed despite the class-level annotation, otherwise the native build fails :(
-  Instance<CredentialsProvider> credentialsProviderInstance;
+  @Inject Instance<CredentialsProvider> credentialsProviderInstance;
 
-  @Inject
-  // Needed despite the class-level annotation, otherwise the native build fails :(
-  Instance<GcpConfigHolder> gcpConfigHolderInstance;
+  @Inject Instance<GcpConfigHolder> gcpConfigHolderInstance;
 
   @Override
   public Backend buildBackend() {
