@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.error.AccessCheckException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.BranchName;

@@ -16,6 +16,7 @@
 package org.projectnessie.services.authz;
 
 import java.util.Map;
+import org.projectnessie.error.AccessCheckException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
