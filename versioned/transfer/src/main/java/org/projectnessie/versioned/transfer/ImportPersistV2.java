@@ -50,7 +50,6 @@ final class ImportPersistV2 extends ImportPersistCommon {
   void prepareRepository() throws IOException {
     RepositoryDescriptionProto repositoryDescription = importer.loadRepositoryDescription();
 
-    persist.erase();
     repositoryLogic(persist)
         .initialize(
             repositoryDescription.getDefaultBranchName(),

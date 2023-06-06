@@ -114,7 +114,7 @@ public class ContentInfo extends BaseCommand {
               keysProcessed.get(), activeGlobalStateEntries.get(), missingContentFound.get());
     }
 
-    return missingContentFound.get() > 0 ? 3 : 0;
+    return missingContentFound.get() > 0 ? EXIT_CODE_CONTENT_ERROR : 0;
   }
 
   private void check(PrintWriter out) throws Exception {

@@ -18,6 +18,7 @@ package org.projectnessie.quarkus.cli;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -86,6 +87,11 @@ public class NessieInfo extends BaseCommand {
   @Override
   protected Integer callWithPersist() throws Exception {
     warnOnInMemory();
+
+    if (!repositoryLogic(persist).repositoryExists()) {
+      spec.commandLine().getErr().println("Nessie repository does not exist");
+      return EXIT_CODE_REPO_DOES_NOT_EXIST;
+    }
 
     ReferenceLogic referenceLogic = referenceLogic(persist);
     Reference defaultBranch =

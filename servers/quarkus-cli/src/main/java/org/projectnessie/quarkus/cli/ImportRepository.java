@@ -134,7 +134,7 @@ public class ImportRepository extends BaseCommand {
                         + "Provide the "
                         + ERASE_BEFORE_IMPORT
                         + " option if you want to erase the repository.");
-            return 100;
+            return EXIT_CODE_REPO_ALREADY_EXISTS;
           }
         }
       }
@@ -184,7 +184,10 @@ public class ImportRepository extends BaseCommand {
         builder.commitBatchSize(commitBatchSize);
       }
 
-      if (!erase && repositoryLogic(persist).repositoryExists()) {
+      if (erase) {
+        spec.commandLine().getOut().println("Erasing repository...");
+        persist.erase();
+      } else if (repositoryLogic(persist).repositoryExists()) {
         spec.commandLine()
             .getErr()
             .println(
@@ -192,7 +195,7 @@ public class ImportRepository extends BaseCommand {
                     + "Provide the "
                     + ERASE_BEFORE_IMPORT
                     + " option if you want to erase the repository.");
-        return 100;
+        return EXIT_CODE_REPO_ALREADY_EXISTS;
       }
 
       NessieImporter importer = builder.progressListener(new ImportProgressListener(out)).build();

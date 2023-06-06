@@ -23,6 +23,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.function.BiFunction;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
@@ -103,7 +104,20 @@ public class PersistProvider {
 
   @Produces
   @Singleton
+  @WIthInitializedRepository
+  public Persist produceWithInitializedRepository(@Default Persist persist) {
+    VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
+    if (!versionStoreType.isNewStorage()) {
+      return null;
+    }
+    repositoryLogic(persist).initialize(serverConfig.getDefaultBranch());
+    return persist;
+  }
+
+  @Produces
+  @Singleton
   @Startup
+  @Default
   public Persist producePersist() {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
     if (!versionStoreType.isNewStorage()) {
@@ -154,8 +168,6 @@ public class PersistProvider {
     }
 
     LOGGER.info("Using {} version store{}, {}, {}", versionStoreType, info, cacheInfo, tracingInfo);
-
-    repositoryLogic(persist).initialize(serverConfig.getDefaultBranch());
 
     return persist;
   }

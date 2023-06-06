@@ -19,6 +19,7 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
 
 import java.util.concurrent.Callable;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
@@ -41,11 +42,16 @@ public abstract class BaseCommand implements Callable<Integer> {
 
   @Spec CommandSpec spec;
 
+  public static final Integer EXIT_CODE_GENERIC_ERROR = 1;
+  public static final Integer EXIT_CODE_CONTENT_ERROR = 3;
+  public static final Integer EXIT_CODE_REPO_DOES_NOT_EXIST = 4;
+  public static final Integer EXIT_CODE_REPO_ALREADY_EXISTS = 100;
+
   @Override
   public final Integer call() throws Exception {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
     if (versionStoreType.isNewStorage()) {
-      persist = persistInstance.get();
+      persist = persistInstance.select(Default.Literal.INSTANCE).get();
       return callWithPersist();
     } else {
       databaseAdapter = databaseAdapterInstance.get();
@@ -63,7 +69,7 @@ public abstract class BaseCommand implements Callable<Integer> {
                     "Command '"
                         + spec.name()
                         + "' is not (yet) supported for new Nessie storage."));
-    return 1;
+    return EXIT_CODE_GENERIC_ERROR;
   }
 
   protected Integer callWithDatabaseAdapter() throws Exception {
@@ -76,7 +82,7 @@ public abstract class BaseCommand implements Callable<Integer> {
                     "Command '"
                         + spec.name()
                         + "' is not (yet) supported for old Nessie storage."));
-    return 1;
+    return EXIT_CODE_GENERIC_ERROR;
   }
 
   protected void warnOnInMemory() {

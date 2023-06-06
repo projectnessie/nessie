@@ -48,6 +48,11 @@ public class EraseRepository extends BaseCommand {
   protected Integer callWithPersist() {
     warnOnInMemory();
 
+    if (!repositoryLogic(persist).repositoryExists()) {
+      spec.commandLine().getErr().println("Nessie repository does not exist");
+      return EXIT_CODE_REPO_DOES_NOT_EXIST;
+    }
+
     String code = getConfirmationCode(persist);
     if (!code.equals(confirmationCode)) {
       spec.commandLine()
@@ -56,7 +61,7 @@ public class EraseRepository extends BaseCommand {
               "Please use the '--confirmation-code=%s' option to indicate that the"
                   + " repository erasure operation is intentional.%nAll Nessie data will be lost!%n",
               code);
-      return 1;
+      return EXIT_CODE_GENERIC_ERROR;
     }
 
     persist.erase();
@@ -82,7 +87,7 @@ public class EraseRepository extends BaseCommand {
               "Please use the '--confirmation-code=%s' option to indicate that the"
                   + " repository erasure operation is intentional.%nAll Nessie data will be lost!%n",
               code);
-      return 1;
+      return EXIT_CODE_GENERIC_ERROR;
     }
 
     databaseAdapter.eraseRepo();
