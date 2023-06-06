@@ -17,8 +17,6 @@ package org.projectnessie.versioned.transfer;
 
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
-import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.ADD;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.REMOVE;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
@@ -37,9 +35,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutExcepti
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.ImmutableRepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -74,12 +70,13 @@ abstract class ImportPersistCommon extends ImportCommon {
   @Override
   void importFinalize(HeadsAndForks headsAndForks) {
     try {
-      IndexesLogic indexesLogic = indexesLogic(persist);
       for (ByteString head : headsAndForks.getHeadsList()) {
         try {
-          indexesLogic.completeIndexesInCommitChain(
-              ObjId.objIdFromBytes(head),
-              () -> importer.progressListener().progress(ProgressEvent.FINALIZE_PROGRESS));
+          importer
+              .indexesLogic()
+              .completeIndexesInCommitChain(
+                  ObjId.objIdFromBytes(head),
+                  () -> importer.progressListener().progress(ProgressEvent.FINALIZE_PROGRESS));
         } catch (ObjNotFoundException e) {
           throw new RuntimeException(e);
         }
@@ -115,16 +112,15 @@ abstract class ImportPersistCommon extends ImportCommon {
 
   @Override
   void markRepositoryImported() {
-    RepositoryLogic repositoryLogic = repositoryLogic(importer.persist());
     RepositoryDescription initialDescription =
-        requireNonNull(repositoryLogic.fetchRepositoryDescription());
+        requireNonNull(importer.repositoryLogic().fetchRepositoryDescription());
     ImmutableRepositoryDescription updatedDescription =
         ImmutableRepositoryDescription.builder()
             .from(initialDescription)
             .repositoryImportedTime(importer.persist().config().clock().instant())
             .build();
     try {
-      repositoryLogic.updateRepositoryDescription(updatedDescription);
+      importer.repositoryLogic().updateRepositoryDescription(updatedDescription);
     } catch (RetryTimeoutException e) {
       throw new RuntimeException(e);
     }

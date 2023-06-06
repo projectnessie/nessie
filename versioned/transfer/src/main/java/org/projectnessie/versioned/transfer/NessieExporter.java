@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +24,11 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.storage.common.logic.CommitLogic;
+import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
+import org.projectnessie.versioned.storage.common.logic.Logics;
+import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
@@ -44,11 +47,16 @@ public abstract class NessieExporter {
 
   @SuppressWarnings("UnusedReturnValue")
   public interface Builder {
-    /** Specify the {@code DatabaseAdapter} to use. */
-    Builder databaseAdapter(DatabaseAdapter databaseAdapter);
-
     /** Specify the {@code Persist} to use. */
     Builder persist(Persist persist);
+
+    Builder commitLogic(CommitLogic commitLogic);
+
+    Builder referenceLogic(ReferenceLogic referenceLogic);
+
+    Builder repositoryLogic(RepositoryLogic repositoryLogic);
+
+    Builder indexesLogic(IndexesLogic indexesLogic);
 
     Builder versionStore(VersionStore store);
 
@@ -97,37 +105,35 @@ public abstract class NessieExporter {
     NessieExporter build();
   }
 
-  @Nullable
-  @jakarta.annotation.Nullable
-  abstract DatabaseAdapter databaseAdapter();
-
-  @Nullable
-  @jakarta.annotation.Nullable
   abstract Persist persist();
+
+  @Value.Default
+  CommitLogic commitLogic() {
+    return Logics.commitLogic(persist());
+  }
+
+  @Value.Default
+  ReferenceLogic referenceLogic() {
+    return Logics.referenceLogic(persist());
+  }
+
+  @Value.Default
+  RepositoryLogic repositoryLogic() {
+    return Logics.repositoryLogic(persist());
+  }
+
+  @Value.Default
+  IndexesLogic indexesLogic() {
+    return Logics.indexesLogic(persist());
+  }
 
   @Nullable
   abstract VersionStore versionStore();
 
   @Value.Lazy
   Clock clock() {
-    DatabaseAdapter databaseAdapter = databaseAdapter();
-    if (databaseAdapter != null) {
-      return databaseAdapter.getConfig().getClock();
-    }
-
     Persist persist = persist();
-    if (persist != null) {
-      return persist.config().clock();
-    }
-
-    throw new IllegalStateException("Neither DatabaseAdapter nor Persist are set.");
-  }
-
-  @Value.Check
-  void check() {
-    checkState(
-        persist() == null ^ databaseAdapter() == null,
-        "Must supply either persist() or databaseAdapter(), never both");
+    return persist.config().clock();
   }
 
   /**
@@ -200,10 +206,6 @@ public abstract class NessieExporter {
 
     if (contentsFromBranch() != null) {
       return new ExportContents(exportFiles, this).exportRepo();
-    }
-
-    if (databaseAdapter() != null) {
-      return new ExportDatabaseAdapter(exportFiles, this).exportRepo();
     }
 
     return new ExportPersist(exportFiles, this, ExportVersion.forNumber(exportVersion()))

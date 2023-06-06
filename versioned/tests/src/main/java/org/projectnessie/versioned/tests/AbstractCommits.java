@@ -21,7 +21,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -99,7 +98,6 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check the commit can be listed
    * - Check that the commit can be deleted
    */
-  @SuppressWarnings("UnstableApiUsage")
   @Test
   public void commitToBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
@@ -166,7 +164,6 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check keys for each commit hash
    * - Check values for each commit hash
    */
-  @SuppressWarnings("UnstableApiUsage")
   @Test
   public void commitSomeOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
@@ -261,7 +258,6 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check keys for each commit hash
    * - Check values for each commit hash
    */
-  @SuppressWarnings("UnstableApiUsage")
   @Test
   public void commitNonConflictingOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
@@ -398,90 +394,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check that branch state hasn't changed
    */
   @Test
-  public void commitConflictingOperationsLegacy() throws Exception {
-    assumeThat(isNewStorageModel()).isFalse();
-
-    BranchName branch = BranchName.of("foo");
-
-    store().create(branch, Optional.empty());
-
-    Hash initialCommit =
-        commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
-
-    Content t1 = store().getValue(branch, ContentKey.of("t1")).content();
-    store().getValue(branch, ContentKey.of("t2"));
-
-    Hash secondCommit =
-        commit("Second Commit")
-            .put("t1", V_1_2.withId(t1.getId()))
-            .delete("t2")
-            .put("t3", V_3_1)
-            .toBranch(branch);
-    store().getValue(branch, ContentKey.of("t3"));
-
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .put("t1", V_1_3)
-                    .toBranch(branch))
-        .isInstanceOf(ReferenceConflictException.class);
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .put("t2", V_2_2)
-                    .toBranch(branch))
-        .isInstanceOf(ReferenceConflictException.class);
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .put("t3", V_3_2)
-                    .toBranch(branch))
-        .isInstanceOf(ReferenceConflictException.class);
-
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .delete("t1")
-                    .toBranch(branch))
-        .isInstanceOf(ReferenceConflictException.class);
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .delete("t2")
-                    .toBranch(branch))
-        .isInstanceOf(ReferenceConflictException.class);
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .delete("t3")
-                    .toBranch(branch))
-        .isInstanceOf(ReferenceConflictException.class);
-
-    // Checking the state hasn't changed
-    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
-        .isEqualTo(secondCommit);
-  }
-
-  /*
-   * Test:
-   * - Create a new branch
-   * - Add a commit to create 2 keys
-   * - Add a second commit to delete one key and add a new one
-   * - Check that put operations against 1st commit for the 3 keys fail
-   * - Check that delete operations against 1st commit for the 3 keys fail
-   * - Check that unchanged operations against 1st commit for the 3 keys fail
-   * - Check that branch state hasn't changed
-   */
-  @Test
   public void commitConflictingOperations() throws Exception {
-    assumeThat(isNewStorageModel()).isTrue();
-
     BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -892,7 +805,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                         ops));
 
     if (reuseContentKey) {
-      if (order == DELETE_THEN_PUT && !reuseContentId && isNewStorageModel()) {
+      if (order == DELETE_THEN_PUT && !reuseContentId) {
         // re-add (DELETE + PUT with same key but without id) allowed with new storage
         soft.assertThat(error).isNull();
       } else {
@@ -1046,7 +959,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             (k, c) -> {});
   }
 
-  static Stream<Arguments> duplicateKeysNewStorage() {
+  static Stream<Arguments> duplicateKeys() {
     ContentKey key = ContentKey.of("my.awesome.table");
     String tableRefState = "table ref state";
     Content createValue1 = newOnRef("no no - not this");
@@ -1064,46 +977,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @MethodSource("duplicateKeysNewStorage")
-  void duplicateKeysNewStorage(Operation operation1, Operation operation2) {
-    assumeThat(isNewStorageModel()).isTrue();
-
-    BranchName branch = BranchName.of("main");
-    ContentKey key = ContentKey.of("my.awesome.table");
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("initial"),
-                        Arrays.asList(operation1, operation2)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(key.toString());
-  }
-
-  static Stream<Arguments> duplicateKeysOldStorage() {
-    ContentKey key = ContentKey.of("my.awesome.table");
-    String tableRefState = "table ref state";
-    Content createValue1 = newOnRef("no no - not this");
-    Content createValue2 = newOnRef(tableRefState);
-    return Stream.of(
-        Arguments.of(Put.of(key, createValue1), Put.of(key, createValue2)),
-        Arguments.of(Put.of(key, createValue2), Delete.of(key)),
-        Arguments.of(Put.of(key, createValue2), Unchanged.of(key)),
-        Arguments.of(Delete.of(key), Put.of(key, createValue2)), // re-add => not allowed
-        // Arguments.of(Delete.of(key), Delete.of(key)), // allowed in old storage
-        Arguments.of(Delete.of(key), Unchanged.of(key)),
-        Arguments.of(Unchanged.of(key), Put.of(key, createValue2)),
-        Arguments.of(Unchanged.of(key), Delete.of(key)),
-        Arguments.of(Unchanged.of(key), Unchanged.of(key)));
-  }
-
-  @ParameterizedTest
-  @MethodSource("duplicateKeysOldStorage")
-  void duplicateKeysOldStorage(Operation operation1, Operation operation2) {
-    assumeThat(isNewStorageModel()).isFalse();
-
+  @MethodSource("duplicateKeys")
+  void duplicateKeys(Operation operation1, Operation operation2) {
     BranchName branch = BranchName.of("main");
     ContentKey key = ContentKey.of("my.awesome.table");
     soft.assertThatThrownBy(

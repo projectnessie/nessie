@@ -47,6 +47,9 @@ are outlined below.
 
 ### Version Store and Database Adapters
 
+**The information on this page is outdated. `DatabaseAdapter` has been replaced with `Persist`
+along with its own `VersionStore` implementation.**
+
 Nessie's REST API implementation works against the `VersionStore` interface, which defines the
 contract for the REST API, deals with concrete contents objects like `IcebergTable` or
 `DeltaLakeTable`.
@@ -71,6 +74,8 @@ to retrieve information. There are these subclasses:
   * SQL/DDL/type definitions for Postgres, Cockroach, H2
 
 ### Non-transactional key-value databases
+
+**The information on this page is outdated. "global state" has been removed from Nessie.**
 
 The data model for non-transactional key-value databases relies on a single _global-state-pointer_,
 which is technically a table with a single row pointing to the _current_ entry in the _global-log_,

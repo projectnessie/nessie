@@ -17,7 +17,6 @@ package org.projectnessie.services.impl;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.abort;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 
 import java.util.Arrays;
@@ -61,28 +60,6 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
     Branch defaultBranch = treeApi().getDefaultBranch();
     Branch branch =
         ensureNamespacesForKeysExist(createBranch("entriesPaging"), ContentKey.of("key", "0"));
-    try {
-      diffApi()
-          .getDiff(
-              branch.getName(),
-              branch.getHash(),
-              defaultBranch.getName(),
-              defaultBranch.getHash(),
-              "666f6f",
-              new UnlimitedListResponseHandler<>(),
-              h -> {},
-              h -> {},
-              null,
-              null,
-              null,
-              null,
-              null);
-    } catch (IllegalArgumentException e) {
-      if (!e.getMessage().contains("Paging not supported")) {
-        throw e;
-      }
-      abort("DatabaseAdapter implementations / PersistVersionStore do not support paging");
-    }
 
     IntFunction<ContentKey> contentKey = i -> ContentKey.of("key", Integer.toString(i));
     IntFunction<IcebergTable> table = i -> IcebergTable.of("meta" + i, 1, 2, 3, 4);

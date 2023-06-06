@@ -110,7 +110,7 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             CommitMeta::getHash)
         .containsExactly(
             "NessieHerself",
-            isNewStorageModel() ? "NessieHerself" : "ThatNessieGuy",
+            "NessieHerself",
             format(
                 "Merged %s at %s into %s at %s",
                 main.getName(), main.getHash(), merge.getName(), merge.getHash()),

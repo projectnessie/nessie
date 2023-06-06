@@ -37,8 +37,8 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.paging.PaginationIterator;
-import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.storage.common.objtypes.Hashes;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
@@ -56,7 +56,7 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.RefType;
 final class ExportContents extends ExportCommon {
   private final VersionStore store;
 
-  private ByteString lastCommitId = AbstractDatabaseAdapter.NO_ANCESTOR.asBytes();
+  private ByteString lastCommitId = ObjId.EMPTY_OBJ_ID.asBytes();
 
   ExportContents(ExportFileSupplier exportFiles, NessieExporter exporter) {
     super(exportFiles, exporter);

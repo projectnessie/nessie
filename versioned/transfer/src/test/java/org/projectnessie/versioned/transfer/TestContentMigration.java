@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,13 +42,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackendName;
@@ -58,31 +52,33 @@ import org.projectnessie.versioned.transfer.files.FileExporter;
 import org.projectnessie.versioned.transfer.files.FileImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 
-@ExtendWith(SoftAssertionsExtension.class)
-@ExtendWith({PersistExtension.class, DatabaseAdapterExtension.class})
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
 @NessieBackendName(InmemoryBackendFactory.NAME)
-public class TestContentMigrationToPersist {
+public class TestContentMigration {
   @InjectSoftAssertions protected SoftAssertions soft;
-  @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
-  @NessieDbAdapter protected static VersionStore srcStore;
+  protected static VersionStore srcStore;
 
-  @NessiePersist protected static Persist persist;
+  @NessiePersist protected static Persist srcPersist;
+  @NessiePersist protected static Persist destPersist;
 
   @TempDir Path dir;
 
+  @BeforeAll
+  static void setup() {
+    srcStore = new VersionStoreImpl(srcPersist);
+  }
+
   private VersionStore prepareTargetRepo() {
     // Erase and re-initialize repository
-    persist.erase();
-    repositoryLogic(persist).initialize("main", false, b -> {});
-    return new VersionStoreImpl(persist);
+    destPersist.erase();
+    repositoryLogic(destPersist).initialize("main", false, b -> {});
+    return new VersionStoreImpl(destPersist);
   }
 
   private void importRepo() throws IOException {
     NessieImporter importer =
         NessieImporter.builder()
-            .persist(persist)
+            .persist(destPersist)
             .importFileSupplier(FileImporter.builder().sourceDirectory(dir).build())
             .build();
     importer.importNessieRepository();
@@ -91,7 +87,7 @@ public class TestContentMigrationToPersist {
   private ExportMeta exportRepo(String branchName, int batchSize) throws IOException {
     NessieExporter exporter =
         NessieExporter.builder()
-            .databaseAdapter(databaseAdapter)
+            .persist(srcPersist)
             .versionStore(srcStore)
             .contentsFromBranch(branchName)
             .contentsBatchSize(batchSize)

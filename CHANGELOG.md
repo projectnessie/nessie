@@ -23,8 +23,14 @@ as necessary. Empty sections will not end in the release notes.
     ```cql
     ALTER TABLE <keyspace>.objs ADD x_class text, ADD x_data blob;
     ```
+- When using one of the legacy and deprecated version-store implementations based on "database adapter",
+  make sure to migrate to the new storage model **before** upgrading to this version or newer Nessie
+  versions.
 
 ### Breaking changes
+
+- The deprecated version-store implementations based on "database datapter" have been removed from the
+  code base.
 
 ### New Features
 

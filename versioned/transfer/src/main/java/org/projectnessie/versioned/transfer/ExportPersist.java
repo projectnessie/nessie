@@ -16,13 +16,8 @@
 package org.projectnessie.versioned.transfer;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Objects.requireNonNull;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
-import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,19 +40,15 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
-import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.HeadsAndForkPoints;
 import org.projectnessie.versioned.storage.common.logic.IdentifyHeadsAndForkPoints;
-import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
-import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.versionstore.RefMapping;
 import org.projectnessie.versioned.storage.versionstore.TypeMapping;
@@ -109,16 +100,13 @@ final class ExportPersist extends ExportCommon {
   }
 
   private HeadsAndForkPoints scanAllReferences(Consumer<CommitObj> commitHandler) {
-    Persist persist = persist();
-
     IdentifyHeadsAndForkPoints identify =
         new IdentifyHeadsAndForkPoints(
-            exporter.expectedCommitCount(), persist.config().currentTimeMicros());
+            exporter.expectedCommitCount(), exporter.persist().config().currentTimeMicros());
 
-    ReferenceLogic referenceLogic = referenceLogic(persist);
-    CommitLogic commitLogic = commitLogic(persist);
     String referencePrefix = exportVersion == ExportVersion.V2 ? null : RefMapping.REFS;
-    referenceLogic
+    exporter
+        .referenceLogic()
         .queryReferences(referencesQuery(referencePrefix))
         .forEachRemaining(
             ref -> {
@@ -127,7 +115,8 @@ final class ExportPersist extends ExportCommon {
               while (!commitsToProcess.isEmpty()) {
                 ObjId id = commitsToProcess.removeFirst();
                 if (identify.isCommitNew(id)) {
-                  Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
+                  Iterator<CommitObj> commitIter =
+                      exporter.commitLogic().commitLog(commitLogQuery(id));
                   while (commitIter.hasNext()) {
                     CommitObj commit = commitIter.next();
                     if (!identify.handleCommit(commit)) {
@@ -148,16 +137,16 @@ final class ExportPersist extends ExportCommon {
   }
 
   private HeadsAndForkPoints scanDatabase(Consumer<CommitObj> commitHandler) {
-    CommitLogic commitLogic = commitLogic(persist());
-    return commitLogic.identifyAllHeadsAndForkPoints(exporter.expectedCommitCount(), commitHandler);
+    return exporter
+        .commitLogic()
+        .identifyAllHeadsAndForkPoints(exporter.expectedCommitCount(), commitHandler);
   }
 
   @Override
   void exportReferences(ExportContext exportContext) {
-    ReferenceLogic referenceLogic = referenceLogic(persist());
     String referencePrefix = exportVersion == ExportVersion.V2 ? null : RefMapping.REFS;
     for (PagedResult<Reference, String> refs =
-            referenceLogic.queryReferences(referencesQuery(referencePrefix));
+            exporter.referenceLogic().queryReferences(referencesQuery(referencePrefix));
         refs.hasNext(); ) {
       Reference reference = refs.next();
       if (exportVersion == ExportVersion.V1) {
@@ -195,12 +184,12 @@ final class ExportPersist extends ExportCommon {
   @Override
   void writeRepositoryDescription() throws IOException {
     RepositoryDescription repositoryDescription =
-        repositoryLogic(exporter.persist()).fetchRepositoryDescription();
+        exporter.repositoryLogic().fetchRepositoryDescription();
     if (repositoryDescription != null) {
       writeRepositoryDescription(
           RepositoryDescriptionProto.newBuilder()
               .putAllProperties(repositoryDescription.properties())
-              .setRepositoryId(persist().config().repositoryId())
+              .setRepositoryId(exporter.persist().config().repositoryId())
               .setRepositoryCreatedTimestampMillis(
                   repositoryDescription.repositoryCreatedTime().toEpochMilli())
               .setOldestCommitTimestampMillis(
@@ -211,19 +200,16 @@ final class ExportPersist extends ExportCommon {
   }
 
   private void mapCommitObjs(List<CommitObj> commitObjs, ExportContext exportContext) {
-    IndexesLogic indexesLogic = indexesLogic(exporter.persist());
-
-    Map<ObjId, Obj> objs = fetchReferencedObjs(commitObjs, indexesLogic);
+    Map<ObjId, Obj> objs = fetchReferencedObjs(commitObjs);
 
     for (CommitObj c : commitObjs) {
-      Commit commit = mapCommitObj(c, indexesLogic, objs);
+      Commit commit = mapCommitObj(c, objs);
       exportContext.writeCommit(commit);
       exporter.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
     }
   }
 
-  private Map<ObjId, Obj> fetchReferencedObjs(
-      List<CommitObj> commitObjs, IndexesLogic indexesLogic) {
+  private Map<ObjId, Obj> fetchReferencedObjs(List<CommitObj> commitObjs) {
     try {
       ObjId[] valueIds =
           commitObjs.stream()
@@ -231,7 +217,7 @@ final class ExportPersist extends ExportCommon {
                   c ->
                       StreamSupport.stream(
                               spliteratorUnknownSize(
-                                  indexesLogic.commitOperations(c).iterator(), 0),
+                                  exporter.indexesLogic().commitOperations(c).iterator(), 0),
                               false)
                           .map(op -> op.content().value())
                           .filter(Objects::nonNull))
@@ -239,7 +225,7 @@ final class ExportPersist extends ExportCommon {
               .toArray(ObjId[]::new);
 
       return valueIds.length > 0
-          ? Arrays.stream(persist().fetchObjs(valueIds))
+          ? Arrays.stream(exporter.persist().fetchObjs(valueIds))
               .filter(Objects::nonNull)
               .collect(Collectors.toMap(Obj::id, Function.identity()))
           : emptyMap();
@@ -248,7 +234,7 @@ final class ExportPersist extends ExportCommon {
     }
   }
 
-  private Commit mapCommitObj(CommitObj c, IndexesLogic indexesLogic, Map<ObjId, Obj> objs) {
+  private Commit mapCommitObj(CommitObj c, Map<ObjId, Obj> objs) {
     Commit.Builder b =
         Commit.newBuilder()
             .setCommitId(c.id().asBytes())
@@ -271,7 +257,8 @@ final class ExportPersist extends ExportCommon {
         .keySet()
         .forEach(h -> b.addHeadersBuilder().setName(h).addAllValues(c.headers().getAll(h)));
     c.secondaryParents().forEach(p -> b.addAdditionalParents(p.asBytes()));
-    indexesLogic
+    exporter
+        .indexesLogic()
         .commitOperations(c)
         .forEach(
             op -> {
@@ -306,9 +293,5 @@ final class ExportPersist extends ExportCommon {
               }
             });
     return b.build();
-  }
-
-  private Persist persist() {
-    return requireNonNull(exporter.persist());
   }
 }

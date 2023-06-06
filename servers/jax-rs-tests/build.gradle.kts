@@ -43,14 +43,9 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
-  testImplementation(project(":nessie-versioned-persist-non-transactional"))
-  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
-  testImplementation(project(":nessie-versioned-persist-transactional"))
-  testImplementation(project(":nessie-versioned-persist-transactional-test"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testImplementation(project(":nessie-versioned-storage-jdbc"))
+  testRuntimeOnly(libs.agroal.pool)
 
   testImplementation(project(":nessie-jaxrs-testextension"))
 

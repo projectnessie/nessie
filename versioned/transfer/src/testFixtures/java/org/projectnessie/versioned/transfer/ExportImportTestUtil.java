@@ -15,23 +15,30 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static java.util.Collections.emptyList;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndexes;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 final class ExportImportTestUtil {
   private ExportImportTestUtil() {}
 
   static final ObjectMapper MAPPER = new ObjectMapper();
+
+  static ObjId intToObjId(int i) {
+    return objIdFromString(String.format("%08x", i));
+  }
 
   static Hash intToHash(int i) {
     return Hash.of(String.format("%08x", i));
@@ -48,24 +55,23 @@ final class ExportImportTestUtil {
     }
   }
 
-  static CommitLogEntry toCommitLogEntry(int i) {
-    return toCommitLogEntry(i, 0);
+  static CommitObj toCommitObj(int i) {
+    return toCommitObj(i, 0);
   }
 
-  static CommitLogEntry toCommitLogEntry(int branchAndCommit, int commitsBetweenBranches) {
-    return CommitLogEntry.of(
-        100L + branchAndCommit,
-        intToHash(branchAndCommit),
-        commitSeq(branchAndCommit, commitsBetweenBranches),
-        Collections.singletonList(parentCommitHash(branchAndCommit, commitsBetweenBranches)),
-        commitMeta(branchAndCommit),
-        emptyList(),
-        emptyList(),
-        Integer.MAX_VALUE - 1,
-        null,
-        emptyList(),
-        emptyList(),
-        emptyList());
+  static final ByteString EMPTY_COMMIT_INDEX =
+      StoreIndexes.emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize();
+
+  static CommitObj toCommitObj(int branchAndCommit, int commitsBetweenBranches) {
+    return CommitObj.commitBuilder()
+        .id(intToObjId(branchAndCommit))
+        .created(100L + branchAndCommit)
+        .seq(commitSeq(branchAndCommit, commitsBetweenBranches))
+        .addTail(parentCommitId(branchAndCommit, commitsBetweenBranches))
+        .message("commit # " + branchAndCommit)
+        .headers(EMPTY_COMMIT_HEADERS)
+        .incrementalIndex(EMPTY_COMMIT_INDEX)
+        .build();
   }
 
   static long commitSeq(int branchAndCommit, int commitsBetweenBranches) {
@@ -76,6 +82,17 @@ final class ExportImportTestUtil {
     int num = branchAndCommit & 0xffff;
     int off = commitsBetweenBranches * branch;
     return 1L + off + num;
+  }
+
+  static ObjId parentCommitId(int branchAndCommit, int commitsBetweenBranches) {
+    int branch = branchAndCommit >> 16;
+    if (branch > 0 && commitsBetweenBranches > 0) {
+      int num = branchAndCommit & 0xffff;
+      if (num == 0) {
+        return intToObjId(branch * commitsBetweenBranches);
+      }
+    }
+    return intToObjId(branchAndCommit - 1);
   }
 
   static Hash parentCommitHash(int branchAndCommit, int commitsBetweenBranches) {

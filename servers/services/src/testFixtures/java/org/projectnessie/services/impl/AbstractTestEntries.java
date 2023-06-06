@@ -19,7 +19,6 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.junit.jupiter.api.Assumptions.abort;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 
 import com.google.common.collect.ImmutableList;
@@ -59,27 +58,6 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
   public void entriesPaging(int numKeys) throws BaseNessieClientServerException {
     Branch branch =
         ensureNamespacesForKeysExist(createBranch("entriesPaging"), ContentKey.of("key", "0"));
-    try {
-      treeApi()
-          .getEntries(
-              branch.getName(),
-              branch.getHash(),
-              null,
-              null,
-              "666f6f",
-              false,
-              new UnlimitedListResponseHandler<>(),
-              h -> {},
-              null,
-              null,
-              null,
-              null);
-    } catch (IllegalArgumentException e) {
-      if (!e.getMessage().contains("Paging not supported")) {
-        throw e;
-      }
-      abort("DatabaseAdapter implementations / PersistVersionStore do not support paging");
-    }
 
     IntFunction<ContentKey> contentKey = i -> ContentKey.of("key", Integer.toString(i));
     IntFunction<IcebergTable> table = i -> IcebergTable.of("meta" + i, 1, 2, 3, 4);

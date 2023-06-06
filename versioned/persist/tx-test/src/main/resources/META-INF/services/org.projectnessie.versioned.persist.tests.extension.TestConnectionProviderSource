@@ -1,5 +1,0 @@
-org.projectnessie.versioned.persist.tx.local.GenericJdbcTestConnectionProviderSource
-org.projectnessie.versioned.persist.tx.h2.H2TestConnectionProviderSource
-# Note: The CockroachTestConnectionProviderSource + PostgresTestConnectionProviderSource are
-# intentionally not discoverable via ServiceLoader, because those start up Docker containers,
-# which should only happen in integration tests, but not in microbenchmarks or simple unit tests.

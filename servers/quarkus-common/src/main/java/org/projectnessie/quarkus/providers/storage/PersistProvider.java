@@ -78,9 +78,6 @@ public class PersistProvider {
   @Startup
   public Backend produceBackend() {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
-    if (!versionStoreType.isNewStorage()) {
-      return null;
-    }
 
     if (backendBuilder.isUnsatisfied()) {
       throw new IllegalStateException("No Quarkus backend implementation for " + versionStoreType);
@@ -104,10 +101,6 @@ public class PersistProvider {
   @Singleton
   @WIthInitializedRepository
   public Persist produceWithInitializedRepository(@Default Persist persist) {
-    VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
-    if (!versionStoreType.isNewStorage()) {
-      return null;
-    }
     repositoryLogic(persist).initialize(serverConfig.getDefaultBranch());
     return persist;
   }
@@ -118,9 +111,6 @@ public class PersistProvider {
   @NotObserved
   public Persist producePersist(MeterRegistry meterRegistry) {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
-    if (!versionStoreType.isNewStorage()) {
-      return null;
-    }
 
     if (backend.isUnsatisfied()) {
       throw new IllegalStateException("No Quarkus backend for " + versionStoreType);

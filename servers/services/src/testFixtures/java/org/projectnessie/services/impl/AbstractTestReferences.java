@@ -18,7 +18,6 @@ package org.projectnessie.services.impl;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assumptions.abort;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 import static org.projectnessie.model.FetchOption.MINIMAL;
@@ -59,15 +58,6 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
   @ParameterizedTest
   @ValueSource(ints = {0, 20, 22})
   public void referencesPaging(int numRefs) throws BaseNessieClientServerException {
-    try {
-      treeApi().getAllReferences(MINIMAL, null, "666f6f", new UnlimitedListResponseHandler<>());
-    } catch (IllegalArgumentException e) {
-      if (!e.getMessage().contains("Paging not supported")) {
-        throw e;
-      }
-      abort("DatabaseAdapter implementations / PersistVersionStore do not support paging");
-    }
-
     Branch defaultBranch = treeApi().getDefaultBranch();
     int pageSize = 5;
 

@@ -39,19 +39,10 @@ dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-server-store"))
-  implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-transfer"))
   implementation(project(":nessie-versioned-transfer-proto"))
   implementation(project(":nessie-model"))
-
-  implementation(project(":nessie-versioned-persist-store"))
-  implementation(project(":nessie-versioned-persist-non-transactional"))
-  implementation(project(":nessie-versioned-persist-in-memory"))
-  implementation(project(":nessie-versioned-persist-dynamodb"))
-  implementation(project(":nessie-versioned-persist-mongodb"))
-  implementation(project(":nessie-versioned-persist-rocks"))
-  implementation(project(":nessie-versioned-persist-transactional"))
 
   implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-storage-bigtable"))
@@ -88,8 +79,6 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   testFixturesApi(project(":nessie-quarkus-tests"))
-  testFixturesImplementation(project(":nessie-versioned-persist-adapter"))
-  intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testFixturesApi(project(":nessie-versioned-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb"))
   testFixturesApi(project(":nessie-versioned-storage-testextension"))

@@ -69,29 +69,23 @@ want to overwrite an existing Nessie repository, then use the `--erase-before-im
 ```java
 class CodeExamples {
 
-  void exportExample(DatabaseAdapter databaseAdapter, Path exportZipFile) {
+  void exportExample(Persist persist, Path exportZipFile) {
 
     ZipArchiveExporter.builder()
       .outputFile(exportZipFile)
-      .databaseAdapter(databaseAdapter)
+      .persist(persist)
       .build()
       .exportNessieRepository();
   }
 
-  void importExample(DatabaseAdapter databaseAdapter, Path importZipFile) {
+  void importExample(Persist persist, Path importZipFile) {
 
     ImportResult importResult =
       ZipArchiveImporter.builder()
         .sourceZipFile(importZipFile)
-        .databaseAdapter(databaseAdapter)
+        .persist(persist)
         .build()
         .importNessieRepository();
-
-    CommitLogOptimization.builder()
-      .headsAndForks(importResult.headsAndForkPoints())
-      .databaseAdapter(databaseAdapter)
-      .build()
-      .optimize();
   }
 }
 ```

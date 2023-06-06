@@ -16,7 +16,6 @@
 package org.projectnessie.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.util.Preconditions.checkState;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
@@ -71,18 +70,12 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.store.PersistVersionStore;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class BaseTestServiceImpl {
-
-  @NessieDbAdapter(initializeRepo = false)
-  DatabaseAdapter databaseAdapter;
 
   @NessiePersist(initializeRepo = false)
   Persist persist;
@@ -150,30 +143,12 @@ public abstract class BaseTestServiceImpl {
   }
 
   protected VersionStore versionStore() {
-    if (persist != null) {
-      checkState(
-          databaseAdapter == null,
-          "Either Persist or DatabaseAdapter should be present - never both");
-      return new VersionStoreImpl(persist);
-    }
-    if (databaseAdapter != null) {
-      return new PersistVersionStore(databaseAdapter);
-    }
-    throw new IllegalStateException("Neither Persist nor DatabaseAdapter instance present");
-  }
-
-  protected boolean isNewStorageModel() {
-    return versionStore().getClass().getName().endsWith("VersionStoreImpl");
+    return new VersionStoreImpl(persist);
   }
 
   @BeforeEach
   protected void setup() {
-    if (persist != null) {
-      repositoryLogic(persist).initialize(config().getDefaultBranch());
-    }
-    if (databaseAdapter != null) {
-      databaseAdapter.initializeRepo(config().getDefaultBranch());
-    }
+    repositoryLogic(persist).initialize(config().getDefaultBranch());
   }
 
   @AfterEach
@@ -182,9 +157,6 @@ public abstract class BaseTestServiceImpl {
     principal = null;
     if (persist != null) {
       persist.erase();
-    }
-    if (databaseAdapter != null) {
-      databaseAdapter.eraseRepo();
     }
   }
 

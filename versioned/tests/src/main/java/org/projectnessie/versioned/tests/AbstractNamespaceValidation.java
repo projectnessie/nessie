@@ -71,9 +71,8 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
   @ParameterizedTest
   @MethodSource("contentKeys")
   void commitWithNonExistingNamespace(ContentKey key) throws Exception {
-
     assumeTrue(
-        key.getElementCount() == 2 || !isNewStorageModel(),
+        key.getElementCount() == 2,
         "multiple missing namespaces are tested separately below for the new storage");
 
     BranchName branch = BranchName.of("commitWithNonExistingNamespace");
@@ -128,8 +127,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
   }
 
   @Test
-  void commitWithNonExistingNamespaceMultipleNewStorage() throws Exception {
-    assumeTrue(isNewStorageModel());
+  void commitWithNonExistingNamespaceMultiple() throws Exception {
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("a", "b");
     ContentKey c = ContentKey.of("a", "b", "c");

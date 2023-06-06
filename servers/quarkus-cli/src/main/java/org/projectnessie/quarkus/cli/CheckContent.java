@@ -34,22 +34,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
-import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.versionstore.ContentMapping;
 import org.projectnessie.versioned.storage.versionstore.RefMapping;
-import org.projectnessie.versioned.store.DefaultStoreWorker;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -113,14 +107,8 @@ public class CheckContent extends BaseCommand {
   private JsonGenerator generator;
 
   @Override
-  protected Integer callWithPersist() throws Exception {
+  public Integer call() throws Exception {
     ops = new PersistOps();
-    return check();
-  }
-
-  @Override
-  protected Integer callWithDatabaseAdapter() throws Exception {
-    ops = new DatabaseAdapterOps();
     return check();
   }
 
@@ -316,45 +304,6 @@ public class CheckContent extends BaseCommand {
         }
       }
       return index;
-    }
-  }
-
-  class DatabaseAdapterOps implements Ops {
-    @Override
-    public Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
-      return databaseAdapter.namedRef(effectiveRef, GetNamedRefsParams.DEFAULT).getHash();
-    }
-
-    @Override
-    public void iterateKeys(Hash hash) throws ReferenceNotFoundException {
-      List<ContentKey> batch = new ArrayList<>(batchSize);
-      try (Stream<KeyListEntry> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
-        keys.forEach(
-            keyListEntry -> {
-              batch.add(keyListEntry.getKey());
-              if (batch.size() >= batchSize) {
-                check(hash, batch);
-                batch.clear();
-              }
-            });
-      }
-      check(hash, batch); // check remaining keys
-    }
-
-    @Override
-    public Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
-        throws ReferenceNotFoundException {
-      return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
-          .map(
-              entry ->
-                  Map.entry(
-                      entry.getKey(),
-                      DefaultStoreWorker.instance()
-                          .valueFromStore(
-                              entry.getValue().getPayload(),
-                              entry.getValue().getRefState(),
-                              entry.getValue()::getGlobalState)))
-          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
   }
 }

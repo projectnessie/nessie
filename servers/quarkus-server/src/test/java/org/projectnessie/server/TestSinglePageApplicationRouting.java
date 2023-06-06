@@ -21,10 +21,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 @QuarkusTest
-@TestProfile(QuarkusTestProfileInmemory.class)
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
 class TestSinglePageApplicationRouting {
 
   @Test

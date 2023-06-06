@@ -23,16 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ReferenceInfo;
-import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
-import org.projectnessie.versioned.persist.adapter.ImmutableHeadsAndForkPoints;
-import org.projectnessie.versioned.transfer.CommitLogOptimization;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.ImportResult;
 import org.projectnessie.versioned.transfer.NessieImporter;
@@ -42,7 +32,6 @@ import org.projectnessie.versioned.transfer.files.FileImporter;
 import org.projectnessie.versioned.transfer.files.ImportFileSupplier;
 import org.projectnessie.versioned.transfer.files.ZipArchiveImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import picocli.CommandLine;
 import picocli.CommandLine.PicocliException;
 
@@ -84,11 +73,6 @@ public class ImportRepository extends BaseCommand {
   private Integer inputBufferSize;
 
   @CommandLine.Option(
-      names = NO_OPTIMIZE,
-      description = "Do not run commit log optimization after importing the repository.")
-  private boolean noOptimize;
-
-  @CommandLine.Option(
       names = {"-e", ERASE_BEFORE_IMPORT},
       description = {
         "Erase an existing repository before the import is started.",
@@ -98,77 +82,7 @@ public class ImportRepository extends BaseCommand {
   private boolean erase;
 
   @Override
-  protected Integer callWithDatabaseAdapter() throws Exception {
-    warnOnInMemory();
-
-    PrintWriter out = spec.commandLine().getOut();
-
-    out.printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
-
-    long t0 = System.nanoTime();
-    try (ImportFileSupplier importFileSupplier = createImportFileSupplier()) {
-
-      NessieImporter.Builder builder =
-          NessieImporter.builder()
-              .importFileSupplier(importFileSupplier)
-              .databaseAdapter(databaseAdapter);
-      if (commitBatchSize != null) {
-        builder.commitBatchSize(commitBatchSize);
-      }
-
-      if (!erase) {
-        try (Stream<ReferenceInfo<ByteString>> refs =
-                databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT);
-            Stream<CommitLogEntry> commits = databaseAdapter.scanAllCommitLogEntries()) {
-          AtomicReference<ReferenceInfo<ByteString>> ref = new AtomicReference<>();
-          long refCount = refs.peek(ref::set).count();
-          boolean hasCommit = commits.findAny().isPresent();
-
-          if (hasCommit
-              || refCount > 1
-              || (refCount == 1 && !ref.get().getHash().equals(databaseAdapter.noAncestorHash()))) {
-            spec.commandLine()
-                .getErr()
-                .println(
-                    "The Nessie repository already exists and is not empty, aborting. "
-                        + "Provide the "
-                        + ERASE_BEFORE_IMPORT
-                        + " option if you want to erase the repository.");
-            return EXIT_CODE_REPO_ALREADY_EXISTS;
-          }
-        }
-      }
-
-      ImportResult importResult =
-          builder
-              .progressListener(new ImportProgressListener(out))
-              .build()
-              .importNessieRepository();
-
-      out.printf(
-          "Imported Nessie repository, %d commits, %d named references.%n",
-          importResult.importedCommitCount(), importResult.importedReferenceCount());
-
-      if (!noOptimize) {
-        out.println("Optimizing...");
-
-        CommitLogOptimization.builder()
-            .headsAndForks(toHeadsAndForkPoints(importResult.headsAndForks()))
-            .databaseAdapter(databaseAdapter)
-            .build()
-            .optimize();
-
-        out.println("Finished commit log optimization.");
-      }
-
-      return 0;
-    } finally {
-      out.printf("Total duration: %s%n", Duration.ofNanos(System.nanoTime() - t0));
-    }
-  }
-
-  @Override
-  protected Integer callWithPersist() throws Exception {
+  public Integer call() throws Exception {
     warnOnInMemory();
 
     PrintWriter out = spec.commandLine().getOut();
@@ -210,15 +124,6 @@ public class ImportRepository extends BaseCommand {
     } finally {
       out.printf("Total duration: %s%n", Duration.ofNanos(System.nanoTime() - t0));
     }
-  }
-
-  static HeadsAndForkPoints toHeadsAndForkPoints(HeadsAndForks headsAndForks) {
-    ImmutableHeadsAndForkPoints.Builder hfBuilder =
-        ImmutableHeadsAndForkPoints.builder()
-            .scanStartedAtInMicros(headsAndForks.getScanStartedAtInMicros());
-    headsAndForks.getHeadsList().forEach(h -> hfBuilder.addHeads(Hash.of(h)));
-    headsAndForks.getForkPointsList().forEach(h -> hfBuilder.addForkPoints(Hash.of(h)));
-    return hfBuilder.build();
   }
 
   private ImportFileSupplier createImportFileSupplier() {

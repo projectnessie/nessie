@@ -15,7 +15,7 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -23,27 +23,23 @@ import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientResponseFactory;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.testextension.NessieBackend;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 /**
  * This tests runs the usual API v1 tests, but checks that JSON responses do not have API v2
  * attributes.
  */
-@ExtendWith(DatabaseAdapterExtension.class)
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+@ExtendWith(PersistExtension.class)
+@NessieBackend(InmemoryBackendTestFactory.class)
 @NessieApiVersions(versions = NessieApiVersion.V1)
 @NessieClientResponseFactory(ValidatingApiV1ResponseFactory.class)
 class TestOlderRestApiV1ClientInMemory extends BaseTestNessieApi {
 
-  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessiePersist static Persist persist;
 
-  @RegisterExtension
-  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 }

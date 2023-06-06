@@ -23,12 +23,6 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.stream.Collectors;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
-import org.projectnessie.versioned.ReferenceInfo;
-import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
@@ -43,49 +37,7 @@ import picocli.CommandLine.Command;
 public class NessieInfo extends BaseCommand {
 
   @Override
-  protected Integer callWithDatabaseAdapter() throws Exception {
-    warnOnInMemory();
-
-    ReferenceInfo<ByteString> refInfo =
-        databaseAdapter.namedRef(
-            serverConfig.getDefaultBranch(),
-            GetNamedRefsParams.builder()
-                .branchRetrieveOptions(RetrieveOptions.COMMIT_META)
-                .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
-                .build());
-
-    RepoDescription repoDesc = databaseAdapter.fetchRepositoryDescription();
-
-    spec.commandLine()
-        .getOut()
-        .printf(
-            "%n"
-                //
-                + "No-ancestor hash:                  %s%n"
-                + "Default branch head commit ID:     %s%n"
-                + "Default branch commit count:       %s%n"
-                + "Repository description version:    %d%n"
-                + "Repository description properties: %s%n"
-                + "%n"
-                + "From configuration:%n"
-                + "-------------------%n"
-                + "Version-store type:                %s%n"
-                + "Default branch:                    %s%n",
-            databaseAdapter.noAncestorHash().asString(),
-            refInfo.getHash().asString(),
-            refInfo.getCommitSeq(),
-            repoDesc.getRepoVersion(),
-            repoDesc.getProperties().entrySet().stream()
-                .map(e -> String.format("%-30s = %s", e.getKey(), e.getValue()))
-                .collect(Collectors.joining("\n                                   ")),
-            versionStoreConfig.getVersionStoreType(),
-            serverConfig.getDefaultBranch());
-
-    return 0;
-  }
-
-  @Override
-  protected Integer callWithPersist() throws Exception {
+  public Integer call() throws Exception {
     warnOnInMemory();
 
     if (!repositoryLogic(persist).repositoryExists()) {
