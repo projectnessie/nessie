@@ -429,15 +429,16 @@ public class BigTablePersist implements Persist {
       return new boolean[] {r};
     }
 
-    List<ApiFuture<Boolean>> futures = new ArrayList<>(objs.length);
+    @SuppressWarnings("unchecked")
+    ApiFuture<Boolean>[] futures = new ApiFuture[objs.length];
+    int idx = 0;
     for (int i = 0; i < objs.length; i++) {
       Obj obj = objs[i];
       if (obj != null) {
         ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
-        futures.add(backend.client().checkAndMutateRowAsync(conditionalRowMutation));
-      } else {
-        futures.add(null);
+        futures[idx] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
       }
+      idx++;
     }
 
     boolean[] r = new boolean[objs.length];
@@ -445,7 +446,7 @@ public class BigTablePersist implements Persist {
       Obj o = objs[i];
       if (o != null) {
         try {
-          r[i] = !futures.get(i).get();
+          r[i] = !futures[i].get();
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
@@ -646,25 +647,26 @@ public class BigTablePersist implements Persist {
     if (num == 0) {
       return;
     }
-    List<ApiFuture<Row>> handles = new ArrayList<>(num);
 
+    @SuppressWarnings("unchecked")
+    ApiFuture<Row>[] handles = new ApiFuture[num];
+    int idx = 0;
     try (Batcher<ByteString, Row> batcher = backend.client().newBulkReadRowsBatcher(tableId)) {
       for (int outer = 0; outer < num; outer += MAX_BULK_READS) {
         for (int inner = outer; inner < outer + MAX_BULK_READS && inner < num; inner++) {
           ID id = ids[inner];
           if (id != null) {
             ByteString key = keyGen.apply(id);
-            handles.add(batcher.add(key));
-          } else {
-            handles.add(null);
+            handles[idx] = batcher.add(key);
           }
+          idx++;
         }
         batcher.sendOutstanding();
       }
     }
 
     for (int i = 0; i < num; i++) {
-      ApiFuture<Row> handle = handles.get(i);
+      ApiFuture<Row> handle = handles[i];
       if (handle != null) {
         Row row = handle.get(READ_TIMEOUT_MILLIS, MILLISECONDS);
         if (row != null) {
