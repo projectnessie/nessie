@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Java project, non-client facing, server component, Java 8
+// Java project, non-client facing, server component, Java 8 (11 for tests)
 
 plugins {
   `java-library`
@@ -26,4 +26,6 @@ plugins {
   id("nessie-testing")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release.set(8) }
+tasks.withType<JavaCompile>().configureEach {
+  options.release.set(if (this.name == "compileJava") 8 else 11)
+}
