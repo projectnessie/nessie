@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -59,7 +60,6 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCom
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -718,7 +718,7 @@ public class VersionStoreImpl implements VersionStore {
       index.loadIfNecessary(
           keys.stream().map(TypeMapping::keyToStoreKey).collect(Collectors.toSet()));
 
-      Map<ObjId, ContentKey> idsToKeys = new HashMap<>();
+      Map<ObjId, ContentKey> idsToKeys = newHashMapWithExpectedSize(keys.size());
       for (ContentKey key : keys) {
         StoreKey storeKey = keyToStoreKey(key);
         StoreIndexElement<CommitOp> indexElement = index.get(storeKey);

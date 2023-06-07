@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyIterator;
@@ -59,7 +60,6 @@ import com.google.common.hash.Hasher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -596,7 +596,7 @@ final class CommitLogicImpl implements CommitLogic {
     // Results in a bulk-(pre)fetch of the requested index stripes
     fullIndex.loadIfNecessary(keys);
 
-    Map<UUID, CommitOp> removes = new HashMap<>();
+    Map<UUID, CommitOp> removes = newHashMapWithExpectedSize(createCommit.removes().size());
     for (Remove remove : createCommit.removes()) {
       StoreKey key = remove.key();
       UUID contentId = remove.contentId();

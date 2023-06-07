@@ -118,7 +118,7 @@ public final class ProtoSerialization {
   }
 
   public static List<ObjId> deserializeObjIds(List<ByteString> predecessorsList) {
-    List<ObjId> result = new ArrayList<>();
+    List<ObjId> result = new ArrayList<>(predecessorsList.size());
     deserializeObjIds(predecessorsList, result::add);
     return result;
   }
