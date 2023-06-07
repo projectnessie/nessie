@@ -24,7 +24,7 @@ public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
   void close();
 
   static <T> CloseableIterator<T> emptyCloseableIterator() {
-    return new CloseableIterator<T>() {
+    return new CloseableIterator<>() {
       @Override
       public void close() {}
 

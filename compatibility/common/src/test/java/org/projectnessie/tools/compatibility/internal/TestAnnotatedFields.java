@@ -50,7 +50,7 @@ class TestAnnotatedFields {
     when(extensionContext.getRequiredTestClass()).thenReturn((Class) AnnotatedFieldsTarget.class);
 
     Function<Field, Object> fieldToObject =
-        new Function<Field, Object>() {
+        new Function<>() {
           @Override
           public Object apply(Field field) {
             return "hello";
@@ -73,7 +73,7 @@ class TestAnnotatedFields {
     when(extensionContext.getRequiredTestClass()).thenReturn((Class) AnnotatedFieldsTarget.class);
 
     Function<Field, Object> fieldToObject =
-        new Function<Field, Object>() {
+        new Function<>() {
           @Override
           public Object apply(Field field) {
             return "hello";
@@ -96,7 +96,7 @@ class TestAnnotatedFields {
     when(extensionContext.getRequiredTestClass()).thenReturn((Class) AnnotatedFieldsTarget.class);
 
     Function<Field, Object> fieldToObject =
-        new Function<Field, Object>() {
+        new Function<>() {
           @Override
           public Object apply(Field field) {
             return "hello";
@@ -123,7 +123,7 @@ class TestAnnotatedFields {
     when(extensionContext.getRequiredTestClass()).thenReturn((Class) AnnotatedFieldsTarget.class);
 
     Function<Field, Object> fieldToObject =
-        new Function<Field, Object>() {
+        new Function<>() {
           @Override
           public Object apply(Field field) {
             return "hello";

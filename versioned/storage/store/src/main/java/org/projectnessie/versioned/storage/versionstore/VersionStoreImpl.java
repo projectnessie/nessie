@@ -366,7 +366,7 @@ public class VersionStoreImpl implements VersionStore {
 
     CommitLogic commitLogic = commitLogic(persist);
 
-    return new FilteringPaginationIterator<Reference, ReferenceInfo<CommitMeta>>(
+    return new FilteringPaginationIterator<>(
         result,
         reference -> {
           try {
@@ -479,7 +479,7 @@ public class VersionStoreImpl implements VersionStore {
 
     ContentMapping contentMapping = new ContentMapping(persist);
 
-    return new FilteringPaginationIterator<CommitObj, Commit>(
+    return new FilteringPaginationIterator<>(
         result,
         commitObj -> {
           try {
@@ -576,7 +576,7 @@ public class VersionStoreImpl implements VersionStore {
       stopPredicate = x -> false;
     }
 
-    return new FilteringPaginationIterator<StoreIndexElement<CommitOp>, KeyEntry>(
+    return new FilteringPaginationIterator<>(
         result,
         indexElement -> {
           try {
@@ -880,7 +880,7 @@ public class VersionStoreImpl implements VersionStore {
       stopPredicate = x -> false;
     }
 
-    return new FilteringPaginationIterator<DiffEntry, Diff>(
+    return new FilteringPaginationIterator<>(
         diffIter,
         d -> {
           Function<ObjId, Content> contentFetcher =

@@ -58,7 +58,7 @@ final class TemporaryDirectory implements CloseableResource {
     List<IOException> failures = new ArrayList<>();
     Files.walkFileTree(
         path,
-        new SimpleFileVisitor<Path>() {
+        new SimpleFileVisitor<>() {
 
           @Override
           public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
