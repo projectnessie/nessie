@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -714,7 +715,7 @@ class BaseCommitHelper {
       commitValidation.addOperations(commitOperation(identifiedKey, OperationType.DELETE));
     }
 
-    Map<ContentKey, UUID> seenContentIds = new HashMap<>();
+    Map<ContentKey, UUID> seenContentIds = newHashMapWithExpectedSize(createCommit.adds().size());
     for (CreateCommit.Add add : createCommit.adds()) {
       ContentKey key = storeKeyToKey(add.key());
       if (key == null) {

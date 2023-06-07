@@ -153,7 +153,7 @@ class CommitImpl extends BaseCommitHelper {
           RetryException,
           ObjTooLargeException {
     CreateCommit.Builder commit = newCommitBuilder().parentCommitId(headId());
-    List<Obj> objectsToStore = new ArrayList<>(operations.size());
+    List<Obj> objectsToStore = new ArrayList<>(operations.size() + 1);
 
     CommitRetryState commitRetryState =
         retryState.map(x -> (CommitRetryState) x).orElseGet(CommitRetryState::new);
@@ -212,13 +212,15 @@ class CommitImpl extends BaseCommitHelper {
       CommitRetryState commitRetryState,
       ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException, ReferenceConflictException {
-    Set<ContentKey> allKeys = new HashSet<>();
+    int num = operations.size();
+    Set<ContentKey> allKeys = newHashSetWithExpectedSize(num);
 
     Set<StoreKey> storeKeysForHead =
         expectedIndex() != headIndex() ? newHashSetWithExpectedSize(operations.size()) : null;
 
-    List<StoreKey> storeKeys = new ArrayList<>();
-    for (Operation operation : operations) {
+    List<StoreKey> storeKeys = new ArrayList<>(num);
+    for (int i = 0; i < num; i++) {
+      Operation operation = operations.get(i);
       ContentKey key = operation.getKey();
       checkArgument(allKeys.add(key), "Duplicate key in commit operations: %s", key);
       StoreKey storeKey = keyToStoreKey(key);

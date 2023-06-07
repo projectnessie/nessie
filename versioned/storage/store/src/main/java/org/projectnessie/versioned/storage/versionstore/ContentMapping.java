@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
@@ -25,7 +26,6 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.store
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -71,9 +71,9 @@ public final class ContentMapping {
   public Map<ContentKey, Content> fetchContents(
       @Nonnull @jakarta.annotation.Nonnull Map<ObjId, ContentKey> idsToKeys)
       throws ObjNotFoundException {
-    Map<ContentKey, Content> r = new HashMap<>();
     ObjId[] ids = idsToKeys.keySet().toArray(new ObjId[0]);
     Obj[] objs = persist.fetchObjs(ids);
+    Map<ContentKey, Content> r = newHashMapWithExpectedSize(ids.length);
     for (int i = 0; i < ids.length; i++) {
       Obj obj = objs[i];
       if (obj instanceof ContentValueObj) {

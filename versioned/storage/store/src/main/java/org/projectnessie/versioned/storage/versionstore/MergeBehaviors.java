@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -31,8 +32,9 @@ final class MergeBehaviors {
 
   MergeBehaviors(MergeTransplantOpBase mergeTransplantOpBase) {
     this.mergeTransplantOpBase = mergeTransplantOpBase;
-    this.remainingKeys = new HashSet<>(mergeTransplantOpBase.mergeKeyBehaviors().keySet());
-    this.keysUsedForCommit = new HashSet<>();
+    Set<ContentKey> allKeys = mergeTransplantOpBase.mergeKeyBehaviors().keySet();
+    this.remainingKeys = new HashSet<>(allKeys);
+    this.keysUsedForCommit = newHashSetWithExpectedSize(allKeys.size());
     validate();
   }
 
