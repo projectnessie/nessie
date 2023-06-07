@@ -107,7 +107,7 @@ public final class TypeMapping {
       variant = raw.substring(idx1 + 1);
     } else {
 
-      keyElements = new ArrayList<>();
+      keyElements = new ArrayList<>(10);
       int off = idx1 + 1;
       for (int i = off; i < idx2; i++) {
         char c = raw.charAt(i);
@@ -197,12 +197,12 @@ public final class TypeMapping {
     // of StoreKey comparisons WRT to ContentKey comparisons. The inner separator must be greater
     // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
     int len = 4; // MAIN_UNIVERSE + separator + separator + discriminator
-    for (String element : keyElements) {
-      len += element.length() + 1;
+    int num = keyElements.size();
+    for (int i = 0; i < num; i++) {
+      len += keyElements.get(i).length() + 1;
     }
     StringBuilder sb = new StringBuilder(len);
     sb.append(MAIN_UNIVERSE);
-    int num = keyElements.size();
     if (num > 0) {
       sb.append((char) 0);
       for (int i = 0; i < num; i++) {
