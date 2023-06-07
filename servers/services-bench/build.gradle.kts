@@ -51,9 +51,13 @@ dependencies {
   jmhRuntimeOnly(libs.testcontainers.testcontainers)
   jmhRuntimeOnly(libs.testcontainers.cassandra)
   jmhRuntimeOnly(libs.testcontainers.mongodb)
+  jmhRuntimeOnly(libs.testcontainers.postgresql)
+  jmhRuntimeOnly(libs.testcontainers.cockroachdb)
   jmhRuntimeOnly(libs.docker.java.api)
   jmhRuntimeOnly(libs.agroal.pool)
   jmhRuntimeOnly(libs.h2)
+  jmhRuntimeOnly(libs.postgresql)
+  jmhRuntimeOnly(libs.logback.classic)
 }
 
 jmh { jmhVersion.set(libs.versions.jmh.get()) }
