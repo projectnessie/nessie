@@ -18,7 +18,6 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.projectnessie.client.StreamingUtil
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.error.{
@@ -37,7 +36,6 @@ import org.projectnessie.model.{
 
 import java.time.format.DateTimeParseException
 import java.time.{Instant, ZonedDateTime}
-import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
 object NessieUtils {
