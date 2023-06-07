@@ -17,7 +17,6 @@ package org.projectnessie.client.builder;
 
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
-import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
