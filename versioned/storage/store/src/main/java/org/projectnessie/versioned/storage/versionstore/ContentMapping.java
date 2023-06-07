@@ -105,13 +105,6 @@ public final class ContentMapping {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Content assignContentId(
-      @Nonnull @jakarta.annotation.Nonnull Content putValue, String contentId) {
-    return putValue.withId(contentId);
-  }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
   public Commit commitObjToCommit(
       boolean fetchAdditionalInfo, @Nonnull @jakarta.annotation.Nonnull CommitObj commitObj)
       throws ObjNotFoundException {
