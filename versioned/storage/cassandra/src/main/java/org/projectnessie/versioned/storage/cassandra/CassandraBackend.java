@@ -201,7 +201,7 @@ final class CassandraBackend implements Backend {
       CompletionStage<AsyncResultSet> query = queryBuilder.apply(batchKeys);
 
       BiFunction<AsyncResultSet, Throwable, ?> pageHandler =
-          new BiFunction<AsyncResultSet, Throwable, Object>() {
+          new BiFunction<>() {
             @Override
             public Object apply(AsyncResultSet rs, Throwable ex) {
               if (ex != null) {

@@ -155,7 +155,7 @@ final class LayeredIndexImpl<V> implements StoreIndex<V> {
       @Nullable @jakarta.annotation.Nullable StoreKey begin,
       @Nullable @jakarta.annotation.Nullable StoreKey end,
       boolean prefetch) {
-    return new AbstractIterator<StoreIndexElement<V>>() {
+    return new AbstractIterator<>() {
       final Iterator<StoreIndexElement<V>> fullIter = reference.iterator(begin, end, prefetch);
       final Iterator<StoreIndexElement<V>> incrementalIter = updates.iterator(begin, end, prefetch);
 

@@ -75,7 +75,7 @@ class JdbcSelectSpliterator<T> extends AbstractSpliterator<T> {
       String sql,
       PrepareStatement prepareStatement,
       ResultSetMapper<T> deserializer) {
-    return new JdbcSelectSpliterator<T>(conn, sql, prepareStatement, deserializer).toStream();
+    return new JdbcSelectSpliterator<>(conn, sql, prepareStatement, deserializer).toStream();
   }
 
   private boolean done = false;

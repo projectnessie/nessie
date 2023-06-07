@@ -355,7 +355,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     e = e.subList(fromIdx, toIdx);
     Iterator<StoreIndexElement<V>> base = e.iterator();
     return prefix
-        ? new AbstractIterator<StoreIndexElement<V>>() {
+        ? new AbstractIterator<>() {
 
           @Override
           protected StoreIndexElement<V> computeNext() {
@@ -413,7 +413,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
   @Override
   public List<StoreKey> asKeyList() {
-    return new AbstractList<StoreKey>() {
+    return new AbstractList<>() {
       @Override
       public StoreKey get(int index) {
         return elements.get(index).key();

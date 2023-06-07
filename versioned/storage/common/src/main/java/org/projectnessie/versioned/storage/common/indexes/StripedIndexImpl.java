@@ -236,7 +236,7 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
     Predicate<StoreKey> endCheck =
         prefix ? k -> !k.startsWith(begin) : (end != null ? k -> end.compareTo(k) < 0 : k -> false);
 
-    return new AbstractIterator<StoreIndexElement<V>>() {
+    return new AbstractIterator<>() {
       int stripe = start;
       Iterator<StoreIndexElement<V>> current = s[start].iterator(begin, null, prefetch);
 

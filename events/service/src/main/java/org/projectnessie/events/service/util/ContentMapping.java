@@ -28,8 +28,7 @@ public final class ContentMapping {
   private static final ObjectMapper MAPPER =
       new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-  private static final TypeReference<Map<String, Object>> MAP_TYPE =
-      new TypeReference<Map<String, Object>>() {};
+  private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
   private ContentMapping() {}
 

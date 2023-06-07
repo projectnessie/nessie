@@ -167,7 +167,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     }
 
     return StreamSupport.stream(
-        new AbstractSpliterator<FileReference>(Long.MAX_VALUE, 0) {
+        new AbstractSpliterator<>(Long.MAX_VALUE, 0) {
           private RemoteIterator<LocatedFileStatus> iterator;
 
           @Override

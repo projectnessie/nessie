@@ -154,7 +154,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   public Iterable<StoreIndexElement<CommitOp>> commitOperations(
       @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> index) {
     return () ->
-        new AbstractIterator<StoreIndexElement<CommitOp>>() {
+        new AbstractIterator<>() {
           final Iterator<StoreIndexElement<CommitOp>> delegate = index.iterator();
 
           @Override

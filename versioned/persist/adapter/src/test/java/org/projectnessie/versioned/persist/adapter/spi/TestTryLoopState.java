@@ -71,7 +71,7 @@ class TestTryLoopState {
       long finalLower = lower;
       long finalUpper = upper;
       ArgumentMatcher<Long> matcher =
-          new ArgumentMatcher<Long>() {
+          new ArgumentMatcher<>() {
             @Override
             public boolean matches(Long l) {
               return l >= finalLower && l < finalUpper && l <= maxSleep;
@@ -102,7 +102,7 @@ class TestTryLoopState {
       long finalLower = lower;
       long finalUpper = upper;
       ArgumentMatcher<Long> matcher =
-          new ArgumentMatcher<Long>() {
+          new ArgumentMatcher<>() {
             @Override
             public boolean matches(Long l) {
               return l >= finalLower && l < finalUpper && l <= maxSleep;

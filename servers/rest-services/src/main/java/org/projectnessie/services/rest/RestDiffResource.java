@@ -67,7 +67,7 @@ public class RestDiffResource implements HttpDiffApi {
             params.getToRef(),
             params.getToHashOnRef(),
             null,
-            new PagedResponseHandler<DiffResponse, DiffEntry>() {
+            new PagedResponseHandler<>() {
 
               @Override
               public DiffResponse build() {
