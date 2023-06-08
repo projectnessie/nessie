@@ -29,7 +29,7 @@ protobuf = "3.23.2"
 quarkus = "2.16.7.Final"
 slf4j = "1.7.36"
 testcontainers = "1.18.3"
-undertow = "2.2.24.Final"
+undertow = "2.3.7.Final"
 
 # Docker image tags
 keycloakContainerTag = "21.0.2"
