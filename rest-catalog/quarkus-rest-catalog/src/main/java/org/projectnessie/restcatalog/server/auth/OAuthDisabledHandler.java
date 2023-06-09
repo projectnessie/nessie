@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.restcatalog.server;
+package org.projectnessie.restcatalog.server.auth;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Vetoed;
+import org.apache.iceberg.rest.responses.OAuthTokenResponse;
+import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
-import org.projectnessie.restcatalog.service.auth.OAuthRequest;
-import org.projectnessie.restcatalog.service.auth.OAuthResponse;
+import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
 
-@ApplicationScoped
-public class DelegatingOAuthHandler implements OAuthHandler {
+@Vetoed
+public class OAuthDisabledHandler implements OAuthHandler {
 
   @Override
-  public OAuthResponse getToken(OAuthRequest oauthRequest) {
-    // TODO
-    return OAuthResponse.oauthResponse("tok", "tok", "bearer", 42, "tok");
+  public OAuthTokenResponse getToken(OAuthTokenRequest request) {
+    throw new OAuthTokenEndpointException(
+        503, // service unavailable
+        "OAuthTokenEndpointUnavailable",
+        "OAuth token endpoint is unavailable");
   }
 }

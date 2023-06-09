@@ -23,10 +23,13 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.restcatalog.server.auth.DynamicBearerAuthentication;
 
 @ApplicationScoped
 public class NessieApiProvider {
   @Inject NessieIcebergRestConfig config;
+
+  @Inject DynamicBearerAuthentication authentication;
 
   @Produces
   @Singleton
@@ -47,10 +50,12 @@ public class NessieApiProvider {
     return clientBuilder
         .fromSystemProperties()
         .fromConfig(cfg -> config.nessieClientConfig().get(cfg))
+        // FIXME: should we allow to configure the authentication method?
+        .withAuthentication(authentication)
         .build(NessieApiV2.class);
   }
 
-  public void disposeFileIO(@Disposes NessieApiV2 api) {
+  public void disposeNessieApi(@Disposes NessieApiV2 api) {
     api.close();
   }
 }

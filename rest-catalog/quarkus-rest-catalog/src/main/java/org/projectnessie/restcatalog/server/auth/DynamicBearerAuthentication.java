@@ -13,10 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.restcatalog.api;
+package org.projectnessie.restcatalog.server.auth;
 
-public class IcebergUnauthorizedException extends GenericIcebergRestException {
-  public IcebergUnauthorizedException(String type, String message) {
-    super(401, type, message);
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.projectnessie.client.http.HttpAuthentication;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.RequestFilter;
+
+@ApplicationScoped
+public class DynamicBearerAuthentication implements HttpAuthentication {
+
+  @Inject RequestFilter filter;
+
+  @Override
+  public void applyToHttpClient(HttpClient.Builder client) {
+    client.addRequestFilter(filter);
   }
+
+  @Override
+  public void close() {}
 }

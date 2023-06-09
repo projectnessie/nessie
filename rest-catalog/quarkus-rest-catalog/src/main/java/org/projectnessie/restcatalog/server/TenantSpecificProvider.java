@@ -19,7 +19,7 @@ import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
 import io.quarkus.runtime.Startup;
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -32,7 +32,7 @@ import org.projectnessie.restcatalog.service.TenantSpecific;
 import org.projectnessie.restcatalog.service.Warehouse;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
 
-@RequestScoped
+@ApplicationScoped
 public class TenantSpecificProvider {
 
   @Inject OAuthHandler oauthHandler;

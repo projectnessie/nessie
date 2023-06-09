@@ -13,10 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.restcatalog.api;
+package org.projectnessie.restcatalog.api.errors;
 
-public class IcebergConflictException extends GenericIcebergRestException {
-  public IcebergConflictException(String type, String message) {
-    super(409, type, message);
+public class GenericIcebergRestException extends Exception {
+  private final int responseCode;
+  private final String type;
+
+  public GenericIcebergRestException(int responseCode, String type, String message) {
+    super(message);
+    this.responseCode = responseCode;
+    this.type = type;
+  }
+
+  public int getResponseCode() {
+    return responseCode;
+  }
+
+  public String getType() {
+    return type;
   }
 }

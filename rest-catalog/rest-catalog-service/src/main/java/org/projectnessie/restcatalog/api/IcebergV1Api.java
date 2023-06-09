@@ -42,6 +42,7 @@ import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
 import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.projectnessie.restcatalog.api.errors.IcebergConflictException;
 
 /** Iceberg REST API v1 JAX-RS interface, using request and response types from Iceberg. */
 @Consumes({MediaType.APPLICATION_JSON})
