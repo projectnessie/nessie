@@ -41,9 +41,9 @@ public final class Backends {
   public static Persist createPersist(
       Backend backend, boolean initializeRepository, Map<String, String> configuration) {
     PersistFactory persistFactory = backend.createFactory();
-    StoreConfig storeConfig = ImmutableAdjustable.builder().build();
-    SystemPropertiesConfigurer.configureFromPropertiesGeneric(
-        storeConfig, StoreConfig.class, configuration::get);
+    StoreConfig storeConfig =
+        SystemPropertiesConfigurer.configureFromPropertiesGeneric(
+            ImmutableAdjustable.builder().build(), StoreConfig.class, configuration::get);
     Persist persist = persistFactory.newPersist(storeConfig);
 
     if (initializeRepository) {
