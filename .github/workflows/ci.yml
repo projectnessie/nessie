@@ -66,7 +66,7 @@ jobs:
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -111,7 +111,7 @@ jobs:
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -154,7 +154,7 @@ jobs:
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -209,7 +209,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -268,7 +268,7 @@ jobs:
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -316,7 +316,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -357,7 +357,7 @@ jobs:
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -522,7 +522,7 @@ jobs:
     if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
       - name: Setup runner
@@ -658,7 +658,7 @@ jobs:
           git config --global user.name "Integrations Testing [Bot]"
 
       - name: Checkout NeQuEIT repo
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
         with:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}
@@ -759,7 +759,7 @@ jobs:
     if: needs.determine-jobs.outputs.helm == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
 
@@ -831,7 +831,7 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.7'] # 3.8 first, it has "all the tox envs"
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
@@ -844,7 +844,7 @@ jobs:
     name: CI Website
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
@@ -892,7 +892,7 @@ jobs:
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle

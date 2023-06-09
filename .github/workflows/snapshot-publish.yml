@@ -19,7 +19,7 @@ jobs:
     if: github.repository_owner == 'projectnessie'
 
     steps:
-      - uses: actions/checkout@v3.5.2
+      - uses: actions/checkout@v3.5.3
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle

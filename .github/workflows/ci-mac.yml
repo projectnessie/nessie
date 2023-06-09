@@ -85,7 +85,7 @@ jobs:
         docker info
         echo "::endgroup::"
 
-    - uses: actions/checkout@v3.5.2
+    - uses: actions/checkout@v3.5.3
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
@@ -134,7 +134,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.7']
 
     steps:
-    - uses: actions/checkout@v3.5.2
+    - uses: actions/checkout@v3.5.3
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
