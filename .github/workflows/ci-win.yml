@@ -41,7 +41,7 @@ jobs:
         git config --global core.autocrlf false
         git config --global core.eol lf
 
-    - uses: actions/checkout@v3.5.2
+    - uses: actions/checkout@v3.5.3
       with:
         repository: cdarlint/winutils
         path: hadoop-winutils
@@ -76,7 +76,7 @@ jobs:
         cd ..\..\..
         rm -r -fo hadoop-winutils
 
-    - uses: actions/checkout@v3.5.2
+    - uses: actions/checkout@v3.5.3
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
@@ -125,7 +125,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.7']
 
     steps:
-    - uses: actions/checkout@v3.5.2
+    - uses: actions/checkout@v3.5.3
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
