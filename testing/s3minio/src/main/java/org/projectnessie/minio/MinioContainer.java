@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.slf4j.Logger;
@@ -43,8 +44,15 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   private static final Logger LOGGER = LoggerFactory.getLogger(MinioContainer.class);
 
   private static final int DEFAULT_PORT = 9000;
-  private static final String DEFAULT_IMAGE = "quay.io/minio/minio";
-  private static final String DEFAULT_TAG = "latest";
+  private static final String DEFAULT_IMAGE =
+      System.getProperty(
+          "nessie.testing.minio.image",
+          Optional.ofNullable(System.getenv("MINIO_DOCKER_IMAGE")).orElse("quay.io/minio/minio"));
+
+  private static final String DEFAULT_TAG =
+      System.getProperty(
+          "nessie.testing.minio.tag",
+          Optional.ofNullable(System.getenv("MINIO_DOCKER_TAG")).orElse("latest"));
 
   private static final String MINIO_ACCESS_KEY = "MINIO_ROOT_USER";
   private static final String MINIO_SECRET_KEY = "MINIO_ROOT_PASSWORD";
