@@ -72,7 +72,8 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 @ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
 public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
 
-  public static final String S3_PATH_PREFIX = "/my/prefix";
+  public static final String S3_BUCKET_URI = "/my/prefix";
+  public static final String S3_KEY_PREFIX = S3_BUCKET_URI.substring(1);
 
   @Minio static MinioAccess minio;
 
@@ -85,7 +86,7 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
 
   @Override
   protected String warehouseURI() {
-    return minio.s3BucketUri(S3_PATH_PREFIX).toString();
+    return minio.s3BucketUri(S3_BUCKET_URI).toString();
   }
 
   @Override
@@ -105,7 +106,7 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
   @AfterEach
   void purgeS3() {
     ListObjectsV2Request request =
-        ListObjectsV2Request.builder().bucket(minio.bucket()).prefix(S3_PATH_PREFIX).build();
+        ListObjectsV2Request.builder().bucket(minio.bucket()).prefix(S3_KEY_PREFIX).build();
     minio.s3Client().listObjectsV2Paginator(request).stream()
         .forEach(
             r -> {
@@ -320,7 +321,7 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
 
   private Set<URI> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
     try (Stream<FileReference> list =
-        icebergFiles.listRecursively(minio.s3BucketUri(S3_PATH_PREFIX))) {
+        icebergFiles.listRecursively(minio.s3BucketUri(S3_BUCKET_URI))) {
       return list.map(FileReference::absolutePath).collect(Collectors.toCollection(TreeSet::new));
     }
   }
