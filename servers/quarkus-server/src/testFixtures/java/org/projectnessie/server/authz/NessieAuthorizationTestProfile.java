@@ -33,7 +33,7 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
               "nessie.server.authorization.rules.allow_all",
               "op in ['VIEW_REFERENCE','CREATE_REFERENCE','DELETE_REFERENCE','VIEW_REFLOG',"
                   + "'LIST_COMMITLOG','READ_ENTRIES','READ_CONTENT_KEY','LIST_COMMIT_LOG','COMMIT_CHANGE_AGAINST_REFERENCE',"
-                  + "'ASSIGN_REFERENCE_TO_HASH','UPDATE_ENTITY','READ_ENTITY_VALUE','DELETE_ENTITY'] && role=='admin_user'")
+                  + "'ASSIGN_REFERENCE_TO_HASH','CREATE_ENTITY','UPDATE_ENTITY','READ_ENTITY_VALUE','DELETE_ENTITY'] && role=='admin_user'")
           .put(
               "nessie.server.authorization.rules.allow_branch_listing",
               "op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.matches('.*')")
@@ -47,11 +47,11 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
                   + "('allowedBranch')"))
           .put(
               "nessie.server.authorization.rules.allow_create_not_read_entity",
-              "op in ['VIEW_REFERENCE', 'UPDATE_ENTITY'] "
+              "op in ['VIEW_REFERENCE', 'CREATE_ENTITY', 'UPDATE_ENTITY'] "
                   + "&& role=='test_user2' && path.startsWith('allowed-') && ref.startsWith('allowedBranch')")
           .put(
               "nessie.server.authorization.rules.allow_create_not_delete_entity",
-              "op in ['VIEW_REFERENCE', 'DELETE_ENTITY_VALUE', 'UPDATE_ENTITY'] "
+              "op in ['VIEW_REFERENCE', 'DELETE_ENTITY_VALUE', 'CREATE_ENTITY', 'UPDATE_ENTITY'] "
                   + "&& role=='test_user3' && path.startsWith('allowed-') && ref.startsWith('allowedBranch')")
           .put(
               "nessie.server.authorization.rules.allow_no_create_entity",

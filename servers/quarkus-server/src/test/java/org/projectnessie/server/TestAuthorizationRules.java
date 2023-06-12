@@ -296,7 +296,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
-                "'UPDATE_ENTITY' is not allowed for role '%s' on content '%s'",
+                "'CREATE_ENTITY' is not allowed for role '%s' on content '%s'",
                 role, key.toPathString()));
   }
 

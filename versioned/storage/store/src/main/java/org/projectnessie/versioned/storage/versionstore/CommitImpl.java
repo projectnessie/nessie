@@ -21,6 +21,9 @@ import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Objects.requireNonNull;
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 import static org.projectnessie.versioned.CommitValidation.CommitOperation.commitOperation;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.CREATE;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.DELETE;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -356,7 +359,7 @@ class CommitImpl extends BaseCommitHelper {
                     contentTypeForPayload(payload),
                     existingContentID != null ? existingContentID.toString() : null,
                     x -> null),
-                operation.getType()));
+                DELETE));
       }
     }
 
@@ -463,7 +466,7 @@ class CommitImpl extends BaseCommitHelper {
                   Content content = newContent.get(ContentKey.of(elements));
                   return content != null ? contentIdMaybe(content.getId()) : null;
                 }),
-            put.getType()));
+            exists ? UPDATE : CREATE));
   }
 
   private String contentIdFromContent(@Nonnull @jakarta.annotation.Nonnull ObjId contentValueId)

@@ -157,9 +157,21 @@ public interface BatchAccessChecker {
   BatchAccessChecker canReadEntityValue(NamedRef ref, IdentifiedContentKey identifiedKey);
 
   /**
-   * Checks whether the given role/principal is allowed to update an entity value as defined by the
-   * {@link IdentifiedContentKey} for the given {@link Branch}, called for a {@link Operation.Put}
-   * operation in a commit.
+   * Checks whether the given role/principal is allowed to create a new entity value as defined by
+   * the {@link IdentifiedContentKey} for the given {@link Branch}, called for a {@link
+   * Operation.Put} operation in a commit.
+   *
+   * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
+   *
+   * @param ref The {@link NamedRef} to check
+   * @param identifiedKey content key / ID / type to check
+   */
+  BatchAccessChecker canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
+
+  /**
+   * Checks whether the given role/principal is allowed to update an existing entity value as
+   * defined by the {@link IdentifiedContentKey} for the given {@link Branch}, called for a {@link
+   * Operation.Put} operation in a commit.
    *
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *

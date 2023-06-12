@@ -25,6 +25,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.versioned.CommitValidation.CommitOperation.commitOperation;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.CREATE;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.DELETE;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.MergeResult.KeyDetails.keyDetails;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
@@ -74,7 +77,6 @@ import org.projectnessie.versioned.ImmutableCommitValidation;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
-import org.projectnessie.versioned.Operation.OperationType;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
@@ -712,7 +714,7 @@ class BaseCommitHelper {
       IdentifiedContentKey identifiedKey =
           VersionStoreImpl.buildIdentifiedKey(
               key, index, remove.payload(), remove.contentId(), x -> null);
-      commitValidation.addOperations(commitOperation(identifiedKey, OperationType.DELETE));
+      commitValidation.addOperations(commitOperation(identifiedKey, DELETE));
     }
 
     Map<ContentKey, UUID> seenContentIds = newHashMapWithExpectedSize(createCommit.adds().size());
@@ -721,6 +723,7 @@ class BaseCommitHelper {
       if (key == null) {
         continue;
       }
+      boolean exists = index.contains(add.key());
       seenContentIds.put(key, add.contentId());
       IdentifiedContentKey identifiedKey =
           VersionStoreImpl.buildIdentifiedKey(
@@ -729,7 +732,7 @@ class BaseCommitHelper {
               add.payload(),
               add.contentId(),
               elements -> seenContentIds.get(ContentKey.of(elements)));
-      commitValidation.addOperations(commitOperation(identifiedKey, OperationType.PUT));
+      commitValidation.addOperations(commitOperation(identifiedKey, exists ? UPDATE : CREATE));
     }
 
     try {

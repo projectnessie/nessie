@@ -102,6 +102,8 @@ public interface Check {
     COMMIT_CHANGE_AGAINST_REFERENCE(true, false),
     /** See {@link BatchAccessChecker#canReadEntityValue(NamedRef, IdentifiedContentKey)}. */
     READ_ENTITY_VALUE(true, true),
+    /** See {@link BatchAccessChecker#canCreateEntity(NamedRef, IdentifiedContentKey)}. */
+    CREATE_ENTITY(true, true),
     /** See {@link BatchAccessChecker#canUpdateEntity(NamedRef, IdentifiedContentKey)}. */
     UPDATE_ENTITY(true, true),
     /** See {@link BatchAccessChecker#canDeleteEntity(NamedRef, IdentifiedContentKey)}. */
@@ -160,6 +162,10 @@ public interface Check {
 
   static Check canReadEntityValue(NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(CheckType.READ_ENTITY_VALUE, ref, identifiedKey);
+  }
+
+  static Check canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+    return check(CheckType.CREATE_ENTITY, ref, identifiedKey);
   }
 
   static Check canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
