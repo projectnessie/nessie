@@ -67,6 +67,7 @@ import org.projectnessie.spark.extensions.SparkSqlTestBase;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 @ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
@@ -108,22 +109,22 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
     ListObjectsV2Request request =
         ListObjectsV2Request.builder().bucket(minio.bucket()).prefix(S3_KEY_PREFIX).build();
     minio.s3Client().listObjectsV2Paginator(request).stream()
+        .map(ListObjectsV2Response::contents)
+        .filter(contents -> !contents.isEmpty())
+        .map(
+            contents ->
+                contents.stream()
+                    .map(o -> ObjectIdentifier.builder().key(o.key()).build())
+                    .collect(Collectors.toList()))
         .forEach(
-            r -> {
-              minio
-                  .s3Client()
-                  .deleteObjects(
-                      DeleteObjectsRequest.builder()
-                          .bucket(minio.bucket())
-                          .delete(
-                              Delete.builder()
-                                  .objects(
-                                      r.contents().stream()
-                                          .map(o -> ObjectIdentifier.builder().key(o.key()).build())
-                                          .collect(Collectors.toList()))
-                                  .build())
-                          .build());
-            });
+            keys ->
+                minio
+                    .s3Client()
+                    .deleteObjects(
+                        DeleteObjectsRequest.builder()
+                            .bucket(minio.bucket())
+                            .delete(Delete.builder().objects(keys).build())
+                            .build()));
   }
 
   @Value.Immutable
