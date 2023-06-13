@@ -16,7 +16,6 @@
 package org.projectnessie.services.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.singletonList;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
@@ -31,9 +30,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,7 +44,6 @@ import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
@@ -205,80 +201,8 @@ public abstract class BaseApiImpl {
   protected MetadataRewriter<CommitMeta> commitMetaUpdate(
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       IntFunction<String> squashMessage) {
-    return new MetadataRewriter<CommitMeta>() {
-      // Used for setting contextual commit properties during new and merge/transplant commits.
-      // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
-      private final Principal principal = getPrincipal();
-      private final String committer = principal == null ? "" : principal.getName();
-      private final Instant now = Instant.now();
-
-      private CommitMeta buildCommitMeta(
-          ImmutableCommitMeta.Builder metadata, Supplier<String> defaultMessage) {
-
-        ImmutableCommitMeta pre = metadata.message("").build();
-
-        if (commitMeta != null && !commitMeta.getAllAuthors().isEmpty()) {
-          metadata.allAuthors(commitMeta.getAllAuthors());
-        } else if (pre.getAllAuthors().isEmpty()) {
-          metadata.allAuthors(singletonList(committer));
-        }
-
-        if (commitMeta != null && !commitMeta.getAllSignedOffBy().isEmpty()) {
-          metadata.allSignedOffBy(commitMeta.getAllSignedOffBy());
-        }
-
-        if (commitMeta != null && commitMeta.getAuthorTime() != null) {
-          metadata.authorTime(commitMeta.getAuthorTime());
-        } else if (pre.getAuthorTime() == null) {
-          metadata.authorTime(now);
-        }
-
-        if (commitMeta != null && !commitMeta.getAllProperties().isEmpty()) {
-          metadata.allProperties(commitMeta.getAllProperties());
-        }
-
-        if (commitMeta != null && !commitMeta.getMessage().isEmpty()) {
-          metadata.message(commitMeta.getMessage());
-        } else {
-          metadata.message(defaultMessage.get());
-        }
-
-        return metadata.committer(committer).commitTime(now).build();
-      }
-
-      @Override
-      public CommitMeta rewriteSingle(CommitMeta metadata) {
-        return buildCommitMeta(CommitMeta.builder().from(metadata), metadata::getMessage);
-      }
-
-      @Override
-      public CommitMeta squash(List<CommitMeta> metadata) {
-        Optional<String> msg = Optional.ofNullable(squashMessage.apply(metadata.size()));
-
-        if (metadata.size() == 1 && !msg.isPresent()) {
-          return rewriteSingle(metadata.get(0));
-        }
-
-        Map<String, String> newProperties = new HashMap<>();
-        for (CommitMeta commitMeta : metadata) {
-          newProperties.putAll(commitMeta.getProperties());
-        }
-
-        return buildCommitMeta(
-            CommitMeta.builder().properties(newProperties),
-            () ->
-                msg.orElseGet(
-                    () -> {
-                      StringBuilder newMessage = new StringBuilder();
-                      for (CommitMeta commitMeta : metadata) {
-                        if (newMessage.length() > 0) {
-                          newMessage.append("\n---------------------------------------------\n");
-                        }
-                        newMessage.append(commitMeta.getMessage());
-                      }
-                      return newMessage.toString();
-                    }));
-      }
-    };
+    Principal principal = getPrincipal();
+    String committer = principal == null ? "" : principal.getName();
+    return new CommitMetaUpdater(committer, Instant.now(), commitMeta, squashMessage);
   }
 }

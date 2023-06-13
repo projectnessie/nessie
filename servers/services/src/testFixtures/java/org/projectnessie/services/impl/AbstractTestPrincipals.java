@@ -111,7 +111,7 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             CommitMeta::getHash)
         .containsExactly(
             "NessieHerself",
-            "NessieHerself",
+            "ThatNessieGuy",
             format(
                 "Merged 2 commits from %s at %s into %s at %s",
                 main.getName(), main.getHash(), merge.getName(), merge.getHash()),
@@ -155,7 +155,7 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(
             tuple("NessieHerself", "ThatNessieGuy", "with security"),
-            tuple("NessieHerself", "", "no security context"));
+            tuple("NessieHerself", "NessieHerself", "no security context"));
   }
 
   @Test
@@ -193,6 +193,6 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(
             tuple("NessieHerself", "ThatNessieGuy", "with security"),
-            tuple("NessieHerself", "", "no security context"));
+            tuple("NessieHerself", "NessieHerself", "no security context"));
   }
 }
