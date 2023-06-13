@@ -34,9 +34,9 @@ dependencies {
 
   testImplementation(platform(baselibs.junit.bom))
   testImplementation(baselibs.assertj.core)
-  testImplementation(baselibs.junit.jupiter.api)
-  testImplementation(baselibs.junit.jupiter.params)
-  testRuntimeOnly(baselibs.junit.jupiter.engine)
+  testImplementation("org.junit.jupiter:junit-jupiter-api")
+  testImplementation("org.junit.jupiter:junit-jupiter-params")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(11)) } }
