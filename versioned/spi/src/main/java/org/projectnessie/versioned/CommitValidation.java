@@ -18,7 +18,6 @@ package org.projectnessie.versioned;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.model.IdentifiedContentKey;
-import org.projectnessie.versioned.Operation.OperationType;
 
 @Value.Immutable
 public interface CommitValidation {
@@ -34,11 +33,17 @@ public interface CommitValidation {
     IdentifiedContentKey identifiedKey();
 
     @Value.Parameter(order = 2)
-    OperationType operation();
+    CommitOperationType operationType();
 
     static CommitOperation commitOperation(
-        IdentifiedContentKey identifiedKey, OperationType operation) {
-      return ImmutableCommitOperation.of(identifiedKey, operation);
+        IdentifiedContentKey identifiedKey, CommitOperationType commitcommitOperationType) {
+      return ImmutableCommitOperation.of(identifiedKey, commitcommitOperationType);
     }
+  }
+
+  enum CommitOperationType {
+    CREATE,
+    UPDATE,
+    DELETE
   }
 }

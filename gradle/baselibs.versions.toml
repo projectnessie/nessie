@@ -6,8 +6,5 @@ errorprone = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version = "3
 idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version = "1.1.7" }
 jandex = { module = "com.github.vlsi.gradle:jandex-plugin", version = "1.89" }
 junit-bom = { module = "org.junit:junit-bom", version = "5.9.3" }
-junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
-junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 shadow = { module = "com.github.johnrengelman:shadow", version = "8.1.1" }
 spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "6.19.0" }

@@ -155,6 +155,9 @@ public class TestBatchAccessChecker {
       case READ_ENTITY_VALUE:
         checker.canReadEntityValue(c.ref(), c.identifiedKey());
         break;
+      case CREATE_ENTITY:
+        checker.canCreateEntity(c.ref(), c.identifiedKey());
+        break;
       case UPDATE_ENTITY:
         checker.canUpdateEntity(c.ref(), c.identifiedKey());
         break;

@@ -377,8 +377,11 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                   .operations()
                   .forEach(
                       op -> {
-                        switch (op.operation()) {
-                          case PUT:
+                        switch (op.operationType()) {
+                          case CREATE:
+                            check.canCreateEntity(branch, op.identifiedKey());
+                            break;
+                          case UPDATE:
                             check.canUpdateEntity(branch, op.identifiedKey());
                             break;
                           case DELETE:
@@ -386,7 +389,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                             break;
                           default:
                             throw new UnsupportedOperationException(
-                                "Unknown operation type " + op.operation());
+                                "Unknown operation type " + op.operationType());
                         }
                       });
               check.checkAndThrow();
