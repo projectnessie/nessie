@@ -34,6 +34,7 @@ on:
     branches:
       - main
       - release-*
+      - feature/*
     paths-ignore:
       - 'LICENSE'
       - 'NOTICE'
@@ -98,7 +99,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'code-checks'
           java-version: ${{ matrix.java-version }}
@@ -141,7 +142,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'test'
           java-version: ${{ matrix.java-version }}
@@ -194,7 +195,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'test-quarkus'
           java-version: ${{ matrix.java-version }}
@@ -255,7 +256,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test'
           java-version: ${{ matrix.java-version }}
@@ -305,7 +306,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-stores'
           java-version: ${{ matrix.java-version }}
@@ -345,7 +346,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-integrations'
 
@@ -397,7 +398,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-quarkus'
           java-version: ${{ matrix.java-version }}
@@ -862,7 +863,7 @@ jobs:
         run: mkdocs build
         working-directory: ./site
       - name: Deploy Static Site to GitHub
-        if: github.event_name == 'push' && github.repository_owner == 'projectnessie'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository_owner == 'projectnessie'
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: projectnessie/projectnessie.github.io
@@ -875,7 +876,7 @@ jobs:
     # Store the Gradle cache to GH cache as soon as all relevant Nessie/Gradle jobs have finished.
     name: CI Store Cache
     runs-on: ubuntu-22.04
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       # Only include jobs that use Nessie's Gradle cache, especially excluding NesQuEIT, which
       # is a "very special" citizen and also not run for "main" CI, which does
