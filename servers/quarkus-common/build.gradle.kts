@@ -64,6 +64,7 @@ dependencies {
 
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-api")
+  implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable
   implementation("io.micrometer:micrometer-core")
 
   // javax/jakarta

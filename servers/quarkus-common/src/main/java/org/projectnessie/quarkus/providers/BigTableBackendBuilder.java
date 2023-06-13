@@ -110,6 +110,9 @@ public class BigTableBackendBuilder implements BackendBuilder {
       // If we need retries, can configure it here via stubSettings.*Settings().retrySettings()
       // If we need a custom tracer, can do it here via dataStubSettings.setTracerFactory.
 
+      BigtableDataSettings.enableOpenCensusStats();
+      BigtableDataSettings.enableGfeOpenCensusStats();
+
       LOGGER.info("Creating Google BigTable data client...");
       BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());
 
