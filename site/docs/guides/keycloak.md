@@ -11,12 +11,14 @@ demonstrate how OpenID authentication works in Nessie servers.
 First, start a Keycloak container using its latest Docker image.
 
 ```shell
-docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
+docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
   --name keycloak quay.io/keycloak/keycloak:latest start-dev
 ```
 
 Note the `admin` username and password. Those values will be required to log into the Keycloak Administration Console
-that should now be available at http://localhost:8080/auth/admin/
+that should now be available at http://localhost:8080/admin/.
+
+**Note: when using keycloak < 17 change the URL to `http://localhost:8080/auth/admin/`**
 
 The default realm is called `Master`. On the left-hand pane find the `Manage > Users` page and click `Add User` on the
 right side of the (initially empty) users table.
@@ -35,7 +37,7 @@ It will be required to access Nessie APIs later.
 === "Plain Command"
     ```shell
     curl -X POST \
-      http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+      http://localhost:8080/realms/master/protocol/openid-connect/token \
       --user admin-cli:none \
       -d 'username=nessie' \
       -d 'password=nessie' \
@@ -44,7 +46,7 @@ It will be required to access Nessie APIs later.
 === "Bash"
     ```bash
     export NESSIE_AUTH_TOKEN=$(curl -X POST \
-      http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+      http://localhost:8080/realms/master/protocol/openid-connect/token \
       --user admin-cli:none \
       -d 'username=nessie' \
       -d 'password=nessie' \
@@ -52,7 +54,7 @@ It will be required to access Nessie APIs later.
       )
     ```
 
-**Note: when using keycloak 17+ change the URL to `http://localhost:8080/realms/master/protocol/openid-connect/token`**
+**Note: when using keycloak < 17 change the URL to `http://localhost:8080/auth/realms/master/protocol/openid-connect/token`**
 
 ## Setting up Nessie Server
 
@@ -61,13 +63,13 @@ using the Keycloak server for validating user credentials.
 
 ```shell
 docker run -p 19120:19120 \
-  -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/master \
+  -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/realms/master \
   -e QUARKUS_OIDC_CLIENT_ID=projectnessie \
   -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true \
   --network host ghcr.io/projectnessie/nessie:latest
 ```
 
-**Note: when using keycloak 17+ change the URL to `http://localhost:8080/realms/master/protocol/openid-connect/token`**
+**Note: when using keycloak < 17 change the URL to `http://localhost:8080/auth/realms/master/protocol/openid-connect/token`**
 
 Note: this example uses a snapshot build. When Nessie 1.0 is released, the `latest` stable image will be usable
 with the instructions from this guide.
