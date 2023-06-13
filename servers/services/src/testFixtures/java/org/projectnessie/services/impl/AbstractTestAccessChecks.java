@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -27,12 +28,12 @@ import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
 import static org.projectnessie.services.authz.Check.canCommitChangeAgainstReference;
+import static org.projectnessie.services.authz.Check.canCreateEntity;
 import static org.projectnessie.services.authz.Check.canDeleteEntity;
 import static org.projectnessie.services.authz.Check.canUpdateEntity;
 import static org.projectnessie.services.authz.Check.canViewReference;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -110,7 +111,8 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     ContentKey keyTable = ContentKey.of("ns1", "ns2", "key");
     Namespace namespace1 = Namespace.of(keyNamespace1);
     Namespace namespace2 = Namespace.of(keyNamespace2);
-    IcebergTable table = IcebergTable.of("foo", 42, 42, 42, 42);
+    IcebergTable table1 = IcebergTable.of("foo", 42, 42, 42, 42);
+    IcebergTable table2 = IcebergTable.of("bar", 42, 42, 42, 42);
     UDF unrelated = UDF.of("meep", "sql");
 
     Branch common = createBranch("common");
@@ -131,23 +133,25 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
             fromMessage("commit"),
             Put.of(keyNamespace1, namespace1),
             Put.of(keyNamespace2, namespace2),
-            Put.of(keyTable, table),
+            Put.of(keyTable, table1),
             Delete.of(keyUnrelated));
     source = response.getTargetBranch();
+    Branch source1 = source;
 
     namespace1 = response.contentWithAssignedId(keyNamespace1, namespace1);
     namespace2 = response.contentWithAssignedId(keyNamespace2, namespace2);
-    table = response.contentWithAssignedId(keyTable, table);
+    table1 = response.contentWithAssignedId(keyTable, table1);
+    table2 = table2.withId(table1.getId());
 
     soft.assertThat(namespace1.getId()).isNotNull();
     soft.assertThat(namespace2.getId()).isNotNull();
-    soft.assertThat(table.getId()).isNotNull();
+    soft.assertThat(table1.getId()).isNotNull();
 
     IdentifiedElement elementNamespace1 =
         identifiedElement(keyNamespace1.getName(), namespace1.getId());
     IdentifiedElement elementNamespace2 =
         identifiedElement(keyNamespace2.getName(), namespace2.getId());
-    IdentifiedElement elementTable = identifiedElement(keyTable.getName(), table.getId());
+    IdentifiedElement elementTable = identifiedElement(keyTable.getName(), table1.getId());
     IdentifiedElement elementUnrelated =
         identifiedElement(keyUnrelated.getName(), unrelated.getId());
 
@@ -166,7 +170,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     IdentifiedContentKey identifiedKeyTable =
         IdentifiedContentKey.builder()
             .contentKey(keyTable)
-            .type(table.getType())
+            .type(table1.getType())
             .addElements(elementNamespace1, elementNamespace2, elementTable)
             .build();
     IdentifiedContentKey identifiedKeyUnrelated =
@@ -180,10 +184,21 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     soft.assertThat(checks)
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
-        .contains(canUpdateEntity(ref, identifiedKeyNamespace1))
-        .contains(canUpdateEntity(ref, identifiedKeyNamespace2))
-        .contains(canUpdateEntity(ref, identifiedKeyTable))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace1))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace2))
+        .contains(canCreateEntity(ref, identifiedKeyTable))
         .contains(canDeleteEntity(ref, identifiedKeyUnrelated));
+
+    // Update entity on source branch
+
+    checks = recordAccessChecks();
+    response = commit(source, fromMessage("update"), Put.of(keyTable, table2));
+    source = response.getTargetBranch();
+
+    soft.assertThat(checks)
+        .contains(canCommitChangeAgainstReference(ref))
+        .contains(canViewReference(ref))
+        .contains(canUpdateEntity(ref, identifiedKeyTable));
 
     // Merge
 
@@ -207,9 +222,9 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
         .contains(canViewReference(BranchName.of(source.getName())))
-        .contains(canUpdateEntity(ref, identifiedKeyNamespace1))
-        .contains(canUpdateEntity(ref, identifiedKeyNamespace2))
-        .contains(canUpdateEntity(ref, identifiedKeyTable))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace1))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace2))
+        .contains(canCreateEntity(ref, identifiedKeyTable))
         .contains(canDeleteEntity(ref, identifiedKeyUnrelated));
 
     // Transplant
@@ -220,8 +235,8 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
             transplantTarget.getName(),
             transplantTarget.getHash(),
             null,
-            singletonList(source.getHash()),
-            source.getName(),
+            asList(source1.getHash(), source.getHash()),
+            source1.getName(),
             true,
             emptyList(),
             NORMAL,
@@ -234,8 +249,9 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
         .contains(canViewReference(BranchName.of(source.getName())))
-        .contains(canUpdateEntity(ref, identifiedKeyNamespace1))
-        .contains(canUpdateEntity(ref, identifiedKeyNamespace2))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace1))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace2))
+        .contains(canCreateEntity(ref, identifiedKeyTable))
         .contains(canUpdateEntity(ref, identifiedKeyTable))
         .contains(canDeleteEntity(ref, identifiedKeyUnrelated));
   }
@@ -278,7 +294,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
               .containsExactlyInAnyOrderElementsOf(expectedKeys);
         };
 
-    assertKeys.accept(Arrays.asList(keyAllowed1, keyAllowed2, keyForbidden1, keyForbidden2));
+    assertKeys.accept(asList(keyAllowed1, keyAllowed2, keyForbidden1, keyForbidden2));
 
     setBatchAccessChecker(
         x ->
@@ -298,7 +314,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
               }
             });
 
-    assertKeys.accept(Arrays.asList(keyAllowed1, keyAllowed2));
+    assertKeys.accept(asList(keyAllowed1, keyAllowed2));
   }
 
   @Test
@@ -344,7 +360,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     Tag detachedAsTag = Tag.of(Detached.REF_NAME, mainCommit.getHash());
     Detached detached = Detached.of(mainCommit.getHash());
 
-    for (Reference ref : Arrays.asList(detached, detachedAsBranch, detachedAsTag)) {
+    for (Reference ref : asList(detached, detachedAsBranch, detachedAsTag)) {
       soft.assertThatThrownBy(() -> commitLog(ref.getName(), MINIMAL, null, ref.getHash(), null))
           .describedAs("ref='%s', getCommitLog", ref)
           .isInstanceOf(AccessCheckException.class)

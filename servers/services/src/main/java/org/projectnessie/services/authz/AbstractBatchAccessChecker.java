@@ -103,6 +103,13 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
 
   @Override
   @Deprecated
+  public BatchAccessChecker canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+    canViewReference(ref);
+    return can(Check.canCreateEntity(ref, identifiedKey));
+  }
+
+  @Override
+  @Deprecated
   public BatchAccessChecker canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     canViewReference(ref);
     return can(Check.canUpdateEntity(ref, identifiedKey));

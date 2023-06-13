@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.DELETE;
+import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.ContentResult.contentResult;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
@@ -189,13 +191,14 @@ public class PersistVersionStore implements VersionStore {
             CommitValidation.CommitOperation.commitOperation(
                 identifiedContentKeyFromContent(
                     op.getKey(), contentTypeForPayload(payload), contentId.getId(), x -> null),
-                operation.getType()));
+                // Note: database adapter does _NOT_ distinguish between CREATE and UPDATE entity.
+                UPDATE));
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
         commitValidation.addOperations(
             CommitValidation.CommitOperation.commitOperation(
                 identifiedContentKeyFromContent(operation.getKey(), null, null, x -> null),
-                operation.getType()));
+                DELETE));
       } else if (operation instanceof Unchanged) {
         commitAttempt.addUnchanged(operation.getKey());
       } else {

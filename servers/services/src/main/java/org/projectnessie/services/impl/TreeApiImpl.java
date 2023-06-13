@@ -1008,8 +1008,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .operations()
           .forEach(
               op -> {
-                switch (op.operation()) {
-                  case PUT:
+                switch (op.operationType()) {
+                  case CREATE:
+                    check.canCreateEntity(branchName, op.identifiedKey());
+                    break;
+                  case UPDATE:
                     check.canUpdateEntity(branchName, op.identifiedKey());
                     break;
                   case DELETE:
@@ -1017,7 +1020,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                     break;
                   default:
                     throw new UnsupportedOperationException(
-                        "Unknown operation type " + op.operation());
+                        "Unknown operation type " + op.operationType());
                 }
               });
       check.checkAndThrow();
