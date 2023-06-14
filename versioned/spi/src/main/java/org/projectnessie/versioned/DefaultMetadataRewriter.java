@@ -32,6 +32,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
 
 public class DefaultMetadataRewriter implements MetadataRewriter<CommitMeta> {
+  public static final MetadataRewriter<CommitMeta> DEFAULT_METADATA_REWRITER =
+      new DefaultMetadataRewriter(null, null, null, numCommits -> null);
   private final String committer;
   private final Instant now;
   private final CommitMeta commitMetaOverride;

@@ -104,7 +104,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     false,
                     returnConflictAsResult),
         withDetachedCommit,
-        "Transplanted");
+        false);
   }
 
   @ParameterizedTest
@@ -143,7 +143,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                   returnConflictAsResult);
         },
         refMode == ReferenceMode.DETACHED,
-        "Merged");
+        true);
   }
 
   @FunctionalInterface
@@ -162,7 +162,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
       boolean keepIndividualCommits,
       MergeTransplantActor actor,
       boolean detached,
-      String mergedTransplanted)
+      boolean isMerge)
       throws BaseNessieClientServerException {
     Branch root = createBranch("root");
 
@@ -213,7 +213,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     // try again --> conflict
 
-    if (isNewStorageModel() && !keepIndividualCommits && "Merged".equals(mergedTransplanted)) {
+    if (isNewStorageModel() && !keepIndividualCommits && isMerge) {
       // New storage model allows "merging the same branch again". If nothing changed, it returns a
       // successful, but not-applied merge-response. This request is effectively a merge without any
       // commits to merge, reported as "successful".
@@ -251,8 +251,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
           .first(InstanceOfAssertFactories.STRING)
           .isEqualTo(
               format(
-                  "%s 2 commits from %s at %s into %s at %s",
-                  mergedTransplanted,
+                  "%s %s at %s into %s at %s",
+                  isMerge ? "Merged" : "Transplanted 2 commits from",
                   detached ? "DETACHED" : source.getName(),
                   committed2.getHash(),
                   target.getName(),
@@ -468,7 +468,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         .extracting(e -> e.getCommitMeta().getMessage())
         .containsExactly(
             format(
-                "Merged 2 commits from %s at %s into %s at %s",
+                "Merged %s at %s into %s at %s",
                 source.getName(), source.getHash(), target.getName(), target.getHash()));
   }
 
@@ -651,7 +651,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         .get()
         .isEqualTo(
             format(
-                "Merged 4 commits from %s at %s into %s at %s",
+                "Merged %s at %s into %s at %s",
                 fromRef.getName(), fromRef.getHash(), base.getName(), base.getHash()));
 
     soft.assertThat(

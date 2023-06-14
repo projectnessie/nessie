@@ -681,8 +681,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                               commitMeta,
                               numCommits ->
                                   String.format(
-                                      "Merged %d commits from %s at %s into %s%s",
-                                      numCommits,
+                                      "Merged %s at %s into %s%s",
                                       fromRefName,
                                       from.asString(),
                                       branchName,

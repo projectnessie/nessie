@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -44,7 +43,6 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -86,23 +84,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   private Hash thirdCommit;
   private List<Commit> commits;
 
-  private MetadataRewriter<CommitMeta> createMetadataRewriter(String suffix) {
-    return new MetadataRewriter<CommitMeta>() {
-      @Override
-      public CommitMeta rewriteSingle(CommitMeta metadata) {
-        return CommitMeta.fromMessage(metadata.getMessage());
-      }
-
-      @Override
-      public CommitMeta squash(List<CommitMeta> metadata, int numCommits) {
-        return CommitMeta.fromMessage(
-            metadata.stream()
-                .map(cm -> cm.getMessage() + suffix)
-                .collect(Collectors.joining("\n-----------------------------------\n")));
-      }
-    };
-  }
-
   @BeforeEach
   protected void setupCommits() throws VersionStoreException {
     store().create(sourceBranch, Optional.empty());
@@ -135,15 +116,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   @ValueSource(booleans = {false, true})
   protected void checkTransplantOnEmptyBranch(boolean individualCommits)
       throws VersionStoreException {
-    checkTransplantOnEmptyBranch(createMetadataRewriter(""), individualCommits);
+    doCheckTransplantOnEmptyBranch(individualCommits);
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void checkTransplantOnEmptyBranchModify(boolean individualCommits)
       throws VersionStoreException {
-    BranchName newBranch =
-        checkTransplantOnEmptyBranch(createMetadataRewriter(""), individualCommits);
+    BranchName newBranch = doCheckTransplantOnEmptyBranch(individualCommits);
 
     if (!individualCommits) {
       assertThat(commitsList(newBranch, false))
@@ -159,8 +139,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     }
   }
 
-  private BranchName checkTransplantOnEmptyBranch(
-      MetadataRewriter<CommitMeta> commitMetaModify, boolean individualCommits)
+  private BranchName doCheckTransplantOnEmptyBranch(boolean individualCommits)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_1");
     Hash targetHead = store().create(newBranch, Optional.empty()).getHash();
@@ -173,7 +152,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     .toBranch(newBranch)
                     .expectedHash(Optional.of(initialHash))
                     .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                    .updateCommitMetadata(commitMetaModify)
                     .keepIndividualCommits(individualCommits)
                     .build());
 
@@ -200,8 +178,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 ContentKey.of(T_4), V_4_1));
 
     if (individualCommits) {
-      assertCommitMeta(
-          soft, commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
+      assertCommitMeta(soft, commitsList(newBranch, false).subList(0, 3), commits);
     }
 
     return newBranch;
@@ -223,7 +200,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     .toBranch(newBranch)
                     .expectedHash(Optional.of(initialHash))
                     .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                    .updateCommitMetadata(createMetadataRewriter(""))
                     .keepIndividualCommits(individualCommits)
                     .build());
 
@@ -387,7 +363,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                             .toBranch(newBranch)
                             .expectedHash(Optional.of(initialHash))
                             .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                            .updateCommitMetadata(createMetadataRewriter(""))
                             .keepIndividualCommits(individualCommits)
                             .dryRun(dryRun)
                             .build()))
@@ -412,7 +387,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 .toBranch(newBranch)
                 .expectedHash(Optional.of(initialHash))
                 .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                .updateCommitMetadata(createMetadataRewriter(""))
                 .keepIndividualCommits(individualCommits)
                 .build());
     soft.assertThat(
@@ -451,7 +425,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                             .toBranch(newBranch)
                             .expectedHash(Optional.of(initialHash))
                             .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                            .updateCommitMetadata(createMetadataRewriter(""))
                             .keepIndividualCommits(individualCommits)
                             .dryRun(dryRun)
                             .build()))
@@ -480,7 +453,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                             .toBranch(newBranch)
                             .expectedHash(Optional.of(initialHash))
                             .addSequenceToTransplant(Hash.of("1234567890abcdef"))
-                            .updateCommitMetadata(createMetadataRewriter(""))
                             .keepIndividualCommits(individualCommits)
                             .dryRun(dryRun)
                             .build()))
@@ -504,7 +476,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 .fromRef(sourceBranch)
                 .toBranch(newBranch)
                 .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                .updateCommitMetadata(createMetadataRewriter(""))
                 .keepIndividualCommits(individualCommits)
                 .build());
     soft.assertThat(
@@ -547,7 +518,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                             .fromRef(sourceBranch)
                             .toBranch(newBranch)
                             .addSequenceToTransplant(secondCommit, firstCommit, thirdCommit)
-                            .updateCommitMetadata(createMetadataRewriter(""))
                             .keepIndividualCommits(individualCommits)
                             .dryRun(dryRun)
                             .build()));
@@ -584,7 +554,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                             .toBranch(newBranch)
                             .expectedHash(Optional.of(unrelatedCommit))
                             .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                            .updateCommitMetadata(createMetadataRewriter(""))
                             .keepIndividualCommits(individualCommits)
                             .dryRun(dryRun)
                             .build()))
@@ -607,7 +576,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     .toBranch(newBranch)
                     .expectedHash(Optional.of(initialHash))
                     .addSequenceToTransplant(firstCommit, secondCommit)
-                    .updateCommitMetadata(createMetadataRewriter(""))
                     .keepIndividualCommits(individualCommits)
                     .build());
 
@@ -708,7 +676,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 .toBranch(target)
                 .expectedHash(Optional.of(targetHead))
                 .addSequenceToTransplant(source1, source2)
-                .updateCommitMetadata(createMetadataRewriter(", merge-drop"))
                 .keepIndividualCommits(individualCommits)
                 .putMergeKeyBehaviors(key1, MergeKeyBehavior.of(key1, MergeBehavior.DROP))
                 .putMergeKeyBehaviors(key2, MergeKeyBehavior.of(key2, MergeBehavior.DROP))

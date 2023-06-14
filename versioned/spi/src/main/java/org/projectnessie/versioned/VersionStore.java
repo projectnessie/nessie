@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import static org.projectnessie.versioned.MetadataRewriter.NOOP_REWRITER;
+import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADATA_REWRITER;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
@@ -141,7 +141,7 @@ public interface VersionStore {
      */
     @Value.Default
     default MetadataRewriter<CommitMeta> updateCommitMetadata() {
-      return NOOP_REWRITER;
+      return DEFAULT_METADATA_REWRITER;
     }
 
     /** Whether to keep the individual commits and do not squash the commits to merge. */

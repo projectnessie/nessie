@@ -30,7 +30,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
@@ -76,18 +75,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
 
   @SuppressWarnings("MustBeClosedChecker")
   static List<ReferenceNotFoundFunction> referenceNotFoundFunctions() {
-    MetadataRewriter<CommitMeta> metadataRewriter =
-        new MetadataRewriter<CommitMeta>() {
-          @Override
-          public CommitMeta rewriteSingle(CommitMeta metadata) {
-            return null;
-          }
-
-          @Override
-          public CommitMeta squash(List<CommitMeta> metadata, int numCommits) {
-            return null;
-          }
-        };
     return Arrays.asList(
         // getCommits()
         new ReferenceNotFoundFunction("getCommits/branch")
@@ -227,7 +214,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                             .addSequenceToTransplant(
                                 s.hashOnReference(
                                     BranchName.of("main"), Optional.empty(), emptyList()))
-                            .updateCommitMetadata(metadataRewriter)
                             .build())),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
@@ -243,7 +229,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                                     Hash.of("12341234123412341234123412341234123412341234")))
                             .addSequenceToTransplant(
                                 Hash.of("12341234123412341234123412341234123412341234"))
-                            .updateCommitMetadata(metadataRewriter)
                             .keepIndividualCommits(true)
                             .build())),
         new ReferenceNotFoundFunction("transplant/empty/hash")
@@ -256,7 +241,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                             .toBranch(BranchName.of("main"))
                             .addSequenceToTransplant(
                                 Hash.of("12341234123412341234123412341234123412341234"))
-                            .updateCommitMetadata(metadataRewriter)
                             .build())),
         // diff()
         new ReferenceNotFoundFunction("diff/from-hash")

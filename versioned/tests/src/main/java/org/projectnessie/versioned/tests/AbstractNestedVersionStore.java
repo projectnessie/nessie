@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
+import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADATA_REWRITER;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,6 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -132,10 +132,7 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected static void assertCommitMeta(
-      SoftAssertions soft,
-      List<Commit> current,
-      List<Commit> expected,
-      MetadataRewriter<CommitMeta> commitMetaModifier) {
+      SoftAssertions soft, List<Commit> current, List<Commit> expected) {
     soft.assertThat(current)
         .map(Commit::getCommitMeta)
         .map(
@@ -145,7 +142,7 @@ public abstract class AbstractNestedVersionStore {
         .containsExactlyElementsOf(
             expected.stream()
                 .map(Commit::getCommitMeta)
-                .map(commitMetaModifier::rewriteSingle)
+                .map(DEFAULT_METADATA_REWRITER::rewriteSingle)
                 .collect(Collectors.toList()));
   }
 

@@ -112,9 +112,9 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             CommitMeta::getHash)
         .containsExactly(
             "NessieHerself",
-            "ThatNessieGuy",
+            isNewStorageModel() ? "NessieHerself" : "ThatNessieGuy",
             format(
-                "Merged 2 commits from %s at %s into %s at %s",
+                "Merged %s at %s into %s at %s",
                 main.getName(), main.getHash(), merge.getName(), merge.getHash()),
             merged.getHash());
   }
