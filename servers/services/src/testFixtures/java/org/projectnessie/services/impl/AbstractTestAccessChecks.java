@@ -103,7 +103,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
   @Test
   public void commitMergeTransplantAccessChecks() throws BaseNessieClientServerException {
-    assumeThat(persist).isNotNull();
+    assumeThat(databaseAdapter).isNull();
 
     ContentKey keyUnrelated = ContentKey.of("unrelated");
     ContentKey keyNamespace1 = ContentKey.of("ns1");

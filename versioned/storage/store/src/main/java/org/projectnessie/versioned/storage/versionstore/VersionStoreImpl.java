@@ -772,9 +772,7 @@ public class VersionStoreImpl implements VersionStore {
   @Override
   public MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
-
-    CommitterSupplier<Merge> supplier =
-        mergeOp.keepIndividualCommits() ? MergeIndividualImpl::new : MergeSquashImpl::new;
+    CommitterSupplier<Merge> supplier = MergeSquashImpl::new;
 
     if (mergeOp.dryRun()) {
       supplier = dryRunCommitterSupplier(supplier);

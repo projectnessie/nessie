@@ -18,6 +18,7 @@ package org.projectnessie.services.impl;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
 
@@ -120,6 +121,8 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
 
   @Test
   public void committerAndAuthorMergeUnsquashed() throws Exception {
+    assumeThat(databaseAdapter).isNotNull();
+
     Branch root = createBranch("root");
 
     root =

@@ -391,6 +391,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ValueSource(booleans = {false, true})
   protected void mergeIntoEmptyBranch3Commits(boolean individualCommits)
       throws VersionStoreException {
+    assumeThat(!isNewStorageModel() || !individualCommits).isTrue();
+
     final BranchName newBranch = BranchName.of("mergeIntoEmptyBranch3Commits");
     store().create(newBranch, Optional.of(initialHash));
 
@@ -744,6 +746,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ValueSource(booleans = {false, true})
   protected void mergeIntoEmptyBranchModifying(boolean individualCommits)
       throws VersionStoreException {
+    assumeThat(!isNewStorageModel() || !individualCommits).isTrue();
+
     final BranchName newBranch = BranchName.of("mergeIntoEmptyBranchModifying");
     store().create(newBranch, Optional.of(initialHash));
 
@@ -786,6 +790,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ValueSource(booleans = {false, true})
   protected void mergeIntoNonConflictingBranch(boolean individualCommits)
       throws VersionStoreException {
+    assumeThat(!isNewStorageModel() || !individualCommits).isTrue();
+
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.of(initialHash));
     final Hash newCommit = commit("Unrelated commit").put("t5", V_5_1).toBranch(newBranch);
@@ -946,6 +952,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void mergeWithCommonAncestor(boolean individualCommits) throws VersionStoreException {
+    assumeThat(!isNewStorageModel() || !individualCommits).isTrue();
+
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.of(firstCommit));
 
@@ -1028,6 +1036,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   })
   protected void mergeWithConflictingKeys(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
+    assumeThat(!isNewStorageModel() || !individualCommits).isTrue();
+
     final BranchName mergeInto = BranchName.of("foofoo");
     final BranchName mergeFrom = BranchName.of("barbar");
     store().create(mergeInto, Optional.of(this.initialHash));

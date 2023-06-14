@@ -21,6 +21,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -109,6 +110,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
   @ParameterizedTest
   @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
   public void mergeKeepCommits(ReferenceMode refMode) throws BaseNessieClientServerException {
+    assumeThat(databaseAdapter).isNotNull();
+
     testMerge(refMode, true);
   }
 
