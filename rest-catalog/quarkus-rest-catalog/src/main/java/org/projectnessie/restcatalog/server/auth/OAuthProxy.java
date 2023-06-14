@@ -22,11 +22,9 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
+
 import javax.enterprise.inject.Vetoed;
-import org.apache.commons.io.IOUtils;
-import org.apache.iceberg.rest.RESTUtil;
+
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
@@ -63,9 +61,7 @@ public class OAuthProxy implements OAuthHandler {
 
   private Uni<OAuthTokenResponse> sendAndReceive(OAuthTokenRequest req) {
     if (LOGGER.isDebugEnabled()) {
-      String encoded = IOUtils.toString(req.body(), StandardCharsets.UTF_8.name());
-      Map<String, String> formData = RESTUtil.decodeFormData(encoded);
-      LOGGER.debug("Sending token request: headers {} form data {}", req.headers(), formData);
+      OAuthUtils.printOAuthTokenRequest(req);
     }
     HttpRequest<Buffer> request = client.postAbs(tokenUri);
     req.headers().forEach(request::putHeader);
@@ -83,7 +79,9 @@ public class OAuthProxy implements OAuthHandler {
   private OAuthTokenResponse parseResponse(HttpResponse<Buffer> resp)
       throws OAuthTokenEndpointException {
     JsonObject json = resp.bodyAsJsonObject();
-    LOGGER.debug("Received token response: status {} body {}", resp.statusCode(), json);
+    if (LOGGER.isDebugEnabled()) {
+      OAuthUtils.printOAuthTokenResponse(resp, json);
+    }
     if (resp.statusCode() == 200) {
       return OAuthUtils.tokenResponseFromJson(json);
     } else {
@@ -102,4 +100,5 @@ public class OAuthProxy implements OAuthHandler {
         "OAuthTokenEndpointUnavailable",
         "OAuth token endpoint is unavailable");
   }
+
 }
