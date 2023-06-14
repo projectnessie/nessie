@@ -44,6 +44,7 @@ dependencies {
   implementation(project(":nessie-versioned-persist-transactional"))
 
   implementation(project(":nessie-versioned-storage-store"))
+  implementation(project(":nessie-versioned-storage-bigtable"))
   implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-cassandra"))
   implementation(project(":nessie-versioned-storage-common"))

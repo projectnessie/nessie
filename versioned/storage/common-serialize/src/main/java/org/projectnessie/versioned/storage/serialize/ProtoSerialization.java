@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -155,37 +156,53 @@ public final class ProtoSerialization {
     }
   }
 
+  public static Obj deserializeObj(ObjId id, ByteBuffer serialized) {
+    if (serialized == null) {
+      return null;
+    }
+    try {
+      ObjProto obj = ObjProto.parseFrom(serialized);
+      return deserializeObjProto(id, obj);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static Obj deserializeObj(ObjId id, byte[] serialized) {
     if (serialized == null) {
       return null;
     }
     try {
       ObjProto obj = ObjProto.parseFrom(serialized);
-      if (obj.hasCommit()) {
-        return deserializeCommit(id, obj.getCommit());
-      }
-      if (obj.hasContentValue()) {
-        return deserializeContentValue(id, obj.getContentValue());
-      }
-      if (obj.hasRef()) {
-        return deserializeRef(id, obj.getRef());
-      }
-      if (obj.hasIndexSegments()) {
-        return deserializeIndexSegments(id, obj.getIndexSegments());
-      }
-      if (obj.hasIndex()) {
-        return deserializeIndex(id, obj.getIndex());
-      }
-      if (obj.hasStringData()) {
-        return deserializeStringData(id, obj.getStringData());
-      }
-      if (obj.hasTag()) {
-        return deserializeTag(id, obj.getTag());
-      }
-      throw new UnsupportedOperationException("Cannot deserialize " + obj);
+      return deserializeObjProto(id, obj);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static Obj deserializeObjProto(ObjId id, ObjProto obj) {
+    if (obj.hasCommit()) {
+      return deserializeCommit(id, obj.getCommit());
+    }
+    if (obj.hasContentValue()) {
+      return deserializeContentValue(id, obj.getContentValue());
+    }
+    if (obj.hasRef()) {
+      return deserializeRef(id, obj.getRef());
+    }
+    if (obj.hasIndexSegments()) {
+      return deserializeIndexSegments(id, obj.getIndexSegments());
+    }
+    if (obj.hasIndex()) {
+      return deserializeIndex(id, obj.getIndex());
+    }
+    if (obj.hasStringData()) {
+      return deserializeStringData(id, obj.getStringData());
+    }
+    if (obj.hasTag()) {
+      return deserializeTag(id, obj.getTag());
+    }
+    throw new UnsupportedOperationException("Cannot deserialize " + obj);
   }
 
   private static CommitObj deserializeCommit(ObjId id, CommitProto commit) {
