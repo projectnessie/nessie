@@ -107,7 +107,7 @@ public class JakartaExceptionMapper implements ExceptionMapper<Exception> {
                     return genericErrorResponse(
                         404,
                         "NoSuchNamespaceException",
-                        "Namespace does not exist: " + keyMessage(ex, errorDetails));
+                        "Namespace does not exist: " + conflict.key());
                   case KEY_DOES_NOT_EXIST:
                     return genericErrorResponse(
                         404, "NoSuchTableException", "Table does not exist: " + ex.getMessage());
