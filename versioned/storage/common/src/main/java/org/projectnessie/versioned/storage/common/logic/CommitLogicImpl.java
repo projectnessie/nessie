@@ -828,20 +828,7 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
       @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException {
-    return MergeBase.builder()
-        .loadCommit(
-            commitId -> {
-              try {
-                return fetchCommit(commitId);
-              } catch (ObjNotFoundException e) {
-                return null;
-              }
-            })
-        .targetCommitId(targetId)
-        .fromCommitId(sourceId)
-        .respectMergeParents(false)
-        .build()
-        .identifyMergeBase();
+    return identifyMergeBase(targetId, sourceId, false);
   }
 
   @Nonnull
@@ -851,6 +838,10 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
       @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException {
+    return identifyMergeBase(targetId, sourceId, true);
+  }
+
+  private CommitObj identifyMergeBase(ObjId targetId, ObjId sourceId, boolean respectMergeParents) {
     return MergeBase.builder()
         .loadCommit(
             commitId -> {
@@ -862,7 +853,7 @@ final class CommitLogicImpl implements CommitLogic {
             })
         .targetCommitId(targetId)
         .fromCommitId(sourceId)
-        .respectMergeParents(true)
+        .respectMergeParents(respectMergeParents)
         .build()
         .identifyMergeBase();
   }
