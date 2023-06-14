@@ -29,7 +29,6 @@ import javax.inject.Singleton;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.HttpAuthentication;
-import org.projectnessie.restcatalog.server.auth.BearerTokenPropagatingAuthentication;
 import org.projectnessie.restcatalog.server.auth.BearerTokenPropagator;
 
 @ApplicationScoped
@@ -57,17 +56,17 @@ public class NessieApiProvider {
       throw new RuntimeException(e);
     }
 
-    Map<String, String> clientConfig = new HashMap<>(config.nessieClientConfig());
+    Map<String, String> cfg = new HashMap<>(config.nessieClientConfig());
 
-    String authType = getAuthType(clientConfig);
+    String authType = System.getProperty(CONF_NESSIE_AUTH_TYPE, cfg.get(CONF_NESSIE_AUTH_TYPE));
     HttpAuthentication authentication = null;
     if (Objects.equals(authType, PROPAGATE_AUTH_TYPE)) {
-      authentication = new BearerTokenPropagatingAuthentication(tokenPropagator);
+      authentication = builder -> builder.addRequestFilter(tokenPropagator);
       System.clearProperty(CONF_NESSIE_AUTH_TYPE);
-      clientConfig.remove(CONF_NESSIE_AUTH_TYPE);
+      cfg.remove(CONF_NESSIE_AUTH_TYPE);
     }
 
-    clientBuilder.fromSystemProperties().fromConfig(clientConfig::get);
+    clientBuilder.fromSystemProperties().fromConfig(cfg::get);
 
     // must be set after fromSystemProperties and fromConfig
     if (authentication != null) {
@@ -75,10 +74,6 @@ public class NessieApiProvider {
     }
 
     return clientBuilder.build(NessieApiV2.class);
-  }
-
-  private static String getAuthType(Map<String, String> clientConfig) {
-    return System.getProperty(CONF_NESSIE_AUTH_TYPE, clientConfig.get(CONF_NESSIE_AUTH_TYPE));
   }
 
   public void disposeNessieApi(@Disposes NessieApiV2 api) {
