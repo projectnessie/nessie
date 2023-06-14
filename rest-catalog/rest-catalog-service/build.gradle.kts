@@ -27,7 +27,7 @@ extra["maven.name"] = "Nessie - REST Catalog - Service"
 val icebergVersion = libs.versions.iceberg.get()
 
 dependencies {
-  implementation(project(":nessie-client"))
+  implementation(nessieProject(":nessie-client"))
 
   implementation("org.apache.iceberg:iceberg-core:$icebergVersion")
 
@@ -59,7 +59,7 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
-  testFixturesApi(project(":nessie-client"))
+  testFixturesApi(nessieProject(":nessie-client"))
   testFixturesApi(libs.guava)
 
   testFixturesApi("org.apache.iceberg:iceberg-core:$icebergVersion")
@@ -115,8 +115,8 @@ dependencies {
   testFixturesImplementation(libs.slf4j.api)
   testFixturesRuntimeOnly(libs.logback.classic)
 
-  testFixturesApi(project(":nessie-jaxrs-testextension"))
-  testFixturesApi(project(":nessie-versioned-storage-inmemory"))
+  testFixturesApi(nessieProject(":nessie-jaxrs-testextension"))
+  testFixturesApi(nessieProject(":nessie-versioned-storage-inmemory"))
 
   testCompileOnly(libs.microprofile.openapi)
 }
