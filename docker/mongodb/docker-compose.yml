@@ -19,17 +19,17 @@ services:
   nessie:
     image: ghcr.io/projectnessie/nessie:latest
     ports:
-      - 19120:19120
+      - "19120:19120"
     depends_on:
       - mongo
     environment:
-      - nessie.version.store.type=MONGO
+      - nessie.version.store.type=MONGODB
       - quarkus.mongodb.database=nessie
       - quarkus.mongodb.connection-string=mongodb://root:password@mongo:27017
   mongo:
     image: mongo
     ports:
-      - 27017:27017
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
