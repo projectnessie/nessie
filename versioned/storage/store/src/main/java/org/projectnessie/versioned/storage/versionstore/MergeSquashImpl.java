@@ -15,9 +15,15 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +36,9 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
+import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -71,5 +79,36 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     }
 
     return squash(mergeOp, mergeResult, sourceCommits, fromId);
+  }
+
+  private CommitObj identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
+    CommitLogic commitLogic = commitLogic(persist);
+    try {
+      return commitLogic.findMergeBase(headId(), fromId);
+    } catch (NoSuchElementException notFound) {
+      throw new ReferenceNotFoundException(notFound.getMessage());
+    }
+  }
+
+  private SourceCommitsAndParent loadSourceCommitsForMerge(
+      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId) {
+    CommitLogic commitLogic = commitLogic(persist);
+    List<CommitObj> commits = new ArrayList<>();
+    CommitObj parent = null;
+    for (PagedResult<CommitObj, ObjId> commitLog =
+            commitLogic.commitLog(commitLogQuery(null, startCommitId, endCommitId));
+        commitLog.hasNext(); ) {
+      CommitObj commit = commitLog.next();
+      if (commit.id().equals(endCommitId)) {
+        parent = commit;
+        break;
+      }
+      commits.add(commit);
+    }
+
+    // Ends here, if 'endCommitId' is NO_ANCESTOR (parent == null)
+    Collections.reverse(commits);
+    return new SourceCommitsAndParent(commits, parent);
   }
 }

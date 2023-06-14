@@ -30,7 +30,6 @@ import static org.projectnessie.versioned.CommitValidation.CommitOperationType.D
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.MergeResult.KeyDetails.keyDetails;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
-import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
@@ -46,13 +45,11 @@ import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeFo
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -80,7 +77,6 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
@@ -100,7 +96,6 @@ import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryExcepti
 import org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
-import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -443,13 +438,13 @@ class BaseCommitHelper {
     /** Parent of the oldest commit. */
     final CommitObj sourceParent;
 
+    final CommitObj mostRecent;
+
     SourceCommitsAndParent(List<CommitObj> sourceCommits, CommitObj sourceParent) {
       this.sourceCommits = sourceCommits;
       this.sourceParent = sourceParent;
-    }
-
-    CommitObj mostRecent() {
-      return sourceCommits.get(sourceCommits.size() - 1);
+      int sourceCommitCount = sourceCommits.size();
+      this.mostRecent = sourceCommitCount > 0 ? sourceCommits.get(sourceCommitCount - 1) : null;
     }
   }
 
@@ -496,57 +491,6 @@ class BaseCommitHelper {
     return new SourceCommitsAndParent(commits, parent);
   }
 
-  SourceCommitsAndParent loadSourceCommitsForMerge(
-      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId) {
-    CommitLogic commitLogic = commitLogic(persist);
-    List<CommitObj> commits = new ArrayList<>();
-    CommitObj parent = null;
-    for (PagedResult<CommitObj, ObjId> commitLog =
-            commitLogic.commitLog(commitLogQuery(null, startCommitId, endCommitId));
-        commitLog.hasNext(); ) {
-      CommitObj commit = commitLog.next();
-      if (commit.id().equals(endCommitId)) {
-        parent = commit;
-        break;
-      }
-      commits.add(commit);
-    }
-
-    // Ends here, if 'endCommitId' is NO_ANCESTOR (parent == null)
-    Collections.reverse(commits);
-    return new SourceCommitsAndParent(commits, parent);
-  }
-
-  ImmutableMergeResult<Commit> mergeSquashFastForward(
-      VersionStore.MergeOp mergeOp,
-      ObjId fromId,
-      CommitObj source,
-      ImmutableMergeResult.Builder<Commit> result)
-      throws RetryException {
-    result.wasSuccessful(true);
-
-    MergeBehaviors mergeBehaviors = new MergeBehaviors(mergeOp);
-
-    IndexesLogic indexesLogic = indexesLogic(persist);
-    for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(source)) {
-      StoreKey k = el.key();
-      ContentKey key = storeKeyToKey(k);
-      // Note: key==null, if not the "main universe" or not a "content" discriminator
-      if (key != null) {
-        result.putDetails(key, keyDetails(mergeBehaviors.mergeBehavior(key), null));
-      }
-    }
-
-    // Only need bump the reference pointer
-    if (!mergeOp.dryRun()) {
-      bumpReferencePointer(fromId, Optional.empty());
-      result.wasApplied(true).resultantTargetHash(objIdToHash(fromId));
-    }
-
-    return result.build();
-  }
-
   ImmutableMergeResult.Builder<Commit> prepareMergeResult() {
     ImmutableMergeResult.Builder<Commit> mergeResult =
         MergeResult.<Commit>builder()
@@ -555,15 +499,6 @@ class BaseCommitHelper {
 
     referenceHash.ifPresent(mergeResult::expectedHash);
     return mergeResult;
-  }
-
-  CommitObj identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
-    CommitLogic commitLogic = commitLogic(persist);
-    try {
-      return commitLogic.findMergeBase(headId(), fromId);
-    } catch (NoSuchElementException notFound) {
-      throw new ReferenceNotFoundException(notFound.getMessage());
-    }
   }
 
   CommitObj createMergeTransplantCommit(

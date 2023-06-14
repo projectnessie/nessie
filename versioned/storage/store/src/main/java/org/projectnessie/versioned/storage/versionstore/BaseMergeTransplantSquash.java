@@ -164,7 +164,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     CommitLogic commitLogic = commitLogic(persist);
     PagedResult<DiffEntry, StoreKey> diff =
         commitLogic.diff(
-            diffQuery(sourceCommits.sourceParent, sourceCommits.mostRecent(), true, filter));
+            diffQuery(sourceCommits.sourceParent, sourceCommits.mostRecent, true, filter));
 
     return commitLogic.diffToCreateCommit(diff, commitBuilder).build();
   }
