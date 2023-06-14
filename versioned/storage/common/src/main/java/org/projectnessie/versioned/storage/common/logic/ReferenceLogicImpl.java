@@ -180,12 +180,22 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @jakarta.annotation.Nonnull
   public List<Reference> getReferences(
       @Nonnull @jakarta.annotation.Nonnull List<String> references) {
-    Reference[] refs = persist.fetchReferences(references.toArray(new String[0]));
-    List<Reference> r = new ArrayList<>(refs.length);
+    int refCount = references.size();
+    String[] refsArray;
+    int refRefsIndex = references.indexOf(REF_REFS.name());
+    if (refRefsIndex != -1) {
+      refsArray = references.toArray(new String[refCount]);
+    } else {
+      refsArray = references.toArray(new String[refCount + 1]);
+      refRefsIndex = references.size();
+      refsArray[refRefsIndex] = REF_REFS.name();
+    }
+    Reference[] refs = persist.fetchReferences(refsArray);
 
-    Supplier<StoreIndex<CommitOp>> refsIndexSupplier = createRefsIndexSupplier();
+    Supplier<StoreIndex<CommitOp>> refsIndexSupplier = createRefsIndexSupplier(refs[refRefsIndex]);
 
-    for (int i = 0; i < refs.length; i++) {
+    List<Reference> r = new ArrayList<>(refCount);
+    for (int i = 0; i < refCount; i++) {
       Reference ref = refs[i];
 
       ref = maybeRecover(references.get(i), ref, refsIndexSupplier);
@@ -314,9 +324,10 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     checkArgument(!isInternalReferenceName(name));
 
     Reference reference = persist.fetchReference(name);
+    Supplier<StoreIndex<CommitOp>> indexSupplier = null;
     if (reference == null) {
       StoreKey nameKey = key(name);
-      Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
+      indexSupplier = createRefsIndexSupplier();
       StoreIndexElement<CommitOp> index = indexSupplier.get().get(nameKey);
       if (index == null) {
         // not there --> okay
@@ -336,7 +347,9 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       // A previous deleteReference failed, act as if the first one succeeded, therefore this
       // one must throw a ReferenceNotFoundException instead of a ReferenceConditionFailedException
       if (!actAsAlreadyDeleted) {
-        Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
+        if (indexSupplier == null) {
+          indexSupplier = createRefsIndexSupplier();
+        }
         Reference recovered = maybeRecover(name, reference, indexSupplier);
         throw new RefConditionFailedException(recovered != null ? recovered : reference);
       }
@@ -632,5 +645,11 @@ final class ReferenceLogicImpl implements ReferenceLogic {
               Reference ref = persist.fetchReference(REF_REFS.name());
               return ref != null ? ref.pointer() : EMPTY_OBJ_ID;
             });
+  }
+
+  @VisibleForTesting
+  Supplier<StoreIndex<CommitOp>> createRefsIndexSupplier(Reference refRefs) {
+    return indexesLogic(persist)
+        .createIndexSupplier(() -> refRefs != null ? refRefs.pointer() : EMPTY_OBJ_ID);
   }
 }
