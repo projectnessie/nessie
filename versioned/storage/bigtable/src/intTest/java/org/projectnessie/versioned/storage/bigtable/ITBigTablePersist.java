@@ -30,7 +30,7 @@ public class ITBigTablePersist extends AbstractPersistTests {
   @Nested
   public class NoAdminClientBackendRepositoryTests extends AbstractBackendRepositoryTests {
     @BeforeEach
-    void blah() {
+    void noAdminClient() {
       BigTableBackend b = (BigTableBackend) backend;
       backend = new BigTableBackend(b.client(), null, false);
     }
