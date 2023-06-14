@@ -84,15 +84,30 @@ jobs:
       - name: Bump Gradle daemon heap
         run: sed -i 's/-Xms.*/-Xms6G -Xmx6G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
 
-      - name: Gradle / Code Checks
+      - name: Gradle / Spotless
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: spotlessCheck checkstyle
+          arguments: spotlessCheck
+
+      - name: Gradle / Compile
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: compileAll
+
+      - name: Gradle / Checkstyle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: checkstyle
 
       - name: Gradle / Assemble
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: assemble publishToMavenLocal --scan
+          arguments: assemble
+
+      - name: Gradle / Publish to Maven local
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishToMavenLocal
 
       # This is a rather quick one and uses the output of 'publishToMavenLocal', which uses the
       # outputs of 'assemble'
