@@ -264,16 +264,16 @@ public class TestMergeBase {
    * ----A------C--------E----G
    * </pre></code>
    *
-   * <p>Merge-base outcome for {@code F} onto {@code G} can be {@code D} or {@code E}
-   * (non-deterministic!).
+   * <p>Merge-base outcome for {@code F} onto {@code G} is {@code B}. In theory, it could also be
+   * {@code C}, but the logic/implementation ensures that it's always {@code B}.
    */
   @Test
   void afterCrossMerge() {
     CommitObj a = repo.add(initialCommit());
     CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
     CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(b.id()).addSecondaryParents(b.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(c.id()).addSecondaryParents(d.id()));
+    CommitObj d = repo.add(buildCommit("d").addTail(b.id()).addSecondaryParents(c.id()));
+    CommitObj e = repo.add(buildCommit("e").addTail(c.id()).addSecondaryParents(b.id()));
     CommitObj f = repo.add(buildCommit("f").addTail(d.id()));
     CommitObj g = repo.add(buildCommit("g").addTail(e.id()));
 
@@ -284,7 +284,7 @@ public class TestMergeBase {
                 .fromCommitId(f.id())
                 .build()
                 .identifyMergeBase())
-        .isIn(d, e);
+        .isEqualTo(b);
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
