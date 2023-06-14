@@ -122,7 +122,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.fetchOption(),
             params.filter(),
             params.pageToken(),
-            new PagedCountingResponseHandler<>(maxRecords) {
+            new PagedCountingResponseHandler<ReferencesResponse, Reference>(maxRecords) {
               final ImmutableReferencesResponse.Builder builder = ReferencesResponse.builder();
 
               @Override
@@ -184,7 +184,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.filter(),
             params.pageToken(),
             params.withContent(),
-            new PagedCountingResponseHandler<>(maxRecords) {
+            new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
               @Override
               public EntriesResponse build() {
                 return builder.build();
@@ -222,7 +222,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             reference.hashWithRelativeSpec(),
             params.filter(),
             params.pageToken(),
-            new PagedCountingResponseHandler<>(maxRecords, MAX_COMMIT_LOG_ENTRIES) {
+            new PagedCountingResponseHandler<LogResponse, LogEntry>(
+                maxRecords, MAX_COMMIT_LOG_ENTRIES) {
               final ImmutableLogResponse.Builder builder = ImmutableLogResponse.builder();
 
               @Override
@@ -257,7 +258,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             to.name(),
             to.hashWithRelativeSpec(),
             params.pageToken(),
-            new PagedCountingResponseHandler<>(maxRecords) {
+            new PagedCountingResponseHandler<DiffResponse, DiffEntry>(maxRecords) {
               @Override
               public DiffResponse build() {
                 return builder.build();
