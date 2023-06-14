@@ -32,7 +32,7 @@ import java.util.Map;
  * </pre>
  *
  * <p>Because of that, we need to handle it differently from other endpoints and refrain from
- * mapping it to {@link GenericIcebergRestException}.
+ * extending {@link GenericIcebergRestException}.
  */
 public class OAuthTokenEndpointException extends RuntimeException {
 
