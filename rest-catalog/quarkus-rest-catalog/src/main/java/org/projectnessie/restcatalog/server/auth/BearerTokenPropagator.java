@@ -16,13 +16,14 @@
 package org.projectnessie.restcatalog.server.auth;
 
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 
 @RequestScoped
-public class DynamicBearerAuthenticationFilter implements RequestFilter {
+public class BearerTokenPropagator implements RequestFilter {
 
   /**
    * The request headers.
@@ -41,6 +42,7 @@ public class DynamicBearerAuthenticationFilter implements RequestFilter {
   @Context HttpHeaders headers;
 
   @Override
+  @ActivateRequestContext
   public void filter(RequestContext context) {
     String authorization = headers.getHeaderString("Authorization");
     if (authorization != null) {

@@ -15,20 +15,25 @@
  */
 package org.projectnessie.restcatalog.server.auth;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.RequestFilter;
 
-@ApplicationScoped
-public class DynamicBearerAuthentication implements HttpAuthentication {
+/**
+ * An {@link HttpAuthentication} implementation that simply adds the injected {@link
+ * BearerTokenPropagator} bean as a request filter into the Nessie client, thus propagating the
+ * bearer token from the incoming request to the Nessie client.
+ */
+public class BearerTokenPropagatingAuthentication implements HttpAuthentication {
 
-  @Inject RequestFilter filter;
+  private final BearerTokenPropagator bearerTokenPropagator;
+
+  public BearerTokenPropagatingAuthentication(BearerTokenPropagator bearerTokenPropagator) {
+    this.bearerTokenPropagator = bearerTokenPropagator;
+  }
 
   @Override
   public void applyToHttpClient(HttpClient.Builder client) {
-    client.addRequestFilter(filter);
+    client.addRequestFilter(bearerTokenPropagator);
   }
 
   @Override
