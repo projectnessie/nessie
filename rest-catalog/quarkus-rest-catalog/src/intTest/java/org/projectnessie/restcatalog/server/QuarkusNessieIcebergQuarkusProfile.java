@@ -49,6 +49,8 @@ public class QuarkusNessieIcebergQuarkusProfile implements QuarkusTestProfile {
         "nessie.iceberg.nessie-client.\"nessie.uri\"",
         uri,
         // TODO enable auth in ITs
+        "nessie.iceberg.nessie-client.\"nessie.authentication.type\"",
+        "NONE",
         "quarkus.oidc.enabled",
         "false");
   }
