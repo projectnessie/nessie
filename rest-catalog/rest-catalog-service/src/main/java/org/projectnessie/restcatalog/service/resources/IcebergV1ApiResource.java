@@ -38,9 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
-import javax.validation.constraints.NotNull;
 import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.MetadataUpdate.SetProperties;
 import org.apache.iceberg.PartitionSpec;
@@ -432,9 +430,9 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
   }
 
   private void updateIcebergTable(
-      @NotNull @jakarta.validation.constraints.NotNull TableMetadata metadata,
-      @Nullable IcebergTable existingIcebergTable,
-      @NotNull ImmutablePut.Builder putOperation) {
+      TableMetadata metadata,
+      IcebergTable existingIcebergTable,
+      ImmutablePut.Builder putOperation) {
     ImmutableIcebergTable.Builder builder = IcebergTable.builder();
     if (existingIcebergTable != null) {
       builder.from(existingIcebergTable);
