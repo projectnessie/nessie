@@ -36,9 +36,9 @@ val quarkusRunner by
   }
 
 dependencies {
-  implementation(project(":nessie-rest-catalog-service"))
-  implementation(project(":nessie-model"))
-  implementation(project(":nessie-client"))
+  implementation(nessieProject(":nessie-rest-catalog-service"))
+  implementation(nessieProject(":nessie-model"))
+  implementation(nessieProject(":nessie-client"))
 
   implementation("org.apache.iceberg:iceberg-core:$icebergVersion")
 
