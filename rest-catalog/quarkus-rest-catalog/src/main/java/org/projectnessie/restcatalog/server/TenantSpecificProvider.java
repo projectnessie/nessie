@@ -19,10 +19,10 @@ import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
 import io.quarkus.runtime.Startup;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.apache.iceberg.io.FileIO;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;

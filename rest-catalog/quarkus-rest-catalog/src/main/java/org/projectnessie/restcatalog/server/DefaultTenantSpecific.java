@@ -15,7 +15,7 @@
  */
 package org.projectnessie.restcatalog.server;
 
-import javax.enterprise.inject.Vetoed;
+import jakarta.enterprise.inject.Vetoed;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.restcatalog.metadata.MetadataIO;

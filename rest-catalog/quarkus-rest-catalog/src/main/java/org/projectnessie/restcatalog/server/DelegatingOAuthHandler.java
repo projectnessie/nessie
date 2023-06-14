@@ -15,7 +15,7 @@
  */
 package org.projectnessie.restcatalog.server;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
 import org.projectnessie.restcatalog.service.auth.OAuthRequest;
 import org.projectnessie.restcatalog.service.auth.OAuthResponse;
