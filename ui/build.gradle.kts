@@ -304,6 +304,10 @@ tasks.named("check") {
   dependsOn(npmLint)
 }
 
+tasks.named("compileAll") { dependsOn(npmBuild) }
+
+tasks.named("checkstyle") { dependsOn(npmLint) }
+
 // NPM tests regularly (nearly consistently) fail
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
   tasks.named("test") { this.enabled = false }
