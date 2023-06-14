@@ -41,6 +41,7 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashT
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
@@ -59,6 +60,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -77,6 +79,7 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
@@ -429,27 +432,10 @@ class BaseCommitHelper {
     validateNamespaces(checkContents, deletedKeysAndPayload, headIndex);
   }
 
-  /** Source commits for merge and transplant operations. */
-  static final class SourceCommitsAndParent {
-
-    /** Source commits in chronological order, most recent commit last. */
-    final List<CommitObj> sourceCommits;
-
-    /** Parent of the oldest commit. */
-    final CommitObj sourceParent;
-
-    final CommitObj mostRecent;
-
-    SourceCommitsAndParent(List<CommitObj> sourceCommits, CommitObj sourceParent) {
-      this.sourceCommits = sourceCommits;
-      this.sourceParent = sourceParent;
-      int sourceCommitCount = sourceCommits.size();
-      this.mostRecent = sourceCommitCount > 0 ? sourceCommits.get(sourceCommitCount - 1) : null;
-    }
-  }
-
-  SourceCommitsAndParent loadSourceCommitsForTransplant(List<Hash> commitHashes)
+  MergeTransplantContext loadSourceCommitsForTransplant(VersionStore.TransplantOp transplantOp)
       throws ReferenceNotFoundException {
+    List<Hash> commitHashes = transplantOp.sequenceToTransplant();
+
     checkArgument(
         !commitHashes.isEmpty(),
         "No hashes to transplant onto %s @ %s, expected commit ID from request was %s.",
@@ -488,7 +474,14 @@ class BaseCommitHelper {
       commits.add(commit);
     }
 
-    return new SourceCommitsAndParent(commits, parent);
+    List<CommitMeta> commitsMetadata = new ArrayList<>(commits.size());
+    for (CommitObj sourceCommit : commits) {
+      commitsMetadata.add(toCommitMeta(sourceCommit));
+    }
+    CommitMeta metadata =
+        transplantOp.updateCommitMetadata().squash(commitsMetadata, commits.size());
+
+    return new MergeTransplantContext(commits, parent, metadata);
   }
 
   ImmutableMergeResult.Builder<Commit> prepareMergeResult() {

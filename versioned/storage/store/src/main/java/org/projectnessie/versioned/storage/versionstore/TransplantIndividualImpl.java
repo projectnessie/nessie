@@ -71,15 +71,14 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
   @Override
   public MergeResult<Commit> transplant(Optional<?> retryState, TransplantOp transplantOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
-    SourceCommitsAndParent sourceCommits =
-        loadSourceCommitsForTransplant(transplantOp.sequenceToTransplant());
+    MergeTransplantContext mergeTransplantContext = loadSourceCommitsForTransplant(transplantOp);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(transplantOp.fromRef());
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     StoreIndex<CommitOp> sourceParentIndex =
-        indexesLogic.buildCompleteIndexOrEmpty(sourceCommits.sourceParent);
+        indexesLogic.buildCompleteIndexOrEmpty(mergeTransplantContext.baseCommit());
     StoreIndex<CommitOp> targetParentIndex = indexesLogic.buildCompleteIndexOrEmpty(head);
 
     MergeBehaviors mergeBehaviors = new MergeBehaviors(transplantOp);
@@ -88,7 +87,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
     ObjId newHead = headId();
     boolean empty = true;
     Map<ContentKey, MergeResult.KeyDetails> keyDetailsMap = new HashMap<>();
-    for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
+    for (CommitObj sourceCommit : mergeTransplantContext.sourceCommits()) {
       CreateCommit createCommit =
           cloneCommit(
               transplantOp.updateCommitMetadata(), sourceCommit, sourceParentIndex, newHead);

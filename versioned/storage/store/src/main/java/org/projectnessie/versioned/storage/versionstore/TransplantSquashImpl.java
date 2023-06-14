@@ -47,12 +47,11 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
   @Override
   public MergeResult<Commit> transplant(Optional<?> retryState, TransplantOp transplantOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
-    SourceCommitsAndParent sourceCommits =
-        loadSourceCommitsForTransplant(transplantOp.sequenceToTransplant());
+    MergeTransplantContext mergeTransplantContext = loadSourceCommitsForTransplant(transplantOp);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(transplantOp.fromRef());
 
-    return squash(transplantOp, mergeResult, sourceCommits, null);
+    return squash(transplantOp, mergeResult, mergeTransplantContext, null);
   }
 }

@@ -15,18 +15,16 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -36,9 +34,9 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
-import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -62,7 +60,8 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     ObjId fromId = hashToObjId(mergeOp.fromHash());
     ObjId commonAncestorId = identifyMergeBase(fromId).id();
 
-    SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
+    MergeTransplantContext mergeTransplantContext =
+        loadSourceCommitsForMerge(fromId, commonAncestorId, mergeOp);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult()
@@ -70,7 +69,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
             .sourceRef(mergeOp.fromRef())
             .commonAncestor(objIdToHash(commonAncestorId));
 
-    if (sourceCommits.sourceCommits.isEmpty()) {
+    if (fromId.equals(commonAncestorId)) {
       return mergeResult
           .wasSuccessful(true)
           .wasApplied(false)
@@ -78,7 +77,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
           .build();
     }
 
-    return squash(mergeOp, mergeResult, sourceCommits, fromId);
+    return squash(mergeOp, mergeResult, mergeTransplantContext, fromId);
   }
 
   private CommitObj identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
@@ -90,25 +89,19 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     }
   }
 
-  private SourceCommitsAndParent loadSourceCommitsForMerge(
+  private MergeTransplantContext loadSourceCommitsForMerge(
       @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId) {
-    CommitLogic commitLogic = commitLogic(persist);
-    List<CommitObj> commits = new ArrayList<>();
-    CommitObj parent = null;
-    for (PagedResult<CommitObj, ObjId> commitLog =
-            commitLogic.commitLog(commitLogQuery(null, startCommitId, endCommitId));
-        commitLog.hasNext(); ) {
-      CommitObj commit = commitLog.next();
-      if (commit.id().equals(endCommitId)) {
-        parent = commit;
-        break;
-      }
-      commits.add(commit);
+      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId,
+      @Nonnull @jakarta.annotation.Nonnull MergeOp mergeOp) {
+    CommitObj[] startEndCommits;
+    try {
+      startEndCommits = commitLogic(persist).fetchCommits(startCommitId, endCommitId);
+    } catch (ObjNotFoundException e) {
+      throw new RuntimeException(e);
     }
 
-    // Ends here, if 'endCommitId' is NO_ANCESTOR (parent == null)
-    Collections.reverse(commits);
-    return new SourceCommitsAndParent(commits, parent);
+    CommitMeta metadata = mergeOp.updateCommitMetadata().rewriteSingle(fromMessage(""));
+
+    return new MergeTransplantContext(startEndCommits[0], startEndCommits[1], metadata);
   }
 }
