@@ -222,7 +222,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
               MergeResponse::wasApplied,
               MergeResponse::wasSuccessful)
           .containsExactly(committed2.getHash(), newHead.getHash(), newHead.getHash(), false, true);
-      ;
     } else {
       soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
           .isInstanceOf(NessieReferenceConflictException.class)
