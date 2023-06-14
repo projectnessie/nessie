@@ -19,7 +19,7 @@ services:
   nessie:
     image: ghcr.io/projectnessie/nessie:latest
     ports:
-      - 19120:19120
+      - "19120:19120"
     depends_on:
       - keycloak
     environment:
@@ -28,11 +28,19 @@ services:
       QUARKUS_OIDC_ENABLED: true
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/master
       QUARKUS_OIDC_CLIENT_ID: projectnessie
+      # QUARKUS_OIDC_TOKEN_ISSUER: any
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     ports:
-      - 8080:8080
+      - "8080:8080"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      # Required if Nessie fails to validate the issuer claim;
+      # but the admin console won't be accessible from the host system
+      # at localhost:8080 anymore; you will need to add an entry to
+      # /etc/hosts:
+      # 127.0.0.1  keycloak
+      # Another option is to set QUARKUS_OIDC_TOKEN_ISSUER above
+      KC_HOSTNAME_URL: http://keycloak:8080
     command: start-dev

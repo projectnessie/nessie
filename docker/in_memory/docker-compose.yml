@@ -21,4 +21,4 @@ services:
     ports:
       - 19120:19120
     environment:
-      - nessie.version.store.type=INMEMORY # Ephemeral storage, data is lost during reset.
+      - nessie.version.store.type=IN_MEMORY # Ephemeral storage, data is lost during reset.

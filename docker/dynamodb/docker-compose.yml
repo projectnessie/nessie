@@ -19,11 +19,11 @@ services:
   nessie:
     image: ghcr.io/projectnessie/nessie:latest
     ports:
-      - 19120:19120
+      - "19120:19120"
     depends_on:
       - dynamodb
     environment:
-      - nessie.version.store.type=DYNAMO
+      - nessie.version.store.type=DYNAMODB
       - quarkus.dynamodb.endpoint-override=http://dynamodb:8000
       - quarkus.dynamodb.aws.region=us-west-2
       - quarkus.dynamodb.aws.credentials.type=STATIC
@@ -32,4 +32,4 @@ services:
   dynamodb:
     image: amazon/dynamodb-local
     ports:
-        - 8000:8000
+        - "8000:8000"
