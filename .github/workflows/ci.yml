@@ -82,7 +82,7 @@ jobs:
 
       # Needed for the Quarkus plugin - can likely go away once we use Quarkus 3 or newer
       - name: Bump Gradle daemon heap
-        run: sed -i 's/-Xms.*/-Xms5G -Xmx5G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
+        run: sed -i 's/-Xms.*/-Xms6G -Xmx6G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
 
       - name: Gradle / Code Checks
         uses: gradle/gradle-build-action@v2
