@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import java.util.Arrays;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -136,5 +137,45 @@ final class ShallowCommit {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder f = new StringBuilder();
+    if ((flags & BOTH_COMMITS) == BOTH_COMMITS) {
+      f.append("BOTH_COMMITS");
+    } else {
+      if ((flags & COMMIT_A) != 0) {
+        f.append("COMMIT_A");
+      }
+      if ((flags & COMMIT_B) != 0) {
+        if (f.length() > 0) {
+          f.append(", ");
+        }
+        f.append("COMMIT_B");
+      }
+    }
+    if ((flags & CANDIDATE) != 0) {
+      if (f.length() > 0) {
+        f.append(", ");
+      }
+      f.append("CANDIDATE");
+    }
+    if ((flags & RESULT) != 0) {
+      if (f.length() > 0) {
+        f.append(", ");
+      }
+      f.append("RESULT");
+    }
+    return "ShallowCommit{"
+        + "id="
+        + id
+        + ", parents="
+        + Arrays.toString(parents)
+        + ", seq="
+        + seq
+        + ", flags="
+        + f
+        + '}';
   }
 }
