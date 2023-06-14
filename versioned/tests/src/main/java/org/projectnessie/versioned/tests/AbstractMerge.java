@@ -139,7 +139,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       }
 
       @Override
-      public CommitMeta squash(List<CommitMeta> metadata) {
+      public CommitMeta squash(List<CommitMeta> metadata, int numCommits) {
         return CommitMeta.fromMessage(
             metadata.stream()
                 .map(cm -> cm.getMessage() + suffix)

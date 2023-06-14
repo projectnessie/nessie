@@ -84,7 +84,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
           }
 
           @Override
-          public CommitMeta squash(List<CommitMeta> metadata) {
+          public CommitMeta squash(List<CommitMeta> metadata, int numCommits) {
             return null;
           }
         };

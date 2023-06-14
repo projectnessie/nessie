@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.impl;
+package org.projectnessie.versioned;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -30,15 +30,14 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
-import org.projectnessie.versioned.MetadataRewriter;
 
-public class CommitMetaUpdater implements MetadataRewriter<CommitMeta> {
+public class DefaultMetadataRewriter implements MetadataRewriter<CommitMeta> {
   private final String committer;
   private final Instant now;
   private final CommitMeta commitMetaOverride;
   private final IntFunction<String> squashMessage;
 
-  public CommitMetaUpdater(
+  public DefaultMetadataRewriter(
       String committer,
       Instant now,
       CommitMeta commitMetaOverride,
@@ -57,8 +56,8 @@ public class CommitMetaUpdater implements MetadataRewriter<CommitMeta> {
     if (hasAuthors(commitMetaOverride)) {
       metaBuilder.allAuthors(emptyList());
       copyAuthors(commitMetaOverride, metaBuilder::addAllAuthors);
-    } else if (!hasAuthors(pre)) {
-      metaBuilder.allAuthors(singletonList(committer != null ? committer : ""));
+    } else if (!hasAuthors(pre) && committer != null) {
+      metaBuilder.allAuthors(singletonList(committer));
     }
 
     if (commitMetaOverride != null && !commitMetaOverride.getAllSignedOffBy().isEmpty()) {
@@ -90,14 +89,16 @@ public class CommitMetaUpdater implements MetadataRewriter<CommitMeta> {
 
   @Override
   public CommitMeta rewriteSingle(CommitMeta metadata) {
-    return buildCommitMeta(CommitMeta.builder().from(metadata), metadata::getMessage);
+    return buildCommitMeta(
+        CommitMeta.builder().from(metadata).hash(null).parentCommitHashes(emptyList()),
+        metadata::getMessage);
   }
 
   @Override
-  public CommitMeta squash(List<CommitMeta> metadata) {
-    Optional<String> msg = Optional.ofNullable(squashMessage.apply(metadata.size()));
+  public CommitMeta squash(List<CommitMeta> metadata, int numCommits) {
+    Optional<String> msg = Optional.ofNullable(squashMessage.apply(numCommits));
 
-    if (metadata.size() == 1 && !msg.isPresent()) {
+    if (numCommits == 1 && !msg.isPresent()) {
       return rewriteSingle(metadata.get(0));
     }
 

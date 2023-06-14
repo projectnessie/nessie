@@ -142,7 +142,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       commitsMetadata.add(toCommitMeta(sourceCommit));
     }
 
-    CommitMeta metadata = updateCommitMetadata.squash(commitsMetadata);
+    CommitMeta metadata = updateCommitMetadata.squash(commitsMetadata, commitsMetadata.size());
     fromCommitMeta(metadata, commitBuilder);
 
     if (mergeFromId != null) {

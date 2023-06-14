@@ -369,12 +369,13 @@ public class PersistVersionStore implements VersionStore {
       }
 
       @Override
-      public ByteString squash(List<ByteString> metadata) {
+      public ByteString squash(List<ByteString> metadata, int numCommits) {
         return serializeMetadata(
             updateCommitMetadata.squash(
                 metadata.stream()
                     .map(PersistVersionStore.this::deserializeMetadata)
-                    .collect(Collectors.toList())));
+                    .collect(Collectors.toList()),
+                numCommits));
       }
     };
   }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.impl;
+package org.projectnessie.versioned;
 
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -35,7 +35,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 
 @ExtendWith(SoftAssertionsExtension.class)
-class TestCommitMetaUpdater {
+class TestDefaultMetadataRewriter {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   static Instant NOW = now();
@@ -46,55 +46,59 @@ class TestCommitMetaUpdater {
   @MethodSource("rewriteSingle")
   void rewriteSingle(String committer, CommitMeta inNessie, CommitMeta expected) {
     CommitMeta parameter = null;
-    CommitMetaUpdater updater = new CommitMetaUpdater(committer, NOW, parameter, p -> null);
+    DefaultMetadataRewriter updater =
+        new DefaultMetadataRewriter(committer, NOW, parameter, p -> null);
     soft.assertThat(updater.rewriteSingle(inNessie)).isEqualTo(expected);
-    soft.assertThat(updater.squash(singletonList(inNessie))).isEqualTo(expected);
+    soft.assertThat(updater.squash(singletonList(inNessie), 1)).isEqualTo(expected);
 
     parameter = fromMessage("forced message");
-    updater = new CommitMetaUpdater(committer, NOW, parameter, p -> null);
+    updater = new DefaultMetadataRewriter(committer, NOW, parameter, p -> null);
     CommitMeta expectedUpdated =
         CommitMeta.builder().from(expected).message("forced message").build();
     soft.assertThat(updater.rewriteSingle(inNessie)).isEqualTo(expectedUpdated);
-    soft.assertThat(updater.squash(singletonList(inNessie))).isEqualTo(expectedUpdated);
+    soft.assertThat(updater.squash(singletonList(inNessie), 1)).isEqualTo(expectedUpdated);
 
     parameter = CommitMeta.builder().message("").authorTime(AUTHOR_TIME_OLDER).build();
-    updater = new CommitMetaUpdater(committer, NOW, parameter, p -> null);
+    updater = new DefaultMetadataRewriter(committer, NOW, parameter, p -> null);
     expectedUpdated = CommitMeta.builder().from(expected).authorTime(AUTHOR_TIME_OLDER).build();
     soft.assertThat(updater.rewriteSingle(inNessie)).isEqualTo(expectedUpdated);
-    soft.assertThat(updater.squash(singletonList(inNessie))).isEqualTo(expectedUpdated);
+    soft.assertThat(updater.squash(singletonList(inNessie), 1)).isEqualTo(expectedUpdated);
 
     parameter = CommitMeta.builder().message("").addAllAuthors("myself").build();
-    updater = new CommitMetaUpdater(committer, NOW, parameter, p -> null);
+    updater = new DefaultMetadataRewriter(committer, NOW, parameter, p -> null);
     expectedUpdated =
         CommitMeta.builder().from(expected).allAuthors(singletonList("myself")).build();
     soft.assertThat(updater.rewriteSingle(inNessie)).isEqualTo(expectedUpdated);
-    soft.assertThat(updater.squash(singletonList(inNessie))).isEqualTo(expectedUpdated);
+    soft.assertThat(updater.squash(singletonList(inNessie), 1)).isEqualTo(expectedUpdated);
   }
 
   @ParameterizedTest
   @MethodSource("squash")
   void squash(String committer, List<CommitMeta> inNessie, CommitMeta expected) {
     CommitMeta parameter = null;
-    CommitMetaUpdater updater =
-        new CommitMetaUpdater(committer, NOW, parameter, p -> "Default message for " + p);
-    soft.assertThat(updater.squash(inNessie)).isEqualTo(expected);
+    DefaultMetadataRewriter updater =
+        new DefaultMetadataRewriter(committer, NOW, parameter, p -> "Default message for " + p);
+    soft.assertThat(updater.squash(inNessie, inNessie.size())).isEqualTo(expected);
 
     parameter = fromMessage("forced message");
-    updater = new CommitMetaUpdater(committer, NOW, parameter, p -> "Default message for " + p);
+    updater =
+        new DefaultMetadataRewriter(committer, NOW, parameter, p -> "Default message for " + p);
     CommitMeta expectedUpdated =
         CommitMeta.builder().from(expected).message("forced message").build();
-    soft.assertThat(updater.squash(inNessie)).isEqualTo(expectedUpdated);
+    soft.assertThat(updater.squash(inNessie, inNessie.size())).isEqualTo(expectedUpdated);
 
     parameter = CommitMeta.builder().message("").authorTime(AUTHOR_TIME_OLDER).build();
-    updater = new CommitMetaUpdater(committer, NOW, parameter, p -> "Default message for " + p);
+    updater =
+        new DefaultMetadataRewriter(committer, NOW, parameter, p -> "Default message for " + p);
     expectedUpdated = CommitMeta.builder().from(expected).authorTime(AUTHOR_TIME_OLDER).build();
-    soft.assertThat(updater.squash(inNessie)).isEqualTo(expectedUpdated);
+    soft.assertThat(updater.squash(inNessie, inNessie.size())).isEqualTo(expectedUpdated);
 
     parameter = CommitMeta.builder().message("").addAllAuthors("myself").build();
-    updater = new CommitMetaUpdater(committer, NOW, parameter, p -> "Default message for " + p);
+    updater =
+        new DefaultMetadataRewriter(committer, NOW, parameter, p -> "Default message for " + p);
     expectedUpdated =
         CommitMeta.builder().from(expected).allAuthors(singletonList("myself")).build();
-    soft.assertThat(updater.squash(inNessie)).isEqualTo(expectedUpdated);
+    soft.assertThat(updater.squash(inNessie, inNessie.size())).isEqualTo(expectedUpdated);
   }
 
   static Stream<Arguments> rewriteSingle() {

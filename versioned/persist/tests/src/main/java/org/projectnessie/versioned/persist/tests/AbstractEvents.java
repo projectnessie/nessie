@@ -424,7 +424,7 @@ public abstract class AbstractEvents {
       }
 
       @Override
-      public ByteString squash(List<ByteString> metadata) {
+      public ByteString squash(List<ByteString> metadata, int numCommits) {
         return rewriteSingle(metadata.get(0));
       }
     };
