@@ -20,12 +20,12 @@ import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.bigtable.BigTableBackendTestFactory;
+import org.projectnessie.versioned.storage.bigtable.BigTableBackendContainerTestFactory;
 
 public class BigTableTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
 
-  private BigTableBackendTestFactory bigTable;
+  private BigTableBackendContainerTestFactory bigTable;
 
   private Optional<String> containerNetworkId;
 
@@ -36,7 +36,7 @@ public class BigTableTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    bigTable = new BigTableBackendTestFactory();
+    bigTable = new BigTableBackendContainerTestFactory();
     bigTable.startBigtable(containerNetworkId);
 
     return ImmutableMap.of(

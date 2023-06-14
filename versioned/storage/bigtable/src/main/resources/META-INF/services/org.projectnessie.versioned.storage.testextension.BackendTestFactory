@@ -13,4 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-org.projectnessie.versioned.storage.bigtable.BigTableBackendTestFactory
+org.projectnessie.versioned.storage.bigtable.BigTableBackendContainerTestFactory
+org.projectnessie.versioned.storage.bigtable.BigTableBackendProcessTestFactory

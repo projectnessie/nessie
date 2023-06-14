@@ -41,7 +41,7 @@ public class ITBigTableBackendFactory {
 
   @Test
   public void productionLike() throws Exception {
-    BigTableBackendTestFactory testFactory = new BigTableBackendTestFactory();
+    BigTableBackendContainerTestFactory testFactory = new BigTableBackendContainerTestFactory();
     testFactory.start();
     try {
       BackendFactory<BigTableBackendConfig> factory =
@@ -95,7 +95,7 @@ public class ITBigTableBackendFactory {
 
   @Test
   public void backendTestFactory() throws Exception {
-    BigTableBackendTestFactory testFactory = new BigTableBackendTestFactory();
+    BigTableBackendContainerTestFactory testFactory = new BigTableBackendContainerTestFactory();
     testFactory.start();
     try {
       BackendFactory<BigTableBackendConfig> factory =

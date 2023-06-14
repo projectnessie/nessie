@@ -18,5 +18,5 @@ package org.projectnessie.versioned.storage.bigtable;
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
-@NessieBackend(BigTableBackendTestFactory.class)
+@NessieBackend(BigTableBackendContainerTestFactory.class)
 public class ITBigTableVersionStore extends AbstractVersionStoreTests {}

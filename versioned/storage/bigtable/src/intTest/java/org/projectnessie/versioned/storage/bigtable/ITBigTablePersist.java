@@ -23,7 +23,7 @@ import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
-@NessieBackend(BigTableBackendTestFactory.class)
+@NessieBackend(BigTableBackendContainerTestFactory.class)
 @ExtendWith(PersistExtension.class)
 public class ITBigTablePersist extends AbstractPersistTests {
 

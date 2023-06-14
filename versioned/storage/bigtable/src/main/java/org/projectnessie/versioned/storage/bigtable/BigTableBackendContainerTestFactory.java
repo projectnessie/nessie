@@ -15,73 +15,27 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
-import com.google.api.gax.core.NoCredentialsProvider;
-import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
-import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
-import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
-import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.common.persist.Backend;
-import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-public class BigTableBackendTestFactory implements BackendTestFactory {
+/** Bigtable emulator via testcontainers. */
+public class BigTableBackendContainerTestFactory extends AbstractBigTableBackendTestFactory {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackendTestFactory.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(BigTableBackendContainerTestFactory.class);
   public static final int BIGTABLE_PORT = 8086;
 
   private GenericContainer<?> container;
-  private String projectId;
-  private String instanceId;
   private String emulatorHost;
   private int emulatorPort;
 
   @Override
   public String getName() {
-    return BigTableBackendFactory.NAME;
-  }
-
-  @Override
-  public Backend createNewBackend() {
-    return new BigTableBackend(buildNewDataClient(), buildNewTableAdminClient(), true);
-  }
-
-  @VisibleForTesting
-  BigtableDataClient buildNewDataClient() {
-    try {
-      BigtableDataSettings settings =
-          BigtableDataSettings.newBuilderForEmulator(emulatorHost, emulatorPort)
-              .setProjectId(projectId)
-              .setInstanceId(instanceId)
-              .setCredentialsProvider(NoCredentialsProvider.create())
-              .build();
-
-      return BigtableDataClient.create(settings);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @VisibleForTesting
-  BigtableTableAdminClient buildNewTableAdminClient() {
-    try {
-      BigtableTableAdminSettings settings =
-          BigtableTableAdminSettings.newBuilderForEmulator(emulatorHost, emulatorPort)
-              .setProjectId(projectId)
-              .setInstanceId(instanceId)
-              .setCredentialsProvider(NoCredentialsProvider.create())
-              .build();
-
-      return BigtableTableAdminClient.create(settings);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return BigTableBackendFactory.NAME + "Container";
   }
 
   @SuppressWarnings("resource")
