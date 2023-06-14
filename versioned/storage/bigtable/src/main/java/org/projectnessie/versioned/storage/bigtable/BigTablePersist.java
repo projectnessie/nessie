@@ -21,7 +21,6 @@ import static com.google.protobuf.ByteString.copyFromUtf8;
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableBackend.apiException;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CELL_TIMESTAMP;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
@@ -90,6 +89,10 @@ public class BigTablePersist implements Persist {
     this.backend = backend;
     this.config = config;
     this.keyPrefix = copyFromUtf8(config.repositoryId() + ':');
+  }
+
+  static RuntimeException apiException(ApiException e) {
+    throw new RuntimeException("Unhandled BigTable exception", e);
   }
 
   private ByteString dbKey(ByteString key) {

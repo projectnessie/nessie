@@ -25,7 +25,6 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_REFS;
 
-import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.models.CreateTableRequest;
@@ -208,9 +207,5 @@ final class BigTableBackend implements Backend {
   @Override
   public String configInfo() {
     return this.tableAdminClient != null ? "" : " (no admin client)";
-  }
-
-  static RuntimeException apiException(ApiException e) {
-    throw new RuntimeException("Unhandled BigTable exception", e);
   }
 }
