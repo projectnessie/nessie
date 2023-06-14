@@ -132,7 +132,15 @@ jobs:
       - name: Gradle / test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-events-quarkus:test --scan
+          arguments: |
+            test
+            :nessie-client:check 
+            -x :nessie-client:intTest 
+            -x :nessie-quarkus:test
+            -x :nessie-quarkus-cli:test
+            -x :nessie-events-quarkus:test
+            -x :nessie-rest-catalog-server:test
+            --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
@@ -175,7 +183,12 @@ jobs:
       - name: Gradle / Test Quarkus
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-quarkus:test :nessie-events-quarkus:test --scan
+          arguments: |
+            :nessie-client:test
+            :nessie-quarkus:test
+            :nessie-events-quarkus:test
+            :nessie-rest-catalog-server:test
+            --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -242,6 +255,8 @@ jobs:
           ./gradlew intTest \
             -x :nessie-quarkus:intTest \
             -x :nessie-quarkus-cli:intTest \
+            -x :nessie-events-quarkus:intTest \
+            -x :nessie-rest-catalog-server:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
             -x :nessie-deltalake:intTest \
@@ -378,7 +393,12 @@ jobs:
       - name: Gradle / intTest Quarkus
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-quarkus:intTest :nessie-quarkus-cli:intTest --scan
+          arguments: |
+            :nessie-quarkus:intTest
+            :nessie-quarkus-cli:intTest
+            :nessie-events-quarkus:intTest
+            :nessie-rest-catalog-server:intTest
+            --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
