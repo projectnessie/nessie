@@ -80,15 +80,42 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - name: Gradle / Code Checks
+      # Needed for the Quarkus plugin - can likely go away once we use Quarkus 3 or newer
+      - name: Bump Gradle daemon heap
+        run: sed -i 's/-Xms.*/-Xms6G -Xmx6G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
+
+      - name: Gradle / Compile
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: spotlessCheck checkstyle --scan
+          arguments: |
+            spotlessCheck
+            compileAll
+            -x :nessie-quarkus:compileAll
+            -x :nessie-quarkus-cli:compileAll
+            -x :nessie-events-quarkus:compileAll
+
+      - name: Gradle / Compile Quarkus
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            :nessie-quarkus:compileAll
+            :nessie-quarkus-cli:compileAll
+            :nessie-events-quarkus:compileAll
+
+      - name: Gradle / Checkstyle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: checkstyle
 
       - name: Gradle / Assemble
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: assemble publishToMavenLocal --scan
+          arguments: assemble
+
+      - name: Gradle / Publish to Maven local
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishToMavenLocal
 
       # This is a rather quick one and uses the output of 'publishToMavenLocal', which uses the
       # outputs of 'assemble'
@@ -128,7 +155,14 @@ jobs:
       - name: Gradle / test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-events-quarkus:test --scan
+          arguments: |
+            test
+            :nessie-client:check 
+            -x :nessie-client:intTest 
+            -x :nessie-quarkus:test
+            -x :nessie-quarkus-cli:test
+            -x :nessie-events-quarkus:test
+            --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
@@ -171,7 +205,11 @@ jobs:
       - name: Gradle / Test Quarkus
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-quarkus:test :nessie-events-quarkus:test --scan
+          arguments: |
+            :nessie-client:test
+            :nessie-quarkus:test
+            :nessie-events-quarkus:test
+            --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -238,6 +276,7 @@ jobs:
           ./gradlew intTest \
             -x :nessie-quarkus:intTest \
             -x :nessie-quarkus-cli:intTest \
+            -x :nessie-events-quarkus:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
             -x :nessie-deltalake:intTest \
@@ -374,7 +413,11 @@ jobs:
       - name: Gradle / intTest Quarkus
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-quarkus:intTest :nessie-quarkus-cli:intTest --scan
+          arguments: |
+            :nessie-quarkus:intTest
+            :nessie-quarkus-cli:intTest
+            :nessie-events-quarkus:intTest
+            --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
