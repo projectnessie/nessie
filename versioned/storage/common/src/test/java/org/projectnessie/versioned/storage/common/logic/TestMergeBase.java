@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.comm
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -404,7 +405,12 @@ public class TestMergeBase {
     final Map<ObjId, CommitObj> commits = new HashMap<>();
 
     CommitObj add(CommitObj.Builder c) {
-      c.created(commits.size());
+      int seq = commits.size();
+      ByteBuffer bb = ByteBuffer.allocate(4);
+      bb.putInt(seq);
+      bb.flip();
+
+      c.created(seq).seq(seq).id(ObjId.objIdFromByteBuffer(bb));
       CommitObj commit = c.build();
       commits.put(commit.id(), commit);
       return commit;
@@ -425,10 +431,8 @@ public class TestMergeBase {
 
   static CommitObj.Builder buildCommit(String msg) {
     return commitBuilder()
-        .id(randomObjId())
         .headers(newCommitHeaders().build())
         .message(msg)
-        .incrementalIndex(ByteString.empty())
-        .seq(0L);
+        .incrementalIndex(ByteString.empty());
   }
 }
