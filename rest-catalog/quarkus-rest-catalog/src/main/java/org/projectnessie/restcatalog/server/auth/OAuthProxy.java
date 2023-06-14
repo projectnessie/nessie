@@ -17,11 +17,16 @@ package org.projectnessie.restcatalog.server.auth;
 
 import io.quarkus.oidc.common.runtime.OidcCommonUtils;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import javax.enterprise.inject.Vetoed;
+import org.apache.commons.io.IOUtils;
+import org.apache.iceberg.rest.RESTUtil;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
@@ -57,6 +62,11 @@ public class OAuthProxy implements OAuthHandler {
   }
 
   private Uni<OAuthTokenResponse> sendAndReceive(OAuthTokenRequest req) {
+    if (LOGGER.isDebugEnabled()) {
+      String encoded = IOUtils.toString(req.body(), StandardCharsets.UTF_8.name());
+      Map<String, String> formData = RESTUtil.decodeFormData(encoded);
+      LOGGER.debug("Sending token request: headers {} form data {}", req.headers(), formData);
+    }
     HttpRequest<Buffer> request = client.postAbs(tokenUri);
     req.headers().forEach(request::putHeader);
     return request
@@ -72,10 +82,12 @@ public class OAuthProxy implements OAuthHandler {
 
   private OAuthTokenResponse parseResponse(HttpResponse<Buffer> resp)
       throws OAuthTokenEndpointException {
+    JsonObject json = resp.bodyAsJsonObject();
+    LOGGER.debug("Received token response: status {} body {}", resp.statusCode(), json);
     if (resp.statusCode() == 200) {
-      return OAuthUtils.tokenResponseFromJson(resp.bodyAsJsonObject());
+      return OAuthUtils.tokenResponseFromJson(json);
     } else {
-      throw OAuthUtils.errorFromJson(resp.bodyAsJsonObject(), resp.statusCode());
+      throw OAuthUtils.errorFromJson(json, resp.statusCode());
     }
   }
 

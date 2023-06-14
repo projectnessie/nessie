@@ -41,7 +41,12 @@ public class OAuthUtils {
         OAuthTokenResponse.builder()
             .withToken(json.getString(ACCESS_TOKEN))
             .withTokenType(json.getString(TOKEN_TYPE))
-            .withIssuedTokenType(json.getString(ISSUED_TOKEN_TYPE));
+            .withIssuedTokenType(
+                json.getString(
+                    ISSUED_TOKEN_TYPE,
+                    // Iceberg won't be able to refresh tokens with this value, so
+                    // we need to set it to something that will work.
+                    "urn:ietf:params:oauth:token-type:access_token"));
     if (json.containsKey(EXPIRES_IN)) {
       builder.setExpirationInSeconds(json.getInteger(EXPIRES_IN));
     }
