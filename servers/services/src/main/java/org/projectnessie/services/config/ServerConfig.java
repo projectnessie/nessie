@@ -18,6 +18,8 @@ package org.projectnessie.services.config;
 /** Nessie server configuration to be injected into the JAX-RS application. */
 public interface ServerConfig {
 
+  int DEFAULT_ACCESS_CHECK_BATCH_SIZE = 100;
+
   /**
    * Gets the branch to use if not provided by the user.
    *
@@ -31,4 +33,8 @@ public interface ServerConfig {
    * @return {@code true} if the server should send the stack trace to the client.
    */
   boolean sendStacktraceToClient();
+
+  default int accessChecksBatchSize() {
+    return DEFAULT_ACCESS_CHECK_BATCH_SIZE;
+  }
 }

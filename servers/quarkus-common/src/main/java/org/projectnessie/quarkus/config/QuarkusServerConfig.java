@@ -35,4 +35,9 @@ public interface QuarkusServerConfig extends ServerConfig {
   @WithName("send-stacktrace-to-client")
   @WithDefault("false")
   boolean sendStacktraceToClient();
+
+  @Override
+  @WithName("access-checks-batch-size")
+  @WithDefault("" + ServerConfig.DEFAULT_ACCESS_CHECK_BATCH_SIZE)
+  int accessChecksBatchSize();
 }
