@@ -84,8 +84,8 @@ public abstract class MergeBase {
   private List<ShallowCommit> identifyAllMergeBases() {
     ShallowCommit targetCommit = shallowCommit(targetCommitId());
     if (targetCommit == null) {
-      // This loop is rather a UX hack, to raise a "not found" exception if any of the
-      // from-commit-IDs does not exist
+      // This is rather a UX hack, to raise a "not found" exception if any of the from-commit-IDs
+      // does not exist
       shallowCommit(fromCommitId());
       return null;
     }
