@@ -308,9 +308,9 @@ public class TestTypeMapping {
   @ParameterizedTest
   @MethodSource("commitMeta")
   public void commitMeta(CommitMeta commitMete, CreateCommit createCommit, CommitObj commitObj) {
-    soft.assertThat(
-            fromCommitMeta(commitMete, newCommitBuilder()).parentCommitId(EMPTY_OBJ_ID).build())
-        .isEqualTo(createCommit);
+    CreateCommit.Builder commitBuilder = newCommitBuilder();
+    fromCommitMeta(commitMete, commitBuilder);
+    soft.assertThat(commitBuilder.parentCommitId(EMPTY_OBJ_ID).build()).isEqualTo(createCommit);
     soft.assertThat(toCommitMeta(commitObj))
         .isEqualTo(commitMete)
         .extracting(CommitMeta::getHash)

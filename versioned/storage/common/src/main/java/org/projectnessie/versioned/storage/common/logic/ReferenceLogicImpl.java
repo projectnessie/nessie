@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
@@ -180,12 +181,22 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @jakarta.annotation.Nonnull
   public List<Reference> getReferences(
       @Nonnull @jakarta.annotation.Nonnull List<String> references) {
-    Reference[] refs = persist.fetchReferences(references.toArray(new String[0]));
-    List<Reference> r = new ArrayList<>(refs.length);
+    int refCount = references.size();
+    String[] refsArray;
+    int refRefsIndex = references.indexOf(REF_REFS.name());
+    if (refRefsIndex != -1) {
+      refsArray = references.toArray(new String[refCount]);
+    } else {
+      refsArray = references.toArray(new String[refCount + 1]);
+      refRefsIndex = references.size();
+      refsArray[refRefsIndex] = REF_REFS.name();
+    }
+    Reference[] refs = persist.fetchReferences(refsArray);
 
-    Supplier<StoreIndex<CommitOp>> refsIndexSupplier = createRefsIndexSupplier();
+    Supplier<StoreIndex<CommitOp>> refsIndexSupplier = createRefsIndexSupplier(refs[refRefsIndex]);
 
-    for (int i = 0; i < refs.length; i++) {
+    List<Reference> r = new ArrayList<>(refCount);
+    for (int i = 0; i < refCount; i++) {
       Reference ref = refs[i];
 
       ref = maybeRecover(references.get(i), ref, refsIndexSupplier);
@@ -226,31 +237,62 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     private final Iterator<StoreIndexElement<CommitOp>> base;
     private final StoreKey prefix;
 
+    private static final int REFERENCES_BATCH_SIZE = 50;
+    private final List<String> referencesBatch;
+    private Iterator<Reference> referenceIterator = emptyIterator();
+
     private QueryIter(
         StoreIndex<CommitOp> index, StoreKey prefix, StoreKey begin, boolean prefetch) {
       this.index = index;
       this.prefix = prefix;
       this.base = index.iterator(begin, null, prefetch);
+      this.referencesBatch = new ArrayList<>(REFERENCES_BATCH_SIZE);
     }
 
     @Override
     protected Reference computeNext() {
       while (true) {
+        if (referenceIterator.hasNext()) {
+          return referenceIterator.next();
+        }
+
         if (!base.hasNext()) {
+          if (fetchReferencesBatch()) {
+            continue;
+          }
           return endOfData();
         }
 
         StoreIndexElement<CommitOp> el = base.next();
         StoreKey k = el.key();
-        if (prefix != null && !k.startsWith(prefix)) {
-          return endOfData();
-        }
-        String name = k.rawString();
-        Reference r = maybeRecover(name, persist.fetchReference(el.key().rawString()), () -> index);
-        if (r != null) {
-          return r;
+        if (prefix == null || k.startsWith(prefix)) {
+          String name = k.rawString();
+          referencesBatch.add(name);
+          if (referencesBatch.size() == REFERENCES_BATCH_SIZE) {
+            fetchReferencesBatch();
+          }
         }
       }
+    }
+
+    private boolean fetchReferencesBatch() {
+      if (referencesBatch.isEmpty()) {
+        return false;
+      }
+      Reference[] refs = persist.fetchReferences(referencesBatch.toArray(new String[0]));
+      List<Reference> refsList = new ArrayList<>(refs.length);
+      for (int i = 0; i < refs.length; i++) {
+        Reference ref = refs[i];
+        ref = maybeRecover(referencesBatch.get(i), ref, () -> index);
+        if (ref != null) {
+          refsList.add(ref);
+        }
+      }
+
+      referencesBatch.clear();
+      referenceIterator = refsList.iterator();
+
+      return true;
     }
 
     @Nonnull
@@ -314,9 +356,10 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     checkArgument(!isInternalReferenceName(name));
 
     Reference reference = persist.fetchReference(name);
+    Supplier<StoreIndex<CommitOp>> indexSupplier = null;
     if (reference == null) {
       StoreKey nameKey = key(name);
-      Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
+      indexSupplier = createRefsIndexSupplier();
       StoreIndexElement<CommitOp> index = indexSupplier.get().get(nameKey);
       if (index == null) {
         // not there --> okay
@@ -336,7 +379,9 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       // A previous deleteReference failed, act as if the first one succeeded, therefore this
       // one must throw a ReferenceNotFoundException instead of a ReferenceConditionFailedException
       if (!actAsAlreadyDeleted) {
-        Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
+        if (indexSupplier == null) {
+          indexSupplier = createRefsIndexSupplier();
+        }
         Reference recovered = maybeRecover(name, reference, indexSupplier);
         throw new RefConditionFailedException(recovered != null ? recovered : reference);
       }
@@ -632,5 +677,11 @@ final class ReferenceLogicImpl implements ReferenceLogic {
               Reference ref = persist.fetchReference(REF_REFS.name());
               return ref != null ? ref.pointer() : EMPTY_OBJ_ID;
             });
+  }
+
+  @VisibleForTesting
+  Supplier<StoreIndex<CommitOp>> createRefsIndexSupplier(Reference refRefs) {
+    return indexesLogic(persist)
+        .createIndexSupplier(() -> refRefs != null ? refRefs.pointer() : EMPTY_OBJ_ID);
   }
 }

@@ -43,6 +43,7 @@ dependencies {
   jmhImplementation(libs.jmh.core)
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
   jmhRuntimeOnly(project(":nessie-versioned-storage-inmemory"))
+  jmhRuntimeOnly(project(":nessie-versioned-storage-bigtable"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-cassandra"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-rocksdb"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-mongodb"))

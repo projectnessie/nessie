@@ -152,7 +152,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       AuthzPaginationIterator<ReferenceInfo<CommitMeta>> authz =
           new AuthzPaginationIterator<ReferenceInfo<CommitMeta>>(
-              references, super::startAccessCheck, ACCESS_CHECK_BATCH_SIZE) {
+              references, super::startAccessCheck, getConfig().accessChecksBatchSize()) {
             @Override
             protected Set<Check> checksForEntry(ReferenceInfo<CommitMeta> entry) {
               return singleton(canViewReference(entry.getNamedRef()));
@@ -852,7 +852,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
         AuthzPaginationIterator<KeyEntry> authz =
             new AuthzPaginationIterator<KeyEntry>(
-                entries, super::startAccessCheck, ACCESS_CHECK_BATCH_SIZE) {
+                entries, super::startAccessCheck, getConfig().accessChecksBatchSize()) {
               @Override
               protected Set<Check> checksForEntry(KeyEntry entry) {
                 return singleton(canReadContentKey(refWithHash.getValue(), entry.getKey()));
