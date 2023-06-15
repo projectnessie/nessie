@@ -28,7 +28,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.CatalogTests;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.apache.iceberg.rest.auth.OAuth2Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.HttpClientBuilder;
@@ -57,6 +56,7 @@ public class ITNessieRestCatalogQuarkus extends CatalogTests<RESTCatalog> {
     return HttpClientBuilder.builder()
         .fromSystemProperties()
         .fromConfig(cfg -> config.nessieClientConfig().get(cfg))
+        .withEnableApiCompatibilityCheck(false)
         .build(NessieApiV2.class);
   }
 
@@ -100,10 +100,6 @@ public class ITNessieRestCatalogQuarkus extends CatalogTests<RESTCatalog> {
               uri(),
               CatalogProperties.FILE_IO_IMPL,
               "org.apache.iceberg.io.ResolvingFileIO",
-              OAuth2Properties.TOKEN,
-              "foo-bar-token",
-              OAuth2Properties.CREDENTIAL,
-              "foo-bar-credential",
               "prefix",
               requireNonNull(api.getConfig().getDefaultBranch())));
       return catalog;

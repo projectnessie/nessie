@@ -59,10 +59,8 @@ dependencies {
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
-  implementation("org.jboss.resteasy:resteasy-core-spi")
-  implementation("io.quarkus:quarkus-resteasy")
-  implementation("io.quarkus:quarkus-resteasy-jackson")
-  implementation("io.quarkus:quarkus-reactive-routes")
+  implementation("io.quarkus:quarkus-resteasy-reactive")
+  implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.smallrye:smallrye-open-api-jaxrs")
   implementation("io.quarkus:quarkus-elytron-security-properties-file")

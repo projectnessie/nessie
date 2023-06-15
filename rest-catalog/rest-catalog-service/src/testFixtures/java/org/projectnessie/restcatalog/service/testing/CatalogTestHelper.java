@@ -28,7 +28,7 @@ import javax.ws.rs.core.Application;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.apache.iceberg.rest.auth.OAuth2Properties;
+import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
@@ -43,12 +43,12 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.Tag;
 import org.projectnessie.restcatalog.ee.javax.ContextObjectMapper;
 import org.projectnessie.restcatalog.ee.javax.JavaxExceptionMapper;
+import org.projectnessie.restcatalog.ee.javax.OAuthTokenRequestReader;
 import org.projectnessie.restcatalog.service.Warehouse;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
-import org.projectnessie.restcatalog.service.auth.OAuthResponse;
 import org.projectnessie.restcatalog.service.resources.IcebergV1ApiResource;
 import org.projectnessie.restcatalog.service.resources.IcebergV1ConfigResource;
-import org.projectnessie.restcatalog.service.resources.IcebergV1OauthResource;
+import org.projectnessie.restcatalog.service.resources.IcebergV1OAuthResource;
 
 public class CatalogTestHelper implements AutoCloseable {
 
@@ -80,13 +80,14 @@ public class CatalogTestHelper implements AutoCloseable {
 
     // TODO
     OAuthHandler oauthHandler =
-        req -> OAuthResponse.oauthResponse("tok", "tok", "bearer", 42, "tok");
+        req -> OAuthTokenResponse.builder().withToken("tok").withTokenType("bearer").build();
 
     weld = new Weld();
     weld.addExtension(new WeldTestingExtension(oauthHandler, api, defaultBranch, defaultWarehouse));
     weld.addPackages(true, DummyTenantSpecific.class);
     weld.addPackages(true, IcebergV1ApiResource.class);
     weld.addPackages(true, JavaxExceptionMapper.class);
+    weld.addPackages(true, OAuthTokenRequestReader.class);
     weld.property(SHUTDOWN_HOOK_SYSTEM_PROPERTY, "false");
     WeldContainer weldContainer = weld.initialize();
     ForcedCDI.setCDI(weldContainer);
@@ -103,7 +104,7 @@ public class CatalogTestHelper implements AutoCloseable {
             config.register(JavaxExceptionMapper.class);
 
             config.register(IcebergV1ConfigResource.class);
-            config.register(IcebergV1OauthResource.class);
+            config.register(IcebergV1OAuthResource.class);
             config.register(IcebergV1ApiResource.class);
 
             // Use a dynamically allocated port, not a static default (80/443) or statically
@@ -158,10 +159,6 @@ public class CatalogTestHelper implements AutoCloseable {
             icebergRestUri().toString(),
             CatalogProperties.FILE_IO_IMPL,
             "org.apache.iceberg.io.ResolvingFileIO",
-            OAuth2Properties.TOKEN,
-            "foo-bar-token",
-            OAuth2Properties.CREDENTIAL,
-            "foo-bar-credential",
             "prefix",
             requireNonNull(api.getConfig().getDefaultBranch())));
     return catalog;
