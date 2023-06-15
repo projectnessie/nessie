@@ -15,36 +15,23 @@
  */
 package org.projectnessie.restcatalog.service.auth;
 
-import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
 import org.immutables.value.Value;
 
+/**
+ * A request made to the OAuth token endpoint.
+ *
+ * <p>Since the OAuth token endpoint is meant to be implemented as a pass-through proxy that
+ * forwards the request to the actual OAuth/OIDC provider, this class is designed to be a generic
+ * representation of the original request and strives to parse it as little as possible.
+ */
 @Value.Immutable
-public interface OAuthResponse {
-  @Value.Parameter(order = 1)
-  String accessToken();
+public interface OAuthTokenRequest {
 
-  @Value.Parameter(order = 2)
-  String issuedTokenType();
+  /** The HTTP headers of the request. */
+  Map<String, List<String>> headers();
 
-  @Value.Parameter(order = 3)
-  String tokenType();
-
-  @Value.Parameter(order = 4)
-  @Nullable
-  @jakarta.annotation.Nullable
-  Integer expiresIn();
-
-  @Value.Parameter(order = 5)
-  @Nullable
-  @jakarta.annotation.Nullable
-  String scope();
-
-  static OAuthResponse oauthResponse(
-      String accessToken,
-      String issuedTokenType,
-      String tokenType,
-      Integer expiresIn,
-      String scope) {
-    return ImmutableOAuthResponse.of(accessToken, issuedTokenType, tokenType, expiresIn, scope);
-  }
+  /** The raw request body, which is assumed to be form data. */
+  byte[] body();
 }
