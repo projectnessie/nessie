@@ -19,19 +19,9 @@ import static org.apache.iceberg.rest.auth.OAuth2Util.parseScope;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.json.JsonObject;
-import io.vertx.mutiny.core.buffer.Buffer;
-import io.vertx.mutiny.ext.web.client.HttpResponse;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.rest.RESTUtil;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
-import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,36 +74,5 @@ public class OAuthUtils {
       errorDescription = json.encode();
     }
     return new OAuthTokenEndpointException(statusCode, error, errorDescription);
-  }
-
-  public static void printOAuthTokenRequest(OAuthTokenRequest req) {
-    String encoded = IOUtils.toString(req.body(), StandardCharsets.UTF_8.name());
-    Map<String, String> formData = RESTUtil.decodeFormData(encoded);
-    StringWriter sw = new StringWriter();
-    PrintWriter pw = new PrintWriter(sw);
-    pw.println("Sending token request:");
-    pw.println("- headers:");
-    req.headers()
-        .forEach(
-            (k, v) -> v.forEach(s -> pw.printf("  %s: %s%n", k, StringUtils.truncate(s, 100))));
-    pw.println("- body:");
-    formData.forEach((k, v) -> pw.printf("  %s: %s%n", k, StringUtils.truncate(v, 100)));
-    LOGGER.debug(sw.toString());
-  }
-
-  public static void printOAuthTokenResponse(HttpResponse<Buffer> resp, JsonObject json) {
-    StringWriter sw = new StringWriter();
-    PrintWriter pw = new PrintWriter(sw);
-    pw.println("Received token response:");
-    pw.printf("- status:%s%n", resp.statusCode());
-    pw.println("- headers:");
-    resp.headers().forEach((k, v) -> pw.printf("  %s: %s%n", k, StringUtils.truncate(v, 100)));
-    pw.println("- body:");
-    json.fieldNames()
-        .forEach(
-            k ->
-                pw.printf(
-                    "  %s: %s%n", k, StringUtils.truncate(String.valueOf(json.getValue(k)), 100)));
-    LOGGER.debug(sw.toString());
   }
 }

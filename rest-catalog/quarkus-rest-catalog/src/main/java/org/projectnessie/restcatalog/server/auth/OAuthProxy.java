@@ -58,9 +58,6 @@ public class OAuthProxy implements OAuthHandler {
   }
 
   private Uni<OAuthTokenResponse> sendAndReceive(OAuthTokenRequest req) {
-    if (LOGGER.isDebugEnabled()) {
-      OAuthUtils.printOAuthTokenRequest(req);
-    }
     HttpRequest<Buffer> request = client.postAbs(tokenUri);
     req.headers().forEach(request::putHeader);
     return request
@@ -77,9 +74,6 @@ public class OAuthProxy implements OAuthHandler {
   private OAuthTokenResponse parseResponse(HttpResponse<Buffer> resp)
       throws OAuthTokenEndpointException {
     JsonObject json = resp.bodyAsJsonObject();
-    if (LOGGER.isDebugEnabled()) {
-      OAuthUtils.printOAuthTokenResponse(resp, json);
-    }
     if (resp.statusCode() == 200) {
       return OAuthUtils.tokenResponseFromJson(json);
     } else {
