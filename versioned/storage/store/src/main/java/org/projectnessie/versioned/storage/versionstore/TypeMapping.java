@@ -268,10 +268,10 @@ public final class TypeMapping {
     return commitMeta;
   }
 
-  public static CreateCommit.Builder fromCommitMeta(
+  public static void fromCommitMeta(
       @Nonnull @jakarta.annotation.Nonnull CommitMeta commitMeta,
       @Nonnull @jakarta.annotation.Nonnull CreateCommit.Builder commit) {
-    return commit.headers(headersFromCommitMeta(commitMeta)).message(commitMeta.getMessage());
+    commit.headers(headersFromCommitMeta(commitMeta)).message(commitMeta.getMessage());
   }
 
   @Nonnull

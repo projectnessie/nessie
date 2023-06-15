@@ -59,6 +59,7 @@ errorprone-core = { module = "com.google.errorprone:error_prone_core", version.r
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
+google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.23.3" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
 guava = { module = "com.google.guava:guava", version = "32.0.1-jre" }
 h2 = { module = "com.h2database:h2", version = "2.1.214" }
@@ -144,6 +145,7 @@ protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "p
 quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkus" }
 quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus" }
 quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkus" }
+quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkus" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.0.1" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.3.0" }
 rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "8.1.1.1" }
@@ -183,4 +185,4 @@ nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version =
 node-gradle = { id = "com.github.node-gradle.node", version = "5.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.3" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "3.3.4" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "3.4.0" }

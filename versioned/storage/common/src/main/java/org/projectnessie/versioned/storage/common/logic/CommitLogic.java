@@ -208,6 +208,13 @@ public interface CommitLogic {
   CommitObj fetchCommit(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)
       throws ObjNotFoundException;
 
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  CommitObj[] fetchCommits(
+      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId)
+      throws ObjNotFoundException;
+
   /**
    * Applies the changes between {@code base} and {@code mostRecent} to the commit builder.
    *

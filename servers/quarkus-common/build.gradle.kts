@@ -35,6 +35,7 @@ dependencies {
   implementation(project(":nessie-versioned-persist-mongodb"))
   implementation(project(":nessie-versioned-persist-transactional"))
 
+  implementation(project(":nessie-versioned-storage-bigtable"))
   implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-cassandra"))
   implementation(project(":nessie-versioned-storage-common"))
@@ -47,19 +48,23 @@ dependencies {
   implementation(project(":nessie-versioned-storage-telemetry"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
-  implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
+  implementation("io.quarkus:quarkus-mongodb-client")
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
+  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }
-  implementation("io.quarkus:quarkus-mongodb-client")
+  implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+  implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-bigtable")
+  implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
+
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-api")
+  implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable
   implementation("io.micrometer:micrometer-core")
 
   // javax/jakarta
