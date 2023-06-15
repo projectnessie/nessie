@@ -65,8 +65,6 @@ public abstract class BaseApiImpl {
   private final Authorizer authorizer;
   private final Supplier<Principal> principal;
 
-  protected static final int ACCESS_CHECK_BATCH_SIZE = 10;
-
   protected BaseApiImpl(
       ServerConfig config,
       VersionStore store,
