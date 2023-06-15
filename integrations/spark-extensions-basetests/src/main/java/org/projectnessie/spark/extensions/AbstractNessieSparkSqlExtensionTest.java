@@ -15,6 +15,7 @@
  */
 package org.projectnessie.spark.extensions;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -499,6 +500,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
             .reduce(SparkCommitLogEntry::mergedCommits)
             .map(SparkCommitLogEntry::relevantFromMerge)
             .get();
+
+    result = ImmutableSparkCommitLogEntry.builder().from(result).properties(emptyMap()).build();
 
     sql(query, refName);
     // here we are skipping commit time as its variable
