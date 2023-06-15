@@ -680,6 +680,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                           commitMetaUpdate(
                               commitMeta,
                               numCommits ->
+                                  // numCommits is always 1 for merges
                                   String.format(
                                       "Merged %s at %s into %s%s",
                                       fromRefName,

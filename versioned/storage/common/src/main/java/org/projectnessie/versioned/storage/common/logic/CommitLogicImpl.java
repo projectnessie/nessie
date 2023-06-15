@@ -161,9 +161,9 @@ final class CommitLogicImpl implements CommitLogic {
             List<ObjId> ids = e.objIds();
             throw new NoSuchElementException(
                 ids.size() == 1
-                    ? "Commit '" + e.objIds().get(0) + "' not found"
+                    ? "Commit '" + ids.get(0) + "' not found"
                     : "Commit(s) "
-                        + e.objIds().stream().map(ObjId::toString).collect(Collectors.joining(", "))
+                        + ids.stream().map(ObjId::toString).collect(Collectors.joining(", "))
                         + " not found");
           }
         }
