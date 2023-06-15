@@ -43,4 +43,4 @@ services:
       # 127.0.0.1  keycloak
       # Another option is to set QUARKUS_OIDC_TOKEN_ISSUER above
       KC_HOSTNAME_URL: http://keycloak:8080
-    command: start-dev
+    command: start-dev --features=preview,token-exchange
