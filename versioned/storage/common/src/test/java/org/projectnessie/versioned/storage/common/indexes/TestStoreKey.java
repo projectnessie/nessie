@@ -300,7 +300,7 @@ public class TestStoreKey {
 
   private void utf8verify(char[] arr) {
     ByteBuffer serToBufferFromString = ByteBuffer.allocate(arr.length * 3 + 2);
-    StoreKey.putString(serToBufferFromString, new String(arr));
+    StoreKey.putString(serToBufferFromString, new String(arr), false);
     serToBufferFromString.put((byte) 0);
     serToBufferFromString.put((byte) 0);
     serToBufferFromString.flip();

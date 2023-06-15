@@ -93,7 +93,7 @@ public final class StoreKey implements Comparable<StoreKey> {
   public ByteBuffer serialize(ByteBuffer keySerializationBuffer) {
     keySerializationBuffer.clear();
     try {
-      putString(keySerializationBuffer, key);
+      putString(keySerializationBuffer, key, false);
       keySerializationBuffer.put((byte) 0);
       keySerializationBuffer.put((byte) 0);
     } catch (BufferOverflowException e) {
@@ -115,32 +115,58 @@ public final class StoreKey implements Comparable<StoreKey> {
    *   <li>Non-surrogates are take 1-3 bytes.
    *   <li>Surrogates take 4 bytes (from 2 {@code char}s)
    * </ul>
+   *
+   * @param buffer the target byte buffer
+   * @param s string to serialize
+   * @param shortened whether the {@code buffer}'s remaining space is likely not big enough to hold
+   *     the full serialized form. This is used when materializing lazily loaded {@link StoreKey}s.
+   *     Checking for "eof" is much cheaper (CPU and heap) than throwing and catching an exception.
+   *     Constructing, throwing and catching an exception (in this case a buffer-overrun thrown by
+   *     {@link ByteBuffer}) requires not just to instantiate the exception, but also construct the
+   *     call stack, which is very costly. Too costly for the case when this function is called
+   *     during serialization of a store-index.
    */
   @VisibleForTesting
-  static void putString(ByteBuffer buffer, String s) {
+  static void putString(ByteBuffer buffer, String s, boolean shortened) {
     int l = s.length();
     int i = 0;
 
+    boolean eof = false;
+
+    BufferPut bufferPut =
+        shortened
+            ? (buf, b) -> {
+              buf.put(b);
+              return buf.position() == buf.limit();
+            }
+            : (buf, b) -> {
+              buf.put(b);
+              return false;
+            };
+
     // "fast" loop
-    for (; i < l; i++) {
+    for (; i < l && !eof; i++) {
       char c = s.charAt(i);
       // NOTE: The "modified UTF-8" encoding does _NOT_ encode 'ASCII 0' in a single byte!
       if (c <= 0x7f) {
-        buffer.put((byte) c);
+        eof = bufferPut.bufferPut(buffer, (byte) c);
       } else {
         break;
       }
     }
 
     // "slow" loop
-    for (; i < l; i++) {
+    for (; i < l && !eof; i++) {
       char c = s.charAt(i);
       // NOTE: The "modified UTF-8" encoding does _NOT_ encode 'ASCII 0' in a single byte!
       if (c <= 0x7f) {
-        buffer.put((byte) c);
+        if (bufferPut.bufferPut(buffer, (byte) c)) {
+          break;
+        }
       } else if (c <= 0x07ff) {
-        buffer.put((byte) (0xc0 | (0x1f & c >> 6)));
-        buffer.put((byte) (0x80 | (0x3f & c)));
+        eof =
+            bufferPut.bufferPut(buffer, (byte) (0xc0 | (0x1f & c >> 6)))
+                || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & c)));
       } else if (isSurrogate(c)) {
         char c2;
         int codePoint =
@@ -153,28 +179,34 @@ public final class StoreKey implements Comparable<StoreKey> {
                   + Integer.toString(c & 0xffff, 16)
                   + ')');
         } else {
-          buffer.put((byte) (0xf0 | (codePoint >> 18)));
-          buffer.put((byte) (0x80 | (0x3f & codePoint >> 12)));
-          buffer.put((byte) (0x80 | (0x3f & codePoint >> 6)));
-          buffer.put((byte) (0x80 | (0x3f & codePoint)));
+          eof =
+              bufferPut.bufferPut(buffer, (byte) (0xf0 | (codePoint >> 18)))
+                  || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & codePoint >> 12)))
+                  || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & codePoint >> 6)))
+                  || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & codePoint)));
           i++; // 2 chars
         }
       } else {
-        buffer.put((byte) (0xe0 | (0x0f & c >> 12)));
-        buffer.put((byte) (0x80 | (0x3f & c >> 6)));
-        buffer.put((byte) (0x80 | (0x3f & c)));
+        eof =
+            bufferPut.bufferPut(buffer, (byte) (0xe0 | (0x0f & c >> 12)))
+                || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & c >> 6)))
+                || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & c)));
       }
     }
   }
 
-  public static int findPositionAfterKey(ByteBuffer src) {
-    int p = src.position();
+  @FunctionalInterface
+  private interface BufferPut {
+    boolean bufferPut(ByteBuffer buffer, byte b);
+  }
+
+  public static void skipKey(ByteBuffer src) {
     while (true) {
       for (int i = 0; ; i++) {
-        if (src.get(p++) == 0) {
+        if (src.get() == 0) {
           if (i == 0) {
             // ignore the trailing 0 of the element and trailing 0 of the "end of key"
-            return p;
+            return;
           }
           break;
         }

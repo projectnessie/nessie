@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.common.indexes;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
@@ -47,6 +48,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -57,6 +59,36 @@ import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet;
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestStoreIndexImpl {
   @InjectSoftAssertions SoftAssertions soft;
+
+  static Stream<List<String>> lazyKeyPredecessor() {
+    return Stream.of(
+        asList(
+            // "a/" sequence ensures that 'b/ref-  11' (and 12) are not materialized as 'b/ref-   1'
+            // (and 2)
+            // (because of a bad predecessor)
+            "a/ref-   0", "a/ref-   1", "a/ref-   2", "a/ref-  10", "a/ref-  11", "a/ref-  12"),
+        asList(
+            // "b/" sequence ensures that 'a/over' is not materialized as 'a/ever'
+            // (because of a bad predecessor)
+            "b/be", "b/eire", "b/opt", "b/over", "b/salt"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("lazyKeyPredecessor")
+  void lazyKeyPredecessor(List<String> keys) {
+    StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
+    keys.stream()
+        .map(s -> s.split("/"))
+        .map(StoreKey::key)
+        .map(k -> indexElement(k, commitOp(CommitOp.Action.ADD, 1, randomObjId())))
+        .forEach(index::add);
+
+    ByteString serialized = index.serialize();
+    StoreIndex<CommitOp> deserialized = deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER);
+
+    soft.assertThat(deserialized.asKeyList()).containsExactlyElementsOf(index.asKeyList());
+    soft.assertThat(deserialized).containsExactlyElementsOf(index);
+  }
 
   private static StoreIndex<ObjId> refs20() {
     StoreIndex<ObjId> segment = newStoreIndex(OBJ_ID_SERIALIZER);
@@ -86,7 +118,7 @@ public class TestStoreIndexImpl {
 
     ByteString serialized = segment.serialize();
     StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
-    soft.assertThat(deserialized.asKeyList()).isEqualTo(segment.asKeyList());
+    soft.assertThat(deserialized.asKeyList()).containsExactlyElementsOf(segment.asKeyList());
     soft.assertThat(deserialized).isEqualTo(segment);
   }
 
@@ -99,7 +131,7 @@ public class TestStoreIndexImpl {
     ((StoreIndexImpl<ObjId>) deserialized).setModified();
     ByteString serialized2 = deserialized.serialize();
 
-    soft.assertThat(serialized2).isEqualTo(serialized);
+    soft.assertThat(serialized2).containsExactlyElementsOf(serialized);
   }
 
   @Test
@@ -110,7 +142,68 @@ public class TestStoreIndexImpl {
     StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
     ByteString serialized2 = deserialized.serialize();
 
-    soft.assertThat(serialized2).isEqualTo(serialized);
+    soft.assertThat(serialized2).containsExactlyElementsOf(serialized);
+  }
+
+  @Test
+  public void addKeysIntoIndex() {
+    KeyIndexTestSet.IndexTestSetGenerator<CommitOp> builder =
+        KeyIndexTestSet.<CommitOp>newGenerator()
+            .keySet(
+                ImmutableRealisticKeySet.builder()
+                    .namespaceLevels(1)
+                    .foldersPerLevel(1)
+                    .tablesPerNamespace(5)
+                    .deterministic(false)
+                    .build())
+            .elementSupplier(
+                key -> indexElement(key, commitOp(CommitOp.Action.ADD, 1, randomObjId())))
+            .elementSerializer(COMMIT_OP_SERIALIZER)
+            .build();
+
+    KeyIndexTestSet<CommitOp> keyIndexTestSet = builder.generateIndexTestSet();
+
+    StoreIndex<CommitOp> deserialized = keyIndexTestSet.deserialize();
+    for (char c = 'a'; c <= 'z'; c++) {
+      deserialized.add(indexElement(key(c + "x", "key"), commitOp(ADD, 1, randomObjId())));
+    }
+
+    ByteString serialized = deserialized.serialize();
+    StoreIndex<CommitOp> reserialized =
+        StoreIndexes.deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER);
+    soft.assertThat(reserialized.asKeyList()).containsExactlyElementsOf(deserialized.asKeyList());
+    soft.assertThat(reserialized).containsExactlyElementsOf(deserialized);
+  }
+
+  @Test
+  public void removeKeysFromIndex() {
+    KeyIndexTestSet.IndexTestSetGenerator<CommitOp> builder =
+        KeyIndexTestSet.<CommitOp>newGenerator()
+            .keySet(
+                ImmutableRealisticKeySet.builder()
+                    .namespaceLevels(3)
+                    .foldersPerLevel(3)
+                    .tablesPerNamespace(5)
+                    .deterministic(false)
+                    .build())
+            .elementSupplier(
+                key -> indexElement(key, commitOp(CommitOp.Action.ADD, 1, randomObjId())))
+            .elementSerializer(COMMIT_OP_SERIALIZER)
+            .build();
+
+    KeyIndexTestSet<CommitOp> keyIndexTestSet = builder.generateIndexTestSet();
+
+    StoreIndex<CommitOp> deserialized = keyIndexTestSet.deserialize();
+    List<StoreKey> allKeys = keyIndexTestSet.keys();
+    for (int i = 0; i < 10; i++) {
+      deserialized.remove(allKeys.get(10 * i));
+    }
+
+    ByteString serialized = deserialized.serialize();
+    StoreIndex<CommitOp> reserialized =
+        StoreIndexes.deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER);
+    soft.assertThat(reserialized.asKeyList()).containsExactlyElementsOf(deserialized.asKeyList());
+    soft.assertThat(reserialized).containsExactlyElementsOf(deserialized);
   }
 
   @Test
@@ -126,7 +219,7 @@ public class TestStoreIndexImpl {
                     .build())
             .elementSupplier(
                 key -> indexElement(key, commitOp(CommitOp.Action.ADD, 1, randomObjId())))
-            .elementSerializer(CommitOp.COMMIT_OP_SERIALIZER)
+            .elementSerializer(COMMIT_OP_SERIALIZER)
             .build();
 
     KeyIndexTestSet<CommitOp> keyIndexTestSet = builder.generateIndexTestSet();
@@ -161,11 +254,11 @@ public class TestStoreIndexImpl {
     ByteString serialized = segment.serialize();
     StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
     soft.assertThat(deserialized).isEqualTo(segment);
-    soft.assertThat(deserialized.serialize()).isEqualTo(serialized);
+    soft.assertThat(deserialized.serialize()).containsExactlyElementsOf(serialized);
 
     deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
-    soft.assertThat(deserialized.asKeyList()).isEqualTo(segment.asKeyList());
-    soft.assertThat(deserialized.serialize()).isEqualTo(serialized);
+    soft.assertThat(deserialized.asKeyList()).containsExactlyElementsOf(segment.asKeyList());
+    soft.assertThat(deserialized.serialize()).containsExactlyElementsOf(serialized);
   }
 
   @Test
