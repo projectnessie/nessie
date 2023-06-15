@@ -31,7 +31,8 @@ import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.restcatalog.api.GenericIcebergRestException;
+import org.projectnessie.restcatalog.api.errors.GenericIcebergRestException;
+import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
 
 @Provider
 public class JavaxExceptionMapper implements ExceptionMapper<Exception> {
@@ -50,10 +51,14 @@ public class JavaxExceptionMapper implements ExceptionMapper<Exception> {
     }
     if (ex instanceof GenericIcebergRestException) {
       GenericIcebergRestException c = (GenericIcebergRestException) ex;
-      return genericJavaxResponse(c.getResponseCode(), c.getType(), c.getMessage());
+      return genericErrorResponse(c.getResponseCode(), c.getType(), c.getMessage());
+    }
+    if (ex instanceof OAuthTokenEndpointException) {
+      OAuthTokenEndpointException e = (OAuthTokenEndpointException) ex;
+      return authEndpointErrorResponse(e);
     }
     if (ex instanceof IllegalArgumentException) {
-      return genericJavaxResponse(400, ex.getClass().getSimpleName(), ex.getMessage());
+      return genericErrorResponse(400, ex.getClass().getSimpleName(), ex.getMessage());
     }
     if (ex instanceof WebApplicationException) {
       return ((WebApplicationException) ex).getResponse();
@@ -66,26 +71,26 @@ public class JavaxExceptionMapper implements ExceptionMapper<Exception> {
     switch (err) {
       case UNSUPPORTED_MEDIA_TYPE:
       case BAD_REQUEST:
-        return genericJavaxResponse(400, "BadRequestException", ex.getMessage());
+        return genericErrorResponse(400, "BadRequestException", ex.getMessage());
       case FORBIDDEN:
-        return genericJavaxResponse(403, "NotAuthorizedException", ex.getMessage());
+        return genericErrorResponse(403, "NotAuthorizedException", ex.getMessage());
       case CONTENT_NOT_FOUND:
-        return genericJavaxResponse(
+        return genericErrorResponse(
             404, "NoSuchTableException", "Table does not exist: " + keyMessage(ex, errorDetails));
       case NAMESPACE_ALREADY_EXISTS:
-        return genericJavaxResponse(
+        return genericErrorResponse(
             409,
             "AlreadyExistsException",
             "Namespace already exists: " + keyMessage(ex, errorDetails));
       case NAMESPACE_NOT_EMPTY:
-        return genericJavaxResponse(409, "", ex.getMessage());
+        return genericErrorResponse(409, "", ex.getMessage());
       case NAMESPACE_NOT_FOUND:
-        return genericJavaxResponse(
+        return genericErrorResponse(
             404,
             "NoSuchNamespaceException",
             "Namespace does not exist: " + keyMessage(ex, errorDetails));
       case REFERENCE_ALREADY_EXISTS:
-        return genericJavaxResponse(409, "", ex.getMessage());
+        return genericErrorResponse(409, "", ex.getMessage());
       case REFERENCE_CONFLICT:
         if (ex instanceof NessieReferenceConflictException) {
           NessieReferenceConflictException referenceConflictException =
@@ -99,12 +104,12 @@ public class JavaxExceptionMapper implements ExceptionMapper<Exception> {
               if (conflictType != null) {
                 switch (conflictType) {
                   case NAMESPACE_ABSENT:
-                    return genericJavaxResponse(
+                    return genericErrorResponse(
                         404,
                         "NoSuchNamespaceException",
                         "Namespace does not exist: " + conflict.key());
                   case KEY_DOES_NOT_EXIST:
-                    return genericJavaxResponse(
+                    return genericErrorResponse(
                         404, "NoSuchTableException", "Table does not exist: " + ex.getMessage());
                   default:
                     break;
@@ -113,9 +118,9 @@ public class JavaxExceptionMapper implements ExceptionMapper<Exception> {
             }
           }
         }
-        return genericJavaxResponse(409, "", ex.getMessage());
+        return genericErrorResponse(409, "", ex.getMessage());
       case REFERENCE_NOT_FOUND:
-        return genericJavaxResponse(400, "NoSuchReferenceException", ex.getMessage());
+        return genericErrorResponse(400, "NoSuchReferenceException", ex.getMessage());
       case UNKNOWN:
       case REFLOG_NOT_FOUND:
       case TOO_MANY_REQUESTS:
@@ -136,18 +141,21 @@ public class JavaxExceptionMapper implements ExceptionMapper<Exception> {
   }
 
   private static Response serverErrorException(Exception ex) {
-    ex.printStackTrace();
     return serverErrorException(ex.getClass().getSimpleName(), ex.getMessage());
   }
 
   private static Response serverErrorException(String type, String message) {
-    return genericJavaxResponse(500, type, message);
+    return genericErrorResponse(500, type, message);
   }
 
-  private static Response genericJavaxResponse(int code, String type, String message) {
+  private static Response genericErrorResponse(int code, String type, String message) {
     return Response.status(code)
         .entity(
             ErrorResponse.builder().responseCode(code).withType(type).withMessage(message).build())
         .build();
+  }
+
+  private static Response authEndpointErrorResponse(OAuthTokenEndpointException e) {
+    return Response.status(e.getCode()).entity(e.getDetails()).build();
   }
 }

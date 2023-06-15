@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.restcatalog.api;
+package org.projectnessie.restcatalog.service.resources;
 
-public class GenericIcebergRestException extends Exception {
-  private final int responseCode;
-  private final String type;
+import org.apache.iceberg.rest.responses.OAuthTokenResponse;
+import org.projectnessie.restcatalog.api.IcebergV1OAuth;
+import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
+import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
 
-  public GenericIcebergRestException(int responseCode, String type, String message) {
-    super(message);
-    this.responseCode = responseCode;
-    this.type = type;
-  }
+public class IcebergV1OAuthResource extends BaseIcebergResource implements IcebergV1OAuth {
 
-  public int getResponseCode() {
-    return responseCode;
-  }
-
-  public String getType() {
-    return type;
+  @Override
+  public OAuthTokenResponse getToken(OAuthTokenRequest request) throws OAuthTokenEndpointException {
+    return tenantSpecific.oauthHandler().getToken(request);
   }
 }

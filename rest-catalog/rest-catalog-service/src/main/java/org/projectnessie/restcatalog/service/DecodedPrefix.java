@@ -19,7 +19,7 @@ import org.immutables.value.Value;
 import org.projectnessie.api.v2.params.ParsedReference;
 
 /**
- * Information from the Iceberg REST {@code prefix} path parameter, which can contains a Nessie
+ * Information from the Iceberg REST {@code prefix} path parameter, which can contain a Nessie
  * reference (named reference, with or without commit ID or detached commit ID) and the warehouse
  * name.
  */

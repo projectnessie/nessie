@@ -45,7 +45,14 @@ public class QuarkusNessieIcebergQuarkusProfile implements QuarkusTestProfile {
                 System.getProperty("nessie.it.http.url"),
                 "Required system property nessie.it.http.url is not set"));
 
-    return ImmutableMap.of("nessie.iceberg.nessie-client.\"nessie.uri\"", uri);
+    return ImmutableMap.of(
+        "nessie.iceberg.nessie-client.\"nessie.uri\"",
+        uri,
+        // TODO enable auth in ITs
+        "nessie.iceberg.nessie-client.\"nessie.authentication.type\"",
+        "NONE",
+        "quarkus.oidc.enabled",
+        "false");
   }
 
   @Override

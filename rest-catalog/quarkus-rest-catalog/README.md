@@ -48,11 +48,11 @@ Rough system "architecture":
    ```
 5. Configure the Iceberg client using these Iceberg catalog properties:
    ```
-   uri = http://127.0.0.1:19130/nessie-rest-catalog/
+   catalog-impl = org.apache.iceberg.rest.RESTCatalog
+   uri = http://127.0.0.1:19130/iceberg
    prefix = main
    io-impl = org.apache.iceberg.io.ResolvingFileIO
-   token = foo-bar-token
-   credential = foo-bar-credential
+   credential = <client-id>:<client-secret>
    ```
    Note: `prefix` is used to configure the Nessie reference name (the default `main` branch in the
-   snippet above).
+   snippet above). Also, the configured client-id must have the `catalog` scope.
