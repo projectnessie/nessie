@@ -21,6 +21,7 @@ plugins {
   id("nessie-conventions-iceberg")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"

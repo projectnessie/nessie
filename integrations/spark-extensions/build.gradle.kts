@@ -21,6 +21,7 @@ plugins {
   id("nessie-conventions-spark")
   id("nessie-shadow-jar")
   id("nessie-jacoco")
+  id("nessie-license-report")
 }
 
 val sparkScala = getSparkScalaVersionsForProject()

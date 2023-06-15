@@ -4,3 +4,7 @@ Copyright 2015-2017 Dremio Corporation
 This product includes software developed at 
 The Apache Software Foundation (http://www.apache.org/).
 
+---
+
+The main docs page for a particular Nessie release under https://projectnessie.org/docs/ contains an
+aggregated license report (since Nessie version 0.83).

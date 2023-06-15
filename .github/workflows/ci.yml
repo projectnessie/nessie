@@ -103,6 +103,11 @@ jobs:
       - name: Gradle / Assemble
         run: ./gradlew assemble --scan
 
+      - name: Gradle / License Check
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: checkLicense
+
       - name: Gradle / Publish to Maven local
         run: ./gradlew publishToMavenLocal --scan
 

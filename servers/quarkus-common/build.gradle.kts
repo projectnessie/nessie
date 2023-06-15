@@ -56,7 +56,10 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-bigtable")
   implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
-  implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
+  implementation("com.datastax.oss.quarkus:cassandra-quarkus-client") {
+    // spotbugs-annotations has only a GPL license!
+    exclude("com.github.spotbugs", "spotbugs-annotations")
+  }
 
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable

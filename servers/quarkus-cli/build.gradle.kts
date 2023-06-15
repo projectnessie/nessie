@@ -21,6 +21,7 @@ plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
   id("nessie-jacoco")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - Quarkus CLI"
