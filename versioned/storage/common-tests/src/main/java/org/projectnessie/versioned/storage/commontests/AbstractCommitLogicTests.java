@@ -130,6 +130,63 @@ public class AbstractCommitLogicTests {
         .isNotNull()
         .extracting(Obj::id, CommitObj::message)
         .containsExactly(commitId, STD_MESSAGE);
+
+    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag.id()), requireNonNull(tag.id())))
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(tuple(commitId, STD_MESSAGE), tuple(commitId, STD_MESSAGE));
+
+    soft.assertThat(commitLogic.fetchCommits(commitId, commitId))
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(tuple(commitId, STD_MESSAGE), tuple(commitId, STD_MESSAGE));
+  }
+
+  @Test
+  public void fetchCommits() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    assertThat(commitLogic.fetchCommits(EMPTY_OBJ_ID, EMPTY_OBJ_ID)).hasSize(2).containsOnlyNulls();
+
+    String otherMessage = "other";
+
+    ObjId commitId1 = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
+    ObjId commitId2 =
+        requireNonNull(commitLogic.doCommit(stdCommit().message(otherMessage).build(), emptyList()))
+            .id();
+    TagObj tag1 = TagObj.tag(randomObjId(), commitId1, null, null, ByteString.EMPTY);
+    TagObj tag2 = TagObj.tag(randomObjId(), commitId2, null, null, ByteString.EMPTY);
+    soft.assertThat(persist.storeObjs(new Obj[] {tag1, tag2})).hasSize(2).containsOnly(true);
+
+    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag1.id()), requireNonNull(tag2.id())))
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
+
+    soft.assertThat(commitLogic.fetchCommits(commitId1, requireNonNull(tag2.id())))
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
+
+    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag1.id()), commitId2))
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
+
+    soft.assertThat(commitLogic.fetchCommits(commitId1, commitId2))
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
+
+    soft.assertThat(commitLogic.fetchCommits(EMPTY_OBJ_ID, requireNonNull(tag2.id())))
+        .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
+        .containsExactly(null, tuple(commitId2, otherMessage));
+
+    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag1.id()), EMPTY_OBJ_ID))
+        .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
+        .containsExactly(tuple(commitId1, STD_MESSAGE), null);
+
+    soft.assertThat(commitLogic.fetchCommits(EMPTY_OBJ_ID, commitId2))
+        .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
+        .containsExactly(null, tuple(commitId2, otherMessage));
+
+    soft.assertThat(commitLogic.fetchCommits(commitId1, EMPTY_OBJ_ID))
+        .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
+        .containsExactly(tuple(commitId1, STD_MESSAGE), null);
   }
 
   @Test

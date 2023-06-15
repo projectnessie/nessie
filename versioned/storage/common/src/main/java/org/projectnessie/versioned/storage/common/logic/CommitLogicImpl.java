@@ -903,6 +903,66 @@ final class CommitLogicImpl implements CommitLogic {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
+  public CommitObj[] fetchCommits(
+      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId)
+      throws ObjNotFoundException {
+    CommitObj[] commitObjs = new CommitObj[2];
+    if (startCommitId.equals(endCommitId)) {
+      commitObjs[0] = commitObjs[1] = fetchCommit(startCommitId);
+      return commitObjs;
+    }
+
+    if (EMPTY_OBJ_ID.equals(startCommitId)) {
+      startCommitId = null;
+    }
+    if (EMPTY_OBJ_ID.equals(endCommitId)) {
+      endCommitId = null;
+    }
+
+    ObjId[] ids = {startCommitId, endCommitId};
+    Obj[] objs = persist.fetchObjs(ids);
+    ids[0] = referenceObjId(objs[0]);
+    ids[1] = referenceObjId(objs[1]);
+    if (ids[0] == null) {
+      commitObjs[0] = castToCommitObj(objs[0]);
+    }
+    if (ids[1] == null) {
+      commitObjs[1] = castToCommitObj(objs[1]);
+    }
+    if (ids[0] != null || ids[1] != null) {
+      objs = persist.fetchObjs(ids);
+      if (objs[0] != null) {
+        commitObjs[0] = castToCommitObj(objs[0]);
+      }
+      if (objs[1] != null) {
+        commitObjs[1] = castToCommitObj(objs[1]);
+      }
+    }
+
+    return commitObjs;
+  }
+
+  private static CommitObj castToCommitObj(Obj obj) {
+    checkState(
+        obj == null || obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
+    return (CommitObj) obj;
+  }
+
+  private ObjId referenceObjId(Obj obj) {
+    if (obj instanceof CommitObjReference) {
+      CommitObjReference commitRef = (CommitObjReference) obj;
+      ObjId refCommitId = commitRef.commitId();
+      if (!EMPTY_OBJ_ID.equals(refCommitId)) {
+        return refCommitId;
+      }
+    }
+    return null;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
   public DiffPagedResult<DiffEntry, StoreKey> diff(
       @Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery) {
     IndexesLogic indexesLogic = indexesLogic(persist);
