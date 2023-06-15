@@ -30,38 +30,40 @@ public final class SupplyOnce {
   }
 
   private static final class NonLockingSupplyOnce<T> implements Supplier<T> {
-    private final Supplier<T> loader;
+    private int loaded;
     private Object result;
-    private boolean loaded;
+    private final Supplier<T> loader;
 
     private NonLockingSupplyOnce(Supplier<T> loader) {
       this.loader = loader;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T get() {
-      if (loaded) {
-        return eval(result);
+      switch (loaded) {
+        case 1:
+          return (T) result;
+        case 2:
+          throw (RuntimeException) result;
+        case 0:
+          return load();
+        default:
+          throw new IllegalStateException();
       }
+    }
 
+    private T load() {
       try {
+        loaded = 1;
         T obj = loader.get();
         result = obj;
         return obj;
       } catch (RuntimeException re) {
+        loaded = 2;
         result = re;
         throw re;
-      } finally {
-        loaded = true;
       }
-    }
-
-    @SuppressWarnings("unchecked")
-    private T eval(Object i) {
-      if (i instanceof RuntimeException) {
-        throw (RuntimeException) i;
-      }
-      return (T) i;
     }
   }
 }
