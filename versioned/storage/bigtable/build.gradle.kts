@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
@@ -55,4 +57,14 @@ dependencies {
   intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
+}
+
+// Testcontainers is not supported on Windows :(
+if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+  tasks.withType<Test>().configureEach { this.enabled = false }
+}
+
+// Issue w/ testcontainers/podman in GH workflows :(
+if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
+  tasks.named<Test>("intTest") { this.enabled = false }
 }

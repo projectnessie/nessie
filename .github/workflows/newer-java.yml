@@ -1,6 +1,8 @@
 name: Newer Java versions
 
 on:
+  pull_request:
+    types: [labeled, opened, synchronize, reopened]
   schedule:
     # Run daily on week days
     - cron:  '0 4 * * 1-5'
@@ -10,7 +12,7 @@ jobs:
   java:
     name: Exercise Java version
     runs-on: ubuntu-22.04
-    if: github.repository_owner == 'projectnessie'
+    if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-newer-java')
     strategy:
       max-parallel: 1
       matrix:
@@ -40,7 +42,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: spotlessCheck checkstyle assemble --scan
+        arguments: spotlessCheck compileAll --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
