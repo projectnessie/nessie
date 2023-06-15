@@ -49,4 +49,7 @@ dependencies {
 
   implementation(platform(libs.junit.bom))
   implementation(libs.bundles.junit.testing)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
 }
