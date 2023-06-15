@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.binarySearch;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.findPositionAfterKey;
@@ -134,6 +135,10 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   private final List<StoreIndexElement<V>> elements;
   private final ElementSerializer<V> serializer;
 
+  private final ByteBuffer serialized;
+  private final ByteBuffer scratchKeyBuffer = newKeyBuffer();
+  //  private final ByteBuffer preKeyBuffer = newKeyBuffer();
+
   private boolean modified;
   private ObjId objId;
 
@@ -145,7 +150,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     this(new ArrayList<>(), 2, serializer, false);
   }
 
-  StoreIndexImpl(
+  private StoreIndexImpl(
       List<StoreIndexElement<V>> elements,
       int originalSerializedSize,
       ElementSerializer<V> serializer,
@@ -154,11 +159,18 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     this.originalSerializedSize = originalSerializedSize;
     this.serializer = serializer;
     this.modified = modified;
+    this.serialized = null;
   }
 
   @Override
   public boolean isModified() {
     return modified;
+  }
+
+  @VisibleForTesting
+  StoreIndexImpl<V> setModified() {
+    modified = true;
+    return this;
   }
 
   @Override
@@ -229,13 +241,14 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   @Override
   public void updateAll(Function<StoreIndexElement<V>, V> updater) {
     List<StoreIndexElement<V>> e = elements;
+    ElementSerializer<V> serializer = this.serializer;
     int size = e.size();
     for (int i = 0; i < size; i++) {
       StoreIndexElement<V> el = e.get(i);
       V updated = updater.apply(el);
       if (updated != el) {
         modified = true;
-        int oldSerializedSize = serializer.serializedSize(el.content());
+        int oldSerializedSize = el.contentSerializedSize(serializer);
         if (updated == null) {
           e.remove(i);
           i--;
@@ -253,13 +266,14 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   public boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element) {
     modified = true;
     List<StoreIndexElement<V>> e = elements;
+    ElementSerializer<V> serializer = this.serializer;
     int idx = search(e, element);
-    int elementSerializedSize = serializer.serializedSize(element.content());
+    int elementSerializedSize = element.contentSerializedSize(serializer);
     if (idx >= 0) {
       // exact match, key already in segment
       StoreIndexElement<V> prev = e.get(idx);
 
-      int prevSerializedSize = serializer.serializedSize(prev.content());
+      int prevSerializedSize = prev.contentSerializedSize(serializer);
       estimatedSerializedSizeDiff += elementSerializedSize - prevSerializedSize;
 
       e.set(idx, element);
@@ -299,7 +313,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   private int removeSizeDiff(StoreIndexElement<V> element) {
-    return 2 + serializer.serializedSize(element.content());
+    return 2 + element.contentSerializedSize(serializer);
   }
 
   @Override
@@ -428,44 +442,49 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
   @Override
   public int estimatedSerializedSize() {
-    return originalSerializedSize + estimatedSerializedSizeDiff + 1;
+    return originalSerializedSize + estimatedSerializedSizeDiff;
   }
 
   @Override
   public @Nonnull @jakarta.annotation.Nonnull ByteString serialize() {
-    ByteBuffer target = ByteBuffer.allocate(estimatedSerializedSize());
+    ByteBuffer target;
 
-    // Serialized segment index version
-    if (SERIALIZE_VERSION >= CURRENT_STORE_INDEX_VERSION) {
-      target.put((byte) 2);
-      putVarInt(target, elementCount());
+    if (serialized == null || modified) {
+      target = ByteBuffer.allocate(estimatedSerializedSize());
+
+      // Serialized segment index version
+      if (SERIALIZE_VERSION >= CURRENT_STORE_INDEX_VERSION) {
+        target.put((byte) 2);
+        putVarInt(target, elementCount());
+      } else {
+        target.put((byte) 1);
+      }
+
+      ByteBuffer previousKey = null;
+
+      // This buffer's backs the currently serialized key - use with care!
+      // Having this "singleton" instance massively reduces GC alloc/churn rate.
+
+      @SuppressWarnings("UnnecessaryLocalVariable")
+      ElementSerializer<V> ser = serializer;
+
+      List<StoreIndexElement<V>> elements = this.elements;
+      for (int i = 0; i < elements.size(); i++) {
+        StoreIndexElement<V> el = elements.get(i);
+        StoreKey key = el.key();
+        previousKey = serializeKey(previousKey, key, target, scratchKeyBuffer);
+        el.serializeContent(ser, target);
+      }
+
+      target.flip();
     } else {
-      target.put((byte) 1);
+      target = serialized.position(0).limit(originalSerializedSize);
     }
-
-    ByteBuffer previousKey = null;
-
-    // This buffer's backs the currently serialized key - use with care!
-    // Having this "singleton" instance massively reduces GC alloc/churn rate.
-    ByteBuffer serializationBuffer = newKeyBuffer();
-
-    @SuppressWarnings("UnnecessaryLocalVariable")
-    ElementSerializer<V> ser = serializer;
-
-    for (StoreIndexElement<V> el : this) {
-      StoreKey key = el.key();
-
-      previousKey = serializeKey(previousKey, key, target, serializationBuffer);
-
-      ser.serialize(el.content(), target);
-    }
-
-    target.flip();
 
     return unsafeWrap(target);
   }
 
-  private ByteBuffer serializeKey(
+  private static ByteBuffer serializeKey(
       ByteBuffer previousKey, StoreKey key, ByteBuffer target, ByteBuffer serializationBuffer) {
     ByteBuffer keyBuf = key.serialize(serializationBuffer);
     int keyPos = keyBuf.position();
@@ -482,26 +501,28 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
     previousKey.clear();
     keyBuf.position(keyPos);
-    previousKey.put(keyBuf);
-    previousKey.flip();
+    previousKey.put(keyBuf).flip();
 
     return previousKey;
   }
 
   static <V> StoreIndex<V> deserializeStoreIndex(ByteBuffer serialized, ElementSerializer<V> ser) {
+    return new StoreIndexImpl<>(serialized, ser);
+  }
+
+  private StoreIndexImpl(ByteBuffer serialized, ElementSerializer<V> ser) {
     byte version = serialized.get();
     checkArgument(
         version == 1 || version == 2, "Unsupported serialized representation of KeyIndexSegment");
 
-    int posPre = serialized.position();
-
     List<StoreIndexElement<V>> elements =
         version >= 2 ? new ArrayList<>(readVarInt(serialized)) : new ArrayList<>();
+
+    boolean first = true;
 
     // This buffer holds the previous key, reused.
     ByteBuffer previousKey = newKeyBuffer();
 
-    boolean first = true;
     while (serialized.remaining() > 0) {
       int strip = first ? 0 : readVarInt(serialized);
       first = false;
@@ -517,13 +538,79 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
       previousKey.flip();
       StoreKey key = StoreKey.deserializeKey(previousKey);
 
-      // read value
-      V value = ser.deserialize(serialized);
-      elements.add(indexElement(key, value));
+      int valueOffset = serialized.position();
+      ser.skip(serialized);
+      int endOffset = serialized.position();
+
+      LazyStoreIndexElement element = new LazyStoreIndexElement(key, valueOffset, endOffset);
+      elements.add(element);
     }
 
-    int len = serialized.position() - posPre;
-    return new StoreIndexImpl<>(elements, len, ser, false);
+    this.elements = elements;
+    this.serializer = ser;
+    this.serialized = serialized.duplicate().clear();
+    this.originalSerializedSize = serialized.position();
+  }
+
+  private final class LazyStoreIndexElement extends AbstractStoreIndexElement<V> {
+    /** Position in {@link StoreIndexImpl#serialized} at which this index-element's value starts. */
+    final int valueOffset;
+
+    final int endOffset;
+
+    /** The materialized key or {@code null}. */
+    private final StoreKey key;
+
+    /** The materialized content or {@code null}. */
+    private V content;
+
+    LazyStoreIndexElement(StoreKey key, int valueOffset, int endOffset) {
+      this.key = key;
+      this.valueOffset = valueOffset;
+      this.endOffset = endOffset;
+    }
+
+    private ByteBuffer serializedForContent() {
+      StoreIndexImpl<V> index = StoreIndexImpl.this;
+      ByteBuffer serialized = requireNonNull(index.serialized);
+      return serialized.limit(endOffset).position(valueOffset);
+    }
+
+    private V materializeContent() {
+      return StoreIndexImpl.this.serializer.deserialize(serializedForContent());
+    }
+
+    @Override
+    public void serializeContent(ElementSerializer<V> ser, ByteBuffer target) {
+      target.put(serializedForContent());
+    }
+
+    @Override
+    public int contentSerializedSize(ElementSerializer<V> ser) {
+      return endOffset - valueOffset;
+    }
+
+    @Override
+    public StoreKey key() {
+      return key;
+    }
+
+    @Override
+    public V content() {
+      V c = content;
+      if (c == null) {
+        c = content = materializeContent();
+      }
+      return c;
+    }
+
+    @Override
+    public String toString() {
+      if (content != null) {
+        return super.toString();
+      }
+      return "LazyStoreIndexElement(key = " + key + ", valueOffset='" + valueOffset + ")";
+    }
   }
 
   @VisibleForTesting

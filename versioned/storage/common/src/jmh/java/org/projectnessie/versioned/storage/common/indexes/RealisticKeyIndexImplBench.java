@@ -99,6 +99,7 @@ public class RealisticKeyIndexImplBench {
   @Benchmark
   public Object serializeModifiedIndex(BenchmarkParam param) {
     StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
+    ((StoreIndexImpl<?>) deserialized).setModified();
     return deserialized.serialize();
   }
 

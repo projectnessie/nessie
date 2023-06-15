@@ -161,6 +161,11 @@ public abstract class ObjId {
     return fromBytes(len, bytes);
   }
 
+  public static void skipObjId(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+    int len = readVarInt(bytes);
+    bytes.position(bytes.position() + len);
+  }
+
   private static ObjId fromBytes(int len, ByteBuffer bytes) {
     switch (len) {
       case 0:

@@ -15,18 +15,19 @@
  */
 package org.projectnessie.versioned.storage.common.indexes;
 
-import org.immutables.value.Value;
+import java.nio.ByteBuffer;
 
-@Value.Immutable
 public interface StoreIndexElement<V> {
 
-  @Value.Parameter(order = 1)
   StoreKey key();
 
-  @Value.Parameter(order = 2)
   V content();
 
   static <V> StoreIndexElement<V> indexElement(StoreKey key, V content) {
-    return ImmutableStoreIndexElement.of(key, content);
+    return new DirectStoreIndexElement<>(key, content);
   }
+
+  void serializeContent(ElementSerializer<V> ser, ByteBuffer target);
+
+  int contentSerializedSize(ElementSerializer<V> ser);
 }

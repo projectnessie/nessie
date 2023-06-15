@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,32 @@ package org.projectnessie.versioned.storage.common.indexes;
 
 import java.nio.ByteBuffer;
 
-public interface ElementSerializer<V> {
-  int serializedSize(V value);
+final class DirectStoreIndexElement<V> extends AbstractStoreIndexElement<V> {
+  private final StoreKey key;
+  private final V content;
 
-  /** Serialize {@code value} into {@code target}, returns {@code target}. */
-  ByteBuffer serialize(V value, ByteBuffer target);
+  DirectStoreIndexElement(StoreKey key, V content) {
+    this.key = key;
+    this.content = content;
+  }
 
-  /**
-   * Deserialize a value from {@code buffer}. Implementations must not assume that the given {@link
-   * ByteBuffer} only contains data for the value to deserialize, other data likely follows.
-   */
-  V deserialize(ByteBuffer buffer);
+  @Override
+  public StoreKey key() {
+    return key;
+  }
 
-  /**
-   * Skips an element, only updating the {@code buffer}'s {@link java.nio.ByteBuffer#position()}.
-   */
-  void skip(ByteBuffer buffer);
+  @Override
+  public V content() {
+    return content;
+  }
+
+  @Override
+  public void serializeContent(ElementSerializer<V> ser, ByteBuffer target) {
+    ser.serialize(content, target);
+  }
+
+  @Override
+  public int contentSerializedSize(ElementSerializer<V> ser) {
+    return ser.serializedSize(content);
+  }
 }
