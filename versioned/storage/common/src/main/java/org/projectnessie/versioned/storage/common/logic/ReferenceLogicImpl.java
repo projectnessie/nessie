@@ -318,20 +318,18 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
       switch (commitToIndex.kind) {
         case ADDED_TO_INDEX:
-          checkState(!reference.deleted(), "internal error");
+          checkState(!reference.deleted(), "internal error / ADDED_TO_INDEX");
           try {
             return persist.addReference(reference);
           } catch (RefAlreadyExistsException e) {
-            Reference existing = e.reference();
-            if (existing != null && !existing.deleted()) {
-              // Might happen in a rare race
-              throw e;
+            if (reference.equals(e.reference())) {
+              return reference;
             }
             // try again
             break;
           }
         case REF_ROW_MISSING:
-          checkState(!reference.deleted(), "internal error");
+          checkState(!reference.deleted(), "internal error / REF_ROW_MISSING");
           // Note: addReference() may or may not throw a ReferenceAlreadyExistsException
           reference = persist.addReference(reference);
           throw new RefAlreadyExistsException(reference);
@@ -393,7 +391,11 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
     commitDeleteReference(reference);
 
-    persist.purgeReference(reference);
+    try {
+      persist.purgeReference(reference);
+    } catch (RefNotFoundException ignore) {
+      // deleted via "deletion recovery" - from another thread/process
+    }
 
     if (actAsAlreadyDeleted) {
       // A previous deleteReference failed, act as if the first one succeeded, therefore this

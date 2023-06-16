@@ -16,8 +16,11 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.Thread.currentThread;
+import static java.lang.Thread.sleep;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,15 +43,21 @@ import static org.projectnessie.versioned.storage.common.persist.Reference.INTER
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -75,6 +84,59 @@ public class AbstractReferenceLogicTests {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @NessiePersist protected Persist persist;
+
+  @SuppressWarnings("BusyWait")
+  @RepeatedTest(2)
+  public void refCreationDeletionWithConcurrentRefsListing() throws Exception {
+    IntFunction<String> refName = i -> "refs/heads/branch-" + i + "-" + (i & 7);
+
+    int num = 100;
+
+    List<Integer> indexes = new ArrayList<>(num);
+    for (int i = 0; i < num; i++) {
+      indexes.add(i);
+    }
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    @SuppressWarnings("resource")
+    ExecutorService exec = newSingleThreadExecutor();
+    try {
+      AtomicBoolean stop = new AtomicBoolean();
+      Future<?> task =
+          exec.submit(
+              () -> {
+                while (!currentThread().isInterrupted() && !stop.get()) {
+                  refLogic
+                      .queryReferences(referencesQuery("refs/heads/"))
+                      .forEachRemaining(x -> {});
+                  try {
+                    sleep(1);
+                  } catch (InterruptedException e) {
+                    break;
+                  }
+                }
+              });
+      try {
+        for (int i = 0; i < num; i++) {
+          refLogic.createReference(refName.apply(i), EMPTY_OBJ_ID);
+          sleep(1);
+        }
+        Collections.shuffle(indexes);
+        for (int i : indexes) {
+          refLogic.deleteReference(refName.apply(i), EMPTY_OBJ_ID);
+          sleep(1);
+        }
+
+        stop.set(true);
+        task.get();
+      } finally {
+        task.cancel(true);
+      }
+
+    } finally {
+      exec.shutdown();
+    }
+  }
 
   @Test
   public void internalReferencesNotVisible() {
