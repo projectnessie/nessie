@@ -227,7 +227,7 @@ public class TestMergeBase {
    * <p>Best merge-base of {@code I} onto {@code F} is {@code F}.
    */
   @Test
-  void doubleMerge3() {
+  void multiMerge1() {
     CommitObj a = repo.add(initialCommit());
     CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
     CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
@@ -258,6 +258,38 @@ public class TestMergeBase {
   }
 
   /**
+   * Merge-again case. <code><pre>
+   * A ----- C - E - F - G
+   *  \- B -/           /
+   *   \    \--------- / ---\
+   *    \- D ---------/------ H - J
+   * </pre></code>
+   *
+   * <p>Best merge-base of {@code J} onto {@code G} is {@code D}.
+   */
+  @Test
+  void multiMerge2() {
+    CommitObj a = repo.add(initialCommit());
+    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
+    CommitObj c = repo.add(buildCommit("c").addTail(a.id()).addSecondaryParents(b.id()));
+    CommitObj d = repo.add(buildCommit("d").addTail(a.id()));
+    CommitObj e = repo.add(buildCommit("e").addTail(c.id()));
+    CommitObj f = repo.add(buildCommit("f").addTail(e.id()));
+    CommitObj g = repo.add(buildCommit("g").addTail(f.id()).addSecondaryParents(d.id()));
+    CommitObj h = repo.add(buildCommit("h").addTail(d.id()).addSecondaryParents(b.id()));
+    CommitObj j = repo.add(buildCommit("j").addTail(h.id()));
+
+    soft.assertThat(
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .targetCommitId(g.id())
+                .fromCommitId(j.id())
+                .build()
+                .identifyMergeBase())
+        .isEqualTo(b);
+  }
+
+  /**
    * Cross-merge case. <code><pre>
    *        ----B--------D----F
    *       /       \ /
@@ -283,6 +315,14 @@ public class TestMergeBase {
                 .loadCommit(repo::loadCommit)
                 .targetCommitId(g.id())
                 .fromCommitId(f.id())
+                .build()
+                .identifyMergeBase())
+        .isEqualTo(b);
+    soft.assertThat(
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .targetCommitId(f.id())
+                .fromCommitId(g.id())
                 .build()
                 .identifyMergeBase())
         .isEqualTo(b);
