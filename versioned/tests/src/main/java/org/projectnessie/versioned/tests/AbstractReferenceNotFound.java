@@ -229,7 +229,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                                     Hash.of("12341234123412341234123412341234123412341234")))
                             .addSequenceToTransplant(
                                 Hash.of("12341234123412341234123412341234123412341234"))
-                            .keepIndividualCommits(true)
                             .build())),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")

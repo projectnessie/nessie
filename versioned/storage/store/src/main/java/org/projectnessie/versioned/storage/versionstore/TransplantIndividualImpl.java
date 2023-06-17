@@ -15,12 +15,15 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
@@ -42,7 +45,9 @@ import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.TransplantOp;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -158,5 +163,57 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
     }
 
     return createCommitBuilder.build();
+  }
+
+  MergeTransplantContext loadSourceCommitsForTransplant(VersionStore.TransplantOp transplantOp)
+      throws ReferenceNotFoundException {
+    List<Hash> commitHashes = transplantOp.sequenceToTransplant();
+
+    checkArgument(
+        !commitHashes.isEmpty(),
+        "No hashes to transplant onto %s @ %s, expected commit ID from request was %s.",
+        head != null ? head.id() : EMPTY_OBJ_ID,
+        branch.getName(),
+        referenceHash.map(Hash::asString).orElse("not specified"));
+
+    Obj[] objs;
+    try {
+      objs =
+          persist.fetchObjs(
+              commitHashes.stream().map(TypeMapping::hashToObjId).toArray(ObjId[]::new));
+    } catch (ObjNotFoundException e) {
+      throw referenceNotFound(e);
+    }
+    List<CommitObj> commits = new ArrayList<>(commitHashes.size());
+    CommitObj parent = null;
+    CommitLogic commitLogic = commitLogic(persist);
+    for (int i = 0; i < objs.length; i++) {
+      Obj o = objs[i];
+      if (o == null) {
+        throw RefMapping.hashNotFound(commitHashes.get(i));
+      }
+      CommitObj commit = (CommitObj) o;
+      if (i > 0) {
+        if (!commit.directParent().equals(commits.get(i - 1).id())) {
+          throw new IllegalArgumentException("Sequence of hashes is not contiguous.");
+        }
+      } else {
+        try {
+          parent = commitLogic.fetchCommit(commit.directParent());
+        } catch (ObjNotFoundException e) {
+          throw referenceNotFound(e);
+        }
+      }
+      commits.add(commit);
+    }
+
+    List<CommitMeta> commitsMetadata = new ArrayList<>(commits.size());
+    for (CommitObj sourceCommit : commits) {
+      commitsMetadata.add(toCommitMeta(sourceCommit));
+    }
+    CommitMeta metadata =
+        transplantOp.updateCommitMetadata().squash(commitsMetadata, commits.size());
+
+    return new MergeTransplantContext(commits, parent, metadata);
   }
 }

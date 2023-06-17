@@ -229,7 +229,7 @@ public class PersistVersionStore implements VersionStore {
                   .sequenceToTransplant(transplantOp.sequenceToTransplant())
                   .updateCommitMetadata(
                       updateCommitMetadataFunction(transplantOp.updateCommitMetadata()))
-                  .keepIndividualCommits(transplantOp.keepIndividualCommits())
+                  .keepIndividualCommits(true)
                   .mergeTypes(mergeTypes)
                   .defaultMergeType(MergeType.valueOf(transplantOp.defaultMergeBehavior().name()))
                   .isDryRun(transplantOp.dryRun())

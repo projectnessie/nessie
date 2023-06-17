@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.lang.String.format;
@@ -41,7 +40,6 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashT
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
@@ -60,7 +58,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.error.BaseNessieClientServerException;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -79,7 +76,6 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
@@ -430,58 +426,6 @@ class BaseCommitHelper {
     }
 
     validateNamespaces(checkContents, deletedKeysAndPayload, headIndex);
-  }
-
-  MergeTransplantContext loadSourceCommitsForTransplant(VersionStore.TransplantOp transplantOp)
-      throws ReferenceNotFoundException {
-    List<Hash> commitHashes = transplantOp.sequenceToTransplant();
-
-    checkArgument(
-        !commitHashes.isEmpty(),
-        "No hashes to transplant onto %s @ %s, expected commit ID from request was %s.",
-        head != null ? head.id() : EMPTY_OBJ_ID,
-        branch.getName(),
-        referenceHash.map(Hash::asString).orElse("not specified"));
-
-    Obj[] objs;
-    try {
-      objs =
-          persist.fetchObjs(
-              commitHashes.stream().map(TypeMapping::hashToObjId).toArray(ObjId[]::new));
-    } catch (ObjNotFoundException e) {
-      throw referenceNotFound(e);
-    }
-    List<CommitObj> commits = new ArrayList<>(commitHashes.size());
-    CommitObj parent = null;
-    CommitLogic commitLogic = commitLogic(persist);
-    for (int i = 0; i < objs.length; i++) {
-      Obj o = objs[i];
-      if (o == null) {
-        throw RefMapping.hashNotFound(commitHashes.get(i));
-      }
-      CommitObj commit = (CommitObj) o;
-      if (i > 0) {
-        if (!commit.directParent().equals(commits.get(i - 1).id())) {
-          throw new IllegalArgumentException("Sequence of hashes is not contiguous.");
-        }
-      } else {
-        try {
-          parent = commitLogic.fetchCommit(commit.directParent());
-        } catch (ObjNotFoundException e) {
-          throw referenceNotFound(e);
-        }
-      }
-      commits.add(commit);
-    }
-
-    List<CommitMeta> commitsMetadata = new ArrayList<>(commits.size());
-    for (CommitObj sourceCommit : commits) {
-      commitsMetadata.add(toCommitMeta(sourceCommit));
-    }
-    CommitMeta metadata =
-        transplantOp.updateCommitMetadata().squash(commitsMetadata, commits.size());
-
-    return new MergeTransplantContext(commits, parent, metadata);
   }
 
   ImmutableMergeResult.Builder<Commit> prepareMergeResult() {

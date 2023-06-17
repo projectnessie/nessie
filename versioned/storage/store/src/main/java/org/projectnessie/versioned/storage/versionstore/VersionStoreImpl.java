@@ -794,10 +794,7 @@ public class VersionStoreImpl implements VersionStore {
   public MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
-    CommitterSupplier<Transplant> supplier =
-        transplantOp.keepIndividualCommits()
-            ? TransplantIndividualImpl::new
-            : TransplantSquashImpl::new;
+    CommitterSupplier<Transplant> supplier = TransplantIndividualImpl::new;
 
     if (transplantOp.dryRun()) {
       supplier = dryRunCommitterSupplier(supplier);

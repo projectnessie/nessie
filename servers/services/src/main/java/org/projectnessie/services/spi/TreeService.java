@@ -214,7 +214,6 @@ public interface TreeService {
               regexp = REF_NAME_REGEX,
               message = REF_NAME_MESSAGE)
           String fromRefName,
-      Boolean keepIndividualCommits,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeType,
       @Nullable @jakarta.annotation.Nullable Boolean dryRun,

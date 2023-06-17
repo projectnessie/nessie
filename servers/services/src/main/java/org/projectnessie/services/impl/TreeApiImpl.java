@@ -566,7 +566,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       List<String> hashesToTransplant,
       String fromRefName,
-      Boolean keepIndividualCommits,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeBehavior,
       Boolean dryRun,
@@ -592,7 +591,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         transplants = s.collect(Collectors.toList());
       }
 
-      if (Boolean.TRUE.equals(keepIndividualCommits) && transplants.size() > 1) {
+      if (transplants.size() > 1) {
         // Message overrides are not meaningful when transplanting more than one commit.
         // This matches old behaviour where `message` was ignored in all cases.
         commitMeta = null;
@@ -619,7 +618,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                                       lastHash,
                                       branchName,
                                       into.map(h -> " at " + h.asString()).orElse(""))))
-                      .keepIndividualCommits(Boolean.TRUE.equals(keepIndividualCommits))
                       .mergeKeyBehaviors(keyMergeBehaviors(keyMergeBehaviors))
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))

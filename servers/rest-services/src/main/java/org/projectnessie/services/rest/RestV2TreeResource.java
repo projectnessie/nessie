@@ -356,7 +356,6 @@ public class RestV2TreeResource implements HttpTreeApi {
             meta,
             transplant.getHashesToTransplant(),
             transplant.getFromRefName(),
-            true,
             transplant.getKeyMergeModes(),
             transplant.getDefaultKeyMergeMode(),
             transplant.isDryRun(),

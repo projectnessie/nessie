@@ -135,10 +135,7 @@ public interface VersionStore {
       return Optional.empty();
     }
 
-    /**
-     * Function that rewrites the commit metadata, gets a multiple commit metadata if {@link
-     * #keepIndividualCommits()} is {@code false}.
-     */
+    /** Function that rewrites the commit metadata. */
     @Value.Default
     default MetadataRewriter<CommitMeta> updateCommitMetadata() {
       return DEFAULT_METADATA_REWRITER;
@@ -186,11 +183,6 @@ public interface VersionStore {
   interface TransplantOp extends MergeTransplantOpBase {
     /** The sequence of hashes to transplant. */
     List<Hash> sequenceToTransplant();
-
-    @Value.Default
-    default boolean keepIndividualCommits() {
-      return true;
-    }
 
     static ImmutableTransplantOp.Builder builder() {
       return ImmutableTransplantOp.builder();

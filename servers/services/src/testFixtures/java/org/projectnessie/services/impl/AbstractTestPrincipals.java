@@ -138,7 +138,6 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             null,
             hashesToTransplant,
             main.getName(),
-            true,
             emptyList(),
             NORMAL,
             false,

@@ -117,7 +117,6 @@ public abstract class AbstractNoNamespaceValidation {
                             .fromRef(branch)
                             .toBranch(root)
                             .addSequenceToTransplant(commit1, commit2)
-                            .keepIndividualCommits(individual)
                             .build());
               }
             })
