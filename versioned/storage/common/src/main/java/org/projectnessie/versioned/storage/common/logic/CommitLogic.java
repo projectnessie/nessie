@@ -193,14 +193,14 @@ public interface CommitLogic {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  CommitObj findCommonAncestor(
+  ObjId findCommonAncestor(
       @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
       @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException;
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  CommitObj findMergeBase(
+  ObjId findMergeBase(
       @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
       @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException;

@@ -191,6 +191,9 @@ public abstract class CommitMeta {
   }
 
   public interface Builder {
+
+    Builder message(String message);
+
     default ImmutableCommitMeta.Builder author(String author) {
       if (author != null) {
         return addAllAuthors(author);
@@ -234,6 +237,8 @@ public abstract class CommitMeta {
     ImmutableCommitMeta.Builder putAllProperties(String key, List<String> value);
 
     ImmutableCommitMeta.Builder allProperties(Map<String, ? extends List<String>> entries);
+
+    CommitMeta build();
   }
 
   /**

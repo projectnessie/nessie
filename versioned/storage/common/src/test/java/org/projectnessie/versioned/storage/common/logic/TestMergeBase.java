@@ -68,7 +68,7 @@ public class TestMergeBase {
                 .fromCommitId(a.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
   }
 
   /**
@@ -130,7 +130,7 @@ public class TestMergeBase {
                 .fromCommitId(b.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -139,7 +139,7 @@ public class TestMergeBase {
                 .fromCommitId(b.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
   }
 
   /**
@@ -166,7 +166,7 @@ public class TestMergeBase {
                 .fromCommitId(e.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b);
+        .isEqualTo(b.id());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -175,7 +175,7 @@ public class TestMergeBase {
                 .fromCommitId(e.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
   }
 
   /**
@@ -203,7 +203,7 @@ public class TestMergeBase {
                 .fromCommitId(f.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(d);
+        .isEqualTo(d.id());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -212,7 +212,7 @@ public class TestMergeBase {
                 .fromCommitId(f.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
   }
 
   /**
@@ -245,7 +245,7 @@ public class TestMergeBase {
                 .fromCommitId(i.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(f);
+        .isEqualTo(f.id());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -254,7 +254,7 @@ public class TestMergeBase {
                 .fromCommitId(i.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
   }
 
   /**
@@ -286,7 +286,7 @@ public class TestMergeBase {
                 .fromCommitId(j.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b);
+        .isEqualTo(b.id());
   }
 
   /**
@@ -317,7 +317,8 @@ public class TestMergeBase {
                 .fromCommitId(f.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b);
+        .isEqualTo(b.id());
+    // DIFFERENCE to the corresponding test in AbstractMergeScenarios in the following assertion
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -325,7 +326,7 @@ public class TestMergeBase {
                 .fromCommitId(g.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b);
+        .isEqualTo(b.id());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -334,7 +335,7 @@ public class TestMergeBase {
                 .fromCommitId(f.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(a);
+        .isEqualTo(a.id());
   }
 
   /**
@@ -367,7 +368,7 @@ public class TestMergeBase {
                 .fromCommitId(h.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(e);
+        .isEqualTo(e.id());
   }
 
   /**
@@ -401,7 +402,7 @@ public class TestMergeBase {
                 .fromCommitId(k.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(f);
+        .isEqualTo(f.id());
   }
 
   @Test

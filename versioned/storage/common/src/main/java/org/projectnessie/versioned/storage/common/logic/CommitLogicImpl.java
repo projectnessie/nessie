@@ -824,7 +824,7 @@ final class CommitLogicImpl implements CommitLogic {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public CommitObj findCommonAncestor(
+  public ObjId findCommonAncestor(
       @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
       @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException {
@@ -834,14 +834,14 @@ final class CommitLogicImpl implements CommitLogic {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public CommitObj findMergeBase(
+  public ObjId findMergeBase(
       @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
       @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException {
     return identifyMergeBase(targetId, sourceId, true);
   }
 
-  private CommitObj identifyMergeBase(ObjId targetId, ObjId sourceId, boolean respectMergeParents) {
+  private ObjId identifyMergeBase(ObjId targetId, ObjId sourceId, boolean respectMergeParents) {
     return MergeBase.builder()
         .loadCommit(
             commitId -> {

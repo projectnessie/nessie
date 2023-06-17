@@ -58,7 +58,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   public MergeResult<Commit> merge(Optional<?> retryState, MergeOp mergeOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(mergeOp.fromHash());
-    ObjId commonAncestorId = identifyMergeBase(fromId).id();
+    ObjId commonAncestorId = identifyMergeBase(fromId);
 
     MergeTransplantContext mergeTransplantContext =
         loadSourceCommitsForMerge(fromId, commonAncestorId, mergeOp);
@@ -80,7 +80,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     return squash(mergeOp, mergeResult, mergeTransplantContext, fromId);
   }
 
-  private CommitObj identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
+  private ObjId identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
     CommitLogic commitLogic = commitLogic(persist);
     try {
       return commitLogic.findMergeBase(headId(), fromId);

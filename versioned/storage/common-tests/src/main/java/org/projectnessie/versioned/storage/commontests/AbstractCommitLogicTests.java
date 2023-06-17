@@ -181,15 +181,15 @@ public class AbstractCommitLogicTests {
     }
 
     for (ObjId branch : branches) {
-      soft.assertThat(commitLogic.findCommonAncestor(branch, root).id()).isEqualTo(root);
+      soft.assertThat(commitLogic.findCommonAncestor(branch, root)).isEqualTo(root);
     }
 
     for (int i = 0; i < branches.length; i++) {
       requireNonNull(branches[i]);
-      soft.assertThat(commitLogic.findCommonAncestor(branches[i], branches[i]).id())
+      soft.assertThat(commitLogic.findCommonAncestor(branches[i], branches[i]))
           .isEqualTo(branches[i]);
       for (int j = i + 1; j < branches.length; j++) {
-        soft.assertThat(commitLogic.findCommonAncestor(branches[i], branches[j]).id())
+        soft.assertThat(commitLogic.findCommonAncestor(branches[i], branches[j]))
             .isEqualTo(commonAncestor);
       }
     }

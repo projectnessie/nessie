@@ -70,8 +70,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  public void transplant(boolean withDetachedCommit)
-      throws BaseNessieClientServerException {
+  public void transplant(boolean withDetachedCommit) throws BaseNessieClientServerException {
     testTransplant(withDetachedCommit);
   }
 
@@ -198,7 +197,11 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
               MergeResponse::wasApplied,
               MergeResponse::wasSuccessful)
           .containsExactly(committed2.getHash(), newHead.getHash(), newHead.getHash(), false, true);
-    } else {
+    } else if (!isNewStorageModel()) {
+      // For the new storage model, the following transplant will NOT fail (correct behavior),
+      // because the eventually
+      // applied content-value is exactly the same as the currently existing one.
+
       soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
           .isInstanceOf(NessieReferenceConflictException.class)
           .hasMessageContaining("keys have been changed in conflict")

@@ -49,6 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -465,11 +466,15 @@ class BaseCommitHelper {
                 // change).
                 CommitOp op = conflict.op();
                 CommitOp ex = conflict.existing();
-                if (op != null
-                    && ex != null
-                    && op.payload() == ex.payload()
-                    && contentTypeForPayload(op.payload()) == NAMESPACE) {
-                  return ConflictResolution.ADD;
+                if (op != null && ex != null && op.payload() == ex.payload()) {
+                  if (Objects.equals(op.value(), ex.value())) {
+                    // Got another add for the exact same content that is already on the target, so
+                    // drop the conflicting operation on the floor.
+                    return ConflictResolution.DROP;
+                  }
+                  if (contentTypeForPayload(op.payload()) == NAMESPACE) {
+                    return ConflictResolution.ADD;
+                  }
                 }
               }
 

@@ -431,10 +431,11 @@ public class VersionStoreImpl implements VersionStore {
         if (baseRefHead.isPresent()) {
           CommitObj baseHead = baseRefHead.get();
           try {
-            CommitObj commonAncestor = commitLogic.findCommonAncestor(baseHead.id(), head.id());
-            refInfo.commonAncestor(objIdToHash(commonAncestor.id()));
+            ObjId commonAncestorId = commitLogic.findCommonAncestor(baseHead.id(), head.id());
+            refInfo.commonAncestor(objIdToHash(commonAncestorId));
 
             if (opts.isComputeAheadBehind()) {
+              CommitObj commonAncestor = commitLogic.fetchCommit(commonAncestorId);
               long commonAncestorSeq = commonAncestor.seq();
               refInfo.aheadBehind(
                   CommitsAheadBehind.of(

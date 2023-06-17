@@ -73,12 +73,12 @@ public abstract class MergeBase {
   }
 
   @Value.NonAttribute
-  public CommitObj identifyMergeBase() {
+  public ObjId identifyMergeBase() {
     List<ShallowCommit> mergeBases = identifyAllMergeBases();
     if (mergeBases == null || mergeBases.isEmpty()) {
       throw noCommonAncestor();
     }
-    return loadCommit().apply(mergeBases.get(0).id());
+    return mergeBases.get(0).id();
   }
 
   private List<ShallowCommit> identifyAllMergeBases() {
