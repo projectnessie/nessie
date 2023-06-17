@@ -259,7 +259,7 @@ public class PersistVersionStore implements VersionStore {
                   .mergeFromHash(mergeOp.fromHash())
                   .updateCommitMetadata(
                       updateCommitMetadataFunction(mergeOp.updateCommitMetadata()))
-                  .keepIndividualCommits(mergeOp.keepIndividualCommits())
+                  .keepIndividualCommits(false)
                   .mergeTypes(mergeTypes)
                   .defaultMergeType(MergeType.valueOf(mergeOp.defaultMergeBehavior().name()))
                   .isDryRun(mergeOp.dryRun())

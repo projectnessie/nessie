@@ -259,7 +259,6 @@ public interface TreeService {
           @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
           @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
           String fromHash,
-      @Nullable @jakarta.annotation.Nullable Boolean keepIndividualCommits,
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeType,

@@ -80,12 +80,6 @@ final class MergeBehaviors {
         .mergeKeyBehaviors()
         .forEach(
             (key, mergeKeyBehavior) -> {
-              checkArgument(
-                  !mergeTransplantOpBase.keepIndividualCommits()
-                      || (mergeKeyBehavior.getExpectedTargetContent() == null
-                          && mergeKeyBehavior.getResolvedContent() == null),
-                  "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
-
               switch (mergeKeyBehavior.getMergeBehavior()) {
                 case NORMAL:
                   if (mergeKeyBehavior.getResolvedContent() != null) {

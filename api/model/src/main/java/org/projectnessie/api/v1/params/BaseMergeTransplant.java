@@ -39,6 +39,7 @@ public interface BaseMergeTransplant {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
+  @Deprecated
   Boolean keepIndividualCommits();
 
   @Nullable

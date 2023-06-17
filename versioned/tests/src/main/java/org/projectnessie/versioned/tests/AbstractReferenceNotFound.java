@@ -289,7 +289,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                             .fromRef(BranchName.of("source"))
                             .fromHash(Hash.of("12341234123412341234123412341234123412341234"))
                             .toBranch(BranchName.of("main"))
-                            .keepIndividualCommits(true)
                             .build())),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
@@ -304,7 +303,6 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                             .expectedHash(
                                 Optional.of(
                                     Hash.of("12341234123412341234123412341234123412341234")))
-                            .keepIndividualCommits(true)
                             .build())),
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")

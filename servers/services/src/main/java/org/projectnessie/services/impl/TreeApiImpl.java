@@ -647,7 +647,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String expectedHash,
       String fromRefName,
       String fromHash,
-      Boolean keepIndividualCommits,
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeBehavior,
@@ -687,7 +686,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                                       from.asString(),
                                       branchName,
                                       into.map(h -> " at " + h.asString()).orElse(""))))
-                      .keepIndividualCommits(Boolean.TRUE.equals(keepIndividualCommits))
                       .mergeKeyBehaviors(keyMergeBehaviors(keyMergeBehaviors))
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))

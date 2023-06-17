@@ -21,7 +21,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -109,23 +108,10 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
   @ParameterizedTest
   @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
-  public void mergeKeepCommits(ReferenceMode refMode) throws BaseNessieClientServerException {
-    assumeThat(databaseAdapter).isNotNull();
-
-    testMerge(refMode, true);
-  }
-
-  @ParameterizedTest
-  @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
-  public void mergeSquashed(ReferenceMode refMode) throws BaseNessieClientServerException {
-    testMerge(refMode, false);
-  }
-
-  private void testMerge(ReferenceMode refMode, boolean keepIndividualCommits)
-      throws BaseNessieClientServerException {
+  public void merge(ReferenceMode refMode) throws BaseNessieClientServerException {
     mergeTransplant(
-        !keepIndividualCommits,
-        keepIndividualCommits,
+        true,
+        false,
         (target, source, committed1, committed2, returnConflictAsResult) -> {
           Reference fromRef = refMode.transform(committed2);
           return treeApi()
@@ -134,7 +120,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                   target.getHash(),
                   fromRef.getName(),
                   fromRef.getHash(),
-                  keepIndividualCommits,
                   null,
                   emptyList(),
                   NORMAL,
@@ -406,7 +391,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     target.getHash(),
                     source.getName(),
                     source.getHash(),
-                    false,
                     CommitMeta.fromMessage("test-message-override-123"),
                     emptyList(),
                     NORMAL,
@@ -455,7 +439,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             target.getHash(),
             source.getName(),
             source.getHash(),
-            false,
             null,
             emptyList(),
             NORMAL,
@@ -637,7 +620,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             base.getHash(),
             fromRef.getName(),
             fromRef.getHash(),
-            false,
             null,
             emptyList(),
             NORMAL,
@@ -672,7 +654,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     target.getHash(),
                     source.getName(),
                     source.getHash(),
-                    false,
                     null,
                     asList(MergeKeyBehavior.of(KEY_1, DROP), MergeKeyBehavior.of(KEY_3, NORMAL)),
                     FORCE,

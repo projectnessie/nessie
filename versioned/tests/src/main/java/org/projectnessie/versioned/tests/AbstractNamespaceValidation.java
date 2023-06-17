@@ -204,12 +204,9 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
   }
 
   enum NamespaceValidationMergeTransplant {
-    MERGE_SQUASH(true, false, false, false, false),
-    MERGE_INDIVIDUAL(true, false, false, true, false),
-    MERGE_CREATE_SQUASH(true, true, false, false, false),
-    MERGE_CREATE_INDIVIDUAL(true, true, false, true, false),
-    MERGE_DELETE_SQUASH(true, false, true, false, true),
-    MERGE_DELETE_INDIVIDUAL(true, false, true, true, true),
+    MERGE(true, false, false, false, false),
+    MERGE_CREATE(true, true, false, false, false),
+    MERGE_DELETE(true, false, true, false, true),
     TRANSPLANT_SQUASH(false, false, false, false, false),
     TRANSPLANT_INDIVIDUAL(false, false, false, true, false),
     TRANSPLANT_CREATE_SQUASH(true, true, false, false, false),
@@ -320,7 +317,6 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                             .fromHash(
                                 store().hashOnReference(branch, Optional.empty(), emptyList()))
                             .toBranch(root)
-                            .keepIndividualCommits(mode.individualCommits)
                             .build())
             : () ->
                 store()

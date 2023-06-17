@@ -225,18 +225,12 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
             base.getHash(),
             branch.getName(),
             branch.getHash(),
-            true,
             null,
             emptyList(),
             NORMAL,
             false,
             false,
             false);
-
-    List<LogEntry> log = commitLog(base.getName(), MINIMAL, base.getHash(), null, null);
-    String expectedCommitMsg = "create namespace a.b.c";
-    soft.assertThat(log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
-        .containsExactly(expectedCommitMsg, "create namespaces", "root");
 
     soft.assertThat(entries(base.getName(), null).stream().map(EntriesResponse.Entry::getName))
         .contains(ns.toContentKey());
@@ -278,7 +272,6 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
                         finalBase.getHash(),
                         finalBranch.getName(),
                         finalBranch.getHash(),
-                        false,
                         CommitMeta.fromMessage("foo"),
                         emptyList(),
                         NORMAL,

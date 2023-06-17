@@ -390,7 +390,6 @@ public class RestV2TreeResource implements HttpTreeApi {
             ref.hashWithRelativeSpec(),
             merge.getFromRefName(),
             merge.getFromHash(),
-            false,
             meta.build(),
             merge.getKeyMergeModes(),
             merge.getDefaultKeyMergeMode(),

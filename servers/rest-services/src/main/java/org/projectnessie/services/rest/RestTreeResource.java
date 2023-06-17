@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v1.http.HttpTreeApi;
+import org.projectnessie.api.v1.params.BaseMergeTransplant;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
 import org.projectnessie.api.v1.params.GetReferenceParams;
@@ -220,6 +222,7 @@ public class RestTreeResource implements HttpTreeApi {
   public MergeResponse transplantCommitsIntoBranch(
       String branchName, String expectedHash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
+    validateKeepIndividual(transplant, true, "Transplant", "unsquashed");
     return resource()
         .transplantCommitsIntoBranch(
             branchName,
@@ -227,7 +230,6 @@ public class RestTreeResource implements HttpTreeApi {
             message != null ? CommitMeta.fromMessage(message) : null,
             transplant.getHashesToTransplant(),
             transplant.getFromRefName(),
-            transplant.keepIndividualCommits(),
             transplant.getKeyMergeModes(),
             transplant.getDefaultKeyMergeMode(),
             transplant.isDryRun(),
@@ -239,19 +241,30 @@ public class RestTreeResource implements HttpTreeApi {
   @Override
   public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
+    validateKeepIndividual(merge, false, "Merge", "squashed");
     return resource()
         .mergeRefIntoBranch(
             branchName,
             expectedHash,
             merge.getFromRefName(),
             merge.getFromHash(),
-            merge.keepIndividualCommits(),
             null,
             merge.getKeyMergeModes(),
             merge.getDefaultKeyMergeMode(),
             merge.isDryRun(),
             merge.isFetchAdditionalInfo(),
             merge.isReturnConflictAsResult());
+  }
+
+  private void validateKeepIndividual(
+      BaseMergeTransplant base, boolean goodValue, String opsName, String supported) {
+    @SuppressWarnings("deprecation")
+    Boolean keep = base.keepIndividualCommits();
+    checkArgument(
+        keep == null || keep == goodValue,
+        "The parameter 'keepIndividualCommits' is deprecated. %s operations only support %s now.",
+        opsName,
+        supported);
   }
 
   @JsonView(Views.V1.class)

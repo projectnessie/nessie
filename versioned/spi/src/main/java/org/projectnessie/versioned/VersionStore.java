@@ -144,9 +144,6 @@ public interface VersionStore {
       return DEFAULT_METADATA_REWRITER;
     }
 
-    /** Whether to keep the individual commits and do not squash the commits to merge. */
-    boolean keepIndividualCommits();
-
     /** Merge behaviors per content key. */
     Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors();
 
@@ -180,12 +177,6 @@ public interface VersionStore {
     /** The hash we are using to get additional commits. */
     Hash fromHash();
 
-    @Override
-    @Value.Default
-    default boolean keepIndividualCommits() {
-      return false;
-    }
-
     static ImmutableMergeOp.Builder builder() {
       return ImmutableMergeOp.builder();
     }
@@ -196,7 +187,6 @@ public interface VersionStore {
     /** The sequence of hashes to transplant. */
     List<Hash> sequenceToTransplant();
 
-    @Override
     @Value.Default
     default boolean keepIndividualCommits() {
       return true;
