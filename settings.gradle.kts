@@ -35,7 +35,7 @@ pluginManagement {
 }
 
 plugins {
-  id("com.gradle.enterprise") version ("3.13.3")
+  id("com.gradle.enterprise") version ("3.13.4")
   if (System.getenv("CI") != null || System.getProperty("allow-java-download").toBoolean()) {
     // Enable automatic Java toolchain download in CI or when explicitly requested by the user.
     // If in doubt, install the required Java toolchain manually, preferably using a "proper"
