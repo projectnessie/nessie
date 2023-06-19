@@ -109,8 +109,9 @@ public class AbstractRepositoryLogicTests {
     ReferenceLogic refLogic = referenceLogic(persist);
     if (createDefaultBranch) {
       soft.assertThat(refLogic.getReference("refs/heads/main-branch-foo"))
-          .extracting(Reference::name, Reference::pointer, Reference::deleted)
-          .containsExactly("refs/heads/main-branch-foo", EMPTY_OBJ_ID, false);
+          .extracting(
+              Reference::name, Reference::pointer, Reference::deleted, Reference::extendedInfoObj)
+          .containsExactly("refs/heads/main-branch-foo", EMPTY_OBJ_ID, false, null);
     } else {
       soft.assertThatThrownBy(() -> refLogic.getReference("refs/heads/main-branch-foo"))
           .isInstanceOf(RefNotFoundException.class);
@@ -123,7 +124,8 @@ public class AbstractRepositoryLogicTests {
     soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNull();
 
     Reference ref =
-        persist.addReference(reference(InternalRef.REF_REPO.name(), EMPTY_OBJ_ID, false));
+        persist.addReference(
+            reference(InternalRef.REF_REPO.name(), EMPTY_OBJ_ID, false, 42L, null));
     soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNull();
 
     ObjId nonExisting = randomObjId();

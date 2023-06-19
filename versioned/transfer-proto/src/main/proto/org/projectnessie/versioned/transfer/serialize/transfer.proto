@@ -56,6 +56,7 @@ message HeadsAndForks {
 message Ref {
   string name = 2;
   bytes pointer = 3;
+  optional bytes extended_info_obj = 4;
 }
 
 // used by V1, not used by V2

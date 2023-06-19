@@ -41,6 +41,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.NO_ANCESTOR;
@@ -355,13 +356,16 @@ public class TestRefMapping {
         .isThrownBy(() -> RefMapping.referenceToNamedRef("int/repo"));
 
     soft.assertThat(
-            RefMapping.referenceToNamedRef(reference(REFS_HEADS + "main", EMPTY_OBJ_ID, false)))
+            RefMapping.referenceToNamedRef(
+                reference(REFS_HEADS + "main", EMPTY_OBJ_ID, false, 0L, null)))
         .isEqualTo(BranchName.of("main"));
     soft.assertThat(
-            RefMapping.referenceToNamedRef(reference(REFS_TAGS + "tag", EMPTY_OBJ_ID, false)))
+            RefMapping.referenceToNamedRef(
+                reference(REFS_TAGS + "tag", EMPTY_OBJ_ID, false, 0L, null)))
         .isEqualTo(TagName.of("tag"));
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> RefMapping.referenceToNamedRef(reference("", EMPTY_OBJ_ID, false)));
+        .isThrownBy(
+            () -> RefMapping.referenceToNamedRef(reference("", EMPTY_OBJ_ID, false, 0L, null)));
   }
 
   @Test
@@ -384,12 +388,16 @@ public class TestRefMapping {
 
     ObjId commitId = generateCommit(EMPTY_OBJ_ID, "foo", 42).id();
 
-    Reference branch = referenceLogic.createReference(REFS_HEADS + "branch", commitId);
-    Reference tag = referenceLogic.createReference(REFS_TAGS + "tag", commitId);
-    Reference emptyBranch = referenceLogic.createReference(REFS_HEADS + "empty", EMPTY_OBJ_ID);
-    Reference emptyTag = referenceLogic.createReference(REFS_TAGS + "empty", EMPTY_OBJ_ID);
+    Reference branch =
+        referenceLogic.createReference(REFS_HEADS + "branch", commitId, randomObjId());
+    Reference tag = referenceLogic.createReference(REFS_TAGS + "tag", commitId, randomObjId());
+    Reference emptyBranch =
+        referenceLogic.createReference(REFS_HEADS + "empty", EMPTY_OBJ_ID, randomObjId());
+    Reference emptyTag =
+        referenceLogic.createReference(REFS_TAGS + "empty", EMPTY_OBJ_ID, randomObjId());
     Reference notThere =
-        referenceLogic.createReference(REFS_TAGS + "not-there", objIdFromString("00001111"));
+        referenceLogic.createReference(
+            REFS_TAGS + "not-there", objIdFromString("00001111"), randomObjId());
 
     soft.assertThat(refMapping.resolveNamedRef("branch")).isEqualTo(branch);
     soft.assertThat(refMapping.resolveNamedRef("tag")).isEqualTo(tag);
@@ -451,7 +459,7 @@ public class TestRefMapping {
     ObjId commits1head = commits1.get(commits1.size() - 1);
     List<ObjId> commits2 = generateCommits("bar");
 
-    referenceLogic.createReference(asBranchName("branch"), commits1head);
+    referenceLogic.createReference(asBranchName("branch"), commits1head, randomObjId());
     for (ObjId testId : commits1) {
       CommitObj commit = refMapping.commitInChain(commits1head, testId);
       soft.assertThat(commit).isNotNull();

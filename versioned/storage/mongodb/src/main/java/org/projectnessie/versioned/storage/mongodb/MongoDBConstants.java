@@ -25,6 +25,8 @@ final class MongoDBConstants {
   static final String COL_REFERENCES_NAME = "n";
   static final String COL_REFERENCES_POINTER = "p";
   static final String COL_REFERENCES_DELETED = "d";
+  static final String COL_REFERENCES_CREATED_AT = "c";
+  static final String COL_REFERENCES_EXTENDED_INFO = "e";
 
   static final String COL_OBJ_ID = "i";
   static final String COL_REPO = "r";
@@ -53,6 +55,7 @@ final class MongoDBConstants {
   static final String COL_REF_NAME = "n";
   static final String COL_REF_INITIAL_POINTER = "p";
   static final String COL_REF_CREATED_AT = "c";
+  static final String COL_REF_EXTENDED_INFO = "e";
 
   static final String COL_VALUE_CONTENT_ID = "i";
   static final String COL_VALUE_PAYLOAD = "p";

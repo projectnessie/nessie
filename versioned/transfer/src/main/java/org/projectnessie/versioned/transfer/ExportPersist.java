@@ -131,12 +131,13 @@ final class ExportPersist extends ExportCommon {
     for (PagedResult<Reference, String> refs = referenceLogic.queryReferences(referencesQuery());
         refs.hasNext(); ) {
       Reference reference = refs.next();
-      Ref ref =
-          Ref.newBuilder()
-              .setName(reference.name())
-              .setPointer(reference.pointer().asBytes())
-              .build();
-      exportContext.writeRef(ref);
+      ObjId extendedInfoObj = reference.extendedInfoObj();
+      Ref.Builder refBuilder =
+          Ref.newBuilder().setName(reference.name()).setPointer(reference.pointer().asBytes());
+      if (extendedInfoObj != null) {
+        refBuilder.setExtendedInfoObj(extendedInfoObj.asBytes());
+      }
+      exportContext.writeRef(refBuilder.build());
       exporter.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
     }
   }

@@ -80,9 +80,8 @@ public final class Hashes {
     return hashAsObjId(hasher);
   }
 
-  static ObjId tagHash(
-      ObjId commitId, String message, CommitHeaders headers, ByteString signature) {
-    Hasher hasher = newHasher().putString(TAG.name(), UTF_8).putBytes(commitId.asByteArray());
+  static ObjId tagHash(String message, CommitHeaders headers, ByteString signature) {
+    Hasher hasher = newHasher().putString(TAG.name(), UTF_8);
     if (message != null) {
       hasher.putString(message, UTF_8);
     }

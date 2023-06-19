@@ -67,7 +67,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
@@ -83,7 +82,6 @@ import org.projectnessie.versioned.storage.common.logic.PagingToken;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
-import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -118,22 +116,6 @@ public class AbstractCommitLogicTests {
     assertThat(commitLogic.fetchCommit(EMPTY_OBJ_ID)).isNull();
 
     ObjId commitId = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
-    TagObj tag = TagObj.tag(randomObjId(), commitId, null, null, ByteString.EMPTY);
-    soft.assertThat(persist.storeObj(tag)).isTrue();
-
-    soft.assertThat(commitLogic.fetchCommit(requireNonNull(tag.id())))
-        .isNotNull()
-        .extracting(Obj::id, CommitObj::message)
-        .containsExactly(commitId, STD_MESSAGE);
-
-    soft.assertThat(commitLogic.fetchCommit(commitId))
-        .isNotNull()
-        .extracting(Obj::id, CommitObj::message)
-        .containsExactly(commitId, STD_MESSAGE);
-
-    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag.id()), requireNonNull(tag.id())))
-        .extracting(Obj::id, CommitObj::message)
-        .containsExactly(tuple(commitId, STD_MESSAGE), tuple(commitId, STD_MESSAGE));
 
     soft.assertThat(commitLogic.fetchCommits(commitId, commitId))
         .extracting(Obj::id, CommitObj::message)
@@ -152,33 +134,10 @@ public class AbstractCommitLogicTests {
     ObjId commitId2 =
         requireNonNull(commitLogic.doCommit(stdCommit().message(otherMessage).build(), emptyList()))
             .id();
-    TagObj tag1 = TagObj.tag(randomObjId(), commitId1, null, null, ByteString.EMPTY);
-    TagObj tag2 = TagObj.tag(randomObjId(), commitId2, null, null, ByteString.EMPTY);
-    soft.assertThat(persist.storeObjs(new Obj[] {tag1, tag2})).hasSize(2).containsOnly(true);
-
-    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag1.id()), requireNonNull(tag2.id())))
-        .extracting(Obj::id, CommitObj::message)
-        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
-
-    soft.assertThat(commitLogic.fetchCommits(commitId1, requireNonNull(tag2.id())))
-        .extracting(Obj::id, CommitObj::message)
-        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
-
-    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag1.id()), commitId2))
-        .extracting(Obj::id, CommitObj::message)
-        .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
 
     soft.assertThat(commitLogic.fetchCommits(commitId1, commitId2))
         .extracting(Obj::id, CommitObj::message)
         .containsExactly(tuple(commitId1, STD_MESSAGE), tuple(commitId2, otherMessage));
-
-    soft.assertThat(commitLogic.fetchCommits(EMPTY_OBJ_ID, requireNonNull(tag2.id())))
-        .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
-        .containsExactly(null, tuple(commitId2, otherMessage));
-
-    soft.assertThat(commitLogic.fetchCommits(requireNonNull(tag1.id()), EMPTY_OBJ_ID))
-        .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
-        .containsExactly(tuple(commitId1, STD_MESSAGE), null);
 
     soft.assertThat(commitLogic.fetchCommits(EMPTY_OBJ_ID, commitId2))
         .extracting(o -> o != null ? tuple(o.id(), o.message()) : null)
@@ -716,15 +675,15 @@ public class AbstractCommitLogicTests {
                         .build(),
                     emptyList()))
             .id();
-    Reference ref = refLogic.createReference("foo", tip);
+    Reference ref = refLogic.createReference("foo", tip, randomObjId());
     soft.assertThat(commitLogic.headCommit(ref))
         .extracting(CommitObj::message)
         .isEqualTo("msg foo");
 
-    Reference refEmpty = refLogic.createReference("empty", EMPTY_OBJ_ID);
+    Reference refEmpty = refLogic.createReference("empty", EMPTY_OBJ_ID, randomObjId());
     soft.assertThat(commitLogic.headCommit(refEmpty)).isNull();
 
-    Reference refNotFound = refLogic.createReference("not-found", randomObjId());
+    Reference refNotFound = refLogic.createReference("not-found", randomObjId(), null);
     soft.assertThatThrownBy(() -> commitLogic.headCommit(refNotFound))
         .isInstanceOf(ObjNotFoundException.class);
   }

@@ -75,8 +75,9 @@ public interface Persist {
    * <p><em>Do not use this function from service implementations, use {@link ReferenceLogic}
    * instead!</em>
    *
-   * @return if the reference exists and the {@link Reference#pointer()} values are equal, return
-   *     the reference object marked as {@link Reference#deleted()}. Returns {@code null} otherwise.
+   * @return if the reference exists and if the current persisted reference is not marked as {@link
+   *     Reference#deleted()} and equal to {@code reference}, return the reference object marked as
+   *     {@link Reference#deleted()}. Returns {@code null} otherwise.
    * @throws RefNotFoundException if a reference with the same name does not exist
    * @throws RefConditionFailedException if the existing reference is already deleted its pointer is
    *     different
@@ -88,7 +89,7 @@ public interface Persist {
 
   /**
    * Low-level, atomically deletes the given reference from the database, if {@link
-   * Reference#deleted()} is {@code true} and the {@link Reference#pointer()} values are equal.
+   * Reference#deleted()} is {@code true} and equal to {@code reference}.
    *
    * <p><em>Do not use this function from service implementations, use {@link ReferenceLogic}
    * instead!</em>
@@ -103,8 +104,7 @@ public interface Persist {
   /**
    * Low-level, atomically updates the given reference's {@link Reference#pointer()} to the new
    * value, if and only if the current persisted reference is not marked as {@link
-   * Reference#deleted()} and {@link Reference#pointer()} of the given and persisted values are
-   * equal.
+   * Reference#deleted()} and equal to {@code reference}.
    *
    * <p><em>Do not use this function from service implementations, use {@link ReferenceLogic}
    * instead!</em>

@@ -87,7 +87,6 @@ import org.projectnessie.versioned.storage.common.logic.CreateCommit.Add;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Unchanged;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObjReference;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
@@ -887,17 +886,7 @@ final class CommitLogicImpl implements CommitLogic {
     if (EMPTY_OBJ_ID.equals(commitId)) {
       return null;
     }
-    Obj obj = persist.fetchObj(commitId);
-    if (obj instanceof CommitObjReference) {
-      CommitObjReference commitRef = (CommitObjReference) obj;
-      ObjId refCommitId = commitRef.commitId();
-      if (EMPTY_OBJ_ID.equals(refCommitId)) {
-        return null;
-      }
-      obj = persist.fetchObj(refCommitId);
-    }
-    checkState(obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
-    return (CommitObj) obj;
+    return persist.fetchTypedObj(commitId, COMMIT, CommitObj.class);
   }
 
   @Nonnull
@@ -920,44 +909,19 @@ final class CommitLogicImpl implements CommitLogic {
       endCommitId = null;
     }
 
-    ObjId[] ids = {startCommitId, endCommitId};
-    Obj[] objs = persist.fetchObjs(ids);
-    ids[0] = referenceObjId(objs[0]);
-    ids[1] = referenceObjId(objs[1]);
-    if (ids[0] == null) {
-      commitObjs[0] = castToCommitObj(objs[0]);
+    CommitObj[] r = new CommitObj[2];
+    if (startCommitId != null || endCommitId != null) {
+      Obj[] objs = persist.fetchObjs(new ObjId[] {startCommitId, endCommitId});
+      r[0] = castToCommitObj(objs[0]);
+      r[1] = castToCommitObj(objs[1]);
     }
-    if (ids[1] == null) {
-      commitObjs[1] = castToCommitObj(objs[1]);
-    }
-    if (ids[0] != null || ids[1] != null) {
-      objs = persist.fetchObjs(ids);
-      if (objs[0] != null) {
-        commitObjs[0] = castToCommitObj(objs[0]);
-      }
-      if (objs[1] != null) {
-        commitObjs[1] = castToCommitObj(objs[1]);
-      }
-    }
-
-    return commitObjs;
+    return r;
   }
 
   private static CommitObj castToCommitObj(Obj obj) {
     checkState(
         obj == null || obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
     return (CommitObj) obj;
-  }
-
-  private ObjId referenceObjId(Obj obj) {
-    if (obj instanceof CommitObjReference) {
-      CommitObjReference commitRef = (CommitObjReference) obj;
-      ObjId refCommitId = commitRef.commitId();
-      if (!EMPTY_OBJ_ID.equals(refCommitId)) {
-        return refCommitId;
-      }
-    }
-    return null;
   }
 
   @Nonnull

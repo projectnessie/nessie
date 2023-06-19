@@ -218,7 +218,8 @@ public class VersionStoreImpl implements VersionStore {
         // as the tag being created) already exists.
         throw referenceAlreadyExists(namedRef);
       } catch (RefNotFoundException good) {
-        Reference reference = referenceLogic.createReference(namedRefToRefName(namedRef), objId);
+        Reference reference =
+            referenceLogic.createReference(namedRefToRefName(namedRef), objId, null);
         return ImmutableReferenceCreatedResult.builder()
             .namedRef(namedRef)
             .hash(objIdToHash(reference.pointer()))
@@ -251,7 +252,13 @@ public class VersionStoreImpl implements VersionStore {
         CommitObj head = commitLogic(persist).headCommit(expected);
         Hash currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
         verifyExpectedHash(currentCommitId, namedRef, expectedHash);
-        expected = reference(refName, hashToObjId(expectedHash.get()), false);
+        expected =
+            reference(
+                refName,
+                hashToObjId(expectedHash.get()),
+                false,
+                expected.createdAtMicros(),
+                expected.extendedInfoObj());
       }
 
       ObjId newPointer = hashToObjId(targetHash);
