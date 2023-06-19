@@ -16,9 +16,14 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.Thread.currentThread;
+import static java.lang.Thread.sleep;
 import static java.util.Arrays.asList;
+import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.stream.IntStream.rangeClosed;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -43,6 +48,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -50,6 +59,7 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -81,6 +91,106 @@ public abstract class AbstractReferenceLogicTests {
 
   protected AbstractReferenceLogicTests(Class<?> surroundingTestClass) {
     this.surroundingTestClass = surroundingTestClass;
+  }
+
+  @SuppressWarnings("BusyWait")
+  @RepeatedTest(2)
+  public void refCreationDeletionWithConcurrentRefsListing() throws Exception {
+    assumeThat(surroundingTestClass.getSimpleName())
+        .isNotIn(
+            // Fails due to "write too old" errors, need to implement logic "everywhere" to handle
+            // `DatabaseSpecific.isRetryTransaction()`.
+            "ITCockroachDBPersist",
+            // Fails due to driver timeouts and LWT issues with Apache Cassandra.
+            "ITCassandraPersist",
+            "ITScyllaDBPersist");
+
+    IntFunction<String> refName = i -> "refs/heads/branch-" + i + "-" + (i & 7);
+
+    int num = 10;
+
+    List<Integer> indexes = new ArrayList<>(num);
+    for (int i = 0; i < num; i++) {
+      indexes.add(i);
+    }
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    int readerThreads = 1;
+    int createDeleteIterations = 2;
+
+    @SuppressWarnings("resource")
+    ExecutorService exec = newFixedThreadPool(readerThreads);
+    try {
+      AtomicBoolean stop = new AtomicBoolean();
+      List<Future<?>> tasks =
+          IntStream.range(0, readerThreads)
+              .mapToObj(
+                  x ->
+                      exec.submit(
+                          () -> {
+                            while (!currentThread().isInterrupted() && !stop.get()) {
+                              refLogic
+                                  .queryReferences(referencesQuery("refs/heads/"))
+                                  .forEachRemaining(ref -> {});
+                              try {
+                                sleep(1);
+                              } catch (InterruptedException e) {
+                                break;
+                              }
+                            }
+                          }))
+              .collect(Collectors.toList());
+      try {
+        // Following could be in the for-loop below, but want to have different stack traces for the
+        // first and following iterations.
+
+        ObjId id = randomObjId();
+
+        for (int i = 0; i < num; i++) {
+          refLogic.createReference(refName.apply(i), id, null);
+          sleep(1);
+        }
+        shuffle(indexes);
+        for (int i : indexes) {
+          refLogic.deleteReference(refName.apply(i), id);
+          sleep(1);
+        }
+
+        // Repeat with a different ref-pointer
+
+        for (int iter = 0; iter < createDeleteIterations; iter++) {
+          id = randomObjId();
+
+          for (int i = 0; i < num; i++) {
+            try {
+              refLogic.createReference(refName.apply(i), id, null);
+            } catch (RefAlreadyExistsException e) {
+              throw new RuntimeException("ae " + e.reference() + " for " + id, e);
+            }
+            sleep(1);
+          }
+          shuffle(indexes);
+          for (int i : indexes) {
+            try {
+              refLogic.deleteReference(refName.apply(i), id);
+            } catch (RefConditionFailedException e) {
+              throw new RuntimeException("ae " + e.reference() + " for " + id, e);
+            }
+            sleep(1);
+          }
+        }
+
+        stop.set(true);
+        for (Future<?> task : tasks) {
+          task.get();
+        }
+      } finally {
+        tasks.forEach(t -> t.cancel(true));
+      }
+
+    } finally {
+      exec.shutdown();
+    }
   }
 
   @Test
