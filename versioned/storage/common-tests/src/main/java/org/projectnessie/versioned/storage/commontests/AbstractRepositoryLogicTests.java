@@ -109,7 +109,8 @@ public class AbstractRepositoryLogicTests {
     ReferenceLogic refLogic = referenceLogic(persist);
     if (createDefaultBranch) {
       soft.assertThat(refLogic.getReference("refs/heads/main-branch-foo"))
-          .isEqualTo(reference("refs/heads/main-branch-foo", EMPTY_OBJ_ID, false));
+          .extracting(Reference::name, Reference::pointer, Reference::deleted)
+          .containsExactly("refs/heads/main-branch-foo", EMPTY_OBJ_ID, false);
     } else {
       soft.assertThatThrownBy(() -> refLogic.getReference("refs/heads/main-branch-foo"))
           .isInstanceOf(RefNotFoundException.class);

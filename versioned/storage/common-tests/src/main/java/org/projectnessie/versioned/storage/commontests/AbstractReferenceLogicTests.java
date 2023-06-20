@@ -175,10 +175,12 @@ public class AbstractReferenceLogicTests {
     ReferenceLogic refLogic = referenceLogic(persist);
     ObjId initialPointer = objIdFromString("0000");
     String refName = "refs/foo/bar";
-    Reference ref = reference(refName, initialPointer, false);
 
-    soft.assertThat(refLogic.createReference(refName, initialPointer)).isEqualTo(ref);
-    soft.assertThat(refLogic.getReference(refName)).isEqualTo(ref);
+    Reference created = refLogic.createReference(refName, initialPointer);
+    soft.assertThat(created)
+        .extracting(Reference::name, Reference::pointer, Reference::deleted)
+        .containsExactly(refName, initialPointer, false);
+    soft.assertThat(refLogic.getReference(refName)).isEqualTo(created);
 
     String notThere = "refs/heads/not_there";
     soft.assertThatThrownBy(() -> refLogic.getReference(notThere))

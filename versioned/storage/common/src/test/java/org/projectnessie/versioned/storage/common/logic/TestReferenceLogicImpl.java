@@ -160,7 +160,9 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
     String refName = "refs/foo/bar";
 
     Reference reference = refLogic.createReference(refName, initialPointer);
-    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+    soft.assertThat(reference)
+        .extracting(Reference::name, Reference::pointer, Reference::deleted)
+        .containsExactly(refName, initialPointer, false);
 
     Reference deleted = persist.markReferenceAsDeleted(reference);
     soft.assertThat(persist.fetchReference(refName)).isEqualTo(deleted);
@@ -192,7 +194,9 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
       case CREATE_REFERENCE_SAME_POINTER:
         soft.assertThatCode(() -> refLogic.createReference(refName, initialPointer))
             .doesNotThrowAnyException();
-        soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
+        soft.assertThat(persist.fetchReference(refName))
+            .extracting(Reference::name, Reference::pointer, Reference::deleted)
+            .containsExactly(reference.name(), reference.pointer(), reference.deleted());
         soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
         break;
       case CREATE_REFERENCE_OTHER_POINTER:
@@ -250,7 +254,9 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
     String refName = "refs/foo/bar";
 
     Reference reference = refLogic.createReference(refName, initialPointer);
-    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+    soft.assertThat(reference)
+        .extracting(Reference::name, Reference::pointer, Reference::deleted)
+        .containsExactly(refName, initialPointer, false);
 
     Reference deleted = persist.markReferenceAsDeleted(reference);
     soft.assertThat(deleted.deleted()).isTrue();
