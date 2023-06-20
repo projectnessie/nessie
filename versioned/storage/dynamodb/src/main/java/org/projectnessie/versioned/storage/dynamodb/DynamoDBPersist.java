@@ -209,7 +209,8 @@ public class DynamoDBPersist implements Persist {
             + COL_REFERENCES_POINTER
             + " = :pointer)";
     try {
-      Reference asDeleted = reference(reference.name(), reference.pointer(), true);
+      reference = reference.withDeleted(false);
+      Reference asDeleted = reference.withDeleted(true);
       conditionalReferencePut(asDeleted, condition, reference.pointer());
       return asDeleted;
     } catch (ConditionalCheckFailedException e) {
@@ -235,7 +236,8 @@ public class DynamoDBPersist implements Persist {
             + COL_REFERENCES_POINTER
             + " = :pointer)";
     try {
-      Reference bumpedReference = reference(reference.name(), newPointer, false);
+      reference = reference.withDeleted(false);
+      Reference bumpedReference = reference.forNewPointer(newPointer);
       conditionalReferencePut(bumpedReference, condition, reference.pointer());
       return bumpedReference;
     } catch (ConditionalCheckFailedException e) {
@@ -250,6 +252,7 @@ public class DynamoDBPersist implements Persist {
   @Override
   public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
+    reference = reference.withDeleted(true);
     String condition =
         "("
             + COL_REFERENCES_DELETED
@@ -260,19 +263,20 @@ public class DynamoDBPersist implements Persist {
     objIdToAttribute(values, ":pointer", reference.pointer());
     values.put(":deleted", fromBool(true));
 
+    String refName = reference.name();
     try {
       backend
           .client()
           .deleteItem(
               b ->
                   b.tableName(TABLE_REFS)
-                      .key(referenceKeyMap(reference.name()))
+                      .key(referenceKeyMap(refName))
                       .expressionAttributeValues(values)
                       .conditionExpression(condition));
     } catch (ConditionalCheckFailedException e) {
-      Reference r = fetchReference(reference.name());
+      Reference r = fetchReference(refName);
       if (r == null) {
-        throw new RefNotFoundException(reference.name());
+        throw new RefNotFoundException(refName);
       }
       throw new RefConditionFailedException(r);
     }

@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.inmemory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singleton;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.google.common.collect.AbstractIterator;
 import java.util.ArrayList;
@@ -117,7 +116,7 @@ class InmemoryPersist implements ValidatingPersist {
       throws RefNotFoundException, RefConditionFailedException {
     Reference[] result = new Reference[1];
 
-    Reference asDeleted = reference(reference.name(), reference.pointer(), true);
+    Reference asDeleted = reference.withDeleted(true);
 
     inmemory.references.computeIfPresent(
         compositeKey(reference.name()),
@@ -163,7 +162,7 @@ class InmemoryPersist implements ValidatingPersist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    Reference asUpdated = reference(reference.name(), newPointer, reference.deleted());
+    Reference asUpdated = reference.forNewPointer(newPointer);
 
     Reference[] result = new Reference[2];
     Reference c =

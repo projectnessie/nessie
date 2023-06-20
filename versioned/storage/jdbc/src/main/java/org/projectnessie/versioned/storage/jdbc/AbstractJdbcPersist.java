@@ -247,7 +247,7 @@ abstract class AbstractJdbcPersist implements Persist {
         throw new RefConditionFailedException(ref);
       }
 
-      return reference(reference.name(), reference.pointer(), true);
+      return reference.withDeleted(true);
     } catch (SQLException e) {
       throw unhandledSQLException(e);
     }
@@ -297,7 +297,7 @@ abstract class AbstractJdbcPersist implements Persist {
         throw new RefConditionFailedException(ref);
       }
 
-      return reference(reference.name(), newPointer, false);
+      return reference.forNewPointer(newPointer);
     } catch (SQLException e) {
       throw unhandledSQLException(e);
     }

@@ -250,6 +250,7 @@ public class MongoDBPersist implements Persist {
   @Override
   public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
+    reference = reference.withDeleted(false);
     UpdateResult result =
         backend
             .refs()
@@ -267,7 +268,7 @@ public class MongoDBPersist implements Persist {
       throw new RefConditionFailedException(ex);
     }
 
-    return reference(reference.name(), reference.pointer(), true);
+    return reference.withDeleted(true);
   }
 
   @Nonnull
@@ -277,7 +278,8 @@ public class MongoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    Reference updated = reference(reference.name(), newPointer, false);
+    Reference updated = reference.forNewPointer(newPointer);
+    reference = reference.withDeleted(false);
     UpdateResult result =
         backend
             .refs()
@@ -306,6 +308,7 @@ public class MongoDBPersist implements Persist {
   @Override
   public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
+    reference = reference.withDeleted(true);
     DeleteResult result =
         backend
             .refs()

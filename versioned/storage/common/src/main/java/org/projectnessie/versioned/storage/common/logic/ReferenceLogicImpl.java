@@ -421,12 +421,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @VisibleForTesting // needed to simulate recovery scenarios
   CommitReferenceResult commitCreateReference(String name, ObjId pointer)
       throws RetryTimeoutException {
+    long created = persist.config().currentTimeMicros();
+    Reference reference = reference(name, pointer, false);
     try {
       return commitRetry(
           persist,
           (p, retryState) -> {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
-            long created = p.config().currentTimeMicros();
             RefObj ref = ref(name, pointer, created);
             try {
               p.storeObj(ref);
@@ -455,7 +456,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
             commitReferenceChange(p, refRefs, c);
 
-            return new CommitReferenceResult(reference(name, pointer, false), ADDED_TO_INDEX);
+            return new CommitReferenceResult(reference, ADDED_TO_INDEX);
           });
     } catch (CommitConflictException e) {
       checkState(e.conflicts().size() == 1, "Unexpected amount of conflicts %s", e.conflicts());
@@ -489,7 +490,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       throw new RuntimeException(
           format(
               "An unexpected internal error happened while committing the creation of the reference '%s'",
-              reference(name, pointer, false)),
+              reference),
           e.getCause());
     }
   }
