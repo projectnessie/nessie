@@ -27,14 +27,19 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -42,6 +47,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestMergeBase {
   @InjectSoftAssertions protected SoftAssertions soft;
+
   private MockRepo repo;
 
   @Test
@@ -60,7 +66,7 @@ public class TestMergeBase {
 
   @Test
   void sameCommits() {
-    CommitObj a = repo.add(initialCommit());
+    CommitObj a = repo.add(repo.initialCommit());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -78,34 +84,27 @@ public class TestMergeBase {
    * ----A-----C
    * </pre></code>
    */
-  @Test
-  void noMergeBase() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(initialCommit());
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj d = repo.add(buildCommit("d", b));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void noMergeBase(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.buildCommit("initial A", null));
+    CommitObj b = repo.add(repo.buildCommit("initial B", null));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", b));
 
     soft.assertThatThrownBy(
             () ->
                 MergeBase.builder()
                     .loadCommit(repo::loadCommit)
+                    .respectMergeParents(respectMergeParents)
                     .targetCommitId(c.id())
                     .fromCommitId(d.id())
                     .build()
                     .identifyMergeBase())
         .isInstanceOf(NoSuchElementException.class)
         .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
-    soft.assertThatThrownBy(
-            () ->
-                MergeBase.builder()
-                    .loadCommit(repo::loadCommit)
-                    .respectMergeParents(false)
-                    .targetCommitId(c.id())
-                    .fromCommitId(d.id())
-                    .build()
-                    .identifyMergeBase())
-        .isInstanceOf(NoSuchElementException.class)
-        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root).contains(a, b);
   }
 
   /**
@@ -117,29 +116,24 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code B} onto {@code C} is {@code A}.
    */
-  @Test
-  void simpleCase() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void simpleCase(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(c.id())
                 .fromCommitId(b.id())
                 .build()
                 .identifyMergeBase())
         .isEqualTo(a.id());
-    soft.assertThat(
-            MergeBase.builder()
-                .loadCommit(repo::loadCommit)
-                .respectMergeParents(false)
-                .targetCommitId(c.id())
-                .fromCommitId(b.id())
-                .build()
-                .identifyMergeBase())
-        .isEqualTo(a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -151,31 +145,26 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code E} onto {@code D} is {@code B}.
    */
-  @Test
-  void doubleMerge() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj d = repo.add(buildCommit("d", c).addSecondaryParents(b.id()));
-    CommitObj e = repo.add(buildCommit("e", b));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void doubleMerge(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", c).addSecondaryParents(b.id()));
+    CommitObj e = repo.add(repo.buildCommit("e", b));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(d.id())
                 .fromCommitId(e.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b.id());
-    soft.assertThat(
-            MergeBase.builder()
-                .loadCommit(repo::loadCommit)
-                .respectMergeParents(false)
-                .targetCommitId(d.id())
-                .fromCommitId(e.id())
-                .build()
-                .identifyMergeBase())
-        .isEqualTo(a.id());
+        .isEqualTo(respectMergeParents ? b.id() : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -187,32 +176,27 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code F} onto {@code E} is {@code D}.
    */
-  @Test
-  void doubleMerge2() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj d = repo.add(buildCommit("d", b));
-    CommitObj e = repo.add(buildCommit("e", c).addSecondaryParents(d.id()));
-    CommitObj f = repo.add(buildCommit("f", d));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void doubleMerge2(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", b));
+    CommitObj e = repo.add(repo.buildCommit("e", c).addSecondaryParents(d.id()));
+    CommitObj f = repo.add(repo.buildCommit("f", d));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(e.id())
                 .fromCommitId(f.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(d.id());
-    soft.assertThat(
-            MergeBase.builder()
-                .loadCommit(repo::loadCommit)
-                .respectMergeParents(false)
-                .targetCommitId(e.id())
-                .fromCommitId(f.id())
-                .build()
-                .identifyMergeBase())
-        .isEqualTo(a.id());
+        .isEqualTo(respectMergeParents ? d.id() : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -226,35 +210,30 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code I} onto {@code F} is {@code F}.
    */
-  @Test
-  void multiMerge1() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj d = repo.add(buildCommit("d", b));
-    CommitObj e = repo.add(buildCommit("e", b));
-    CommitObj f = repo.add(buildCommit("f", c));
-    CommitObj g = repo.add(buildCommit("g", e).addSecondaryParents(d.id()));
-    CommitObj h = repo.add(buildCommit("h", d).addSecondaryParents(f.id()));
-    CommitObj i = repo.add(buildCommit("i", g).addSecondaryParents(h.id()));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void multiMerge1(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", b));
+    CommitObj e = repo.add(repo.buildCommit("e", b));
+    CommitObj f = repo.add(repo.buildCommit("f", c));
+    CommitObj g = repo.add(repo.buildCommit("g", e).addSecondaryParents(d.id()));
+    CommitObj h = repo.add(repo.buildCommit("h", d).addSecondaryParents(f.id()));
+    CommitObj i = repo.add(repo.buildCommit("i", g).addSecondaryParents(h.id()));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(f.id())
                 .fromCommitId(i.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(f.id());
-    soft.assertThat(
-            MergeBase.builder()
-                .loadCommit(repo::loadCommit)
-                .respectMergeParents(false)
-                .targetCommitId(f.id())
-                .fromCommitId(i.id())
-                .build()
-                .identifyMergeBase())
-        .isEqualTo(a.id());
+        .isEqualTo(respectMergeParents ? f.id() : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -267,26 +246,30 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code J} onto {@code G} is {@code D}.
    */
-  @Test
-  void multiMerge2() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a).addSecondaryParents(b.id()));
-    CommitObj d = repo.add(buildCommit("d", a));
-    CommitObj e = repo.add(buildCommit("e", c));
-    CommitObj f = repo.add(buildCommit("f", e));
-    CommitObj g = repo.add(buildCommit("g", f).addSecondaryParents(d.id()));
-    CommitObj h = repo.add(buildCommit("h", d).addSecondaryParents(b.id()));
-    CommitObj j = repo.add(buildCommit("j", h));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void multiMerge2(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a).addSecondaryParents(b.id()));
+    CommitObj d = repo.add(repo.buildCommit("d", a));
+    CommitObj e = repo.add(repo.buildCommit("e", c));
+    CommitObj f = repo.add(repo.buildCommit("f", e));
+    CommitObj g = repo.add(repo.buildCommit("g", f).addSecondaryParents(d.id()));
+    CommitObj h = repo.add(repo.buildCommit("h", d).addSecondaryParents(b.id()));
+    CommitObj j = repo.add(repo.buildCommit("j", h));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(g.id())
                 .fromCommitId(j.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(d.id());
+        .isEqualTo(respectMergeParents ? d.id() : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -299,41 +282,28 @@ public class TestMergeBase {
    *
    * <p>Merge-base outcome for {@code F} onto {@code G} is either {@code B} or {@code C}.
    */
-  @Test
-  void afterCrossMerge() {
-    CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj d = repo.add(buildCommit("d", b).addSecondaryParents(c.id()));
-    CommitObj e = repo.add(buildCommit("e", c).addSecondaryParents(b.id()));
-    CommitObj f = repo.add(buildCommit("f", d));
-    CommitObj g = repo.add(buildCommit("g", e));
+  @ParameterizedTest
+  @CsvSource(value = {"true,false", "true,true", "false,false", "false,true"})
+  void afterCrossMerge(boolean respectMergeParents, boolean reverse) {
+    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", b).addSecondaryParents(c.id()));
+    CommitObj e = repo.add(repo.buildCommit("e", c).addSecondaryParents(b.id()));
+    CommitObj f = repo.add(repo.buildCommit("f", d));
+    CommitObj g = repo.add(repo.buildCommit("g", e));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
-                .targetCommitId(g.id())
-                .fromCommitId(f.id())
+                .respectMergeParents(respectMergeParents)
+                .targetCommitId(reverse ? f.id() : g.id())
+                .fromCommitId(reverse ? g.id() : f.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b.id());
-    soft.assertThat(
-            MergeBase.builder()
-                .loadCommit(repo::loadCommit)
-                .targetCommitId(f.id())
-                .fromCommitId(g.id())
-                .build()
-                .identifyMergeBase())
-        .isEqualTo(c.id());
-    soft.assertThat(
-            MergeBase.builder()
-                .loadCommit(repo::loadCommit)
-                .respectMergeParents(false)
-                .targetCommitId(g.id())
-                .fromCommitId(f.id())
-                .build()
-                .identifyMergeBase())
-        .isEqualTo(a.id());
+        .isEqualTo(respectMergeParents ? (reverse ? c.id() : b.id()) : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -348,25 +318,29 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code H} onto {@code F} is {@code E}.
    */
-  @Test
-  void nestedBranches() {
-    CommitObj a = repo.add(initialCommit("a"));
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj d = repo.add(buildCommit("d", c));
-    CommitObj e = repo.add(buildCommit("e", d));
-    CommitObj g = repo.add(buildCommit("g", e));
-    CommitObj f = repo.add(buildCommit("f", a).addSecondaryParents(e.id()));
-    CommitObj h = repo.add(buildCommit("h", b).addSecondaryParents(g.id()));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void nestedBranches(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit("a"));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj d = repo.add(repo.buildCommit("d", c));
+    CommitObj e = repo.add(repo.buildCommit("e", d));
+    CommitObj g = repo.add(repo.buildCommit("g", e));
+    CommitObj f = repo.add(repo.buildCommit("f", a).addSecondaryParents(e.id()));
+    CommitObj h = repo.add(repo.buildCommit("h", b).addSecondaryParents(g.id()));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(f.id())
                 .fromCommitId(h.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(e.id());
+        .isEqualTo(respectMergeParents ? e.id() : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   /**
@@ -379,28 +353,32 @@ public class TestMergeBase {
    *
    * <p>Best merge-base of {@code K} onto {@code J} is {@code F}.
    */
-  @Test
-  void featureBranch() {
-    CommitObj a = repo.add(initialCommit("a"));
-    CommitObj b = repo.add(buildCommit("b", a));
-    CommitObj c = repo.add(buildCommit("c", a));
-    CommitObj d = repo.add(buildCommit("d", c));
-    CommitObj e = repo.add(buildCommit("e", b).addSecondaryParents(c.id()));
-    CommitObj f = repo.add(buildCommit("f", d));
-    CommitObj g = repo.add(buildCommit("g", e));
-    CommitObj h = repo.add(buildCommit("h", f));
-    CommitObj i = repo.add(buildCommit("i", g).addSecondaryParents(f.id()));
-    CommitObj j = repo.add(buildCommit("j", h));
-    CommitObj k = repo.add(buildCommit("k", i));
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void featureBranch(boolean respectMergeParents) {
+    CommitObj a = repo.add(repo.initialCommit("a"));
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", c));
+    CommitObj e = repo.add(repo.buildCommit("e", b).addSecondaryParents(c.id()));
+    CommitObj f = repo.add(repo.buildCommit("f", d));
+    CommitObj g = repo.add(repo.buildCommit("g", e));
+    CommitObj h = repo.add(repo.buildCommit("h", f));
+    CommitObj i = repo.add(repo.buildCommit("i", g).addSecondaryParents(f.id()));
+    CommitObj j = repo.add(repo.buildCommit("j", h));
+    CommitObj k = repo.add(repo.buildCommit("k", i));
 
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
                 .targetCommitId(j.id())
                 .fromCommitId(k.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(f.id());
+        .isEqualTo(respectMergeParents ? f.id() : a.id());
+
+    soft.assertThat(repo.loaded).doesNotContain(repo.root);
   }
 
   @Test
@@ -442,6 +420,18 @@ public class TestMergeBase {
 
   static class MockRepo {
     final Map<ObjId, CommitObj> commits = new HashMap<>();
+    final Set<CommitObj> loaded = new LinkedHashSet<>();
+    final CommitObj root;
+    final CommitObj testRoot;
+
+    MockRepo() {
+      root = add(buildCommit("root", null));
+      CommitObj parent = null;
+      for (int i = 1; i <= 16; i++) {
+        parent = add(buildCommit("unrelated " + i, parent));
+      }
+      testRoot = parent;
+    }
 
     CommitObj add(CommitObj.Builder c) {
       int num = commits.size();
@@ -456,29 +446,31 @@ public class TestMergeBase {
     }
 
     public CommitObj loadCommit(ObjId id) {
-      return commits.get(id);
+      CommitObj c = commits.get(id);
+      loaded.add(c);
+      return c;
     }
-  }
 
-  static CommitObj.Builder initialCommit() {
-    return initialCommit("initial");
-  }
-
-  static CommitObj.Builder initialCommit(String name) {
-    return buildCommit(name, null).addTail(EMPTY_OBJ_ID);
-  }
-
-  static CommitObj.Builder buildCommit(String msg, CommitObj parent) {
-    CommitObj.Builder commit =
-        commitBuilder()
-            .headers(newCommitHeaders().build())
-            .message(msg)
-            .incrementalIndex(ByteString.empty());
-    if (parent != null) {
-      commit.seq(parent.seq() + 1).addTail(parent.id());
-    } else {
-      commit.seq(0);
+    CommitObj.Builder initialCommit() {
+      return initialCommit("initial");
     }
-    return commit;
+
+    CommitObj.Builder initialCommit(String name) {
+      return buildCommit(name, testRoot);
+    }
+
+    CommitObj.Builder buildCommit(String msg, CommitObj parent) {
+      CommitObj.Builder commit =
+          commitBuilder()
+              .headers(newCommitHeaders().build())
+              .message(msg)
+              .incrementalIndex(ByteString.empty());
+      if (parent != null) {
+        commit.seq(parent.seq() + 1).addTail(parent.id());
+      } else {
+        commit.seq(0).addTail(EMPTY_OBJ_ID);
+      }
+      return commit;
+    }
   }
 }
