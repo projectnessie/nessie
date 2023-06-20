@@ -28,6 +28,9 @@ final class DynamoDBConstants {
   static final String COL_REFERENCES_POINTER = "p";
   static final String COL_REFERENCES_DELETED = "d";
 
+  static final String COL_REFERENCES_CONDITION =
+      "(" + COL_REFERENCES_DELETED + " = :deleted) AND (" + COL_REFERENCES_POINTER + " = :pointer)";
+
   static final String KEY_NAME = "k";
 
   static final String COL_OBJ_TYPE = "y";

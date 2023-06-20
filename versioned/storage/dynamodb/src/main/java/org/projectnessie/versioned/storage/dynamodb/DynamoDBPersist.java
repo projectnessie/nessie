@@ -53,6 +53,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_INDEX_INDEX;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CONDITION;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_DELETED;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_POINTER;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_CREATED_AT;
@@ -202,16 +203,10 @@ public class DynamoDBPersist implements Persist {
   @Override
   public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    String condition =
-        "("
-            + COL_REFERENCES_DELETED
-            + " = :deleted) AND ("
-            + COL_REFERENCES_POINTER
-            + " = :pointer)";
     try {
       reference = reference.withDeleted(false);
       Reference asDeleted = reference.withDeleted(true);
-      conditionalReferencePut(asDeleted, condition, reference.pointer());
+      conditionalReferencePut(asDeleted, reference);
       return asDeleted;
     } catch (ConditionalCheckFailedException e) {
       Reference r = fetchReference(reference.name());
@@ -229,16 +224,10 @@ public class DynamoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    String condition =
-        "("
-            + COL_REFERENCES_DELETED
-            + " = :deleted) AND ("
-            + COL_REFERENCES_POINTER
-            + " = :pointer)";
     try {
       reference = reference.withDeleted(false);
       Reference bumpedReference = reference.forNewPointer(newPointer);
-      conditionalReferencePut(bumpedReference, condition, reference.pointer());
+      conditionalReferencePut(bumpedReference, reference);
       return bumpedReference;
     } catch (ConditionalCheckFailedException e) {
       Reference r = fetchReference(reference.name());
@@ -253,15 +242,7 @@ public class DynamoDBPersist implements Persist {
   public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
-    String condition =
-        "("
-            + COL_REFERENCES_DELETED
-            + " = :deleted) AND ("
-            + COL_REFERENCES_POINTER
-            + " = :pointer)";
-    Map<String, AttributeValue> values = new HashMap<>();
-    objIdToAttribute(values, ":pointer", reference.pointer());
-    values.put(":deleted", fromBool(true));
+    Map<String, AttributeValue> values = referenceConditionAttributes(reference);
 
     String refName = reference.name();
     try {
@@ -272,7 +253,7 @@ public class DynamoDBPersist implements Persist {
                   b.tableName(TABLE_REFS)
                       .key(referenceKeyMap(refName))
                       .expressionAttributeValues(values)
-                      .conditionExpression(condition));
+                      .conditionExpression(COL_REFERENCES_CONDITION));
     } catch (ConditionalCheckFailedException e) {
       Reference r = fetchReference(refName);
       if (r == null) {
@@ -949,18 +930,23 @@ public class DynamoDBPersist implements Persist {
   }
 
   private void conditionalReferencePut(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference, String condition, ObjId pointer) {
-    Map<String, AttributeValue> values = new HashMap<>();
-    objIdToAttribute(values, ":pointer", pointer);
-    values.put(":deleted", fromBool(false));
+      @Nonnull @jakarta.annotation.Nonnull Reference reference, Reference expected) {
+    Map<String, AttributeValue> values = referenceConditionAttributes(expected);
     backend
         .client()
         .putItem(
             b ->
                 b.tableName(TABLE_REFS)
-                    .conditionExpression(condition)
+                    .conditionExpression(COL_REFERENCES_CONDITION)
                     .expressionAttributeValues(values)
                     .item(referenceAttributeValues(reference)));
+  }
+
+  private static Map<String, AttributeValue> referenceConditionAttributes(Reference reference) {
+    Map<String, AttributeValue> values = new HashMap<>();
+    objIdToAttribute(values, ":pointer", reference.pointer());
+    values.put(":deleted", fromBool(reference.deleted()));
+    return values;
   }
 
   @Nonnull
