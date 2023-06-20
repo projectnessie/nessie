@@ -120,7 +120,7 @@ public class AbstractBasePersistTests {
     ObjId otherId = objIdFromString("88776655");
     String name = "some-reference-name";
     Reference create = reference(name, pointer, false);
-    Reference deleted = reference(name, pointer, true);
+    Reference deleted = create.withDeleted(true);
 
     soft.assertThat(persist.addReference(create)).isEqualTo(create);
     soft.assertThatThrownBy(() -> persist.addReference(create))
@@ -136,9 +136,10 @@ public class AbstractBasePersistTests {
         .containsExactly(deleted);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(create))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(reference(name, otherId, false)))
+    soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(create.forNewPointer(otherId)))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(reference(name, otherId, true)))
+    soft.assertThatThrownBy(
+            () -> persist.markReferenceAsDeleted(create.forNewPointer(otherId).withDeleted(true)))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(deleted))
         .isInstanceOf(RefConditionFailedException.class);
@@ -164,9 +165,9 @@ public class AbstractBasePersistTests {
     ObjId pointer3 = objIdFromString("0003");
 
     Reference create = reference("some-reference-name", initialPointer, false);
-    Reference assigned1 = reference("some-reference-name", pointer1, false);
-    Reference assigned2 = reference("some-reference-name", pointer2, false);
-    Reference deleted = reference("some-reference-name", pointer2, true);
+    Reference assigned1 = create.forNewPointer(pointer1);
+    Reference assigned2 = create.forNewPointer(pointer2);
+    Reference deleted = assigned2.withDeleted(true);
 
     soft.assertThat(persist.addReference(create)).isEqualTo(create);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
