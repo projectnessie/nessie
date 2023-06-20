@@ -45,7 +45,7 @@ public class TestKeyIndexSets {
   @InjectSoftAssertions SoftAssertions soft;
 
   @Test
-  void foo() {
+  void keyCombinations() {
     StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
     Stream.of("x/be", "x/eire", "x/opt", "x/over", "x/salt")
         .map(s -> s.split("/"))
