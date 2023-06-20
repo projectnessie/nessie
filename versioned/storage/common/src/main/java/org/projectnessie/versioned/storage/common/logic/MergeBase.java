@@ -111,7 +111,8 @@ public abstract class MergeBase {
   }
 
   private List<ShallowCommit> flagReachableCommits(ShallowCommit commitA, ShallowCommit commitB) {
-    PriorityQueue<ShallowCommit> queue = new PriorityQueue<>(comparing(ShallowCommit::seq));
+    PriorityQueue<ShallowCommit> queue =
+        new PriorityQueue<>(comparing(ShallowCommit::seq).reversed());
     List<ShallowCommit> result = new ArrayList<>();
 
     commitA.setCommitA();
