@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +34,7 @@ import java.util.function.Supplier;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -430,7 +432,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(
+                        asList(
                             ContentKey.of("t1"),
                             ContentKey.of("t2"),
                             ContentKey.of("t3"),
@@ -507,7 +509,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         tuple(
                             firstCommit,
                             "First Commit",
-                            Arrays.asList(
+                            asList(
                                 Put.of(ContentKey.of("t1"), V_1_1),
                                 Put.of(ContentKey.of("t2"), V_2_1),
                                 Put.of(ContentKey.of("t3"), V_3_1)))));
@@ -567,7 +569,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(
+                        asList(
                             ContentKey.of("t1"),
                             ContentKey.of("t2"),
                             ContentKey.of("t3"),
@@ -662,7 +664,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(
+                        asList(
                             ContentKey.of("t1"),
                             ContentKey.of("t2"),
                             ContentKey.of("t3"),
@@ -769,7 +771,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(
+                        asList(
                             ContentKey.of("t1"),
                             ContentKey.of("t2"),
                             ContentKey.of("t3"),
@@ -842,14 +844,14 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             mergeFrom,
             Optional.empty(),
             CommitMeta.fromMessage("commit 2"),
-            Arrays.asList(Put.of(conflictingKey1, VALUE_2), Put.of(key3, VALUE_5)));
+            asList(Put.of(conflictingKey1, VALUE_2), Put.of(key3, VALUE_5)));
     Hash mergeIntoHead =
         store()
             .commit(
                 mergeInto,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 3"),
-                Arrays.asList(Put.of(conflictingKey2, VALUE_3), Put.of(key4, VALUE_6)))
+                asList(Put.of(conflictingKey2, VALUE_3), Put.of(key4, VALUE_6)))
             .getCommitHash();
     Hash mergeFromHash =
         store()
@@ -1011,7 +1013,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         });
               });
     } else {
-      // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
+      // Merge with force-merge of conflictingKey1, no drop of conflictingKey2
       MergeResult<Commit> result2 =
           store()
               .merge(
