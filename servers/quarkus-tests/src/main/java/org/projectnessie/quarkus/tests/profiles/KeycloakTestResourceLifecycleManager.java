@@ -15,17 +15,22 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
+import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -36,6 +41,7 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.Network;
 
 /**
  * This is a copy of, and a drop-in replacement for, the Keycloak test resource {@code
@@ -51,7 +57,18 @@ import org.slf4j.LoggerFactory;
  *   <li>Use {@link Keycloak} from {@code org.keycloak:keycloak-admin-client} instead of RestAssured
  *       to interact with the Keycloak server;
  *   <li>Token exchange is enabled;
- *   <li>Some static methods were removed.
+ *   <li>Implements {@link DevServicesContext.ContextAware}};
+ *   <li>Container can be configured using Quarkus test resource init args, falling back to system
+ *       properties for defaults;
+ *   <li>Defines a few extra configuration properties: {@code quarkus.oidc.token.issuer}, {@code
+ *       quarkus.oidc.client-id} and {@code quarkus.oidc.credentials.secret};
+ *   <li>Ability to start the container in a shared and/or pre-existing Docker network;
+ *   <li>Ability to inject {@link KeycloakTokenEndpointUri} and {@link KeycloakRealmUri} into a test
+ *       instance field;
+ *   <li>Access token lifespan by default is 1 minute instead of 3 seconds;
+ *   <li>Some static methods were removed, instead the {@link CustomKeycloakContainer} instance is
+ *       exposed;
+ *   <li>Token issuer URL is fixed to facilitate testing involving token validation.
  * </ul>
  *
  * Since it is meant as a replacement of the original test resource, it is possible to use this
@@ -64,106 +81,209 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("SameParameterValue")
 public class KeycloakTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
+
+  /**
+   * This annotation can be used to inject the (external) auth server URI into a test instance
+   * field.
+   *
+   * <p>This is the URL that clients outside the Docker network can use to access Keycloak. This is
+   * also the URL that should be used as the value of the {@code quarkus.oidc.auth-server-url}
+   * property for Quarkus applications running outside the Docker network.
+   */
+  @Target(ElementType.FIELD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface KeycloakRealmUri {}
+
+  /**
+   * This annotation can be used to inject the (external) token endpoint URI into a test instance
+   * field.
+   *
+   * <p>This is the URL that should be used as the value of the {@code
+   * nessie.authentication.oauth2.token-endpoint} property for Nessie clients using the OAUTH2
+   * authentication provider, and sitting outside the Docker network.
+   */
+  @Target(ElementType.FIELD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface KeycloakTokenEndpointUri {}
+
+  /**
+   * This annotation can be used to inject the client ID into a test instance field.
+   *
+   * <p>This value is configured using the {@code keycloak.service.client} init arg when starting
+   * the Keycloak container, and by default is {@code quarkus-service-app}.
+   *
+   * <p>This is the client ID that should be used as the value of the {@code
+   * nessie.authentication.oauth2.client-id} property for Nessie clients using the OAUTH2
+   * authentication provider, and sitting outside the Docker network.
+   *
+   * <p>It can also be used as the value of the {@code quarkus.oidc.client-id} property for Quarkus
+   * applications running outside the Docker network.
+   */
+  @Target(ElementType.FIELD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface KeycloakClientId {}
+
+  /**
+   * This annotation can be used to inject the client secret into a test instance field.
+   *
+   * <p>This is the client secret that should be used as the value of the {@code
+   * nessie.authentication.oauth2.client-secret} property for Nessie clients using the OAUTH2
+   * authentication provider, and sitting outside the Docker network.
+   *
+   * <p>It can also be used as the value of the {@code quarkus.oidc.credentials.secret} property for
+   * Quarkus applications running outside the Docker network.
+   *
+   * <p>Note: currently, this secret is hard-coded to {@code secret} in the Keycloak container, but
+   * this may change in the future.
+   */
+  @Target(ElementType.FIELD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface KeycloakClientSecret {}
+
   private static final Logger LOGGER =
       LoggerFactory.getLogger(KeycloakTestResourceLifecycleManager.class);
 
-  private static final String KEYCLOAK_REALM = System.getProperty("keycloak.realm", "quarkus");
-  private static final String KEYCLOAK_SERVICE_CLIENT =
-      System.getProperty("keycloak.service.client", "quarkus-service-app");
-  private static final String KEYCLOAK_WEB_APP_CLIENT =
-      System.getProperty("keycloak.web-app.client", "quarkus-web-app");
-  private static final Boolean KEYCLOAK_USE_HTTPS =
-      Boolean.valueOf(System.getProperty("keycloak.use.https", "false"));
-  private static final String KEYCLOAK_VERSION = System.getProperty("keycloak.version");
-  private static final String KEYCLOAK_DOCKER_IMAGE = System.getProperty("keycloak.docker.image");
+  public static final String KEYCLOAK_REALM = "keycloak.realm";
+  public static final String KEYCLOAK_SERVICE_CLIENT = "keycloak.service.client";
+  public static final String KEYCLOAK_WEB_APP_CLIENT = "keycloak.web-app.client";
+  public static final String KEYCLOAK_USE_HTTPS = "keycloak.use.https";
+  public static final String KEYCLOAK_DOCKER_IMAGE = "keycloak.docker.image";
+  public static final String KEYCLOAK_DOCKER_TAG = "keycloak.docker.tag";
+  public static final String KEYCLOAK_DOCKER_NETWORK_ID = "keycloak.docker.network.id";
+  public static final String TOKEN_USER_ROLES = "keycloak.token.user-roles";
+  public static final String TOKEN_ADMIN_ROLES = "keycloak.token.admin-roles";
+  public static final String FEATURES_ENABLED = "keycloak.features.enabled";
 
-  private static final String TOKEN_USER_ROLES =
-      System.getProperty("keycloak.token.user-roles", "user");
-  private static final String TOKEN_ADMIN_ROLES =
-      System.getProperty("keycloak.token.admin-roles", "user,admin");
+  private static final String CLIENT_SECRET = "secret";
 
-  private static KeycloakContainer keycloak;
+  private static CustomKeycloakContainer keycloak;
   private static Keycloak keycloakAdminClient;
 
-  private Optional<String> containerNetworkId;
+  public static CustomKeycloakContainer getKeycloak() {
+    return keycloak;
+  }
+
+  private DevServicesContext context;
+  private String realmName;
+  private String serviceClientId;
+  private String webAppClientId;
+  private boolean useHttps;
+  private String dockerImage;
+  private String dockerTag;
+  private String dockerNetworkId;
+  private List<String> tokenUserRoles;
+  private List<String> tokenAdminRoles;
+  private String[] featuresEnabled;
 
   @Override
   public void setIntegrationTestContext(DevServicesContext context) {
-    containerNetworkId = context.containerNetworkId();
+    this.context = context;
+  }
+
+  @Override
+  public void init(Map<String, String> initArgs) {
+    realmName =
+        initArgs.getOrDefault(KEYCLOAK_REALM, System.getProperty(KEYCLOAK_REALM, "quarkus"));
+    serviceClientId =
+        initArgs.getOrDefault(
+            KEYCLOAK_SERVICE_CLIENT,
+            System.getProperty(KEYCLOAK_SERVICE_CLIENT, "quarkus-service-app"));
+    webAppClientId =
+        initArgs.getOrDefault(
+            KEYCLOAK_WEB_APP_CLIENT,
+            System.getProperty(KEYCLOAK_WEB_APP_CLIENT, "quarkus-web-app"));
+    useHttps =
+        Boolean.parseBoolean(
+            initArgs.getOrDefault(
+                KEYCLOAK_USE_HTTPS, System.getProperty(KEYCLOAK_USE_HTTPS, "false")));
+    dockerImage =
+        initArgs.getOrDefault(
+            KEYCLOAK_DOCKER_IMAGE,
+            System.getProperty(KEYCLOAK_DOCKER_IMAGE, "quay.io/keycloak/keycloak"));
+    dockerTag =
+        initArgs.getOrDefault(
+            KEYCLOAK_DOCKER_TAG, System.getProperty(KEYCLOAK_DOCKER_TAG, "latest"));
+    dockerNetworkId =
+        initArgs.getOrDefault(
+            KEYCLOAK_DOCKER_NETWORK_ID, System.getProperty(KEYCLOAK_DOCKER_NETWORK_ID));
+    tokenUserRoles =
+        List.of(
+            initArgs
+                .getOrDefault(TOKEN_USER_ROLES, System.getProperty(TOKEN_USER_ROLES, "user"))
+                .split(","));
+    tokenAdminRoles =
+        List.of(
+            initArgs
+                .getOrDefault(
+                    TOKEN_ADMIN_ROLES, System.getProperty(TOKEN_ADMIN_ROLES, "user,admin"))
+                .split(","));
+    featuresEnabled =
+        initArgs
+            .getOrDefault(
+                FEATURES_ENABLED, System.getProperty(FEATURES_ENABLED, "token-exchange,preview"))
+            .split(",");
   }
 
   @Override
   public Map<String, String> start() {
-    String keycloakDockerImage;
-    if (KEYCLOAK_DOCKER_IMAGE != null) {
-      keycloakDockerImage = KEYCLOAK_DOCKER_IMAGE;
-    } else if (KEYCLOAK_VERSION != null) {
-      keycloakDockerImage = "quay.io/keycloak/keycloak:" + KEYCLOAK_VERSION;
-    } else {
-      throw new ConfigurationException(
-          "Please set either 'keycloak.docker.image' or 'keycloak.version' system property");
-    }
 
-    LOGGER.info("Using Keycloak image {}", keycloakDockerImage);
+    LOGGER.info("Using Keycloak image {}:{}", dockerImage, dockerTag);
+    keycloak = new CustomKeycloakContainer();
 
-    keycloak =
-        new KeycloakContainer(keycloakDockerImage) {
-          @Override
-          public String getAuthServerUrl() {
-            String url = super.getAuthServerUrl();
-
-            if (containerNetworkId.isPresent()) {
-              int port = KEYCLOAK_USE_HTTPS ? getHttpsPort() : getHttpPort();
-              String hostPort = keycloak.getHost() + ':' + keycloak.getMappedPort(port);
-              String networkHostPort =
-                  keycloak.getCurrentContainerInfo().getConfig().getHostName() + ':' + port;
-              url = url.replace(hostPort, networkHostPort);
-            }
-
-            return url;
-          }
-        };
-    keycloak.withFeaturesEnabled("preview", "token-exchange");
-    containerNetworkId.ifPresent(keycloak::withNetworkMode);
-
-    if (KEYCLOAK_USE_HTTPS) {
-      LOGGER.info("Enabling TLS for Keycloak");
-      keycloak.useTls();
-    }
-
-    LOGGER.info("Starting Keycloak (network-id: {}) ...", containerNetworkId);
-
+    LOGGER.info("Starting Keycloak...");
     keycloak.start();
-
-    String keycloakServerUrl = keycloak.getAuthServerUrl();
-    String authServerUrl = keycloakServerUrl + "realms/" + KEYCLOAK_REALM;
-    LOGGER.info(
-        "Keycloak started with auth url {} (network-id: {})", authServerUrl, containerNetworkId);
-
-    LOGGER.info("Creating realm in Keycloak...");
+    LOGGER.info("Keycloak started, creating realm {}...", realmName);
 
     keycloakAdminClient = keycloak.getKeycloakAdminClient();
     RealmRepresentation realm = createRealm();
     keycloakAdminClient.realms().create(realm);
 
-    LOGGER.info("Finished setting up Keycloak");
+    LOGGER.info(
+        "Finished setting up Keycloak, external realm auth url: {}",
+        keycloak.getExternalRealmUri());
 
-    Map<String, String> conf = new HashMap<>();
-    conf.put("keycloak.url", keycloakServerUrl);
-    conf.put("quarkus.oidc.auth-server-url", authServerUrl);
-
-    return conf;
+    return Map.of(
+        "keycloak.url", keycloak.getAuthServerUrl(), // TODO check if this is needed
+        "quarkus.oidc.auth-server-url", keycloak.getExternalRealmUri().toString(),
+        "quarkus.oidc.token-path", keycloak.getExternalTokenEndpointUri().toString(),
+        "quarkus.oidc.token.issuer", keycloak.getTokenIssuerUri().toString(),
+        "quarkus.oidc.client-id", serviceClientId,
+        "quarkus.oidc.credentials.secret", CLIENT_SECRET);
   }
 
-  private static RealmRepresentation createRealm() {
+  @Override
+  public void inject(TestInjector testInjector) {
+    testInjector.injectIntoFields(
+        keycloak.getExternalRealmUri(),
+        new TestInjector.AnnotatedAndMatchesType(KeycloakRealmUri.class, URI.class));
+    testInjector.injectIntoFields(
+        keycloak.getExternalTokenEndpointUri(),
+        new TestInjector.AnnotatedAndMatchesType(KeycloakTokenEndpointUri.class, URI.class));
+    testInjector.injectIntoFields(
+        serviceClientId,
+        new TestInjector.AnnotatedAndMatchesType(KeycloakClientId.class, String.class));
+    testInjector.injectIntoFields(
+        CLIENT_SECRET,
+        new TestInjector.AnnotatedAndMatchesType(KeycloakClientSecret.class, String.class));
+  }
+
+  private RealmRepresentation createRealm() {
     RealmRepresentation realm = new RealmRepresentation();
 
-    realm.setRealm(KEYCLOAK_REALM);
+    realm.setRealm(realmName);
     realm.setEnabled(true);
     realm.setUsers(new ArrayList<>());
     realm.setClients(new ArrayList<>());
-    realm.setAccessTokenLifespan(3);
-    realm.setSsoSessionMaxLifespan(3);
+
+    realm.setAccessTokenLifespan(60); // 1 minute
+
+    // Refresh token lifespan will be equal to the smallest value between:
+    // SSO Session Idle, SSO Session Max, Client Session Idle, and Client Session Max.
+    int refreshTokenLifespanSeconds = 60 * 5; // 5 minutes
+    realm.setClientSessionIdleTimeout(refreshTokenLifespanSeconds);
+    realm.setClientSessionMaxLifespan(refreshTokenLifespanSeconds);
+    realm.setSsoSessionIdleTimeout(refreshTokenLifespanSeconds);
+    realm.setSsoSessionMaxLifespan(refreshTokenLifespanSeconds);
 
     RolesRepresentation roles = new RolesRepresentation();
     List<RoleRepresentation> realmRoles = new ArrayList<>();
@@ -175,11 +295,11 @@ public class KeycloakTestResourceLifecycleManager
     realm.getRoles().getRealm().add(new RoleRepresentation("admin", null, false));
     realm.getRoles().getRealm().add(new RoleRepresentation("confidential", null, false));
 
-    realm.getClients().add(createServiceClient(KEYCLOAK_SERVICE_CLIENT));
-    realm.getClients().add(createWebAppClient(KEYCLOAK_WEB_APP_CLIENT));
+    realm.getClients().add(createServiceClient(serviceClientId));
+    realm.getClients().add(createWebAppClient(webAppClientId));
 
-    realm.getUsers().add(createUser("alice", getUserRoles()));
-    realm.getUsers().add(createUser("admin", getAdminRoles()));
+    realm.getUsers().add(createUser("alice", tokenUserRoles));
+    realm.getUsers().add(createUser("admin", tokenAdminRoles));
     realm.getUsers().add(createUser("jdoe", Arrays.asList("user", "confidential")));
 
     return realm;
@@ -190,7 +310,7 @@ public class KeycloakTestResourceLifecycleManager
 
     client.setClientId(clientId);
     client.setPublicClient(false);
-    client.setSecret("secret");
+    client.setSecret(CLIENT_SECRET);
     client.setDirectAccessGrantsEnabled(true);
     client.setServiceAccountsEnabled(true);
     client.setEnabled(true);
@@ -203,7 +323,7 @@ public class KeycloakTestResourceLifecycleManager
 
     client.setClientId(clientId);
     client.setPublicClient(false);
-    client.setSecret("secret");
+    client.setSecret(CLIENT_SECRET);
     client.setRedirectUris(Collections.singletonList("*"));
     client.setEnabled(true);
 
@@ -233,18 +353,164 @@ public class KeycloakTestResourceLifecycleManager
   @Override
   public void stop() {
     try {
-      RealmResource realm = keycloakAdminClient.realm(KEYCLOAK_REALM);
-      realm.remove();
+      Keycloak adminClient = keycloakAdminClient;
+      if (adminClient != null) {
+        RealmResource realm = adminClient.realm(realmName);
+        realm.remove();
+      }
     } finally {
       keycloak.stop();
+      keycloak = null;
+      keycloakAdminClient = null;
     }
   }
 
-  private static List<String> getAdminRoles() {
-    return Arrays.asList(TOKEN_ADMIN_ROLES.split(","));
+  public class CustomKeycloakContainer
+      extends ExtendableKeycloakContainer<CustomKeycloakContainer> {
+
+    private static final int KEYCLOAK_PORT_HTTP = 8080;
+    private static final int KEYCLOAK_PORT_HTTPS = 8443;
+
+    @SuppressWarnings("resource")
+    public CustomKeycloakContainer() {
+      super(dockerImage + ":" + dockerTag);
+
+      withNetworkAliases("keycloak");
+      withFeaturesEnabled(featuresEnabled);
+
+      // This will force all token issuer claims for the configured realm to be
+      // equal to getInternalRealmUri(), and in turn equal to getTokenIssuerUri(),
+      // which simplifies testing.
+      withEnv("KC_HOSTNAME_URL", getInternalRootUri().toString());
+
+      // Don't use withNetworkMode, or aliases won't work!
+      // See https://github.com/testcontainers/testcontainers-java/issues/1221
+      if (context.containerNetworkId().isPresent()) {
+        withNetwork(new ExternalNetwork(context.containerNetworkId().get()));
+      } else if (dockerNetworkId != null) {
+        withNetwork(new ExternalNetwork(dockerNetworkId));
+      }
+
+      if (useHttps) {
+        LOGGER.info("Enabling TLS for Keycloak");
+        useTls();
+      }
+    }
+
+    @Override
+    public String getAuthServerUrl() {
+      if (context.containerNetworkId().isPresent()) {
+        // TODO recheck, not sure why we need to special case this
+        return String.format(
+            "http%s://%s:%s%s",
+            useHttps ? "s" : "",
+            getCurrentContainerInfo().getConfig().getHostName(),
+            useHttps ? getHttpsPort() : getHttpPort(), // mapped ports
+            getContextPath());
+      } else {
+        return super.getAuthServerUrl();
+      }
+    }
+
+    /**
+     * Returns the (external) URL of the Keycloak realm. This is the URL that clients outside the
+     * Docker network can use to access Keycloak. This is also the URL that should be used as the
+     * value of the {@code quarkus.oidc.auth-server-url} property for Quarkus applications running
+     * outside the Docker network.
+     */
+    public URI getExternalRealmUri() {
+      return URI.create(
+          String.format(
+              "%s://%s:%s%srealms/%s",
+              useHttps ? "https" : "http",
+              getHost(),
+              useHttps ? getHttpsPort() : getHttpPort(), // mapped ports
+              ensureSlashes(getContextPath()),
+              realmName));
+    }
+
+    /**
+     * Returns the (external) URL of the Keycloak token endpoint. This is the URL that should be
+     * used as the value of the {@code nessie.authentication.oauth2.token-endpoint} property for
+     * Nessie clients using the OAUTH2 authentication provider, and sitting outside the Docker
+     * network.
+     */
+    public URI getExternalTokenEndpointUri() {
+      return URI.create(
+          String.format(
+              "%s://%s:%s%srealms/%s/protocol/openid-connect/token",
+              useHttps ? "https" : "http",
+              getHost(),
+              useHttps ? getHttpsPort() : getHttpPort(), // mapped ports
+              ensureSlashes(getContextPath()),
+              realmName));
+    }
+
+    /**
+     * Returns the (internal) root URL for Keycloak (without the context path). This is used as the
+     * issuer claim for all tokens.
+     */
+    public URI getInternalRootUri() {
+      return URI.create(
+          String.format(
+              "%s://keycloak:%s",
+              useHttps ? "https" : "http",
+              useHttps ? KEYCLOAK_PORT_HTTPS : KEYCLOAK_PORT_HTTP)); // non-mapped ports
+    }
+
+    /**
+     * Returns the (internal) URL of the Keycloak realm. This is the URL that clients inside the
+     * Docker network can use to access Keycloak. This is also the URL that should be used as the
+     * value of the {@code quarkus.oidc.auth-server-url} property for Quarkus applications running
+     * inside the Docker network.
+     */
+    public URI getInternalRealmUri() {
+      return URI.create(
+          String.format(
+              "%s%srealms/%s", getInternalRootUri(), ensureSlashes(getContextPath()), realmName));
+    }
+
+    /**
+     * Returns the URI used to fill the issuer ("iss") claim for all tokens generated by this
+     * server, regardless of the client IP address. Having a fixed issuer claim facilitates testing
+     * by making it easier to validate tokens.
+     *
+     * <p>This is currently set to be the {@link #getInternalRealmUri()}, and cannot be changed.
+     */
+    public URI getTokenIssuerUri() {
+      return getInternalRealmUri();
+    }
   }
 
-  private static List<String> getUserRoles() {
-    return Arrays.asList(TOKEN_USER_ROLES.split(","));
+  private static class ExternalNetwork implements Network {
+
+    private final String networkId;
+
+    public ExternalNetwork(String networkId) {
+      this.networkId = networkId;
+    }
+
+    @Override
+    public Statement apply(Statement var1, Description var2) {
+      return null;
+    }
+
+    public String getId() {
+      return networkId;
+    }
+
+    public void close() {
+      // don't close the external network
+    }
+  }
+
+  private static String ensureSlashes(String s) {
+    if (!s.startsWith("/")) {
+      s = "/" + s;
+    }
+    if (!s.endsWith("/")) {
+      s = s + "/";
+    }
+    return s;
   }
 }

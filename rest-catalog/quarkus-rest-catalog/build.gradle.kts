@@ -21,7 +21,6 @@ plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
   id("nessie-jacoco")
-  alias(libs.plugins.nessie.run)
 }
 
 description = "Nessie REST Catalog - Quarkus Server"
@@ -94,20 +93,16 @@ dependencies {
   testFixturesApi("io.quarkus:quarkus-junit5")
   testFixturesApi("io.quarkus:quarkus-jacoco")
 
+  testFixturesApi(project(":nessie-quarkus-tests"))
+
   testFixturesCompileOnly(libs.microprofile.openapi)
 
   testFixturesImplementation(platform(libs.junit.bom))
   testFixturesImplementation(libs.bundles.junit.testing)
 
-  nessieQuarkusServer(nessieQuarkusServerRunner())
-}
-
-nessieQuarkusApp {
-  includeTask(tasks.named<Test>("intTest"))
-  environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
-  jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
-  httpListenPortProperty.set("nessie.it.http.port")
-  httpListenUrlProperty.set("nessie.it.http.url")
+  intTestImplementation(libs.testcontainers.keycloak) {
+    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
+  }
 }
 
 val packageType = quarkusPackageType()
@@ -121,7 +116,9 @@ val quarkusBuild =
     inputs.property("final.name", quarkus.finalName())
   }
 
-tasks.withType<Test>().configureEach { systemProperty("quarkus.smallrye.jwt.enabled", "true") }
+tasks.withType<Test>().configureEach {
+  systemProperty("keycloak.docker.tag", libs.versions.keycloakContainerTag.get())
+}
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.
