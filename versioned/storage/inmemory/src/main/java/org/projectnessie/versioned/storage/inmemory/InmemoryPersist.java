@@ -169,9 +169,11 @@ class InmemoryPersist implements ValidatingPersist {
         inmemory.references.computeIfPresent(
             compositeKey(reference.name()),
             (k, r) -> {
-              result[0] = r;
-              if (!r.deleted() && r.pointer().equals(reference.pointer())) {
+              if (!r.deleted() && r.equals(reference)) {
+                result[0] = r;
                 r = asUpdated;
+              } else {
+                result[1] = r;
               }
               return r;
             });
@@ -180,10 +182,10 @@ class InmemoryPersist implements ValidatingPersist {
       throw new RefNotFoundException(reference);
     }
     Reference r = result[0];
-    if (!r.pointer().equals(reference.pointer()) || r.deleted()) {
-      throw new RefConditionFailedException(r);
+    if (r != null) {
+      return asUpdated;
     }
-    return asUpdated;
+    throw new RefConditionFailedException(result[1]);
   }
 
   @Override
