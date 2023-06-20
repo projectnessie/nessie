@@ -82,8 +82,8 @@ public class TestMergeBase {
   void noMergeBase() {
     CommitObj a = repo.add(initialCommit());
     CommitObj b = repo.add(initialCommit());
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(b.id()));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj d = repo.add(buildCommit("d", b));
 
     soft.assertThatThrownBy(
             () ->
@@ -120,8 +120,8 @@ public class TestMergeBase {
   @Test
   void simpleCase() {
     CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a));
 
     soft.assertThat(
             MergeBase.builder()
@@ -154,10 +154,10 @@ public class TestMergeBase {
   @Test
   void doubleMerge() {
     CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(c.id()).addSecondaryParents(b.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(b.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj d = repo.add(buildCommit("d", c).addSecondaryParents(b.id()));
+    CommitObj e = repo.add(buildCommit("e", b));
 
     soft.assertThat(
             MergeBase.builder()
@@ -190,11 +190,11 @@ public class TestMergeBase {
   @Test
   void doubleMerge2() {
     CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(b.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(c.id()).addSecondaryParents(d.id()));
-    CommitObj f = repo.add(buildCommit("f").addTail(d.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj d = repo.add(buildCommit("d", b));
+    CommitObj e = repo.add(buildCommit("e", c).addSecondaryParents(d.id()));
+    CommitObj f = repo.add(buildCommit("f", d));
 
     soft.assertThat(
             MergeBase.builder()
@@ -229,14 +229,14 @@ public class TestMergeBase {
   @Test
   void multiMerge1() {
     CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(b.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(b.id()));
-    CommitObj f = repo.add(buildCommit("f").addTail(c.id()));
-    CommitObj g = repo.add(buildCommit("g").addTail(e.id()).addSecondaryParents(d.id()));
-    CommitObj h = repo.add(buildCommit("h").addTail(d.id()).addSecondaryParents(f.id()));
-    CommitObj i = repo.add(buildCommit("i").addTail(g.id()).addSecondaryParents(h.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj d = repo.add(buildCommit("d", b));
+    CommitObj e = repo.add(buildCommit("e", b));
+    CommitObj f = repo.add(buildCommit("f", c));
+    CommitObj g = repo.add(buildCommit("g", e).addSecondaryParents(d.id()));
+    CommitObj h = repo.add(buildCommit("h", d).addSecondaryParents(f.id()));
+    CommitObj i = repo.add(buildCommit("i", g).addSecondaryParents(h.id()));
 
     soft.assertThat(
             MergeBase.builder()
@@ -270,14 +270,14 @@ public class TestMergeBase {
   @Test
   void multiMerge2() {
     CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()).addSecondaryParents(b.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(a.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(c.id()));
-    CommitObj f = repo.add(buildCommit("f").addTail(e.id()));
-    CommitObj g = repo.add(buildCommit("g").addTail(f.id()).addSecondaryParents(d.id()));
-    CommitObj h = repo.add(buildCommit("h").addTail(d.id()).addSecondaryParents(b.id()));
-    CommitObj j = repo.add(buildCommit("j").addTail(h.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a).addSecondaryParents(b.id()));
+    CommitObj d = repo.add(buildCommit("d", a));
+    CommitObj e = repo.add(buildCommit("e", c));
+    CommitObj f = repo.add(buildCommit("f", e));
+    CommitObj g = repo.add(buildCommit("g", f).addSecondaryParents(d.id()));
+    CommitObj h = repo.add(buildCommit("h", d).addSecondaryParents(b.id()));
+    CommitObj j = repo.add(buildCommit("j", h));
 
     soft.assertThat(
             MergeBase.builder()
@@ -286,7 +286,7 @@ public class TestMergeBase {
                 .fromCommitId(j.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b.id());
+        .isEqualTo(d.id());
   }
 
   /**
@@ -297,18 +297,17 @@ public class TestMergeBase {
    * ----A------C--------E----G
    * </pre></code>
    *
-   * <p>Merge-base outcome for {@code F} onto {@code G} is {@code B}. In theory, it could also be
-   * {@code C}, but the logic/implementation ensures that it's always {@code B}.
+   * <p>Merge-base outcome for {@code F} onto {@code G} is either {@code B} or {@code C}.
    */
   @Test
   void afterCrossMerge() {
     CommitObj a = repo.add(initialCommit());
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(b.id()).addSecondaryParents(c.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(c.id()).addSecondaryParents(b.id()));
-    CommitObj f = repo.add(buildCommit("f").addTail(d.id()));
-    CommitObj g = repo.add(buildCommit("g").addTail(e.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj d = repo.add(buildCommit("d", b).addSecondaryParents(c.id()));
+    CommitObj e = repo.add(buildCommit("e", c).addSecondaryParents(b.id()));
+    CommitObj f = repo.add(buildCommit("f", d));
+    CommitObj g = repo.add(buildCommit("g", e));
 
     soft.assertThat(
             MergeBase.builder()
@@ -318,7 +317,6 @@ public class TestMergeBase {
                 .build()
                 .identifyMergeBase())
         .isEqualTo(b.id());
-    // DIFFERENCE to the corresponding test in AbstractMergeScenarios in the following assertion
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -326,7 +324,7 @@ public class TestMergeBase {
                 .fromCommitId(g.id())
                 .build()
                 .identifyMergeBase())
-        .isEqualTo(b.id());
+        .isEqualTo(c.id());
     soft.assertThat(
             MergeBase.builder()
                 .loadCommit(repo::loadCommit)
@@ -353,13 +351,13 @@ public class TestMergeBase {
   @Test
   void nestedBranches() {
     CommitObj a = repo.add(initialCommit("a"));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(c.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(d.id()));
-    CommitObj g = repo.add(buildCommit("g").addTail(e.id()));
-    CommitObj f = repo.add(buildCommit("f").addTail(a.id()).addSecondaryParents(e.id()));
-    CommitObj h = repo.add(buildCommit("h").addTail(b.id()).addSecondaryParents(g.id()));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj d = repo.add(buildCommit("d", c));
+    CommitObj e = repo.add(buildCommit("e", d));
+    CommitObj g = repo.add(buildCommit("g", e));
+    CommitObj f = repo.add(buildCommit("f", a).addSecondaryParents(e.id()));
+    CommitObj h = repo.add(buildCommit("h", b).addSecondaryParents(g.id()));
 
     soft.assertThat(
             MergeBase.builder()
@@ -384,16 +382,16 @@ public class TestMergeBase {
   @Test
   void featureBranch() {
     CommitObj a = repo.add(initialCommit("a"));
-    CommitObj b = repo.add(buildCommit("b").addTail(a.id()));
-    CommitObj c = repo.add(buildCommit("c").addTail(a.id()));
-    CommitObj d = repo.add(buildCommit("d").addTail(c.id()));
-    CommitObj e = repo.add(buildCommit("e").addTail(b.id()).addSecondaryParents(c.id()));
-    CommitObj f = repo.add(buildCommit("f").addTail(d.id()));
-    CommitObj g = repo.add(buildCommit("g").addTail(e.id()));
-    CommitObj h = repo.add(buildCommit("h").addTail(f.id()));
-    CommitObj i = repo.add(buildCommit("i").addTail(g.id()).addSecondaryParents(f.id()));
-    CommitObj j = repo.add(buildCommit("j").addTail(h.id()));
-    CommitObj k = repo.add(buildCommit("k").addTail(i.id()));
+    CommitObj b = repo.add(buildCommit("b", a));
+    CommitObj c = repo.add(buildCommit("c", a));
+    CommitObj d = repo.add(buildCommit("d", c));
+    CommitObj e = repo.add(buildCommit("e", b).addSecondaryParents(c.id()));
+    CommitObj f = repo.add(buildCommit("f", d));
+    CommitObj g = repo.add(buildCommit("g", e));
+    CommitObj h = repo.add(buildCommit("h", f));
+    CommitObj i = repo.add(buildCommit("i", g).addSecondaryParents(f.id()));
+    CommitObj j = repo.add(buildCommit("j", h));
+    CommitObj k = repo.add(buildCommit("k", i));
 
     soft.assertThat(
             MergeBase.builder()
@@ -446,12 +444,12 @@ public class TestMergeBase {
     final Map<ObjId, CommitObj> commits = new HashMap<>();
 
     CommitObj add(CommitObj.Builder c) {
-      int seq = commits.size();
+      int num = commits.size();
       ByteBuffer bb = ByteBuffer.allocate(4);
-      bb.putInt(seq);
+      bb.putInt(num);
       bb.flip();
 
-      c.created(seq).seq(seq).id(ObjId.objIdFromByteBuffer(bb));
+      c.created(num).id(ObjId.objIdFromByteBuffer(bb));
       CommitObj commit = c.build();
       commits.put(commit.id(), commit);
       return commit;
@@ -467,13 +465,20 @@ public class TestMergeBase {
   }
 
   static CommitObj.Builder initialCommit(String name) {
-    return buildCommit(name).addTail(EMPTY_OBJ_ID);
+    return buildCommit(name, null).addTail(EMPTY_OBJ_ID);
   }
 
-  static CommitObj.Builder buildCommit(String msg) {
-    return commitBuilder()
-        .headers(newCommitHeaders().build())
-        .message(msg)
-        .incrementalIndex(ByteString.empty());
+  static CommitObj.Builder buildCommit(String msg, CommitObj parent) {
+    CommitObj.Builder commit =
+        commitBuilder()
+            .headers(newCommitHeaders().build())
+            .message(msg)
+            .incrementalIndex(ByteString.empty());
+    if (parent != null) {
+      commit.seq(parent.seq() + 1).addTail(parent.id());
+    } else {
+      commit.seq(0);
+    }
+    return commit;
   }
 }

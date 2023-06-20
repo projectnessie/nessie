@@ -207,7 +207,6 @@ public abstract class AbstractMergeScenarios extends AbstractNestedVersionStore 
     Commit g = buildCommit().commitTo("b1");
 
     buildMerge().dryRun().from("b2").assertMergeBase("b1", b);
-    // DIFFERENCE to the corresponding test in TestMergeBase in the following assertion
     buildMerge().dryRun().from("b1").assertMergeBase("b2", c);
   }
 
