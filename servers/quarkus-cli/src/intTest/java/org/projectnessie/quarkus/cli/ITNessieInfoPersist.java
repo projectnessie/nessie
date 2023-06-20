@@ -25,7 +25,6 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogi
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.Launch;
@@ -40,6 +39,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedE
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
 
 @QuarkusMainTest
 @TestProfile(QuarkusCliTestProfilePersistMongo.class)
@@ -80,9 +80,8 @@ class ITNessieInfoPersist {
                     .headers(EMPTY_COMMIT_HEADERS)
                     .build(),
                 emptyList());
-    referenceLogic(persist)
-        .assignReference(
-            reference("refs/heads/main", EMPTY_OBJ_ID, false), requireNonNull(head).id());
+    Reference reference = persist.fetchReference("refs/heads/main");
+    referenceLogic(persist).assignReference(requireNonNull(reference), requireNonNull(head).id());
 
     LaunchResult result = launcher.launch("info");
     assertThat(result.getOutput())
