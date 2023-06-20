@@ -55,6 +55,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
+  testRuntimeOnly(libs.logback.classic)
 
   jmhImplementation(libs.jmh.core)
   jmhImplementation(project(":nessie-versioned-storage-common-tests"))

@@ -55,6 +55,7 @@ dependencies {
   testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation(libs.slf4j.jcl.over.slf4j)
   testRuntimeOnly(libs.h2)
+  testRuntimeOnly(libs.logback.classic)
 
   testCompileOnly(libs.microprofile.openapi)
 
