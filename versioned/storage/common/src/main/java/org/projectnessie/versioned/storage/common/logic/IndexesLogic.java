@@ -38,7 +38,7 @@ public interface IndexesLogic {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  Supplier<StoreIndex<CommitOp>> createIndexSupplier(
+  Supplier<SuppliedCommitIndex> createIndexSupplier(
       @Nonnull @jakarta.annotation.Nonnull Supplier<ObjId> commitIdSupplier);
 
   @Nonnull

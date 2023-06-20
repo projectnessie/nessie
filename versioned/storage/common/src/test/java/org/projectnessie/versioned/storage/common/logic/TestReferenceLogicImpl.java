@@ -172,7 +172,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
       case AFTER_MARK_DELETE:
         break;
       case AFTER_COMMIT_DELETED:
-        refLogic.commitDeleteReference(deleted);
+        refLogic.commitDeleteReference(deleted, null);
         break;
       default:
         throw new IllegalArgumentException();
@@ -234,7 +234,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
 
   private static boolean indexActionExists(ReferenceLogicImpl refLogic, String name) {
     StoreKey key = key(name);
-    StoreIndexElement<CommitOp> el = refLogic.createRefsIndexSupplier().get().get(key);
+    StoreIndexElement<CommitOp> el = refLogic.createRefsIndexSupplier().get().index().get(key);
     return el != null && el.content().action().exists();
   }
 
