@@ -71,10 +71,16 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 /** {@link ReferenceLogic} related tests to be run against every {@link Persist} implementation. */
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
-public class AbstractReferenceLogicTests {
+public abstract class AbstractReferenceLogicTests {
+  private final Class<?> surroundingTestClass;
+
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @NessiePersist protected Persist persist;
+
+  protected AbstractReferenceLogicTests(Class<?> surroundingTestClass) {
+    this.surroundingTestClass = surroundingTestClass;
+  }
 
   @Test
   public void internalReferencesNotVisible() {
