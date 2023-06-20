@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.common.indexes;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.String.format;
 import static java.util.Collections.emptySet;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -46,6 +48,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet;
@@ -53,6 +56,85 @@ import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet;
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestStoreIndexImpl {
   @InjectSoftAssertions SoftAssertions soft;
+
+  private static StoreIndex<ObjId> refs20() {
+    StoreIndex<ObjId> segment = newStoreIndex(OBJ_ID_SERIALIZER);
+    for (int i = 0; i < 20; i++) {
+      segment.add(indexElement(key(format("refs-%10d", i)), randomObjId()));
+    }
+    return segment;
+  }
+
+  @Test
+  public void entriesCompareAfterReserialize() {
+    StoreIndex<ObjId> segment = refs20();
+    List<StoreKey> keyList = segment.asKeyList();
+
+    ByteString serialized = segment.serialize();
+    StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+
+    for (int i = keyList.size() - 1; i >= 0; i--) {
+      StoreKey key = keyList.get(i);
+      soft.assertThat(deserialized.get(key)).isEqualTo(segment.get(key));
+    }
+  }
+
+  @Test
+  public void deserialized() {
+    StoreIndex<ObjId> segment = refs20();
+
+    ByteString serialized = segment.serialize();
+    StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    soft.assertThat(deserialized).isEqualTo(segment);
+  }
+
+  @Test
+  public void reserialize() {
+    StoreIndex<ObjId> segment = refs20();
+
+    ByteString serialized = segment.serialize();
+    StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    ByteString serialized2 = deserialized.serialize();
+
+    soft.assertThat(serialized2).isEqualTo(serialized);
+  }
+
+  @Test
+  public void reserializeUnmodified() {
+    StoreIndex<ObjId> segment = refs20();
+
+    ByteString serialized = segment.serialize();
+    StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    ByteString serialized2 = deserialized.serialize();
+
+    soft.assertThat(serialized2).isEqualTo(serialized);
+  }
+
+  @Test
+  public void similarPrefixLengths() {
+    StoreKey keyA = key("a", "x", "A");
+    StoreKey keyB = key("b", "x", "A");
+    StoreKey keyC = key("c", "x", "A");
+    StoreKey keyD = key("d", "x", "A");
+    StoreKey keyE = key("e", "x", "A");
+    StoreKey keyExB = key("e", "x", "B");
+    StoreKey keyExD = key("e", "x", "D");
+    StoreKey keyEyC = key("e", "y", "C");
+    StoreKey keyExC = key("e", "x", "C");
+    StoreIndex<ObjId> segment = newStoreIndex(OBJ_ID_SERIALIZER);
+    Stream.of(keyA, keyB, keyC, keyD, keyE, keyExB, keyExD, keyEyC, keyExC)
+        .map(k -> indexElement(k, randomObjId()))
+        .forEach(segment::add);
+
+    ByteString serialized = segment.serialize();
+    StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    soft.assertThat(deserialized).isEqualTo(segment);
+    soft.assertThat(deserialized.serialize()).isEqualTo(serialized);
+
+    deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    soft.assertThat(deserialized.asKeyList()).isEqualTo(segment.asKeyList());
+    soft.assertThat(deserialized.serialize()).isEqualTo(serialized);
+  }
 
   @Test
   public void isModified() {

@@ -18,6 +18,8 @@ package org.projectnessie.versioned.storage.common.indexes;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.ADD;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
@@ -33,7 +35,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action;
 import org.projectnessie.versioned.storage.commontests.ImmutableRealisticKeySet;
@@ -89,17 +90,26 @@ public class RealisticKeyIndexImplBench {
   }
 
   @Benchmark
-  public void serialize(BenchmarkParam param, Blackhole bh) {
-    bh.consume(param.keyIndexTestSet.serialize());
+  public Object serialize(BenchmarkParam param) {
+    return param.keyIndexTestSet.serialize();
   }
 
   @Benchmark
-  public void deserialize(BenchmarkParam param, Blackhole bh) {
-    bh.consume(param.keyIndexTestSet.deserialize());
+  public Object deserializeAddSerialize(BenchmarkParam param) {
+    StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
+    for (char c = 'a'; c <= 'z'; c++) {
+      deserialized.add(indexElement(key(c + "x", "key"), commitOp(ADD, 1, randomObjId())));
+    }
+    return deserialized.serialize();
   }
 
   @Benchmark
-  public void randomGetKey(BenchmarkParam param, Blackhole bh) {
-    bh.consume(param.keyIndexTestSet.randomGetKey());
+  public Object deserialize(BenchmarkParam param) {
+    return param.keyIndexTestSet.deserialize();
+  }
+
+  @Benchmark
+  public Object randomGetKey(BenchmarkParam param) {
+    return param.keyIndexTestSet.randomGetKey();
   }
 }
