@@ -182,46 +182,20 @@ public class KeycloakTestResourceLifecycleManager
 
   @Override
   public void init(Map<String, String> initArgs) {
-    realmName =
-        initArgs.getOrDefault(KEYCLOAK_REALM, System.getProperty(KEYCLOAK_REALM, "quarkus"));
-    serviceClientId =
-        initArgs.getOrDefault(
-            KEYCLOAK_SERVICE_CLIENT,
-            System.getProperty(KEYCLOAK_SERVICE_CLIENT, "quarkus-service-app"));
-    webAppClientId =
-        initArgs.getOrDefault(
-            KEYCLOAK_WEB_APP_CLIENT,
-            System.getProperty(KEYCLOAK_WEB_APP_CLIENT, "quarkus-web-app"));
-    useHttps =
-        Boolean.parseBoolean(
-            initArgs.getOrDefault(
-                KEYCLOAK_USE_HTTPS, System.getProperty(KEYCLOAK_USE_HTTPS, "false")));
-    dockerImage =
-        initArgs.getOrDefault(
-            KEYCLOAK_DOCKER_IMAGE,
-            System.getProperty(KEYCLOAK_DOCKER_IMAGE, "quay.io/keycloak/keycloak"));
-    dockerTag =
-        initArgs.getOrDefault(
-            KEYCLOAK_DOCKER_TAG, System.getProperty(KEYCLOAK_DOCKER_TAG, "latest"));
-    dockerNetworkId =
-        initArgs.getOrDefault(
-            KEYCLOAK_DOCKER_NETWORK_ID, System.getProperty(KEYCLOAK_DOCKER_NETWORK_ID));
-    tokenUserRoles =
-        List.of(
-            initArgs
-                .getOrDefault(TOKEN_USER_ROLES, System.getProperty(TOKEN_USER_ROLES, "user"))
-                .split(","));
-    tokenAdminRoles =
-        List.of(
-            initArgs
-                .getOrDefault(
-                    TOKEN_ADMIN_ROLES, System.getProperty(TOKEN_ADMIN_ROLES, "user,admin"))
-                .split(","));
-    featuresEnabled =
-        initArgs
-            .getOrDefault(
-                FEATURES_ENABLED, System.getProperty(FEATURES_ENABLED, "token-exchange,preview"))
-            .split(",");
+    realmName = initArg(initArgs, KEYCLOAK_REALM, "quarkus");
+    serviceClientId = initArg(initArgs, KEYCLOAK_SERVICE_CLIENT, "quarkus-service-app");
+    webAppClientId = initArg(initArgs, KEYCLOAK_WEB_APP_CLIENT, "quarkus-web-app");
+    useHttps = Boolean.parseBoolean(initArg(initArgs, KEYCLOAK_USE_HTTPS, "false"));
+    dockerImage = initArg(initArgs, KEYCLOAK_DOCKER_IMAGE, "quay.io/keycloak/keycloak");
+    dockerTag = initArg(initArgs, KEYCLOAK_DOCKER_TAG, "latest");
+    dockerNetworkId = initArg(initArgs, KEYCLOAK_DOCKER_NETWORK_ID, null);
+    tokenUserRoles = List.of(initArg(initArgs, TOKEN_USER_ROLES, "user").split(","));
+    tokenAdminRoles = List.of(initArg(initArgs, TOKEN_ADMIN_ROLES, "user,admin").split(","));
+    featuresEnabled = initArg(initArgs, FEATURES_ENABLED, "token-exchange,preview").split(",");
+  }
+
+  private static String initArg(Map<String, String> initArgs, String initArg, String defaultValue) {
+    return initArgs.getOrDefault(initArg, System.getProperty(initArg, defaultValue));
   }
 
   @Override
