@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.la
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.SuppliedCommitIndex.suppliedCommitIndex;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.INCREMENTAL_ADD;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.INCREMENTAL_REMOVE;
@@ -82,7 +83,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Supplier<StoreIndex<CommitOp>> createIndexSupplier(
+  public Supplier<SuppliedCommitIndex> createIndexSupplier(
       @Nonnull @jakarta.annotation.Nonnull Supplier<ObjId> commitIdSupplier) {
     return memoize(
         () -> {
@@ -92,7 +93,7 @@ final class IndexesLogicImpl implements IndexesLogic {
                 EMPTY_OBJ_ID.equals(commitId)
                     ? null
                     : persist.fetchTypedObj(commitId, COMMIT, CommitObj.class);
-            return buildCompleteIndexOrEmpty(c);
+            return suppliedCommitIndex(commitId, buildCompleteIndexOrEmpty(c));
           } catch (ObjNotFoundException e) {
             throw new RuntimeException(e);
           }

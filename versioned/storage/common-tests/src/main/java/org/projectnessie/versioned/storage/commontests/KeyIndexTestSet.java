@@ -16,6 +16,9 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
+import static java.lang.Math.pow;
+import static java.util.UUID.randomUUID;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.deserializeStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
@@ -32,15 +35,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
+import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -62,11 +62,25 @@ public interface KeyIndexTestSet<ELEMENT> {
         .generateIndexTestSet();
   }
 
+  @Value.Parameter(order = 1)
   List<StoreKey> keys();
 
+  @Value.Parameter(order = 2)
   ByteString serialized();
 
+  @Value.Parameter(order = 3)
   StoreIndex<ELEMENT> keyIndex();
+
+  @Value.Parameter(order = 4)
+  StoreIndex<ELEMENT> sourceKeyIndex();
+
+  static <ELEMENT> KeyIndexTestSet<ELEMENT> of(
+      List<StoreKey> keys,
+      ByteString serialized,
+      StoreIndex<ELEMENT> keyIndex,
+      StoreIndex<ELEMENT> sourceKeyIndex) {
+    return ImmutableKeyIndexTestSet.of(keys, serialized, keyIndex, sourceKeyIndex);
+  }
 
   static <ELEMENT> ImmutableIndexTestSetGenerator.Builder<ELEMENT> newGenerator() {
     return ImmutableIndexTestSetGenerator.builder();
@@ -90,10 +104,11 @@ public interface KeyIndexTestSet<ELEMENT> {
 
     @Override
     public List<StoreKey> keys() {
-      return IntStream.range(0, numKeys())
-          .mapToObj(x -> key(UUID.randomUUID().toString()))
-          .sorted()
-          .collect(Collectors.toList());
+      Set<StoreKey> keys = new TreeSet<>();
+      for (int i = 0; i < numKeys(); i++) {
+        keys.add(key(randomUUID().toString()));
+      }
+      return new ArrayList<>(keys);
     }
   }
 
@@ -127,12 +142,16 @@ public interface KeyIndexTestSet<ELEMENT> {
 
     @Override
     public List<StoreKey> keys() {
-      Set<StoreKey> namespaces = new HashSet<>();
-      Set<StoreKey> keys = new HashSet<>();
+      // This is the fastest way to generate a ton of keys, tested using profiling/JMH.
+      int namespacesFolders = (int) pow(namespaceLevels(), foldersPerLevel());
+      Set<StoreKey> namespaces =
+          newHashSetWithExpectedSize(
+              namespacesFolders); // actual value is higher, but that's fine here
+      Set<StoreKey> keys = new TreeSet<>();
 
       generateKeys(null, 0, namespaces, keys);
 
-      return keys.stream().sorted().collect(Collectors.toList());
+      return new ArrayList<>(keys);
     }
 
     private void generateKeys(
@@ -219,11 +238,7 @@ public interface KeyIndexTestSet<ELEMENT> {
       // Re-serialize to have "clean" internal values in KeyIndexImpl
       StoreIndex<ELEMENT> keyIndex = deserializeStoreIndex(serialized, elementSerializer());
 
-      return ImmutableKeyIndexTestSet.<ELEMENT>builder()
-          .keys(keys)
-          .serialized(keyIndex.serialize())
-          .keyIndex(keyIndex)
-          .build();
+      return KeyIndexTestSet.of(keys, keyIndex.serialize(), keyIndex, index);
     }
   }
 

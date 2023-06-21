@@ -15,11 +15,11 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
@@ -77,7 +77,7 @@ class ITEraseRepositoryPersist {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     PagedResult<Reference, String> iter = referenceLogic.queryReferences(referencesQuery());
     soft.assertThat(Lists.newArrayList(iter))
-        .containsExactly(
-            reference("refs/heads/" + repoDesc.defaultBranchName(), EMPTY_OBJ_ID, false));
+        .extracting(Reference::name, Reference::pointer, Reference::deleted)
+        .containsExactly(tuple("refs/heads/" + repoDesc.defaultBranchName(), EMPTY_OBJ_ID, false));
   }
 }

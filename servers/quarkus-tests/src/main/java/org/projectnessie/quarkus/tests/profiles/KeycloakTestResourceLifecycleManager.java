@@ -16,7 +16,6 @@
 package org.projectnessie.quarkus.tests.profiles;
 
 import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
-import dasniko.testcontainers.keycloak.KeycloakContainer;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.lang.annotation.ElementType;
@@ -52,8 +51,8 @@ import org.testcontainers.containers.Network;
  * introduces the following changes compared to the original:
  *
  * <ul>
- *   <li>Use {@link KeycloakContainer} from {@code dasniko/testcontainers-keycloak} instead of
- *       {@code GenericContainer};
+ *   <li>Use {@link ExtendableKeycloakContainer} from {@code dasniko/testcontainers-keycloak}
+ *       instead of {@code GenericContainer};
  *   <li>Use {@link Keycloak} from {@code org.keycloak:keycloak-admin-client} instead of RestAssured
  *       to interact with the Keycloak server;
  *   <li>Token exchange is enabled;

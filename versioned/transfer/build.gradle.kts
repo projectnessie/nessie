@@ -53,6 +53,7 @@ dependencies {
   testFixturesImplementation(platform(libs.jackson.bom))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind")
   testFixturesImplementation(libs.guava)
+  testFixturesImplementation(libs.logback.classic)
   testFixturesApi(libs.jakarta.annotation.api)
   testFixturesApi(project(":nessie-client"))
   testFixturesApi(project(":nessie-server-store"))

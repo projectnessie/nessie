@@ -189,7 +189,7 @@ class RocksDBPersist implements Persist {
 
       checkReference(reference, db, cf, key, false);
 
-      Reference asDeleted = reference(reference.name(), reference.pointer(), true);
+      Reference asDeleted = reference.withDeleted(true);
       db.put(cf, key, serializeReference(asDeleted));
       return asDeleted;
     } catch (RocksDBException e) {
@@ -200,7 +200,7 @@ class RocksDBPersist implements Persist {
   }
 
   private static void checkReference(
-      Reference reference,
+      Reference expected,
       TransactionDB db,
       ColumnFamilyHandle cf,
       byte[] key,
@@ -208,11 +208,11 @@ class RocksDBPersist implements Persist {
       throws RocksDBException, RefNotFoundException, RefConditionFailedException {
     byte[] existing = db.get(cf, key);
     if (existing == null) {
-      throw new RefNotFoundException(reference);
+      throw new RefNotFoundException(expected);
     }
 
     Reference ref = deserializeReference(existing);
-    if (ref.deleted() != expectDeleted || !ref.pointer().equals(reference.pointer())) {
+    if (ref.deleted() != expectDeleted || !ref.equals(expected)) {
       throw new RefConditionFailedException(ref);
     }
   }
@@ -227,7 +227,7 @@ class RocksDBPersist implements Persist {
       ColumnFamilyHandle cf = b.refs();
       byte[] key = dbKey(reference.name());
 
-      checkReference(reference, db, cf, key, true);
+      checkReference(reference.withDeleted(true), db, cf, key, true);
 
       db.delete(cf, key);
     } catch (RocksDBException e) {
@@ -253,7 +253,7 @@ class RocksDBPersist implements Persist {
 
       checkReference(reference, db, cf, key, false);
 
-      Reference updated = reference(reference.name(), newPointer, false);
+      Reference updated = reference.forNewPointer(newPointer);
 
       db.put(cf, key, serializeReference(updated));
       return updated;

@@ -190,8 +190,8 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(reference.name());
 
-      Reference expected = reference(reference.name(), reference.pointer(), false);
-      Reference deleted = reference(reference.name(), reference.pointer(), true);
+      Reference expected = reference.withDeleted(false);
+      Reference deleted = reference.withDeleted(true);
 
       casReferenceAndThrow(reference, key, expected, refsMutation(deleted));
       return deleted;
@@ -210,8 +210,8 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(reference.name());
 
-      Reference expected = reference(reference.name(), reference.pointer(), false);
-      Reference updated = reference(reference.name(), newPointer, false);
+      Reference expected = reference.withDeleted(false);
+      Reference updated = reference.forNewPointer(newPointer);
 
       casReferenceAndThrow(reference, key, expected, refsMutation(updated));
       return updated;
@@ -226,7 +226,7 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(reference.name());
 
-      Reference expected = reference(reference.name(), reference.pointer(), true);
+      Reference expected = reference.withDeleted(true);
 
       casReferenceAndThrow(reference, key, expected, Mutation.create().deleteRow());
     } catch (ApiException e) {

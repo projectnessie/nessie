@@ -170,6 +170,8 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  */
 final class ReferenceLogicImpl implements ReferenceLogic {
 
+  private static final String REF_REFS_ADVANCED = "ref-refs advanced";
+
   private final Persist persist;
 
   ReferenceLogicImpl(Persist persist) {
@@ -193,7 +195,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     }
     Reference[] refs = persist.fetchReferences(refsArray);
 
-    Supplier<StoreIndex<CommitOp>> refsIndexSupplier = createRefsIndexSupplier(refs[refRefsIndex]);
+    Supplier<SuppliedCommitIndex> refsIndexSupplier = createRefsIndexSupplier(refs[refRefsIndex]);
 
     List<Reference> r = new ArrayList<>(refCount);
     for (int i = 0; i < refCount; i++) {
@@ -226,14 +228,14 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             .map(StoreKey::key)
             .orElse(prefix);
 
-    StoreIndex<CommitOp> index = createRefsIndexSupplier().get();
+    SuppliedCommitIndex index = createRefsIndexSupplier().get();
 
     return new QueryIter(index, prefix, begin, referencesQuery.prefetch());
   }
 
   private final class QueryIter extends AbstractIterator<Reference>
       implements PagedResult<Reference, String> {
-    private final StoreIndex<CommitOp> index;
+    private final SuppliedCommitIndex index;
     private final Iterator<StoreIndexElement<CommitOp>> base;
     private final StoreKey prefix;
 
@@ -242,10 +244,10 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     private Iterator<Reference> referenceIterator = emptyIterator();
 
     private QueryIter(
-        StoreIndex<CommitOp> index, StoreKey prefix, StoreKey begin, boolean prefetch) {
+        SuppliedCommitIndex index, StoreKey prefix, StoreKey begin, boolean prefetch) {
       this.index = index;
       this.prefix = prefix;
-      this.base = index.iterator(begin, null, prefetch);
+      this.base = index.index().iterator(begin, null, prefetch);
       this.referencesBatch = new ArrayList<>(REFERENCES_BATCH_SIZE);
     }
 
@@ -356,11 +358,11 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     checkArgument(!isInternalReferenceName(name));
 
     Reference reference = persist.fetchReference(name);
-    Supplier<StoreIndex<CommitOp>> indexSupplier = null;
+    Supplier<SuppliedCommitIndex> indexSupplier = null;
     if (reference == null) {
       StoreKey nameKey = key(name);
       indexSupplier = createRefsIndexSupplier();
-      StoreIndexElement<CommitOp> index = indexSupplier.get().get(nameKey);
+      StoreIndexElement<CommitOp> index = indexSupplier.get().index().get(nameKey);
       if (index == null) {
         // not there --> okay
         throw new RefNotFoundException(reference(name, expectedPointer, false));
@@ -391,7 +393,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       persist.markReferenceAsDeleted(reference);
     }
 
-    commitDeleteReference(reference);
+    commitDeleteReference(reference, null);
 
     persist.purgeReference(reference);
 
@@ -421,12 +423,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @VisibleForTesting // needed to simulate recovery scenarios
   CommitReferenceResult commitCreateReference(String name, ObjId pointer)
       throws RetryTimeoutException {
+    long created = persist.config().currentTimeMicros();
+    Reference reference = reference(name, pointer, false);
     try {
       return commitRetry(
           persist,
           (p, retryState) -> {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
-            long created = p.config().currentTimeMicros();
             RefObj ref = ref(name, pointer, created);
             try {
               p.storeObj(ref);
@@ -455,7 +458,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
             commitReferenceChange(p, refRefs, c);
 
-            return new CommitReferenceResult(reference(name, pointer, false), ADDED_TO_INDEX);
+            return new CommitReferenceResult(reference, ADDED_TO_INDEX);
           });
     } catch (CommitConflictException e) {
       checkState(e.conflicts().size() == 1, "Unexpected amount of conflicts %s", e.conflicts());
@@ -463,8 +466,8 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       CommitConflict conflict = e.conflicts().get(0);
       checkState(conflict.conflictType() == KEY_EXISTS, "Unexpected conflict type %s", conflict);
 
-      Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
-      StoreIndexElement<CommitOp> el = indexSupplier.get().get(key(name));
+      Supplier<SuppliedCommitIndex> indexSupplier = createRefsIndexSupplier();
+      StoreIndexElement<CommitOp> el = indexSupplier.get().index().get(key(name));
       checkNotNull(el, "Key %s missing in index", name);
 
       Reference existing = persist.fetchReference(name);
@@ -489,19 +492,24 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       throw new RuntimeException(
           format(
               "An unexpected internal error happened while committing the creation of the reference '%s'",
-              reference(name, pointer, false)),
+              reference),
           e.getCause());
     }
   }
 
   @VisibleForTesting // needed to simulate recovery scenarios
   // Note: commitForReference is for testing, to test race conditions
-  void commitDeleteReference(Reference reference) throws RetryTimeoutException {
+  void commitDeleteReference(Reference reference, ObjId expectedRefRefsHead)
+      throws RetryTimeoutException {
     try {
       commitRetry(
           persist,
           (p, retryState) -> {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
+            if (expectedRefRefsHead != null && !refRefs.pointer().equals(expectedRefRefsHead)) {
+              throw new RuntimeException(REF_REFS_ADVANCED);
+            }
+
             CommitObj commit;
             try {
               commit = p.fetchTypedObj(refRefs.pointer(), COMMIT, CommitObj.class);
@@ -600,9 +608,11 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   private Reference maybeRecover(
       @Nonnull @jakarta.annotation.Nonnull String name,
       Reference ref,
-      @Nonnull @jakarta.annotation.Nonnull Supplier<StoreIndex<CommitOp>> refsIndexSupplier) {
+      @Nonnull @jakarta.annotation.Nonnull Supplier<SuppliedCommitIndex> refsIndexSupplier) {
     if (ref == null) {
-      StoreIndexElement<CommitOp> commitOp = refsIndexSupplier.get().get(key(name));
+      SuppliedCommitIndex suppliedIndex = refsIndexSupplier.get();
+
+      StoreIndexElement<CommitOp> commitOp = suppliedIndex.index().get(key(name));
 
       if (commitOp == null) {
         // Reference not in index - nothing to do.
@@ -626,6 +636,10 @@ final class ReferenceLogicImpl implements ReferenceLogic {
         }
         ref = reference(name, initialRef.initialPointer(), false);
         try {
+          if (refRefsOutOfDate(suppliedIndex)) {
+            return null;
+          }
+
           ref = persist.addReference(ref);
         } catch (RefAlreadyExistsException e) {
           ref = e.reference();
@@ -637,7 +651,9 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       }
 
     } else if (ref.deleted()) {
-      StoreIndexElement<CommitOp> commitOp = refsIndexSupplier.get().get(key(name));
+      SuppliedCommitIndex suppliedIndex = refsIndexSupplier.get();
+
+      StoreIndexElement<CommitOp> commitOp = suppliedIndex.index().get(key(name));
 
       if (commitOp == null) {
         throw new RuntimeException("Loaded Reference is marked as deleted, but not found in index");
@@ -646,7 +662,11 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       CommitOp commitOpContent = commitOp.content();
       if (commitOpContent.action().exists()) {
         try {
-          commitDeleteReference(ref);
+          if (refRefsOutOfDate(suppliedIndex)) {
+            return ref;
+          }
+
+          commitDeleteReference(ref, suppliedIndex.pointer());
           persist.purgeReference(ref);
         } catch (RefNotFoundException e) {
           // ignore
@@ -669,8 +689,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     return ref;
   }
 
+  private boolean refRefsOutOfDate(SuppliedCommitIndex index) {
+    Reference refRefs = persist.fetchReference(REF_REFS.name());
+    return !index.pointer().equals(requireNonNull(refRefs).pointer());
+  }
+
   @VisibleForTesting
-  Supplier<StoreIndex<CommitOp>> createRefsIndexSupplier() {
+  Supplier<SuppliedCommitIndex> createRefsIndexSupplier() {
     return indexesLogic(persist)
         .createIndexSupplier(
             () -> {
@@ -680,7 +705,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   }
 
   @VisibleForTesting
-  Supplier<StoreIndex<CommitOp>> createRefsIndexSupplier(Reference refRefs) {
+  Supplier<SuppliedCommitIndex> createRefsIndexSupplier(Reference refRefs) {
     return indexesLogic(persist)
         .createIndexSupplier(() -> refRefs != null ? refRefs.pointer() : EMPTY_OBJ_ID);
   }
