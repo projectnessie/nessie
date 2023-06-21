@@ -28,7 +28,6 @@ import static org.projectnessie.restcatalog.server.resources.NessieDockerTestRes
 import static org.projectnessie.restcatalog.server.resources.NessieDockerTestResourceLifecycleManager.NESSIE_DOCKER_NETWORK_ID;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.net.URI;
 import java.util.List;
@@ -119,15 +118,20 @@ public abstract class BaseNessieRestCatalogTests extends CatalogTests<RESTCatalo
       catalog.setConf(new Configuration());
       catalog.initialize(
           "nessie-iceberg-rest",
-          ImmutableMap.of(
+          Map.of(
+              // REST Catalog server URI
               CatalogProperties.URI,
               restCatalogServerUri(),
+              // FileIO
               CatalogProperties.FILE_IO_IMPL,
               "org.apache.iceberg.io.ResolvingFileIO",
+              // Credentials
               OAuth2Properties.CREDENTIAL,
               oidcClientId + ":" + oidcClientSecret,
+              // OAUth2 Scope
               OAuth2Properties.SCOPE,
               "profile",
+              // Prefix (branch)
               "prefix",
               requireNonNull(controlClient.getConfig().getDefaultBranch())));
       return catalog;
