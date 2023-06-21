@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 final class BigTableBackend implements Backend {
   private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackend.class);
+  static final ByteString REPO_REGEX_SUFFIX = copyFromUtf8("\\C*");
 
   private final BigtableDataClient dataClient;
   private final BigtableTableAdminClient tableAdminClient;
@@ -174,9 +175,8 @@ final class BigTableBackend implements Backend {
     BulkMutation bulkDelete = BulkMutation.create(tableId);
 
     Filters.InterleaveFilter repoFilter = FILTERS.interleave();
-    ByteString regexSuffix = copyFromUtf8("\\C*");
     for (ByteString prefix : prefixes) {
-      repoFilter.filter(FILTERS.key().regex(prefix.concat(regexSuffix)));
+      repoFilter.filter(FILTERS.key().regex(prefix.concat(REPO_REGEX_SUFFIX)));
     }
 
     Query.QueryPaginator paginator = Query.create(tableId).filter(repoFilter).createPaginator(100);

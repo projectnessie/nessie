@@ -21,6 +21,7 @@ import static com.google.protobuf.ByteString.copyFromUtf8;
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.projectnessie.versioned.storage.bigtable.BigTableBackend.REPO_REGEX_SUFFIX;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CELL_TIMESTAMP;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
@@ -33,7 +34,6 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.REA
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_REFS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
@@ -567,9 +567,7 @@ public class BigTablePersist implements Persist {
       Query q = Query.create(TABLE_OBJS).prefix(keyPrefix);
 
       Filters.ChainFilter filterChain =
-          FILTERS
-              .chain()
-              .filter(FILTERS.key().regex(copyFromUtf8(config.repositoryId() + ":\\C*")));
+          FILTERS.chain().filter(FILTERS.key().regex(keyPrefix.concat(REPO_REGEX_SUFFIX)));
 
       // TODO the following filter does not really work as expected, can implement it later though.
       //
