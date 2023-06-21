@@ -117,24 +117,13 @@ public abstract class BaseNessieRestCatalogTests extends CatalogTests<RESTCatalo
     try (NessieApiV2 controlClient = buildControlClient()) {
       RESTCatalog catalog = new RESTCatalog();
       catalog.setConf(new Configuration());
-      catalog.initialize(
-          "nessie-iceberg-rest",
-          Map.of(
-              // REST Catalog server URI
-              CatalogProperties.URI,
-              restCatalogServerUri(),
-              // FileIO
-              CatalogProperties.FILE_IO_IMPL,
-              "org.apache.iceberg.io.ResolvingFileIO",
-              // Credentials
-              OAuth2Properties.CREDENTIAL,
-              oidcClientId + ":" + oidcClientSecret,
-              // OAUth2 Scope
-              OAuth2Properties.SCOPE,
-              "profile",
-              // Prefix (branch)
-              "prefix",
-              requireNonNull(controlClient.getConfig().getDefaultBranch())));
+      Map<String, String> props = new HashMap<>();
+      props.put(CatalogProperties.URI, restCatalogServerUri());
+      props.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
+      props.put(OAuth2Properties.CREDENTIAL, oidcClientId + ":" + oidcClientSecret);
+      props.put(OAuth2Properties.SCOPE, "profile");
+      props.put("prefix", requireNonNull(controlClient.getConfig().getDefaultBranch()));
+      catalog.initialize("nessie-iceberg-rest", props);
       return catalog;
     }
   }
@@ -148,23 +137,12 @@ public abstract class BaseNessieRestCatalogTests extends CatalogTests<RESTCatalo
   }
 
   private NessieApiV2 buildControlClient() {
-    Map<String, String> config =
-        Map.of(
-            // Nessie URI
-            CONF_NESSIE_URI,
-            nessieUri.toString(),
-            // Authentication type: OAUTH2
-            CONF_NESSIE_AUTH_TYPE,
-            OAuth2AuthenticationProvider.AUTH_TYPE_VALUE,
-            // OAUTH2 token endpoint URI
-            CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
-            oidcTokenEndpointUri.toString(),
-            // OAUTH2 client ID
-            CONF_NESSIE_OAUTH2_CLIENT_ID,
-            oidcClientId,
-            // OAUTH2 client secret
-            CONF_NESSIE_OAUTH2_CLIENT_SECRET,
-            oidcClientSecret);
+    Map<String, String> config = new HashMap<>();
+    config.put(CONF_NESSIE_URI, nessieUri.toString());
+    config.put(CONF_NESSIE_AUTH_TYPE, OAuth2AuthenticationProvider.AUTH_TYPE_VALUE);
+    config.put(CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, oidcTokenEndpointUri.toString());
+    config.put(CONF_NESSIE_OAUTH2_CLIENT_ID, oidcClientId);
+    config.put(CONF_NESSIE_OAUTH2_CLIENT_SECRET, oidcClientSecret);
     return HttpClientBuilder.builder().fromConfig(config::get).build(NessieApiV2.class);
   }
 
