@@ -565,6 +565,12 @@ public class BigTablePersist implements Persist {
       this.filter = filter;
 
       Query q = Query.create(TABLE_OBJS).prefix(keyPrefix);
+
+      Filters.ChainFilter filterChain =
+          FILTERS
+              .chain()
+              .filter(FILTERS.key().regex(copyFromUtf8(config.repositoryId() + ":\\C*")));
+
       // TODO the following filter does not really work as expected, can implement it later though.
       //
       // Filters.InterleaveFilter typeFilter = FILTERS.interleave();
@@ -586,7 +592,7 @@ public class BigTablePersist implements Persist {
       //          .filter(typeFilter));
       // }
 
-      this.paginator = q.createPaginator(100);
+      this.paginator = q.filter(filterChain).createPaginator(100);
       this.iter = backend.client().readRows(paginator.getNextQuery()).iterator();
     }
 

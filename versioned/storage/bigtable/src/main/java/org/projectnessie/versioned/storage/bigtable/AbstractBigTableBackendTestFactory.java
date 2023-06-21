@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
+import static org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory.configureDataClient;
+
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
@@ -37,14 +39,15 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
   @VisibleForTesting
   BigtableDataClient buildNewDataClient() {
     try {
-      BigtableDataSettings settings =
+      BigtableDataSettings.Builder settings =
           BigtableDataSettings.newBuilderForEmulator(getEmulatorHost(), getEmulatorPort())
               .setProjectId(projectId)
               .setInstanceId(instanceId)
-              .setCredentialsProvider(NoCredentialsProvider.create())
-              .build();
+              .setCredentialsProvider(NoCredentialsProvider.create());
 
-      return BigtableDataClient.create(settings);
+      configureDataClient(settings);
+
+      return BigtableDataClient.create(settings.build());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

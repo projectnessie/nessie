@@ -30,6 +30,7 @@ import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.models.CreateTableRequest;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
+import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Mutation;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
@@ -172,7 +173,13 @@ final class BigTableBackend implements Backend {
   private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {
     BulkMutation bulkDelete = BulkMutation.create(tableId);
 
-    Query.QueryPaginator paginator = Query.create(tableId).createPaginator(100);
+    Filters.InterleaveFilter repoFilter = FILTERS.interleave();
+    ByteString regexSuffix = copyFromUtf8("\\C*");
+    for (ByteString prefix : prefixes) {
+      repoFilter.filter(FILTERS.key().regex(prefix.concat(regexSuffix)));
+    }
+
+    Query.QueryPaginator paginator = Query.create(tableId).filter(repoFilter).createPaginator(100);
     Iterator<Row> rows = dataClient.readRows(nextQuery(paginator)).iterator();
     while (true) {
       ByteString lastKey = null;
