@@ -145,14 +145,19 @@ public abstract class BaseNessieRestCatalogTests extends CatalogTests<RESTCatalo
   private NessieApiV2 buildControlClient() {
     Map<String, String> config =
         Map.of(
+            // Nessie URI
             CONF_NESSIE_URI,
             nessieUri.toString(),
+            // Authentication type: OAUTH2
             CONF_NESSIE_AUTH_TYPE,
             OAuth2AuthenticationProvider.AUTH_TYPE_VALUE,
+            // OAUTH2 token endpoint URI
             CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
             oidcTokenEndpointUri.toString(),
+            // OAUTH2 client ID
             CONF_NESSIE_OAUTH2_CLIENT_ID,
             oidcClientId,
+            // OAUTH2 client secret
             CONF_NESSIE_OAUTH2_CLIENT_SECRET,
             oidcClientSecret);
     return HttpClientBuilder.builder().fromConfig(config::get).build(NessieApiV2.class);
