@@ -200,7 +200,7 @@ class RocksDBPersist implements Persist {
   }
 
   private static void checkReference(
-      Reference reference,
+      Reference expected,
       TransactionDB db,
       ColumnFamilyHandle cf,
       byte[] key,
@@ -208,11 +208,11 @@ class RocksDBPersist implements Persist {
       throws RocksDBException, RefNotFoundException, RefConditionFailedException {
     byte[] existing = db.get(cf, key);
     if (existing == null) {
-      throw new RefNotFoundException(reference);
+      throw new RefNotFoundException(expected);
     }
 
     Reference ref = deserializeReference(existing);
-    if (ref.deleted() != expectDeleted || !ref.pointer().equals(reference.pointer())) {
+    if (ref.deleted() != expectDeleted || !ref.equals(expected)) {
       throw new RefConditionFailedException(ref);
     }
   }
