@@ -93,7 +93,7 @@ dependencies {
   testFixturesApi("io.quarkus:quarkus-junit5")
   testFixturesApi("io.quarkus:quarkus-jacoco")
 
-  testFixturesApi(project(":nessie-quarkus-tests"))
+  testFixturesApi(nessieProject(":nessie-quarkus-tests"))
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 
