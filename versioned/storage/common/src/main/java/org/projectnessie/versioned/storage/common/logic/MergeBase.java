@@ -105,6 +105,13 @@ public abstract class MergeBase {
 
     List<ShallowCommit> reachableCommits = flagReachableCommits(commitA, commitB);
 
+    int numReachable = reachableCommits.size();
+    if (numReachable < 2) {
+      // Short-cut, if there is only one reachable commit that is already the result for both
+      // commits. Also if there are no reachable commits at all.
+      return reachableCommits;
+    }
+
     clearFlags(newArrayList(commitA, commitB), ALL_FLAGS);
 
     return removeRedundant(reachableCommits);
@@ -147,10 +154,6 @@ public abstract class MergeBase {
 
   private List<ShallowCommit> removeRedundant(List<ShallowCommit> reachableCommits) {
     // Note: all commits in 'reachableCommits' have the RESULT flag set.
-
-    if (reachableCommits.isEmpty()) {
-      return reachableCommits;
-    }
 
     // Sort the given commits by 'seq'. This allows us to increase the 'min seq' limit when we
     // discover the commit with the lowest 'seq' that is CANDIDATE.
