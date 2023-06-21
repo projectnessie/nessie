@@ -327,13 +327,16 @@ public class KeycloakTestResourceLifecycleManager
   @Override
   public void stop() {
     try {
-      Keycloak adminClient = keycloakAdminClient;
-      if (adminClient != null) {
-        RealmResource realm = adminClient.realm(realmName);
-        realm.remove();
+      try {
+        Keycloak adminClient = keycloakAdminClient;
+        if (adminClient != null) {
+          RealmResource realm = adminClient.realm(realmName);
+          realm.remove();
+        }
+      } finally {
+        keycloak.stop();
       }
     } finally {
-      keycloak.stop();
       keycloak = null;
       keycloakAdminClient = null;
     }
