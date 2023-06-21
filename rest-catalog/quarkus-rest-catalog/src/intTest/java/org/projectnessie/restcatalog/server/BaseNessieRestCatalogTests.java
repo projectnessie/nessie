@@ -30,6 +30,7 @@ import static org.projectnessie.restcatalog.server.resources.NessieDockerTestRes
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -168,6 +169,11 @@ public abstract class BaseNessieRestCatalogTests extends CatalogTests<RESTCatalo
   }
 
   static class Profile implements QuarkusTestProfile {
+
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return Map.of("quarkus.http.test-port", "0");
+    }
 
     @Override
     public List<TestResourceEntry> testResources() {
