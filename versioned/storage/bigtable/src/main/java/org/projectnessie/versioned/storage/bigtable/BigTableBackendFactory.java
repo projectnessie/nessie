@@ -17,10 +17,16 @@ package org.projectnessie.versioned.storage.bigtable;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
+import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
+import java.util.List;
 import javax.annotation.Nonnull;
+import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
+import org.threeten.bp.Duration;
 
 public class BigTableBackendFactory implements BackendFactory<BigTableBackendConfig> {
 
@@ -43,10 +49,30 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public BigTableBackend buildBackend(
-      @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config) {
+  public Backend buildBackend(@Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config) {
     BigtableDataClient dataClient = requireNonNull(config.dataClient());
     BigtableTableAdminClient tableAdminClient = config.tableAdminClient();
     return new BigTableBackend(dataClient, tableAdminClient, false);
+  }
+
+  public static void configureDataClient(BigtableDataSettings.Builder settings) {
+    Duration maxRetryDelay = Duration.ofSeconds(1);
+
+    EnhancedBigtableStubSettings.Builder stubSettings = settings.stubSettings();
+    for (RetrySettings.Builder retrySettings :
+        List.of(
+            stubSettings.readRowSettings().retrySettings(),
+            stubSettings.readRowsSettings().retrySettings(),
+            stubSettings.bulkReadRowsSettings().retrySettings(),
+            stubSettings.mutateRowSettings().retrySettings(),
+            stubSettings.bulkMutateRowsSettings().retrySettings(),
+            stubSettings.readChangeStreamSettings().retrySettings())) {
+      // The max-retry-delay is 1 minute, which is pretty high for us.
+      retrySettings.setMaxRetryDelay(maxRetryDelay);
+    }
+
+    // Enable tracing & metrics
+    BigtableDataSettings.enableOpenCensusStats();
+    BigtableDataSettings.enableGfeOpenCensusStats();
   }
 }
