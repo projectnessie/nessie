@@ -72,6 +72,10 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
         .flatMap(f -> Arrays.stream(PostActions.values()).map(p -> arguments(f, p)));
   }
 
+  public TestReferenceLogicImpl() {
+    super(TestReferenceLogicImpl.class);
+  }
+
   @ParameterizedTest
   @MethodSource("createRecoverScenarios")
   public void createRecoverScenarios(CreateFailures createFailure, PostActions postCreateAction)
