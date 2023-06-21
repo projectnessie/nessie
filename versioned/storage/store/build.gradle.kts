@@ -55,6 +55,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.logback.classic)
 
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")

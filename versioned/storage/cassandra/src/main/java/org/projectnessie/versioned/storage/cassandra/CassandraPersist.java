@@ -210,7 +210,7 @@ public class CassandraPersist implements Persist {
         reference.name(),
         serializeObjId(reference.pointer()),
         false)) {
-      return reference(reference.name(), reference.pointer(), true);
+      return reference.withDeleted(true);
     }
 
     Reference ref = fetchReference(reference.name());
@@ -258,7 +258,7 @@ public class CassandraPersist implements Persist {
       throw new RefConditionFailedException(ref);
     }
 
-    return reference(reference.name(), newPointer, false);
+    return reference.forNewPointer(newPointer);
   }
 
   @SuppressWarnings("unused")

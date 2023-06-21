@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.referenceL
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromBytes;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +35,6 @@ import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
@@ -77,7 +77,7 @@ final class ImportPersistV2 extends ImportPersistCommon {
             }
 
             try {
-              refLogic.createReference(ref.getName(), ObjId.objIdFromBytes(ref.getPointer()));
+              refLogic.createReference(ref.getName(), objIdFromBytes(ref.getPointer()));
             } catch (RefAlreadyExistsException | RetryTimeoutException e) {
               throw new RuntimeException(e);
             }
@@ -102,16 +102,14 @@ final class ImportPersistV2 extends ImportPersistCommon {
 
     CommitObj.Builder c =
         commitBuilder()
-            .id(ObjId.objIdFromBytes(commit.getCommitId()))
-            .addTail(ObjId.objIdFromBytes(commit.getParentCommitId()))
+            .id(objIdFromBytes(commit.getCommitId()))
+            .addTail(objIdFromBytes(commit.getParentCommitId()))
             .created(commit.getCreatedTimeMicros())
             .seq(commit.getCommitSequence())
             .message(commit.getMessage())
             .headers(headers.build())
             .incompleteIndex(true);
-    commit
-        .getAdditionalParentsList()
-        .forEach(ap -> c.addSecondaryParents(ObjId.objIdFromBytes(ap)));
+    commit.getAdditionalParentsList().forEach(ap -> c.addSecondaryParents(objIdFromBytes(ap)));
     StoreIndex<CommitOp> index = newStoreIndex(CommitOp.COMMIT_OP_SERIALIZER);
     commit
         .getOperationsList()

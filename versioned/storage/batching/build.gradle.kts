@@ -46,4 +46,5 @@ dependencies {
   testImplementation(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.logback.classic)
 }

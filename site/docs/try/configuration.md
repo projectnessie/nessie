@@ -35,6 +35,21 @@ docker run \
 | `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                                                                                                                                                                                             |
 | `nessie.version.store.events.enable`  | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                              |
 
+### Support for the database specific implementations
+
+| Database         | Status                                  | Configuration value for `nessie.version.store.type`     | Notes                                                                                                                                                                                                                           |
+|------------------|-----------------------------------------|---------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| "in memory"      | only for development and local testing  | `IN_MEMORY`                                             | Do not use for any serious use case.                                                                                                                                                                                            |
+| RocksDB          | production, single node only            | `ROCKSDB`                                               |                                                                                                                                                                                                                                 |
+| Google BigTable  | production                              | `BIGTABLE`                                              |                                                                                                                                                                                                                                 |
+| MongoDB          | production                              | `MONGODB`                                               |                                                                                                                                                                                                                                 |
+| Amazon DynamoDB  | beta, only tested against the simulator | `DYNAMODB`                                              |                                                                                                                                                                                                                                 |
+| PostgreSQL       | production                              | `JDBC`                                                  |                                                                                                                                                                                                                                 |
+| CockroachDB      | experimental, known issues              | `JDBC`                                                  | Known to raise user-facing "write too old" errors under contention.                                                                                                                                                             |
+| Apache Cassandra | experimental, known issues              | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                     |
+| ScyllaDB         | experimental, known issues              | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. |
+| (all legacy)     | out of support                          | `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` | no longer supported, migrate to one of the above.                                                                                                                                                                               |
+
 #### BigTable Version Store Settings
 
 When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
@@ -113,6 +128,10 @@ When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the ve
 
 !!! info
 A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client)
+
+#### In-Memory Version Store Settings
+
+No special configuration options for this store type.
 
 ### Version Store Advanced Settings
 

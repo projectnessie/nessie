@@ -52,6 +52,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
+import org.projectnessie.versioned.storage.common.logic.SuppliedCommitIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -75,6 +76,7 @@ public class AbstractIndexesLogicTests {
         .doesNotThrowAnyException();
     soft.assertThat(indexesLogic.createIndexSupplier(() -> EMPTY_OBJ_ID))
         .extracting(Supplier::get)
+        .extracting(SuppliedCommitIndex::index)
         .extracting(StoreIndex::elementCount)
         .isEqualTo(0);
   }
@@ -177,8 +179,8 @@ public class AbstractIndexesLogicTests {
     soft.assertThat(persist.fetchObj(commit.id())).isEqualTo(commit);
 
     soft.assertThat(indexesLogic.createIndexSupplier(commit::id).get())
-        .isEqualTo(index)
-        .containsExactly(remove, incrementalAdd, add, incrementalRemove);
+        .extracting(SuppliedCommitIndex::index)
+        .isEqualTo(index);
   }
 
   @Test

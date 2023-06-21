@@ -43,6 +43,12 @@ public interface Reference {
   @Value.Parameter(order = 4)
   boolean deleted();
 
+  default Reference forNewPointer(ObjId newPointer) {
+    return ImmutableReference.builder().from(this).deleted(false).pointer(newPointer).build();
+  }
+
+  Reference withDeleted(boolean deleted);
+
   static Reference reference(String name, ObjId pointer, boolean deleted) {
     return ImmutableReference.of(name, pointer, deleted);
   }
