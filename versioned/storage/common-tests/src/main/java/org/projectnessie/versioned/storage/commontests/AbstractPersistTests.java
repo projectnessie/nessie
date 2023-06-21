@@ -15,10 +15,19 @@
  */
 package org.projectnessie.versioned.storage.commontests;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.TestInfo;
 
 /** Groups base and logic tests. */
 public abstract class AbstractPersistTests {
+  private static Class<?> surroundingTestClass;
+
+  @BeforeAll
+  static void gatherTestClass(TestInfo testInfo) {
+    surroundingTestClass = testInfo.getTestClass().orElseThrow();
+  }
+
   @Nested
   public class BaseTests extends AbstractBasePersistTests {}
 
@@ -29,7 +38,11 @@ public abstract class AbstractPersistTests {
   public class IndexesLogicTests extends AbstractIndexesLogicTests {}
 
   @Nested
-  public class ReferencesLogicTests extends AbstractReferenceLogicTests {}
+  public class ReferencesLogicTests extends AbstractReferenceLogicTests {
+    ReferencesLogicTests() {
+      super(surroundingTestClass);
+    }
+  }
 
   @Nested
   public class RepositoryLogicTests extends AbstractRepositoryLogicTests {}
