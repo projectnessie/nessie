@@ -110,6 +110,7 @@ import javax.annotation.Nonnull;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -252,14 +253,7 @@ public class MongoDBPersist implements Persist {
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(false);
     UpdateResult result =
-        backend
-            .refs()
-            .updateOne(
-                and(
-                    eq(ID_PROPERTY_NAME, idRefDoc(reference)),
-                    eq(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer())),
-                    eq(COL_REFERENCES_DELETED, false)),
-                set(COL_REFERENCES_DELETED, true));
+        backend.refs().updateOne(referenceCondition(reference), set(COL_REFERENCES_DELETED, true));
     if (result.getModifiedCount() != 1) {
       Reference ex = fetchReference(reference.name());
       if (ex == null) {
@@ -269,6 +263,15 @@ public class MongoDBPersist implements Persist {
     }
 
     return reference.withDeleted(true);
+  }
+
+  private Bson referenceCondition(Reference reference) {
+    List<Bson> filters = new ArrayList<>(5);
+    filters.add(eq(ID_PROPERTY_NAME, idRefDoc(reference)));
+    filters.add(eq(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer())));
+    filters.add(eq(COL_REFERENCES_DELETED, reference.deleted()));
+
+    return and(filters);
   }
 
   @Nonnull
@@ -284,10 +287,7 @@ public class MongoDBPersist implements Persist {
         backend
             .refs()
             .updateOne(
-                and(
-                    eq(ID_PROPERTY_NAME, idRefDoc(reference)),
-                    eq(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer())),
-                    eq(COL_REFERENCES_DELETED, false)),
+                referenceCondition(reference),
                 set(COL_REFERENCES_POINTER, objIdToBinary(newPointer)));
     if (result.getModifiedCount() != 1) {
       if (result.getMatchedCount() == 1) {
@@ -309,14 +309,7 @@ public class MongoDBPersist implements Persist {
   public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
-    DeleteResult result =
-        backend
-            .refs()
-            .deleteOne(
-                and(
-                    eq(ID_PROPERTY_NAME, idRefDoc(reference)),
-                    eq(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer())),
-                    eq(COL_REFERENCES_DELETED, true)));
+    DeleteResult result = backend.refs().deleteOne(referenceCondition(reference));
     if (result.getDeletedCount() != 1) {
       Reference ex = fetchReference(reference.name());
       if (ex == null) {
