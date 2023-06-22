@@ -53,6 +53,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
@@ -1564,6 +1566,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
+  @DisabledOnOs(OS.WINDOWS) // time resolution issues
   public void relativeCommitLocations() throws BaseNessieClientServerException {
     Branch main = api().getDefaultBranch();
 
