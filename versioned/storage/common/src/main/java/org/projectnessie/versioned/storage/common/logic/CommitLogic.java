@@ -198,7 +198,7 @@ public interface CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull ObjId otherId)
       throws NoSuchElementException;
 
-  /** Retrieves the {@link CommitOp commit object} referenced by {@code commitId}. */
+  /** Retrieves the {@link CommitObj commit object} referenced by {@code commitId}. */
   @Nullable
   @jakarta.annotation.Nullable
   CommitObj fetchCommit(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)
