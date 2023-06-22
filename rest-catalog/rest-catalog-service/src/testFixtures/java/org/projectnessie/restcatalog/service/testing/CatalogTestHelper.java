@@ -49,6 +49,7 @@ import org.projectnessie.restcatalog.service.auth.OAuthHandler;
 import org.projectnessie.restcatalog.service.resources.IcebergV1ApiResource;
 import org.projectnessie.restcatalog.service.resources.IcebergV1ConfigResource;
 import org.projectnessie.restcatalog.service.resources.IcebergV1OAuthResource;
+import org.projectnessie.restcatalog.service.resources.NessieProxyResource;
 
 public class CatalogTestHelper implements AutoCloseable {
 
@@ -83,7 +84,8 @@ public class CatalogTestHelper implements AutoCloseable {
         req -> OAuthTokenResponse.builder().withToken("tok").withTokenType("bearer").build();
 
     weld = new Weld();
-    weld.addExtension(new WeldTestingExtension(oauthHandler, api, defaultBranch, defaultWarehouse));
+    weld.addExtension(
+        new WeldTestingExtension(oauthHandler, api, nessieApiUri, defaultBranch, defaultWarehouse));
     weld.addPackages(true, DummyTenantSpecific.class);
     weld.addPackages(true, IcebergV1ApiResource.class);
     weld.addPackages(true, JavaxExceptionMapper.class);
@@ -104,8 +106,11 @@ public class CatalogTestHelper implements AutoCloseable {
             config.register(JavaxExceptionMapper.class);
 
             config.register(IcebergV1ConfigResource.class);
-            config.register(IcebergV1OAuthResource.class);
             config.register(IcebergV1ApiResource.class);
+            config.register(IcebergV1OAuthResource.class);
+            config.register(OAuthTokenRequestReader.class);
+
+            config.register(NessieProxyResource.class);
 
             // Use a dynamically allocated port, not a static default (80/443) or statically
             // configured port.
@@ -147,6 +152,14 @@ public class CatalogTestHelper implements AutoCloseable {
 
   public URI icebergRestUri() {
     return uri().resolve("iceberg/");
+  }
+
+  public URI nessieCoreRestUri() {
+    return uri().resolve("api/");
+  }
+
+  public URI nessieCatalogRestUri() {
+    return uri().resolve("nessie-catalog/");
   }
 
   public RESTCatalog createCatalog() {

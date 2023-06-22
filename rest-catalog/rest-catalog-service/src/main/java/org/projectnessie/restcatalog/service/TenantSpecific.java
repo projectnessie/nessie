@@ -15,6 +15,7 @@
  */
 package org.projectnessie.restcatalog.service;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
@@ -41,6 +42,8 @@ public interface TenantSpecific {
   Warehouse getWarehouse(String warehouse);
 
   NessieApiV2 api();
+
+  URI nessieApiBaseUri();
 
   String commitAuthor();
 

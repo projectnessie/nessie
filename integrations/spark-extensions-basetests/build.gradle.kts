@@ -33,6 +33,7 @@ dependencies {
   implementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
+  implementation(nessieProject("nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}"))
 
   implementation(nessieClientForIceberg())
 

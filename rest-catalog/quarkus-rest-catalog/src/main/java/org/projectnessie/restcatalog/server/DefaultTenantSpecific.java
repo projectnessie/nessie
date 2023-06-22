@@ -15,6 +15,7 @@
  */
 package org.projectnessie.restcatalog.server;
 
+import java.net.URI;
 import javax.enterprise.inject.Vetoed;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
@@ -32,6 +33,7 @@ public class DefaultTenantSpecific implements TenantSpecific {
   private final NessieApiV2 api;
   private final String commitAuthor;
   private final Warehouse defaultWarehouse;
+  private final URI nessieApiBaseUri;
 
   public DefaultTenantSpecific(
       OAuthHandler oauthHandler,
@@ -39,12 +41,14 @@ public class DefaultTenantSpecific implements TenantSpecific {
       ParsedReference defaultBranch,
       Warehouse defaultWarehouse,
       NessieApiV2 api,
+      URI nessieApiBaseUri,
       String commitAuthor) {
     this.oauthHandler = oauthHandler;
     this.metadataIO = metadataIO;
     this.defaultBranch = defaultBranch;
     this.defaultWarehouse = defaultWarehouse;
     this.api = api;
+    this.nessieApiBaseUri = nessieApiBaseUri;
     this.commitAuthor = commitAuthor;
   }
 
@@ -79,6 +83,11 @@ public class DefaultTenantSpecific implements TenantSpecific {
   @Override
   public NessieApiV2 api() {
     return api;
+  }
+
+  @Override
+  public URI nessieApiBaseUri() {
+    return nessieApiBaseUri;
   }
 
   @Override

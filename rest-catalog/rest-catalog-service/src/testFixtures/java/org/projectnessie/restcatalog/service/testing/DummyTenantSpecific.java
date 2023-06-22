@@ -15,6 +15,7 @@
  */
 package org.projectnessie.restcatalog.service.testing;
 
+import java.net.URI;
 import javax.enterprise.inject.Vetoed;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
@@ -31,6 +32,7 @@ public class DummyTenantSpecific implements TenantSpecific {
       "Nessie Prototype Factory <nessie-prototype-factory@projectnessie.org>";
 
   private final NessieApiV2 api;
+  private final URI nessieApiBaseUri;
   private final MetadataIO metadataIO;
   private final ParsedReference defaultBranch;
   private final Warehouse defaultWarehouse;
@@ -44,11 +46,13 @@ public class DummyTenantSpecific implements TenantSpecific {
   public DummyTenantSpecific(
       OAuthHandler oauthHandler,
       NessieApiV2 api,
+      URI nessieApiBaseUri,
       ParsedReference defaultBranch,
       Warehouse defaultWarehouse,
       MetadataIO metadataIO) {
     this.oauthHandler = oauthHandler;
     this.api = api;
+    this.nessieApiBaseUri = nessieApiBaseUri;
     this.defaultBranch = defaultBranch;
     this.defaultWarehouse = defaultWarehouse;
     this.metadataIO = metadataIO;
@@ -85,6 +89,11 @@ public class DummyTenantSpecific implements TenantSpecific {
   @Override
   public NessieApiV2 api() {
     return api;
+  }
+
+  @Override
+  public URI nessieApiBaseUri() {
+    return nessieApiBaseUri;
   }
 
   @Override

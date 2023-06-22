@@ -18,6 +18,7 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.projectnessie.client.NessieConfigConstants
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.error.{
@@ -25,17 +26,11 @@ import org.projectnessie.error.{
   NessieReferenceNotFoundException
 }
 import org.projectnessie.model.Reference.ReferenceType
-import org.projectnessie.model.{
-  Branch,
-  ImmutableBranch,
-  ImmutableTag,
-  Reference,
-  Tag,
-  Validation
-}
+import org.projectnessie.model._
 
 import java.time.format.DateTimeParseException
 import java.time.{Instant, ZonedDateTime}
+import java.util.Collections
 import scala.collection.JavaConverters._
 
 object NessieUtils {
@@ -167,30 +162,102 @@ object NessieUtils {
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
   ): NessieApiV1 = {
-    val catalogName = catalog.getOrElse(currentCatalog.name)
-    val sparkConf = SparkSession.active.sparkContext.conf
-    val catalogConf = sparkConf
-      .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
-      .toMap
+    val maybeIcebergCatalog = getBaseIcebergCatalog(currentCatalog, catalog)
+    val errorPre =
+      "The command works only when the catalog is a NessieCatalog or a RESTCatalog using the Nessie Catalog Server"
+    val errorPost =
+      "Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>."
+    require(maybeIcebergCatalog.isDefined, errorPre + ". " + errorPost)
 
-    val catalogImpl = catalogConf.get("catalog-impl")
-    val catalogErrorDetail = catalogImpl match {
-      case Some(clazz) => s"but $catalogName is a $clazz"
-      case None =>
-        s"but spark.sql.catalog.$catalogName.catalog-impl is not set"
-    }
-    // Referring to https://github.com/apache/iceberg/blob/master/nessie/src/main/java/org/apache/iceberg/nessie/NessieCatalog.java
-    // Not using fully-qualified class name to provide protection from shading activities (if any)
-    require(
-      catalogImpl
-        .exists(impl => impl.endsWith(".NessieCatalog")),
-      s"The command works only when the catalog is a NessieCatalog ($catalogErrorDetail). Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>."
-    )
+    val icebergCatalog = maybeIcebergCatalog.get
+
+    val catalogName = catalog.getOrElse(currentCatalog.name)
+
+    val nessieClientConfigMapper: java.util.function.Function[String, String] =
+      icebergCatalog.getClass.getSimpleName match {
+        case "NessieCatalog" =>
+          val sparkConf = SparkSession.active.sparkContext.conf
+          val catalogConf = sparkConf
+            .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
+            .toMap
+          x => catalogConf.getOrElse(x.replace("nessie.", ""), null)
+        case "RESTCatalog" =>
+          val catalogProperties = getCatalogProperties(icebergCatalog)
+
+          require(
+            java.lang.Boolean
+              .parseBoolean(catalogProperties.get("nessie.is-nessie-catalog")),
+            errorPre + ", but the referenced REST endpoint is not a Nessie Catalog Server. " + errorPost
+          )
+          x => {
+            x match {
+              case NessieConfigConstants.CONF_NESSIE_URI =>
+                // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie Catalog
+                // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely assume
+                // that `nessie.core-base-uri` contains a `/` terminated URI.
+                catalogProperties.get("nessie.core-base-uri") + "v1"
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID =>
+                parseCredential(
+                  resolveViaEnvironment(catalogProperties, "credential")
+                )._1
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET =>
+                // See o.a.i.rest.auth.OAuth2Util.SCOPE
+                parseCredential(
+                  resolveViaEnvironment(catalogProperties, "credential")
+                )._2
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES =>
+                // Same default scope as the Iceberg REST Client uses in o.a.i.rest.RESTSessionCatalog.initialize
+                // See o.a.i.rest.auth.OAuth2Util.SCOPE
+                resolveViaEnvironment(catalogProperties, "scope", "catalog")
+              // TODO need the "token" (initial bearer token for OAuth2 as in o.a.i.rest.RESTSessionCatalog.initialize?
+              case _ =>
+                catalogProperties.get(x)
+            }
+          }
+        case _ =>
+          throw new IllegalArgumentException(
+            errorPre + ", " + s"but $catalogName is a ${icebergCatalog.getClass.getName}. " + errorPost
+          )
+      }
 
     HttpClientBuilder
       .builder()
-      .fromConfig(x => catalogConf.getOrElse(x.replace("nessie.", ""), null))
+      .fromConfig(nessieClientConfigMapper)
       .build(classOf[NessieApiV1])
+  }
+
+  /** Allow resolving a property via the environment.
+    */
+  private def resolveViaEnvironment(
+      properties: java.util.Map[String, String],
+      property: String,
+      defaultValue: String = null
+  ): String = {
+    val value = properties.get(property)
+    if (value == null) {
+      return defaultValue;
+    }
+    if (value.startsWith("env:")) {
+      val env = System.getenv(value.substring("env:".length))
+      if (env == null) {
+        return defaultValue
+      }
+      env
+    } else {
+      value
+    }
+  }
+
+  private def parseCredential(credential: String): (String, String) = {
+    if (credential == null) {
+      return Tuple2(null, null)
+    }
+    val colon = credential.indexOf(':')
+    if (colon == -1) {
+      Tuple2(null, credential)
+    } else {
+      Tuple2(credential.substring(0, colon), credential.substring(colon + 1))
+    }
   }
 
   /** @param currentCatalog
@@ -213,25 +280,146 @@ object NessieUtils {
     val catalogName = catalog.getOrElse(currentCatalog.name)
     val catalogImpl =
       SparkSession.active.sessionState.catalogManager.catalog(catalogName)
-    SparkSession.active.sparkContext.conf
-      .set(s"spark.sql.catalog.$catalogName.ref", ref.getName)
-    if (configureRefAtHash) {
-      // we only configure ref.hash if we're reading data
-      SparkSession.active.sparkContext.conf
-        .set(s"spark.sql.catalog.$catalogName.ref.hash", ref.getHash)
-    } else {
-      // we need to clear it in case it was previously set
-      SparkSession.active.sparkContext.conf
-        .remove(s"spark.sql.catalog.$catalogName.ref.hash")
+
+    val activeConf = SparkSession.active.sparkContext.conf
+
+    val icebergCatalog = getBaseIcebergCatalog(catalogImpl).get
+
+    val confPrefix = s"spark.sql.catalog.$catalogName"
+
+    icebergCatalog.getClass.getSimpleName match {
+      case "NessieCatalog" =>
+        activeConf.set(s"$confPrefix.ref", ref.getName)
+        if (configureRefAtHash) {
+          // we only configure ref.hash if we're reading data
+          activeConf.set(
+            s"$confPrefix.ref.hash",
+            ref.getHash
+          )
+        } else {
+          // we need to clear it in case it was previously set
+          activeConf.remove(s"$confPrefix.ref.hash")
+        }
+      case "RESTCatalog" =>
+        val icebergCatalogProperties = getCatalogProperties(icebergCatalog)
+        if (
+          "true".equals(
+            icebergCatalogProperties.get("nessie.is-nessie-catalog")
+          )
+        ) {
+          val nessiePrefixPattern =
+            icebergCatalogProperties.get("nessie.prefix-pattern")
+
+          val refAndWarehouse = refAndWarehouseFromPrefix(
+            icebergCatalogProperties.get("prefix")
+          )
+          val warehouseSuffix =
+            refAndWarehouse._2.map(w => s"|$w").getOrElse("")
+
+          if (configureRefAtHash) {
+            // we only configure ref.hash if we're reading data
+            activeConf.set(
+              s"$confPrefix.prefix",
+              s"${ref.getName}@${ref.getHash}$warehouseSuffix"
+            )
+          } else {
+            activeConf.set(
+              s"$confPrefix.prefix",
+              s"${ref.getName}$warehouseSuffix"
+            )
+          }
+        }
     }
-    val catalogConf = SparkSession.active.sparkContext.conf
-      .getAllWithPrefix(s"spark.sql.catalog.$catalogName.")
+
+    val catalogConf = activeConf
+      .getAllWithPrefix(s"$confPrefix.")
       .toMap
       .asJava
+    if (icebergCatalog.isInstanceOf[AutoCloseable]) {
+      icebergCatalog.asInstanceOf[AutoCloseable].close()
+    }
     catalogImpl.initialize(
       catalogName,
       new CaseInsensitiveStringMap(catalogConf)
     )
+  }
+
+  def getBaseIcebergCatalog(
+      currentCatalog: CatalogPlugin,
+      catalog: Option[String]
+  ): Option[Any] = {
+    val catalogName = catalog.getOrElse(currentCatalog.name)
+    val catalogImpl =
+      SparkSession.active.sessionState.catalogManager.catalog(catalogName)
+
+    getBaseIcebergCatalog(catalogImpl)
+  }
+
+  def getBaseIcebergCatalog(
+      catalogImpl: CatalogPlugin
+  ): Option[Any] = {
+    try {
+      // `catalogImpl` is (should be) an org.apache.iceberg.spark.SparkCatalog.
+      // We need the Iceberg `Catalog` instance from `SparkCatalog`
+      var icebergCatalog = icebergCatalogFromSparkCatalog(catalogImpl)
+
+      // If the Iceberg catalog is a `CachingCatalog`, get the "base" catalog from it.
+      if (icebergCatalog.getClass.getSimpleName.equals("CachingCatalog")) {
+        val cachingCatalogCatalog =
+          icebergCatalog.getClass.getDeclaredField("catalog")
+        cachingCatalogCatalog.setAccessible(true)
+        icebergCatalog = cachingCatalogCatalog.get(icebergCatalog)
+      }
+
+      Some(icebergCatalog)
+    } catch {
+      // TODO have something better, at least log something
+      case _: Exception => None
+    }
+  }
+
+  private def icebergCatalogFromSparkCatalog(
+      catalogImpl: CatalogPlugin
+  ): Any = {
+    // `catalogImpl` is an `org.apache.iceberg.spark.SparkCatalog`...
+    try {
+      // ... and most(!!) implementations of `o.a.i.s.SparkCatalog` have a
+      // `public Catalog icebergCatalog()` function...
+      catalogImpl.getClass
+        .getDeclaredMethod("icebergCatalog")
+        .invoke(catalogImpl)
+    } catch {
+      case _: NoSuchMethodException =>
+        // ... but not *ALL* have that function, so we need to refer to the
+        // field in these cases. :facepalm:
+        val icebergCatalogField = catalogImpl.getClass
+          .getDeclaredField("icebergCatalog")
+        icebergCatalogField.setAccessible(true)
+        icebergCatalogField.get(catalogImpl)
+    }
+  }
+
+  def getCatalogProperties(
+      icebergCatalog: Any
+  ): java.util.Map[String, String] = {
+    try {
+      // This is funny: all Iceberg catalogs have a function `Map<String, String> properties()`.
+      // In `BaseMetastoreCatalog` it is protected, in `RESTCatalog`, which does not extend
+      // `BaseMetastoreCatalog`, it is public.
+      val catalogProperties =
+        icebergCatalog.getClass.getDeclaredMethod("properties")
+      catalogProperties.setAccessible(true)
+
+      // Call the `properties()` function to get the catalog's configuration.
+      val properties = catalogProperties
+        .invoke(icebergCatalog)
+        .asInstanceOf[java.util.Map[String, String]]
+
+      properties
+    } catch {
+      // TODO have something better, at least log something
+      case _: Exception => Collections.emptyMap()
+    }
   }
 
   def getCurrentRef(
@@ -267,18 +455,45 @@ object NessieUtils {
       catalog: Option[String]
   ): (String, Option[String]) = {
     val catalogName = catalog.getOrElse(currentCatalog.name)
-    val refName = SparkSession.active.sparkContext.conf
-      .get(s"spark.sql.catalog.$catalogName.ref")
-    var refHash: Option[String] = None
-    try {
-      refHash = Some(
-        SparkSession.active.sparkContext.conf
-          .get(s"spark.sql.catalog.$catalogName.ref.hash")
-      )
-    } catch {
-      case _: NoSuchElementException =>
+    val activeConf = SparkSession.active.sparkContext.conf
+    val confPrefix = s"spark.sql.catalog.$catalogName"
+    val icebergCatalog = getBaseIcebergCatalog(currentCatalog, catalog).get
+
+    icebergCatalog.getClass.getSimpleName match {
+      case "NessieCatalog" =>
+        val refName = activeConf.get(s"$confPrefix.ref")
+        var refHash: Option[String] = None
+        try {
+          refHash = Some(activeConf.get(s"$confPrefix.ref.hash"))
+        } catch {
+          case _: NoSuchElementException =>
+        }
+        (refName, refHash)
+      case "RESTCatalog" =>
+        val icebergCatalogProperties = getCatalogProperties(icebergCatalog)
+        val prefix = icebergCatalogProperties.get("prefix")
+        val refAndWarehouse = refAndWarehouseFromPrefix(prefix)
+        refNameAndHash(refAndWarehouse._1)
     }
-    (refName, refHash)
+  }
+
+  private def refAndWarehouseFromPrefix(
+      prefix: String
+  ): (String, Option[String]) = {
+    val idx = prefix.indexOf("|")
+    idx match {
+      case -1 => (prefix, None)
+      case _  => (prefix.substring(0, idx), Some(prefix.substring(idx + 1)))
+    }
+  }
+
+  private def refNameAndHash(prefixRef: String): (String, Option[String]) = {
+    val idx = prefixRef.indexOf("@")
+    idx match {
+      case -1 => (prefixRef, None)
+      case _ =>
+        (prefixRef.substring(0, idx), Some(prefixRef.substring(idx + 1)))
+    }
   }
 
   def getRefType(ref: Reference): String = {
