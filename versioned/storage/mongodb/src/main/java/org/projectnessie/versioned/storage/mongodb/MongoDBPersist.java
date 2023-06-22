@@ -20,7 +20,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.mongodb.ErrorCategory.DUPLICATE_KEY;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.exists;
 import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Filters.not;
 import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -53,10 +55,13 @@ import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_I
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_DELETED;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_POINTER;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_CREATED_AT;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_INITIAL_POINTER;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REPO;
@@ -72,7 +77,6 @@ import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_S
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRIPES_LAST_KEY;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRIPES_SEGMENT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_COMMIT_ID;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_HEADERS;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_MESSAGE;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_SIGNATURE;
@@ -194,7 +198,7 @@ public class MongoDBPersist implements Persist {
   }
 
   private static ObjId binaryToObjId(Binary id) {
-    return ObjId.objIdFromByteArray(id.getData());
+    return id != null ? ObjId.objIdFromByteArray(id.getData()) : null;
   }
 
   private static void objIdsToDoc(Document doc, String n, List<ObjId> ids) {
@@ -235,6 +239,14 @@ public class MongoDBPersist implements Persist {
     doc.put(ID_PROPERTY_NAME, idRefDoc(reference));
     doc.put(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer()));
     doc.put(COL_REFERENCES_DELETED, reference.deleted());
+    long createdAtMicros = reference.createdAtMicros();
+    if (createdAtMicros != 0L) {
+      doc.put(COL_REFERENCES_CREATED_AT, createdAtMicros);
+    }
+    ObjId extendedInfoObj = reference.extendedInfoObj();
+    if (extendedInfoObj != null) {
+      doc.put(COL_REFERENCES_EXTENDED_INFO, objIdToBinary(extendedInfoObj));
+    }
     try {
       backend.refs().insertOne(doc);
     } catch (MongoWriteException e) {
@@ -270,6 +282,18 @@ public class MongoDBPersist implements Persist {
     filters.add(eq(ID_PROPERTY_NAME, idRefDoc(reference)));
     filters.add(eq(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer())));
     filters.add(eq(COL_REFERENCES_DELETED, reference.deleted()));
+    long createdAt = reference.createdAtMicros();
+    if (createdAt != 0L) {
+      filters.add(eq(COL_REFERENCES_CREATED_AT, createdAt));
+    } else {
+      filters.add(not(exists(COL_REFERENCES_CREATED_AT)));
+    }
+    ObjId extendedInfoObj = reference.extendedInfoObj();
+    if (extendedInfoObj != null) {
+      filters.add(eq(COL_REFERENCES_EXTENDED_INFO, objIdToBinary(extendedInfoObj)));
+    } else {
+      filters.add(not(exists(COL_REFERENCES_EXTENDED_INFO)));
+    }
 
     return and(filters);
   }
@@ -331,7 +355,9 @@ public class MongoDBPersist implements Persist {
     return reference(
         name,
         binaryToObjId(doc.get(COL_REFERENCES_POINTER, Binary.class)),
-        doc.getBoolean(COL_REFERENCES_DELETED));
+        doc.getBoolean(COL_REFERENCES_DELETED),
+        doc.getLong(COL_REFERENCES_CREATED_AT),
+        binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)));
   }
 
   @Nonnull
@@ -349,7 +375,9 @@ public class MongoDBPersist implements Persist {
           reference(
               name,
               binaryToObjId(doc.get(COL_REFERENCES_POINTER, Binary.class)),
-              doc.getBoolean(COL_REFERENCES_DELETED));
+              doc.getBoolean(COL_REFERENCES_DELETED),
+              doc.getLong(COL_REFERENCES_CREATED_AT),
+              binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)));
       for (int i = 0; i < names.length; i++) {
         if (name.equals(names[i])) {
           r[i] = reference;
@@ -777,6 +805,10 @@ public class MongoDBPersist implements Persist {
             doc.put(COL_REF_NAME, obj.name());
             doc.put(COL_REF_CREATED_AT, obj.createdAtMicros());
             doc.put(COL_REF_INITIAL_POINTER, objIdToBinary(obj.initialPointer()));
+            ObjId extendedInfoObj = obj.extendedInfoObj();
+            if (extendedInfoObj != null) {
+              doc.put(COL_REF_EXTENDED_INFO, objIdToBinary(extendedInfoObj));
+            }
           }
 
           @Override
@@ -785,7 +817,8 @@ public class MongoDBPersist implements Persist {
                 id,
                 doc.getString(COL_REF_NAME),
                 binaryToObjId(doc.get(COL_REF_INITIAL_POINTER, Binary.class)),
-                doc.getLong(COL_REF_CREATED_AT));
+                doc.getLong(COL_REF_CREATED_AT),
+                binaryToObjId(doc.get(COL_REF_EXTENDED_INFO, Binary.class)));
           }
         });
     STORE_OBJ_TYPE.put(
@@ -855,8 +888,6 @@ public class MongoDBPersist implements Persist {
           @Override
           void objToDoc(
               TagObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
-            doc.put(COL_TAG_COMMIT_ID, objIdToBinary(obj.commitId()));
-
             String message = obj.message();
             if (message != null) {
               doc.put(COL_TAG_MESSAGE, message);
@@ -896,7 +927,6 @@ public class MongoDBPersist implements Persist {
 
             return tag(
                 id,
-                binaryToObjId(doc.get(COL_TAG_COMMIT_ID, Binary.class)),
                 doc.getString(COL_TAG_MESSAGE),
                 tagHeaders,
                 binaryToBytes(doc.get(COL_TAG_SIGNATURE, Binary.class)));

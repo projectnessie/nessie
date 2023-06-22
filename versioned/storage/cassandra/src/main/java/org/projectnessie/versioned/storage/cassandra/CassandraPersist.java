@@ -34,6 +34,7 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.C
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_INDEX_INDEX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_CREATED_AT;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_INITIAL_POINTER;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_NAME;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_SEGMENTS_STRIPES;
@@ -42,7 +43,6 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.C
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_FILENAME;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_PREDECESSORS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_TEXT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_COMMIT_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_HEADERS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_MESSAGE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_SIGNATURE;
@@ -192,7 +192,9 @@ public class CassandraPersist implements Persist {
         config.repositoryId(),
         reference.name(),
         serializeObjId(reference.pointer()),
-        reference.deleted())) {
+        reference.deleted(),
+        reference.createdAtMicros(),
+        serializeObjId(reference.extendedInfoObj()))) {
       return reference;
     }
     throw new RefAlreadyExistsException(fetchReference(reference.name()));
@@ -209,7 +211,9 @@ public class CassandraPersist implements Persist {
         config().repositoryId(),
         reference.name(),
         serializeObjId(reference.pointer()),
-        false)) {
+        false,
+        reference.createdAtMicros(),
+        serializeObjId(reference.extendedInfoObj()))) {
       return reference.withDeleted(true);
     }
 
@@ -228,7 +232,9 @@ public class CassandraPersist implements Persist {
         config().repositoryId(),
         reference.name(),
         serializeObjId(reference.pointer()),
-        true)) {
+        true,
+        reference.createdAtMicros(),
+        serializeObjId(reference.extendedInfoObj()))) {
       Reference ref = fetchReference(reference.name());
       if (ref == null) {
         throw new RefNotFoundException(reference);
@@ -250,7 +256,9 @@ public class CassandraPersist implements Persist {
         config().repositoryId(),
         reference.name(),
         serializeObjId(reference.pointer()),
-        false)) {
+        false,
+        reference.createdAtMicros(),
+        serializeObjId(reference.extendedInfoObj()))) {
       Reference ref = fetchReference(reference.name());
       if (ref == null) {
         throw new RefNotFoundException(reference);
@@ -646,6 +654,7 @@ public class CassandraPersist implements Persist {
             values.accept(obj.name());
             values.accept(serializeObjId(obj.initialPointer()));
             values.accept(obj.createdAtMicros());
+            values.accept(serializeObjId(obj.extendedInfoObj()));
           }
 
           @Override
@@ -654,7 +663,8 @@ public class CassandraPersist implements Persist {
                 id,
                 row.getString(COL_REF_NAME),
                 deserializeObjId(row.getString(COL_REF_INITIAL_POINTER)),
-                row.getLong(COL_REF_CREATED_AT));
+                row.getLong(COL_REF_CREATED_AT),
+                deserializeObjId(row.getString(COL_REF_EXTENDED_INFO)));
           }
         });
     STORE_OBJ_TYPE.put(
@@ -756,7 +766,6 @@ public class CassandraPersist implements Persist {
               TagObj obj,
               int incrementalIndexLimit,
               int maxSerializedIndexSize) {
-            values.accept(serializeObjId(obj.commitId()));
             values.accept(obj.message());
             Headers.Builder hb = Headers.newBuilder();
             CommitHeaders headers = obj.headers();
@@ -790,7 +799,6 @@ public class CassandraPersist implements Persist {
 
             return tag(
                 id,
-                deserializeObjId(row.getString(COL_TAG_COMMIT_ID)),
                 row.getString(COL_TAG_MESSAGE),
                 tagHeaders,
                 deserializeBytes(row, COL_TAG_SIGNATURE));
@@ -832,7 +840,11 @@ public class CassandraPersist implements Persist {
 
   private static Reference deserializeReference(Row row) {
     return Reference.reference(
-        row.getString(0), deserializeObjId(row.getString(1)), row.getBoolean(2));
+        row.getString(0),
+        deserializeObjId(row.getString(1)),
+        row.getBoolean(2),
+        row.getLong(3),
+        deserializeObjId(row.getString(4)));
   }
 
   private static ObjId deserializeObjId(String id) {

@@ -66,6 +66,7 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -119,7 +120,9 @@ public class AbstractBasePersistTests {
     ObjId pointer = randomObjId();
     ObjId otherId = objIdFromString("88776655");
     String name = "some-reference-name";
-    Reference create = reference(name, pointer, false);
+    long created = 12345L;
+    ObjId extended = randomObjId();
+    Reference create = reference(name, pointer, false, created, extended);
     Reference deleted = create.withDeleted(true);
 
     soft.assertThat(persist.addReference(create)).isEqualTo(create);
@@ -146,7 +149,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.addReference(create))
         .isInstanceOf(RefAlreadyExistsException.class);
 
-    soft.assertThatThrownBy(() -> persist.purgeReference(reference(name, otherId, false)))
+    soft.assertThatThrownBy(() -> persist.purgeReference(reference(name, otherId, false, 0L, null)))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThatCode(() -> persist.purgeReference(deleted)).doesNotThrowAnyException();
     soft.assertThatThrownBy(() -> persist.purgeReference(deleted))
@@ -164,7 +167,10 @@ public class AbstractBasePersistTests {
     ObjId pointer2 = objIdFromString("0002");
     ObjId pointer3 = objIdFromString("0003");
 
-    Reference create = reference("some-reference-name", initialPointer, false);
+    long created = 12345L;
+    ObjId extended = randomObjId();
+
+    Reference create = reference("some-reference-name", initialPointer, false, created, extended);
     Reference assigned1 = create.forNewPointer(pointer1);
     Reference assigned2 = create.forNewPointer(pointer2);
     Reference deleted = assigned2.withDeleted(true);
@@ -177,12 +183,68 @@ public class AbstractBasePersistTests {
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
+    // Wrong created timestamp
+    soft.assertThatThrownBy(
+            () ->
+                persist.updateReferencePointer(
+                    reference(
+                        create.name(),
+                        create.pointer(),
+                        create.deleted(),
+                        create.createdAtMicros() + 1,
+                        create.extendedInfoObj()),
+                    pointer1))
+        .isInstanceOf(RefConditionFailedException.class);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
+
+    // Wrong created extended info obj
+    soft.assertThatThrownBy(
+            () ->
+                persist.updateReferencePointer(
+                    reference(
+                        create.name(),
+                        create.pointer(),
+                        create.deleted(),
+                        create.createdAtMicros(),
+                        randomObjId()),
+                    pointer1))
+        .isInstanceOf(RefConditionFailedException.class);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
+
     // Correct current pointer
     soft.assertThat(persist.updateReferencePointer(create, pointer1)).isEqualTo(assigned1);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
 
     // Wrong current pointer
     soft.assertThatThrownBy(() -> persist.updateReferencePointer(assigned2, initialPointer))
+        .isInstanceOf(RefConditionFailedException.class);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
+
+    // Wrong created timestamp
+    soft.assertThatThrownBy(
+            () ->
+                persist.updateReferencePointer(
+                    reference(
+                        assigned1.name(),
+                        assigned1.pointer(),
+                        assigned1.deleted(),
+                        assigned1.createdAtMicros() + 1,
+                        assigned1.extendedInfoObj()),
+                    pointer2))
+        .isInstanceOf(RefConditionFailedException.class);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
+
+    // Wrong created extended info obj
+    soft.assertThatThrownBy(
+            () ->
+                persist.updateReferencePointer(
+                    reference(
+                        assigned1.name(),
+                        assigned1.pointer(),
+                        assigned1.deleted(),
+                        assigned1.createdAtMicros(),
+                        randomObjId()),
+                    pointer2))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
 
@@ -205,7 +267,8 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(
             () ->
                 persist.updateReferencePointer(
-                    reference("other-reference-name", initialPointer, false), pointer1))
+                    reference("other-reference-name", initialPointer, false, created, extended),
+                    pointer1))
         .isInstanceOf(RefNotFoundException.class);
     soft.assertThat(persist.fetchReference("other-reference-name")).isNull();
   }
@@ -214,7 +277,14 @@ public class AbstractBasePersistTests {
   public void fetchManyReferences() throws Exception {
     List<Reference> references =
         IntStream.range(0, 305)
-            .mapToObj(i -> reference("ref-" + i, randomObjId(), false))
+            .mapToObj(
+                i ->
+                    reference(
+                        "ref-" + i,
+                        randomObjId(),
+                        false,
+                        ThreadLocalRandom.current().nextLong(1L, Long.MAX_VALUE),
+                        randomObjId()))
             .collect(Collectors.toList());
     for (Reference reference : references) {
       persist.addReference(reference);
@@ -230,9 +300,9 @@ public class AbstractBasePersistTests {
   public void fetchManyReferencesEmpty() throws Exception {
     List<Reference> references =
         asList(
-            reference("foo", randomObjId(), false),
-            reference("bar", randomObjId(), false),
-            reference("baz", randomObjId(), false));
+            reference("foo", randomObjId(), false, 1L, randomObjId()),
+            reference("bar", randomObjId(), false, 2L, randomObjId()),
+            reference("baz", randomObjId(), false, 3L, null));
     for (Reference reference : references) {
       persist.addReference(reference);
     }
@@ -281,13 +351,8 @@ public class AbstractBasePersistTests {
         index(randomObjId(), emptyIndex.serialize()),
         index(randomObjId(), index.serialize()),
         // 10
-        tag(
-            randomObjId(),
-            randomObjId(),
-            "tag-message",
-            newCommitHeaders().add("Foo", "Bar").build(),
-            fooBar),
-        tag(randomObjId(), randomObjId(), null, null, ByteString.EMPTY),
+        tag(randomObjId(), "tag-message", newCommitHeaders().add("Foo", "Bar").build(), fooBar),
+        tag(randomObjId(), null, null, ByteString.EMPTY),
         commitBuilder()
             .id(randomObjId())
             .created(123L)
@@ -335,7 +400,8 @@ public class AbstractBasePersistTests {
                 objIdFromString("deadbeefcafebabe"),
                 objIdFromString("0000000000000000")),
             copyFromUtf8("This is not a markdown")),
-        ref(randomObjId(), "foo", randomObjId(), 123L));
+        ref(randomObjId(), "foo", randomObjId(), 123L, null),
+        ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()));
   }
 
   @SuppressWarnings("rawtypes")
@@ -455,14 +521,7 @@ public class AbstractBasePersistTests {
   public void storeAndFetchMany() throws Exception {
     List<TagObj> objects =
         IntStream.range(0, 957) // 957 is an arbitrary number, just not something "round"
-            .mapToObj(
-                i ->
-                    tag(
-                        randomObjId(),
-                        randomObjId(),
-                        null,
-                        null,
-                        ByteString.copyFrom(new byte[42])))
+            .mapToObj(i -> tag(randomObjId(), null, null, ByteString.copyFrom(new byte[42])))
             .collect(Collectors.toList());
 
     boolean[] results = persist.storeObjs(objects.toArray(new Obj[0]));
@@ -475,11 +534,11 @@ public class AbstractBasePersistTests {
 
   @Test
   public void multipleStoreObjs() throws Exception {
-    Obj obj1 = tag(randomObjId(), randomObjId(), null, null, ByteString.EMPTY);
-    Obj obj2 = tag(randomObjId(), randomObjId(), null, null, ByteString.EMPTY);
-    Obj obj3 = tag(randomObjId(), randomObjId(), null, null, ByteString.EMPTY);
-    Obj obj4 = tag(randomObjId(), randomObjId(), null, null, ByteString.EMPTY);
-    Obj obj5 = tag(randomObjId(), randomObjId(), null, null, ByteString.EMPTY);
+    Obj obj1 = tag(randomObjId(), null, null, ByteString.EMPTY);
+    Obj obj2 = tag(randomObjId(), null, null, ByteString.EMPTY);
+    Obj obj3 = tag(randomObjId(), null, null, ByteString.EMPTY);
+    Obj obj4 = tag(randomObjId(), null, null, ByteString.EMPTY);
+    Obj obj5 = tag(randomObjId(), null, null, ByteString.EMPTY);
 
     soft.assertThat(persist.storeObjs(new Obj[] {obj1})).containsExactly(true);
     soft.assertThat(persist.fetchObj(requireNonNull(obj1.id()))).isEqualTo(obj1);
@@ -778,7 +837,7 @@ public class AbstractBasePersistTests {
         newObj = contentValue(obj.id(), randomContentId(), 123, copyFromUtf8("updated stuff"));
         break;
       case REF:
-        newObj = ref(obj.id(), "hello", randomObjId(), 42L);
+        newObj = ref(obj.id(), "hello", randomObjId(), 42L, randomObjId());
         break;
       case INDEX:
         index = newStoreIndex(COMMIT_OP_SERIALIZER);
@@ -793,7 +852,7 @@ public class AbstractBasePersistTests {
                 obj.id(), singletonList(indexStripe(key("abc"), key("def"), randomObjId())));
         break;
       case TAG:
-        newObj = tag(obj.id(), randomObjId(), null, null, copyFromUtf8("updated-tag"));
+        newObj = tag(obj.id(), null, null, copyFromUtf8("updated-tag"));
         break;
       case STRING:
         newObj =

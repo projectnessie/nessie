@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
 
@@ -43,14 +44,23 @@ public interface Reference {
   @Value.Parameter(order = 4)
   boolean deleted();
 
+  @Value.Parameter(order = 5)
+  long createdAtMicros();
+
+  @Value.Parameter(order = 6)
+  @Nullable
+  @jakarta.annotation.Nullable
+  ObjId extendedInfoObj();
+
   default Reference forNewPointer(ObjId newPointer) {
     return ImmutableReference.builder().from(this).deleted(false).pointer(newPointer).build();
   }
 
   Reference withDeleted(boolean deleted);
 
-  static Reference reference(String name, ObjId pointer, boolean deleted) {
-    return ImmutableReference.of(name, pointer, deleted);
+  static Reference reference(
+      String name, ObjId pointer, boolean deleted, long createdAtMicros, ObjId extendedInfoObj) {
+    return ImmutableReference.of(name, pointer, deleted, createdAtMicros, extendedInfoObj);
   }
 
   @Value.NonAttribute

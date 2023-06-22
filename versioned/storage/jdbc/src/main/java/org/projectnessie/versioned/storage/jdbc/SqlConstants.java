@@ -33,11 +33,11 @@ final class SqlConstants {
 
   static final String COLS_COMMIT =
       "c_created, c_seq, c_message, c_headers, c_reference_index, c_reference_index_stripes, c_tail, c_secondary_parents, c_incremental_index, c_incomplete_index, c_commit_type";
-  static final String COLS_REF = "r_name, r_initial_pointer, r_created_at";
+  static final String COLS_REF = "r_name, r_initial_pointer, r_created_at, r_extended_info";
   static final String COLS_VALUE = "v_content_id, v_payload, v_data";
   static final String COLS_SEGMENTS = "i_stripes";
   static final String COLS_INDEX = "i_index";
-  static final String COLS_TAG = "t_commit_id, t_message, t_headers, t_signature";
+  static final String COLS_TAG = "t_message, t_headers, t_signature";
   static final String COLS_STRING =
       "s_content_type, s_compression, s_filename, s_predecessors, s_text";
 
@@ -66,9 +66,9 @@ final class SqlConstants {
           + ", "
           + COLS_INDEX
           + ") VALUES (?,?,? "
-          + ",?,?,? " // REF
+          + ",?,?,?,? " // REF
           + ",?,?,?,?,?,?,?,?,?,?,?" // COMMIT
-          + ",?,?,?,? " // TAG
+          + ",?,?,? " // TAG
           + ",?,?,? " // VALUE
           + ",?,?,?,?,? " // STRING
           + ",? " // SEGMENTS
@@ -86,11 +86,11 @@ final class SqlConstants {
           + COL_OBJ_TYPE
           + " {0}"
           + ",\n    c_created {5}, c_seq {5}, c_message {6}, c_headers {4}, c_reference_index {1}, c_reference_index_stripes {4}, c_tail {2}, c_secondary_parents {2}, c_incremental_index {4}, c_incomplete_index {3}, c_commit_type {0}"
-          + ",\n    r_name {0}, r_initial_pointer {1}, r_created_at {5}"
+          + ",\n    r_name {0}, r_initial_pointer {1}, r_created_at {5}, r_extended_info {1}"
           + ",\n    v_content_id {0}, v_payload {5}, v_data {4}"
           + ",\n    i_stripes {4}"
           + ",\n    i_index {4}"
-          + ",\n    t_commit_id {1}, t_message {6}, t_headers {4}, t_signature {4}"
+          + ",\n    t_message {6}, t_headers {4}, t_signature {4}"
           + ",\n    s_content_type {0}, s_compression {0}, s_filename {0}, s_predecessors {2}, s_text {4}"
           + ",\n    PRIMARY KEY ("
           + COL_REPO_ID
@@ -100,6 +100,9 @@ final class SqlConstants {
   static final String COL_REFS_NAME = "ref_name";
   static final String COL_REFS_POINTER = "pointer";
   static final String COL_REFS_DELETED = "deleted";
+  static final String COL_REFS_CREATED_AT = "created_at";
+  static final String COL_REFS_EXTENDED_INFO = "ext_info";
+  static final String REFS_EXTENDED_INFO_COND = "_REFS_EXTENDED_INFO_";
   static final String UPDATE_REFERENCE_POINTER =
       "UPDATE "
           + TABLE_REFS
@@ -113,7 +116,11 @@ final class SqlConstants {
           + COL_REFS_POINTER
           + "=? AND "
           + COL_REFS_DELETED
-          + "=?";
+          + "=? AND "
+          + COL_REFS_CREATED_AT
+          + "=? AND "
+          + COL_REFS_EXTENDED_INFO
+          + REFS_EXTENDED_INFO_COND;
   static final String PURGE_REFERENCE =
       "DELETE FROM "
           + TABLE_REFS
@@ -125,7 +132,11 @@ final class SqlConstants {
           + COL_REFS_POINTER
           + "=? AND "
           + COL_REFS_DELETED
-          + "=?";
+          + "=? AND "
+          + COL_REFS_CREATED_AT
+          + "=? AND "
+          + COL_REFS_EXTENDED_INFO
+          + REFS_EXTENDED_INFO_COND;
   static final String MARK_REFERENCE_AS_DELETED =
       "UPDATE "
           + TABLE_REFS
@@ -139,7 +150,11 @@ final class SqlConstants {
           + COL_REFS_POINTER
           + "=? AND "
           + COL_REFS_DELETED
-          + "=?";
+          + "=? AND "
+          + COL_REFS_CREATED_AT
+          + "=? AND "
+          + COL_REFS_EXTENDED_INFO
+          + REFS_EXTENDED_INFO_COND;
   static final String ADD_REFERENCE =
       "INSERT INTO "
           + TABLE_REFS
@@ -151,7 +166,11 @@ final class SqlConstants {
           + COL_REFS_POINTER
           + ", "
           + COL_REFS_DELETED
-          + ") VALUES (?, ?, ?, ?)";
+          + ", "
+          + COL_REFS_CREATED_AT
+          + ", "
+          + COL_REFS_EXTENDED_INFO
+          + ") VALUES (?, ?, ?, ?, ?, ?)";
   static final String FIND_REFERENCES =
       "SELECT "
           + COL_REFS_NAME
@@ -159,6 +178,10 @@ final class SqlConstants {
           + COL_REFS_POINTER
           + ", "
           + COL_REFS_DELETED
+          + ", "
+          + COL_REFS_CREATED_AT
+          + ", "
+          + COL_REFS_EXTENDED_INFO
           + " FROM "
           + TABLE_REFS
           + " WHERE "
@@ -178,6 +201,10 @@ final class SqlConstants {
           + " {1}, "
           + COL_REFS_DELETED
           + " {3}, "
+          + COL_REFS_CREATED_AT
+          + " {5} DEFAULT 0, "
+          + COL_REFS_EXTENDED_INFO
+          + " {1}, "
           + "\n    PRIMARY KEY ("
           + COL_REPO_ID
           + ", "
@@ -215,13 +242,13 @@ final class SqlConstants {
   static final int COL_REF_NAME = COL_COMMIT_TYPE + 1;
   static final int COL_REF_INITIAL_POINTER = COL_REF_NAME + 1;
   static final int COL_REF_CREATED_AT = COL_REF_INITIAL_POINTER + 1;
-  static final int COL_VALUE_CONTENT_ID = COL_REF_CREATED_AT + 1;
+  static final int COL_REF_EXTENDED_INFO = COL_REF_CREATED_AT + 1;
+  static final int COL_VALUE_CONTENT_ID = COL_REF_EXTENDED_INFO + 1;
   static final int COL_VALUE_PAYLOAD = COL_VALUE_CONTENT_ID + 1;
   static final int COL_VALUE_DATA = COL_VALUE_PAYLOAD + 1;
   static final int COL_SEGMENTS_STRIPES = COL_VALUE_DATA + 1;
   static final int COL_INDEX_INDEX = COL_SEGMENTS_STRIPES + 1;
-  static final int COL_TAG_COMMIT_ID = COL_INDEX_INDEX + 1;
-  static final int COL_TAG_MESSAGE = COL_TAG_COMMIT_ID + 1;
+  static final int COL_TAG_MESSAGE = COL_INDEX_INDEX + 1;
   static final int COL_TAG_HEADERS = COL_TAG_MESSAGE + 1;
   static final int COL_TAG_SIGNATURE = COL_TAG_HEADERS + 1;
   static final int COL_STRING_CONTENT_TYPE = COL_TAG_SIGNATURE + 1;

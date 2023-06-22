@@ -59,12 +59,23 @@ public interface RefObj extends Obj {
   @Value.Parameter(order = 3)
   long createdAtMicros();
 
-  static RefObj ref(ObjId id, String name, ObjId initialPointer, long createdAtMicros) {
-    return ImmutableRefObj.of(name, id, initialPointer, createdAtMicros);
+  @Value.Parameter(order = 4)
+  @Nullable
+  @jakarta.annotation.Nullable
+  ObjId extendedInfoObj();
+
+  static RefObj ref(
+      ObjId id, String name, ObjId initialPointer, long createdAtMicros, ObjId extendedInfoObj) {
+    return ImmutableRefObj.of(name, id, initialPointer, createdAtMicros, extendedInfoObj);
   }
 
-  static RefObj ref(String name, ObjId initialPointer, long createdAtMicros) {
+  static RefObj ref(
+      String name, ObjId initialPointer, long createdAtMicros, ObjId extendedInfoObj) {
     return ref(
-        refHash(name, initialPointer, createdAtMicros), name, initialPointer, createdAtMicros);
+        refHash(name, initialPointer, createdAtMicros),
+        name,
+        initialPointer,
+        createdAtMicros,
+        extendedInfoObj);
   }
 }

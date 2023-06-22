@@ -27,8 +27,10 @@ final class DynamoDBConstants {
 
   static final String COL_REFERENCES_POINTER = "p";
   static final String COL_REFERENCES_DELETED = "d";
+  static final String COL_REFERENCES_CREATED_AT = "c";
+  static final String COL_REFERENCES_EXTENDED_INFO = "e";
 
-  static final String COL_REFERENCES_CONDITION =
+  static final String COL_REFERENCES_CONDITION_COMMON =
       "(" + COL_REFERENCES_DELETED + " = :deleted) AND (" + COL_REFERENCES_POINTER + " = :pointer)";
 
   static final String KEY_NAME = "k";
@@ -60,6 +62,7 @@ final class DynamoDBConstants {
   static final String COL_REF_NAME = "n";
   static final String COL_REF_INITIAL_POINTER = "p";
   static final String COL_REF_CREATED_AT = "c";
+  static final String COL_REF_EXTENDED_INFO = "e";
 
   static final String COL_VALUE_CONTENT_ID = "i";
   static final String COL_VALUE_PAYLOAD = "p";

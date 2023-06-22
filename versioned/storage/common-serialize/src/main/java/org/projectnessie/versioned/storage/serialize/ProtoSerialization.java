@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
+import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -67,12 +68,20 @@ public final class ProtoSerialization {
     if (reference == null) {
       return null;
     }
-    return ReferenceProto.newBuilder()
-        .setName(reference.name())
-        .setPointer(serializeObjId(reference.pointer()))
-        .setDeleted(reference.deleted())
-        .build()
-        .toByteArray();
+    ReferenceProto.Builder refBuilder =
+        ReferenceProto.newBuilder()
+            .setName(reference.name())
+            .setPointer(serializeObjId(reference.pointer()))
+            .setDeleted(reference.deleted());
+    long created = reference.createdAtMicros();
+    if (created != 0L) {
+      refBuilder.setCreatedAtMicros(created);
+    }
+    ObjId extendedInfoObj = reference.extendedInfoObj();
+    if (extendedInfoObj != null) {
+      refBuilder.setExtendedInfoObj(serializeObjId(extendedInfoObj));
+    }
+    return refBuilder.build().toByteArray();
   }
 
   public static Reference deserializeReference(byte[] reference) {
@@ -81,8 +90,12 @@ public final class ProtoSerialization {
     }
     try {
       ReferenceProto proto = ReferenceProto.parseFrom(reference);
-      return Reference.reference(
-          proto.getName(), deserializeObjId(proto.getPointer()), proto.getDeleted());
+      return reference(
+          proto.getName(),
+          deserializeObjId(proto.getPointer()),
+          proto.getDeleted(),
+          proto.getCreatedAtMicros(),
+          deserializeObjId(proto.getExtendedInfoObj()));
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
@@ -96,7 +109,7 @@ public final class ProtoSerialization {
   }
 
   public static ObjId deserializeObjId(ByteString bytes) {
-    if (bytes == null) {
+    if (bytes == null || bytes.isEmpty()) {
       return null;
     }
     return ObjId.objIdFromBytes(bytes);
@@ -298,14 +311,24 @@ public final class ProtoSerialization {
 
   private static RefObj deserializeRef(ObjId id, RefProto ref) {
     return ref(
-        id, ref.getName(), deserializeObjId(ref.getInitialPointer()), ref.getCreatedAtMicros());
+        id,
+        ref.getName(),
+        deserializeObjId(ref.getInitialPointer()),
+        ref.getCreatedAtMicros(),
+        deserializeObjId(ref.getExtendedInfoObj()));
   }
 
   private static RefProto.Builder serializeRef(RefObj obj) {
-    return RefProto.newBuilder()
-        .setName(obj.name())
-        .setCreatedAtMicros(obj.createdAtMicros())
-        .setInitialPointer(serializeObjId(obj.initialPointer()));
+    RefProto.Builder refBuilder =
+        RefProto.newBuilder()
+            .setName(obj.name())
+            .setCreatedAtMicros(obj.createdAtMicros())
+            .setInitialPointer(serializeObjId(obj.initialPointer()));
+    ObjId extendedInfoObj = obj.extendedInfoObj();
+    if (extendedInfoObj != null) {
+      refBuilder.setExtendedInfoObj(serializeObjId(extendedInfoObj));
+    }
+    return refBuilder;
   }
 
   private static IndexSegmentsObj deserializeIndexSegments(
@@ -378,11 +401,11 @@ public final class ProtoSerialization {
     }
     String message = tag.hasMessage() ? tag.getMessage() : null;
     ByteString signature = tag.hasSignature() ? tag.getSignature() : null;
-    return tag(id, ObjId.objIdFromBytes(tag.getCommitId()), message, tagHeaders, signature);
+    return tag(id, message, tagHeaders, signature);
   }
 
   private static TagProto.Builder serializeTag(TagObj obj) {
-    TagProto.Builder tag = TagProto.newBuilder().setCommitId(serializeObjId(obj.commitId()));
+    TagProto.Builder tag = TagProto.newBuilder();
     if (obj.message() != null) {
       tag.setMessage(obj.message());
     }

@@ -79,7 +79,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
 
     if (createDefaultBranch) {
       try {
-        referenceLogic(persist).createReference(REFS_HEADS + defaultBranchName, EMPTY_OBJ_ID);
+        referenceLogic(persist).createReference(REFS_HEADS + defaultBranchName, EMPTY_OBJ_ID, null);
       } catch (RefAlreadyExistsException ignore) {
         // ignore an existing reference (theoretically possible race of two initialize() calls)
       } catch (RetryTimeoutException e) {
@@ -203,7 +203,13 @@ final class RepositoryLogicImpl implements RepositoryLogic {
       }
 
       try {
-        persist.addReference(reference(internalRef.name(), commit.id(), false));
+        persist.addReference(
+            reference(
+                internalRef.name(),
+                commit.id(),
+                false,
+                persist.config().currentTimeMicros(),
+                null));
       } catch (RefAlreadyExistsException ignore) {
         // ignore an existing reference (theoretically possible race of two initialize() calls)
       }

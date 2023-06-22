@@ -40,6 +40,7 @@ message RefProto {
   string name = 1;
   bytes initial_pointer = 2;
   int64 created_at_micros = 3;
+  optional bytes extended_info_obj = 4;
 }
 
 message ContentValueProto {
@@ -90,7 +91,6 @@ enum CompressionProto {
 }
 
 message TagProto {
-  bytes commit_id = 1;
   optional string message = 2;
   repeated HeaderEntry headers = 3;
   optional bytes signature = 4;
@@ -122,4 +122,6 @@ message ReferenceProto {
   string name = 1;
   bytes pointer = 2;
   bool deleted = 3;
+  optional int64 created_at_micros = 4;
+  optional bytes extended_info_obj = 5;
 }

@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -103,7 +104,7 @@ public abstract class AbstractReferenceLogicTests {
     ObjId initialPointer = randomObjId();
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> refLogic.createReference(INTERNAL_PREFIX, initialPointer));
+        .isThrownBy(() -> refLogic.createReference(INTERNAL_PREFIX, initialPointer, null));
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> refLogic.deleteReference(REF_REPO.name(), randomObjId()));
@@ -121,10 +122,15 @@ public abstract class AbstractReferenceLogicTests {
     ObjId initialPointer = randomObjId();
     String refName = "refs/foo/bar";
 
-    Reference reference = refLogic.createReference(refName, initialPointer);
-    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+    ObjId extendedInfoObj = randomObjId();
+    Reference reference = refLogic.createReference(refName, initialPointer, extendedInfoObj);
+    soft.assertThat(reference)
+        .isEqualTo(
+            reference(refName, initialPointer, false, reference.createdAtMicros(), extendedInfoObj))
+        .extracting(Reference::createdAtMicros, InstanceOfAssertFactories.LONG)
+        .isGreaterThan(0L);
 
-    soft.assertThatThrownBy(() -> refLogic.createReference(refName, initialPointer))
+    soft.assertThatThrownBy(() -> refLogic.createReference(refName, initialPointer, randomObjId()))
         .isInstanceOf(RefAlreadyExistsException.class);
 
     soft.assertThat(refLogic.getReferences(singletonList(refName))).containsExactly(reference);
@@ -144,16 +150,16 @@ public abstract class AbstractReferenceLogicTests {
   @Test
   public void assign() throws Exception {
     ReferenceLogic refLogic = referenceLogic(persist);
-    Reference ref = reference("foo", randomObjId(), false);
+    Reference ref = reference("foo", randomObjId(), false, 123L, randomObjId());
 
     persist.addReference(ref);
 
     ObjId to = objIdFromString("1234");
-    Reference refTo = reference("foo", to, false);
+    Reference refTo = reference("foo", to, false, ref.createdAtMicros(), ref.extendedInfoObj());
 
     soft.assertThat(refLogic.assignReference(ref, to)).isEqualTo(refTo);
 
-    Reference notExists = reference("not-exists", randomObjId(), false);
+    Reference notExists = reference("not-exists", randomObjId(), false, 0L, null);
     soft.assertThatThrownBy(() -> refLogic.assignReference(notExists, randomObjId()))
         .isInstanceOf(RefNotFoundException.class);
 
@@ -171,7 +177,7 @@ public abstract class AbstractReferenceLogicTests {
   public void deleteNonExisting() {
     ReferenceLogic refLogic = referenceLogic(persist);
 
-    Reference notExists = reference("not-exists", randomObjId(), false);
+    Reference notExists = reference("not-exists", randomObjId(), false, 0L, null);
     soft.assertThatThrownBy(() -> refLogic.deleteReference(notExists.name(), notExists.pointer()))
         .isInstanceOf(RefNotFoundException.class);
   }
@@ -182,10 +188,12 @@ public abstract class AbstractReferenceLogicTests {
     ObjId initialPointer = objIdFromString("0000");
     String refName = "refs/foo/bar";
 
-    Reference created = refLogic.createReference(refName, initialPointer);
+    ObjId extendedInfoObj = randomObjId();
+    Reference created = refLogic.createReference(refName, initialPointer, extendedInfoObj);
     soft.assertThat(created)
-        .extracting(Reference::name, Reference::pointer, Reference::deleted)
-        .containsExactly(refName, initialPointer, false);
+        .extracting(
+            Reference::name, Reference::pointer, Reference::deleted, Reference::extendedInfoObj)
+        .containsExactly(refName, initialPointer, false, extendedInfoObj);
     soft.assertThat(refLogic.getReference(refName)).isEqualTo(created);
 
     String notThere = "refs/heads/not_there";
@@ -220,8 +228,12 @@ public abstract class AbstractReferenceLogicTests {
 
     singleCommitRetry(persistSpy);
 
-    Reference reference = refLogic.createReference(refName, initialPointer);
-    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+    ObjId extendedInfoObj = randomObjId();
+    Reference reference = refLogic.createReference(refName, initialPointer, extendedInfoObj);
+    soft.assertThat(reference)
+        .isEqualTo(
+            reference(
+                refName, initialPointer, false, reference.createdAtMicros(), extendedInfoObj));
 
     soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
 
@@ -242,8 +254,12 @@ public abstract class AbstractReferenceLogicTests {
     ObjId initialPointer = randomObjId();
     String refName = "refs/foo/bar";
 
-    Reference reference = refLogic.createReference(refName, initialPointer);
-    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+    ObjId extendedInfoObj = randomObjId();
+    Reference reference = refLogic.createReference(refName, initialPointer, extendedInfoObj);
+    soft.assertThat(reference)
+        .isEqualTo(
+            reference(
+                refName, initialPointer, false, reference.createdAtMicros(), extendedInfoObj));
 
     Reference deleted = persistSpy.markReferenceAsDeleted(reference);
     soft.assertThat(persistSpy.fetchReference(refName)).isEqualTo(deleted);
@@ -265,7 +281,9 @@ public abstract class AbstractReferenceLogicTests {
   protected static void singleCommitRetry(Persist persistSpy) {
     // Force one retry-exception during ReferenceLogic.commitCreateReference() commitRetry()-loop
     try {
-      doThrow(new RefConditionFailedException(reference(REF_REPO.name(), EMPTY_OBJ_ID, false)))
+      doThrow(
+              new RefConditionFailedException(
+                  reference(REF_REPO.name(), EMPTY_OBJ_ID, false, 123L, null)))
           .doCallRealMethod()
           .when(persistSpy)
           .updateReferencePointer(any(), any());
@@ -285,7 +303,7 @@ public abstract class AbstractReferenceLogicTests {
             .map(
                 n -> {
                   try {
-                    return refLogic.createReference(n, randomObjId());
+                    return refLogic.createReference(n, randomObjId(), randomObjId());
                   } catch (RefAlreadyExistsException | RetryTimeoutException e) {
                     throw new RuntimeException(e);
                   }
@@ -368,7 +386,7 @@ public abstract class AbstractReferenceLogicTests {
 
     Map<String, Reference> references = new LinkedHashMap<>();
     for (String refName : refNames) {
-      references.put(refName, refLogic.createReference(refName, EMPTY_OBJ_ID));
+      references.put(refName, refLogic.createReference(refName, EMPTY_OBJ_ID, randomObjId()));
     }
 
     ArrayList<Reference> queryResult = newArrayList(refLogic.queryReferences(referencesQuery()));
@@ -411,7 +429,7 @@ public abstract class AbstractReferenceLogicTests {
             .map(
                 n -> {
                   try {
-                    return refLogic.createReference(n, randomObjId());
+                    return refLogic.createReference(n, randomObjId(), randomObjId());
                   } catch (RefAlreadyExistsException | RetryTimeoutException e) {
                     throw new RuntimeException(e);
                   }
