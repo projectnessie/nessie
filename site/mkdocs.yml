@@ -1,5 +1,5 @@
 site_name: "Project Nessie: Transactional Catalog for Data Lakes with Git-like semantics"
-site_description: "Project Nessie is a cloud native OSS service that works with Apache Iceberg and Delta Lake tables to give your data lake cross-table transactions and a Git-like experience to data history."
+site_description: "Project Nessie is a cloud native OSS service that works with Apache Iceberg to give your data lake cross-table transactions and a Git-like experience to data history."
 site_url: "https://projectnessie.org"
 edit_uri: ""
 strict: true

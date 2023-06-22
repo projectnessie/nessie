@@ -47,8 +47,8 @@ those via its configuration mechanism.
 
 ## Spark
 
-When Nessie is used in Spark-based environments (either with [Iceberg](./iceberg/index.md) 
-or [Delta Lake](./deltalake/index.md)) the Nessie authentication settings are configured via Spark session properties (Replace `<catalog_name>` with the name of your catalog).
+When Nessie is used in Spark-based environments (with [Iceberg](./iceberg/index.md) 
+the Nessie authentication settings are configured via Spark session properties (Replace `<catalog_name>` with the name of your catalog).
 
 === "Java"
     ``` java

@@ -22,7 +22,7 @@ Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics
 
 More information can be found at [projectnessie.org](https://projectnessie.org/).
 
-Nessie supports Iceberg Tables/Views and Delta Lake Tables. Additionally, Nessie is focused on working with the widest range of tools possible, which can be seen in the [feature matrix](https://projectnessie.org/tools/#feature-matrix).
+Nessie supports Iceberg Tables/Views. Additionally, Nessie is focused on working with the widest range of tools possible, which can be seen in the [feature matrix](https://projectnessie.org/tools/#feature-matrix).
 
 ## Using Nessie
 
@@ -51,7 +51,6 @@ From there, you can use one of our technology integrations such those for
 
 * [Spark via Iceberg](https://projectnessie.org/tools/iceberg/spark/)
 * [Hive via Iceberg](https://projectnessie.org/tools/iceberg/hive/)
-* [Spark via Delta Lake](https://projectnessie.org/tools/deltalake/spark/)
 
 To learn more about all supported integrations and tools, check [here](https://projectnessie.org/tools/) 
 
@@ -110,16 +109,6 @@ Nessie Iceberg's integration is compatible with Iceberg as in the following tabl
 | Nessie version | Iceberg version | Spark version                                                                                 | Hive version | Flink version          | Presto version                      | Trino version |
 |----------------|-----------------|-----------------------------------------------------------------------------------------------|--------------|------------------------|-------------------------------------|---------------|
 | 0.61.0         | 1.3.0           | 3.1.x (Scala 2.12), 3.2.x (Scala 2.12+2.13), 3.3.x (Scala 2.12+2.13), 3.4.x (Scala 2.12+2.13) | n/a          | 1.15.x, 1.16.x, 1.17.x | 0.277, 0.278.x, 0.279, 0.280, 0.281 | 419           |
-
-Nessie Delta Lake's integration is compatible with Delta Lake as in the following table:
-
-| Nessie version | Delta Lake version              | Spark version | 
-|----------------|---------------------------------|---------------|
-| 0.61.0         | [Custom](#delta-lake-artifacts) | 3.2.X         |
-
-#### Delta Lake artifacts
-
-Nessie required some minor changes to Delta for full support of branching and history. These changes are currently being integrated into the [mainline repo](https://github.com/delta-io/delta). Until these have been merged we have provided custom builds in [our fork](https://github.com/projectnessie/delta) which can be downloaded from a separate maven repository. 
 
 ### Distribution
 To run:

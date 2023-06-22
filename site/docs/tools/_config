@@ -2,7 +2,6 @@ title: Tools & Integrations
 arrange:
   - index.md
   - iceberg
-  - deltalake
   - client_config.md
   - cli.md
   - export_import.md
