@@ -52,6 +52,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
@@ -77,6 +78,8 @@ import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Named references management for non-transactional databases.
@@ -171,6 +174,7 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  */
 final class ReferenceLogicImpl implements ReferenceLogic {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(ReferenceLogicImpl.class);
   private static final String REF_REFS_ADVANCED = "ref-refs advanced";
 
   private final Persist persist;
@@ -316,34 +320,51 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       throws RefAlreadyExistsException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
+    long refCreatedTimestamp = persist.config().currentTimeMicros();
     while (true) {
-      CommitReferenceResult commitToIndex = commitCreateReference(name, pointer, extendedInfoObj);
-      Reference reference = commitToIndex.reference;
+      CommitReferenceResult commitToIndex =
+          commitCreateReference(name, pointer, extendedInfoObj, refCreatedTimestamp);
+      Reference created = commitToIndex.created;
+      Reference existing;
+
+      LOGGER.debug(
+          "Committed create reference {} with outcome {}, existing is {}",
+          created,
+          commitToIndex.kind,
+          commitToIndex.existing);
 
       switch (commitToIndex.kind) {
         case ADDED_TO_INDEX:
-          checkState(!reference.deleted(), "internal error");
+          checkState(!created.deleted(), "internal error");
           try {
-            return persist.addReference(reference);
+            return persist.addReference(created);
           } catch (RefAlreadyExistsException e) {
-            Reference existing = e.reference();
-            if (existing != null && !existing.deleted()) {
-              // Might happen in a rare race
-              throw e;
+            // Reference recovery logic might have kicked in and added the reference. It that's the
+            // case, just return it.
+            existing = e.reference();
+            if (Objects.equals(created, existing)) {
+              break;
             }
-            // try again
-            break;
+            // Might happen in a rare race
+            throw e;
           }
         case REF_ROW_MISSING:
-          checkState(!reference.deleted(), "internal error");
+          existing = commitToIndex.existing;
+          checkState(!existing.deleted(), "internal error");
           // Note: addReference() may or may not throw a ReferenceAlreadyExistsException
-          reference = persist.addReference(reference);
-          throw new RefAlreadyExistsException(reference);
+          existing = persist.addReference(existing);
+          throw new RefAlreadyExistsException(existing);
         case REF_ROW_EXISTS:
-          if (!reference.deleted()) {
-            throw new RefAlreadyExistsException(reference);
+          // Reference recovery logic might have kicked in and added the reference. It that's the
+          // case, just return it.
+          existing = commitToIndex.existing;
+          if (created.equals(existing)) {
+            return existing;
           }
-          maybeRecover(name, reference, createRefsIndexSupplier());
+          if (!existing.deleted()) {
+            throw new RefAlreadyExistsException(existing);
+          }
+          maybeRecover(name, existing, createRefsIndexSupplier());
           // try again
           break;
         default:
@@ -393,11 +414,19 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
     if (!actAsAlreadyDeleted) {
       persist.markReferenceAsDeleted(reference);
+      LOGGER.debug("Reference {} marked as deleted", reference);
     }
 
+    LOGGER.debug("Commit deleted reference {}", reference);
     commitDeleteReference(reference, null);
+    LOGGER.debug("Committed deleted reference {}", reference);
 
-    persist.purgeReference(reference);
+    try {
+      persist.purgeReference(reference);
+      LOGGER.debug("Reference {} purged", reference);
+    } catch (RefNotFoundException ignore) {
+      // deleted via "deletion recovery" - from another thread/process
+    }
 
     if (actAsAlreadyDeleted) {
       // A previous deleteReference failed, act as if the first one succeeded, therefore this
@@ -413,11 +442,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   }
 
   static final class CommitReferenceResult {
-    final Reference reference;
+    final Reference created;
+    final Reference existing;
     final Kind kind;
 
-    CommitReferenceResult(Reference reference, Kind kind) {
-      this.reference = reference;
+    CommitReferenceResult(Reference reference, Reference existing, Kind kind) {
+      this.created = reference;
+      this.existing = existing;
       this.kind = kind;
     }
 
@@ -426,19 +457,31 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       REF_ROW_EXISTS,
       REF_ROW_MISSING
     }
+
+    @Override
+    public String toString() {
+      return "CommitReferenceResult{"
+          + "created="
+          + created
+          + ", existing="
+          + existing
+          + ", kind="
+          + kind
+          + '}';
+    }
   }
 
   @VisibleForTesting // needed to simulate recovery scenarios
-  CommitReferenceResult commitCreateReference(String name, ObjId pointer, ObjId extendedInfoObj)
+  CommitReferenceResult commitCreateReference(
+      String name, ObjId pointer, ObjId extendedInfoObj, long refCreatedTimestamp)
       throws RetryTimeoutException {
-    long created = persist.config().currentTimeMicros();
-    Reference reference = reference(name, pointer, false, created, extendedInfoObj);
+    Reference reference = reference(name, pointer, false, refCreatedTimestamp, extendedInfoObj);
     try {
       return commitRetry(
           persist,
           (p, retryState) -> {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
-            RefObj ref = ref(name, pointer, created, extendedInfoObj);
+            RefObj ref = ref(name, pointer, refCreatedTimestamp, extendedInfoObj);
             try {
               p.storeObj(ref);
             } catch (ObjTooLargeException e) {
@@ -466,7 +509,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
             commitReferenceChange(p, refRefs, c);
 
-            return new CommitReferenceResult(reference, ADDED_TO_INDEX);
+            return new CommitReferenceResult(reference, null, ADDED_TO_INDEX);
           });
     } catch (CommitConflictException e) {
       checkState(e.conflicts().size() == 1, "Unexpected amount of conflicts %s", e.conflicts());
@@ -481,7 +524,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       Reference existing = persist.fetchReference(name);
 
       if (existing != null) {
-        return new CommitReferenceResult(existing, REF_ROW_EXISTS);
+        return new CommitReferenceResult(reference, existing, REF_ROW_EXISTS);
       }
 
       RefObj ref;
@@ -495,6 +538,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
         throw new RuntimeException("Internal error getting reference creation object", e);
       }
       return new CommitReferenceResult(
+          reference,
           reference(
               name, ref.initialPointer(), false, ref.createdAtMicros(), ref.extendedInfoObj()),
           REF_ROW_MISSING);
@@ -656,7 +700,15 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             return null;
           }
 
+          LOGGER.debug(
+              "Recovering reference creation {} from commit op {}",
+              ref,
+              commitOp.content().action());
           ref = persist.addReference(ref);
+          LOGGER.debug(
+              "Recovered reference creation {} from commit op {}",
+              ref,
+              commitOp.content().action());
         } catch (RefAlreadyExistsException e) {
           ref = e.reference();
         }
@@ -682,21 +734,50 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             return ref;
           }
 
+          LOGGER.debug(
+              "Recovering reference deletion commit for {} from commit op {}",
+              ref,
+              commitOp.content().action());
           commitDeleteReference(ref, suppliedIndex.pointer());
+          LOGGER.debug(
+              "Recovered reference deletion commit for {} from commit op {}",
+              ref,
+              commitOp.content().action());
+
           persist.purgeReference(ref);
-        } catch (RefNotFoundException e) {
+        } catch (RefNotFoundException | RefConditionFailedException e) {
           // ignore
-        } catch (RetryTimeoutException | RefConditionFailedException e) {
+        } catch (RetryTimeoutException e) {
+          LOGGER.debug(
+              "Recovery of reference deletion commit-retry failed for {} from commit op {}",
+              ref,
+              commitOp.content().action(),
+              e);
           throw new RuntimeException(e);
+        } catch (RuntimeException e) {
+          if (REF_REFS_ADVANCED.equals(e.getMessage())) {
+            // It is expected that int/refs can advance while a reference is being recovered.
+            // This can happen, just ignore the recovery, it will be retried in the future, if
+            // necessary.
+            return ref;
+          }
+          throw e;
         }
       } else {
         // Reference marked as deleted in index, purge it.
         try {
+          LOGGER.debug(
+              "Recovering reference purge for {} from commit op {}",
+              ref,
+              commitOp.content().action());
           persist.purgeReference(ref);
-        } catch (RefNotFoundException e) {
+        } catch (RefNotFoundException | RefConditionFailedException e) {
+          LOGGER.debug(
+              "Recovery of reference purge for {} from commit op {} failed",
+              ref,
+              commitOp.content().action(),
+              e);
           // ignore
-        } catch (RefConditionFailedException e) {
-          throw new RuntimeException(e);
         }
       }
       return null;

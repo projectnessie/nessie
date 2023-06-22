@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.spy;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_TIMEOUT_MILLIS;
@@ -90,9 +91,10 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
     switch (createFailure) {
       case AFTER_COMMIT_CREATED:
         CommitReferenceResult commitCreate =
-            refLogic.commitCreateReference(refName, initialPointer, extendedInfoObj);
+            refLogic.commitCreateReference(
+                refName, initialPointer, extendedInfoObj, persist.config().currentTimeMicros());
         soft.assertThat(commitCreate.kind).isSameAs(ADDED_TO_INDEX);
-        created = commitCreate.reference;
+        created = commitCreate.created;
         soft.assertThat(persist.fetchReference(refName)).isNull();
         break;
       default:
@@ -181,6 +183,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
         break;
       case AFTER_COMMIT_DELETED:
         refLogic.commitDeleteReference(deleted, null);
+        reference = reference.withDeleted(true);
         break;
       default:
         throw new IllegalArgumentException();
@@ -202,25 +205,54 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
         soft.assertThat(indexActionExists(refLogic, refName)).isFalse();
         break;
       case CREATE_REFERENCE_SAME_POINTER:
-        soft.assertThatCode(
-                () -> refLogic.createReference(refName, initialPointer, otherExtendedInfoObj))
-            .doesNotThrowAnyException();
-        soft.assertThat(persist.fetchReference(refName))
-            .extracting(
-                Reference::name, Reference::pointer, Reference::deleted, Reference::extendedInfoObj)
-            .containsExactly(
-                reference.name(), reference.pointer(), reference.deleted(), otherExtendedInfoObj);
-        soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
+        switch (deleteFailure) {
+          case AFTER_MARK_DELETE:
+            soft.assertThatCode(
+                    () -> refLogic.createReference(refName, initialPointer, extendedInfoObj))
+                .doesNotThrowAnyException();
+            soft.assertThat(persist.fetchReference(refName))
+                .extracting(Reference::pointer, Reference::deleted)
+                .containsExactly(initialPointer, false);
+            soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
+            break;
+          case AFTER_COMMIT_DELETED:
+            soft.assertThatThrownBy(
+                    () -> refLogic.createReference(refName, initialPointer, extendedInfoObj))
+                .isInstanceOf(RefAlreadyExistsException.class)
+                .asInstanceOf(type(RefAlreadyExistsException.class))
+                .extracting(RefAlreadyExistsException::reference)
+                .isEqualTo(reference);
+            soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
+            soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
+            break;
+          default:
+            throw new IllegalArgumentException();
+        }
         break;
       case CREATE_REFERENCE_OTHER_POINTER:
-        soft.assertThatCode(
-                () -> refLogic.createReference(refName, otherPointer, otherExtendedInfoObj))
-            .doesNotThrowAnyException();
-        soft.assertThat(persist.fetchReference(refName))
-            .extracting(
-                Reference::name, Reference::pointer, Reference::deleted, Reference::extendedInfoObj)
-            .containsExactly(refName, otherPointer, false, otherExtendedInfoObj);
-        soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
+        switch (deleteFailure) {
+          case AFTER_MARK_DELETE:
+            soft.assertThatCode(
+                    () -> refLogic.createReference(refName, otherPointer, otherExtendedInfoObj))
+                .doesNotThrowAnyException();
+            soft.assertThat(persist.fetchReference(refName))
+                .extracting(Reference::pointer, Reference::deleted)
+                .containsExactly(otherPointer, false);
+            soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
+            break;
+          case AFTER_COMMIT_DELETED:
+            soft.assertThatThrownBy(
+                    () -> refLogic.createReference(refName, otherPointer, otherExtendedInfoObj))
+                .isInstanceOf(RefAlreadyExistsException.class)
+                .asInstanceOf(type(RefAlreadyExistsException.class))
+                .extracting(RefAlreadyExistsException::reference)
+                .isEqualTo(reference);
+            soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
+            soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
+            break;
+          default:
+            throw new IllegalArgumentException();
+        }
         break;
       case REMOVE_REFERENCE_SAME_POINTER:
         soft.assertThatThrownBy(() -> refLogic.deleteReference(refName, initialPointer))
@@ -309,23 +341,28 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
 
     // 1st user
     CommitReferenceResult commitCreate1 =
-        refLogic.commitCreateReference(refName, initialPointer, extendedInfo1);
-    soft.assertThat(commitCreate1.kind).isSameAs(ADDED_TO_INDEX);
-    Reference ref1 = commitCreate1.reference;
+        refLogic.commitCreateReference(
+            refName, initialPointer, extendedInfo1, persist.config().currentTimeMicros());
+    soft.assertThat(commitCreate1)
+        .extracting(crr -> crr.existing, crr -> crr.kind)
+        .containsExactly(null, ADDED_TO_INDEX);
+
+    Reference ref1 = commitCreate1.created;
     Reference expected =
         reference(refName, initialPointer, false, ref1.createdAtMicros(), extendedInfo1);
     soft.assertThat(ref1).isEqualTo(expected);
     // 2nd user
     CommitReferenceResult commitCreate2 =
-        refLogic.commitCreateReference(refName, initialPointer, extendedInfo2);
-    soft.assertThat(commitCreate2.kind).isSameAs(Kind.REF_ROW_MISSING);
-    Reference ref2 = commitCreate2.reference;
-    soft.assertThat(ref2).isEqualTo(expected);
+        refLogic.commitCreateReference(
+            refName, initialPointer, extendedInfo2, persist.config().currentTimeMicros());
+    soft.assertThat(commitCreate2)
+        .extracting(crr -> crr.existing, crr -> crr.kind)
+        .containsExactly(expected, Kind.REF_ROW_MISSING);
 
     // 1st user
     soft.assertThat(persist.addReference(ref1)).isEqualTo(expected);
     // 2nd user
-    soft.assertThatThrownBy(() -> persist.addReference(ref2))
+    soft.assertThatThrownBy(() -> persist.addReference(commitCreate2.created))
         .isInstanceOf(RefAlreadyExistsException.class);
 
     soft.assertThat(
