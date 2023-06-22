@@ -42,7 +42,22 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: spotlessCheck compileAll --scan
+        arguments: |
+          spotlessCheck
+          compileAll
+          -x :nessie-quarkus:compileAll
+          -x :nessie-quarkus-cli:compileAll
+          -x :nessie-events-quarkus:compileAll
+          --scan
+
+    - name: Gradle / Compile Quarkus
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: |
+          :nessie-quarkus:compileAll
+          :nessie-quarkus-cli:compileAll
+          :nessie-events-quarkus:compileAll
+          --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
