@@ -85,33 +85,20 @@ public class NessieDockerTestResourceLifecycleManager
 
   @Override
   public void init(Map<String, String> initArgs) {
-    dockerImage = initArgs.get(NESSIE_DOCKER_IMAGE);
-    if (dockerImage == null) {
-      dockerImage = System.getProperty(NESSIE_DOCKER_IMAGE, "ghcr.io/projectnessie/nessie");
-    }
-    dockerTag = initArgs.get(NESSIE_DOCKER_TAG);
-    if (dockerTag == null) {
-      dockerTag = System.getProperty(NESSIE_DOCKER_TAG, "latest");
-    }
-    dockerNetworkId = initArgs.get(NESSIE_DOCKER_NETWORK_ID);
-    if (dockerNetworkId == null) {
-      dockerNetworkId = System.getProperty(NESSIE_DOCKER_NETWORK_ID);
-    }
-    if (initArgs.containsKey(NESSIE_DOCKER_AUTH_ENABLED)) {
-      authEnabled = Boolean.parseBoolean(initArgs.get(NESSIE_DOCKER_AUTH_ENABLED));
-    } else {
-      authEnabled = Boolean.getBoolean(NESSIE_DOCKER_AUTH_ENABLED);
-    }
-    if (initArgs.containsKey(NESSIE_DOCKER_DEBUG_ENABLED)) {
-      debugEnabled = Boolean.parseBoolean(initArgs.get(NESSIE_DOCKER_DEBUG_ENABLED));
-    } else {
-      debugEnabled = Boolean.getBoolean(NESSIE_DOCKER_DEBUG_ENABLED);
-    }
-    this.extraEnvVars =
+    dockerImage = initArg(initArgs, NESSIE_DOCKER_IMAGE, "ghcr.io/projectnessie/nessie");
+    dockerTag = initArg(initArgs, NESSIE_DOCKER_TAG, "latest");
+    dockerNetworkId = initArg(initArgs, NESSIE_DOCKER_NETWORK_ID, null);
+    authEnabled = initArg(initArgs, NESSIE_DOCKER_AUTH_ENABLED, "false").equalsIgnoreCase("true");
+    debugEnabled = initArg(initArgs, NESSIE_DOCKER_DEBUG_ENABLED, "false").equalsIgnoreCase("true");
+    extraEnvVars =
         initArgs.entrySet().stream()
             .filter(e -> !e.getKey().startsWith("nessie.docker."))
             .map(e -> Map.entry(asEnvVar(e.getKey()), e.getValue()))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private static String initArg(Map<String, String> initArgs, String initArg, String defaultValue) {
+    return initArgs.getOrDefault(initArg, System.getProperty(initArg, defaultValue));
   }
 
   private static String asEnvVar(String key) {
