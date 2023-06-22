@@ -71,7 +71,7 @@ public class TestObjTypes {
 
   static Stream<Arguments> objTypes() {
     return Stream.of(
-        arguments(ref(randomObjId(), "hello", randomObjId(), 42L), REF),
+        arguments(ref(randomObjId(), "hello", randomObjId(), 42L, randomObjId()), REF),
         arguments(
             CommitObj.commitBuilder()
                 .id(randomObjId())
@@ -84,7 +84,6 @@ public class TestObjTypes {
             COMMIT),
         arguments(
             tag(
-                randomObjId(),
                 randomObjId(),
                 "tab-msg",
                 newCommitHeaders().add("Foo", "bar").build(),
@@ -164,10 +163,10 @@ public class TestObjTypes {
   public void refIds() {
     List<RefObj> objs =
         asList(
-            ref("r1", objIdFromString("1234"), 0L),
-            ref("r2", objIdFromString("1234"), 42L),
-            ref("r3", objIdFromString("123456"), 0L),
-            ref("r4", objIdFromString("123456"), 42L));
+            ref("r1", objIdFromString("1234"), 0L, randomObjId()),
+            ref("r2", objIdFromString("1234"), 42L, null),
+            ref("r3", objIdFromString("123456"), 0L, randomObjId()),
+            ref("r4", objIdFromString("123456"), 42L, randomObjId()));
 
     // Generated IDs must be unique
     soft.assertThat(objs.stream().map(Obj::id).collect(Collectors.toSet())).hasSize(objs.size());
@@ -177,15 +176,9 @@ public class TestObjTypes {
   public void tagIds() {
     List<TagObj> objs =
         asList(
-            tag(objIdFromString("1234"), null, null, copyFromUtf8("hello world")),
-            tag(objIdFromString("1234"), null, null, copyFromUtf8("foo")),
-            tag(
-                objIdFromString("1234"),
-                "tag-message",
-                newCommitHeaders().add("Foo", "bar").build(),
-                copyFromUtf8("foo")),
-            tag(objIdFromString("123456"), null, null, copyFromUtf8("hello world")),
-            tag(objIdFromString("123456"), null, null, copyFromUtf8("foo")));
+            tag("tag-message", newCommitHeaders().add("Foo", "bar").build(), copyFromUtf8("foo")),
+            tag(null, null, copyFromUtf8("hello world")),
+            tag(null, null, copyFromUtf8("foo")));
 
     // Generated IDs must be unique
     soft.assertThat(objs.stream().map(Obj::id).collect(Collectors.toSet())).hasSize(objs.size());

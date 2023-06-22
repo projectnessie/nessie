@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.common.logic;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
@@ -72,7 +73,8 @@ public interface ReferenceLogic {
   @jakarta.annotation.Nonnull
   Reference createReference(
       @Nonnull @jakarta.annotation.Nonnull String name,
-      @Nonnull @jakarta.annotation.Nonnull ObjId pointer)
+      @Nonnull @jakarta.annotation.Nonnull ObjId pointer,
+      @Nullable @jakarta.annotation.Nullable ObjId extendedInfoObj)
       throws RefAlreadyExistsException, RetryTimeoutException;
 
   /**

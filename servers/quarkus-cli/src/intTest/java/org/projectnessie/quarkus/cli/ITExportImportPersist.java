@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.referenceL
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
@@ -342,7 +343,8 @@ public class ITExportImportPersist {
             emptyList());
     referenceLogic.assignReference(refMain, requireNonNull(main).id());
 
-    Reference refFoo = referenceLogic.createReference("refs/heads/branch-foo", main.id());
+    Reference refFoo =
+        referenceLogic.createReference("refs/heads/branch-foo", main.id(), randomObjId());
     soft.assertThat(persist.storeObj(valueFoo)).isTrue();
     CommitObj foo =
         commitLogic.doCommit(

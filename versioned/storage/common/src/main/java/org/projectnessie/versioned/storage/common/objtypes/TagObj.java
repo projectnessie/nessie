@@ -25,7 +25,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
-public interface TagObj extends Obj, CommitObjReference {
+public interface TagObj extends Obj {
 
   @Override
   default ObjType type() {
@@ -38,34 +38,28 @@ public interface TagObj extends Obj, CommitObjReference {
   @jakarta.annotation.Nullable
   ObjId id();
 
-  @Override
-  @Value.Parameter(order = 2)
-  ObjId commitId();
-
   /** The tag message as plain text. */
-  @Value.Parameter(order = 3)
+  @Value.Parameter(order = 2)
   @Nullable
   @jakarta.annotation.Nullable
   String message();
 
   /** All headers and values. Headers are multi-valued. */
-  @Value.Parameter(order = 4)
+  @Value.Parameter(order = 3)
   @Nullable
   @jakarta.annotation.Nullable
   CommitHeaders headers();
 
-  @Value.Parameter(order = 5)
+  @Value.Parameter(order = 4)
   @Nullable
   @jakarta.annotation.Nullable
   ByteString signature();
 
-  static TagObj tag(
-      ObjId id, ObjId commitId, String message, CommitHeaders headers, ByteString signature) {
-    return ImmutableTagObj.of(id, commitId, message, headers, signature);
+  static TagObj tag(ObjId id, String message, CommitHeaders headers, ByteString signature) {
+    return ImmutableTagObj.of(id, message, headers, signature);
   }
 
-  static TagObj tag(ObjId commitId, String message, CommitHeaders headers, ByteString signature) {
-    return tag(
-        tagHash(commitId, message, headers, signature), commitId, message, headers, signature);
+  static TagObj tag(String message, CommitHeaders headers, ByteString signature) {
+    return tag(tagHash(message, headers, signature), message, headers, signature);
   }
 }

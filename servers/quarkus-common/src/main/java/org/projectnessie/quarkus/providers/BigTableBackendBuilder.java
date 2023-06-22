@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.BIGTABLE;
+import static org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory.configureDataClient;
 
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.NoCredentialsProvider;
@@ -107,11 +108,7 @@ public class BigTableBackendBuilder implements BackendBuilder {
         dataSettings.stubSettings().setJwtAudienceMapping(bigTableConfig.jwtAudienceMapping());
       }
 
-      // If we need retries, can configure it here via stubSettings.*Settings().retrySettings()
-      // If we need a custom tracer, can do it here via dataStubSettings.setTracerFactory.
-
-      BigtableDataSettings.enableOpenCensusStats();
-      BigtableDataSettings.enableGfeOpenCensusStats();
+      configureDataClient(dataSettings);
 
       LOGGER.info("Creating Google BigTable data client...");
       BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());

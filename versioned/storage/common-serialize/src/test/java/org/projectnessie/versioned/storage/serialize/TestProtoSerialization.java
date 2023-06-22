@@ -75,14 +75,23 @@ public class TestProtoSerialization {
 
   static Stream<Reference> references() {
     return Stream.of(
-        reference("a", EMPTY_OBJ_ID, false),
-        reference("b", randomObjId(), false),
-        reference("c", randomObjId(), true));
+        reference("a", EMPTY_OBJ_ID, false, 0L, null),
+        reference("b", randomObjId(), false, 0L, null),
+        reference("c", randomObjId(), true, 0L, null),
+        reference("d", EMPTY_OBJ_ID, false, 42L, null),
+        reference("e", randomObjId(), false, 42L, null),
+        reference("f", randomObjId(), true, 42L, null),
+        reference("g", EMPTY_OBJ_ID, false, 0L, randomObjId()),
+        reference("h", randomObjId(), false, 0L, randomObjId()),
+        reference("i", randomObjId(), true, 0L, randomObjId()),
+        reference("j", EMPTY_OBJ_ID, false, 42L, randomObjId()),
+        reference("k", randomObjId(), false, 42L, randomObjId()),
+        reference("l", randomObjId(), true, 42L, randomObjId()));
   }
 
   static Stream<Obj> objs() {
     return Stream.of(
-        ref(randomObjId(), "hello", randomObjId(), 42L),
+        ref(randomObjId(), "hello", randomObjId(), 42L, randomObjId()),
         CommitObj.commitBuilder()
             .id(randomObjId())
             .seq(1L)

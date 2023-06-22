@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
@@ -310,12 +311,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @jakarta.annotation.Nonnull
   public Reference createReference(
       @Nonnull @jakarta.annotation.Nonnull String name,
-      @Nonnull @jakarta.annotation.Nonnull ObjId pointer)
+      @Nonnull @jakarta.annotation.Nonnull ObjId pointer,
+      @Nullable @jakarta.annotation.Nullable ObjId extendedInfoObj)
       throws RefAlreadyExistsException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
     while (true) {
-      CommitReferenceResult commitToIndex = commitCreateReference(name, pointer);
+      CommitReferenceResult commitToIndex = commitCreateReference(name, pointer, extendedInfoObj);
       Reference reference = commitToIndex.reference;
 
       switch (commitToIndex.kind) {
@@ -365,13 +367,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       StoreIndexElement<CommitOp> index = indexSupplier.get().index().get(nameKey);
       if (index == null) {
         // not there --> okay
-        throw new RefNotFoundException(reference(name, expectedPointer, false));
+        throw new RefNotFoundException(reference(name, expectedPointer, false, 0, null));
       }
       reference = maybeRecover(name, null, indexSupplier);
 
       if (reference == null) {
         // not there, even after recovery
-        throw new RefNotFoundException(reference(name, expectedPointer, false));
+        throw new RefNotFoundException(reference(name, expectedPointer, false, 0, null));
       }
     }
 
@@ -400,7 +402,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     if (actAsAlreadyDeleted) {
       // A previous deleteReference failed, act as if the first one succeeded, therefore this
       // one would have not found the reference.
-      throw new RefNotFoundException(reference(name, expectedPointer, false));
+      throw new RefNotFoundException(
+          reference(
+              name,
+              expectedPointer,
+              false,
+              reference.createdAtMicros(),
+              reference.extendedInfoObj()));
     }
   }
 
@@ -421,16 +429,16 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   }
 
   @VisibleForTesting // needed to simulate recovery scenarios
-  CommitReferenceResult commitCreateReference(String name, ObjId pointer)
+  CommitReferenceResult commitCreateReference(String name, ObjId pointer, ObjId extendedInfoObj)
       throws RetryTimeoutException {
     long created = persist.config().currentTimeMicros();
-    Reference reference = reference(name, pointer, false);
+    Reference reference = reference(name, pointer, false, created, extendedInfoObj);
     try {
       return commitRetry(
           persist,
           (p, retryState) -> {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
-            RefObj ref = ref(name, pointer, created);
+            RefObj ref = ref(name, pointer, created, extendedInfoObj);
             try {
               p.storeObj(ref);
             } catch (ObjTooLargeException e) {
@@ -487,7 +495,9 @@ final class ReferenceLogicImpl implements ReferenceLogic {
         throw new RuntimeException("Internal error getting reference creation object", e);
       }
       return new CommitReferenceResult(
-          reference(name, ref.initialPointer(), false), REF_ROW_MISSING);
+          reference(
+              name, ref.initialPointer(), false, ref.createdAtMicros(), ref.extendedInfoObj()),
+          REF_ROW_MISSING);
     } catch (CommitWrappedException e) {
       throw new RuntimeException(
           format(
@@ -634,7 +644,13 @@ final class ReferenceLogicImpl implements ReferenceLogic {
         } catch (ObjNotFoundException e) {
           throw new RuntimeException("Internal error getting reference creation object", e);
         }
-        ref = reference(name, initialRef.initialPointer(), false);
+        ref =
+            reference(
+                name,
+                initialRef.initialPointer(),
+                false,
+                initialRef.createdAtMicros(),
+                initialRef.extendedInfoObj());
         try {
           if (refRefsOutOfDate(suppliedIndex)) {
             return null;

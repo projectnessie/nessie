@@ -53,10 +53,13 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_INDEX_INDEX;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF;
-import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CONDITION;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CONDITION_COMMON;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_DELETED;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_POINTER;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_CREATED_AT;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_INITIAL_POINTER;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_NAME;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_SEGMENTS;
@@ -71,7 +74,6 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_STRIPES_LAST_KEY;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_STRIPES_SEGMENT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_TAG;
-import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_TAG_COMMIT_ID;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_TAG_HEADERS;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_TAG_MESSAGE;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_TAG_SIGNATURE;
@@ -242,6 +244,7 @@ public class DynamoDBPersist implements Persist {
   public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
+    String condition = referenceCondition(reference);
     Map<String, AttributeValue> values = referenceConditionAttributes(reference);
 
     String refName = reference.name();
@@ -253,7 +256,7 @@ public class DynamoDBPersist implements Persist {
                   b.tableName(TABLE_REFS)
                       .key(referenceKeyMap(refName))
                       .expressionAttributeValues(values)
-                      .conditionExpression(COL_REFERENCES_CONDITION));
+                      .conditionExpression(condition));
     } catch (ConditionalCheckFailedException e) {
       Reference r = fetchReference(refName);
       if (r == null) {
@@ -275,10 +278,14 @@ public class DynamoDBPersist implements Persist {
 
     Map<String, AttributeValue> i = item.item();
 
+    String createdAtStr = attributeToString(i, COL_REFERENCES_CREATED_AT);
+    long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
     return reference(
         name,
         attributeToObjId(i, COL_REFERENCES_POINTER),
-        attributeToBool(i, COL_REFERENCES_DELETED));
+        attributeToBool(i, COL_REFERENCES_DELETED),
+        createdAt,
+        attributeToObjId(i, COL_REFERENCES_EXTENDED_INFO));
   }
 
   @Nonnull
@@ -327,11 +334,15 @@ public class DynamoDBPersist implements Persist {
         .forEach(
             item -> {
               String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
+              String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
+              long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
               Reference reference =
                   reference(
                       name,
                       attributeToObjId(item, COL_REFERENCES_POINTER),
-                      attributeToBool(item, COL_REFERENCES_DELETED));
+                      attributeToBool(item, COL_REFERENCES_DELETED),
+                      createdAt,
+                      attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO));
               int idx = nameToIndex.getValue(name);
               if (idx >= 0) {
                 r[idx] = reference;
@@ -714,15 +725,22 @@ public class DynamoDBPersist implements Persist {
             i.put(COL_REF_NAME, fromS(obj.name()));
             i.put(COL_REF_CREATED_AT, fromS(Long.toString(obj.createdAtMicros())));
             objIdToAttribute(i, COL_REF_INITIAL_POINTER, obj.initialPointer());
+            ObjId extendedInfoObj = obj.extendedInfoObj();
+            if (extendedInfoObj != null) {
+              objIdToAttribute(i, COL_REF_EXTENDED_INFO, extendedInfoObj);
+            }
           }
 
           @Override
           RefObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+            String createdAtStr = attributeToString(i, COL_REFERENCES_CREATED_AT);
+            long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
             return ref(
                 id,
                 attributeToString(i, COL_REF_NAME),
                 attributeToObjId(i, COL_REF_INITIAL_POINTER),
-                Long.parseLong(attributeToString(i, COL_REF_CREATED_AT)));
+                createdAt,
+                attributeToObjId(i, COL_REF_EXTENDED_INFO));
           }
         });
 
@@ -802,8 +820,6 @@ public class DynamoDBPersist implements Persist {
               Map<String, AttributeValue> i,
               int incrementalIndexSize,
               int maxSerializedIndexSize) {
-            objIdToAttribute(i, COL_TAG_COMMIT_ID, obj.commitId());
-
             String message = obj.message();
             if (message != null) {
               i.put(COL_TAG_MESSAGE, fromS(message));
@@ -843,7 +859,6 @@ public class DynamoDBPersist implements Persist {
 
             return tag(
                 id,
-                attributeToObjId(i, COL_TAG_COMMIT_ID),
                 attributeToString(i, COL_TAG_MESSAGE),
                 tagHeaders,
                 attributeToBytes(i, COL_TAG_SIGNATURE));
@@ -924,20 +939,25 @@ public class DynamoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference) {
     Map<String, AttributeValue> item = new HashMap<>();
     item.put(KEY_NAME, referenceKey(reference.name()));
-    bytesAttribute(item, COL_REFERENCES_POINTER, reference.pointer().asBytes());
+    objIdToAttribute(item, COL_REFERENCES_POINTER, reference.pointer());
     item.put(COL_REFERENCES_DELETED, fromBool(reference.deleted()));
+    item.put(COL_REFERENCES_CREATED_AT, referencesCreatedAt(reference));
+    objIdToAttribute(item, COL_REFERENCES_EXTENDED_INFO, reference.extendedInfoObj());
+
     return item;
   }
 
   private void conditionalReferencePut(
       @Nonnull @jakarta.annotation.Nonnull Reference reference, Reference expected) {
+    String condition = referenceCondition(expected);
     Map<String, AttributeValue> values = referenceConditionAttributes(expected);
+
     backend
         .client()
         .putItem(
             b ->
                 b.tableName(TABLE_REFS)
-                    .conditionExpression(COL_REFERENCES_CONDITION)
+                    .conditionExpression(condition)
                     .expressionAttributeValues(values)
                     .item(referenceAttributeValues(reference)));
   }
@@ -946,7 +966,24 @@ public class DynamoDBPersist implements Persist {
     Map<String, AttributeValue> values = new HashMap<>();
     objIdToAttribute(values, ":pointer", reference.pointer());
     values.put(":deleted", fromBool(reference.deleted()));
+    values.put(":createdAt", referencesCreatedAt(reference));
+    objIdToAttribute(values, ":extendedInfo", reference.extendedInfoObj());
     return values;
+  }
+
+  private static String referenceCondition(Reference reference) {
+    return COL_REFERENCES_CONDITION_COMMON
+        + (reference.createdAtMicros() != 0L
+            ? " AND (" + COL_REFERENCES_CREATED_AT + " = :createdAt)"
+            : " AND attribute_not_exists(" + COL_REFERENCES_CREATED_AT + ")")
+        + (reference.extendedInfoObj() != null
+            ? " AND (" + COL_REFERENCES_EXTENDED_INFO + " = :extendedInfo)"
+            : " AND attribute_not_exists(" + COL_REFERENCES_EXTENDED_INFO + ")");
+  }
+
+  private static AttributeValue referencesCreatedAt(Reference reference) {
+    long createdAt = reference.createdAtMicros();
+    return createdAt == 0L ? null : fromS(Long.toString(createdAt));
   }
 
   @Nonnull
@@ -1010,7 +1047,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   private static void objIdToAttribute(Map<String, AttributeValue> i, String n, ObjId id) {
-    i.put(n, fromB(fromByteBuffer(id.asByteBuffer())));
+    i.put(n, id != null ? fromB(fromByteBuffer(id.asByteBuffer())) : null);
   }
 
   private static void objIdsAttribute(Map<String, AttributeValue> i, String n, List<ObjId> l) {

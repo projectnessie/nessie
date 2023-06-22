@@ -78,7 +78,7 @@ final class ImportPersistV1 extends ImportPersistCommon {
             }
 
             try {
-              refLogic.createReference(ref, objIdFromBytes(namedReference.getCommitId()));
+              refLogic.createReference(ref, objIdFromBytes(namedReference.getCommitId()), null);
             } catch (RefAlreadyExistsException | RetryTimeoutException e) {
               throw new RuntimeException(e);
             }

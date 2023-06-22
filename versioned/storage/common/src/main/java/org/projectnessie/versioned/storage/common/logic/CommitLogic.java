@@ -30,7 +30,6 @@ import org.projectnessie.versioned.storage.common.logic.CreateCommit.Add;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Builder;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObjReference;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -199,10 +198,7 @@ public interface CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull ObjId otherId)
       throws NoSuchElementException;
 
-  /**
-   * Retrieves the {@link CommitOp commit object} referenced by {@code commitId}. Resolves a {@link
-   * CommitObjReference}, if necessary.
-   */
+  /** Retrieves the {@link CommitObj commit object} referenced by {@code commitId}. */
   @Nullable
   @jakarta.annotation.Nullable
   CommitObj fetchCommit(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)

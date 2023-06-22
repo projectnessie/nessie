@@ -45,7 +45,7 @@ antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "ant
 assertj-core = { module = "org.assertj:assertj-core", version = "3.24.2" }
 avro = { module = "org.apache.avro:avro", version = "1.11.1" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.0" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.20.89" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.20.90" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
 cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version = "4.16.0" }
@@ -128,7 +128,7 @@ micrometer-core = { module = "io.micrometer:micrometer-core", version = "1.11.1"
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.9.1" }
+mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.10.0" }
 openapi-generator-cli = { module = "org.openapitools:openapi-generator-cli", version = "6.6.0" }
 openapi-jackson-databind = { module = "org.openapitools:jackson-databind-nullable", version = "0.2.6" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }

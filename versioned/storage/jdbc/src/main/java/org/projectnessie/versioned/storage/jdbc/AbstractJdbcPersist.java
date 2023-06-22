@@ -47,6 +47,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_T
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_INDEX_INDEX;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_CREATED_AT;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_INITIAL_POINTER;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_NAME;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_SEGMENTS_STRIPES;
@@ -55,7 +56,6 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_C
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_FILENAME;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_PREDECESSORS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_TEXT;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_COMMIT_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_HEADERS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_MESSAGE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_SIGNATURE;
@@ -70,6 +70,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_REFEREN
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.MARK_REFERENCE_AS_DELETED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.MAX_BATCH_SIZE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.PURGE_REFERENCE;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_EXTENDED_INFO_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.STORE_OBJ;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_REFERENCE_POINTER;
@@ -212,6 +213,8 @@ abstract class AbstractJdbcPersist implements Persist {
       ps.setString(2, reference.name());
       serializeObjId(ps, 3, reference.pointer());
       ps.setBoolean(4, reference.deleted());
+      ps.setLong(5, reference.createdAtMicros());
+      serializeObjId(ps, 6, reference.extendedInfoObj());
 
       if (ps.executeUpdate() != 1) {
         throw new RefAlreadyExistsException(fetchReference(reference.name()));
@@ -232,12 +235,18 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    try (PreparedStatement ps = conn.prepareStatement(MARK_REFERENCE_AS_DELETED)) {
+    try (PreparedStatement ps =
+        conn.prepareStatement(referencesDml(MARK_REFERENCE_AS_DELETED, reference))) {
       ps.setBoolean(1, true);
       ps.setString(2, config().repositoryId());
       ps.setString(3, reference.name());
       serializeObjId(ps, 4, reference.pointer());
       ps.setBoolean(5, false);
+      ps.setLong(6, reference.createdAtMicros());
+      ObjId extendedInfoObj = reference.extendedInfoObj();
+      if (extendedInfoObj != null) {
+        serializeObjId(ps, 7, extendedInfoObj);
+      }
 
       if (ps.executeUpdate() != 1) {
         Reference ref = findReference(conn, reference.name());
@@ -257,11 +266,16 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    try (PreparedStatement ps = conn.prepareStatement(PURGE_REFERENCE)) {
+    try (PreparedStatement ps = conn.prepareStatement(referencesDml(PURGE_REFERENCE, reference))) {
       ps.setString(1, config().repositoryId());
       ps.setString(2, reference.name());
       serializeObjId(ps, 3, reference.pointer());
       ps.setBoolean(4, true);
+      ps.setLong(5, reference.createdAtMicros());
+      ObjId extendedInfoObj = reference.extendedInfoObj();
+      if (extendedInfoObj != null) {
+        serializeObjId(ps, 6, extendedInfoObj);
+      }
 
       if (ps.executeUpdate() != 1) {
         Reference ref = findReference(conn, reference.name());
@@ -282,12 +296,18 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    try (PreparedStatement ps = conn.prepareStatement(UPDATE_REFERENCE_POINTER)) {
+    try (PreparedStatement ps =
+        conn.prepareStatement(referencesDml(UPDATE_REFERENCE_POINTER, reference))) {
       serializeObjId(ps, 1, newPointer);
       ps.setString(2, config().repositoryId());
       ps.setString(3, reference.name());
       serializeObjId(ps, 4, reference.pointer());
       ps.setBoolean(5, false);
+      ps.setLong(6, reference.createdAtMicros());
+      ObjId extendedInfoObj = reference.extendedInfoObj();
+      if (extendedInfoObj != null) {
+        serializeObjId(ps, 7, extendedInfoObj);
+      }
 
       if (ps.executeUpdate() != 1) {
         Reference ref = findReference(conn, reference.name());
@@ -301,6 +321,11 @@ abstract class AbstractJdbcPersist implements Persist {
     } catch (SQLException e) {
       throw unhandledSQLException(e);
     }
+  }
+
+  private String referencesDml(String sql, Reference reference) {
+    String extendedInfoCond = reference.extendedInfoObj() != null ? "=?" : " IS NULL";
+    return sql.replace(REFS_EXTENDED_INFO_COND, extendedInfoCond);
   }
 
   @SuppressWarnings("unused")
@@ -737,6 +762,7 @@ abstract class AbstractJdbcPersist implements Persist {
             ps.setNull(idx++, Types.VARCHAR);
             ps.setNull(idx++, Types.VARCHAR);
             ps.setNull(idx++, Types.BIGINT);
+            ps.setNull(idx++, Types.VARCHAR);
             return idx;
           }
 
@@ -751,6 +777,7 @@ abstract class AbstractJdbcPersist implements Persist {
             ps.setString(idx++, obj.name());
             serializeObjId(ps, idx++, obj.initialPointer());
             ps.setLong(idx++, obj.createdAtMicros());
+            serializeObjId(ps, idx++, obj.extendedInfoObj());
             return idx;
           }
 
@@ -760,7 +787,8 @@ abstract class AbstractJdbcPersist implements Persist {
                 id,
                 rs.getString(COL_REF_NAME),
                 deserializeObjId(rs, COL_REF_INITIAL_POINTER),
-                rs.getLong(COL_REF_CREATED_AT));
+                rs.getLong(COL_REF_CREATED_AT),
+                deserializeObjId(rs, COL_REF_EXTENDED_INFO));
           }
         });
     STORE_OBJ_TYPE.put(
@@ -886,7 +914,6 @@ abstract class AbstractJdbcPersist implements Persist {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.VARCHAR);
             ps.setNull(idx++, Types.BINARY);
             ps.setNull(idx++, Types.BINARY);
             return idx;
@@ -900,7 +927,6 @@ abstract class AbstractJdbcPersist implements Persist {
               int incrementalIndexLimit,
               int maxSerializedIndexSize)
               throws SQLException {
-            serializeObjId(ps, idx++, obj.commitId());
             ps.setString(idx++, obj.message());
             Headers.Builder hb = Headers.newBuilder();
             CommitHeaders headers = obj.headers();
@@ -934,7 +960,6 @@ abstract class AbstractJdbcPersist implements Persist {
 
             return tag(
                 id,
-                deserializeObjId(rs, COL_TAG_COMMIT_ID),
                 rs.getString(COL_TAG_MESSAGE),
                 tagHeaders,
                 deserializeBytes(rs, COL_TAG_SIGNATURE));
@@ -997,7 +1022,12 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   private static Reference deserializeReference(ResultSet rs) throws SQLException {
-    return Reference.reference(rs.getString(1), deserializeObjId(rs, 2), rs.getBoolean(3));
+    return Reference.reference(
+        rs.getString(1),
+        deserializeObjId(rs, 2),
+        rs.getBoolean(3),
+        rs.getLong(4),
+        deserializeObjId(rs, 5));
   }
 
   private static ObjId deserializeObjId(ResultSet rs, int col) throws SQLException {

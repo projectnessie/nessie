@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFrom
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
@@ -77,7 +78,11 @@ final class ImportPersistV2 extends ImportPersistCommon {
             }
 
             try {
-              refLogic.createReference(ref.getName(), objIdFromBytes(ref.getPointer()));
+              ByteString ext = ref.getExtendedInfoObj();
+              refLogic.createReference(
+                  ref.getName(),
+                  objIdFromBytes(ref.getPointer()),
+                  ext == null ? null : objIdFromBytes(ext));
             } catch (RefAlreadyExistsException | RetryTimeoutException e) {
               throw new RuntimeException(e);
             }
