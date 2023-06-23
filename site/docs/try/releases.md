@@ -2,6 +2,53 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.62.0 Release (June 23, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.62.0).
+
+* Identify merge-base instead of common-ancestor (#7035)
+* Remove code for and mentions of Delta Lake (#7108)
+* Fix reference-recovery-logic (#7100)
+* Fix Windows CI (#7107)
+* CI: Fix newer-java CI (#7106)
+* Enhance references with created-timestamp + extended-info-obj-pointer (#7088)
+* BigTable follow-up (#7102)
+* Refactor KeycloakTestResourceLifecycleManager (#7101)
+* Tests: Only pass the surrounding test class to `AbstractReferenceLogicTests` (#7099)
+* Ref-indexes: supply `int/refs` HEAD commit ID to check in reference-r… (#7095)
+* Rocks: simplify `checkReference` (#7096)
+* Inmemory: slightly change the update-ref function (#7094)
+* Mongo: unify condition handling (#7093)
+* Dynamo: simplify condition handling (#7092)
+* Tests: Add logging to a bunch of modules (#7086)
+* Add some convenience functionality to `Reference` (#7089)
+* Nit: `ImportPersistV1/2` just a static import (#7091)
+* Just test refactorings, no functional change (#7090)
+* Site: Add database status section (#7085)
+* Store indexes: some new tests, some test/bench optimizations (#7066)
+* Testing: Remove unnecessary `ITCockroachDBCachingPersist` (#7087)
+* Fix Newer-Java + Mac/Win CI (#7058)
+* Micro-optimization of `LazyIndexImpl.get()` (#7059)
+* Bump Scala 2.12/2.13 patch versions (#7060)
+* CommitLogic: add `fetchCommits` for 2 IDs (#7055)
+* Enable token exchange flow in authn docker-compose example (#7057)
+* Make number of access checks configurable (#7056)
+* Fix nit in `TypeMapping` (#7054)
+* UI: Properly "wire" `compileAll` + `checkstyle` helper tasks (#7042)
+* Add BigTable as a version-store type (#6846)
+* `nessie-rest-services` back to 8 (#7049)
+* Fetch names references: replace `fetchReference`-per-ref w/ bulk-fetch (#7046)
+* Extract `CommitMetaUpdater` class, fix "set authors on merge" (#7039)
+* New storage/references logic: prevent one database read (#7045)
+* More enhancements to docker-compose files (#7047)
+* CI: Do not trigger on push to `feature/**` branches (#7044)
+* CI: Split "Code Checks" job's main step (#7041)
+* Minor fixes to Keycloak docs and docker-compose file (#7036)
+* `BatchAccessChecker`: distinguish `UPDATE` and `CREATE` for commited values (#7028)
+* Build/nit: simplify version catalog usage (#7032)
+* CI: Give "Newer Java" runs more memory (#7031)
+* CI: Support `feature/**` branches (#7030)
+
 ## 0.61.0 Release (June 13, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.61.0).
