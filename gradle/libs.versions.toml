@@ -126,7 +126,7 @@ micrometer-core = { module = "io.micrometer:micrometer-core", version = "1.11.1"
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.10.0" }
+mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.10.1" }
 openapi-generator-cli = { module = "org.openapitools:openapi-generator-cli", version = "6.6.0" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
 opentelemetry-bom-alpha = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
