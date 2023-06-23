@@ -45,14 +45,13 @@ antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "ant
 assertj-core = { module = "org.assertj:assertj-core", version = "3.24.2" }
 avro = { module = "org.apache.avro:avro", version = "1.11.1" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.0" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.20.90" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.20.91" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
 cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version = "4.16.0" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "2.9.3" }
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.17" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
-delta-core = { module = "io.delta:delta-core_2.12", version = "1.1.0-nessie" }
 docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.3.1" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }

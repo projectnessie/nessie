@@ -26,10 +26,6 @@ apply<PublishingHelperPlugin>()
 
 repositories {
   mavenCentral { content { excludeVersionByRegex("io[.]delta", ".*", ".*-nessie") } }
-  maven("https://storage.googleapis.com/nessie-maven") {
-    name = "Nessie Delta custom Repository"
-    content { includeVersionByRegex("io[.]delta", ".*", ".*-nessie") }
-  }
   if (System.getProperty("withMavenLocal").toBoolean()) {
     mavenLocal()
   }
