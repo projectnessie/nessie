@@ -435,8 +435,7 @@ public class VersionStoreImpl implements VersionStore {
             refInfo.commonAncestor(objIdToHash(commonAncestorId));
 
             if (opts.isComputeAheadBehind()) {
-              CommitObj commonAncestor =
-                  persist.fetchTypedObj(commonAncestorId, COMMIT, CommitObj.class);
+              CommitObj commonAncestor = commitLogic.fetchCommit(commonAncestorId);
               long commonAncestorSeq = commonAncestor.seq();
               refInfo.aheadBehind(
                   CommitsAheadBehind.of(
@@ -774,9 +773,7 @@ public class VersionStoreImpl implements VersionStore {
   @Override
   public MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
-
-    CommitterSupplier<Merge> supplier =
-        mergeOp.keepIndividualCommits() ? MergeIndividualImpl::new : MergeSquashImpl::new;
+    CommitterSupplier<Merge> supplier = MergeSquashImpl::new;
 
     if (mergeOp.dryRun()) {
       supplier = dryRunCommitterSupplier(supplier);
@@ -798,10 +795,7 @@ public class VersionStoreImpl implements VersionStore {
   public MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
-    CommitterSupplier<Transplant> supplier =
-        transplantOp.keepIndividualCommits()
-            ? TransplantIndividualImpl::new
-            : TransplantSquashImpl::new;
+    CommitterSupplier<Transplant> supplier = TransplantIndividualImpl::new;
 
     if (transplantOp.dryRun()) {
       supplier = dryRunCommitterSupplier(supplier);

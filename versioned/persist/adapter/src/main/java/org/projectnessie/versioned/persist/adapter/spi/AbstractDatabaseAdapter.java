@@ -2129,7 +2129,7 @@ public abstract class AbstractDatabaseAdapter<
       return null;
     }
 
-    ByteString newCommitMeta = rewriteMetadata.squash(commitMeta);
+    ByteString newCommitMeta = rewriteMetadata.squash(commitMeta, commitMeta.size());
 
     CommitLogEntry targetHeadCommit = fetchFromCommitLog(ctx, toHead);
 

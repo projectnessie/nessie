@@ -103,7 +103,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
   @Test
   public void commitMergeTransplantAccessChecks() throws BaseNessieClientServerException {
-    assumeThat(persist).isNotNull();
+    assumeThat(databaseAdapter).isNull();
 
     ContentKey keyUnrelated = ContentKey.of("unrelated");
     ContentKey keyNamespace1 = ContentKey.of("ns1");
@@ -209,7 +209,6 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
             common.getHash(),
             source.getName(),
             source.getHash(),
-            false,
             null,
             emptyList(),
             NORMAL,
@@ -237,7 +236,6 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
             null,
             asList(source1.getHash(), source.getHash()),
             source1.getName(),
-            true,
             emptyList(),
             NORMAL,
             false,
@@ -373,7 +371,6 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
                           merge.getHash(),
                           ref.getName(),
                           ref.getHash(),
-                          false,
                           null,
                           emptyList(),
                           NORMAL,
@@ -392,7 +389,6 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
                           null,
                           singletonList(ref.getHash()),
                           ref.getName(),
-                          false,
                           emptyList(),
                           NORMAL,
                           false,

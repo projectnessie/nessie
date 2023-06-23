@@ -162,6 +162,10 @@ public abstract class BaseTestServiceImpl {
     throw new IllegalStateException("Neither Persist nor DatabaseAdapter instance present");
   }
 
+  protected boolean isNewStorageModel() {
+    return versionStore().getClass().getName().endsWith("VersionStoreImpl");
+  }
+
   @BeforeEach
   protected void setup() {
     if (persist != null) {

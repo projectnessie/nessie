@@ -55,7 +55,14 @@ public interface MergeResponse {
   @jakarta.annotation.Nullable
   String getResultantTargetHash();
 
-  /** Commit-ID of the identified common ancestor, only returned for a merge operation. */
+  /**
+   * Commit-ID of the identified merge base, only returned for a merge operation.
+   *
+   * <p>Note: earlier Nessie versions only supported merging using the common ancestor, so only
+   * considering the direct commit parents (predecessors). Nessie identifies the "nearest"
+   * merge-base singe version 0.61.0 (with the new storage model), and allows "incremental merges".
+   * Since renaming a public API fields is not good practice, this field represents the merge-base.
+   */
   @Nullable
   @jakarta.annotation.Nullable
   String getCommonAncestor();

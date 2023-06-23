@@ -21,9 +21,9 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogi
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +74,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
   MergeResult<Commit> squash(
       MergeTransplantOpBase mergeTransplantOpBase,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      SourceCommitsAndParent sourceCommits,
+      MergeTransplantContext mergeTransplantContext,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
 
@@ -87,7 +87,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
             mergeBehaviors,
             keyDetailsMap,
             mergeTransplantOpBase.updateCommitMetadata(),
-            sourceCommits,
+            mergeTransplantContext,
             mergeFromId);
 
     List<Obj> objsToStore = new ArrayList<>();
@@ -133,17 +133,15 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       MergeBehaviors mergeBehaviors,
       Map<ContentKey, KeyDetails> keyDetailsMap,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      SourceCommitsAndParent sourceCommits,
+      MergeTransplantContext mergeTransplantContext,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId) {
     CreateCommit.Builder commitBuilder = newCommitBuilder().parentCommitId(headId());
 
-    List<CommitMeta> commitsMetadata = new ArrayList<>(sourceCommits.sourceCommits.size());
-    for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
-      commitsMetadata.add(toCommitMeta(sourceCommit));
-    }
-
-    CommitMeta metadata = updateCommitMetadata.squash(commitsMetadata);
-    fromCommitMeta(metadata, commitBuilder);
+    fromCommitMeta(
+        updateCommitMetadata.squash(
+            Collections.singletonList(mergeTransplantContext.metadata()),
+            mergeTransplantContext.numCommits()),
+        commitBuilder);
 
     if (mergeFromId != null) {
       commitBuilder.addSecondaryParents(mergeFromId);
@@ -164,7 +162,11 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     CommitLogic commitLogic = commitLogic(persist);
     PagedResult<DiffEntry, StoreKey> diff =
         commitLogic.diff(
-            diffQuery(sourceCommits.sourceParent, sourceCommits.mostRecent(), true, filter));
+            diffQuery(
+                mergeTransplantContext.baseCommit(),
+                mergeTransplantContext.headCommit(),
+                true,
+                filter));
 
     return commitLogic.diffToCreateCommit(diff, commitBuilder).build();
   }

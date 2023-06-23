@@ -229,7 +229,7 @@ public class PersistVersionStore implements VersionStore {
                   .sequenceToTransplant(transplantOp.sequenceToTransplant())
                   .updateCommitMetadata(
                       updateCommitMetadataFunction(transplantOp.updateCommitMetadata()))
-                  .keepIndividualCommits(transplantOp.keepIndividualCommits())
+                  .keepIndividualCommits(true)
                   .mergeTypes(mergeTypes)
                   .defaultMergeType(MergeType.valueOf(transplantOp.defaultMergeBehavior().name()))
                   .isDryRun(transplantOp.dryRun())
@@ -259,7 +259,7 @@ public class PersistVersionStore implements VersionStore {
                   .mergeFromHash(mergeOp.fromHash())
                   .updateCommitMetadata(
                       updateCommitMetadataFunction(mergeOp.updateCommitMetadata()))
-                  .keepIndividualCommits(mergeOp.keepIndividualCommits())
+                  .keepIndividualCommits(false)
                   .mergeTypes(mergeTypes)
                   .defaultMergeType(MergeType.valueOf(mergeOp.defaultMergeBehavior().name()))
                   .isDryRun(mergeOp.dryRun())
@@ -369,12 +369,13 @@ public class PersistVersionStore implements VersionStore {
       }
 
       @Override
-      public ByteString squash(List<ByteString> metadata) {
+      public ByteString squash(List<ByteString> metadata, int numCommits) {
         return serializeMetadata(
             updateCommitMetadata.squash(
                 metadata.stream()
                     .map(PersistVersionStore.this::deserializeMetadata)
-                    .collect(Collectors.toList())));
+                    .collect(Collectors.toList()),
+                numCommits));
       }
     };
   }

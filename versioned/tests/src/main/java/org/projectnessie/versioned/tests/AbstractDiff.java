@@ -155,7 +155,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     soft.assertThat(diffAsList(firstCommit, firstCommit)).isEmpty();
 
     // Key restrictions
-    if (store().getClass().getName().endsWith("VersionStoreImpl")) {
+    if (isNewStorageModel()) {
       soft.assertThat(
               diffAsList(
                   initial,

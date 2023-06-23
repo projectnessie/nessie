@@ -124,7 +124,7 @@ public abstract class AbstractMergeTransplant {
       }
 
       @Override
-      public ByteString squash(List<ByteString> metadata) {
+      public ByteString squash(List<ByteString> metadata, int numCommits) {
         return ByteString.copyFromUtf8(
             metadata.stream().map(ByteString::toStringUtf8).collect(Collectors.joining(";"))
                 + " "

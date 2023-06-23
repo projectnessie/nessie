@@ -70,23 +70,13 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  public void transplantKeepCommits(boolean withDetachedCommit)
-      throws BaseNessieClientServerException {
-    testTransplant(withDetachedCommit, true);
+  public void transplant(boolean withDetachedCommit) throws BaseNessieClientServerException {
+    testTransplant(withDetachedCommit);
   }
 
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void transplantSquashed(boolean withDetachedCommit)
-      throws BaseNessieClientServerException {
-    testTransplant(withDetachedCommit, false);
-  }
-
-  private void testTransplant(boolean withDetachedCommit, boolean keepIndividualCommits)
-      throws BaseNessieClientServerException {
+  private void testTransplant(boolean withDetachedCommit) throws BaseNessieClientServerException {
     mergeTransplant(
         false,
-        keepIndividualCommits,
         (target, source, committed1, committed2, returnConflictAsResult) ->
             treeApi()
                 .transplantCommitsIntoBranch(
@@ -96,33 +86,20 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     maybeAsDetachedName(withDetachedCommit, source),
-                    keepIndividualCommits,
                     emptyList(),
                     NORMAL,
                     false,
                     false,
                     returnConflictAsResult),
         withDetachedCommit,
-        "Transplanted");
+        false);
   }
 
   @ParameterizedTest
   @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
-  public void mergeKeepCommits(ReferenceMode refMode) throws BaseNessieClientServerException {
-    testMerge(refMode, true);
-  }
-
-  @ParameterizedTest
-  @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
-  public void mergeSquashed(ReferenceMode refMode) throws BaseNessieClientServerException {
-    testMerge(refMode, false);
-  }
-
-  private void testMerge(ReferenceMode refMode, boolean keepIndividualCommits)
-      throws BaseNessieClientServerException {
+  public void merge(ReferenceMode refMode) throws BaseNessieClientServerException {
     mergeTransplant(
-        !keepIndividualCommits,
-        keepIndividualCommits,
+        true,
         (target, source, committed1, committed2, returnConflictAsResult) -> {
           Reference fromRef = refMode.transform(committed2);
           return treeApi()
@@ -131,7 +108,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                   target.getHash(),
                   fromRef.getName(),
                   fromRef.getHash(),
-                  keepIndividualCommits,
                   null,
                   emptyList(),
                   NORMAL,
@@ -140,7 +116,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                   returnConflictAsResult);
         },
         refMode == ReferenceMode.DETACHED,
-        "Merged");
+        true);
   }
 
   @FunctionalInterface
@@ -156,10 +132,9 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
   private void mergeTransplant(
       boolean verifyAdditionalParents,
-      boolean keepIndividualCommits,
       MergeTransplantActor actor,
       boolean detached,
-      String mergedTransplanted)
+      boolean isMerge)
       throws BaseNessieClientServerException {
     Branch root = createBranch("root");
 
@@ -210,22 +185,40 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     // try again --> conflict
 
-    soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
-        .isInstanceOf(NessieReferenceConflictException.class)
-        .hasMessageContaining("keys have been changed in conflict")
-        .asInstanceOf(type(NessieReferenceConflictException.class))
-        .extracting(NessieReferenceConflictException::getErrorDetails)
-        .isNotNull()
-        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
-        .hasSizeGreaterThan(0);
+    if (isNewStorageModel() && isMerge) {
+      // New storage model allows "merging the same branch again". If nothing changed, it returns a
+      // successful, but not-applied merge-response. This request is effectively a merge without any
+      // commits to merge, reported as "successful".
+      soft.assertThat(actor.act(target, source, committed1, committed2, false))
+          .extracting(
+              MergeResponse::getCommonAncestor,
+              MergeResponse::getEffectiveTargetHash,
+              MergeResponse::getResultantTargetHash,
+              MergeResponse::wasApplied,
+              MergeResponse::wasSuccessful)
+          .containsExactly(committed2.getHash(), newHead.getHash(), newHead.getHash(), false, true);
+    } else if (!isNewStorageModel()) {
+      // For the new storage model, the following transplant will NOT fail (correct behavior),
+      // because the eventually
+      // applied content-value is exactly the same as the currently existing one.
 
-    // try again --> conflict, but return information
+      soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
+          .isInstanceOf(NessieReferenceConflictException.class)
+          .hasMessageContaining("keys have been changed in conflict")
+          .asInstanceOf(type(NessieReferenceConflictException.class))
+          .extracting(NessieReferenceConflictException::getErrorDetails)
+          .isNotNull()
+          .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+          .hasSizeGreaterThan(0);
 
-    conflictExceptionReturnedAsMergeResult(
-        actor, target, source, key1, committed1, committed2, newHead);
+      // try again --> conflict, but return information
+
+      conflictExceptionReturnedAsMergeResult(
+          actor, target, source, key1, committed1, committed2, newHead);
+    }
 
     List<LogEntry> log = commitLog(target.getName(), MINIMAL, target.getHash(), null, null);
-    if (keepIndividualCommits) {
+    if (!isMerge) {
       soft.assertThat(log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
           .containsExactly("test-branch2", "test-branch1", "test-main", "root");
     } else {
@@ -234,8 +227,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
           .first(InstanceOfAssertFactories.STRING)
           .isEqualTo(
               format(
-                  "%s 2 commits from %s at %s into %s at %s",
-                  mergedTransplanted,
+                  "%s %s at %s into %s at %s",
+                  isMerge ? "Merged" : "Transplanted 2 commits from",
                   detached ? "DETACHED" : source.getName(),
                   committed2.getHash(),
                   target.getName(),
@@ -389,7 +382,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     target.getHash(),
                     source.getName(),
                     source.getHash(),
-                    false,
                     CommitMeta.fromMessage("test-message-override-123"),
                     emptyList(),
                     NORMAL,
@@ -438,7 +430,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             target.getHash(),
             source.getName(),
             source.getHash(),
-            false,
             null,
             emptyList(),
             NORMAL,
@@ -451,33 +442,12 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         .extracting(e -> e.getCommitMeta().getMessage())
         .containsExactly(
             format(
-                "Merged 2 commits from %s at %s into %s at %s",
+                "Merged %s at %s into %s at %s",
                 source.getName(), source.getHash(), target.getName(), target.getHash()));
   }
 
   @Test
-  public void transplantMessageSquashed() throws BaseNessieClientServerException {
-    testMergeTransplantMessage(
-        (target, source, committed1, committed2, returnConflictAsResult) ->
-            treeApi()
-                .transplantCommitsIntoBranch(
-                    target.getName(),
-                    target.getHash(),
-                    CommitMeta.fromMessage("test-message-override-123"),
-                    ImmutableList.of(
-                        requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
-                    source.getName(),
-                    false,
-                    emptyList(),
-                    NORMAL,
-                    false,
-                    false,
-                    returnConflictAsResult),
-        ImmutableList.of("test-message-override-123"));
-  }
-
-  @Test
-  public void transplantMessageSingle() throws BaseNessieClientServerException {
+  public void transplantMessage() throws BaseNessieClientServerException {
     testMergeTransplantMessage(
         (target, source, committed1, committed2, returnConflictAsResult) ->
             treeApi()
@@ -487,7 +457,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     CommitMeta.fromMessage("test-message-override-123"),
                     ImmutableList.of(requireNonNull(committed1.getHash())),
                     source.getName(),
-                    false,
                     emptyList(),
                     NORMAL,
                     false,
@@ -508,7 +477,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     source.getName(),
-                    true,
                     emptyList(),
                     NORMAL,
                     false,
@@ -620,7 +588,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             base.getHash(),
             fromRef.getName(),
             fromRef.getHash(),
-            false,
             null,
             emptyList(),
             NORMAL,
@@ -634,7 +601,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         .get()
         .isEqualTo(
             format(
-                "Merged 4 commits from %s at %s into %s at %s",
+                "Merged %s at %s into %s at %s",
                 fromRef.getName(), fromRef.getHash(), base.getName(), base.getHash()));
 
     soft.assertThat(
@@ -655,7 +622,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     target.getHash(),
                     source.getName(),
                     source.getHash(),
-                    false,
                     null,
                     asList(MergeKeyBehavior.of(KEY_1, DROP), MergeKeyBehavior.of(KEY_3, NORMAL)),
                     FORCE,
@@ -676,7 +642,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     source.getName(),
-                    false,
                     asList(MergeKeyBehavior.of(KEY_1, DROP), MergeKeyBehavior.of(KEY_3, NORMAL)),
                     FORCE,
                     false,

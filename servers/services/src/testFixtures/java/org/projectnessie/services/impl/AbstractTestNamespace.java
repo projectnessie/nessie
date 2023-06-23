@@ -18,6 +18,7 @@ package org.projectnessie.services.impl;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -200,6 +201,8 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
   @Test
   public void testNamespaceMerge() throws BaseNessieClientServerException {
+    assumeThat(databaseAdapter).isNotNull();
+
     Branch base = createBranch("merge-base");
     base =
         commit(
@@ -222,18 +225,12 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
             base.getHash(),
             branch.getName(),
             branch.getHash(),
-            true,
             null,
             emptyList(),
             NORMAL,
             false,
             false,
             false);
-
-    List<LogEntry> log = commitLog(base.getName(), MINIMAL, base.getHash(), null, null);
-    String expectedCommitMsg = "create namespace a.b.c";
-    soft.assertThat(log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
-        .containsExactly(expectedCommitMsg, "create namespaces", "root");
 
     soft.assertThat(entries(base.getName(), null).stream().map(EntriesResponse.Entry::getName))
         .contains(ns.toContentKey());
@@ -275,7 +272,6 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
                         finalBase.getHash(),
                         finalBranch.getName(),
                         finalBranch.getHash(),
-                        false,
                         CommitMeta.fromMessage("foo"),
                         emptyList(),
                         NORMAL,
