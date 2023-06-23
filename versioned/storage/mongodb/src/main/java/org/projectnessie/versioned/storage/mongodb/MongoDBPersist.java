@@ -356,8 +356,12 @@ public class MongoDBPersist implements Persist {
         name,
         binaryToObjId(doc.get(COL_REFERENCES_POINTER, Binary.class)),
         doc.getBoolean(COL_REFERENCES_DELETED),
-        doc.getLong(COL_REFERENCES_CREATED_AT),
+        refCreatedAt(doc),
         binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)));
+  }
+
+  private static Long refCreatedAt(Document doc) {
+    return doc.containsKey(COL_REFERENCES_CREATED_AT) ? doc.getLong(COL_REFERENCES_CREATED_AT) : 0L;
   }
 
   @Nonnull
@@ -376,7 +380,7 @@ public class MongoDBPersist implements Persist {
               name,
               binaryToObjId(doc.get(COL_REFERENCES_POINTER, Binary.class)),
               doc.getBoolean(COL_REFERENCES_DELETED),
-              doc.getLong(COL_REFERENCES_CREATED_AT),
+              refCreatedAt(doc),
               binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)));
       for (int i = 0; i < names.length; i++) {
         if (name.equals(names[i])) {

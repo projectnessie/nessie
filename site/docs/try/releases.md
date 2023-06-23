@@ -2,6 +2,13 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.62.1 Release (June 23, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.62.1).
+
+* Emergency-fix of #7088 (#7117)
+* Remove another occurence of Delta Lake (#7113)
+
 ## 0.62.0 Release (June 23, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.62.0).
