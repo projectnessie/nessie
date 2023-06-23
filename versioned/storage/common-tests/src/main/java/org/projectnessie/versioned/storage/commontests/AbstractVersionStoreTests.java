@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -32,5 +33,12 @@ public class AbstractVersionStoreTests extends AbstractVersionStoreTestBase {
   @Override
   protected VersionStore store() {
     return new VersionStoreImpl(persist);
+  }
+
+  @Nested
+  public class MergeScenarios extends AbstractMergeScenarios {
+    public MergeScenarios() {
+      super(AbstractVersionStoreTests.this.store());
+    }
   }
 }

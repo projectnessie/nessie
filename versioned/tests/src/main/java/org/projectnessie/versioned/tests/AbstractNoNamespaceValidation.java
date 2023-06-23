@@ -63,7 +63,7 @@ public abstract class AbstractNoNamespaceValidation {
   }
 
   @ParameterizedTest
-  @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+  @CsvSource({"false,false", "false,true", "true,true"})
   void mergeTransplant(boolean merge, boolean individual) throws Exception {
     BranchName root = BranchName.of("root");
     BranchName branch = BranchName.of("branch");
@@ -109,12 +109,7 @@ public abstract class AbstractNoNamespaceValidation {
               if (merge) {
                 store()
                     .merge(
-                        MergeOp.builder()
-                            .fromRef(branch)
-                            .fromHash(commit2)
-                            .toBranch(root)
-                            .keepIndividualCommits(individual)
-                            .build());
+                        MergeOp.builder().fromRef(branch).fromHash(commit2).toBranch(root).build());
               } else {
                 store()
                     .transplant(
@@ -122,7 +117,6 @@ public abstract class AbstractNoNamespaceValidation {
                             .fromRef(branch)
                             .toBranch(root)
                             .addSequenceToTransplant(commit1, commit2)
-                            .keepIndividualCommits(individual)
                             .build());
               }
             })

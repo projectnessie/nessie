@@ -91,7 +91,6 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             merge.getHash(),
             main.getName(),
             main.getHash(),
-            false,
             null,
             emptyList(),
             NORMAL,
@@ -111,51 +110,11 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             CommitMeta::getHash)
         .containsExactly(
             "NessieHerself",
-            "ThatNessieGuy",
+            isNewStorageModel() ? "NessieHerself" : "ThatNessieGuy",
             format(
-                "Merged 2 commits from %s at %s into %s at %s",
+                "Merged %s at %s into %s at %s",
                 main.getName(), main.getHash(), merge.getName(), merge.getHash()),
             merged.getHash());
-  }
-
-  @Test
-  public void committerAndAuthorMergeUnsquashed() throws Exception {
-    Branch root = createBranch("root");
-
-    root =
-        commit(
-                root,
-                CommitMeta.fromMessage("root"),
-                Put.of(ContentKey.of("other"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
-            .getTargetBranch();
-
-    Branch main = makeCommits(createBranch("committerAndAuthorMergeUnsquashed_main", root));
-    Branch merge = createBranch("committerAndAuthorMergeUnsquashed_target", root);
-
-    setPrincipal(() -> "NessieHerself");
-
-    treeApi()
-        .mergeRefIntoBranch(
-            merge.getName(),
-            merge.getHash(),
-            main.getName(),
-            main.getHash(),
-            true,
-            null,
-            emptyList(),
-            NORMAL,
-            false,
-            false,
-            false);
-
-    merge = (Branch) getReference(merge.getName());
-
-    assertThat(commitLog(merge.getName()).stream().limit(2).collect(Collectors.toList()))
-        .extracting(LogEntry::getCommitMeta)
-        .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
-        .containsExactly(
-            tuple("NessieHerself", "ThatNessieGuy", "with security"),
-            tuple("NessieHerself", "NessieHerself", "no security context"));
   }
 
   @Test
@@ -179,7 +138,6 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             null,
             hashesToTransplant,
             main.getName(),
-            true,
             emptyList(),
             NORMAL,
             false,

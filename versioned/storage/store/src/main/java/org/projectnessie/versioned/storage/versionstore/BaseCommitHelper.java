@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.lang.String.format;
@@ -30,7 +29,6 @@ import static org.projectnessie.versioned.CommitValidation.CommitOperationType.D
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.MergeResult.KeyDetails.keyDetails;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
-import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
@@ -46,13 +44,12 @@ import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeFo
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -80,7 +77,6 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
@@ -100,7 +96,6 @@ import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryExcepti
 import org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
-import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -434,128 +429,6 @@ class BaseCommitHelper {
     validateNamespaces(checkContents, deletedKeysAndPayload, headIndex);
   }
 
-  /** Source commits for merge and transplant operations. */
-  static final class SourceCommitsAndParent {
-
-    /** Source commits in chronological order, most recent commit last. */
-    final List<CommitObj> sourceCommits;
-
-    /** Parent of the oldest commit. */
-    final CommitObj sourceParent;
-
-    SourceCommitsAndParent(List<CommitObj> sourceCommits, CommitObj sourceParent) {
-      this.sourceCommits = sourceCommits;
-      this.sourceParent = sourceParent;
-    }
-
-    CommitObj mostRecent() {
-      return sourceCommits.get(sourceCommits.size() - 1);
-    }
-  }
-
-  SourceCommitsAndParent loadSourceCommitsForTransplant(List<Hash> commitHashes)
-      throws ReferenceNotFoundException {
-    checkArgument(
-        !commitHashes.isEmpty(),
-        "No hashes to transplant onto %s @ %s, expected commit ID from request was %s.",
-        head != null ? head.id() : EMPTY_OBJ_ID,
-        branch.getName(),
-        referenceHash.map(Hash::asString).orElse("not specified"));
-
-    Obj[] objs;
-    try {
-      objs =
-          persist.fetchObjs(
-              commitHashes.stream().map(TypeMapping::hashToObjId).toArray(ObjId[]::new));
-    } catch (ObjNotFoundException e) {
-      throw referenceNotFound(e);
-    }
-    List<CommitObj> commits = new ArrayList<>(commitHashes.size());
-    CommitObj parent = null;
-    CommitLogic commitLogic = commitLogic(persist);
-    for (int i = 0; i < objs.length; i++) {
-      Obj o = objs[i];
-      if (o == null) {
-        throw RefMapping.hashNotFound(commitHashes.get(i));
-      }
-      CommitObj commit = (CommitObj) o;
-      if (i > 0) {
-        if (!commit.directParent().equals(commits.get(i - 1).id())) {
-          throw new IllegalArgumentException("Sequence of hashes is not contiguous.");
-        }
-      } else {
-        try {
-          parent = commitLogic.fetchCommit(commit.directParent());
-        } catch (ObjNotFoundException e) {
-          throw referenceNotFound(e);
-        }
-      }
-      commits.add(commit);
-    }
-
-    return new SourceCommitsAndParent(commits, parent);
-  }
-
-  SourceCommitsAndParent loadSourceCommitsForMerge(
-      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId) {
-    CommitLogic commitLogic = commitLogic(persist);
-    List<CommitObj> commits = new ArrayList<>();
-    CommitObj parent = null;
-    for (PagedResult<CommitObj, ObjId> commitLog =
-            commitLogic.commitLog(commitLogQuery(null, startCommitId, endCommitId));
-        commitLog.hasNext(); ) {
-      CommitObj commit = commitLog.next();
-      if (commit.id().equals(endCommitId)) {
-        parent = commit;
-        break;
-      }
-      commits.add(commit);
-    }
-
-    checkArgument(
-        !commits.isEmpty(),
-        "No hashes to merge from %s onto %s @ %s using common ancestor %s, expected commit ID from request was %s.",
-        startCommitId,
-        head != null ? head.id() : EMPTY_OBJ_ID,
-        branch.getName(),
-        endCommitId,
-        referenceHash.map(Hash::asString).orElse("not specified"));
-
-    // Ends here, if 'endCommitId' is NO_ANCESTOR (parent == null)
-    Collections.reverse(commits);
-    return new SourceCommitsAndParent(commits, parent);
-  }
-
-  ImmutableMergeResult<Commit> mergeSquashFastForward(
-      VersionStore.MergeOp mergeOp,
-      ObjId fromId,
-      CommitObj source,
-      ImmutableMergeResult.Builder<Commit> result)
-      throws RetryException {
-    result.wasSuccessful(true);
-
-    MergeBehaviors mergeBehaviors = new MergeBehaviors(mergeOp);
-
-    IndexesLogic indexesLogic = indexesLogic(persist);
-    for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(source)) {
-      StoreKey k = el.key();
-      ContentKey key = storeKeyToKey(k);
-      // Note: key==null, if not the "main universe" or not a "content" discriminator
-      if (key != null) {
-        result.putDetails(key, keyDetails(mergeBehaviors.mergeBehavior(key), null));
-      }
-    }
-
-    // Only need bump the reference pointer
-    if (!mergeOp.dryRun()) {
-      bumpReferencePointer(fromId, Optional.empty());
-      result.wasApplied(true).resultantTargetHash(objIdToHash(fromId));
-    }
-
-    return result.build();
-  }
-
   ImmutableMergeResult.Builder<Commit> prepareMergeResult() {
     ImmutableMergeResult.Builder<Commit> mergeResult =
         MergeResult.<Commit>builder()
@@ -564,17 +437,6 @@ class BaseCommitHelper {
 
     referenceHash.ifPresent(mergeResult::expectedHash);
     return mergeResult;
-  }
-
-  ObjId identifyCommonAncestor(ObjId fromId) throws ReferenceNotFoundException {
-    CommitLogic commitLogic = commitLogic(persist);
-    ObjId commonAncestorId;
-    try {
-      commonAncestorId = commitLogic.findCommonAncestor(headId(), fromId);
-    } catch (NoSuchElementException notFound) {
-      throw new ReferenceNotFoundException(notFound.getMessage());
-    }
-    return commonAncestorId;
   }
 
   CommitObj createMergeTransplantCommit(
@@ -604,11 +466,15 @@ class BaseCommitHelper {
                 // change).
                 CommitOp op = conflict.op();
                 CommitOp ex = conflict.existing();
-                if (op != null
-                    && ex != null
-                    && op.payload() == ex.payload()
-                    && contentTypeForPayload(op.payload()) == NAMESPACE) {
-                  return ConflictResolution.ADD;
+                if (op != null && ex != null && op.payload() == ex.payload()) {
+                  if (Objects.equals(op.value(), ex.value())) {
+                    // Got another add for the exact same content that is already on the target, so
+                    // drop the conflicting operation on the floor.
+                    return ConflictResolution.DROP;
+                  }
+                  if (contentTypeForPayload(op.payload()) == NAMESPACE) {
+                    return ConflictResolution.ADD;
+                  }
                 }
               }
 

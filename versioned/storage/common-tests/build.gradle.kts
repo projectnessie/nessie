@@ -31,6 +31,7 @@ dependencies {
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-server-store"))
+  implementation(project(":nessie-model"))
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
@@ -46,6 +47,10 @@ dependencies {
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
+
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(platform(libs.junit.bom))
   implementation(libs.bundles.junit.testing)

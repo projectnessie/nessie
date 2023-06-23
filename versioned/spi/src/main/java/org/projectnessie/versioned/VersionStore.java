@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import static org.projectnessie.versioned.MetadataRewriter.NOOP_REWRITER;
+import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADATA_REWRITER;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
@@ -135,17 +135,11 @@ public interface VersionStore {
       return Optional.empty();
     }
 
-    /**
-     * Function that rewrites the commit metadata, gets a multiple commit metadata if {@link
-     * #keepIndividualCommits()} is {@code false}.
-     */
+    /** Function that rewrites the commit metadata. */
     @Value.Default
     default MetadataRewriter<CommitMeta> updateCommitMetadata() {
-      return NOOP_REWRITER;
+      return DEFAULT_METADATA_REWRITER;
     }
-
-    /** Whether to keep the individual commits and do not squash the commits to merge. */
-    boolean keepIndividualCommits();
 
     /** Merge behaviors per content key. */
     Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors();
@@ -180,12 +174,6 @@ public interface VersionStore {
     /** The hash we are using to get additional commits. */
     Hash fromHash();
 
-    @Override
-    @Value.Default
-    default boolean keepIndividualCommits() {
-      return false;
-    }
-
     static ImmutableMergeOp.Builder builder() {
       return ImmutableMergeOp.builder();
     }
@@ -195,12 +183,6 @@ public interface VersionStore {
   interface TransplantOp extends MergeTransplantOpBase {
     /** The sequence of hashes to transplant. */
     List<Hash> sequenceToTransplant();
-
-    @Override
-    @Value.Default
-    default boolean keepIndividualCommits() {
-      return true;
-    }
 
     static ImmutableTransplantOp.Builder builder() {
       return ImmutableTransplantOp.builder();

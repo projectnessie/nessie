@@ -48,6 +48,7 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.DefaultMetadataRewriter;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -201,6 +202,6 @@ public abstract class BaseApiImpl {
       IntFunction<String> squashMessage) {
     Principal principal = getPrincipal();
     String committer = principal == null ? "" : principal.getName();
-    return new CommitMetaUpdater(committer, Instant.now(), commitMeta, squashMessage);
+    return new DefaultMetadataRewriter(committer, Instant.now(), commitMeta, squashMessage);
   }
 }

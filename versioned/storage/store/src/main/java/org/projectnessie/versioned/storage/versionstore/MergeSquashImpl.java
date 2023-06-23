@@ -15,12 +15,16 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -30,6 +34,8 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
+import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -52,9 +58,10 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   public MergeResult<Commit> merge(Optional<?> retryState, MergeOp mergeOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(mergeOp.fromHash());
-    ObjId commonAncestorId = identifyCommonAncestor(fromId);
+    ObjId commonAncestorId = identifyMergeBase(fromId);
 
-    SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
+    MergeTransplantContext mergeTransplantContext =
+        loadSourceCommitsForMerge(fromId, commonAncestorId, mergeOp);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult()
@@ -62,6 +69,39 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
             .sourceRef(mergeOp.fromRef())
             .commonAncestor(objIdToHash(commonAncestorId));
 
-    return squash(mergeOp, mergeResult, sourceCommits, fromId);
+    if (fromId.equals(commonAncestorId)) {
+      return mergeResult
+          .wasSuccessful(true)
+          .wasApplied(false)
+          .resultantTargetHash(objIdToHash(headId()))
+          .build();
+    }
+
+    return squash(mergeOp, mergeResult, mergeTransplantContext, fromId);
+  }
+
+  private ObjId identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
+    CommitLogic commitLogic = commitLogic(persist);
+    try {
+      return commitLogic.findMergeBase(headId(), fromId);
+    } catch (NoSuchElementException notFound) {
+      throw new ReferenceNotFoundException(notFound.getMessage());
+    }
+  }
+
+  private MergeTransplantContext loadSourceCommitsForMerge(
+      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId,
+      @Nonnull @jakarta.annotation.Nonnull MergeOp mergeOp) {
+    CommitObj[] startEndCommits;
+    try {
+      startEndCommits = commitLogic(persist).fetchCommits(startCommitId, endCommitId);
+    } catch (ObjNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+
+    CommitMeta metadata = mergeOp.updateCommitMetadata().rewriteSingle(fromMessage(""));
+
+    return new MergeTransplantContext(startEndCommits[0], startEndCommits[1], metadata);
   }
 }

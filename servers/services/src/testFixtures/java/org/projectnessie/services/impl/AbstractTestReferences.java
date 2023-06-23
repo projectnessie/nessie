@@ -287,7 +287,6 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
             branchHash2,
             branchName,
             newHash,
-            false,
             null,
             Collections.emptyList(),
             MergeBehavior.NORMAL,
