@@ -102,6 +102,7 @@ final class SqlConstants {
   static final String COL_REFS_DELETED = "deleted";
   static final String COL_REFS_CREATED_AT = "created_at";
   static final String COL_REFS_EXTENDED_INFO = "ext_info";
+  static final String REFS_CREATED_AT_COND = "_REFS_CREATED_AT_";
   static final String REFS_EXTENDED_INFO_COND = "_REFS_EXTENDED_INFO_";
   static final String UPDATE_REFERENCE_POINTER =
       "UPDATE "
@@ -118,7 +119,8 @@ final class SqlConstants {
           + COL_REFS_DELETED
           + "=? AND "
           + COL_REFS_CREATED_AT
-          + "=? AND "
+          + REFS_CREATED_AT_COND
+          + " AND "
           + COL_REFS_EXTENDED_INFO
           + REFS_EXTENDED_INFO_COND;
   static final String PURGE_REFERENCE =
@@ -134,7 +136,8 @@ final class SqlConstants {
           + COL_REFS_DELETED
           + "=? AND "
           + COL_REFS_CREATED_AT
-          + "=? AND "
+          + REFS_CREATED_AT_COND
+          + " AND "
           + COL_REFS_EXTENDED_INFO
           + REFS_EXTENDED_INFO_COND;
   static final String MARK_REFERENCE_AS_DELETED =
@@ -152,7 +155,8 @@ final class SqlConstants {
           + COL_REFS_DELETED
           + "=? AND "
           + COL_REFS_CREATED_AT
-          + "=? AND "
+          + REFS_CREATED_AT_COND
+          + " AND "
           + COL_REFS_EXTENDED_INFO
           + REFS_EXTENDED_INFO_COND;
   static final String ADD_REFERENCE =

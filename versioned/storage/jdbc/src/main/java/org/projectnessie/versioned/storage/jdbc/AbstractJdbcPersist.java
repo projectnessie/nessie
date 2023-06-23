@@ -70,6 +70,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_REFEREN
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.MARK_REFERENCE_AS_DELETED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.MAX_BATCH_SIZE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.PURGE_REFERENCE;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_CREATED_AT_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_EXTENDED_INFO_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.STORE_OBJ;
@@ -213,7 +214,11 @@ abstract class AbstractJdbcPersist implements Persist {
       ps.setString(2, reference.name());
       serializeObjId(ps, 3, reference.pointer());
       ps.setBoolean(4, reference.deleted());
-      ps.setLong(5, reference.createdAtMicros());
+      if (reference.createdAtMicros() != 0L) {
+        ps.setLong(5, reference.createdAtMicros());
+      } else {
+        ps.setNull(5, Types.BIGINT);
+      }
       serializeObjId(ps, 6, reference.extendedInfoObj());
 
       if (ps.executeUpdate() != 1) {
@@ -237,15 +242,19 @@ abstract class AbstractJdbcPersist implements Persist {
       throws RefNotFoundException, RefConditionFailedException {
     try (PreparedStatement ps =
         conn.prepareStatement(referencesDml(MARK_REFERENCE_AS_DELETED, reference))) {
-      ps.setBoolean(1, true);
-      ps.setString(2, config().repositoryId());
-      ps.setString(3, reference.name());
-      serializeObjId(ps, 4, reference.pointer());
-      ps.setBoolean(5, false);
-      ps.setLong(6, reference.createdAtMicros());
+      int idx = 1;
+      ps.setBoolean(idx++, true);
+      ps.setString(idx++, config().repositoryId());
+      ps.setString(idx++, reference.name());
+      serializeObjId(ps, idx++, reference.pointer());
+      ps.setBoolean(idx++, false);
+      long createdAtMicros = reference.createdAtMicros();
+      if (createdAtMicros != 0L) {
+        ps.setLong(idx++, createdAtMicros);
+      }
       ObjId extendedInfoObj = reference.extendedInfoObj();
       if (extendedInfoObj != null) {
-        serializeObjId(ps, 7, extendedInfoObj);
+        serializeObjId(ps, idx, extendedInfoObj);
       }
 
       if (ps.executeUpdate() != 1) {
@@ -267,14 +276,18 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try (PreparedStatement ps = conn.prepareStatement(referencesDml(PURGE_REFERENCE, reference))) {
-      ps.setString(1, config().repositoryId());
-      ps.setString(2, reference.name());
-      serializeObjId(ps, 3, reference.pointer());
-      ps.setBoolean(4, true);
-      ps.setLong(5, reference.createdAtMicros());
+      int idx = 1;
+      ps.setString(idx++, config().repositoryId());
+      ps.setString(idx++, reference.name());
+      serializeObjId(ps, idx++, reference.pointer());
+      ps.setBoolean(idx++, true);
+      long createdAtMicros = reference.createdAtMicros();
+      if (createdAtMicros != 0L) {
+        ps.setLong(idx++, createdAtMicros);
+      }
       ObjId extendedInfoObj = reference.extendedInfoObj();
       if (extendedInfoObj != null) {
-        serializeObjId(ps, 6, extendedInfoObj);
+        serializeObjId(ps, idx, extendedInfoObj);
       }
 
       if (ps.executeUpdate() != 1) {
@@ -298,15 +311,19 @@ abstract class AbstractJdbcPersist implements Persist {
       throws RefNotFoundException, RefConditionFailedException {
     try (PreparedStatement ps =
         conn.prepareStatement(referencesDml(UPDATE_REFERENCE_POINTER, reference))) {
-      serializeObjId(ps, 1, newPointer);
-      ps.setString(2, config().repositoryId());
-      ps.setString(3, reference.name());
-      serializeObjId(ps, 4, reference.pointer());
-      ps.setBoolean(5, false);
-      ps.setLong(6, reference.createdAtMicros());
+      int idx = 1;
+      serializeObjId(ps, idx++, newPointer);
+      ps.setString(idx++, config().repositoryId());
+      ps.setString(idx++, reference.name());
+      serializeObjId(ps, idx++, reference.pointer());
+      ps.setBoolean(idx++, false);
+      long createdAtMicros = reference.createdAtMicros();
+      if (createdAtMicros != 0L) {
+        ps.setLong(idx++, createdAtMicros);
+      }
       ObjId extendedInfoObj = reference.extendedInfoObj();
       if (extendedInfoObj != null) {
-        serializeObjId(ps, 7, extendedInfoObj);
+        serializeObjId(ps, idx, extendedInfoObj);
       }
 
       if (ps.executeUpdate() != 1) {
@@ -324,8 +341,10 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   private String referencesDml(String sql, Reference reference) {
+    String createdAtCond = reference.createdAtMicros() != 0L ? "=?" : " IS NULL";
     String extendedInfoCond = reference.extendedInfoObj() != null ? "=?" : " IS NULL";
-    return sql.replace(REFS_EXTENDED_INFO_COND, extendedInfoCond);
+    return sql.replace(REFS_CREATED_AT_COND, createdAtCond)
+        .replace(REFS_EXTENDED_INFO_COND, extendedInfoCond);
   }
 
   @SuppressWarnings("unused")
