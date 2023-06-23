@@ -16,7 +16,7 @@ jandex = "3.1.2"
 jmh = "1.36"
 junit = "5.9.3"
 maven = "3.9.2"
-mavenResolver = "1.9.12"
+mavenResolver = "1.9.13"
 mockito="4.11.0"
 nessieClientVersion = "0.59.0" # Must be in sync with Nessie version in the Iceberg release.
 nessieBuildPlugins = "0.2.24"
@@ -109,7 +109,7 @@ javax-validation-api = { module = "javax.validation:validation-api", version = "
 javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 javax-ws-rs21 = { module = "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec", version = "2.0.2.Final" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "2.3.8" }
-jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "2.39.1" }
+jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "2.40" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "24.0.1" }
 jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
