@@ -7,7 +7,7 @@ This page documents the complete Nessie specification. This includes:
 
 ## API contract
 
-The Nessie API is used by Nessie integrations within for example Apache Iceberg or Delta Lake and
+The Nessie API is used by Nessie integrations within for example Apache Iceberg and
 user facing applications like Web UIs.
 
 Nessie defines a [REST API](rest.md) (OpenAPI) and implementations for [Java](java.md)
@@ -18,7 +18,7 @@ and [Python](python.md).
 ### General Contract
 
 _Content Objects_ describe the state of a data lake object like a table or view.
-Nessie currently provides types for Iceberg tables, Delta Lake tables and Iceberg views. Nessie uses
+Nessie currently provides types for Iceberg tables views. Nessie uses
 two identifiers for a single Content object:
 
 1. The [Content Id](#content-id) is used to identify a content object across all branches even
@@ -37,7 +37,7 @@ new key ([see below](#operations-in-a-nessie-commit)).
 
 ### On Reference State vs Global State
 
-Nessie is designed to support multiple table formats like Apache Iceberg or Delta Lake. 
+Nessie is designed to support multiple table formats like Apache Iceberg. 
 Since different Nessie commits, think: on different branches in Nessie, can refer to the
 same physical table but with different state of the data and potentially different schema, some
 table formats require Nessie to refer to a single _Global State_.
@@ -126,14 +126,6 @@ The state of an Iceberg view is represented using the attributes `versionId`, `s
 and `dialect`.
 
 Iceberg views are handled similar to [Iceberg Tables](#iceberg-table).
-
-#### Delta Lake Table
-
-The state of a Delta Lake Table is represented using the Delta Lake Table attributes
-`metadataLocationHistory`, `checkpointLocationHistory` and `lastCheckpoint`.
-
-Delta Lake Tables are tracked without a _Global State_ in Nessie, i.e. those three attributes are
-recorded within the [_Put Operation_](#put-operation) of a Nessie commit.
 
 ## Operations in a Nessie commit
 

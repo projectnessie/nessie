@@ -5,7 +5,6 @@ of your data and leverage Git-like Branches & Tags for your Data Lake. Nessie en
 table formats with version control techniques:
 
 * Apache Iceberg Tables ([more](../tables/iceberg.md))
-* Delta Lake Tables ([more](../tables/deltalake.md))
 * Apache Iceberg Views ([more](../tables/views.md))
 
 ## Basic Concepts
@@ -77,11 +76,11 @@ of your tables at every point in time and then allows you to recall those as nee
 ## Scale & Performance
 
 Nessie is built for very large data warehouses. Nessie [supports](../develop/kernel.md) 
-millions of tables and thousands of commits/second. Because Nessie builds on top of Iceberg 
-and Delta Lake, each table can have millions of files. As such, Nessie can support 
+millions of tables and thousands of commits/second. Because Nessie builds on top of Iceberg, 
+each table can have millions of files. As such, Nessie can support 
 data warehouses several magnitudes larger than the largest in the world today. This 
 is possible in large part due to the separation of transaction management (Nessie) from 
-table metadata management (Iceberg and Delta Lake).
+table metadata management.
 
 ## Technology 
 Nessie can be [deployed in multiple ways](../try) and is composed primarily of the Nessie service, 

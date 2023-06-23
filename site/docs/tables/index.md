@@ -21,11 +21,8 @@ formats with the Nessie capabilities around versioning and transactions.
 
 ## Table Formats
 
-Nessie currently works with the following formats.
+Nessie currently works with the [Apache Iceberg table format](iceberg.md).
  
-* [Iceberg Tables](iceberg.md)
-* [Delta Lake Tables](deltalake.md)
-
 We expect that Nessie will continue to add table formats as more are created.
 
 ## Iceberg Views

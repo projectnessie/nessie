@@ -56,7 +56,6 @@
     {
       matchManagers: ["maven", "gradle"],
       matchPackageNames: [
-        "io.delta:delta-core_2.12",
         "jakarta.validation:jakarta.validation-api",
         "jakarta.enterprise:jakarta.enterprise.cdi-api",
         "org.glassfish.jersey:jersey-bom",

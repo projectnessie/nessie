@@ -7,7 +7,7 @@ template: "home.html"
 * Git-inspired data version control
 * Cross-table transactions and visibility
 * Open data lake approach, supporting Hive, Spark, Dremio, AWS Athena, etc.
-* Works with Apache Iceberg and Delta Lake tables
+* Works with Apache Iceberg tables
 * Run as a docker image or fork it on GitHub
 
 Get in touch via our [Google Group](https://groups.google.com/g/projectnessie) and our

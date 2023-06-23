@@ -24,8 +24,7 @@
 # cache when the checks have successfully finished.
 #
 # Java CI runs against Java 11 and Java 17, where it is meaningful.
-# (Spark + Deltalake tests always run against 11, so not run against
-# Java 17.)
+# (Spark tests always run against 11, so not run against Java 17.)
 
 name: CI build
 
@@ -278,7 +277,6 @@ jobs:
             -x :nessie-events-quarkus:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
-            -x :nessie-deltalake:intTest \
             $(cat ../spark-prjs.txt) \
             --scan
 
@@ -370,7 +368,7 @@ jobs:
           ./gradlew :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt
           echo "::endgroup::"
 
-          ./gradlew :nessie-deltalake:intTest $(cat ../spark-prjs.txt) --scan
+          ./gradlew $(cat ../spark-prjs.txt) --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
