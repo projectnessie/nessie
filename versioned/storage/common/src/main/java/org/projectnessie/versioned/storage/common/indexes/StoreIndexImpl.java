@@ -142,7 +142,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   // 'elements' j.u.ArrayList.
 
   StoreIndexImpl(ElementSerializer<V> serializer) {
-    this(new ArrayList<>(), 1, serializer, false);
+    this(new ArrayList<>(), 2, serializer, false);
   }
 
   StoreIndexImpl(
