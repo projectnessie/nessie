@@ -45,7 +45,7 @@ import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.IndexTest
 @Warmup(iterations = 2, time = 2000, timeUnit = MILLISECONDS)
 @Measurement(iterations = 3, time = 1000, timeUnit = MILLISECONDS)
 @Fork(1)
-@Threads(4)
+@Threads(1) // Do NOT use multiple threads StoreIndex is NOT thread safe!
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(MICROSECONDS)
 public class RealisticKeyIndexImplBench {
@@ -90,8 +90,23 @@ public class RealisticKeyIndexImplBench {
   }
 
   @Benchmark
-  public Object serialize(BenchmarkParam param) {
+  public Object serializeUnmodifiedIndex(BenchmarkParam param) {
     return param.keyIndexTestSet.serialize();
+  }
+
+  @Benchmark
+  public Object serializeModifiedIndex(BenchmarkParam param) {
+    StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
+    return deserialized.serialize();
+  }
+
+  @Benchmark
+  public Object deserializeAdd(BenchmarkParam param) {
+    StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
+    for (char c = 'a'; c <= 'z'; c++) {
+      deserialized.add(indexElement(key(c + "x", "key"), commitOp(ADD, 1, randomObjId())));
+    }
+    return deserialized;
   }
 
   @Benchmark
@@ -109,7 +124,8 @@ public class RealisticKeyIndexImplBench {
   }
 
   @Benchmark
-  public Object randomGetKey(BenchmarkParam param) {
-    return param.keyIndexTestSet.randomGetKey();
+  public Object deserializeGetRandomKey(BenchmarkParam param) {
+    StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
+    return deserialized.get(param.keyIndexTestSet.randomKey());
   }
 }
