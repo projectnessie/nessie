@@ -24,7 +24,7 @@ pytest==7.3.2
 pytest-cov==4.1.0
 pytest-mock==3.11.1
 pytest-recording==0.12.2
-tox==4.6.2
+tox==4.6.3
 twine==4.0.2
 watchdog==3.0.0
 wheel==0.40.0
