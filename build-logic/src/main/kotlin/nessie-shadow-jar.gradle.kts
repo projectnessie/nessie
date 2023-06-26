@@ -29,3 +29,5 @@ tasks.named<Jar>("jar") {
   dependsOn(shadowJar)
   archiveClassifier.set("raw")
 }
+
+tasks.withType<ShadowJar>().configureEach { exclude("META-INF/jandex.idx") }
