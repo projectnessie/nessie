@@ -136,8 +136,9 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   private final ElementSerializer<V> serializer;
 
   private final ByteBuffer serialized;
+
+  /** This buffer is used for temporary use within (de)serialization. */
   private final ByteBuffer scratchKeyBuffer = newKeyBuffer();
-  //  private final ByteBuffer preKeyBuffer = newKeyBuffer();
 
   private boolean modified;
   private ObjId objId;
@@ -461,9 +462,6 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
       }
 
       ByteBuffer previousKey = null;
-
-      // This buffer's backs the currently serialized key - use with care!
-      // Having this "singleton" instance massively reduces GC alloc/churn rate.
 
       @SuppressWarnings("UnnecessaryLocalVariable")
       ElementSerializer<V> ser = serializer;
