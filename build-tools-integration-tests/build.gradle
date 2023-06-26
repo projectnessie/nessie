@@ -28,7 +28,7 @@ repositories {
 
 def nessieVersion = file("../version.txt").text.trim()
 def versionMavenResolver = "1.9.13"
-def versionMaven = "3.9.2"
+def versionMaven = "3.9.3"
 
 dependencies {
   implementation(enforcedPlatform("org.projectnessie.nessie:nessie-bom:$nessieVersion"))
