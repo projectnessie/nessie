@@ -23,6 +23,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Actio
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
+import java.util.Iterator;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,6 +36,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action;
 import org.projectnessie.versioned.storage.commontests.ImmutableRealisticKeySet;
@@ -127,5 +129,14 @@ public class RealisticKeyIndexImplBench {
   public Object deserializeGetRandomKey(BenchmarkParam param) {
     StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
     return deserialized.get(param.keyIndexTestSet.randomKey());
+  }
+
+  @Benchmark
+  public void deserializeIterate250(BenchmarkParam param, Blackhole bh) {
+    StoreIndex<CommitOp> deserialized = param.keyIndexTestSet.deserialize();
+    Iterator<StoreIndexElement<CommitOp>> iter = deserialized.iterator();
+    for (int i = 0; i < 250 && iter.hasNext(); i++) {
+      bh.consume(iter.next());
+    }
   }
 }
