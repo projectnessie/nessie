@@ -15,17 +15,21 @@
  */
 package org.projectnessie.server;
 
+import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.keycloak.client.KeycloakTestClient;
+import java.util.Map;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
+import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusIntegrationTest
 @QuarkusTestResource(
     restrictToAnnotatedClass = true,
     value = KeycloakTestResourceLifecycleManager.class)
-@TestProfile(value = AbstractOAuth2Authentication.Profile.class)
+@TestProfile(ITOAuth2Authentication.Profile.class)
 public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
 
   private final KeycloakTestClient keycloakClient = new KeycloakTestClient();
@@ -33,5 +37,15 @@ public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
   @Override
   protected String tokenEndpoint() {
     return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/token";
+  }
+
+  public static class Profile implements QuarkusTestProfile {
+
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return ImmutableMap.<String, String>builder()
+          .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
+          .build();
+    }
   }
 }
