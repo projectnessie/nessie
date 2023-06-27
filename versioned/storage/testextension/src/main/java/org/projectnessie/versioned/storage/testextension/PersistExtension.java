@@ -166,14 +166,18 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
     boolean wantsPersist = Persist.class.isAssignableFrom(type);
     boolean wantsPersistFactory = PersistFactory.class.isAssignableFrom(type);
     boolean wantsBackend = Backend.class.isAssignableFrom(type);
+    boolean wantsBackendTestFactory = BackendTestFactory.class.isAssignableFrom(type);
 
     checkState(
-        wantsPersist || wantsPersistFactory || wantsBackend,
+        wantsPersist || wantsPersistFactory || wantsBackend || wantsBackendTestFactory,
         "Cannot assign to %s",
         annotatedElement);
 
-    if (wantsBackend || wantsPersistFactory) {
+    if (wantsBackendTestFactory || wantsBackend || wantsPersistFactory) {
       ClassPersistInstances classPersistInstances = classPersistInstances(context);
+      if (wantsBackendTestFactory) {
+        return classPersistInstances.backendTestFactory();
+      }
       if (wantsBackend) {
         return classPersistInstances.backend();
       }
@@ -281,7 +285,8 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
   private void assertValidFieldCandidate(Field field) {
     if (!field.getType().isAssignableFrom(Persist.class)
         && !field.getType().isAssignableFrom(PersistFactory.class)
-        && !field.getType().isAssignableFrom(Backend.class)) {
+        && !field.getType().isAssignableFrom(Backend.class)
+        && !field.getType().isAssignableFrom(BackendTestFactory.class)) {
       throw new ExtensionConfigurationException(
           "Can only resolve fields of type "
               + Persist.class.getName()

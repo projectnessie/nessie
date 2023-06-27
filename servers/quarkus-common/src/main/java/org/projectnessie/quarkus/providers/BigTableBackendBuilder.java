@@ -147,6 +147,7 @@ public class BigTableBackendBuilder implements BackendBuilder {
           BigTableBackendConfig.builder()
               .dataClient(dataClient)
               .tableAdminClient(tableAdminClient)
+              .tablePrefix(bigTableConfig.tablePrefix())
               .build();
       return factory.buildBackend(c);
     } catch (Exception e) {

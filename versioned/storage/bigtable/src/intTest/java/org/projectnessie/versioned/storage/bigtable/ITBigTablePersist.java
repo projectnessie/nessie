@@ -15,12 +15,27 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
+
+import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
+import java.util.List;
+import java.util.Optional;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.commontests.AbstractBackendRepositoryTests;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
+import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 @NessieBackend(BigTableBackendContainerTestFactory.class)
@@ -32,7 +47,78 @@ public class ITBigTablePersist extends AbstractPersistTests {
     @BeforeEach
     void noAdminClient() {
       BigTableBackend b = (BigTableBackend) backend;
-      backend = new BigTableBackend(b.client(), null, false);
+      backend =
+          new BigTableBackend(
+              BigTableBackendConfig.builder().dataClient(b.client()).build(), false);
+    }
+  }
+
+  @Nested
+  @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+  public class TablePrefixes {
+    @InjectSoftAssertions protected SoftAssertions soft;
+
+    @NessiePersist(initializeRepo = false)
+    protected BackendTestFactory factory;
+
+    @Test
+    void tablePrefix() {
+      AbstractBigTableBackendTestFactory btFactory = (AbstractBigTableBackendTestFactory) factory;
+      try (BigTableBackend backendA =
+              btFactory.createNewBackend(
+                  btFactory.bigtableConfigBuilder().tablePrefix(Optional.of("instanceA")).build(),
+                  true);
+          BigTableBackend backendB =
+              btFactory.createNewBackend(
+                  btFactory.bigtableConfigBuilder().tablePrefix(Optional.of("instanceB")).build(),
+                  true)) {
+
+        BigtableTableAdminClient adminClientA = requireNonNull(backendA.adminClient());
+        BigtableTableAdminClient adminClientB = requireNonNull(backendB.adminClient());
+
+        List<String> expectedTables = List.of();
+        soft.assertThat(adminClientA.listTables())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(adminClientB.listTables())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+
+        // Setup "A"
+
+        backendA.setupSchema();
+
+        Persist persistA = backendA.createFactory().newPersist(StoreConfig.Adjustable.empty());
+        RepositoryLogic repoA = repositoryLogic(persistA);
+
+        expectedTables = List.of("instanceA_refs", "instanceA_objs");
+
+        soft.assertThat(adminClientA.listTables())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(adminClientB.listTables())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+
+        soft.assertThat(repoA.repositoryExists()).isFalse();
+        repoA.initialize("main");
+        soft.assertThat(repoA.repositoryExists()).isTrue();
+
+        // Setup "B"
+
+        backendB.setupSchema();
+
+        Persist persistB = backendB.createFactory().newPersist(StoreConfig.Adjustable.empty());
+        RepositoryLogic repoB = repositoryLogic(persistB);
+
+        expectedTables =
+            List.of("instanceA_refs", "instanceA_objs", "instanceB_refs", "instanceB_objs");
+
+        soft.assertThat(adminClientA.listTables())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(adminClientB.listTables())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+
+        soft.assertThat(repoB.repositoryExists()).isFalse();
+        repoB.initialize("main");
+        soft.assertThat(repoB.repositoryExists()).isTrue();
+      }
     }
   }
 }

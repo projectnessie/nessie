@@ -15,11 +15,7 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.api.gax.retrying.RetrySettings;
-import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
 import java.util.List;
@@ -50,9 +46,7 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
   @Nonnull
   @jakarta.annotation.Nonnull
   public Backend buildBackend(@Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config) {
-    BigtableDataClient dataClient = requireNonNull(config.dataClient());
-    BigtableTableAdminClient tableAdminClient = config.tableAdminClient();
-    return new BigTableBackend(dataClient, tableAdminClient, false);
+    return new BigTableBackend(config, false);
   }
 
   public static void configureDataClient(BigtableDataSettings.Builder settings) {

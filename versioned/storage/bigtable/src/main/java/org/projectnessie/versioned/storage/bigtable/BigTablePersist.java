@@ -31,8 +31,6 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUA
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_REFS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.READ_TIMEOUT_MILLIS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_OBJS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_REFS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
@@ -125,7 +123,7 @@ public class BigTablePersist implements Persist {
   public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     try {
       ByteString key = dbKey(name);
-      Row row = backend.client().readRow(TABLE_REFS, key);
+      Row row = backend.client().readRow(backend.tableRefs, key);
       return row != null ? referenceFromRow(row) : null;
     } catch (ApiException e) {
       throw apiException(e);
@@ -138,7 +136,8 @@ public class BigTablePersist implements Persist {
   public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     try {
       Reference[] r = new Reference[names.length];
-      bulkFetch(TABLE_REFS, names, r, this::dbKey, BigTablePersist::referenceFromRow, name -> {});
+      bulkFetch(
+          backend.tableRefs, names, r, this::dbKey, BigTablePersist::referenceFromRow, name -> {});
       return r;
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
@@ -168,7 +167,7 @@ public class BigTablePersist implements Persist {
           backend
               .client()
               .checkAndMutateRow(
-                  ConditionalRowMutation.create(TABLE_REFS, key)
+                  ConditionalRowMutation.create(backend.tableRefs, key)
                       .condition(condition)
                       .otherwise(mutation));
 
@@ -275,7 +274,9 @@ public class BigTablePersist implements Persist {
     return backend
         .client()
         .checkAndMutateRow(
-            ConditionalRowMutation.create(TABLE_REFS, key).condition(condition).then(mutation));
+            ConditionalRowMutation.create(backend.tableRefs, key)
+                .condition(condition)
+                .then(mutation));
   }
 
   private static Reference referenceFromRow(Row row) {
@@ -295,7 +296,7 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(id);
 
-      Row row = backend.client().readRow(TABLE_OBJS, key);
+      Row row = backend.client().readRow(backend.tableObjs, key);
       if (row != null) {
         ByteBuffer obj =
             row.getCells(FAMILY_OBJS, QUALIFIER_OBJS).get(0).getValue().asReadOnlyByteBuffer();
@@ -339,7 +340,7 @@ public class BigTablePersist implements Persist {
       Obj[] r = new Obj[ids.length];
       List<ObjId> notFound = new ArrayList<>();
       bulkFetch(
-          TABLE_OBJS,
+          backend.tableObjs,
           ids,
           r,
           this::dbKey,
@@ -414,7 +415,9 @@ public class BigTablePersist implements Persist {
             .filter(FILTERS.key().exactMatch(key))
             .filter(FILTERS.family().exactMatch(FAMILY_OBJS))
             .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJS));
-    return ConditionalRowMutation.create(TABLE_OBJS, key).condition(condition).otherwise(mutation);
+    return ConditionalRowMutation.create(backend.tableObjs, key)
+        .condition(condition)
+        .otherwise(mutation);
   }
 
   @Override
@@ -464,7 +467,7 @@ public class BigTablePersist implements Persist {
       ByteString key = dbKey(id);
       backend
           .client()
-          .mutateRow(RowMutation.create(TABLE_OBJS, key, Mutation.create().deleteRow()));
+          .mutateRow(RowMutation.create(backend.tableObjs, key, Mutation.create().deleteRow()));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -472,13 +475,13 @@ public class BigTablePersist implements Persist {
 
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
-    BulkMutation bulk = BulkMutation.create(TABLE_OBJS);
+    BulkMutation bulk = BulkMutation.create(backend.tableObjs);
     for (ObjId id : ids) {
       ByteString key = dbKey(id);
       bulk.add(key, Mutation.create().deleteRow());
       if (bulk.getEntryCount() == MAX_BULK_MUTATIONS) {
         backend.client().bulkMutateRows(bulk);
-        bulk = BulkMutation.create(TABLE_OBJS);
+        bulk = BulkMutation.create(backend.tableObjs);
       }
     }
     if (bulk.getEntryCount() > 0) {
@@ -502,7 +505,7 @@ public class BigTablePersist implements Persist {
       backend
           .client()
           .mutateRow(
-              RowMutation.create(TABLE_OBJS, key)
+              RowMutation.create(backend.tableObjs, key)
                   .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
     } catch (ApiException e) {
       throw apiException(e);
@@ -516,7 +519,7 @@ public class BigTablePersist implements Persist {
       return;
     }
 
-    BulkMutation bulkMutation = BulkMutation.create(TABLE_OBJS);
+    BulkMutation bulkMutation = BulkMutation.create(backend.tableObjs);
     for (Obj obj : objs) {
       ObjId id = obj.id();
       checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -564,7 +567,7 @@ public class BigTablePersist implements Persist {
     ScanAllObjectsIterator(Predicate<ObjType> filter) {
       this.filter = filter;
 
-      Query q = Query.create(TABLE_OBJS).prefix(keyPrefix);
+      Query q = Query.create(backend.tableObjs).prefix(keyPrefix);
 
       Filters.ChainFilter filterChain =
           FILTERS.chain().filter(FILTERS.key().regex(keyPrefix.concat(REPO_REGEX_SUFFIX)));
