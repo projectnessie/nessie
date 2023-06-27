@@ -64,4 +64,13 @@ public final class Ser {
     }
     return r;
   }
+
+  public static void skipVarInt(ByteBuffer b) {
+    for (; ; ) {
+      int v = b.get() & 0xff;
+      if ((v & 0x80) == 0) {
+        break;
+      }
+    }
+  }
 }

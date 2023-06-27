@@ -17,8 +17,10 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.deserializeObjId;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.skipObjId;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
+import static org.projectnessie.versioned.storage.common.util.Ser.skipVarInt;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -148,7 +150,15 @@ public interface CommitOp {
       if (v == null) {
         v = ObjId.zeroLengthObjId();
       }
-      return 1 + 1 + v.serializedSize() + 16;
+      return
+      // Action
+      1
+          // Payload
+          + 1
+          // ObjId
+          + v.serializedSize()
+          // content ID (UUID)
+          + 16;
     }
 
     @Override
@@ -183,6 +193,18 @@ public interface CommitOp {
       long lsb = buffer.getLong();
       UUID contentId = (msb != 0L || lsb != 0L) ? new UUID(msb, lsb) : null;
       return commitOp(operation, payload, id, contentId);
+    }
+
+    @Override
+    public void skip(ByteBuffer buffer) {
+      // Action
+      buffer.get();
+      // Payload
+      skipVarInt(buffer);
+      // ObjId
+      skipObjId(buffer);
+      // content ID (UUID MSB + LSB)
+      buffer.position(buffer.position() + 16);
     }
   }
 
