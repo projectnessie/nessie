@@ -46,7 +46,6 @@ dependencies {
     api(project(":nessie-server-store-proto"))
     api(project(":nessie-content-generator"))
     api(project(":nessie-protobuf-relocated"))
-    api(project(":nessie-ui"))
     api(project(":nessie-versioned-persist-adapter"))
     api(project(":nessie-versioned-persist-bench"))
     api(project(":nessie-versioned-persist-dynamodb"))

@@ -96,7 +96,7 @@ jobs:
       env:
         SPARK_LOCAL_IP: localhost
       with:
-        arguments: test -x :nessie-ui:test --scan
+        arguments: test --scan
 
     - name: Gradle / integ-test
       uses: gradle/gradle-build-action@v2

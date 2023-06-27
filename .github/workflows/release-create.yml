@@ -133,7 +133,7 @@ jobs:
           exit 1
         fi
 
-    - name: Bump versions for Python, site/, helm and UI
+    - name: Bump versions for Python, site/ and helm
       uses: ./.github/actions/bump-versions
       with:
         new-version: ${{ env.RELEASE_VERSION }}
@@ -242,7 +242,7 @@ jobs:
         | Git HEAD                   | \`$(git rev-parse HEAD)\` |
         !
 
-    - name: Bump versions for Python, site/, helm and UI
+    - name: Bump versions for Python, site/ and helm
       uses: ./.github/actions/bump-versions
       with:
         new-version: ${{ env.NEXT_VERSION_NO_SNAPSHOT }}

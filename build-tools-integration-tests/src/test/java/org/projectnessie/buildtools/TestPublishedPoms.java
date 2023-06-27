@@ -99,7 +99,6 @@ public class TestPublishedPoms {
     "nessie-rest-services",
     "nessie-server-store",
     "nessie-services",
-    "nessie-ui",
     "nessie-versioned-spi",
     "nessie-versioned-storage-cache",
     "nessie-versioned-storage-common",
