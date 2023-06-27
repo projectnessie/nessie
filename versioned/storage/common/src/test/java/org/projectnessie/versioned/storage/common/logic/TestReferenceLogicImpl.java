@@ -87,7 +87,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
   }
 
   @Test
-  public void manyBranches(
+  public void referencesInStripedIndex(
       @NessiePersist @NessieStoreConfig(name = CONFIG_MAX_INCREMENTAL_INDEX_SIZE, value = "2048")
           Persist persist)
       throws Exception {
