@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.bigtable;
 
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -27,6 +28,11 @@ public interface BigTableBackendConfig {
   @Nullable
   @jakarta.annotation.Nullable
   BigtableTableAdminClient tableAdminClient();
+
+  @Value.Default
+  default Optional<String> tablePrefix() {
+    return Optional.empty();
+  }
 
   static ImmutableBigTableBackendConfig.Builder builder() {
     return ImmutableBigTableBackendConfig.builder();

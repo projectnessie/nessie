@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.storage.testextension.PersistExtension
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
@@ -35,8 +36,10 @@ final class ClassPersistInstances {
 
   private final List<Persist> persistInstances = new ArrayList<>();
   private final CacheBackend cacheBackend;
-  private final Backend backend;
-  private final PersistFactory persistFactory;
+  private final BackendTestFactory backendTestFactory;
+  private final Supplier<Backend> backendSupplier;
+  private Backend backend;
+  private PersistFactory persistFactory;
 
   ClassPersistInstances(ExtensionContext context) {
     Store rootStore = context.getRoot().getStore(NAMESPACE);
@@ -44,24 +47,37 @@ final class ClassPersistInstances {
         rootStore.getOrComputeIfAbsent(
             KEY_REUSABLE_BACKEND, k -> new ReusableTestBackend(), ReusableTestBackend.class);
 
+    backendSupplier = () -> reusableTestBackend.backend(context);
+
     NessiePersistCache nessiePersistCache =
         PersistExtension.annotationInstance(context, NessiePersistCache.class);
     cacheBackend =
         nessiePersistCache != null ? PersistCaches.newBackend(nessiePersistCache.capacity()) : null;
 
-    backend = reusableTestBackend.backend(context);
-
-    backend.setupSchema();
-
-    persistFactory = backend.createFactory();
+    backendTestFactory = reusableTestBackend.backendTestFactory(context);
   }
 
-  PersistFactory persistFactory() {
-    return persistFactory;
+  BackendTestFactory backendTestFactory() {
+    return backendTestFactory;
   }
 
   Backend backend() {
-    return backend;
+    Backend b = backend;
+    if (b == null) {
+      b = backend = backendSupplier.get();
+
+      b.setupSchema();
+    }
+    return b;
+  }
+
+  @SuppressWarnings("resource")
+  PersistFactory persistFactory() {
+    PersistFactory p = persistFactory;
+    if (p == null) {
+      p = persistFactory = backend().createFactory();
+    }
+    return p;
   }
 
   void registerPersist(Persist persist) {
@@ -81,7 +97,7 @@ final class ClassPersistInstances {
   }
 
   public Persist newPersist(StoreConfig config) {
-    Persist persist = persistFactory.newPersist(config);
+    Persist persist = persistFactory().newPersist(config);
 
     if (cacheBackend != null) {
       persist = cacheBackend.wrap(persist);

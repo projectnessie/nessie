@@ -54,12 +54,17 @@ final class BigTableBackend implements Backend {
   private final BigtableTableAdminClient tableAdminClient;
   private final boolean closeClient;
 
+  final String tableRefs;
+  final String tableObjs;
+
   BigTableBackend(
-      @Nonnull @jakarta.annotation.Nonnull BigtableDataClient dataClient,
-      @Nullable @jakarta.annotation.Nullable BigtableTableAdminClient tableAdminClient,
-      boolean closeClient) {
-    this.dataClient = dataClient;
-    this.tableAdminClient = tableAdminClient;
+      @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config, boolean closeClient) {
+    this.dataClient = config.dataClient();
+    this.tableAdminClient = config.tableAdminClient();
+    this.tableRefs =
+        config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
+    this.tableObjs =
+        config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
     this.closeClient = closeClient;
   }
 
@@ -67,6 +72,12 @@ final class BigTableBackend implements Backend {
   @jakarta.annotation.Nonnull
   BigtableDataClient client() {
     return dataClient;
+  }
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  BigtableTableAdminClient adminClient() {
+    return tableAdminClient;
   }
 
   @Override
@@ -106,19 +117,19 @@ final class BigTableBackend implements Backend {
   public void setupSchema() {
     if (tableAdminClient == null) {
       // If BigTable admin client is not available, check at least that the required tables exist.
-      boolean refs = checkTableNoAdmin(TABLE_REFS);
-      boolean objs = checkTableNoAdmin(TABLE_OBJS);
+      boolean refs = checkTableNoAdmin(tableRefs);
+      boolean objs = checkTableNoAdmin(tableObjs);
       checkState(
           refs && objs,
           "Not all required tables (%s and %s) are available in BigTable, cannot start.",
-          TABLE_REFS,
-          TABLE_OBJS);
+          tableRefs,
+          tableObjs);
       LOGGER.info("No Bigtable admin client available, skipping schema setup");
       return;
     }
 
-    checkTable(TABLE_REFS, FAMILY_REFS);
-    checkTable(TABLE_OBJS, FAMILY_OBJS);
+    checkTable(tableRefs, FAMILY_REFS);
+    checkTable(tableObjs, FAMILY_OBJS);
   }
 
   private boolean checkTableNoAdmin(String table) {
@@ -155,8 +166,8 @@ final class BigTableBackend implements Backend {
 
     for (String repoId : repositoryIds) {
       ByteString prefix = copyFromUtf8(repoId + ':');
-      tableAdminClient.dropRowRange(TABLE_REFS, prefix);
-      tableAdminClient.dropRowRange(TABLE_OBJS, prefix);
+      tableAdminClient.dropRowRange(tableRefs, prefix);
+      tableAdminClient.dropRowRange(tableObjs, prefix);
     }
 
     return true;
@@ -167,8 +178,8 @@ final class BigTableBackend implements Backend {
         repositoryIds.stream()
             .map(repoId -> copyFromUtf8(repoId + ':'))
             .collect(Collectors.toList());
-    eraseRepositoriesTable(TABLE_REFS, prefixes);
-    eraseRepositoriesTable(TABLE_OBJS, prefixes);
+    eraseRepositoriesTable(tableRefs, prefixes);
+    eraseRepositoriesTable(tableObjs, prefixes);
   }
 
   private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {

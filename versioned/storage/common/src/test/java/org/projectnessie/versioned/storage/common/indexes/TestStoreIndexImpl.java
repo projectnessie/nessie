@@ -51,6 +51,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.commontests.ImmutableRealisticKeySet;
 import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -85,6 +86,7 @@ public class TestStoreIndexImpl {
 
     ByteString serialized = segment.serialize();
     StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    soft.assertThat(deserialized.asKeyList()).isEqualTo(segment.asKeyList());
     soft.assertThat(deserialized).isEqualTo(segment);
   }
 
@@ -94,6 +96,7 @@ public class TestStoreIndexImpl {
 
     ByteString serialized = segment.serialize();
     StoreIndex<ObjId> deserialized = deserializeStoreIndex(serialized, OBJ_ID_SERIALIZER);
+    ((StoreIndexImpl<ObjId>) deserialized).setModified();
     ByteString serialized2 = deserialized.serialize();
 
     soft.assertThat(serialized2).isEqualTo(serialized);
@@ -108,6 +111,35 @@ public class TestStoreIndexImpl {
     ByteString serialized2 = deserialized.serialize();
 
     soft.assertThat(serialized2).isEqualTo(serialized);
+  }
+
+  @Test
+  public void randomGetKey() {
+    KeyIndexTestSet.IndexTestSetGenerator<CommitOp> builder =
+        KeyIndexTestSet.<CommitOp>newGenerator()
+            .keySet(
+                ImmutableRealisticKeySet.builder()
+                    .namespaceLevels(5)
+                    .foldersPerLevel(5)
+                    .tablesPerNamespace(5)
+                    .deterministic(true)
+                    .build())
+            .elementSupplier(
+                key -> indexElement(key, commitOp(CommitOp.Action.ADD, 1, randomObjId())))
+            .elementSerializer(CommitOp.COMMIT_OP_SERIALIZER)
+            .build();
+
+    KeyIndexTestSet<CommitOp> keyIndexTestSet = builder.generateIndexTestSet();
+
+    for (int i = 0; i < 50; i++) {
+      StoreIndex<CommitOp> deserialized = keyIndexTestSet.deserialize();
+      deserialized.get(keyIndexTestSet.randomKey());
+    }
+
+    StoreIndex<CommitOp> deserialized = keyIndexTestSet.deserialize();
+    for (int i = 0; i < 50; i++) {
+      deserialized.get(keyIndexTestSet.randomKey());
+    }
   }
 
   @Test

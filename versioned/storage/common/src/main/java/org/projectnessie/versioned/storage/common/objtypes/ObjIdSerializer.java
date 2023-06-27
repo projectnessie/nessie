@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.projectnessie.versioned.storage.common.persist.ObjId.deserializeObjId;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.skipObjId;
 
 import java.nio.ByteBuffer;
 import org.projectnessie.versioned.storage.common.indexes.ElementSerializer;
@@ -39,5 +40,10 @@ public final class ObjIdSerializer implements ElementSerializer<ObjId> {
   @Override
   public ObjId deserialize(ByteBuffer buffer) {
     return deserializeObjId(buffer);
+  }
+
+  @Override
+  public void skip(ByteBuffer buffer) {
+    skipObjId(buffer);
   }
 }

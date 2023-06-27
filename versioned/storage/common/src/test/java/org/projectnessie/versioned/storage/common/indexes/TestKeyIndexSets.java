@@ -17,8 +17,6 @@ package org.projectnessie.versioned.storage.common.indexes;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
-import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.deserializeStoreIndex;
-import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.ADD;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
@@ -29,13 +27,11 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.commontests.ImmutableRealisticKeySet;
 import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet;
@@ -43,23 +39,6 @@ import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet;
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestKeyIndexSets {
   @InjectSoftAssertions SoftAssertions soft;
-
-  @Test
-  void keyCombinations() {
-    StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
-    Stream.of("x/be", "x/eire", "x/opt", "x/over", "x/salt")
-        .map(s -> s.split("/"))
-        .map(StoreKey::key)
-        .map(k -> indexElement(k, commitOp(CommitOp.Action.ADD, 1, randomObjId())))
-        .forEach(index::add);
-
-    ByteString serialized = index.serialize();
-    StoreIndex<CommitOp> deserialized = deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER);
-
-    soft.assertThat(deserialized.asKeyList()).isEqualTo(index.asKeyList());
-
-    soft.assertThat(deserialized).isEqualTo(index);
-  }
 
   @ParameterizedTest
   @MethodSource("keyIndexSetConfigs")
@@ -85,7 +64,8 @@ public class TestKeyIndexSets {
 
     soft.assertThatCode(keyIndexTestSet::serialize).doesNotThrowAnyException();
     soft.assertThatCode(keyIndexTestSet::deserialize).doesNotThrowAnyException();
-    soft.assertThat(keyIndexTestSet.deserialize().serialize())
+    soft.assertThat(
+            ((StoreIndexImpl<CommitOp>) keyIndexTestSet.deserialize()).setModified().serialize())
         .isEqualTo(keyIndexTestSet.serialized());
     soft.assertThatCode(keyIndexTestSet::randomGetKey).doesNotThrowAnyException();
     soft.assertThatCode(

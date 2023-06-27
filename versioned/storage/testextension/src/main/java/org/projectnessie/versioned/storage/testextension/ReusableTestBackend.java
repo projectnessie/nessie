@@ -30,6 +30,24 @@ final class ReusableTestBackend implements CloseableResource {
   private BackendTestFactory backendTestFactory;
   private Backend backend;
 
+  BackendTestFactory backendTestFactory(ExtensionContext context) {
+    BackendTestFactory f = backendTestFactory;
+    if (f == null) {
+      NessieBackend nessieBackend =
+          PersistExtension.annotationInstance(context, NessieBackend.class);
+      if (nessieBackend != null) {
+        try {
+          backendType = nessieBackend.value();
+          f = backendTestFactory = backendType.getDeclaredConstructor().newInstance();
+          f.start();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    return f;
+  }
+
   Backend backend(ExtensionContext context) {
     Backend reusable = maybeReusable(context);
     if (reusable != null) {
@@ -48,10 +66,9 @@ final class ReusableTestBackend implements CloseableResource {
       try {
         backendType = nessieBackend.value();
 
-        backendTestFactory = backendType.getDeclaredConstructor().newInstance();
-        backendTestFactory.start();
+        BackendTestFactory f = backendTestFactory(context);
 
-        backend = backendTestFactory.createNewBackend();
+        backend = f.createNewBackend();
       } catch (Exception e) {
         throw new RuntimeException(e);
       }

@@ -66,6 +66,7 @@ When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable 
 | `nessie.version.store.persist.bigtable.endpoint`             | n/a            | `String`              | Google BigTable endpoint (if not default).                                                                               |
 | `nessie.version.store.persist.bigtable.mtls-endpoint`        | n/a            | `String`              | Google BigTable MTLS endpoint (if not default).                                                                          |
 | `nessie.version.store.persist.bigtable.jwt-audience-mapping` | n/a            | `Map<String, String>` | Google BigTable JWT audience mappings (if necessary).                                                                    |
+| `nessie.version.store.persist.bigtable.table-prefix`         | n/a            | `String`              | Prefix for tables, default is no prefix.                                                                                 |
 
 !!! info
 A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/)
