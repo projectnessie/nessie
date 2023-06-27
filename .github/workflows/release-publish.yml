@@ -16,7 +16,7 @@
 
 # Triggered when a `nessie-*` tag is being pushed.
 
-# Publishes the Maven, Python, Docker and Gradle-plugin artifacts.
+# Publishes the Maven and Docker artifacts.
 
 # GitHub environment name:
 #   release
@@ -89,14 +89,6 @@ jobs:
       uses: ./.github/actions/dev-tool-java
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-    - name: Setup Python
-      uses: ./.github/actions/dev-tool-python
-      with:
-        python-version: '3.8'
-    - name: Install Python dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install -r python/requirements_dev.txt
     - name: Install Helm
       uses: azure/setup-helm@v3
       with:
@@ -168,22 +160,6 @@ jobs:
 
         echo "## Successfully published Helm chart for ${RELEASE_VERSION}" >> $GITHUB_STEP_SUMMARY
 
-
-    # Deploys pynessie. Build and test steps were already ran in previous steps
-    - name: Build pynessie for release
-      working-directory: ./python
-      run: python setup.py sdist bdist_wheel
-
-    - name: Publish pynessie package
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        packages_dir: ./python/dist/
-
-    - name: pynessie info
-      run: echo "## Successfully published pynessie ${RELEASE_VERSION}" >> $GITHUB_STEP_SUMMARY
-
     # Prepare Nessie release notes for GitHub
     #
     # The markdown file for the release is generated using some mostly simple shell script.
@@ -218,7 +194,7 @@ jobs:
         * Maven Central: https://search.maven.org/search?q=g:org.projectnessie+v:${RELEASE_VERSION}
         * Docker images: https://github.com/projectnessie/nessie/pkgs/container/nessie and https://quay.io/repository/projectnessie/nessie?tab=tags
           It is a multiplatform Java image (amd64, arm64, ppc64le, s390x): \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-java\`
-        * PyPI: https://pypi.org/project/pynessie/${RELEASE_VERSION}/
+        * PyPI: https://pypi.org/project/pynessie/ (See [pynessie](https://github.com/projectnessie/pynessie/releases))
         * Helm Chart repo: https://charts.projectnessie.org/
 
         ## Try it
