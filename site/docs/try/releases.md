@@ -2,6 +2,17 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.63.0 Release (June 27, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.63.0).
+
+* Fix inability to delete some references (#7141)
+* Do not add Jandex index to shadow-jars (#7138)
+* Allow table names prefixes for BigTable (#7140)
+* Lazily deserialize `StoreIndexElement`s `content` (#7130)
+* StoreIndexImpl: wrong estimated serialized size for empty index (#7128)
+* Events/Quarkus: Do not cache huge artifacts in Gradle cache (#7118)
+
 ## 0.62.1 Release (June 23, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.62.1).
