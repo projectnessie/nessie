@@ -24,24 +24,28 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.oidc.server.OidcWireMock;
 import io.quarkus.test.oidc.server.OidcWiremockTestResource;
 import io.smallrye.jwt.build.Jwt;
+import java.util.Map;
 import java.util.Properties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @SuppressWarnings("resource")
 @QuarkusTest
 @QuarkusTestResource(OidcWiremockTestResource.class)
-@TestProfile(value = AbstractOAuth2Authentication.Profile.class)
+@TestProfile(value = TestOAuth2Authentication.Profile.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
 
@@ -163,5 +167,17 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
                     + "\"token_type\":\"bearer\","
                     + "\"expires_in\":300}",
                 accessToken));
+  }
+
+  public static class Profile implements QuarkusTestProfile {
+
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return ImmutableMap.<String, String>builder()
+          .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
+          // keycloak.url defined by OidcWiremockTestResource
+          .put("quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus/")
+          .build();
+    }
   }
 }
