@@ -38,6 +38,8 @@ public interface QuarkusBigTableConfig {
 
   Optional<String> emulatorHost();
 
+  Optional<String> tablePrefix();
+
   Map<String, String> jwtAudienceMapping();
 
   @WithDefault("8086")

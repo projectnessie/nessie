@@ -33,7 +33,21 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
 
   @Override
   public Backend createNewBackend() {
-    return new BigTableBackend(buildNewDataClient(), buildNewTableAdminClient(), true);
+    return createNewBackend(bigtableConfigBuilder().build(), true);
+  }
+
+  @SuppressWarnings("ClassEscapesDefinedScope")
+  @VisibleForTesting
+  public BigTableBackend createNewBackend(
+      BigTableBackendConfig bigtableConfig, boolean closeClient) {
+    return new BigTableBackend(bigtableConfig, closeClient);
+  }
+
+  @VisibleForTesting
+  public ImmutableBigTableBackendConfig.Builder bigtableConfigBuilder() {
+    return BigTableBackendConfig.builder()
+        .dataClient(buildNewDataClient())
+        .tableAdminClient(buildNewTableAdminClient());
   }
 
   @VisibleForTesting
