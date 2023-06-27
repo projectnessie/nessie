@@ -17,21 +17,29 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.spy;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_TIMEOUT_MILLIS;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_INCREMENTAL_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.REF_REFS;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferenceLogicImpl.CommitReferenceResult.Kind.ADDED_TO_INDEX;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.IntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,6 +52,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogicImpl.CommitReferenceResult;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogicImpl.CommitReferenceResult.Kind;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -75,6 +84,51 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
 
   public TestReferenceLogicImpl() {
     super(TestReferenceLogicImpl.class);
+  }
+
+  @Test
+  public void manyBranches(
+      @NessiePersist @NessieStoreConfig(name = CONFIG_MAX_INCREMENTAL_INDEX_SIZE, value = "2048")
+          Persist persist)
+      throws Exception {
+    int num = 100;
+
+    IntFunction<String> refName = i -> "refs/heads/branch-" + i + "-" + (i & 7);
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    ArrayList<Reference> before = newArrayList(refLogic.queryReferences(referencesQuery()));
+    soft.assertThat(before).hasSize(1);
+
+    for (int i = 0; i < num; i++) {
+      refLogic.createReference(refName.apply(i), EMPTY_OBJ_ID, null);
+    }
+
+    Reference refRefs = requireNonNull(persist.fetchReference(REF_REFS.name()));
+    CommitObj refRefsCommit = requireNonNull(commitLogic(persist).fetchCommit(refRefs.pointer()));
+    soft.assertThat(refRefsCommit.referenceIndexStripes())
+        .describedAs(
+            "This test requires must exercise against a striped reference-index, adjust the 'num' parameter.")
+        .isNotEmpty();
+
+    ArrayList<Reference> created = newArrayList(refLogic.queryReferences(referencesQuery()));
+    soft.assertThat(created)
+        .containsAll(before)
+        .map(Reference::name)
+        .containsAll(IntStream.range(0, num).mapToObj(refName).collect(Collectors.toList()))
+        .hasSize(num + 1);
+
+    refLogic.queryReferences(referencesQuery()).forEachRemaining(ref -> {});
+
+    for (int i = 0; i < num; i++) {
+      String name = refName.apply(i);
+      refLogic.deleteReference(name, EMPTY_OBJ_ID);
+      soft.assertThatThrownBy(() -> refLogic.getReference(name))
+          .isInstanceOf(RefNotFoundException.class);
+    }
+
+    ArrayList<Reference> afterDeletion = newArrayList(refLogic.queryReferences(referencesQuery()));
+    soft.assertThat(afterDeletion).hasSize(1);
+    soft.assertThat(afterDeletion).containsExactlyElementsOf(before);
   }
 
   @ParameterizedTest
