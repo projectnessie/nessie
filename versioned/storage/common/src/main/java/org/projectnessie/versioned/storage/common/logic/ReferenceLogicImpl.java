@@ -570,8 +570,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             } catch (ObjNotFoundException e) {
               throw new RuntimeException("Internal error getting reference creation log commit", e);
             }
-            StoreIndex<CommitOp> index =
-                indexesLogic(persist).incrementalIndexForUpdate(commit, Optional.empty());
+            StoreIndex<CommitOp> index = indexesLogic(persist).buildCompleteIndexOrEmpty(commit);
 
             StoreKey key = key(reference.name());
 
