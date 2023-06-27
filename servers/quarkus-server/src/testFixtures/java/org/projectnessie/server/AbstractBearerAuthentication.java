@@ -18,14 +18,10 @@ package org.projectnessie.server;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.junit.QuarkusTestProfile;
 import io.smallrye.jwt.build.Jwt;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BearerAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
-import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @SuppressWarnings("resource") // api() returns an AutoCloseable
 public abstract class AbstractBearerAuthentication extends BaseClientAuthTest {
@@ -62,20 +58,5 @@ public abstract class AbstractBearerAuthentication extends BaseClientAuthTest {
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));
-  }
-
-  public static class Profile implements QuarkusTestProfile {
-
-    @Override
-    public Map<String, String> getConfigOverrides() {
-      return ImmutableMap.<String, String>builder()
-          .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
-          .put("quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus/")
-          .put("quarkus.oidc.client-id", "quarkus-service-app")
-          .put("quarkus.oidc.credentials", "secret")
-          .put("quarkus.oidc.application-type", "service")
-          .put("smallrye.jwt.sign.key.location", "privateKey.jwk") // for unit tests
-          .build();
-    }
   }
 }

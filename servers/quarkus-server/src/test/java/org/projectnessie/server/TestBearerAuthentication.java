@@ -15,16 +15,20 @@
  */
 package org.projectnessie.server;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.oidc.server.OidcWiremockTestResource;
 import io.smallrye.jwt.build.Jwt;
+import java.util.Map;
+import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusTest
 @QuarkusTestResource(OidcWiremockTestResource.class)
-@TestProfile(value = AbstractBearerAuthentication.Profile.class)
+@TestProfile(value = TestBearerAuthentication.Profile.class)
 public class TestBearerAuthentication extends AbstractBearerAuthentication {
 
   @Override
@@ -33,5 +37,17 @@ public class TestBearerAuthentication extends AbstractBearerAuthentication {
         .groups(ImmutableSet.of("user"))
         .issuer("https://server.example.com")
         .sign();
+  }
+
+  public static class Profile implements QuarkusTestProfile {
+
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return ImmutableMap.<String, String>builder()
+          .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
+          // keycloak.url defined by OidcWiremockTestResource
+          .put("quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus/")
+          .build();
+    }
   }
 }
