@@ -107,7 +107,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
     CommitObj refRefsCommit = requireNonNull(commitLogic(persist).fetchCommit(refRefs.pointer()));
     soft.assertThat(refRefsCommit.referenceIndexStripes())
         .describedAs(
-            "This test requires must exercise against a striped reference-index, adjust the 'num' parameter.")
+            "This test must be exercised against a striped reference-index, adjust the 'num' parameter.")
         .isNotEmpty();
 
     ArrayList<Reference> created = newArrayList(refLogic.queryReferences(referencesQuery()));
@@ -116,8 +116,6 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
         .map(Reference::name)
         .containsAll(IntStream.range(0, num).mapToObj(refName).collect(Collectors.toList()))
         .hasSize(num + 1);
-
-    refLogic.queryReferences(referencesQuery()).forEachRemaining(ref -> {});
 
     for (int i = 0; i < num; i++) {
       String name = refName.apply(i);
