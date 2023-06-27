@@ -25,7 +25,7 @@ plugins {
 apply<PublishingHelperPlugin>()
 
 repositories {
-  mavenCentral { content { excludeVersionByRegex("io[.]delta", ".*", ".*-nessie") } }
+  mavenCentral()
   if (System.getProperty("withMavenLocal").toBoolean()) {
     mavenLocal()
   }
