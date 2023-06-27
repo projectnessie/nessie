@@ -2,9 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
     "config:base",
-    // https://docs.renovatebot.com/presets-npm/
-    "npm:unpublishSafe",
-    // Required to not pin dependencies to _exact_ versions (npm + pip)
+    // Required to not pin dependencies to _exact_ versions (pip)
     ":preserveSemverRanges",
   ],
 
@@ -19,10 +17,6 @@
       "labels": ["dependencies", "java"],
     },
     {
-      matchManagers: ["npm"],
-      "labels": ["dependencies", "javascript"],
-    },
-    {
       matchManagers: ["pip_requirements", "pip_setup"],
       "labels": ["dependencies", "python"],
     },
@@ -33,7 +27,7 @@
 
     // Check for updates, merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup", "dockerfile"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       platformAutomerge: true,
@@ -41,13 +35,13 @@
 
     // Schedule npm + pip on weekends
     {
-      matchManagers: ["npm", "pip_requirements", "pip_setup"],
+      matchManagers: ["pip_requirements", "pip_setup"],
       extends: ["schedule:weekends"],
     },
 
     // Check for major updates, but do not merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup"],
       matchUpdateTypes: ["major"],
       automerge: false,
     },

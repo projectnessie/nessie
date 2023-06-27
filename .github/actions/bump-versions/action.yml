@@ -46,12 +46,3 @@ runs:
         NEW_VERSION: ${{ inputs.new-version }}
       run: |
         sed -i "s/^version: [0-9.]*$/version: ${NEW_VERSION}/" helm/nessie/Chart.yaml
-
-    - name: Bump UI release version ${{ inputs.new-version }}
-      shell: bash
-      working-directory: ./ui
-      env:
-        NEW_VERSION: ${{ inputs.new-version }}
-      run: |
-        jq ".version = \"${NEW_VERSION}\"" < package.json > /tmp/package.json && mv /tmp/package.json package.json
-        jq ".version = \"${NEW_VERSION}\" | .packages[\"\"].version = \"${NEW_VERSION}\"" < package-lock.json > /tmp/package-lock.json && mv /tmp/package-lock.json package-lock.json

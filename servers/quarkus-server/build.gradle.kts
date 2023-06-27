@@ -42,7 +42,7 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
-  implementation(project(":nessie-ui"))
+  implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
