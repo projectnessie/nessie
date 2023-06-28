@@ -163,10 +163,6 @@ public abstract class IdentifyLiveContents {
       throw new IllegalStateException("identifyLiveContents() has already been called.");
     }
 
-    if (parallelism() == 1) {
-      return this.walkAllReferences();
-    }
-
     ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism());
     try {
       return forkJoinPool.invoke(ForkJoinTask.adapt(this::walkAllReferences));
