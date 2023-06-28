@@ -112,24 +112,3 @@ jobs:
           **/build/reports/*
           **/build/test-results/*
         retention-days: 3
-
-  python:
-    name: Python Windows
-    runs-on: windows-2022
-    if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
-    env:
-      working-directory: ./python
-    strategy:
-      max-parallel: 1
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.7']
-
-    steps:
-    - uses: actions/checkout@v3.5.3
-    - name: Setup Python
-      uses: ./.github/actions/dev-tool-python
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Test with tox
-      run: tox
-      working-directory: ${{env.working-directory}}

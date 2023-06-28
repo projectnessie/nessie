@@ -58,17 +58,6 @@ jobs:
         ref: ${{ env.BUMP_ON_BRANCH }}
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
-    - name: Setup Python
-      uses: ./.github/actions/dev-tool-python
-      with:
-        python-version: '3.8'
-    - name: Install Python dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install bump2version
-        # Remove the following, once https://github.com/c4urself/bump2version/issues/30 is fixed
-        # and the two workarounds below are removed.
-        python3 -m pip install -r python/requirements.txt
     ### END runner setup
 
     - name: Get previous version information

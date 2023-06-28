@@ -64,17 +64,6 @@ jobs:
         fetch-depth: '0'
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
-    - name: Setup Python
-      uses: ./.github/actions/dev-tool-python
-      with:
-        python-version: '3.8'
-    - name: Install Python dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install bump2version
-        # Remove the following, once https://github.com/c4urself/bump2version/issues/30 is fixed
-        # and the two workarounds below are removed.
-        python3 -m pip install -r python/requirements.txt
     - name: Setup Go
       uses: actions/setup-go@v4
     ### END runner setup
@@ -133,7 +122,7 @@ jobs:
           exit 1
         fi
 
-    - name: Bump versions for Python, site/ and helm
+    - name: Bump versions for site/ and helm
       uses: ./.github/actions/bump-versions
       with:
         new-version: ${{ env.RELEASE_VERSION }}
@@ -162,30 +151,6 @@ jobs:
         
         cp /tmp/releases.md site/docs/try/releases.md
         rm /tmp/releases.md
-
-    # Updates the python/HISTORY.rst file, takes the first four lines (the big heading),
-    # adds a heading with the version and a single item referencing the release notes on GitHub,
-    # followed by the Git change log for the python/ directory, finalized with the remainder of the
-    # previous python/HISTORY.rst file.
-    - name: Update HISTORY.rst file
-      run: |
-        head -4 python/HISTORY.rst > /tmp/HISTORY.rst
-        HEAD="${RELEASE_VERSION} ($(date '+%Y-%m-%d'))"
-        cat <<!  >> /tmp/HISTORY.rst
-        ${HEAD}
-        $(echo -n $HEAD | sed 's/./-/g')
-        
-        * See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-${RELEASE_VERSION}
-        !
-        
-        git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
-          --format='format:* %s' ${LAST_TAG}..HEAD python/ |\
-          >> /tmp/HISTORY.rst
-        
-        tail +4 python/HISTORY.rst >> /tmp/HISTORY.rst
-        
-        cp /tmp/HISTORY.rst python/HISTORY.rst
-        rm /tmp/HISTORY.rst
 
     - name: Update helm/README.md
       run: |
@@ -242,11 +207,11 @@ jobs:
         | Git HEAD                   | \`$(git rev-parse HEAD)\` |
         !
 
-    - name: Bump versions for Python, site/ and helm
+    - name: Bump versions for site/ and helm
       uses: ./.github/actions/bump-versions
       with:
         new-version: ${{ env.NEXT_VERSION_NO_SNAPSHOT }}
-      
+
       # Record the next development iteration in Git
     - name: Record next development version in Git
       run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
