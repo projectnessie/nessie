@@ -163,7 +163,6 @@ public abstract class IdentifyLiveContents {
       throw new IllegalStateException("identifyLiveContents() has already been called.");
     }
 
-    // If parallelism is one, use the existing thread.
     if (parallelism() == 1) {
       return this.walkAllReferences();
     }
