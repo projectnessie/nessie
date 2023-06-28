@@ -67,15 +67,10 @@ public abstract class DefaultLocalExpire implements Expire {
     Instant started = clock().instant();
     expireParameters().liveContentSet().startExpireContents(started);
 
-    ForkJoinPool forkJoinPool = null;
+    ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism());
     try {
-      DeleteSummary deleteSummary;
-      if (parallelism() == 1) {
-        deleteSummary = this.expireContents();
-      } else {
-        forkJoinPool = new ForkJoinPool(parallelism());
-        deleteSummary = forkJoinPool.invoke(ForkJoinTask.adapt(this::expireContents));
-      }
+      DeleteSummary deleteSummary =
+          forkJoinPool.invoke(ForkJoinTask.adapt(this::expireInForkJoinPool));
       LOGGER.info(
           "live-set#{}: Expiry finished, took {}, deletion summary: {}.",
           expireParameters().liveContentSet().id(),
@@ -84,13 +79,11 @@ public abstract class DefaultLocalExpire implements Expire {
       return deleteSummary;
     } finally {
       expireParameters().liveContentSet().finishedExpireContents(clock().instant(), null);
-      if (forkJoinPool != null) {
-        forkJoinPool.shutdown();
-      }
+      forkJoinPool.shutdown();
     }
   }
 
-  private DeleteSummary expireContents() {
+  private DeleteSummary expireInForkJoinPool() {
     try (Stream<String> contentIds = expireParameters().liveContentSet().fetchContentIds()) {
       return contentIds
           .parallel()
