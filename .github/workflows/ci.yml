@@ -868,25 +868,6 @@ jobs:
         if: env.WF_EXEC != 'false'
         run: ct install --debug --charts ./helm/nessie
 
-  python:
-    name: CI Python
-    runs-on: ubuntu-22.04
-    strategy:
-      # Python CI is relatively quick, don't parallelize to reduce number of concurrent jobs,
-      # respecting GitHub's concurrent jobs limit.
-      max-parallel: 1
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.7'] # 3.8 first, it has "all the tox envs"
-    steps:
-      - uses: actions/checkout@v3.5.3
-      - name: Setup Python
-        uses: ./.github/actions/dev-tool-python
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Test with tox
-        run: tox
-        working-directory: ./python
-
   site:
     name: CI Website
     runs-on: ubuntu-22.04

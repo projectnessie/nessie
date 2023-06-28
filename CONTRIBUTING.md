@@ -191,7 +191,10 @@ testcontainers does not support Windows (not WSL), running a lot of important in
 tests that use Docker is not possible. Running those tests inside WSL2 _should_ work, but
 has not been verified.
 
-##### Windows line ending issue in `nessie-ui` module
+##### Windows line ending issue in `nessie-ui` repository
+
+Nessie UI is in the [`projectnessie/nessie-ui`](https://github.com/projectnessie/nessie-ui/)
+repository.
 
 Windows uses a different line ending (CR LF) than Linux and macOS (LF). The _prettier_ tool
 that we use in the `ui/` module for linting however expects LF even on Windows. This is an
