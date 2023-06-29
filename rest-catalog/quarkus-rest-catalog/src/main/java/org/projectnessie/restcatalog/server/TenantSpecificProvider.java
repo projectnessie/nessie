@@ -15,10 +15,18 @@
  */
 package org.projectnessie.restcatalog.server;
 
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REF_HASH;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
 import io.quarkus.runtime.Startup;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -50,7 +58,29 @@ public class TenantSpecificProvider {
         Warehouse.builder().name("warehouse").location(config.warehouseLocation()).build();
     String commitAuthor = null;
 
+    URI apiBaseUri =
+        URI.create(
+            requireNonNull(
+                config.nessieClientConfig().get(CONF_NESSIE_URI),
+                "nessie.iceberg.nessie-client.\"nessie.uri\" must be configured, but is not available"));
+    String apiPath = apiBaseUri.getPath();
+    apiBaseUri = apiBaseUri.resolve(apiPath + "/..").normalize();
+
+    // Pass (most of) the Nessie Core client configuration to Nessie Catalog clients.
+    Map<String, String> clientCoreProperties = new HashMap<>(config.nessieClientConfig());
+    clientCoreProperties.remove(CONF_NESSIE_AUTH_TOKEN);
+    clientCoreProperties.remove(CONF_NESSIE_REF);
+    clientCoreProperties.remove(CONF_NESSIE_REF_HASH);
+    clientCoreProperties.remove(CONF_NESSIE_URI);
+
     return new DefaultTenantSpecific(
-        oauthHandler, metadataIO, defaultBranch, defaultWarehouse, api, commitAuthor);
+        oauthHandler,
+        metadataIO,
+        defaultBranch,
+        defaultWarehouse,
+        api,
+        apiBaseUri,
+        commitAuthor,
+        clientCoreProperties);
   }
 }

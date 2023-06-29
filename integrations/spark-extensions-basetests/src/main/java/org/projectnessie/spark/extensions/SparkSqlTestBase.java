@@ -33,6 +33,8 @@ import java.util.stream.IntStream;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.connector.catalog.CatalogPlugin;
+import org.apache.spark.sql.execution.datasources.v2.NessieUtils;
 import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -55,6 +57,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
+import scala.None$;
 
 public abstract class SparkSqlTestBase {
 
@@ -62,12 +65,6 @@ public abstract class SparkSqlTestBase {
   protected static SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;
-  protected static String url =
-      format(
-          "%s/api/v1",
-          requireNonNull(
-              System.getProperty("quarkus.http.test-url"),
-              "Required system property quarkus.http.test-url is not set"));
 
   protected boolean first = true;
 
@@ -77,6 +74,14 @@ public abstract class SparkSqlTestBase {
   protected String additionalRefName;
   protected NessieApiV1 api;
 
+  protected String nessieApiUri() {
+    return format(
+        "%s/api/v1",
+        requireNonNull(
+            System.getProperty("quarkus.http.test-url"),
+            "Required system property quarkus.http.test-url is not set"));
+  }
+
   protected abstract String warehouseURI();
 
   protected Map<String, String> sparkHadoop() {
@@ -84,7 +89,15 @@ public abstract class SparkSqlTestBase {
   }
 
   protected Map<String, String> nessieParams() {
-    return ImmutableMap.of("ref", defaultBranch(), "uri", url, "warehouse", warehouseURI());
+    return ImmutableMap.of(
+        "ref",
+        defaultBranch(),
+        "uri",
+        nessieApiUri(),
+        "warehouse",
+        warehouseURI(),
+        "catalog-impl",
+        "org.apache.iceberg.nessie.NessieCatalog");
   }
 
   protected boolean requiresCommonAncestor() {
@@ -94,7 +107,7 @@ public abstract class SparkSqlTestBase {
   @BeforeEach
   protected void setupSparkAndApi(TestInfo testInfo)
       throws NessieNotFoundException, NessieConflictException {
-    api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
+    api = HttpClientBuilder.builder().withUri(nessieApiUri()).build(NessieApiV1.class);
 
     refName = testInfo.getTestMethod().map(Method::getName).get();
     additionalRefName = refName + "_other";
@@ -130,7 +143,6 @@ public abstract class SparkSqlTestBase {
         .set("spark.testing", "true")
         .set("spark.sql.warehouse.dir", warehouseURI())
         .set("spark.sql.shuffle.partitions", "4")
-        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
 
     // the following catalog is only added to test a check in the nessie spark extensions
@@ -146,17 +158,14 @@ public abstract class SparkSqlTestBase {
   }
 
   @AfterEach
-  void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    try {
-      // Reset potential "USE REFERENCE" statements from previous tests
-      SparkSession.active()
-          .sparkContext()
-          .conf()
-          .set(format("spark.sql.catalog.%s.ref", "nessie"), defaultBranch())
-          .remove(format("spark.sql.catalog.%s.ref.hash", "nessie"));
-    } catch (IllegalStateException e) {
-      // Ignore potential java.lang.IllegalStateException: No active or default Spark session found
-    }
+  protected void removeBranches() throws NessieConflictException, NessieNotFoundException {
+    @SuppressWarnings("resource")
+    CatalogPlugin sparkCatalog =
+        SparkSession.active().sessionState().catalogManager().catalog("nessie");
+    // *sing*
+    // Oh, Scala, your lovely Java bindings make me cry...
+    NessieUtils.setCurrentRefForSpark(
+        sparkCatalog, None$.<String>empty(), Branch.of(defaultBranch(), null), false);
 
     if (api != null) {
       Branch defaultBranch = api.getDefaultBranch();
