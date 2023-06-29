@@ -163,18 +163,25 @@ public abstract class IdentifyLiveContents {
       throw new IllegalStateException("identifyLiveContents() has already been called.");
     }
 
-    ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism());
-    try {
-      return forkJoinPool.invoke(ForkJoinTask.adapt(this::walkAllReferences));
-    } finally {
-      forkJoinPool.shutdown();
+    if (parallelism() > 1) {
+      ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism());
+      try {
+        return forkJoinPool.invoke(ForkJoinTask.adapt(this::walkAllReferences));
+      } finally {
+        forkJoinPool.shutdown();
+      }
+    } else {
+      return walkAllReferences();
     }
   }
 
   private UUID walkAllReferences() {
     try (AddContents addContents = liveContentSetsRepository().newAddContents()) {
       try {
-        Stream<Reference> refs = repositoryConnector().allReferences();
+        Stream<Reference> refs =
+            parallelism() > 1
+                ? repositoryConnector().allReferences().parallel()
+                : repositoryConnector().allReferences();
 
         // If a Reference comparator is configured, then apply it to the stream of references.
         // Note: Stream.sorted() has the side effect that all references will be fetched first and
@@ -185,8 +192,7 @@ public abstract class IdentifyLiveContents {
         }
 
         Optional<ReferencesWalkResult> result =
-            refs.parallel()
-                .map(ref -> identifyContentsForReference(addContents, ref))
+            refs.map(ref -> identifyContentsForReference(addContents, ref))
                 .reduce(ReferencesWalkResult::add);
 
         LOGGER.info(
