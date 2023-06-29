@@ -9,5 +9,5 @@ $$ | \$$ |\$$$$$$$\ $$$$$$$  |$$$$$$$  |$$ |\$$$$$$$\ \$$$$$$  |\$$$$$$$ | \$$$$
                                                                                                            $$\   $$ |
                                                                                                            \$$$$$$  |
           Nessie Catalog Server                                                                            \______/
-          Compatible to the Apache Iceberg REST Catalog
+          Compatible with Apache Iceberg REST Catalog
           implementation by https://projectnessie.org/
