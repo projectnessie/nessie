@@ -667,7 +667,12 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     // check for compaction commit
     LogResponse.LogEntry logEntry =
         api.getCommitLog().refName(branchName).maxRecords(1).get().getLogEntries().get(0);
-    assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Iceberg replace against db.tbl");
+    assertThat(logEntry.getCommitMeta().getMessage())
+        .isIn(
+            // Non-RESTCatalog
+            "Iceberg replace against db.tbl",
+            // RESTCatalog
+            "Update table db.tbl");
 
     assertThat(sql("SELECT * FROM nessie.db.tbl"))
         .hasSize(2)

@@ -130,7 +130,7 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
 
     args.add(command);
 
-    URI nessieUriV2 = new URI(url).resolve("v2");
+    URI nessieUriV2 = new URI(nessieApiUri()).resolve("v2");
 
     switch (command) {
       case "identify":
