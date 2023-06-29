@@ -22,7 +22,8 @@ import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
-import static org.projectnessie.versioned.storage.common.indexes.StoreKey.findPositionAfterKey;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.deserializeKey;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.skipKey;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
 
@@ -135,9 +136,18 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   private final List<StoreIndexElement<V>> elements;
   private final ElementSerializer<V> serializer;
 
+  /**
+   * Buffer that holds the raw serialized value of a store index. This buffer's {@link
+   * ByteBuffer#position()} and {@link ByteBuffer#limit()} are updated by the users of this buffer
+   * to perform the necessary operations. Note: {@link StoreIndexImpl} is not thread safe as defined
+   * by {@link StoreIndex}
+   */
   private final ByteBuffer serialized;
 
-  /** This buffer is used for temporary use within (de)serialization. */
+  /**
+   * This buffer is used for temporary use within (de)serialization. Note: {@link StoreIndexImpl} is
+   * not thread safe as defined by {@link StoreIndex}.
+   */
   private final ByteBuffer scratchKeyBuffer = newKeyBuffer();
 
   private boolean modified;
@@ -467,11 +477,46 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
       ElementSerializer<V> ser = serializer;
 
       List<StoreIndexElement<V>> elements = this.elements;
+      boolean onlyLazy;
+      StoreIndexElement<V> previous = null;
       for (int i = 0; i < elements.size(); i++) {
         StoreIndexElement<V> el = elements.get(i);
-        StoreKey key = el.key();
-        previousKey = serializeKey(previousKey, key, target, scratchKeyBuffer);
+        ByteBuffer keyBuf = null;
+        if (el.getClass() == LazyStoreIndexElement.class) {
+          LazyStoreIndexElement lazyEl = (LazyStoreIndexElement) el;
+          // The purpose of this 'if'-branch is to determine whether it can serialize the 'StoreKey'
+          // by _not_ fully materializing the  `StoreKey`. This is possible if (and only if!) the
+          // current and the previous element are `LazyStoreIndexElement`s, where the previous
+          // element is exactly the one that has been deserialized.
+          if (lazyEl.prefixLen == 0 || lazyEl.previous == previous) {
+            // Can use the optimized serialization in `LazyStoreIndexElement`, if the current
+            // element has no prefix of if the previously serialized element was also a
+            // `LazyStoreIndexElement`. In other words: no intermediate `LazyStoreIndexElement` has
+            // been removed and no new element has been added.
+            onlyLazy = true;
+          } else {
+            // This if-branch detects whether an element has been removed from the index. In that
+            // case serialization has to materialize the `StoreKey` for serialization.
+            onlyLazy = false;
+          }
+          if (onlyLazy) {
+            // Key serialization via 'LazyStoreIndexElement' is much cheaper (CPU and heap) than
+            // having to first materialize and then serialize it.
+            keyBuf = lazyEl.serializeKey(scratchKeyBuffer, previousKey);
+          }
+        } else {
+          onlyLazy = false;
+        }
+
+        if (!onlyLazy) {
+          // Either 'el' is not a 'LazyStoreIndexElement' or the previous element of a
+          // 'LazyStoreIndexElement' is not suitable (see above).
+          keyBuf = el.key().serialize(scratchKeyBuffer);
+        }
+
+        previousKey = serializeKey(keyBuf, previousKey, target);
         el.serializeContent(ser, target);
+        previous = el;
       }
 
       target.flip();
@@ -482,9 +527,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     return unsafeWrap(target);
   }
 
-  private static ByteBuffer serializeKey(
-      ByteBuffer previousKey, StoreKey key, ByteBuffer target, ByteBuffer serializationBuffer) {
-    ByteBuffer keyBuf = key.serialize(serializationBuffer);
+  private ByteBuffer serializeKey(ByteBuffer keyBuf, ByteBuffer previousKey, ByteBuffer target) {
     int keyPos = keyBuf.position();
     if (previousKey != null) {
       int mismatch = previousKey.mismatch(keyBuf);
@@ -508,6 +551,10 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     return new StoreIndexImpl<>(serialized, ser);
   }
 
+  /**
+   * Private constructor handling deserialization, required to instantiate the inner {@link
+   * LazyStoreIndexElement} class.
+   */
   private StoreIndexImpl(ByteBuffer serialized, ElementSerializer<V> ser) {
     byte version = serialized.get();
     checkArgument(
@@ -517,31 +564,41 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
         version >= 2 ? new ArrayList<>(readVarInt(serialized)) : new ArrayList<>();
 
     boolean first = true;
-
-    // This buffer holds the previous key, reused.
-    ByteBuffer previousKey = newKeyBuffer();
+    int previousKeyLen = 0;
+    LazyStoreIndexElement predecessor = null;
+    LazyStoreIndexElement previous = null;
 
     while (serialized.remaining() > 0) {
       int strip = first ? 0 : readVarInt(serialized);
       first = false;
 
-      // strip
-      previousKey.position(previousKey.position() - strip);
-      previousKey.limit(MAX_KEY_BYTES);
-      // add
-      int limitSave = serialized.limit();
-      previousKey.put(serialized.limit(findPositionAfterKey(serialized)));
-      serialized.limit(limitSave);
-      // read key
-      previousKey.flip();
-      StoreKey key = StoreKey.deserializeKey(previousKey);
-
+      int prefixLen = previousKeyLen - strip;
+      int keyOffset = serialized.position();
+      skipKey(serialized); // skip key
       int valueOffset = serialized.position();
-      ser.skip(serialized);
+      ser.skip(serialized); // skip content/value
       int endOffset = serialized.position();
 
-      LazyStoreIndexElement element = new LazyStoreIndexElement(key, valueOffset, endOffset);
+      int keyPartLen = valueOffset - keyOffset;
+      int totalKeyLen = prefixLen + keyPartLen;
+
+      predecessor = cutPredecessor(predecessor, prefixLen, previous);
+
+      // 'prefixLen==0' means that the current key represents the "full" key.
+      // It has no predecessor that would be needed to re-construct (aka materialize) the full key.
+      LazyStoreIndexElement elementPredecessor = prefixLen > 0 ? predecessor : null;
+      LazyStoreIndexElement element =
+          new LazyStoreIndexElement(
+              elementPredecessor, previous, keyOffset, prefixLen, valueOffset, endOffset);
+      if (elementPredecessor == null) {
+        predecessor = element;
+      } else if (predecessor.prefixLen > prefixLen) {
+        predecessor = element;
+      }
       elements.add(element);
+
+      previous = element;
+      previousKeyLen = totalKeyLen;
     }
 
     this.elements = elements;
@@ -550,22 +607,160 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     this.originalSerializedSize = serialized.position();
   }
 
+  /**
+   * Identifies the earliest suitable predecessor, which is a very important step during
+   * deserialization, because otherwise the chain of predecessors (to the element having a {@code
+   * prefixLen==0}) can easily become very long in the order of many thousands "hops", which makes
+   * key materialization overly expensive.
+   */
+  private LazyStoreIndexElement cutPredecessor(
+      LazyStoreIndexElement predecessor, int prefixLen, LazyStoreIndexElement previous) {
+    if (predecessor != null) {
+      if (predecessor.prefixLen < prefixLen) {
+        // If the current element's prefixLen is higher, let the current element's predecessor point
+        // to the previous element.
+        predecessor = previous;
+      } else {
+        // Otherwise find the predecessor that has "enough" data. Without this step, the chain of
+        // predecessors would become extremely long.
+        for (LazyStoreIndexElement p = predecessor; ; p = p.predecessor) {
+          if (p == null || p.prefixLen < prefixLen) {
+            break;
+          }
+          predecessor = p;
+        }
+      }
+    }
+    return predecessor;
+  }
+
   private final class LazyStoreIndexElement extends AbstractStoreIndexElement<V> {
+    /**
+     * Points to the predecessor (in index order) that has a required part of the store-key needed
+     * to deserialize. In other words, if multiple index-elements have the same {@code prefixLen},
+     * this one points to the first one (in index order), because referencing the "intermediate"
+     * predecessors in-between would yield no part of the store-key to be re-constructed.
+     *
+     * <p>This fields holds the "earliest" predecessor in deserialization order, as determined by
+     * {@link #cutPredecessor(LazyStoreIndexElement, int, LazyStoreIndexElement)}.
+     *
+     * <p>Example:<code><pre>
+     *  IndexElement #0 { prefixLen = 0, key = "aaa", predecessor = null }
+     *  IndexElement #1 { prefixLen = 2, key = "aab", predecessor = #0 }
+     *  IndexElement #2 { prefixLen = 2, key = "aac", predecessor = #0 }
+     *  IndexElement #3 { prefixLen = 1, key = "abb", predecessor = #0 }
+     *  IndexElement #4 { prefixLen = 0, key = "bbb", predecessor = null }
+     *  IndexElement #5 { prefixLen = 2, key = "bbc", predecessor = #4 }
+     *  IndexElement #6 { prefixLen = 3, key = "bbcaaa", predecessor = #5 }
+     * </pre></code>
+     */
+    final LazyStoreIndexElement predecessor;
+
+    /**
+     * The previous element in the order of deserialization. This is needed later during
+     * serialization.
+     */
+    final LazyStoreIndexElement previous;
+
+    /** Number of bytes for this element's key that are held by its predecessor(s). */
+    final int prefixLen;
+
+    /**
+     * Position in {@link StoreIndexImpl#serialized} at which this index-element's key part starts.
+     */
+    final int keyOffset;
+
     /** Position in {@link StoreIndexImpl#serialized} at which this index-element's value starts. */
     final int valueOffset;
 
+    /**
+     * Position in {@link #serialized} pointing to the first byte <em>after</em> this element's key
+     * and value.
+     */
     final int endOffset;
 
     /** The materialized key or {@code null}. */
-    private final StoreKey key;
+    private StoreKey key;
 
     /** The materialized content or {@code null}. */
     private V content;
 
-    LazyStoreIndexElement(StoreKey key, int valueOffset, int endOffset) {
-      this.key = key;
+    LazyStoreIndexElement(
+        LazyStoreIndexElement predecessor,
+        LazyStoreIndexElement previous,
+        int keyOffset,
+        int prefixLen,
+        int valueOffset,
+        int endOffset) {
+      this.predecessor = predecessor;
+      this.previous = previous;
+      this.keyOffset = keyOffset;
+      this.prefixLen = prefixLen;
       this.valueOffset = valueOffset;
       this.endOffset = endOffset;
+    }
+
+    ByteBuffer serializeKey(ByteBuffer keySerBuffer, ByteBuffer previousKey) {
+      keySerBuffer.clear();
+      if (previousKey != null) {
+        int limitSave = previousKey.limit();
+        keySerBuffer.put(previousKey.limit(prefixLen).position(0));
+        previousKey.limit(limitSave).position(0);
+      }
+
+      StoreIndexImpl<V> index = StoreIndexImpl.this;
+      ByteBuffer serialized = requireNonNull(index.serialized);
+      return keySerBuffer.put(serialized.limit(valueOffset).position(keyOffset)).flip();
+    }
+
+    private StoreKey materializeKey() {
+      StoreIndexImpl<V> index = StoreIndexImpl.this;
+      ByteBuffer serialized = requireNonNull(index.serialized);
+
+      ByteBuffer suffix = serialized.limit(valueOffset).position(keyOffset);
+
+      ByteBuffer keyBuffer;
+      int preLen = prefixLen;
+      if (preLen > 0) {
+        keyBuffer = prefixKey(serialized, this, preLen).position(preLen).put(suffix).flip();
+      } else {
+        keyBuffer = suffix;
+      }
+      return deserializeKey(keyBuffer);
+    }
+
+    private ByteBuffer prefixKey(ByteBuffer serialized, LazyStoreIndexElement me, int remaining) {
+      ByteBuffer keyBuffer = StoreIndexImpl.this.scratchKeyBuffer.clear();
+
+      // This loop could be easier written using recursion. However, recursion is way more expensive
+      // than this loop. Since this code is on a very hot code path, it is worth it.
+      for (LazyStoreIndexElement e = me.predecessor; e != null; e = e.predecessor) {
+        if (e.key != null) {
+          // In case the current 'e' has its key already materialized, use that one to construct the
+          // prefix for "our" key.
+          int limitSave = keyBuffer.limit();
+          try {
+            // Call 'putString' with the parameter 'shortened==true' to instruct the function to
+            // expect buffer overruns and handle those gracefully.
+            StoreKey.putString(keyBuffer.limit(remaining).position(0), e.key.rawString(), true);
+          } finally {
+            keyBuffer.limit(limitSave);
+          }
+          break;
+        }
+
+        int prefixLen = e.prefixLen;
+        int take = remaining - prefixLen;
+        if (take > 0) {
+          remaining -= take;
+
+          for (int src = e.keyOffset, dst = e.prefixLen; take-- > 0; src++, dst++) {
+            keyBuffer.put(dst, serialized.get(src));
+          }
+        }
+      }
+
+      return keyBuffer;
     }
 
     private ByteBuffer serializedForContent() {
@@ -575,7 +770,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     }
 
     private V materializeContent() {
-      return StoreIndexImpl.this.serializer.deserialize(serializedForContent());
+      return serializer.deserialize(serializedForContent());
     }
 
     @Override
@@ -590,7 +785,11 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
     @Override
     public StoreKey key() {
-      return key;
+      StoreKey k = key;
+      if (k == null) {
+        k = key = materializeKey();
+      }
+      return k;
     }
 
     @Override
@@ -604,10 +803,26 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
     @Override
     public String toString() {
-      if (content != null) {
+      StoreKey k = key;
+      V c = content;
+      if (k != null && c != null) {
         return super.toString();
       }
-      return "LazyStoreIndexElement(key = " + key + ", valueOffset='" + valueOffset + ")";
+
+      StringBuilder sb = new StringBuilder("LazyStoreIndexElement(");
+      if (k != null) {
+        sb.append("key=").append(k);
+      } else {
+        sb.append("keyOffset=").append(keyOffset).append(", prefixLen=").append(prefixLen);
+      }
+
+      if (c != null) {
+        sb.append(", content=").append(c);
+      } else {
+        sb.append(", valueOffset=").append(valueOffset).append(" endOffset=").append(endOffset);
+      }
+
+      return sb.toString();
     }
   }
 
