@@ -110,6 +110,11 @@ dependencies {
   testFixturesApi(libs.bundles.junit.testing)
 
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
+  intTestRuntimeOnly(libs.testcontainers.cassandra)
+  intTestRuntimeOnly(libs.testcontainers.postgresql)
+  intTestRuntimeOnly(libs.testcontainers.mongodb)
+  intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestRuntimeOnly(project(":nessie-nessie-testcontainer"))
 }
 
 val pullOpenApiSpec by
