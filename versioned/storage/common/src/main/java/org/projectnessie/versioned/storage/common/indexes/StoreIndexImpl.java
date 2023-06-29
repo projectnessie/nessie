@@ -735,9 +735,6 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
       // This loop could be easier written using recursion. However, recursion is way more expensive
       // than this loop. Since this code is on a very hot code path, it is worth it.
       for (LazyStoreIndexElement e = me.predecessor; e != null; e = e.predecessor) {
-        int prefixLen = e.prefixLen;
-        int take = remaining - prefixLen;
-
         if (e.key != null) {
           // In case the current 'e' has its key already materialized, use that one to construct the
           // prefix for "our" key.
@@ -752,6 +749,8 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
           break;
         }
 
+        int prefixLen = e.prefixLen;
+        int take = remaining - prefixLen;
         if (take > 0) {
           remaining -= take;
 

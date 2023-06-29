@@ -116,7 +116,9 @@ public final class StoreKey implements Comparable<StoreKey> {
    *   <li>Surrogates take 4 bytes (from 2 {@code char}s)
    * </ul>
    *
-   * @param buffer the target byte buffer
+   * @param buffer the target byte buffer. If {@code shortened==false}, the buffer must be large
+   *     enough to hold the whole string. If {@code shortened==true}, the function will serialize up
+   *     to the available {@link ByteBuffer} limit, at max the whole string.
    * @param s string to serialize
    * @param shortened whether the {@code buffer}'s remaining space is likely not big enough to hold
    *     the full serialized form. This is used when materializing lazily loaded {@link StoreKey}s.
