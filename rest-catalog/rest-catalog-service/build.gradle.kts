@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-server8")
   id("nessie-jacoco")
-  alias(libs.plugins.nessie.run)
 }
 
 description = "Nessie - REST Catalog - Service"
@@ -54,10 +53,6 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.microprofile.openapi)
-
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testFixturesApi(nessieProject(":nessie-client"))
   testFixturesApi(libs.guava)
