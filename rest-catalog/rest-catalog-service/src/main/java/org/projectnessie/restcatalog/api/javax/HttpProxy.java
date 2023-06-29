@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.restcatalog.api;
+package org.projectnessie.restcatalog.api.javax;
 
 import java.io.InputStream;
 import javax.ws.rs.Consumes;

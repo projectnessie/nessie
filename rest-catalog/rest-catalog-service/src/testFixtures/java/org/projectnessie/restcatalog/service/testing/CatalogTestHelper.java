@@ -49,7 +49,7 @@ import org.projectnessie.restcatalog.service.auth.OAuthHandler;
 import org.projectnessie.restcatalog.service.resources.IcebergV1ApiResource;
 import org.projectnessie.restcatalog.service.resources.IcebergV1ConfigResource;
 import org.projectnessie.restcatalog.service.resources.IcebergV1OAuthResource;
-import org.projectnessie.restcatalog.service.resources.NessieProxyResource;
+import org.projectnessie.restcatalog.service.resources.javax.NessieProxyResource;
 
 public class CatalogTestHelper implements AutoCloseable {
 
