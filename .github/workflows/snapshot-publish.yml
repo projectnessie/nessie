@@ -35,6 +35,7 @@ jobs:
         with:
           cache-disabled: true
           arguments: |
+            --no-watch-fs --no-daemon 
             publishToSonatype closeAndReleaseSonatypeStagingRepository
             -Prelease -Puber-jar
 
