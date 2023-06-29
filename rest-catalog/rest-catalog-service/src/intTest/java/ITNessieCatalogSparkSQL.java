@@ -18,13 +18,11 @@ import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -76,15 +74,5 @@ public class ITNessieCatalogSparkSQL extends AbstractNessieSparkSqlExtensionTest
     r.put("prefix", "main");
     r.put("warehouse", "warehouse");
     return r;
-  }
-
-  // tests
-
-  @Test
-  public void justSmokeTestTheNessieProxy() {
-    List<Object[]> useBranch = sql("USE REFERENCE `main` IN nessie");
-    List<Object[]> showReference = sql("SHOW REFERENCE IN nessie");
-    List<Object[]> listReferences = sql("LIST REFERENCES IN nessie");
-    List<Object[]> showLog = sql("SHOW LOG IN nessie");
   }
 }
