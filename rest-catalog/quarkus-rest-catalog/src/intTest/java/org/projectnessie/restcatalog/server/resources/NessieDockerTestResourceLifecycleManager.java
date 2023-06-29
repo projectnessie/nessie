@@ -170,7 +170,18 @@ public class NessieDockerTestResourceLifecycleManager
         //   since Keycloak is configured to return tokens with that specific address as the issuer
         //   claim, regardless of the client IP address.
         CustomKeycloakContainer keycloak = KeycloakTestResourceLifecycleManager.getKeycloak();
-        assert keycloak != null;
+
+        String keycloakContainerIpAddress =
+            keycloak
+                .getContainerInfo()
+                .getNetworkSettings()
+                .getNetworks()
+                .values()
+                .iterator()
+                .next()
+                .getIpAddress();
+        withExtraHost("keycloak", keycloakContainerIpAddress);
+
         withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "true")
             .withEnv("QUARKUS_OIDC_AUTH_SERVER_URL", keycloak.getInternalRealmUri().toString())
             .withEnv("QUARKUS_OIDC_TOKEN_ISSUER", keycloak.getTokenIssuerUri().toString())
