@@ -37,6 +37,11 @@ public class IcebergV1ConfigResource extends BaseIcebergResource implements Iceb
 
     ConfigResponse.Builder config = ConfigResponse.builder();
 
+    // TODO really need a client ID
+    config.withDefault(CONF_NESSIE_OAUTH2_CLIENT_ID, "nessie-catalog-core-client");
+    // TODO a non-secret secret is not a secret ...
+    config.withDefault(CONF_NESSIE_OAUTH2_CLIENT_SECRET, "secret");
+
     config.withDefaults(w.configDefaults());
     config.withOverrides(w.configOverrides());
 
@@ -50,17 +55,12 @@ public class IcebergV1ConfigResource extends BaseIcebergResource implements Iceb
     config.withOverride(
         "nessie.catalog-base-uri", uriInfo.getBaseUri().resolve("nessie-catalog/").toString());
     config.withOverride("nessie.prefix-pattern", "{ref}|{warehouse}");
-    config.withOverride("nessie.prefix-pattern", "{ref}|{warehouse}");
 
     URI oauthUri = uriInfo.getBaseUri().resolve("iceberg/v1/oauth/tokens");
 
     // "Just" Nessie client specific configs
     config.withOverride(CONF_NESSIE_AUTH_TYPE, "OAUTH2");
     config.withOverride(CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, oauthUri.toString());
-    // TODO really need a client ID
-    config.withOverride(CONF_NESSIE_OAUTH2_CLIENT_ID, "nessie-catalog-core-client");
-    // TODO a non-secret secret is not a secret ...
-    config.withOverride(CONF_NESSIE_OAUTH2_CLIENT_SECRET, "secret");
 
     return config.build();
   }

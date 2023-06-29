@@ -28,6 +28,7 @@ import org.projectnessie.error.{
 import org.projectnessie.model.Reference.ReferenceType
 import org.projectnessie.model._
 
+import java.lang.Boolean.parseBoolean
 import java.time.format.DateTimeParseException
 import java.time.{Instant, ZonedDateTime}
 import java.util.Collections
@@ -37,7 +38,6 @@ object NessieUtils {
 
   val BRANCH: String = "Branch"
   val TAG: String = "Tag"
-  val HASH: String = "Hash"
 
   def unquoteRefName(branch: String): String = if (
     branch.startsWith("`") && branch.endsWith("`")
@@ -185,10 +185,13 @@ object NessieUtils {
           val catalogProperties = getCatalogProperties(icebergCatalog)
 
           require(
-            java.lang.Boolean
-              .parseBoolean(catalogProperties.get("nessie.is-nessie-catalog")),
+            parseBoolean(catalogProperties.get("nessie.is-nessie-catalog")),
             errorPre + ", but the referenced REST endpoint is not a Nessie Catalog Server. " + errorPost
           )
+
+          // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
+          val credential = resolveCredential(catalogProperties)
+
           x => {
             x match {
               case NessieConfigConstants.CONF_NESSIE_URI =>
@@ -197,21 +200,18 @@ object NessieUtils {
                 // that `nessie.core-base-uri` contains a `/` terminated URI.
                 catalogProperties.get("nessie.core-base-uri") + "v1"
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID =>
-                parseCredential(
-                  resolveViaEnvironment(catalogProperties, "credential")
-                )._1
+                credential.clientId
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET =>
-                // See o.a.i.rest.auth.OAuth2Util.SCOPE
-                parseCredential(
-                  resolveViaEnvironment(catalogProperties, "credential")
-                )._2
+                // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
+                credential.secret
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES =>
                 // Same default scope as the Iceberg REST Client uses in o.a.i.rest.RESTSessionCatalog.initialize
                 // See o.a.i.rest.auth.OAuth2Util.SCOPE
-                resolveViaEnvironment(catalogProperties, "scope", "catalog")
+                resolveOAuthScope(catalogProperties)
               // TODO need the "token" (initial bearer token for OAuth2 as in o.a.i.rest.RESTSessionCatalog.initialize?
               case _ =>
-                catalogProperties.get(x)
+                if (catalogProperties.containsKey(x)) catalogProperties.get(x)
+                else catalogProperties.get(x.replace("nessie.", ""))
             }
           }
         case _ =>
@@ -248,15 +248,57 @@ object NessieUtils {
     }
   }
 
-  private def parseCredential(credential: String): (String, String) = {
+  private def resolveOAuthScope(
+      catalogProperties: java.util.Map[String, String]
+  ): String = {
+    val nessieScope = resolveViaEnvironment(
+      catalogProperties,
+      NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES
+    )
+    if (nessieScope != null) {
+      nessieScope
+    } else {
+      resolveViaEnvironment(catalogProperties, "scope", "catalog")
+    }
+  }
+
+  private def resolveCredential(
+      catalogProperties: java.util.Map[String, String]
+  ): Credential = {
+    val nessieClientId = resolveViaEnvironment(
+      catalogProperties,
+      NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID
+    )
+    val nessieClientSecret = resolveViaEnvironment(
+      catalogProperties,
+      NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET
+    )
+
+    val credentialFromIceberg = parseIcebergCredential(
+      resolveViaEnvironment(catalogProperties, "credential")
+    )
+
+    Credential(
+      if (nessieClientId != null) nessieClientId
+      else credentialFromIceberg.clientId,
+      if (nessieClientSecret != null) nessieClientSecret
+      else credentialFromIceberg.secret
+    )
+  }
+
+  private def parseIcebergCredential(credential: String): Credential = {
+    // See o.a.i.rest.auth.OAuth2Util.parseCredential
     if (credential == null) {
-      return Tuple2(null, null)
+      return Credential(null, null)
     }
     val colon = credential.indexOf(':')
     if (colon == -1) {
-      Tuple2(null, credential)
+      Credential(null, credential)
     } else {
-      Tuple2(credential.substring(0, colon), credential.substring(colon + 1))
+      Credential(
+        credential.substring(0, colon),
+        credential.substring(colon + 1)
+      )
     }
   }
 
@@ -301,17 +343,13 @@ object NessieUtils {
           activeConf.remove(s"$confPrefix.ref.hash")
         }
       case "RESTCatalog" =>
-        val icebergCatalogProperties = getCatalogProperties(icebergCatalog)
-        if (
-          "true".equals(
-            icebergCatalogProperties.get("nessie.is-nessie-catalog")
-          )
-        ) {
+        val catalogProperties = getCatalogProperties(icebergCatalog)
+        if (parseBoolean(catalogProperties.get("nessie.is-nessie-catalog"))) {
           val nessiePrefixPattern =
-            icebergCatalogProperties.get("nessie.prefix-pattern")
+            catalogProperties.get("nessie.prefix-pattern")
 
           val refAndWarehouse = refAndWarehouseFromPrefix(
-            icebergCatalogProperties.get("prefix")
+            catalogProperties.get("prefix")
           )
           val warehouseSuffix =
             refAndWarehouse._2.map(w => s"|$w").getOrElse("")
@@ -355,7 +393,7 @@ object NessieUtils {
     getBaseIcebergCatalog(catalogImpl)
   }
 
-  def getBaseIcebergCatalog(
+  private def getBaseIcebergCatalog(
       catalogImpl: CatalogPlugin
   ): Option[Any] = {
     try {
@@ -399,7 +437,7 @@ object NessieUtils {
     }
   }
 
-  def getCatalogProperties(
+  private def getCatalogProperties(
       icebergCatalog: Any
   ): java.util.Map[String, String] = {
     try {
@@ -470,8 +508,8 @@ object NessieUtils {
         }
         (refName, refHash)
       case "RESTCatalog" =>
-        val icebergCatalogProperties = getCatalogProperties(icebergCatalog)
-        val prefix = icebergCatalogProperties.get("prefix")
+        val catalogProperties = getCatalogProperties(icebergCatalog)
+        val prefix = catalogProperties.get("prefix")
         val refAndWarehouse = refAndWarehouseFromPrefix(prefix)
         refNameAndHash(refAndWarehouse._1)
     }
@@ -504,4 +542,6 @@ object NessieUtils {
         throw new UnsupportedOperationException(s"Unknown reference type $ref")
     }
   }
+
+  case class Credential(clientId: String, secret: String)
 }
