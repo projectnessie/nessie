@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-server8")
+  id("nessie-conventions-server")
   id("nessie-jacoco")
   alias(libs.plugins.nessie.run)
 }
@@ -24,12 +24,14 @@ description = "Nessie - REST Catalog - Service"
 
 extra["maven.name"] = "Nessie - REST Catalog - Service"
 
-val icebergVersion = libs.versions.iceberg.get()
+val versionIceberg = libs.versions.iceberg.get()
+
+val sparkScala = useSparkScalaVersionsForProject("3.4", "2.12")
 
 dependencies {
   implementation(nessieProject(":nessie-client"))
 
-  implementation("org.apache.iceberg:iceberg-core:$icebergVersion")
+  implementation("org.apache.iceberg:iceberg-core:$versionIceberg")
 
   implementation(libs.hadoop.common) { hadoopExcludes() }
 
@@ -62,7 +64,7 @@ dependencies {
   testFixturesApi(nessieProject(":nessie-client"))
   testFixturesApi(libs.guava)
 
-  testFixturesApi("org.apache.iceberg:iceberg-core:$icebergVersion")
+  testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
   testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
 
   // javax/jakarta
@@ -108,8 +110,8 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  testFixturesApi("org.apache.iceberg:iceberg-api:$icebergVersion:tests")
-  testFixturesApi("org.apache.iceberg:iceberg-core:$icebergVersion:tests")
+  testFixturesApi("org.apache.iceberg:iceberg-api:$versionIceberg:tests")
+  testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg:tests")
   testFixturesImplementation(libs.junit4)
 
   testFixturesImplementation(libs.slf4j.api)
@@ -119,6 +121,35 @@ dependencies {
   testFixturesApi(nessieProject(":nessie-versioned-storage-inmemory"))
 
   testCompileOnly(libs.microprofile.openapi)
+
+  intTestImplementation(
+    nessieProject(
+      ":nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
+    )
+  )
+  intTestImplementation("org.apache.iceberg:iceberg-nessie:$versionIceberg")
+  intTestImplementation(
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg"
+  )
+  intTestImplementation(
+    "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg"
+  )
+  intTestImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
+
+  intTestRuntimeOnly(libs.logback.classic)
+  intTestImplementation(libs.slf4j.log4j.over.slf4j)
+  intTestImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  intTestImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  intTestImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  intTestImplementation(
+    nessieProject(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
+  )
 }
 
 fun ModuleDependency.hadoopExcludes() {
@@ -135,3 +166,5 @@ fun ModuleDependency.hadoopExcludes() {
   exclude("org.eclipse.jetty")
   exclude("org.apache.zookeeper")
 }
+
+forceJavaVersionForTestTask("intTest", sparkScala.runtimeJavaVersion)
