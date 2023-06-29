@@ -16,6 +16,7 @@
 package org.projectnessie.restcatalog.service.testing;
 
 import java.net.URI;
+import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -36,6 +37,7 @@ public class WeldTestingExtension implements Extension {
   private final URI nessieApiUri;
   private final ParsedReference defaultBranch;
   private final Warehouse defaultWarehouse;
+  private final Map<String, String> clientCoreProperties;
 
   @SuppressWarnings("unused")
   public WeldTestingExtension() {
@@ -47,12 +49,14 @@ public class WeldTestingExtension implements Extension {
       NessieApiV2 api,
       URI nessieApiUri,
       ParsedReference defaultBranch,
-      Warehouse defaultWarehouse) {
+      Warehouse defaultWarehouse,
+      Map<String, String> clientCoreProperties) {
     this.oauthHandler = oauthHandler;
     this.api = api;
     this.nessieApiUri = nessieApiUri;
     this.defaultBranch = defaultBranch;
     this.defaultWarehouse = defaultWarehouse;
+    this.clientCoreProperties = clientCoreProperties;
   }
 
   @SuppressWarnings("unused")
@@ -72,6 +76,7 @@ public class WeldTestingExtension implements Extension {
                     apiBaseUri,
                     defaultBranch,
                     defaultWarehouse,
-                    new DelegatingMetadataIO(new LocalFileIO())));
+                    new DelegatingMetadataIO(new LocalFileIO()),
+                    clientCoreProperties));
   }
 }

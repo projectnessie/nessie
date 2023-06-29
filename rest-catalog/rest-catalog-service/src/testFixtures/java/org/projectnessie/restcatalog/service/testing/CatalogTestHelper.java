@@ -16,6 +16,7 @@
 package org.projectnessie.restcatalog.service.testing;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
@@ -85,7 +86,8 @@ public class CatalogTestHelper implements AutoCloseable {
 
     weld = new Weld();
     weld.addExtension(
-        new WeldTestingExtension(oauthHandler, api, nessieApiUri, defaultBranch, defaultWarehouse));
+        new WeldTestingExtension(
+            oauthHandler, api, nessieApiUri, defaultBranch, defaultWarehouse, emptyMap()));
     weld.addPackages(true, DummyTenantSpecific.class);
     weld.addPackages(true, IcebergV1ApiResource.class);
     weld.addPackages(true, JavaxExceptionMapper.class);

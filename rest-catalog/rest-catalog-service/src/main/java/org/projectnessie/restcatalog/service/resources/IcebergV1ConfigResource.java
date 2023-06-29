@@ -21,6 +21,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Inject;
 import javax.ws.rs.core.UriInfo;
 import org.apache.iceberg.rest.responses.ConfigResponse;
@@ -37,10 +39,13 @@ public class IcebergV1ConfigResource extends BaseIcebergResource implements Iceb
 
     ConfigResponse.Builder config = ConfigResponse.builder();
 
+    // Pass Nessie client properties to the client
+    Map<String, String> clientCoreProperties = new HashMap<>(tenantSpecific.clientCoreProperties());
     // TODO really need a client ID
-    config.withDefault(CONF_NESSIE_OAUTH2_CLIENT_ID, "nessie-catalog-core-client");
+    clientCoreProperties.putIfAbsent(CONF_NESSIE_OAUTH2_CLIENT_ID, "nessie-catalog-core-client");
     // TODO a non-secret secret is not a secret ...
-    config.withDefault(CONF_NESSIE_OAUTH2_CLIENT_SECRET, "secret");
+    clientCoreProperties.putIfAbsent(CONF_NESSIE_OAUTH2_CLIENT_SECRET, "secret");
+    clientCoreProperties.forEach(config::withDefault);
 
     config.withDefaults(w.configDefaults());
     config.withOverrides(w.configOverrides());

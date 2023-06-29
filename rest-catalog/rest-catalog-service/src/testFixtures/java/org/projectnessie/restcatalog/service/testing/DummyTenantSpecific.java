@@ -16,6 +16,7 @@
 package org.projectnessie.restcatalog.service.testing;
 
 import java.net.URI;
+import java.util.Map;
 import javax.enterprise.inject.Vetoed;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
@@ -37,6 +38,7 @@ public class DummyTenantSpecific implements TenantSpecific {
   private final ParsedReference defaultBranch;
   private final Warehouse defaultWarehouse;
   private final OAuthHandler oauthHandler;
+  private final Map<String, String> clientCoreProperties;
 
   @SuppressWarnings("unused")
   public DummyTenantSpecific() {
@@ -49,13 +51,15 @@ public class DummyTenantSpecific implements TenantSpecific {
       URI nessieApiBaseUri,
       ParsedReference defaultBranch,
       Warehouse defaultWarehouse,
-      MetadataIO metadataIO) {
+      MetadataIO metadataIO,
+      Map<String, String> clientCoreProperties) {
     this.oauthHandler = oauthHandler;
     this.api = api;
     this.nessieApiBaseUri = nessieApiBaseUri;
     this.defaultBranch = defaultBranch;
     this.defaultWarehouse = defaultWarehouse;
     this.metadataIO = metadataIO;
+    this.clientCoreProperties = clientCoreProperties;
   }
 
   @Override
@@ -99,5 +103,10 @@ public class DummyTenantSpecific implements TenantSpecific {
   @Override
   public String commitAuthor() {
     return COMMIT_AUTHOR;
+  }
+
+  @Override
+  public Map<String, String> clientCoreProperties() {
+    return clientCoreProperties;
   }
 }

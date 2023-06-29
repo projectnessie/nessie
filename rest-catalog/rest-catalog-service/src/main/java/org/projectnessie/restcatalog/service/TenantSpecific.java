@@ -17,6 +17,7 @@ package org.projectnessie.restcatalog.service;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -46,6 +47,8 @@ public interface TenantSpecific {
   URI nessieApiBaseUri();
 
   String commitAuthor();
+
+  Map<String, String> clientCoreProperties();
 
   default CommitMeta buildCommitMeta(String message) {
     return CommitMeta.builder()
