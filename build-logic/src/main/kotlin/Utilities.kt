@@ -92,6 +92,17 @@ fun Project.forceJava11ForTests() {
   }
 }
 
+fun Project.forceJava11ForTestTask(name: String) {
+  if (!JavaVersion.current().isJava11) {
+    tasks.named(name, Test::class.java).configure {
+      val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
+      javaLauncher.set(
+        javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(11)) }
+      )
+    }
+  }
+}
+
 fun Project.libsRequiredVersion(name: String): String {
   val libVer =
     extensions.getByType<VersionCatalogsExtension>().named("libs").findVersion(name).get()
