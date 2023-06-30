@@ -23,9 +23,9 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
-import static org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KEYCLOAK_DOCKER_NETWORK_ID;
-import static org.projectnessie.restcatalog.server.resources.NessieDockerTestResourceLifecycleManager.NESSIE_DOCKER_AUTH_ENABLED;
-import static org.projectnessie.restcatalog.server.resources.NessieDockerTestResourceLifecycleManager.NESSIE_DOCKER_NETWORK_ID;
+import static org.projectnessie.testing.keycloak.CustomKeycloakContainer.KEYCLOAK_DOCKER_NETWORK_ID;
+import static org.projectnessie.testing.nessie.NessieContainer.NESSIE_DOCKER_AUTH_ENABLED;
+import static org.projectnessie.testing.nessie.NessieContainer.NESSIE_DOCKER_NETWORK_ID;
 
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -51,8 +51,8 @@ import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleMan
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakClientId;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakClientSecret;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakTokenEndpointUri;
-import org.projectnessie.restcatalog.server.resources.NessieDockerTestResourceLifecycleManager;
-import org.projectnessie.restcatalog.server.resources.NessieDockerTestResourceLifecycleManager.NessieDockerUri;
+import org.projectnessie.quarkus.tests.profiles.NessieDockerTestResourceLifecycleManager;
+import org.projectnessie.quarkus.tests.profiles.NessieDockerTestResourceLifecycleManager.NessieDockerUri;
 import org.projectnessie.restcatalog.server.resources.WarehouseTestLocation;
 import org.testcontainers.containers.Network;
 
