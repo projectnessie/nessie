@@ -1,0 +1,237 @@
+/*
+ * Copyright (C) 2023 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.testing.nessie;
+
+import static java.util.Objects.requireNonNull;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.net.URI;
+import java.time.Duration;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
+
+public class NessieContainer extends GenericContainer<NessieContainer> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieContainer.class);
+
+  public static final String NESSIE_DOCKER_IMAGE = "nessie.docker.image";
+  public static final String NESSIE_DOCKER_TAG = "nessie.docker.tag";
+  public static final String NESSIE_DOCKER_NETWORK_ID = "nessie.docker.network.id";
+  public static final String NESSIE_DOCKER_AUTH_ENABLED = "nessie.docker.auth.enabled";
+  public static final String NESSIE_DOCKER_DEBUG_ENABLED = "nessie.docker.debug.enabled";
+
+  public static NessieConfig.Builder builder() {
+    return ImmutableNessieConfig.builder();
+  }
+
+  @Value.Immutable
+  public abstract static class NessieConfig {
+    @Value.Default
+    public String dockerImage() {
+      return "ghcr.io/projectnessie/nessie";
+    }
+
+    @Value.Default
+    public String dockerTag() {
+      return "latest";
+    }
+
+    @Nullable
+    public abstract String dockerNetworkId();
+
+    @Value.Default
+    public boolean debugEnabled() {
+      return false;
+    }
+
+    @Value.Default
+    public boolean authEnabled() {
+      return false;
+    }
+
+    @Nullable
+    public abstract Supplier<CustomKeycloakContainer> keycloakContainerSupplier();
+
+    public abstract Map<String, String> extraEnvVars();
+
+    public interface Builder {
+      @CanIgnoreReturnValue
+      Builder dockerImage(String dockerImage);
+
+      @CanIgnoreReturnValue
+      Builder dockerTag(String dockerTag);
+
+      @CanIgnoreReturnValue
+      Builder dockerNetworkId(String dockerNetworkId);
+
+      @CanIgnoreReturnValue
+      Builder debugEnabled(boolean debugEnabled);
+
+      @CanIgnoreReturnValue
+      Builder authEnabled(boolean authEnabled);
+
+      @CanIgnoreReturnValue
+      Builder keycloakContainerSupplier(
+          Supplier<CustomKeycloakContainer> keycloakContainerSupplier);
+
+      @CanIgnoreReturnValue
+      Builder putExtraEnvVars(String key, String value);
+
+      @CanIgnoreReturnValue
+      Builder putExtraEnvVars(Map.Entry<String, ? extends String> envVar);
+
+      @CanIgnoreReturnValue
+      Builder extraEnvVars(Map<String, ? extends String> entries);
+
+      NessieConfig build();
+
+      default Builder fromProperties(Map<String, String> initArgs) {
+        initArgs(initArgs, NESSIE_DOCKER_DEBUG_ENABLED, s -> debugEnabled(Boolean.parseBoolean(s)));
+        initArgs(initArgs, NESSIE_DOCKER_IMAGE, this::dockerImage);
+        initArgs(initArgs, NESSIE_DOCKER_TAG, this::dockerTag);
+        initArgs(initArgs, NESSIE_DOCKER_NETWORK_ID, this::dockerNetworkId);
+        initArgs(initArgs, NESSIE_DOCKER_AUTH_ENABLED, s -> authEnabled(Boolean.parseBoolean(s)));
+
+        initArgs.entrySet().stream()
+            .filter(e -> !e.getKey().startsWith("nessie.docker."))
+            .map(e -> Map.entry(asEnvVar(e.getKey()), e.getValue()))
+            .forEach(this::putExtraEnvVars);
+
+        return this;
+      }
+    }
+
+    public NessieContainer createContainer() {
+      LOGGER.info("Using Nessie image {}:{}", dockerImage(), dockerTag());
+      return new NessieContainer(this);
+    }
+  }
+
+  private static String asEnvVar(String key) {
+    return key.replaceAll("[.\\-\"]", "_").toUpperCase();
+  }
+
+  private static void initArgs(
+      Map<String, String> initArgs, String property, Consumer<String> consumer) {
+    String value = initArgs.getOrDefault(property, System.getProperty(property));
+    if (value != null) {
+      consumer.accept(value);
+    }
+  }
+
+  @SuppressWarnings("resource")
+  public NessieContainer(NessieConfig config) {
+    super(config.dockerImage() + ":" + config.dockerTag());
+
+    withExposedPorts(19120);
+    withNetworkAliases("nessie");
+    Duration startupTimeout = Duration.ofMinutes(2);
+    waitingFor(Wait.forHttp("/q/health/live").forPort(19120).withStartupTimeout(startupTimeout));
+    withStartupTimeout(startupTimeout);
+    withLogConsumer(new Slf4jLogConsumer(logger()));
+
+    // Don't use withNetworkMode, or aliases won't work!
+    // See https://github.com/testcontainers/testcontainers-java/issues/1221
+    String containerNetworkId = config.dockerNetworkId();
+    if (containerNetworkId != null) {
+      withNetwork(new ExternalNetwork(containerNetworkId));
+    }
+
+    if (config.authEnabled()) {
+      LOGGER.info("Enabling Nessie authentication");
+      // If auth is enabled, assume the following:
+      // - Keycloak is running on the same Docker network
+      // - Nessie will contact Keycloak inside Docker network, using its internal address
+      //   with the network alias "keycloak" and the non-mapped HTTP or HTTPS port.
+      // - Nessie will also use the configured URI for OIDC token validation,
+      //   since Keycloak is configured to return tokens with that specific address as the issuer
+      //   claim, regardless of the client IP address.
+      CustomKeycloakContainer keycloak = config.keycloakContainerSupplier().get();
+
+      String keycloakContainerIpAddress =
+          requireNonNull(
+                  keycloak.getContainerInfo(),
+                  "Keycloak container object available, but container info is null. Is the Keycloak container started?")
+              .getNetworkSettings()
+              .getNetworks()
+              .values()
+              .iterator()
+              .next()
+              .getIpAddress();
+      withExtraHost("keycloak", keycloakContainerIpAddress);
+
+      withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "true")
+          .withEnv("QUARKUS_OIDC_AUTH_SERVER_URL", keycloak.getInternalRealmUri().toString())
+          .withEnv("QUARKUS_OIDC_TOKEN_ISSUER", keycloak.getTokenIssuerUri().toString())
+          .withEnv("QUARKUS_OIDC_CLIENT_ID", "nessie");
+    } else {
+      LOGGER.info("Disabling Nessie authentication");
+      withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "false");
+    }
+
+    if (config.debugEnabled()) {
+      withEnv("QUARKUS_LOG_LEVEL", "DEBUG")
+          .withEnv("QUARKUS_LOG_CONSOLE_LEVEL", "DEBUG")
+          .withEnv("QUARKUS_LOG_MIN_LEVEL", "DEBUG");
+    }
+
+    config.extraEnvVars().forEach(this::withEnv);
+  }
+
+  /** Returns the mapped port for the Nessie server, for clients outside the container's network. */
+  public int getExternalNessiePort() {
+    return getMappedPort(19120);
+  }
+
+  /** Returns the Nessie URI for external clients running outside the container's network. */
+  @SuppressWarnings("HttpUrlsUsage")
+  public URI getExternalNessieUri() {
+    return URI.create(String.format("http://%s:%d/api/v2", getHost(), getExternalNessiePort()));
+  }
+
+  private static class ExternalNetwork implements Network {
+
+    private final String networkId;
+
+    public ExternalNetwork(String networkId) {
+      this.networkId = networkId;
+    }
+
+    @Override
+    public Statement apply(Statement var1, Description var2) {
+      return null;
+    }
+
+    public String getId() {
+      return networkId;
+    }
+
+    public void close() {
+      // don't close the external network
+    }
+  }
+}

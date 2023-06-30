@@ -100,9 +100,8 @@ dependencies {
   testFixturesImplementation(platform(libs.junit.bom))
   testFixturesImplementation(libs.bundles.junit.testing)
 
-  intTestImplementation(libs.testcontainers.keycloak) {
-    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
-  }
+  intTestImplementation(nessieProject(":nessie-keycloak-testcontainer"))
+  intTestImplementation(nessieProject(":nessie-nessie-testcontainer"))
 }
 
 val packageType = quarkusPackageType()
