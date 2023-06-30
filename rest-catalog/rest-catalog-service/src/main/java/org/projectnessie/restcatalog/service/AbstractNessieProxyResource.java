@@ -36,6 +36,7 @@ public abstract class AbstractNessieProxyResource {
       Arrays.asList(
           "Content-Type",
           "Content-Encoding",
+          "Authorization",
           "Accept",
           "Accept-Encoding",
           "Accept-Language",
