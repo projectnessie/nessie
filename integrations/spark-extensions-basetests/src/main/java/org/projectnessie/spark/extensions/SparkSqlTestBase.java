@@ -107,7 +107,8 @@ public abstract class SparkSqlTestBase {
   @BeforeEach
   protected void setupSparkAndApi(TestInfo testInfo)
       throws NessieNotFoundException, NessieConflictException {
-    api = HttpClientBuilder.builder().withUri(nessieApiUri()).build(NessieApiV1.class);
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.builder().withUri(nessieApiUri());
+    api = configureNessieHttpClient(httpClientBuilder).build(NessieApiV1.class);
 
     refName = testInfo.getTestMethod().map(Method::getName).get();
     additionalRefName = refName + "_other";
@@ -155,6 +156,10 @@ public abstract class SparkSqlTestBase {
 
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
+  }
+
+  protected HttpClientBuilder configureNessieHttpClient(HttpClientBuilder httpClientBuilder) {
+    return httpClientBuilder;
   }
 
   @AfterEach
