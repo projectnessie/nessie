@@ -41,6 +41,9 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
+  // This lets Immutables discover the right Guava version, otherwise we end with Guava 16 (from
+  // 14), and Immutables uses Objects.toStringHelper instead of MoreObjects.toStringHelper.
+  compileOnly(libs.guava)
   annotationProcessor(libs.immutables.value.processor)
 
   implementation(platform(libs.junit.bom))
