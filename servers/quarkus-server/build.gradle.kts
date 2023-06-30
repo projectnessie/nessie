@@ -112,6 +112,12 @@ dependencies {
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
   intTestImplementation(libs.keycloak.admin.client)
+  intTestRuntimeOnly(platform(libs.testcontainers.bom))
+  intTestRuntimeOnly("org.testcontainers:cassandra")
+  intTestRuntimeOnly("org.testcontainers:postgresql")
+  intTestRuntimeOnly("org.testcontainers:mongodb")
+  intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestRuntimeOnly(project(":nessie-nessie-testcontainer"))
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)

@@ -100,9 +100,8 @@ dependencies {
   testFixturesImplementation(platform(libs.junit.bom))
   testFixturesImplementation(libs.bundles.junit.testing)
 
-  intTestImplementation(libs.testcontainers.keycloak) {
-    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
-  }
+  intTestImplementation(nessieProject(":nessie-keycloak-testcontainer"))
+  intTestImplementation(nessieProject(":nessie-nessie-testcontainer"))
 }
 
 val packageType = quarkusPackageType()
@@ -117,7 +116,7 @@ val quarkusBuild =
   }
 
 tasks.withType<Test>().configureEach {
-  systemProperty("keycloak.docker.tag", libs.versions.keycloakContainerTag.get())
+  systemProperty("keycloak.docker.tag", libs.versions.keycloak.get())
 }
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
