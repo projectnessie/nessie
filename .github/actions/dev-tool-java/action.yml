@@ -44,5 +44,3 @@ runs:
           }
         }
         !
-        echo "org.gradle.jvmargs=-Xmx1280m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
-        echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties

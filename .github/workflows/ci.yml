@@ -73,14 +73,14 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
+      # Needed for the Quarkus plugin - can likely go away once we use Quarkus 3 or newer
+      - name: Bump Gradle daemon heap
+        run: sed -i 's/-Xms.*/-Xms6G -Xmx6G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
+
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-
-      # Needed for the Quarkus plugin - can likely go away once we use Quarkus 3 or newer
-      - name: Bump Gradle daemon heap
-        run: sed -i 's/-Xms.*/-Xms6G -Xmx6G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
 
       - name: Gradle / Compile
         uses: gradle/gradle-build-action@v2
@@ -729,13 +729,6 @@ jobs:
           patch-repository: ${{env.ICEBERG_PATCH_REPOSITORY}}
           patch-branch: ${{env.ICEBERG_PATCH_BRANCH}}
           work-branch: iceberg-integration-patched
-
-      # Setup Gradle properties, heap requirements are for the "Integration test w/ Nessie".
-      - name: Setup gradle.properties
-        run: |
-          mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xms2g -Xmx4g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
-          echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties
 
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v3
