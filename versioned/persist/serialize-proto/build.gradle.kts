@@ -73,5 +73,6 @@ tasks.withType(ProtobufExtract::class).configureEach {
   when (name) {
     "extractIncludeTestProto" -> dependsOn(tasks.named("processJandexIndex"))
     "extractIncludeTestFixturesProto" -> dependsOn(tasks.named("processJandexIndex"))
+    "extractIncludeIntTestProto" -> dependsOn(tasks.named("processJandexIndex"))
   }
 }

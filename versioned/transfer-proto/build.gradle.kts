@@ -16,6 +16,7 @@
 
 import com.google.protobuf.gradle.GenerateProtoTask
 import com.google.protobuf.gradle.ProtobufExtension
+import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
   alias(libs.plugins.nessie.reflectionconfig)
@@ -66,9 +67,10 @@ tasks.named<Jar>("sourcesJar") {
   dependsOn(tasks.named("generateProto"), tasks.named("generateReflectionConfig"))
 }
 
-tasks.withType(com.google.protobuf.gradle.ProtobufExtract::class).configureEach {
+tasks.withType(ProtobufExtract::class).configureEach {
   when (name) {
     "extractIncludeTestProto" -> dependsOn(tasks.named("processJandexIndex"))
     "extractIncludeTestFixturesProto" -> dependsOn(tasks.named("processJandexIndex"))
+    "extractIncludeIntTestProto" -> dependsOn(tasks.named("processJandexIndex"))
   }
 }
