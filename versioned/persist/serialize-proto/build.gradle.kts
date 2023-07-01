@@ -38,7 +38,7 @@ extensions.configure<ProtobufExtension> {
   }
 }
 
-tasks.named<GenerateProtoTask>("generateProto") {
+tasks.named<GenerateProtoTask>("generateProto").configure {
   doLast(
     ReplaceInFiles(
       fileTree(project.buildDir.resolve("generated/source/proto/main")),
@@ -65,7 +65,7 @@ reflectionConfig {
 }
 
 // The protobuf-plugin should ideally do this
-tasks.named<Jar>("sourcesJar") {
+tasks.named<Jar>("sourcesJar").configure {
   dependsOn(tasks.named("generateProto"), tasks.named("generateReflectionConfig"))
 }
 

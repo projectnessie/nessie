@@ -72,10 +72,10 @@ nessieQuarkusApp {
   systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
 }
 
-tasks.named<ShadowJar>("shadowJar") {
+tasks.named<ShadowJar>("shadowJar").configure {
   manifest {
     attributes["Main-Class"] = "org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator"
   }
 }
 
-tasks.named<Test>("intTest") { systemProperty("expectedNessieVersion", project.version) }
+tasks.named<Test>("intTest").configure { systemProperty("expectedNessieVersion", project.version) }

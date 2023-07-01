@@ -25,7 +25,7 @@ extra["maven.name"] = "Nessie - Antlr Runtime"
 
 dependencies { implementation(libs.antlr.antlr4.runtime) }
 
-tasks.named<ShadowJar>("shadowJar") {
+tasks.named<ShadowJar>("shadowJar").configure {
   dependencies { include(dependency("org.antlr:antlr4-runtime")) }
   relocate("org.antlr.v4.runtime", "org.projectnessie.shaded.org.antlr.v4.runtime")
 }

@@ -39,7 +39,7 @@ sourceSets?.withType(SourceSet::class.java)?.configureEach {
   val sourceSet = this
 
   val jandexTaskName = sourceSet.getTaskName("process", "jandexIndex")
-  tasks.named(jandexTaskName, JandexProcessResources::class.java) {
+  tasks.named(jandexTaskName, JandexProcessResources::class.java).configure {
     if ("main" != sourceSet.name) {
       // No Jandex for non-main
       jandexBuildAction.set(JandexBuildAction.NONE)
@@ -117,7 +117,7 @@ if (
 
 //
 
-tasks.register("compileAll") {
+tasks.register("compileAll").configure {
   group = "build"
   description = "Runs all compilation and jar tasks"
   dependsOn(tasks.withType<AbstractCompile>(), tasks.withType<ProcessResources>())

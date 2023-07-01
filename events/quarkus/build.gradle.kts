@@ -62,11 +62,11 @@ dependencies {
 }
 
 listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name) { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
 }
 
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name) { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
 
 val quarkusBuild =

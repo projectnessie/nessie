@@ -63,7 +63,7 @@ components {
 if (plugins.hasPlugin("io.quarkus")) {
   // This directory somehow disappears... Maybe some weird Quarkus code.
   val testFixturesDir = buildDir.resolve("resources/testFixtures")
-  tasks.named("quarkusGenerateCodeTests") { doFirst { testFixturesDir.mkdirs() } }
+  tasks.named("quarkusGenerateCodeTests").configure { doFirst { testFixturesDir.mkdirs() } }
   tasks.withType<Test>().configureEach { doFirst { testFixturesDir.mkdirs() } }
 }
 
@@ -152,12 +152,12 @@ testing {
         }
 
         if (hasQuarkus) {
-          tasks.named("compileIntTestJava") {
+          tasks.named("compileIntTestJava").configure {
             dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava"))
           }
         }
 
-        tasks.named("check") { dependsOn(testTask) }
+        tasks.named("check").configure { dependsOn(testTask) }
       }
 
       if (hasQuarkus) {
@@ -169,13 +169,13 @@ testing {
 
 // Let the test's implementation config extend testImplementation, so it also inherits the
 // project's "main" implementation dependencies (not just the "api" configuration)
-configurations.named("intTestImplementation") {
+configurations.named("intTestImplementation").configure {
   extendsFrom(configurations.getByName("testImplementation"))
 }
 
 dependencies { add("intTestImplementation", java.sourceSets.getByName("test").output.dirs) }
 
-configurations.named("intTestRuntimeOnly") {
+configurations.named("intTestRuntimeOnly").configure {
   extendsFrom(configurations.getByName("testRuntimeOnly"))
 }
 
