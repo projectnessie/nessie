@@ -110,7 +110,6 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
   }
 
   private static final String serviceClientId = "quarkus-service-app";
-  private static final String webAppClientId = "quarkus-web-app";
   private static final List<String> tokenUserRoles = List.of("user");
   private static final List<String> tokenAdminRoles = List.of("user", "admin");
 
@@ -120,7 +119,6 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
     realm.getRoles().getRealm().add(new RoleRepresentation("confidential", null, false));
 
     realm.getClients().add(CustomKeycloakContainer.createServiceClient(serviceClientId));
-    realm.getClients().add(CustomKeycloakContainer.createWebAppClient(webAppClientId));
 
     realm.getUsers().add(CustomKeycloakContainer.createUser("alice", tokenUserRoles));
     realm.getUsers().add(CustomKeycloakContainer.createUser("admin", tokenAdminRoles));
