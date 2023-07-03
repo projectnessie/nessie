@@ -112,11 +112,12 @@ dependencies {
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
 }
 
-val pullOpenApiSpec by
-  tasks.registering(Sync::class) {
-    destinationDir = openApiSpecDir
-    from(project.objects.property(Configuration::class).value(openapiSource))
-  }
+val pullOpenApiSpec by tasks.registering(Sync::class)
+
+pullOpenApiSpec.configure {
+  destinationDir = openApiSpecDir
+  from(project.objects.property(Configuration::class).value(openapiSource))
+}
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
 
@@ -132,13 +133,14 @@ quarkus {
   )
 }
 
-val quarkusBuild =
-  tasks.named<QuarkusBuild>("quarkusBuild") {
-    outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
-    dependsOn(pullOpenApiSpec)
-    inputs.property("final.name", quarkus.finalName())
-    inputs.properties(quarkus.quarkusBuildProperties.get())
-  }
+val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
+
+quarkusBuild.configure {
+  outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
+  dependsOn(pullOpenApiSpec)
+  inputs.property("final.name", quarkus.finalName())
+  inputs.properties(quarkus.quarkusBuildProperties.get())
+}
 
 tasks.withType<Test>().configureEach {
   systemProperty(
@@ -179,19 +181,19 @@ if (quarkusFatJar()) {
 }
 
 listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name) { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
 }
 
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name) { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
 
 // Testcontainers is not supported on Windows :(
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }

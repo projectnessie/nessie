@@ -102,7 +102,7 @@ dependencies {
 
 val intTest = tasks.named<Test>("intTest")
 
-intTest { systemProperty("aws.region", "us-east-1") }
+intTest.configure { systemProperty("aws.region", "us-east-1") }
 
 nessieQuarkusApp {
   includeTask(intTest)

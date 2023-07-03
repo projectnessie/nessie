@@ -63,4 +63,4 @@ dependencies {
 
 jmh { jmhVersion.set(libs.versions.jmh.get()) }
 
-tasks.named<ShadowJar>("jmhJar") { mergeServiceFiles() }
+tasks.named<ShadowJar>("jmhJar").configure { mergeServiceFiles() }

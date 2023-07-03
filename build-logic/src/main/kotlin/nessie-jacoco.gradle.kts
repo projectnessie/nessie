@@ -48,7 +48,7 @@ tasks.withType<JacocoReport>().configureEach {
 jacoco { toolVersion = libsRequiredVersion("jacoco") }
 
 if (plugins.hasPlugin("io.quarkus")) {
-  tasks.named("classes") { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
+  tasks.named("classes").configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
 
   tasks.withType<Test>().configureEach {
     extensions.configure(JacocoTaskExtension::class.java) {
@@ -69,10 +69,12 @@ testing {
       val extension = project.extensions.getByType(JacocoPluginExtension::class.java)
       targets.configureEach {
         val testTaskName = testTask.name
-        project.tasks.register(
-          "jacoco${testTaskName.capitalized()}Report",
-          JacocoReport::class.java
-        ) {
+        val reportTask =
+          project.tasks.register(
+            "jacoco${testTaskName.capitalized()}Report",
+            JacocoReport::class.java
+          )
+        reportTask.configure {
           group = LifecycleBasePlugin.VERIFICATION_GROUP
           description =
             String.format("Generates code coverage report for the %s task.", testTaskName)
@@ -81,7 +83,6 @@ testing {
           // TODO: Change the default location for these reports to follow the convention defined in
           // ReportOutputDirectoryAction
           val reportsDir = extension.reportsDirectory
-          val reportTask = this
           reports.all(
             SerializableLambdas.action(
               SerializableLambdas.SerializableAction<ConfigurableReport> {
@@ -103,10 +104,12 @@ testing {
           )
         }
 
-        project.tasks.register(
-          "jacoco${testTask.name.capitalized()}CoverageVerification",
-          JacocoCoverageVerification::class.java
-        ) {
+        val verification =
+          project.tasks.register(
+            "jacoco${testTask.name.capitalized()}CoverageVerification",
+            JacocoCoverageVerification::class.java
+          )
+        verification.configure {
           group = LifecycleBasePlugin.VERIFICATION_GROUP
           description =
             String.format(

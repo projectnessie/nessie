@@ -69,11 +69,10 @@ extensions.configure<SmallryeOpenApiExtension> {
   )
 }
 
-val processResources =
-  tasks.named<ProcessResources>("processResources") {
-    inputs.property("projectVersion", project.version)
-    filter(ReplaceTokens::class, mapOf("tokens" to mapOf("projectVersion" to project.version)))
-  }
+tasks.named<ProcessResources>("processResources").configure {
+  inputs.property("projectVersion", project.version)
+  filter(ReplaceTokens::class, mapOf("tokens" to mapOf("projectVersion" to project.version)))
+}
 
 val openapiSource by
   configurations.creating {
@@ -82,10 +81,11 @@ val openapiSource by
     description = "Source OpenAPI spec files, containing the examples"
   }
 
-val generateOpenApiSpec =
-  tasks.named<SmallryeOpenApiTask>("generateOpenApiSpec") {
-    inputs.files("src/main").withPathSensitivity(PathSensitivity.RELATIVE)
-  }
+val generateOpenApiSpec = tasks.named<SmallryeOpenApiTask>("generateOpenApiSpec")
+
+generateOpenApiSpec.configure {
+  inputs.files("src/main").withPathSensitivity(PathSensitivity.RELATIVE)
+}
 
 artifacts { add(openapiSource.name, file("src/main/resources/META-INF")) }
 

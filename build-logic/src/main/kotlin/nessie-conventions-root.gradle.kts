@@ -70,7 +70,9 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
       encodings.encoding = "UTF-8"
       encodings.properties.encoding = "UTF-8"
 
-      runConfigurations.register("Gradle", org.jetbrains.gradle.ext.Gradle::class.java) {
+      val runConfig =
+        runConfigurations.register("Gradle", org.jetbrains.gradle.ext.Gradle::class.java)
+      runConfig.configure {
         defaults = true
 
         jvmArgs =

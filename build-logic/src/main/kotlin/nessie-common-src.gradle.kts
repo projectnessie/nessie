@@ -53,14 +53,13 @@ if (project.name.endsWith("-proto") || project.extra.has("duplicated-project-sou
 
   val sourceSets = project.extensions.findByType(SourceSetContainer::class.java)
   if (sourceSets != null) {
-    val checkstyleAll = tasks.register("checkstyle") { description = "Checkstyle all source sets" }
+    val checkstyleAll = tasks.register("checkstyle")
+    checkstyleAll.configure { description = "Checkstyle all source sets" }
 
     sourceSets.withType(SourceSet::class.java).configureEach {
       val sourceSet = this
-      val checkstyleTask =
-        tasks.named(sourceSet.getTaskName("checkstyle", null)) {
-          dependsOn(sourceSet.getTaskName("process", "jandexIndex"))
-        }
+      val checkstyleTask = tasks.named(sourceSet.getTaskName("checkstyle", null))
+      checkstyleTask.configure { dependsOn(sourceSet.getTaskName("process", "jandexIndex")) }
       checkstyleAll.configure { dependsOn(checkstyleTask) }
     }
   }

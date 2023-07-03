@@ -42,19 +42,20 @@ reflectionConfig {
   relocations.put("com[.]google[.]protobuf[.]", "org.projectnessie.nessie.relocated.protobuf.$1")
 }
 
-val shadowJar =
-  tasks.named<ShadowJar>("shadowJar") {
-    relocate("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
-    manifest {
-      attributes["Specification-Title"] = "Google Protobuf"
-      attributes["Specification-Version"] = libs.protobuf.java.get().version
-    }
-    configurations = listOf(project.configurations.getByName("compileClasspath"))
-    dependencies { include(dependency(libs.protobuf.java.get())) }
+val shadowJar = tasks.named<ShadowJar>("shadowJar")
+
+shadowJar.configure {
+  relocate("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
+  manifest {
+    attributes["Specification-Title"] = "Google Protobuf"
+    attributes["Specification-Version"] = libs.protobuf.java.get().version
   }
+  configurations = listOf(project.configurations.getByName("compileClasspath"))
+  dependencies { include(dependency(libs.protobuf.java.get())) }
+}
 
-tasks.named("compileJava") { finalizedBy(shadowJar) }
+tasks.named("compileJava").configure { finalizedBy(shadowJar) }
 
-tasks.named("processResources") { finalizedBy(shadowJar) }
+tasks.named("processResources").configure { finalizedBy(shadowJar) }
 
-tasks.named<Jar>("jar") { dependsOn("processJandexIndex", "generateReflectionConfig") }
+tasks.named("jar").configure { dependsOn("processJandexIndex", "generateReflectionConfig") }

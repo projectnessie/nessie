@@ -111,7 +111,7 @@ fun JvmTestSuite.commonCompatSuite() {
 
   sources { java.srcDirs(sourceSets.getByName("test").java.srcDirs) }
 
-  targets { all { tasks.named("check") { dependsOn(testTask) } } }
+  targets { all { tasks.named("check").configure { dependsOn(testTask) } } }
 }
 
 @Suppress("UnstableApiUsage")
@@ -181,9 +181,9 @@ annotationStripper {
 (jacksonTestVersions
     .map { jacksonVersion -> "Jackson_" + jacksonVersion.replace("[.]".toRegex(), "_") }
     .flatMap { n -> listOf(n, n + "_java8") } + listOf("Java8"))
-  .forEach { v -> tasks.named("checkstyleTest$v") { enabled = false } }
+  .forEach { v -> tasks.named("checkstyleTest$v").configure { enabled = false } }
 
 // Issue w/ testcontainers/podman in GH workflows :(
 if ((Os.isFamily(Os.FAMILY_MAC) || Os.isFamily(Os.FAMILY_WINDOWS)) && System.getenv("CI") != null) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }

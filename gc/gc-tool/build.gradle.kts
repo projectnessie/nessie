@@ -97,7 +97,7 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
 }
 
-tasks.named<Test>("test") { systemProperty("expectedNessieVersion", project.version) }
+tasks.named<Test>("test").configure { systemProperty("expectedNessieVersion", project.version) }
 
 val mainClassName = "org.projectnessie.gc.tool.cli.CLI"
 
@@ -131,37 +131,39 @@ val generateAutoComplete by
 // which is a bit ugly, but works. But the following tasks need a dependency to that task so that
 // Gradle can properly evaluate the dependencies.
 listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
-  tasks.named(t) { dependsOn(generateAutoComplete) }
+  tasks.named(t).configure { dependsOn(generateAutoComplete) }
 }
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-val unixExecutable by
-  tasks.registering(UnixExecutableTask::class) {
-    group = "build"
-    description = "Generates the Unix executable"
+val unixExecutable by tasks.registering(UnixExecutableTask::class)
 
-    dependsOn(shadowJar)
-    executable.set(buildDir.resolve("executable").resolve("nessie-gc"))
-    template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
-    sourceJar.set(shadowJar.get().archiveFile)
-  }
+unixExecutable.configure {
+  group = "build"
+  description = "Generates the Unix executable"
 
-shadowJar {
+  dependsOn(shadowJar)
+  executable.set(buildDir.resolve("executable").resolve("nessie-gc"))
+  template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
+  sourceJar.set(shadowJar.get().archiveFile)
+}
+
+shadowJar.configure {
   manifest { attributes["Main-Class"] = mainClassName }
   finalizedBy(unixExecutable)
 }
 
-val execSmokeTest by
-  tasks.registering(Exec::class) {
-    description = "Verify that the generated nessie-gc executable works"
-    enabled = Os.isFamily(Os.FAMILY_UNIX)
-    val exec = buildDir.resolve("executable").resolve("nessie-gc")
-    inputs.file(exec).withPathSensitivity(PathSensitivity.RELATIVE)
-    dependsOn(unixExecutable)
-    executable(exec)
-    args("help")
-    standardOutput = NullOutputStream.INSTANCE
-  }
+val execSmokeTest by tasks.registering(Exec::class)
 
-tasks.named("check") { dependsOn(execSmokeTest) }
+execSmokeTest.configure {
+  description = "Verify that the generated nessie-gc executable works"
+  enabled = Os.isFamily(Os.FAMILY_UNIX)
+  val exec = buildDir.resolve("executable").resolve("nessie-gc")
+  inputs.file(exec).withPathSensitivity(PathSensitivity.RELATIVE)
+  dependsOn(unixExecutable)
+  executable(exec)
+  args("help")
+  standardOutput = NullOutputStream.INSTANCE
+}
+
+tasks.named("check").configure { dependsOn(execSmokeTest) }

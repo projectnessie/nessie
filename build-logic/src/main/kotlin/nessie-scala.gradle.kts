@@ -25,16 +25,17 @@ if (extensions.findByName("jandex") != null) {
   scaladoc.configure { dependsOn(tasks.named("processJandexIndex")) }
 }
 
-val scaladocJar =
-  tasks.register<Jar>("scaladocJar") {
-    dependsOn(scaladoc)
-    val baseJar = tasks.getByName<Jar>("jar")
-    from(scaladoc.get().destinationDir)
-    destinationDirectory.set(baseJar.destinationDirectory)
-    archiveClassifier.set("scaladoc")
-  }
+val scaladocJar = tasks.register<Jar>("scaladocJar")
 
-tasks.named("assemble") { dependsOn(scaladocJar) }
+scaladocJar.configure {
+  dependsOn(scaladoc)
+  val baseJar = tasks.getByName<Jar>("jar")
+  from(scaladoc.get().destinationDir)
+  destinationDirectory.set(baseJar.destinationDirectory)
+  archiveClassifier.set("scaladoc")
+}
+
+tasks.named("assemble").configure { dependsOn(scaladocJar) }
 
 configure<PublishingExtension> {
   publications {
