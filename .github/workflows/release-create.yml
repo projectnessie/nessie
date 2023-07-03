@@ -144,7 +144,7 @@ jobs:
         !
         
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
-          --format='format:* %s' ${LAST_TAG}..HEAD . ':!python' |\
+          --format='format:* %s' ${LAST_TAG}..HEAD . |\
           grep -v '^\* \[release\] .*$' >> /tmp/releases.md
         
         tail +4 site/docs/try/releases.md >> /tmp/releases.md
