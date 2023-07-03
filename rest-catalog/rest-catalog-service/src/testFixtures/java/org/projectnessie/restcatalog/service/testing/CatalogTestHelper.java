@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import javax.ws.rs.core.Application;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -77,8 +78,9 @@ public class CatalogTestHelper implements AutoCloseable {
         resolveReferencePathElement(defaultBranchName, null, () -> defaultBranchName);
 
     String warehouseDir = tempDir.toUri().toString();
+    FileIO fileIO = new LocalFileIO();
     Warehouse defaultWarehouse =
-        Warehouse.builder().name("warehouse").location(warehouseDir).build();
+        Warehouse.builder().name("warehouse").location(warehouseDir).fileIO(fileIO).build();
 
     // TODO
     OAuthHandler oauthHandler =

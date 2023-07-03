@@ -34,8 +34,6 @@ import javax.inject.Singleton;
 import org.apache.iceberg.io.FileIO;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.restcatalog.metadata.DelegatingMetadataIO;
-import org.projectnessie.restcatalog.metadata.MetadataIO;
 import org.projectnessie.restcatalog.service.TenantSpecific;
 import org.projectnessie.restcatalog.service.Warehouse;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
@@ -52,10 +50,13 @@ public class TenantSpecificProvider {
   @Singleton
   @Startup
   public TenantSpecific produceTenantSpecific() {
-    MetadataIO metadataIO = new DelegatingMetadataIO(fileIO);
     ParsedReference defaultBranch = parsedReference("main", null, BRANCH);
     Warehouse defaultWarehouse =
-        Warehouse.builder().name("warehouse").location(config.warehouseLocation()).build();
+        Warehouse.builder()
+            .name("warehouse")
+            .location(config.warehouseLocation())
+            .fileIO(fileIO)
+            .build();
     String commitAuthor = null;
 
     URI apiBaseUri =
@@ -75,7 +76,6 @@ public class TenantSpecificProvider {
 
     return new DefaultTenantSpecific(
         oauthHandler,
-        metadataIO,
         defaultBranch,
         defaultWarehouse,
         api,
