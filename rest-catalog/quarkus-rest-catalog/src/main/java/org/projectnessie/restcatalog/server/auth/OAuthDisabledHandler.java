@@ -18,8 +18,8 @@ package org.projectnessie.restcatalog.server.auth;
 import javax.enterprise.inject.Vetoed;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
+import org.projectnessie.restcatalog.api.model.OAuthTokenRequest;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
-import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
 
 @Vetoed
 public class OAuthDisabledHandler implements OAuthHandler {
