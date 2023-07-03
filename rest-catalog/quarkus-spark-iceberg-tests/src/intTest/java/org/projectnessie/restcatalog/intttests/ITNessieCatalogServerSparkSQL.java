@@ -48,7 +48,6 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
 
   // Nessie Core container
   static NessieContainer nessieCoreContainer;
-  static String nessieCoreBaseUri;
 
   // Nessie Catalog
 
@@ -87,7 +86,6 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
             .build();
     nessieCoreContainer = nessieConfig.createContainer();
     nessieCoreContainer.start();
-    nessieCoreBaseUri = "http://localhost:" + nessieCoreContainer.getExternalNessiePort() + "/api/";
 
     nessieCatalogProcess.start(
         new ProcessBuilder(
@@ -99,7 +97,9 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
             "-Dquarkus.oidc.token-issuer=" + keycloakContainer.getTokenIssuerUri(),
             "-Dquarkus.oidc.client-id=" + serviceClientId,
             "-Dquarkus.oidc.credentials.secret=" + CLIENT_SECRET,
-            "-Dnessie.iceberg.nessie-client.\"nessie.uri\"=" + nessieCoreBaseUri + "v2/",
+            "-Dnessie.iceberg.nessie-client.\"nessie.uri\"="
+                + nessieCoreContainer.getExternalNessieBaseUri()
+                + "v2/",
             "-Dnessie.iceberg.nessie-client.\"nessie.authentication.oauth2.client-id\"="
                 + serviceClientId,
             "-Dnessie.iceberg.nessie-client.\"nessie.authentication.oauth2.client-secret\"="
@@ -175,7 +175,7 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
 
   @Override
   protected String nessieApiUri() {
-    return nessieCoreBaseUri + "v1";
+    return nessieCoreContainer.getExternalNessieBaseUri().resolve("v2").toString();
   }
 
   @Override
