@@ -98,8 +98,7 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
             "-Dquarkus.oidc.client-id=" + serviceClientId,
             "-Dquarkus.oidc.credentials.secret=" + CLIENT_SECRET,
             "-Dnessie.iceberg.nessie-client.\"nessie.uri\"="
-                + nessieCoreContainer.getExternalNessieBaseUri()
-                + "v2/",
+                + nessieCoreContainer.getExternalNessieUri(),
             "-Dnessie.iceberg.nessie-client.\"nessie.authentication.oauth2.client-id\"="
                 + serviceClientId,
             "-Dnessie.iceberg.nessie-client.\"nessie.authentication.oauth2.client-secret\"="
