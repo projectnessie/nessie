@@ -18,14 +18,15 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins { id("com.github.johnrengelman.shadow") }
 
-val shadowJar =
-  tasks.named<ShadowJar>("shadowJar") {
-    outputs.cacheIf { false } // do not cache uber/shaded jars
-    archiveClassifier.set("")
-    mergeServiceFiles()
-  }
+val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-tasks.named<Jar>("jar") {
+shadowJar.configure {
+  outputs.cacheIf { false } // do not cache uber/shaded jars
+  archiveClassifier.set("")
+  mergeServiceFiles()
+}
+
+tasks.named<Jar>("jar").configure {
   dependsOn(shadowJar)
   archiveClassifier.set("raw")
 }

@@ -59,7 +59,7 @@ dependencies {
   testFixturesImplementation(libs.bundles.junit.testing)
 }
 
-tasks.named<Test>("intTest") {
+tasks.named<Test>("intTest").configure {
   systemProperty("it.nessie.dbs", System.getProperty("it.nessie.dbs", "postgres"))
   systemProperty(
     "it.nessie.container.postgres.tag",
@@ -69,10 +69,10 @@ tasks.named<Test>("intTest") {
 
 // Testcontainers is not supported on Windows :(
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }

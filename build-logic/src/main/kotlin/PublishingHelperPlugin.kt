@@ -79,7 +79,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
                 mavenPublication.version = project.version.toString()
               }
 
-              tasks.named("generatePomFileForMavenPublication") {
+              tasks.named("generatePomFileForMavenPublication").configure {
                 val e = project.extensions.getByType(PublishingHelperExtension::class.java)
 
                 pom {

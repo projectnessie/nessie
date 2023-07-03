@@ -126,19 +126,19 @@ if (quarkusFatJar()) {
 }
 
 listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name) { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
 }
 
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name) { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
 
 // Testcontainers is not supported on Windows :(
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+  tasks.named<Test>("intTest").configure { this.enabled = false }
 }

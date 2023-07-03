@@ -32,7 +32,7 @@ sourceSets { main { antlr { setSrcDirs(listOf(project.projectDir.resolve("src/ma
 // to all users of this project. So do not let "api" extend from "antlr".
 configurations.api.get().setExtendsFrom(listOf())
 
-tasks.named<AntlrTask>("generateGrammarSource") {
+tasks.named<AntlrTask>("generateGrammarSource").configure {
   arguments.add("-visitor")
   doLast(
     ReplaceInFiles(

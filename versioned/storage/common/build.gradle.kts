@@ -62,8 +62,8 @@ dependencies {
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
 }
 
-tasks.named("processJmhJandexIndex") { enabled = false }
+tasks.named("processJmhJandexIndex").configure { enabled = false }
 
-tasks.named("processTestJandexIndex") { enabled = false }
+tasks.named("processTestJandexIndex").configure { enabled = false }
 
 jmh { jmhVersion.set(libs.versions.jmh.get()) }

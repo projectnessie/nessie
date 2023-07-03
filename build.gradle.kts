@@ -44,7 +44,7 @@ mapOf(
   .plus(loadProperties(file("integrations/spark-scala.properties")))
   .forEach { (k, v) -> extra[k.toString()] = v }
 
-tasks.named<Wrapper>("wrapper") { distributionType = Wrapper.DistributionType.ALL }
+tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.DistributionType.ALL }
 
 // Pass environment variables:
 //    ORG_GRADLE_PROJECT_sonatypeUsername
@@ -65,35 +65,38 @@ nexusPublishing {
   repositories { sonatype() }
 }
 
-val buildToolIntegrationGradle by
-  tasks.registering(Exec::class) {
-    group = "Verification"
-    description =
-      "Checks whether the bom works fine with Gradle, requires preceding publishToMavenLocal in a separate Gradle invocation"
+val buildToolIntegrationGradle by tasks.registering(Exec::class)
 
-    workingDir = file("build-tools-integration-tests")
-    commandLine("${project.projectDir}/gradlew", "-p", workingDir, "test")
-  }
+buildToolIntegrationGradle.configure {
+  group = "Verification"
+  description =
+    "Checks whether the bom works fine with Gradle, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-val buildToolIntegrationMaven by
-  tasks.registering(Exec::class) {
-    group = "Verification"
-    description =
-      "Checks whether the bom works fine with Maven, requires preceding publishToMavenLocal in a separate Gradle invocation"
+  workingDir = file("build-tools-integration-tests")
+  commandLine("${project.projectDir}/gradlew", "-p", workingDir, "test")
+}
 
-    workingDir = file("build-tools-integration-tests")
-    commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
-  }
+val buildToolIntegrationMaven by tasks.registering(Exec::class)
 
-val buildToolsIntegrationTest by
-  tasks.registering {
-    group = "Verification"
-    description =
-      "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
+buildToolIntegrationMaven.configure {
+  group = "Verification"
+  description =
+    "Checks whether the bom works fine with Maven, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-    dependsOn(buildToolIntegrationGradle)
-    dependsOn(buildToolIntegrationMaven)
-  }
+  workingDir = file("build-tools-integration-tests")
+  commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
+}
+
+val buildToolsIntegrationTest by tasks.registering
+
+buildToolsIntegrationTest.configure {
+  group = "Verification"
+  description =
+    "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
+
+  dependsOn(buildToolIntegrationGradle)
+  dependsOn(buildToolIntegrationMaven)
+}
 
 publishingHelper {
   nessieRepoName.set("nessie")

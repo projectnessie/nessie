@@ -51,7 +51,6 @@ dependencies {
   implementation(libs.postgresql)
 }
 
-val shadowJar =
-  tasks.named<ShadowJar>("shadowJar") {
-    manifest { attributes["Main-Class"] = "org.openjdk.jmh.Main" }
-  }
+tasks.named<ShadowJar>("shadowJar").configure {
+  manifest { attributes["Main-Class"] = "org.openjdk.jmh.Main" }
+}
