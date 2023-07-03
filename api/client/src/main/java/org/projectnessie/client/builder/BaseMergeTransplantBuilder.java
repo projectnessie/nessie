@@ -86,11 +86,16 @@ public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
 
   @SuppressWarnings("unchecked")
   public B mergeMode(ContentKey key, MergeBehavior mergeBehavior) {
+    return mergeKeyBehavior(MergeKeyBehavior.of(key, mergeBehavior));
+  }
+
+  @SuppressWarnings("unchecked")
+  public B mergeKeyBehavior(MergeKeyBehavior mergeKeyBehavior) {
     if (mergeModes == null) {
       mergeModes = new HashMap<>();
     }
 
-    mergeModes.put(key, MergeKeyBehavior.of(key, mergeBehavior));
+    mergeModes.put(mergeKeyBehavior.getKey(), mergeKeyBehavior);
     return (B) this;
   }
 }
