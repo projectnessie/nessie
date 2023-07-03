@@ -2,6 +2,31 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.64.0 Release (July 03, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.64.0).
+
+* Ninja: really fix create-release WF
+* Fix create-release workflow (#7177)
+* Make gc-base, gc-iceberg classes Java 8 compatible (#7174)
+* Nessie-Java-API: Add builder methods for extended merge behaviors (#7175)
+* Spark-SQL-tests: Nessie client configuration + ignore committer (#7166)
+* improve configure-on-demand (#7173)
+* Fix Gradle task dependencies (#7172)
+* Let Immutables discover the right Guava version (#7165)
+* Unify Gradle daemon heap size (#7164)
+* Revert Gradle daemon heap settings (#7160)
+* Nessie Catalog related changes for Spark SQL extensions (#7159)
+* Minor Gradle build scripts addition (noop for `main`) (#7158)
+* Fully lazy `StoreIndexElement` deserializion (#7132)
+* CI: attempt to fix snapshot publising (#7151)
+* Revert "Use WorkerThread if parallelism is one." (#7152)
+* Use WorkerThread if parallelism is one. (#7150)
+* Move `python/` to separate repo (#7147)
+* Move `ui/` to separate repo (#7146)
+* Simplify test profiles in AbstractOAuth2Authentication and AbstractBearerAuthentication (#7143)
+* Remove another Deltalake left-over (#7145)
+
 ## 0.63.0 Release (June 27, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.63.0).
