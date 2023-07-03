@@ -64,7 +64,7 @@ abstract class SparkCommitLogEntry {
   static SparkCommitLogEntry fromShowLog(Object[] row) {
     return ImmutableSparkCommitLogEntry.builder()
         .author((String) row[0])
-        .committer((String) row[1])
+        // omit the committer! .committer((String) row[1])
         .hash((String) row[2])
         .message((String) row[3])
         .signedOffBy((String) row[4])
