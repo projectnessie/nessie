@@ -16,6 +16,7 @@
 
 // Nessie root project
 
+import java.util.Properties
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.copyright
 import org.jetbrains.gradle.ext.delegateActions
@@ -43,6 +44,16 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
       isDownloadSources = true // this is the default BTW
       inheritOutputDirs = true
 
+      val sparkScalaProps = Properties()
+      val integrationsDir = projectDir.resolve("integrations")
+      val sparkExtensionsDir = integrationsDir.resolve("spark-extensions")
+      integrationsDir.resolve("spark-scala.properties").reader().use { sparkScalaProps.load(it) }
+      val sparkExtensionsBuildDirs =
+        sparkScalaProps
+          .getProperty("sparkVersions")
+          .split(",")
+          .map { sparkVersion -> sparkExtensionsDir.resolve("v$sparkVersion/build") }
+          .toSet()
       val buildToolsIT = projectDir.resolve("build-tools-integration-tests")
       excludeDirs =
         excludeDirs +
@@ -50,10 +61,17 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
             // Do not index the .mvn folders
             projectDir.resolve(".mvn"),
             // And more...
+            projectDir.resolve(".idea"),
+            projectDir.resolve("site/venv"),
+            projectDir.resolve("nessie-iceberg/.gradle"),
             buildToolsIT.resolve(".gradle"),
             buildToolsIT.resolve("build"),
-            buildToolsIT.resolve("target")
-          )
+            buildToolsIT.resolve("target"),
+            // somehow those are not automatically excluded...
+            integrationsDir.resolve("spark-extensions-base/build"),
+            integrationsDir.resolve("spark-extensions-basetests/build")
+          ) +
+          sparkExtensionsBuildDirs
     }
 
     this.project.settings {
