@@ -20,7 +20,6 @@ import java.util.Map;
 import javax.enterprise.inject.Vetoed;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.restcatalog.metadata.MetadataIO;
 import org.projectnessie.restcatalog.service.TenantSpecific;
 import org.projectnessie.restcatalog.service.Warehouse;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
@@ -34,7 +33,6 @@ public class DummyTenantSpecific implements TenantSpecific {
 
   private final NessieApiV2 api;
   private final URI nessieApiBaseUri;
-  private final MetadataIO metadataIO;
   private final ParsedReference defaultBranch;
   private final Warehouse defaultWarehouse;
   private final OAuthHandler oauthHandler;
@@ -51,25 +49,18 @@ public class DummyTenantSpecific implements TenantSpecific {
       URI nessieApiBaseUri,
       ParsedReference defaultBranch,
       Warehouse defaultWarehouse,
-      MetadataIO metadataIO,
       Map<String, String> clientCoreProperties) {
     this.oauthHandler = oauthHandler;
     this.api = api;
     this.nessieApiBaseUri = nessieApiBaseUri;
     this.defaultBranch = defaultBranch;
     this.defaultWarehouse = defaultWarehouse;
-    this.metadataIO = metadataIO;
     this.clientCoreProperties = clientCoreProperties;
   }
 
   @Override
   public OAuthHandler oauthHandler() {
     return oauthHandler;
-  }
-
-  @Override
-  public MetadataIO metadataIO() {
-    return metadataIO;
   }
 
   @Override
