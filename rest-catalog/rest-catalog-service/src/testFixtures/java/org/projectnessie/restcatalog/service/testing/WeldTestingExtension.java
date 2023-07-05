@@ -25,7 +25,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.restcatalog.metadata.DelegatingMetadataIO;
 import org.projectnessie.restcatalog.service.TenantSpecific;
 import org.projectnessie.restcatalog.service.Warehouse;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
@@ -76,7 +75,6 @@ public class WeldTestingExtension implements Extension {
                     apiBaseUri,
                     defaultBranch,
                     defaultWarehouse,
-                    new DelegatingMetadataIO(new LocalFileIO()),
                     clientCoreProperties));
   }
 }
