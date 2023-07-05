@@ -208,9 +208,12 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
   }
 
   /** Returns the Nessie URI for external clients running outside the container's network. */
-  @SuppressWarnings("HttpUrlsUsage")
   public URI getExternalNessieUri() {
-    return URI.create(String.format("http://%s:%d/api/v2", getHost(), getExternalNessiePort()));
+    return getExternalNessieBaseUri().resolve("v2");
+  }
+
+  public URI getExternalNessieBaseUri() {
+    return URI.create(String.format("http://%s:%d/api/", getHost(), getExternalNessiePort()));
   }
 
   private static class ExternalNetwork implements Network {
