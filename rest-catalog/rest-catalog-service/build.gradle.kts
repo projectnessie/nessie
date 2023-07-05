@@ -62,6 +62,10 @@ dependencies {
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
   testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
 
+  testFixturesCompileOnly(libs.immutables.builder)
+  testFixturesCompileOnly(libs.immutables.value.annotations)
+  testFixturesAnnotationProcessor(libs.immutables.value.processor)
+
   // javax/jakarta
   testFixturesImplementation(libs.jakarta.enterprise.cdi.api)
   testFixturesImplementation(libs.javax.enterprise.cdi.api)
