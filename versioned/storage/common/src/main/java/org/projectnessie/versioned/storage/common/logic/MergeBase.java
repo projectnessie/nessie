@@ -101,7 +101,6 @@ public abstract class MergeBase {
     // might be necessary to re-incarnate `removeRedundant`, if there is a situation in which it
     // would yield the "better" result, so keep the code.
     return flagReachableCommits(commitA, commitB);
-
   }
 
   private List<ShallowCommit> flagReachableCommits(ShallowCommit commitA, ShallowCommit commitB) {
@@ -138,6 +137,7 @@ public abstract class MergeBase {
 
     return result;
   }
+
   private NoSuchElementException noCommonAncestor() {
     return new NoSuchElementException(
         NO_COMMON_ANCESTOR_IN_PARENTS_OF + targetCommitId() + " and " + fromCommitId());
