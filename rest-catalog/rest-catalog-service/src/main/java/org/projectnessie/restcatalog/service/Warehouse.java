@@ -16,7 +16,10 @@
 package org.projectnessie.restcatalog.service;
 
 import java.util.Map;
+import org.apache.iceberg.io.FileIO;
 import org.immutables.value.Value;
+import org.projectnessie.restcatalog.metadata.DelegatingMetadataIO;
+import org.projectnessie.restcatalog.metadata.MetadataIO;
 
 @Value.Immutable
 public interface Warehouse {
@@ -27,6 +30,13 @@ public interface Warehouse {
   Map<String, String> configDefaults();
 
   Map<String, String> configOverrides();
+
+  @Value.Default
+  default MetadataIO metadataIO() {
+    return new DelegatingMetadataIO(fileIO());
+  }
+
+  FileIO fileIO();
 
   static ImmutableWarehouse.Builder builder() {
     return ImmutableWarehouse.builder();

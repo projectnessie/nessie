@@ -27,14 +27,11 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.restcatalog.metadata.MetadataIO;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
 
 public interface TenantSpecific {
 
   OAuthHandler oauthHandler();
-
-  MetadataIO metadataIO();
 
   ParsedReference defaultBranch();
 
