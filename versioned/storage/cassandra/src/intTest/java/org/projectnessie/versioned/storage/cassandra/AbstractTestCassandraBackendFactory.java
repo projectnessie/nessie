@@ -24,7 +24,9 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.T
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.metadata.Node;
+import java.time.Duration;
 import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -132,6 +134,10 @@ public abstract class AbstractTestCassandraBackendFactory {
     }
   }
 
+  static void executeDDL(CqlSession client, String cql) {
+    client.execute(SimpleStatement.newInstance(cql).setTimeout(Duration.ofSeconds(30)));
+  }
+
   @Test
   public void incompatibleTableSchema() throws Exception {
     AbstractCassandraBackendTestFactory testFactory = testFactory();
@@ -147,10 +153,10 @@ public abstract class AbstractTestCassandraBackendFactory {
         backend.setupSchema();
       }
 
-      client.execute("DROP TABLE IF EXISTS nessie." + TABLE_REFS);
-      client.execute("DROP TABLE IF EXISTS nessie." + TABLE_OBJS);
+      executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_REFS);
+      executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_OBJS);
 
-      client.execute("CREATE TABLE nessie." + TABLE_REFS + " (foobarbaz VARCHAR PRIMARY KEY)");
+      executeDDL(client, "CREATE TABLE nessie." + TABLE_REFS + " (foobarbaz VARCHAR PRIMARY KEY)");
 
       try (Backend backend = factory.buildBackend(buildConfig(client))) {
         soft.assertThat(backend).isNotNull().isInstanceOf(CassandraBackend.class);
@@ -164,10 +170,11 @@ public abstract class AbstractTestCassandraBackendFactory {
                     + TABLE_REFS);
       }
 
-      client.execute("DROP TABLE IF EXISTS nessie." + TABLE_REFS);
-      client.execute("DROP TABLE IF EXISTS nessie." + TABLE_OBJS);
+      executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_REFS);
+      executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_OBJS);
 
-      client.execute(
+      executeDDL(
+          client,
           "CREATE TABLE nessie."
               + TABLE_REFS
               + " ("
@@ -193,10 +200,10 @@ public abstract class AbstractTestCassandraBackendFactory {
                     + TABLE_REFS);
       }
 
-      client.execute("DROP TABLE IF EXISTS nessie." + TABLE_REFS);
-      client.execute("DROP TABLE IF EXISTS nessie." + TABLE_OBJS);
+      executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_REFS);
+      executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_OBJS);
 
-      client.execute("CREATE TABLE nessie." + TABLE_OBJS + " (foobarbaz VARCHAR PRIMARY KEY)");
+      executeDDL(client, "CREATE TABLE nessie." + TABLE_OBJS + " (foobarbaz VARCHAR PRIMARY KEY)");
 
       try (Backend backend = factory.buildBackend(buildConfig(client))) {
         soft.assertThat(backend).isNotNull().isInstanceOf(CassandraBackend.class);
@@ -219,8 +226,9 @@ public abstract class AbstractTestCassandraBackendFactory {
   }
 
   private void setupKeyspace(CqlSession client) {
-    client.execute(format("DROP KEYSPACE IF EXISTS %s", KEYSPACE_FOR_TEST));
-    client.execute(
+    executeDDL(client, format("DROP KEYSPACE IF EXISTS %s", KEYSPACE_FOR_TEST));
+    executeDDL(
+        client,
         format(
             "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'NetworkTopologyStrategy', %s}",
             KEYSPACE_FOR_TEST,
