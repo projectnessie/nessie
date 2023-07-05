@@ -18,6 +18,7 @@ package org.projectnessie.restcatalog.service.testing;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.io.FileIO;
@@ -31,20 +32,28 @@ public class LocalFileIO implements FileIO {
 
   @Override
   public InputFile newInputFile(String path) {
-    return Files.localInput(Paths.get(URI.create(path)).toFile());
+    return Files.localInput(asPath(path).toFile());
   }
 
   @Override
   public OutputFile newOutputFile(String path) {
-    return Files.localOutput(Paths.get(URI.create(path)).toFile());
+    return Files.localOutput(asPath(path).toFile());
   }
 
   @Override
   public void deleteFile(String path) {
     try {
-      java.nio.file.Files.delete(Paths.get(URI.create(path)));
+      java.nio.file.Files.delete(asPath(path));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  private static Path asPath(String path) {
+    URI uri = URI.create(path);
+    if (uri.getScheme() == null) {
+      return Paths.get(uri.getPath());
+    }
+    return Paths.get(uri);
   }
 }

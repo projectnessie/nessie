@@ -44,7 +44,6 @@ import org.apache.iceberg.MetadataUpdate.SetProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableProperties;
@@ -84,14 +83,11 @@ import org.projectnessie.restcatalog.api.IcebergV1Api;
 import org.projectnessie.restcatalog.api.errors.IcebergConflictException;
 import org.projectnessie.restcatalog.service.NamespaceRef;
 import org.projectnessie.restcatalog.service.TableRef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.projectnessie.restcatalog.service.Warehouse;
 
 @RequestScoped
 @jakarta.enterprise.context.RequestScoped
 public class IcebergV1ApiResource extends BaseIcebergResource implements IcebergV1Api {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(IcebergV1ApiResource.class);
 
   @Override
   public ListNamespacesResponse listNamespaces(String prefix, String parent) throws IOException {
@@ -250,6 +246,7 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
       String prefix, String namespace, CreateTableRequest createTableRequest)
       throws IOException, IcebergConflictException {
     TableRef tableRef = decodeTableRef(prefix, namespace, createTableRequest.name());
+    Warehouse warehouse = tenantSpecific.getWarehouse(tableRef.warehouse());
 
     @SuppressWarnings("resource")
     NessieApiV2 api = tenantSpecific.api();
@@ -300,7 +297,7 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
           expectedCommitId == null, "Creating a staged table must be committed via update-table.");
 
       table = newTableMetadata(schema, spec, sortOrder, location, properties);
-      table = tenantSpecific.metadataIO().store(table, 0);
+      table = warehouse.metadataIO().store(table, 0);
 
       ImmutablePut.Builder putOperation = Operation.Put.builder().key(tableRef.contentKey());
       updateIcebergTable(table, null, putOperation);
@@ -322,11 +319,12 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
   public LoadTableResponse loadTable(String prefix, String namespace, String table)
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
+    Warehouse warehouse = tenantSpecific.getWarehouse(tableRef.warehouse());
 
     ContentResponse content = fetchIcebergTable(tableRef);
     IcebergTable icebergTable = verifyIcebergTable(content.getContent());
     Reference reference = requireNonNull(content.getEffectiveReference());
-    TableMetadata metadata = loadAndFixTableMetadata(icebergTable);
+    TableMetadata metadata = warehouse.metadataIO().loadAndFixTableMetadata(icebergTable);
 
     return buildLoadTableResponse(metadata, reference, false);
   }
@@ -336,6 +334,7 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
       String prefix, String namespace, String table, UpdateTableRequest commitTableRequest)
       throws IOException, IcebergConflictException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
+    Warehouse warehouse = tenantSpecific.getWarehouse(tableRef.warehouse());
 
     IcebergTable icebergTable = null;
     Branch ref = null;
@@ -346,9 +345,9 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
     try {
       ContentResponse content = fetchIcebergTable(tableRef);
       icebergTable = verifyIcebergTable(content.getContent());
-      newVersion = parseVersion(icebergTable.getMetadataLocation()) + 1;
+      newVersion = warehouse.metadataIO().parseVersion(icebergTable.getMetadataLocation()) + 1;
       ref = checkBranch(content.getEffectiveReference());
-      base = loadAndFixTableMetadata(icebergTable);
+      base = warehouse.metadataIO().loadAndFixTableMetadata(icebergTable);
     } catch (NessieNotFoundException e) {
       // paranoia...
       if (requirements == null || requirements.isEmpty()) {
@@ -412,7 +411,7 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
           "Got a staged create-table commit for a table that already exists.");
     }
 
-    TableMetadata storedMetadata = tenantSpecific.metadataIO().store(updatedMetadata, newVersion);
+    TableMetadata storedMetadata = warehouse.metadataIO().store(updatedMetadata, newVersion);
     ImmutablePut.Builder putOperation = Operation.Put.builder().key(tableRef.contentKey());
     updateIcebergTable(storedMetadata, icebergTable, putOperation);
 
@@ -614,30 +613,6 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
     return LoadTableResponse.builder().addAllConfig(tableConfig).withTableMetadata(table).build();
   }
 
-  /**
-   * Loads and fixes the {@link TableMetadata}, if necessary, with the IDs that are different from
-   * in Nessie's legacy global-state commits.
-   */
-  private TableMetadata loadAndFixTableMetadata(IcebergTable table) throws IOException {
-    String metadataLocation = table.getMetadataLocation();
-    TableMetadata loaded = tenantSpecific.metadataIO().load(metadataLocation);
-
-    // TODO only re-build, if necessary (optimization)
-
-    TableMetadata.Builder builder =
-        TableMetadata.buildFrom(loaded)
-            .setPreviousFileLocation(null)
-            .setCurrentSchema(table.getSchemaId())
-            .setDefaultSortOrder(table.getSortOrderId())
-            .setDefaultPartitionSpec(table.getSpecId())
-            .withMetadataLocation(metadataLocation);
-    if (table.getSnapshotId() != -1) {
-      builder.setBranchSnapshot(table.getSnapshotId(), SnapshotRef.MAIN_BRANCH);
-    }
-
-    return builder.discardChanges().build();
-  }
-
   private ContentResponse fetchIcebergTable(TableRef tableRef) throws NessieNotFoundException {
     @SuppressWarnings("resource")
     NessieApiV2 api = tenantSpecific.api();
@@ -651,25 +626,5 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
         "Table is not an Iceberg table, it is of type %s",
         content.getContent().getType());
     return content;
-  }
-
-  private static int parseVersion(String metadataLocation) {
-    if (metadataLocation == null) {
-      return -1;
-    }
-
-    int versionStart = metadataLocation.lastIndexOf('/') + 1; // if '/' isn't found, this will be 0
-    int versionEnd = metadataLocation.indexOf('-', versionStart);
-    if (versionEnd < 0) {
-      // found filesystem table's metadata
-      return -1;
-    }
-
-    try {
-      return Integer.parseInt(metadataLocation.substring(versionStart, versionEnd));
-    } catch (NumberFormatException e) {
-      LOGGER.warn("Unable to parse version from metadata location: {}", metadataLocation, e);
-      return -1;
-    }
   }
 }
