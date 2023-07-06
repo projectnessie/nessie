@@ -92,6 +92,101 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
   }
 
   @Test
+  protected void checkDiffRename() throws VersionStoreException {
+    BranchName branch1 = BranchName.of("checkDiffRename");
+    ContentKey k1 = ContentKey.of("k1");
+    ContentKey k2 = ContentKey.of("k2");
+
+    store().create(branch1, Optional.empty());
+    Hash commit1 = commit("Commit1").put("k1", V_1).toBranch(branch1);
+
+    ContentResult contents1 = store().getValue(commit1, k1);
+    IdentifiedContentKey ik1 = contents1.identifiedKey();
+    Content content = contents1.content();
+
+    // Rename operation
+    Hash commit2 = commit("Commit2").delete("k1").put("k2", content).toBranch(branch1);
+
+    ContentResult contents2 = store().getValue(commit2, k2);
+    IdentifiedContentKey ik2 = contents2.identifiedKey();
+
+    List<Diff> diff = diffAsList(commit1, commit2);
+    soft.assertThat(ik1.lastElement().contentId()).isEqualTo(content.getId());
+    soft.assertThat(ik2.lastElement().contentId()).isEqualTo(content.getId());
+    soft.assertThat(diffsWithoutContentId(diff))
+        .extracting(Diff::getFromKey, Diff::getToKey, Diff::getFromValue, Diff::getToValue)
+        .containsExactlyInAnyOrder(
+            tuple(ik1, null, Optional.of(V_1), Optional.empty()),
+            tuple(null, ik2, Optional.empty(), Optional.of(V_1)));
+  }
+
+  @Test
+  protected void checkDiffDropAndCreate() throws VersionStoreException {
+    BranchName branch1 = BranchName.of("checkDiffReadd");
+    ContentKey k1 = ContentKey.of("k1");
+    ContentKey k2 = ContentKey.of("k2");
+
+    store().create(branch1, Optional.empty());
+    Hash commit1 = commit("Commit1").put("k1", V_1).toBranch(branch1);
+
+    // Rename operation
+    Hash commit2 = commit("Commit2").delete("k1").put("k2", V_2).toBranch(branch1);
+
+    ContentResult contents1 = store().getValue(commit1, k1);
+    IdentifiedContentKey ik1 = contents1.identifiedKey();
+    Content content1 = contents1.content();
+    ContentResult contents2 = store().getValue(commit2, k2);
+    IdentifiedContentKey ik2 = contents2.identifiedKey();
+    Content content2 = contents2.content();
+
+    soft.assertThat(ik1.lastElement().contentId())
+        .isEqualTo(content1.getId())
+        .isNotEqualTo(content2.getId());
+    soft.assertThat(ik2.lastElement().contentId())
+        .isEqualTo(content2.getId())
+        .isNotEqualTo(content1.getId());
+
+    List<Diff> diff = diffAsList(commit1, commit2);
+    soft.assertThat(diffsWithoutContentId(diff))
+        .extracting(Diff::getFromKey, Diff::getToKey, Diff::getFromValue, Diff::getToValue)
+        .containsExactlyInAnyOrder(
+            tuple(ik1, null, Optional.of(V_1), Optional.empty()),
+            tuple(null, ik2, Optional.empty(), Optional.of(V_2)));
+  }
+
+  @Test
+  protected void checkDiffReadd() throws VersionStoreException {
+    BranchName branch1 = BranchName.of("checkDiffReadd");
+    ContentKey k = ContentKey.of("k");
+
+    store().create(branch1, Optional.empty());
+    Hash commit1 = commit("Commit1").put("k", V_1).toBranch(branch1);
+    Content content1 = store().getValue(commit1, k).content();
+
+    // Re-add operations (have to happen in 2 commits)
+    commit("Commit2").delete("k").toBranch(branch1);
+    Hash commit3 = commit("Commit3").put("k", V_2).toBranch(branch1);
+    Content content3 = store().getValue(commit3, k).content();
+
+    ContentResult contents1 = store().getValue(commit1, k);
+    IdentifiedContentKey ik1 = contents1.identifiedKey();
+    ContentResult contents2 = store().getValue(commit3, k);
+    IdentifiedContentKey ik2 = contents2.identifiedKey();
+
+    soft.assertThat(ik1.lastElement().contentId())
+        .isEqualTo(content1.getId())
+        .isNotEqualTo(content3.getId());
+    soft.assertThat(ik2.lastElement().contentId())
+        .isEqualTo(content3.getId())
+        .isNotEqualTo(content1.getId());
+
+    List<Diff> diff = diffAsList(commit1, commit3);
+    soft.assertThat(diffsWithoutContentId(diff))
+        .extracting(Diff::getFromKey, Diff::getToKey, Diff::getFromValue, Diff::getToValue)
+        .containsExactlyInAnyOrder(tuple(ik1, ik2, Optional.of(V_1), Optional.of(V_2)));
+  }
+
+  @Test
   protected void checkDiff() throws VersionStoreException {
     BranchName branch = BranchName.of("checkDiff");
     store().create(branch, Optional.empty());
