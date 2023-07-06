@@ -16,7 +16,10 @@
 package org.projectnessie.client.http.v2api;
 
 import org.projectnessie.api.v2.params.ImmutableMerge;
+import org.projectnessie.api.v2.params.Merge;
 import org.projectnessie.client.api.MergeReferenceBuilder;
+import org.projectnessie.client.api.MergeResponseInspector;
+import org.projectnessie.client.api.impl.MergeResponseInspectorImpl;
 import org.projectnessie.client.builder.BaseMergeReferenceBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
@@ -25,9 +28,11 @@ import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Reference;
 
 final class HttpMergeReference extends BaseMergeReferenceBuilder {
+  private final HttpApiV2 api;
   private final HttpClient client;
 
-  public HttpMergeReference(HttpClient client) {
+  public HttpMergeReference(HttpApiV2 api, HttpClient client) {
+    this.api = api;
     this.client = client;
   }
 
@@ -39,8 +44,7 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
     return this;
   }
 
-  @Override
-  public MergeResponse merge() throws NessieNotFoundException, NessieConflictException {
+  private Merge buildMerge() {
     ImmutableMerge.Builder merge =
         ImmutableMerge.builder()
             .fromHash(fromHash)
@@ -59,12 +63,38 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
       merge.keyMergeModes(mergeModes.values());
     }
 
+    return merge.build();
+  }
+
+  private MergeResponse submitMergeRequest(Merge request)
+      throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()
         .path("trees/{ref}/history/merge")
         .resolveTemplate("ref", Reference.toPathString(branchName, hash))
         .unwrap(NessieNotFoundException.class, NessieConflictException.class)
-        .post(merge.build())
+        .post(request)
         .readEntity(MergeResponse.class);
+  }
+
+  @Override
+  public MergeResponse merge() throws NessieNotFoundException, NessieConflictException {
+    Merge request = buildMerge();
+
+    return submitMergeRequest(request);
+  }
+
+  @Override
+  public MergeResponseInspector mergeInspect()
+      throws NessieNotFoundException, NessieConflictException {
+    Merge request = buildMerge();
+
+    MergeResponse response = submitMergeRequest(request);
+
+    return MergeResponseInspectorImpl.builder()
+        .api(api)
+        .request(request)
+        .response(response)
+        .build();
   }
 }
