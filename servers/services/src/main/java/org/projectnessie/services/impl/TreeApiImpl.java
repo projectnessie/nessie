@@ -24,6 +24,7 @@ import static java.util.Collections.singleton;
 import static java.util.function.Function.identity;
 import static org.projectnessie.model.CommitResponse.AddedContent.addedContent;
 import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateNoRelativeSpec;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canReadEntries;
 import static org.projectnessie.services.authz.Check.canViewReference;
@@ -964,6 +965,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
+    expectedHash = validateNoRelativeSpec(expectedHash);
 
     CommitMeta commitMeta = operations.getCommitMeta();
     validateCommitMeta(commitMeta);

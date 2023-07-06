@@ -423,6 +423,15 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
       IcebergTable table,
       int clientSpec,
       boolean buildMissingNamespaces) {
+    return prepareCommitV2(branch.toPathString(), key, table, clientSpec, buildMissingNamespaces);
+  }
+
+  private ValidatableResponse prepareCommitV2(
+      String ref,
+      ContentKey key,
+      IcebergTable table,
+      int clientSpec,
+      boolean buildMissingNamespaces) {
     ImmutableOperations.Builder ops =
         ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("test commit"));
     if (buildMissingNamespaces) {
@@ -438,7 +447,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     if (clientSpec > 0) {
       resp = resp.header("Nessie-Client-Spec", clientSpec);
     }
-    return resp.post("trees/{ref}/history/commit", branch.toPathString()).then();
+    return resp.post("trees/{ref}/history/commit", ref).then();
   }
 
   private Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
@@ -633,5 +642,26 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         .containsExactly(400, ErrorCode.BAD_REQUEST);
     assertThat(nessieError.getMessage())
         .contains("No enum constant org.projectnessie.model.Reference.ReferenceType.X");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @ParameterizedTest
+  @CsvSource({
+    "-~1",
+    "main~1",
+    "main@cafebabe~1",
+    "-^2",
+    "main^2",
+    "main@cafebabe^2",
+    "-*2021-04-07T14:42:25.534748Z",
+    "main*2021-04-07T14:42:25.534748Z",
+    "main@cafebabe*2021-04-07T14:42:25.534748Z",
+  })
+  public void commitWithRelativeHashesNotAllowed(String ref) {
+    ContentKey key1 = ContentKey.of("test", "Key");
+    IcebergTable table1 = IcebergTable.of("loc1", 1, 2, 3, 4);
+    NessieError error =
+        prepareCommitV2(ref, key1, table1, 2, true).statusCode(400).extract().as(NessieError.class);
+    assertThat(error.getMessage()).startsWith("Relative hash not allowed here");
   }
 }

@@ -855,8 +855,8 @@ public interface HttpTreeApi extends TreeApi {
   @Override
   @POST
   @jakarta.ws.rs.POST
-  @Path("{branch}/history/commit")
-  @jakarta.ws.rs.Path("{branch}/history/commit")
+  @Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/commit")
+  @jakarta.ws.rs.Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/commit")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
@@ -885,7 +885,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(
         responseCode = "403",
         description = "Not allowed to view the given reference or perform commits"),
-    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+    @APIResponse(responseCode = "404", description = "Provided ref doesn't exist"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
   @JsonView(Views.V2.class)
@@ -896,20 +896,6 @@ public interface HttpTreeApi extends TreeApi {
               examples = {
                 @ExampleObject(ref = "ref"),
                 @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(
-                    ref = "refWithTimestampMillisSinceEpoch",
-                    description =
-                        "The commit 'valid for' the timestamp 1685185847230 in ms since epoch on main"),
-                @ExampleObject(
-                    ref = "refWithTimestampInstant",
-                    description = "The commit 'valid for' the given ISO-8601 instant on main"),
-                @ExampleObject(
-                    ref = "refWithNthPredecessor",
-                    description = "The 10th commit from HEAD of main"),
-                @ExampleObject(
-                    ref = "refWithMergeParent",
-                    description =
-                        "References the merge-parent of commit 2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d on main"),
                 @ExampleObject(ref = "refDefault"),
               })
           @PathParam("branch")

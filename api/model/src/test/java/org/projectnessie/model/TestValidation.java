@@ -250,4 +250,42 @@ class TestValidation {
     soft.assertThat(matcher.group(2)).isEqualTo(hashOnRef);
     soft.assertThat(matcher.group(3)).isEqualTo(relativeSpec);
   }
+
+  @ParameterizedTest
+  @CsvSource({
+    ",false",
+    "'',false",
+    "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,false",
+    "~1,true",
+    "^2,true",
+    "*2021-04-07T14:42:25.534748Z,true",
+    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~1,true",
+    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1^2,true",
+    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1*2021-04-07T14:42:25.534748Z,true",
+  })
+  void hasRelativeSpec(String hash, boolean expected) {
+    soft.assertThat(Validation.hasRelativeSpec(hash)).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    ",false",
+    "'',false",
+    "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,false",
+    "~1,true",
+    "^2,true",
+    "*2021-04-07T14:42:25.534748Z,true",
+    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~1,true",
+    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1^2,true",
+    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1*2021-04-07T14:42:25.534748Z,true",
+  })
+  void validateNoRelativeSpec(String hash, boolean errorExpected) {
+    if (errorExpected) {
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(() -> Validation.validateNoRelativeSpec(hash))
+          .withMessageContaining("Relative hash not allowed here");
+    } else {
+      soft.assertThatCode(() -> Validation.validateNoRelativeSpec(hash)).doesNotThrowAnyException();
+    }
+  }
 }

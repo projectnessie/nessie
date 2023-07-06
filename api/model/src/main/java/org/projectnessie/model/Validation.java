@@ -235,4 +235,19 @@ public final class Validation {
     }
     return ref;
   }
+
+  public static boolean hasRelativeSpec(String hash) {
+    if (hash == null) {
+      return false;
+    }
+    Matcher matcher = HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN.matcher(hash);
+    return matcher.matches() && !matcher.group(2).isEmpty();
+  }
+
+  public static String validateNoRelativeSpec(String hash) throws IllegalArgumentException {
+    if (hasRelativeSpec(hash)) {
+      throw new IllegalArgumentException("Relative hash not allowed here: " + hash);
+    }
+    return hash;
+  }
 }
