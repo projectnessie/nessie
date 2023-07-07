@@ -255,7 +255,7 @@ components:
               elements:
                 - example
                 - key
-              mergeBehavior: "FORCE"
+            mergeBehavior: "FORCE"
         dryRun: false
         fetchAdditionalInfo: false
         returnConflictAsResult: true
