@@ -716,7 +716,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   @CsvSource({
     "-", "main",
   })
-  public void mergeWithoutHashAllowed(String targetRefAndHash) {
+  public void mergeWithoutHashNotAllowed(String targetRefAndHash) {
     NessieError error =
         prepareMergeV2(targetRefAndHash, "irrelevant", "cafebabe", 2)
             .statusCode(400)
@@ -758,7 +758,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   @CsvSource({
     "-", "main",
   })
-  public void transplantWithoutHashAllowed(String targetRefAndHash) {
+  public void transplantWithoutHashNotAllowed(String targetRefAndHash) {
     NessieError error =
         prepareTransplantV2(
                 targetRefAndHash, "irrelevant", Collections.singletonList("cafebabe"), 2)
