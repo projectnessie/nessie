@@ -82,7 +82,7 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
             .dockerNetworkId(networkId)
             .fromProperties(emptyMap())
             .authEnabled(true)
-            .keycloakContainerSupplier(() -> keycloakContainer)
+            .oidcFromCustomKeycloakContainer(keycloakContainer)
             .build();
     nessieCoreContainer = nessieConfig.createContainer();
     nessieCoreContainer.start();

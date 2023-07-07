@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
 import java.util.Map;
+import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
 import org.projectnessie.testing.nessie.NessieContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,7 @@ public class NessieDockerTestResourceLifecycleManager
 
   private DevServicesContext context;
 
-  private NessieContainer.NessieConfig containerConfig;
+  private NessieContainer.NessieConfig.Builder containerConfig;
 
   @Override
   public void setIntegrationTestContext(DevServicesContext context) {
@@ -66,17 +67,14 @@ public class NessieDockerTestResourceLifecycleManager
 
   @Override
   public void init(Map<String, String> initArgs) {
-    NessieContainer.NessieConfig.Builder configBuilder =
-        NessieContainer.builder()
-            .fromProperties(initArgs)
-            .keycloakContainerSupplier(KeycloakTestResourceLifecycleManager::getKeycloak);
-    context.containerNetworkId().ifPresent(configBuilder::dockerNetworkId);
-    containerConfig = configBuilder.build();
+    containerConfig = NessieContainer.builder().fromProperties(initArgs);
+    context.containerNetworkId().ifPresent(containerConfig::dockerNetworkId);
   }
 
   @Override
   public Map<String, String> start() {
-    nessie = containerConfig.createContainer();
+    CustomKeycloakContainer keycloak = KeycloakTestResourceLifecycleManager.getKeycloak();
+    nessie = containerConfig.oidcFromCustomKeycloakContainer(keycloak).build().createContainer();
 
     LOGGER.info("Starting Nessie container...");
     nessie.start();
