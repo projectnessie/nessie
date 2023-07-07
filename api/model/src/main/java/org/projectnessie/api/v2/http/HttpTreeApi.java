@@ -15,11 +15,11 @@
  */
 package org.projectnessie.api.v2.http;
 
-import static org.projectnessie.api.v2.doc.ApiDoc.BRANCH_DESCRIPTION;
-import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_BRANCH_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_INFO;
+import static org.projectnessie.api.v2.doc.ApiDoc.COMMIT_BRANCH_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_PARAMETER_DESCRIPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.MERGE_TRANSPLANT_BRANCH_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.PAGING_INFO;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_NAME_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_PARAMETER_DESCRIPTION;
@@ -715,8 +715,8 @@ public interface HttpTreeApi extends TreeApi {
   @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-  @Path("{branch}/history/transplant")
-  @jakarta.ws.rs.Path("{branch}/history/transplant")
+  @Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/transplant")
+  @jakarta.ws.rs.Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/transplant")
   @Operation(
       summary =
           "Transplant commits specified by the 'Transplant' payload object onto the given 'branch'",
@@ -756,7 +756,7 @@ public interface HttpTreeApi extends TreeApi {
   MergeResponse transplantCommitsIntoBranch(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
-              description = CHECKED_BRANCH_DESCRIPTION,
+              description = MERGE_TRANSPLANT_BRANCH_DESCRIPTION,
               examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           @jakarta.ws.rs.PathParam("branch")
@@ -776,8 +776,8 @@ public interface HttpTreeApi extends TreeApi {
   @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-  @Path("{branch}/history/merge")
-  @jakarta.ws.rs.Path("{branch}/history/merge")
+  @Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/merge")
+  @jakarta.ws.rs.Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/merge")
   @Operation(
       summary = "Merge commits from another reference onto 'branch'.",
       description =
@@ -819,24 +819,8 @@ public interface HttpTreeApi extends TreeApi {
   MergeResponse mergeRefIntoBranch(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
-              description = CHECKED_BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(
-                    ref = "refWithTimestampMillisSinceEpoch",
-                    description =
-                        "The commit 'valid for' the timestamp 1685185847230 in ms since epoch on main"),
-                @ExampleObject(
-                    ref = "refWithTimestampInstant",
-                    description = "The commit 'valid for' the given ISO-8601 instant on main"),
-                @ExampleObject(
-                    ref = "refWithNthPredecessor",
-                    description = "The 10th commit from HEAD of main"),
-                @ExampleObject(
-                    ref = "refWithMergeParent",
-                    description =
-                        "References the merge-parent of commit 2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d on main"),
-              })
+              description = MERGE_TRANSPLANT_BRANCH_DESCRIPTION,
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           @jakarta.ws.rs.PathParam("branch")
           String branch,
@@ -855,8 +839,8 @@ public interface HttpTreeApi extends TreeApi {
   @Override
   @POST
   @jakarta.ws.rs.POST
-  @Path("{branch}/history/commit")
-  @jakarta.ws.rs.Path("{branch}/history/commit")
+  @Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/commit")
+  @jakarta.ws.rs.Path("{branch:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history/commit")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
@@ -885,33 +869,15 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(
         responseCode = "403",
         description = "Not allowed to view the given reference or perform commits"),
-    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+    @APIResponse(responseCode = "404", description = "Provided ref doesn't exist"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
   @JsonView(Views.V2.class)
   CommitResponse commitMultipleOperations(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
-              description = BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(
-                    ref = "refWithTimestampMillisSinceEpoch",
-                    description =
-                        "The commit 'valid for' the timestamp 1685185847230 in ms since epoch on main"),
-                @ExampleObject(
-                    ref = "refWithTimestampInstant",
-                    description = "The commit 'valid for' the given ISO-8601 instant on main"),
-                @ExampleObject(
-                    ref = "refWithNthPredecessor",
-                    description = "The 10th commit from HEAD of main"),
-                @ExampleObject(
-                    ref = "refWithMergeParent",
-                    description =
-                        "References the merge-parent of commit 2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d on main"),
-                @ExampleObject(ref = "refDefault"),
-              })
+              description = COMMIT_BRANCH_DESCRIPTION,
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           @jakarta.ws.rs.PathParam("branch")
           String branch,

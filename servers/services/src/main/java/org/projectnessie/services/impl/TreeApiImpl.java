@@ -24,6 +24,7 @@ import static java.util.Collections.singleton;
 import static java.util.function.Function.identity;
 import static org.projectnessie.model.CommitResponse.AddedContent.addedContent;
 import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateNoRelativeSpec;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canReadEntries;
 import static org.projectnessie.services.authz.Check.canViewReference;
@@ -575,6 +576,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     try {
       checkArgument(!hashesToTransplant.isEmpty(), "No hashes given to transplant.");
       validateCommitMeta(commitMeta);
+      validateNoRelativeSpec(expectedHash);
 
       BranchName targetBranch = BranchName.of(branchName);
       String lastHash = hashesToTransplant.get(hashesToTransplant.size() - 1);
@@ -654,6 +656,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throws NessieNotFoundException, NessieConflictException {
     try {
       validateCommitMeta(commitMeta);
+      validateNoRelativeSpec(fromHash);
+      validateNoRelativeSpec(expectedHash);
 
       BranchName targetBranch = BranchName.of(branchName);
       WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(fromRefName, fromHash);
@@ -964,6 +968,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
+    validateNoRelativeSpec(expectedHash);
 
     CommitMeta commitMeta = operations.getCommitMeta();
     validateCommitMeta(commitMeta);

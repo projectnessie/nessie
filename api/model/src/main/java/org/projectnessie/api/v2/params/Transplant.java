@@ -22,6 +22,7 @@ import static org.projectnessie.api.v2.doc.ApiDoc.FROM_REF_NAME_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MERGE_MODES_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.RETURN_CONFLICTS_AS_RESULT_DESCRIPTION;
 import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateNoRelativeSpec;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -85,6 +86,7 @@ public interface Transplant extends BaseMergeTransplant {
     List<String> hashes = getHashesToTransplant();
     if (hashes != null) {
       for (String hash : hashes) {
+        validateNoRelativeSpec(hash);
         validateHash(hash);
       }
     }

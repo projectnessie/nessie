@@ -53,6 +53,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-jdbc"))
 
   testImplementation(project(":nessie-jaxrs-testextension"))
+  testImplementation(libs.hibernate.validator.cdi)
   testImplementation(libs.slf4j.jcl.over.slf4j)
   testRuntimeOnly(libs.h2)
   testRuntimeOnly(libs.logback.classic)
