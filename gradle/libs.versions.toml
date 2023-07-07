@@ -52,7 +52,7 @@ cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version = 
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "2.9.3" }
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.18" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
-docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.3.1" }
+docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.3.2" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
