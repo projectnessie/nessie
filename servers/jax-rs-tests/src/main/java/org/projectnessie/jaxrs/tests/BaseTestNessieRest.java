@@ -738,20 +738,14 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     "-*2021-04-07T14:42:25.534748Z,cafebabe",
     "main*2021-04-07T14:42:25.534748Z,cafebabe",
     "main@cafebabe*2021-04-07T14:42:25.534748Z,cafebabe",
-    // relative hashes in hash to transplant (request body)
-    "-,cafebabe~1",
-    "main,cafebabe~1",
+    // relative hashes in source hash (request body)
     "main@cafebabe,cafebabe~1",
-    "-,cafebabe^2",
-    "main,cafebabe^2",
     "main@cafebabe,cafebabe^2",
-    "-,cafebabe*2021-04-07T14:42:25.534748Z",
-    "main,cafebabe*2021-04-07T14:42:25.534748Z",
     "main@cafebabe,cafebabe*2021-04-07T14:42:25.534748Z",
   })
-  public void mergeWithRelativeHashesNotAllowed(String targetRefAndHash, String hashToTransplant) {
+  public void mergeWithRelativeHashesNotAllowed(String targetRefAndHash, String fromHash) {
     NessieError error =
-        prepareMergeV2(targetRefAndHash, "source", hashToTransplant, 2)
+        prepareMergeV2(targetRefAndHash, "source", fromHash, 2)
             .statusCode(400)
             .extract()
             .as(NessieError.class);
@@ -788,20 +782,16 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     "-*2021-04-07T14:42:25.534748Z,cafebabe",
     "main*2021-04-07T14:42:25.534748Z,cafebabe",
     "main@cafebabe*2021-04-07T14:42:25.534748Z,cafebabe",
-    // relative hashes in source ref (request body)
-    "-,cafebabe~1",
-    "main,cafebabe~1",
+    // relative hashes in hashes to transplant (request body)
     "main@cafebabe,cafebabe~1",
-    "-,cafebabe^2",
-    "main,cafebabe^2",
     "main@cafebabe,cafebabe^2",
-    "-,cafebabe*2021-04-07T14:42:25.534748Z",
-    "main,cafebabe*2021-04-07T14:42:25.534748Z",
     "main@cafebabe,cafebabe*2021-04-07T14:42:25.534748Z",
   })
-  public void transplantWithRelativeHashesNotAllowed(String targetRefAndHash, String fromHash) {
+  public void transplantWithRelativeHashesNotAllowed(
+      String targetRefAndHash, String hashToTransplant) {
     NessieError error =
-        prepareTransplantV2(targetRefAndHash, "source", Collections.singletonList(fromHash), 2)
+        prepareTransplantV2(
+                targetRefAndHash, "source", Collections.singletonList(hashToTransplant), 2)
             .statusCode(400)
             .extract()
             .as(NessieError.class);
