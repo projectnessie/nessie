@@ -757,11 +757,7 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = MERGE_TRANSPLANT_BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
-              })
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           @jakarta.ws.rs.PathParam("branch")
           String branch,
@@ -824,11 +820,7 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = MERGE_TRANSPLANT_BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
-              })
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           @jakarta.ws.rs.PathParam("branch")
           String branch,
@@ -885,11 +877,7 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = COMMIT_BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
-              })
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           @jakarta.ws.rs.PathParam("branch")
           String branch,
