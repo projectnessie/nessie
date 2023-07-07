@@ -31,8 +31,6 @@ dependencies {
 
   implementation("org.apache.iceberg:iceberg-core:$versionIceberg")
 
-  implementation(libs.guava)
-
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
