@@ -675,8 +675,6 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         .contains("No enum constant org.projectnessie.model.Reference.ReferenceType.X");
   }
 
-  // TODO merge allowed with -  or just branch no hash
-
   @NessieApiVersions(versions = {NessieApiVersion.V2})
   @ParameterizedTest
   @CsvSource({
