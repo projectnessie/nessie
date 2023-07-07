@@ -21,8 +21,6 @@ extra["maven.name"] = "Nessie - Nessie testcontainer"
 dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.testcontainers.testcontainers)
-  // compileOnly, for non-custom-keycloak use cases
-  compileOnly(project(":nessie-keycloak-testcontainer"))
 
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
