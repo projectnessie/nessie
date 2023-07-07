@@ -32,6 +32,10 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.assertj.core.data.MapEntry;
@@ -450,6 +454,33 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     return resp.post("trees/{ref}/history/commit", ref).then();
   }
 
+  private ValidatableResponse prepareMergeV2(
+      String targetRefAndHash, String fromRefName, String fromHash, int clientSpec) {
+    Map<String, String> body = new HashMap<>();
+    body.put("fromRefName", fromRefName);
+    body.put("fromHash", fromHash);
+    RequestSpecification resp = rest().body(body);
+    if (clientSpec > 0) {
+      resp = resp.header("Nessie-Client-Spec", clientSpec);
+    }
+    return resp.post("trees/{ref}/history/merge", targetRefAndHash).then();
+  }
+
+  private ValidatableResponse prepareTransplantV2(
+      String targetRefAndHash,
+      String fromRefName,
+      List<String> hashesToTransplant,
+      int clientSpec) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("fromRefName", fromRefName);
+    body.put("hashesToTransplant", hashesToTransplant);
+    RequestSpecification resp = rest().body(body);
+    if (clientSpec > 0) {
+      resp = resp.header("Nessie-Client-Spec", clientSpec);
+    }
+    return resp.post("trees/{ref}/history/transplant", targetRefAndHash).then();
+  }
+
   private Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
     return prepareCommitV2(branch, key, table, 2, true)
         .statusCode(200)
@@ -644,6 +675,22 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         .contains("No enum constant org.projectnessie.model.Reference.ReferenceType.X");
   }
 
+  // TODO merge allowed with -  or just branch no hash
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @ParameterizedTest
+  @CsvSource({
+    "-", "main",
+  })
+  public void commitWithoutHashNotAllowed(String ref) {
+    ContentKey key1 = ContentKey.of("test", "Key");
+    IcebergTable table1 = IcebergTable.of("loc1", 1, 2, 3, 4);
+    NessieError error =
+        prepareCommitV2(ref, key1, table1, 2, true).statusCode(400).extract().as(NessieError.class);
+    assertThat(error.getMessage())
+        .isEqualTo("commitMultipleOperations.expectedHash: must not be null");
+  }
+
   @NessieApiVersions(versions = {NessieApiVersion.V2})
   @ParameterizedTest
   @CsvSource({
@@ -662,6 +709,105 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     IcebergTable table1 = IcebergTable.of("loc1", 1, 2, 3, 4);
     NessieError error =
         prepareCommitV2(ref, key1, table1, 2, true).statusCode(400).extract().as(NessieError.class);
-    assertThat(error.getMessage()).startsWith("Relative hash not allowed here");
+    assertThat(error.getMessage())
+        .startsWith("Relative hash not allowed in commit, merge or transplant operations");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @ParameterizedTest
+  @CsvSource({
+    "-", "main",
+  })
+  public void mergeWithoutHashAllowed(String targetRefAndHash) {
+    NessieError error =
+        prepareMergeV2(targetRefAndHash, "irrelevant", "cafebabe", 2)
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    assertThat(error.getMessage()).contains("mergeRefIntoBranch.expectedHash: must not be null");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @ParameterizedTest
+  @CsvSource({
+    // relative hashes in target ref (path param)
+    "-~1,cafebabe",
+    "main~1,cafebabe",
+    "main@cafebabe~1,cafebabe",
+    "-^2,cafebabe",
+    "main^2,cafebabe",
+    "main@cafebabe^2,cafebabe",
+    "-*2021-04-07T14:42:25.534748Z,cafebabe",
+    "main*2021-04-07T14:42:25.534748Z,cafebabe",
+    "main@cafebabe*2021-04-07T14:42:25.534748Z,cafebabe",
+    // relative hashes in hash to transplant (request body)
+    "-,cafebabe~1",
+    "main,cafebabe~1",
+    "main@cafebabe,cafebabe~1",
+    "-,cafebabe^2",
+    "main,cafebabe^2",
+    "main@cafebabe,cafebabe^2",
+    "-,cafebabe*2021-04-07T14:42:25.534748Z",
+    "main,cafebabe*2021-04-07T14:42:25.534748Z",
+    "main@cafebabe,cafebabe*2021-04-07T14:42:25.534748Z",
+  })
+  public void mergeWithRelativeHashesNotAllowed(String targetRefAndHash, String hashToTransplant) {
+    NessieError error =
+        prepareMergeV2(targetRefAndHash, "source", hashToTransplant, 2)
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    assertThat(error.getMessage())
+        .contains("Relative hash not allowed in commit, merge or transplant operations");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @ParameterizedTest
+  @CsvSource({
+    "-", "main",
+  })
+  public void transplantWithoutHashAllowed(String targetRefAndHash) {
+    NessieError error =
+        prepareTransplantV2(
+                targetRefAndHash, "irrelevant", Collections.singletonList("cafebabe"), 2)
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    assertThat(error.getMessage())
+        .contains("transplantCommitsIntoBranch.expectedHash: must not be null");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @ParameterizedTest
+  @CsvSource({
+    // relative hashes in target ref (path param)
+    "-~1,cafebabe",
+    "main~1,cafebabe",
+    "main@cafebabe~1,cafebabe",
+    "-^2,cafebabe",
+    "main^2,cafebabe",
+    "main@cafebabe^2,cafebabe",
+    "-*2021-04-07T14:42:25.534748Z,cafebabe",
+    "main*2021-04-07T14:42:25.534748Z,cafebabe",
+    "main@cafebabe*2021-04-07T14:42:25.534748Z,cafebabe",
+    // relative hashes in source ref (request body)
+    "-,cafebabe~1",
+    "main,cafebabe~1",
+    "main@cafebabe,cafebabe~1",
+    "-,cafebabe^2",
+    "main,cafebabe^2",
+    "main@cafebabe,cafebabe^2",
+    "-,cafebabe*2021-04-07T14:42:25.534748Z",
+    "main,cafebabe*2021-04-07T14:42:25.534748Z",
+    "main@cafebabe,cafebabe*2021-04-07T14:42:25.534748Z",
+  })
+  public void transplantWithRelativeHashesNotAllowed(String targetRefAndHash, String fromHash) {
+    NessieError error =
+        prepareTransplantV2(targetRefAndHash, "source", Collections.singletonList(fromHash), 2)
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    assertThat(error.getMessage())
+        .contains("Relative hash not allowed in commit, merge or transplant operations");
   }
 }

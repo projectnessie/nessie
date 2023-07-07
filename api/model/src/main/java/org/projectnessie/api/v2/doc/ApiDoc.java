@@ -42,32 +42,18 @@ public interface ApiDoc {
           + "at different times depending on the state of the system. Using the full 'name@hash' form is recommended "
           + "to avoid ambiguity.\n";
 
-  String BRANCH_DESCRIPTION =
+  String COMMIT_BRANCH_DESCRIPTION =
       "A reference to a particular version of the contents tree (a point in history) on a branch.\n"
-          + "This reference can be specified in these forms:\n"
-          + "- \\- (literal minus character) - Identifies the HEAD of the default branch \n"
-          + "- name - Identifies the HEAD commit on the named branch\n"
+          + "This reference is specified in this form:\n"
           + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
           + "\n"
-          + "If both 'name' and 'hash' are given, 'hash' must be reachable from the current HEAD of the branch.\n"
-          + "In this case 'hash' indicates the state of contents known to the client and serves to ensure that the "
-          + "operation is performed on the contents that the client expects.\n"
-          + "\n"
-          + "Note that using the simple 'name' form will effectively disable content conflict checks and is "
-          + "generally discouraged.\n"
-          + "\n"
-          + FULL_REF_INFO;
+          + "The 'hash' commit must be reachable from the current HEAD of the branch.\n"
+          + "In this case 'hash' indicates the state of contents that should be used for validating incoming changes.\n";
 
-  String CHECKED_BRANCH_DESCRIPTION =
+  String MERGE_TRANSPLANT_BRANCH_DESCRIPTION =
       "A reference to a specific version of the contents tree (a point in history) on a branch.\n"
-          + "This reference can be specified in these forms:\n"
+          + "This reference is specified in this form:\n"
           + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
-          + "- -~3 - The 3rd predecessor commit from the HEAD of the default branch.\n"
-          + "- name~3 - The 3rd predecessor commit from the HEAD of a branch or tag.\n"
-          + "- name@hash^2 - The merge parent of the 'hash' commit of a branch or tag.\n"
-          + "- -*2021-04-07T14:42:25.534748Z - The predecessor commit closest to the HEAD of the default branch for the given ISO-8601 timestamp.\n"
-          + "- name*2021-04-07T14:42:25.534748Z - The predecessor commit closest to the HEAD of a branch or tag valid for the given ISO-8601 timestamp.\n"
-          + "- name*1685185847230 - The predecessor commit closest to the HEAD of a branch or tag valid for the given timestamp in milliseconds since epoch.\n"
           + "\n"
           + "The 'hash' commit must be reachable from the current HEAD of the branch.\n"
           + "In this case 'hash' indicates the state of contents known to the client and serves to ensure that the "

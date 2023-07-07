@@ -283,7 +283,8 @@ class TestValidation {
     if (errorExpected) {
       soft.assertThatIllegalArgumentException()
           .isThrownBy(() -> Validation.validateNoRelativeSpec(hash))
-          .withMessageContaining("Relative hash not allowed here");
+          .withMessageContaining(
+              "Relative hash not allowed in commit, merge or transplant operations");
     } else {
       soft.assertThatCode(() -> Validation.validateNoRelativeSpec(hash)).doesNotThrowAnyException();
     }

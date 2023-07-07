@@ -244,10 +244,10 @@ public final class Validation {
     return matcher.matches() && !matcher.group(2).isEmpty();
   }
 
-  public static String validateNoRelativeSpec(String hash) throws IllegalArgumentException {
+  public static void validateNoRelativeSpec(String hash) throws IllegalArgumentException {
     if (hasRelativeSpec(hash)) {
-      throw new IllegalArgumentException("Relative hash not allowed here: " + hash);
+      throw new IllegalArgumentException(
+          "Relative hash not allowed in commit, merge or transplant operations: " + hash);
     }
-    return hash;
   }
 }
