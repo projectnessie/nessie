@@ -74,7 +74,13 @@ public class NessieDockerTestResourceLifecycleManager
   @Override
   public Map<String, String> start() {
     CustomKeycloakContainer keycloak = KeycloakTestResourceLifecycleManager.getKeycloak();
-    nessie = containerConfig.oidcFromCustomKeycloakContainer(keycloak).build().createContainer();
+    nessie =
+        containerConfig
+            .oidcHostIp(keycloak.getExternalIp())
+            .oidcInternalRealmUri(keycloak.getInternalRealmUri().toString())
+            .oidcTokenIssuerUri(keycloak.getTokenIssuerUri().toString())
+            .build()
+            .createContainer();
 
     LOGGER.info("Starting Nessie container...");
     nessie.start();

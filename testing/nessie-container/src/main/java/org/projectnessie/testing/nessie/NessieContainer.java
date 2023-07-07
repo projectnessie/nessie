@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -101,13 +100,6 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
 
       @CanIgnoreReturnValue
       Builder authEnabled(boolean authEnabled);
-
-      default Builder oidcFromCustomKeycloakContainer(
-          CustomKeycloakContainer customKeycloakContainer) {
-        return oidcHostIp(customKeycloakContainer.getExternalIp())
-            .oidcInternalRealmUri(customKeycloakContainer.getInternalRealmUri().toString())
-            .oidcTokenIssuerUri(customKeycloakContainer.getTokenIssuerUri().toString());
-      }
 
       @CanIgnoreReturnValue
       Builder oidcInternalRealmUri(String oidcInternalRealmUri);
