@@ -66,6 +66,7 @@ dependencies {
   intTestImplementation(libs.slf4j.log4j.over.slf4j)
 
   intTestImplementation(nessieProject("nessie-client"))
+  intTestImplementation(nessieProject("nessie-keycloak-testcontainer"))
   intTestImplementation(nessieProject("nessie-nessie-testcontainer"))
 
   intTestImplementation(
