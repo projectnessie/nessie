@@ -25,8 +25,8 @@ import io.vertx.mutiny.ext.web.client.WebClient;
 import javax.enterprise.inject.Vetoed;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
+import org.projectnessie.restcatalog.api.model.OAuthTokenRequest;
 import org.projectnessie.restcatalog.service.auth.OAuthHandler;
-import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
