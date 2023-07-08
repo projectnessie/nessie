@@ -15,19 +15,15 @@
  */
 package org.projectnessie.testing.nessie;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -74,7 +70,18 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
     }
 
     @Nullable
-    public abstract Supplier<CustomKeycloakContainer> keycloakContainerSupplier();
+    public abstract String oidcInternalRealmUri();
+
+    @Nullable
+    public abstract String oidcTokenIssuerUri();
+
+    @Value.Default
+    public String oidcHostName() {
+      return "keycloak";
+    }
+
+    @Nullable
+    public abstract String oidcHostIp();
 
     public abstract Map<String, String> extraEnvVars();
 
@@ -95,8 +102,16 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
       Builder authEnabled(boolean authEnabled);
 
       @CanIgnoreReturnValue
-      Builder keycloakContainerSupplier(
-          Supplier<CustomKeycloakContainer> keycloakContainerSupplier);
+      Builder oidcInternalRealmUri(String oidcInternalRealmUri);
+
+      @CanIgnoreReturnValue
+      Builder oidcTokenIssuerUri(String oidcTokenIssuerUri);
+
+      @CanIgnoreReturnValue
+      Builder oidcHostName(String oidcHostName);
+
+      @CanIgnoreReturnValue
+      Builder oidcHostIp(String oidcHostIp);
 
       @CanIgnoreReturnValue
       Builder putExtraEnvVars(String key, String value);
@@ -170,24 +185,19 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
       // - Nessie will also use the configured URI for OIDC token validation,
       //   since Keycloak is configured to return tokens with that specific address as the issuer
       //   claim, regardless of the client IP address.
-      CustomKeycloakContainer keycloak = config.keycloakContainerSupplier().get();
 
-      String keycloakContainerIpAddress =
-          requireNonNull(
-                  keycloak.getContainerInfo(),
-                  "Keycloak container object available, but container info is null. Is the Keycloak container started?")
-              .getNetworkSettings()
-              .getNetworks()
-              .values()
-              .iterator()
-              .next()
-              .getIpAddress();
-      withExtraHost("keycloak", keycloakContainerIpAddress);
+      if (config.oidcHostIp() != null) {
+        withExtraHost(config.oidcHostName(), config.oidcHostIp());
+      }
 
-      withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "true")
-          .withEnv("QUARKUS_OIDC_AUTH_SERVER_URL", keycloak.getInternalRealmUri().toString())
-          .withEnv("QUARKUS_OIDC_TOKEN_ISSUER", keycloak.getTokenIssuerUri().toString())
-          .withEnv("QUARKUS_OIDC_CLIENT_ID", "nessie");
+      withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "true");
+      if (config.oidcInternalRealmUri() != null) {
+        withEnv("QUARKUS_OIDC_AUTH_SERVER_URL", config.oidcInternalRealmUri());
+      }
+      if (config.oidcInternalRealmUri() != null) {
+        withEnv("QUARKUS_OIDC_TOKEN_ISSUER", config.oidcTokenIssuerUri());
+      }
+      withEnv("QUARKUS_OIDC_CLIENT_ID", "nessie");
     } else {
       LOGGER.info("Disabling Nessie authentication");
       withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "false");
