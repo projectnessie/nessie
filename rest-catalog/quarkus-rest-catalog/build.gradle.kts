@@ -40,6 +40,7 @@ dependencies {
   implementation(nessieProject(":nessie-client"))
 
   implementation("org.apache.iceberg:iceberg-core:$icebergVersion")
+  implementation(nessieProject(":nessie-rest-catalog-api"))
 
   implementation(libs.hadoop.common) {
     exclude("ch.qos.reload4j", "reload4j")

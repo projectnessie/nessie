@@ -17,6 +17,7 @@ package org.projectnessie.restcatalog.service.auth;
 
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
+import org.projectnessie.restcatalog.api.model.OAuthTokenRequest;
 
 @FunctionalInterface
 public interface OAuthHandler {

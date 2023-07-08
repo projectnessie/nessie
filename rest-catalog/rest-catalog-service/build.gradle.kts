@@ -31,6 +31,7 @@ dependencies {
   implementation(nessieProject(":nessie-client"))
 
   implementation("org.apache.iceberg:iceberg-core:$versionIceberg")
+  implementation(nessieProject(":nessie-rest-catalog-api"))
 
   implementation(libs.hadoop.common) { hadoopExcludes() }
 
@@ -60,6 +61,7 @@ dependencies {
   testFixturesApi(libs.guava)
 
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
+  testFixturesApi(nessieProject(":nessie-rest-catalog-api"))
   testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
 
   testFixturesCompileOnly(libs.immutables.builder)
