@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
-import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
+import org.projectnessie.restcatalog.api.model.OAuthTokenRequest;
 
 /** Iceberg OAuth token endpoint. */
 @Path("iceberg/v1")

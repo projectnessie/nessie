@@ -15,7 +15,9 @@
  */
 package org.projectnessie.restcatalog.api.errors;
 
-import com.google.common.collect.ImmutableMap;
+import static java.util.Collections.unmodifiableMap;
+
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -54,6 +56,9 @@ public class OAuthTokenEndpointException extends RuntimeException {
   }
 
   public Map<String, String> getDetails() {
-    return ImmutableMap.of("error", error, "error_description", getMessage());
+    Map<String, String> r = new HashMap<>();
+    r.put("error", error);
+    r.put("error_description", getMessage());
+    return unmodifiableMap(r);
   }
 }

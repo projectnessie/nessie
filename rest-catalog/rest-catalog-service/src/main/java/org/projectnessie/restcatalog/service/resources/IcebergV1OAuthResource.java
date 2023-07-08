@@ -18,7 +18,7 @@ package org.projectnessie.restcatalog.service.resources;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.restcatalog.api.IcebergV1OAuth;
 import org.projectnessie.restcatalog.api.errors.OAuthTokenEndpointException;
-import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
+import org.projectnessie.restcatalog.api.model.OAuthTokenRequest;
 
 public class IcebergV1OAuthResource extends BaseIcebergResource implements IcebergV1OAuth {
 
