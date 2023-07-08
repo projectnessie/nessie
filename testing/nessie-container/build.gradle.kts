@@ -20,7 +20,7 @@ extra["maven.name"] = "Nessie - Nessie testcontainer"
 
 dependencies {
   implementation(libs.slf4j.api)
-  api(project(":nessie-keycloak-testcontainer"))
+  implementation(libs.testcontainers.testcontainers)
 
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)

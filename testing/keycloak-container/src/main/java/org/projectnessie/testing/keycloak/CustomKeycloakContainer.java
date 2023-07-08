@@ -15,6 +15,8 @@
  */
 package org.projectnessie.testing.keycloak;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
 import java.net.URI;
@@ -332,6 +334,18 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
         String.format(
             "%s%srealms/%s",
             getInternalRootUri(), ensureSlashes(getContextPath()), config.realmName()));
+  }
+
+  public String getExternalIp() {
+    return requireNonNull(
+            getContainerInfo(),
+            "Keycloak container object available, but container info is null. Is the Keycloak container started?")
+        .getNetworkSettings()
+        .getNetworks()
+        .values()
+        .iterator()
+        .next()
+        .getIpAddress();
   }
 
   /**
