@@ -26,8 +26,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Provider;
 import org.apache.commons.io.IOUtils;
-import org.projectnessie.restcatalog.service.auth.ImmutableOAuthTokenRequest;
-import org.projectnessie.restcatalog.service.auth.OAuthTokenRequest;
+import org.projectnessie.restcatalog.api.model.ImmutableOAuthTokenRequest;
+import org.projectnessie.restcatalog.api.model.OAuthTokenRequest;
 
 @Provider
 public class OAuthTokenRequestReader implements MessageBodyReader<OAuthTokenRequest> {
