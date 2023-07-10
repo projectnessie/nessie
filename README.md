@@ -117,16 +117,8 @@ To run:
 3. go to `http://localhost:19120`
 
 ### UI 
-To run the ui (from `ui` directory):
-1. If you are running in test ensure that `setupProxy.js` points to the correct api instance. This ensures we avoid CORS
-issues in testing
-2. `npm install` will install dependencies
-3. `npm run start` to start the ui in development mode via node
 
-To deploy the ui (from `ui` directory):
-1. `npm install` will install dependencies
-2. `npm build` will minify and collect the package for deployment in `build`
-3. the `build` directory can be deployed to any static hosting environment or run locally as `serve -s build`
+Nessie UI sources have moved to their own repository: https://github.com/projectnessie/nessie-ui.
 
 ### Docker image
 
