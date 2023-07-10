@@ -102,7 +102,7 @@ dependencies {
 
   intTestImplementation("org.projectnessie.nessie-runner:nessie-runner-common:0.30.6")
 
-  add("nessieCatalogServer", nessieProject(":nessie-rest-catalog-server", "quarkusRunner"))
+  add("nessieCatalogServer", nessieProject(":nessie-catalog-server", "quarkusRunner"))
 }
 
 fun ModuleDependency.hadoopExcludes() {

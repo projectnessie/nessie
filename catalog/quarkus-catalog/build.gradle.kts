@@ -35,12 +35,12 @@ val quarkusRunner by
   }
 
 dependencies {
-  implementation(nessieProject(":nessie-rest-catalog-service"))
+  implementation(nessieProject(":nessie-catalog-service"))
   implementation(nessieProject(":nessie-model"))
   implementation(nessieProject(":nessie-client"))
 
   implementation("org.apache.iceberg:iceberg-core:$icebergVersion")
-  implementation(nessieProject(":nessie-rest-catalog-api"))
+  implementation(nessieProject(":nessie-catalog-api"))
 
   implementation(libs.hadoop.common) {
     exclude("ch.qos.reload4j", "reload4j")
