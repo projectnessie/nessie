@@ -91,6 +91,7 @@ jobs:
             -x :nessie-quarkus:compileAll
             -x :nessie-quarkus-cli:compileAll
             -x :nessie-events-quarkus:compileAll
+            --scan
 
       - name: Gradle / Compile Quarkus
         uses: gradle/gradle-build-action@v2
@@ -99,21 +100,22 @@ jobs:
             :nessie-quarkus:compileAll
             :nessie-quarkus-cli:compileAll
             :nessie-events-quarkus:compileAll
+            --scan
 
       - name: Gradle / Checkstyle
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: checkstyle
+          arguments: checkstyle --scan
 
       - name: Gradle / Assemble
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: assemble
+          arguments: assemble --scan
 
       - name: Gradle / Publish to Maven local
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishToMavenLocal
+          arguments: publishToMavenLocal --scan
 
       # This is a rather quick one and uses the output of 'publishToMavenLocal', which uses the
       # outputs of 'assemble'
