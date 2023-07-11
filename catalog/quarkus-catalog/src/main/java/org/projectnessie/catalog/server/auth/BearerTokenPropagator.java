@@ -15,10 +15,10 @@
  */
 package org.projectnessie.catalog.server.auth;
 
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 

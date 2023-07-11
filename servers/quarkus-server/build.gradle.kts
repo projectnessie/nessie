@@ -109,13 +109,28 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
+  intTestImplementation("io.quarkus:quarkus-test-keycloak-server") {
+    exclude(
+      group = "org.keycloak",
+      module = "keycloak-admin-client"
+    ) // Quarkus 3 / Jakarta EE required
+  }
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:cassandra")
   intTestRuntimeOnly("org.testcontainers:postgresql")
   intTestRuntimeOnly("org.testcontainers:mongodb")
-  intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestImplementation(project(":nessie-keycloak-testcontainer")) {
+    exclude(
+      group = "org.keycloak",
+      module = "keycloak-admin-client"
+    ) // Quarkus 3 / Jakarta EE required
+  }
+  intTestImplementation(libs.keycloak.admin.client.jakarta)
   intTestRuntimeOnly(project(":nessie-nessie-testcontainer"))
+  // Keycloak-admin-client depends on Resteasy.
+  // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
+  // cause non-existing jackson versions like 2.15.2-jakarta, which then lets the build fail.
+  intTestImplementation(platform(libs.resteasy.bom))
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)
