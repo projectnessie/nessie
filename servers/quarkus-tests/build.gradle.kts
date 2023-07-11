@@ -58,5 +58,5 @@ dependencies {
       module = "keycloak-admin-client"
     ) // Quarkus 3 / Jakarta EE required
   }
-  implementation("org.keycloak:keycloak-admin-client-jakarta")
+  implementation(libs.keycloak.admin.client.jakarta)
 }
