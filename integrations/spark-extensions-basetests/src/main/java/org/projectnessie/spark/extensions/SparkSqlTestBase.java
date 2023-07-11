@@ -141,6 +141,7 @@ public abstract class SparkSqlTestBase {
             });
 
     conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
+        .set("spark.ui.enabled", "false")
         .set("spark.testing", "true")
         .set("spark.sql.warehouse.dir", warehouseURI())
         .set("spark.sql.shuffle.partitions", "4")
