@@ -27,7 +27,8 @@ dependencies {
   implementation(project(":nessie-versioned-persist-mongodb"))
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-persist-non-transactional-test"))
-  implementation(libs.testcontainers.mongodb)
+  implementation(platform(libs.testcontainers.bom))
+  implementation("org.testcontainers:mongodb")
 
   implementation(platform(libs.junit.bom))
   implementation("org.junit.jupiter:junit-jupiter-api")

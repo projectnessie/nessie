@@ -42,7 +42,8 @@ dependencies {
 
   implementation(libs.mongodb.driver.sync)
 
-  compileOnly(libs.testcontainers.mongodb)
+  compileOnly(platform(libs.testcontainers.bom))
+  compileOnly("org.testcontainers:mongodb")
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
@@ -53,7 +54,8 @@ dependencies {
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))
-  intTestRuntimeOnly(libs.testcontainers.mongodb)
+  intTestRuntimeOnly(platform(libs.testcontainers.bom))
+  intTestRuntimeOnly("org.testcontainers:mongodb")
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

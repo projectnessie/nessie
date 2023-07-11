@@ -38,10 +38,11 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-junit5")
 
-  implementation(libs.testcontainers.testcontainers)
-  implementation(libs.testcontainers.cassandra)
-  implementation(libs.testcontainers.postgresql)
-  implementation(libs.testcontainers.mongodb)
+  implementation(platform(libs.testcontainers.bom))
+  implementation("org.testcontainers:testcontainers")
+  implementation("org.testcontainers:cassandra")
+  implementation("org.testcontainers:postgresql")
+  implementation("org.testcontainers:mongodb")
   implementation(libs.docker.java.api)
 
   implementation(platform(libs.awssdk.bom))

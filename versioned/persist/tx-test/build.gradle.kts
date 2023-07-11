@@ -41,7 +41,8 @@ dependencies {
   compileOnly(libs.h2)
   compileOnly(libs.postgresql)
 
-  implementation(libs.testcontainers.postgresql)
-  implementation(libs.testcontainers.cockroachdb)
+  implementation(platform(libs.testcontainers.bom))
+  implementation("org.testcontainers:postgresql")
+  implementation("org.testcontainers:cockroachdb")
   implementation(libs.docker.java.api)
 }
