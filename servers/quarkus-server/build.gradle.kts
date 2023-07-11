@@ -142,7 +142,7 @@ tasks.withType<Test>().configureEach {
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
   )
-  systemProperty("keycloak.docker.tag", libs.versions.keycloakContainerTag.get())
+  systemProperty("keycloak.docker.tag", libs.versions.keycloak.get())
 }
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
