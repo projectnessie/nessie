@@ -103,12 +103,6 @@ val packageType = quarkusPackageType()
 
 quarkus { quarkusBuildProperties.put("quarkus.package.type", packageType) }
 
-tasks.withType<QuarkusBuild>().configureEach {
-  outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
-  inputs.property("final.name", quarkus.finalName())
-  inputs.properties(quarkus.quarkusBuildProperties.get())
-}
-
 if (quarkusFatJar()) {
   afterEvaluate {
     publishing {

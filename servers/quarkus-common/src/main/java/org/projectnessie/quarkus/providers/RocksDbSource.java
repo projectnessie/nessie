@@ -15,10 +15,10 @@
  */
 package org.projectnessie.quarkus.providers;
 
-import javax.enterprise.inject.Disposes;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.enterprise.inject.Disposes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.versioned.persist.rocks.ImmutableRocksDbConfig;
 import org.projectnessie.versioned.persist.rocks.RocksDbInstance;

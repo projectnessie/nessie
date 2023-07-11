@@ -18,9 +18,9 @@ package org.projectnessie.events.quarkus;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.events.quarkus.assertions.EventAssertions;
@@ -104,9 +104,8 @@ class TestQuarkusEvents {
       map.put("nessie.version.store.events.metrics.enable", "false");
       // Extensions all enabled by default
       map.put("quarkus.micrometer.enabled", "true");
-      map.put("quarkus.opentelemetry.enabled", "true");
       // Sample everything
-      map.put("quarkus.opentelemetry.tracer.sampler", "on");
+      map.put("quarkus.otel.traces.sampler", "always_on");
       // Enable retries + reduce backoff
       map.put("nessie.version.store.events.retry.max-attempts", "3");
       map.put("nessie.version.store.events.retry.initial-delay", "PT0.01S");

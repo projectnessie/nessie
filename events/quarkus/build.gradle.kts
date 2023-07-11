@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.quarkus.gradle.tasks.QuarkusBuild
-
 plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
@@ -68,10 +66,3 @@ listOf("javadoc", "sourcesJar").forEach { name ->
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
   tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
-
-val quarkusBuild =
-  tasks.named<QuarkusBuild>("quarkusBuild") {
-    outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
-    inputs.property("final.name", quarkus.finalName())
-    inputs.properties(quarkus.quarkusBuildProperties.get())
-  }

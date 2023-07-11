@@ -135,12 +135,7 @@ quarkus {
 
 val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
-quarkusBuild.configure {
-  outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
-  dependsOn(pullOpenApiSpec)
-  inputs.property("final.name", quarkus.finalName())
-  inputs.properties(quarkus.quarkusBuildProperties.get())
-}
+quarkusBuild.configure { dependsOn(pullOpenApiSpec) }
 
 tasks.withType<Test>().configureEach {
   systemProperty(

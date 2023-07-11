@@ -20,11 +20,11 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConf
 import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig.DEFAULT_DML_TIMEOUT;
 
 import com.datastax.oss.quarkus.runtime.api.session.QuarkusCqlSession;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendFactory;

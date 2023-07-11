@@ -15,8 +15,8 @@
  */
 package org.projectnessie.events.quarkus;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
 import org.projectnessie.events.service.EventSubscribers;
 import org.projectnessie.events.spi.EventSubscriber;
 

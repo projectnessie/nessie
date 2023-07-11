@@ -231,7 +231,7 @@ Since Nessie 0.46.0, traces are published using OpenTelemetry. See [Using
 OpenTelemetry](https://quarkus.io/guides/opentelemetry) in the Quarkus documentation.
 
 In order for the server to publish its traces, the
-`quarkus.opentelemetry.tracer.exporter.otlp.endpoint` property _must_ be set. Its value must be a
+`quarkus.otel.exporter.otlp.endpoint` property _must_ be set. Its value must be a
 valid collector endpoint URL, with either `http://` or `https://` scheme. The collector must talk
 the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 3417), e.g.
 "http://otlp-collector:4317".
@@ -244,7 +244,7 @@ If the server is unable to publish traces, check first for a log warning message
 WARN  [io.qua.ope.run.exp.otl.LateBoundBatchSpanProcessor] (vert.x-eventloop-thread-5) No BatchSpanProcessor delegate specified, no action taken.
 ```
 
-This means that the `quarkus.opentelemetry.tracer.exporter.otlp.endpoint` property is not set. Set
+This means that the `quarkus.otel.exporter.otlp.endpoint` property is not set. Set
 it to a valid OTLP connector URL and try again.
 
 If you see a log error message like the following:

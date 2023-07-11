@@ -16,12 +16,12 @@
 package org.projectnessie.server.authn;
 
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.inject.Inject;
 import java.security.Principal;
 import java.util.function.Supplier;
-import javax.annotation.Priority;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Alternative;
-import javax.inject.Inject;
 
 @RequestScoped
 @Alternative

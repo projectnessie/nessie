@@ -9,7 +9,7 @@ services:
       - jaeger
     environment:
       - nessie.version.store.type=IN_MEMORY
-      - quarkus.opentelemetry.tracer.exporter.otlp.endpoint=http://jaeger:4317
+      - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
 
   # Jaeger
   jaeger:

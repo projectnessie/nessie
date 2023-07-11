@@ -23,9 +23,9 @@ import static org.projectnessie.events.api.EventType.CONTENT_STORED;
 import static org.projectnessie.events.api.EventType.MERGE;
 import static org.projectnessie.events.api.EventType.TRANSPLANT;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.time.Duration;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.quarkus.fixtures.MockEventSubscriber;

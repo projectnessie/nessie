@@ -17,8 +17,8 @@ package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.ROCKSDB;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.projectnessie.quarkus.config.QuarkusRocksConfig;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendConfig;

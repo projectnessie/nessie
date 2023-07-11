@@ -15,17 +15,17 @@
  */
 package org.projectnessie.server.rest;
 
-import javax.inject.Inject;
-import javax.validation.ValidationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+import jakarta.inject.Inject;
+import jakarta.validation.ValidationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import org.jboss.resteasy.api.validation.ResteasyViolationException;
 import org.jboss.resteasy.api.validation.Validation;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.restjavax.BaseExceptionMapper;
-import org.projectnessie.services.restjavax.NessieExceptionMapper;
+import org.projectnessie.services.restjakarta.BaseExceptionMapper;
+import org.projectnessie.services.restjakarta.NessieExceptionMapper;
 
 /**
  * "Special" implementation for exceptions that extend {@link ValidationException}, as those do not

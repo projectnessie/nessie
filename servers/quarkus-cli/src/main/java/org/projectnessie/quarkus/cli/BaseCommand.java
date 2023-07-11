@@ -18,10 +18,10 @@ package org.projectnessie.quarkus.cli;
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
 
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.util.concurrent.Callable;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.services.config.ServerConfig;
