@@ -26,9 +26,8 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.inject.Inject;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
 import org.projectnessie.catalog.service.resources.HttpClientHolder;
+import org.projectnessie.catalog.service.resources.RestAbstraction;
 
 public abstract class AbstractNessieProxyResource {
 
@@ -55,14 +54,7 @@ public abstract class AbstractNessieProxyResource {
 
   @Inject @jakarta.inject.Inject protected TenantSpecific tenantSpecific;
   @Inject @jakarta.inject.Inject protected HttpClientHolder httpClientHolder;
-
-  protected abstract URI baseUri();
-
-  protected abstract URI requestUri();
-
-  protected abstract String requestMethod();
-
-  protected abstract String headerString(String header);
+  @Inject @jakarta.inject.Inject protected RestAbstraction restAbstraction;
 
   protected HttpResponse<InputStream> proxyRequest(InputStream data)
       throws IOException, InterruptedException {
@@ -78,7 +70,7 @@ public abstract class AbstractNessieProxyResource {
     HttpRequest.Builder httpRequest =
         HttpRequest.newBuilder(target)
             .timeout(httpClientHolder.requestTimeout())
-            .method(requestMethod(), bodyPublisher);
+            .method(restAbstraction.requestMethod(), bodyPublisher);
     requestHeaders(httpRequest::header);
 
     HttpResponse.BodyHandler<InputStream> bodyHandler = HttpResponse.BodyHandlers.ofInputStream();
@@ -88,9 +80,9 @@ public abstract class AbstractNessieProxyResource {
 
   private URI proxyTo() {
     // Need the request URI, which has everything we need - the path and query parameters
-    URI reqUri = requestUri();
+    URI reqUri = restAbstraction.requestUri();
     // "Our" base-URI is the one for this resource
-    URI baseUri = baseUri();
+    URI baseUri = restAbstraction.baseUri().resolve("api/");
 
     // Relativize the request URI
     URI relativeUri = baseUri.relativize(reqUri);
@@ -100,19 +92,18 @@ public abstract class AbstractNessieProxyResource {
     // Ensure that the resolved URI is not used to abuse this proxy for anything else than Nessie
     // Core REST API calls. Otherwise, it could be used to issue generic requests to other resources
     // on the same network.
-    if (relativeUri.isAbsolute()) {
-      // Status message isn't always propagated into the result
-      throw new ClientErrorException(Response.Status.BAD_REQUEST);
-    }
+    validateRelativeUri(relativeUri);
 
     // Resolve the relative request URI against the Nessie Core server base URI. This gives us the
     // properly encoded path and query parameters.
     return nessieApiBaseUri.resolve(relativeUri);
   }
 
+  protected abstract void validateRelativeUri(URI relativeUri);
+
   protected void requestHeaders(BiConsumer<String, String> headerConsumer) {
     for (String hdr : REQUEST_HEADERS) {
-      String value = headerString(hdr);
+      String value = restAbstraction.headerString(hdr);
       if (value != null) {
         headerConsumer.accept(hdr, value);
       }

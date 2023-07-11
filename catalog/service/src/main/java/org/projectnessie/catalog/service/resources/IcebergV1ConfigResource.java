@@ -24,14 +24,13 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
-import javax.ws.rs.core.UriInfo;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.projectnessie.catalog.api.IcebergV1Config;
 import org.projectnessie.catalog.service.spi.Warehouse;
 
 public class IcebergV1ConfigResource extends BaseIcebergResource implements IcebergV1Config {
 
-  @Inject protected UriInfo uriInfo;
+  @Inject @jakarta.inject.Inject RestAbstraction restAbstraction;
 
   @Override
   public ConfigResponse getConfig(String warehouse) {
@@ -55,13 +54,14 @@ public class IcebergV1ConfigResource extends BaseIcebergResource implements Iceb
     config.withOverride("nessie.default-branch.name", tenantSpecific.defaultBranch().name());
     config.withOverride("nessie.is-nessie-catalog", "true");
     // Make sure that `nessie.core-base-uri` always returns a `/` terminated URI.
-    config.withOverride("nessie.core-base-uri", uriInfo.getBaseUri().resolve("api/").toString());
+    config.withOverride(
+        "nessie.core-base-uri", restAbstraction.baseUri().resolve("api/").toString());
     // Make sure that `nessie.catalog-base-uri` always returns a `/` terminated URI.
     config.withOverride(
-        "nessie.catalog-base-uri", uriInfo.getBaseUri().resolve("nessie-catalog/").toString());
+        "nessie.catalog-base-uri", restAbstraction.baseUri().resolve("nessie-catalog/").toString());
     config.withOverride("nessie.prefix-pattern", "{ref}|{warehouse}");
 
-    URI oauthUri = uriInfo.getBaseUri().resolve("iceberg/v1/oauth/tokens");
+    URI oauthUri = restAbstraction.baseUri().resolve("iceberg/v1/oauth/tokens");
 
     // "Just" Nessie client specific configs
     config.withOverride(CONF_NESSIE_AUTH_TYPE, "OAUTH2");

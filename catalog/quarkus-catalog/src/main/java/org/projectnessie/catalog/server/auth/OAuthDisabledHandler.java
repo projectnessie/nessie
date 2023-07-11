@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.server.auth;
 
-import javax.enterprise.inject.Vetoed;
+import jakarta.enterprise.inject.Vetoed;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.catalog.api.errors.OAuthTokenEndpointException;
 import org.projectnessie.catalog.api.model.OAuthTokenRequest;

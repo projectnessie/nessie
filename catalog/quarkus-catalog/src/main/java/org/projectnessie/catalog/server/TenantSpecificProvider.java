@@ -24,13 +24,13 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
 import io.quarkus.runtime.Startup;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.apache.iceberg.io.FileIO;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.service.spi.OAuthHandler;

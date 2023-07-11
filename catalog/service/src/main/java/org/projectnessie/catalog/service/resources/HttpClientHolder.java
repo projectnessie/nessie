@@ -22,12 +22,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
+@jakarta.inject.Singleton
 public class HttpClientHolder {
 
   private final HttpClient httpClient;
   private final Duration requestTimeout;
 
   @Inject
+  @jakarta.inject.Inject
   public HttpClientHolder() {
     HttpClient.Builder clientBuilder =
         HttpClient.newBuilder()

@@ -66,8 +66,18 @@ dependencies {
   intTestImplementation(libs.slf4j.log4j.over.slf4j)
 
   intTestImplementation(nessieProject("nessie-client"))
-  intTestImplementation(nessieProject("nessie-keycloak-testcontainer"))
+  intTestImplementation(nessieProject("nessie-keycloak-testcontainer")) {
+    exclude(
+      group = "org.keycloak",
+      module = "keycloak-admin-client"
+    ) // Quarkus 3 / Jakarta EE required
+  }
+  intTestImplementation(libs.keycloak.admin.client.jakarta)
   intTestImplementation(nessieProject("nessie-nessie-testcontainer"))
+  // Keycloak-admin-client depends on Resteasy.
+  // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
+  // cause non-existing jackson versions like 2.15.2-jakarta, which then lets the build fail.
+  intTestImplementation(platform(libs.resteasy.bom))
 
   intTestImplementation(
     nessieProject(
@@ -96,10 +106,6 @@ dependencies {
     nessieProject(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
   )
 
-  intTestImplementation(libs.testcontainers.keycloak) {
-    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
-  }
-
   intTestImplementation("org.projectnessie.nessie-runner:nessie-runner-common:0.30.6")
 
   add("nessieCatalogServer", nessieProject(":nessie-catalog-server", "quarkusRunner"))
@@ -123,7 +129,7 @@ fun ModuleDependency.hadoopExcludes() {
 forceJava11ForTestTask("intTest")
 
 tasks.withType<Test>().configureEach {
-  systemProperty("keycloak.docker.tag", libs.versions.keycloakContainerTag.get())
+  systemProperty("keycloak.docker.tag", libs.versions.keycloak.get())
 
   dependsOn(configurations.named("nessieCatalogServer"))
   jvmArgumentProviders.add(

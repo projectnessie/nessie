@@ -16,8 +16,8 @@
 package org.projectnessie.catalog.server.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
 import org.projectnessie.catalog.service.ee.javax.ContextObjectMapper;
 import org.projectnessie.catalog.service.util.Json;
 

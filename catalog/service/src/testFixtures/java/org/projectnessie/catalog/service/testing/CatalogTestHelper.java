@@ -43,6 +43,7 @@ import org.projectnessie.catalog.service.ee.javax.OAuthTokenRequestReader;
 import org.projectnessie.catalog.service.resources.IcebergV1ApiResource;
 import org.projectnessie.catalog.service.resources.IcebergV1ConfigResource;
 import org.projectnessie.catalog.service.resources.IcebergV1OAuthResource;
+import org.projectnessie.catalog.service.resources.javax.JavaxAbstraction;
 import org.projectnessie.catalog.service.resources.javax.NessieProxyResource;
 import org.projectnessie.catalog.service.spi.OAuthHandler;
 import org.projectnessie.catalog.service.spi.Warehouse;
@@ -108,6 +109,7 @@ public class CatalogTestHelper implements AutoCloseable {
             config.register(ContextObjectMapper.class);
 
             config.register(JavaxExceptionMapper.class);
+            config.register(JavaxAbstraction.class);
 
             config.register(IcebergV1ConfigResource.class);
             config.register(IcebergV1ApiResource.class);

@@ -16,14 +16,11 @@
 package org.projectnessie.catalog.service.resources.jakarta;
 
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
+import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
-import jakarta.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpResponse;
@@ -37,30 +34,6 @@ import org.slf4j.LoggerFactory;
 public class NessieProxyResource extends AbstractNessieProxyResource implements HttpProxy {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieProxyResource.class);
 
-  @Inject protected Request request;
-  @Inject protected HttpHeaders httpHeaders;
-  @Inject protected UriInfo uriInfo;
-
-  @Override
-  protected URI baseUri() {
-    return uriInfo.getBaseUri().resolve("api/");
-  }
-
-  @Override
-  protected URI requestUri() {
-    return uriInfo.getRequestUri();
-  }
-
-  @Override
-  protected String requestMethod() {
-    return request.getMethod();
-  }
-
-  @Override
-  protected String headerString(String header) {
-    return httpHeaders.getHeaderString(header);
-  }
-
   public Response doProxy(InputStream data) {
     try {
       HttpResponse<InputStream> httpResponse = proxyRequest(data);
@@ -72,9 +45,21 @@ public class NessieProxyResource extends AbstractNessieProxyResource implements 
     } catch (WebApplicationException e) {
       return e.getResponse();
     } catch (Exception e) {
-      LOGGER.error("Internal error during proxy of {} {}", requestMethod(), requestUri(), e);
+      LOGGER.error(
+          "Internal error during proxy of {} {}",
+          restAbstraction.requestMethod(),
+          restAbstraction.requestUri(),
+          e);
       return new ServerErrorException("Internal error", Response.Status.INTERNAL_SERVER_ERROR)
           .getResponse();
+    }
+  }
+
+  @Override
+  protected void validateRelativeUri(URI relativeUri) {
+    if (relativeUri.isAbsolute()) {
+      // Status message isn't always propagated into the result
+      throw new ClientErrorException(Response.Status.BAD_REQUEST);
     }
   }
 

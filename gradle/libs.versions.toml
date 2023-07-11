@@ -148,6 +148,7 @@ quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", 
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkus" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.0.1" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.3.1" }
+resteasy-bom = { module = "org.jboss.resteasy:resteasy-bom", version = "6.2.4.Final" }
 rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "8.3.2" }
 scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.18" }}
 scala-library-v213 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.13, 2.14[", prefer = "2.13.11"}}

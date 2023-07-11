@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.projectnessie.catalog.service.resources;
 
-plugins { id("nessie-conventions-iceberg") }
+import java.net.URI;
 
-extra["maven.name"] = "Nessie - Nessie testcontainer"
+public interface RestAbstraction {
+  URI baseUri();
 
-dependencies {
-  implementation(libs.slf4j.api)
-  implementation(platform(libs.testcontainers.bom))
-  implementation("org.testcontainers:testcontainers")
+  URI requestUri();
 
-  compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
+  String requestMethod();
 
-  compileOnly(libs.immutables.value.annotations)
-  compileOnly(libs.immutables.value.fixture)
-  annotationProcessor(libs.immutables.value.processor)
+  String headerString(String header);
 }
