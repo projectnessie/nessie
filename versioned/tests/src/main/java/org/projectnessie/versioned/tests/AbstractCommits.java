@@ -18,12 +18,15 @@ package org.projectnessie.versioned.tests;
 import static com.google.common.collect.Streams.stream;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
+import static org.projectnessie.versioned.tests.AbstractCommits.OperationOrder.DELETE_THEN_PUT;
+import static org.projectnessie.versioned.tests.AbstractCommits.OperationOrder.PUT_THEN_DELETE;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
@@ -824,22 +827,31 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
+  enum OperationOrder {
+    PUT_THEN_DELETE,
+    DELETE_THEN_PUT
+  }
+
   static Stream<Arguments> renames() {
     return Stream.of(
-        arguments(false, false),
-        arguments(false, true),
-        arguments(true, false),
-        arguments(true, true));
+        arguments(DELETE_THEN_PUT, false, false),
+        arguments(DELETE_THEN_PUT, false, true),
+        arguments(DELETE_THEN_PUT, true, false),
+        arguments(DELETE_THEN_PUT, true, true),
+        arguments(PUT_THEN_DELETE, false, false),
+        arguments(PUT_THEN_DELETE, false, true),
+        arguments(PUT_THEN_DELETE, true, false),
+        arguments(PUT_THEN_DELETE, true, true));
   }
 
   @ParameterizedTest
   @MethodSource("renames")
-  void renames(boolean reverse, boolean recreate) throws Exception {
+  void renames(OperationOrder order, boolean reuseContentKey, boolean reuseContentId)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
     Hash initialHash = store().create(branch, Optional.empty()).getHash();
 
     ContentKey original = ContentKey.of("original");
-    ContentKey renamed = ContentKey.of("renamed");
 
     Hash committed =
         store()
@@ -853,20 +865,46 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Content table = store().getValue(branch, original).content();
 
     Delete deleteOp = Delete.of(original);
+
+    ContentKey renamed = reuseContentKey ? original : ContentKey.of("renamed");
+
     Put putOp =
         Put.of(
             renamed,
-            recreate
-                ? IcebergTable.of("recreated", 1, 2, 3, 4)
-                : IcebergTable.of("renamed", 1, 2, 3, 4, table.getId()));
+            reuseContentId
+                ? IcebergTable.of("loc", 1, 2, 3, 4, table.getId())
+                : IcebergTable.of("loc", 1, 2, 3, 4));
 
-    List<Operation> ops = reverse ? Arrays.asList(putOp, deleteOp) : Arrays.asList(deleteOp, putOp);
+    List<Operation> ops =
+        order == PUT_THEN_DELETE ? Arrays.asList(putOp, deleteOp) : Arrays.asList(deleteOp, putOp);
 
-    store().commit(branch, Optional.of(committed), CommitMeta.fromMessage("Rename commit"), ops);
+    Throwable error =
+        catchThrowable(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.of(committed),
+                        CommitMeta.fromMessage("Rename commit"),
+                        ops));
 
-    soft.assertThat(store().getValues(branch, Arrays.asList(original, renamed)))
-        .containsKey(renamed)
-        .doesNotContainKey(original);
+    if (reuseContentKey) {
+      if (order == DELETE_THEN_PUT && !reuseContentId && isNewStorageModel()) {
+        // re-add (DELETE + PUT with same key but without id) allowed with new storage
+        soft.assertThat(error).isNull();
+      } else {
+        soft.assertThat(error)
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Duplicate key");
+      }
+      soft.assertThat(store().getValues(branch, Collections.singletonList(original)))
+          .containsKey(original);
+    } else {
+      soft.assertThat(error).isNull();
+      soft.assertThat(store().getValues(branch, Arrays.asList(original, renamed)))
+          .containsKey(renamed)
+          .doesNotContainKey(original);
+    }
   }
 
   @Test
@@ -913,16 +951,28 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             (k, c) -> {});
   }
 
-  @Test
-  void duplicateKeys() {
-    BranchName branch = BranchName.of("main");
-
+  static Stream<Arguments> duplicateKeys() {
     ContentKey key = ContentKey.of("my.awesome.table");
     String tableRefState = "table ref state";
-
     Content createValue1 = newOnRef("no no - not this");
     Content createValue2 = newOnRef(tableRefState);
+    return Stream.of(
+        Arguments.of(Put.of(key, createValue1), Put.of(key, createValue2)),
+        Arguments.of(Put.of(key, createValue2), Delete.of(key)), // PUT-DELETE is not re-add!
+        Arguments.of(Put.of(key, createValue2), Unchanged.of(key)),
+        // Arguments.of(Delete.of(key), Put.of(key, createValue2)), // re-add => allowed
+        Arguments.of(Delete.of(key), Delete.of(key)),
+        Arguments.of(Delete.of(key), Unchanged.of(key)),
+        Arguments.of(Unchanged.of(key), Put.of(key, createValue2)),
+        Arguments.of(Unchanged.of(key), Delete.of(key)),
+        Arguments.of(Unchanged.of(key), Unchanged.of(key)));
+  }
 
+  @ParameterizedTest
+  @MethodSource("duplicateKeys")
+  void duplicateKeys(Operation operation1, Operation operation2) {
+    BranchName branch = BranchName.of("main");
+    ContentKey key = ContentKey.of("my.awesome.table");
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -930,40 +980,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                         branch,
                         Optional.empty(),
                         CommitMeta.fromMessage("initial"),
-                        Arrays.asList(Put.of(key, createValue1), Put.of(key, createValue2))))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(key.toString());
-
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("initial"),
-                        Arrays.asList(Unchanged.of(key), Put.of(key, createValue2))))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(key.toString());
-
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("initial"),
-                        Arrays.asList(Delete.of(key), Put.of(key, createValue2))))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(key.toString());
-
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("initial"),
-                        Arrays.asList(Delete.of(key), Unchanged.of(key))))
+                        Arrays.asList(operation1, operation2)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
   }
