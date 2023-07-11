@@ -131,13 +131,15 @@ public class ITNessieCatalogServerSparkSQL extends AbstractNessieSparkSqlExtensi
 
   @AfterAll
   static void stopNessieCatalog() {
-    nessieCatalogProcess.stop();
+    if (nessieCatalogProcess.isAlive()) {
+      nessieCatalogProcess.stop();
+    }
   }
 
   @AfterAll
   static void stopNessieCore() {
     try {
-      if (nessieCoreContainer != null) {
+      if (nessieCoreContainer != null && nessieCoreContainer.isRunning()) {
         nessieCoreContainer.stop();
       }
     } finally {

@@ -57,4 +57,8 @@ dependencies {
 
   implementation(libs.testcontainers.keycloak)
   implementation(libs.keycloak.admin.client)
+  // Keycloak-admin-client depends on Resteasy.
+  // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
+  // cause non-existing jackson versions like 2.15.2-jakarta, which then lets the build fail.
+  implementation(platform(libs.resteasy.bom))
 }

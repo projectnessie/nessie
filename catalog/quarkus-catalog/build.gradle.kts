@@ -101,8 +101,18 @@ dependencies {
   testFixturesImplementation(platform(libs.junit.bom))
   testFixturesImplementation(libs.bundles.junit.testing)
 
-  intTestImplementation(nessieProject(":nessie-keycloak-testcontainer"))
+  intTestImplementation(nessieProject(":nessie-keycloak-testcontainer")) {
+    exclude(
+      group = "org.keycloak",
+      module = "keycloak-admin-client"
+    ) // Quarkus 3 / Jakarta EE required
+  }
+  intTestImplementation(libs.keycloak.admin.client.jakarta)
   intTestImplementation(nessieProject(":nessie-nessie-testcontainer"))
+  // Keycloak-admin-client depends on Resteasy.
+  // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
+  // cause non-existing jackson versions like 2.15.2-jakarta, which then lets the build fail.
+  intTestImplementation(platform(libs.resteasy.bom))
 }
 
 val packageType = quarkusPackageType()

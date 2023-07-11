@@ -22,7 +22,7 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import javax.enterprise.inject.Vetoed;
+import jakarta.enterprise.inject.Vetoed;
 import org.apache.iceberg.rest.responses.OAuthTokenResponse;
 import org.projectnessie.catalog.api.errors.OAuthTokenEndpointException;
 import org.projectnessie.catalog.api.model.OAuthTokenRequest;

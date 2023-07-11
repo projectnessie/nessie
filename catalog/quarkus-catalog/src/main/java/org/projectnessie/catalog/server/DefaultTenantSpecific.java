@@ -15,9 +15,9 @@
  */
 package org.projectnessie.catalog.server;
 
+import jakarta.enterprise.inject.Vetoed;
 import java.net.URI;
 import java.util.Map;
-import javax.enterprise.inject.Vetoed;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.service.spi.OAuthHandler;
 import org.projectnessie.catalog.service.spi.TenantSpecific;

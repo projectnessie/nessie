@@ -118,6 +118,10 @@ dependencies {
   intTestRuntimeOnly("org.testcontainers:mongodb")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
   intTestRuntimeOnly(project(":nessie-nessie-testcontainer"))
+  // Keycloak-admin-client depends on Resteasy.
+  // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
+  // cause non-existing jackson versions like 2.15.2-jakarta, which then lets the build fail.
+  intTestImplementation(platform(libs.resteasy.bom))
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)
