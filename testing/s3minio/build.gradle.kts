@@ -21,7 +21,8 @@ extra["maven.name"] = "Nessie - Minio testcontainer"
 description = "JUnit extension providing a Minio instance."
 
 dependencies {
-  implementation(libs.testcontainers.testcontainers)
+  implementation(platform(libs.testcontainers.bom))
+  implementation("org.testcontainers:testcontainers")
 
   implementation(platform(libs.awssdk.bom))
   implementation("software.amazon.awssdk:s3")

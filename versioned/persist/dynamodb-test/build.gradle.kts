@@ -33,6 +33,7 @@ dependencies {
     exclude("software.amazon.awssdk", "apache-client")
   }
 
-  implementation(libs.testcontainers.testcontainers)
+  implementation(platform(libs.testcontainers.bom))
+  implementation("org.testcontainers:testcontainers")
   implementation(libs.docker.java.api)
 }

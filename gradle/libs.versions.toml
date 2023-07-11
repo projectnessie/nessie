@@ -27,7 +27,6 @@ picocli = "4.7.4"
 protobuf = "3.23.4"
 quarkus = "3.2.0.Final"
 slf4j = "1.7.36"
-testcontainers = "1.18.3"
 undertow = "2.2.24.Final"
 
 # Docker image tags
@@ -159,13 +158,8 @@ spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { s
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.2"}}
 spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.4, 3.5[", prefer = "3.4.0"}}
 spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.5[", prefer = "3.4.0"}}
-testcontainers-cassandra = { module = "org.testcontainers:cassandra", version.ref = "testcontainers" }
-testcontainers-cockroachdb = { module = "org.testcontainers:cockroachdb", version.ref = "testcontainers" }
-testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.18.3" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "2.5.0" }
-testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.7.2" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
