@@ -95,6 +95,14 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
     return MongoClientProducer.builder().connectionString(connectionString).build().createClient();
   }
 
+  public String getDatabaseName() {
+    return MONGO_DB_NAME;
+  }
+
+  public String getConnectionString() {
+    return connectionString;
+  }
+
   @Override
   public void start() {
     startMongo(Optional.empty());

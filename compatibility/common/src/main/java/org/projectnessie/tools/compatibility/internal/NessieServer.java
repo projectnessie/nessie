@@ -22,13 +22,13 @@ import static org.projectnessie.tools.compatibility.internal.Util.extensionStore
 import java.net.URI;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.Version;
 
 interface NessieServer extends CloseableResource {
-  String STORE_TYPE_PROPERTY = "nessie.test.store.kind";
 
   static NessieServer nessieServerExisting(ExtensionContext context, ServerKey serverKey) {
     return Objects.requireNonNull(
@@ -37,11 +37,14 @@ interface NessieServer extends CloseableResource {
   }
 
   static NessieServer nessieServer(
-      ExtensionContext context, ServerKey serverKey, BooleanSupplier initRepo) {
+      ExtensionContext context,
+      ServerKey serverKey,
+      BooleanSupplier initRepo,
+      Consumer<Object> backendConfigConsumer) {
     if (Version.CURRENT.equals(serverKey.getVersion())) {
-      return currentNessieServer(context, serverKey, initRepo);
+      return currentNessieServer(context, serverKey, initRepo, backendConfigConsumer);
     } else {
-      return oldNessieServer(context, serverKey, initRepo);
+      return oldNessieServer(context, serverKey, initRepo, backendConfigConsumer);
     }
   }
 

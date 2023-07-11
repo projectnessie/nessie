@@ -15,24 +15,25 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static org.projectnessie.tools.compatibility.internal.Configurations.backendConfigBuilderApply;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.throwUnchecked;
-import static org.projectnessie.tools.compatibility.jersey.Backends.createBackend;
-import static org.projectnessie.tools.compatibility.jersey.Backends.createPersist;
-import static org.projectnessie.tools.compatibility.jersey.DatabaseAdapters.createDatabaseAdapter;
-import static org.projectnessie.tools.compatibility.jersey.DatabaseAdapters.createDatabaseConnectionProvider;
 import static org.projectnessie.tools.compatibility.jersey.ServerConfigExtension.SERVER_CONFIG;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.jersey.JerseyServer;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.logic.Logics;
 import org.projectnessie.versioned.storage.common.persist.Backend;
+import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistFactory;
+import org.projectnessie.versioned.storage.common.persist.PersistLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,18 +44,18 @@ final class CurrentNessieServer implements NessieServer {
   private final JerseyServer jersey;
   private final BooleanSupplier initializeRepository;
 
-  private DatabaseAdapter databaseAdapter;
   private Persist persist;
   private AutoCloseable connectionProvider;
 
   static CurrentNessieServer currentNessieServer(
       ExtensionContext extensionContext,
       ServerKey serverKey,
-      BooleanSupplier initializeRepository) {
+      BooleanSupplier initializeRepository,
+      Consumer<Object> backendConfigConsumer) {
     return extensionStore(extensionContext)
         .getOrComputeIfAbsent(
             serverKey,
-            k -> new CurrentNessieServer(serverKey, initializeRepository),
+            k -> new CurrentNessieServer(serverKey, initializeRepository, backendConfigConsumer),
             CurrentNessieServer.class);
   }
 
@@ -77,23 +78,14 @@ final class CurrentNessieServer implements NessieServer {
     }
   }
 
-  private CurrentNessieServer(ServerKey serverKey, BooleanSupplier initializeRepository) {
+  private CurrentNessieServer(
+      ServerKey serverKey,
+      BooleanSupplier initializeRepository,
+      Consumer<Object> backendConfigConsumer) {
     try {
       this.serverKey = serverKey;
       this.initializeRepository = initializeRepository;
-      switch (serverKey.getStorageKind()) {
-        case DATABASE_ADAPTER:
-          this.jersey = new JerseyServer(this::getOrCreateDatabaseAdapter, null);
-          break;
-
-        case PERSIST:
-          this.jersey = new JerseyServer(null, this::getOrCreatePersist);
-          break;
-
-        default:
-          throw new IllegalStateException(
-              "Unsupported storage kind: " + serverKey.getStorageKind());
-      }
+      this.jersey = new JerseyServer(() -> getOrCreatePersist(backendConfigConsumer));
 
       LOGGER.info("Nessie Server started at {}", jersey.getUri());
     } catch (Exception e) {
@@ -101,32 +93,58 @@ final class CurrentNessieServer implements NessieServer {
     }
   }
 
-  private synchronized DatabaseAdapter getOrCreateDatabaseAdapter() {
-    if (this.databaseAdapter == null) {
-      LOGGER.info("Creating connection provider for current Nessie version");
-      DatabaseConnectionProvider<DatabaseConnectionConfig> dbConnectionProvider =
-          createDatabaseConnectionProvider(serverKey.getStorageName(), serverKey.getConfig());
-      this.connectionProvider = dbConnectionProvider;
-      this.databaseAdapter =
-          createDatabaseAdapter(
-              serverKey.getStorageName(), dbConnectionProvider, serverKey.getConfig());
-
-      if (initializeRepository.getAsBoolean()) {
-        databaseAdapter.eraseRepo();
-        databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
-      }
-    }
-    return this.databaseAdapter;
-  }
-
-  private synchronized Persist getOrCreatePersist() {
+  private synchronized Persist getOrCreatePersist(Consumer<Object> backendConfigConsumer) {
     if (persist == null) {
       LOGGER.info("Creating Persist current Nessie version");
-      Backend backend = createBackend(serverKey.getStorageName());
+      Backend backend =
+          createBackend(serverKey.getStorageName(), serverKey.getConfig(), backendConfigConsumer);
       connectionProvider = backend;
 
       persist = createPersist(backend, initializeRepository.getAsBoolean(), serverKey.getConfig());
     }
     return persist;
+  }
+
+  private static Persist createPersist(
+      Backend backend, boolean initializeRepository, Map<String, String> configuration) {
+    PersistFactory persistFactory = backend.createFactory();
+    StoreConfig.Adjustable storeConfig = StoreConfig.Adjustable.empty();
+    storeConfig = storeConfig.fromFunction(p -> configuration.get("nessie.store." + p));
+    Persist persist = persistFactory.newPersist(storeConfig);
+
+    if (initializeRepository) {
+      persist.erase();
+      Logics.repositoryLogic(persist).initialize(SERVER_CONFIG.getDefaultBranch());
+    }
+
+    return persist;
+  }
+
+  /**
+   * Need to build the backend configuration and the backend here, because the originally intended
+   * way to use {@code BackendFactory.newConfigInstance()} does not work: for example {@code
+   * RocksDBBackendConfig} requires the {@code databasePath} attribute, but there is no way to
+   * create a database-config instance using supplied configuration properties.
+   */
+  @SuppressWarnings("unchecked")
+  private static <CONFIG> Backend createBackend(
+      String backendName, Map<String, String> config, Consumer<Object> backendConfigConsumer) {
+    BackendFactory<CONFIG> factory = PersistLoader.findFactoryByName(backendName);
+    CONFIG backendConfig;
+    try {
+      Object backendConfigBuilder =
+          Class.forName(factory.getClass().getName().replace("BackendFactory", "BackendConfig"))
+              .getDeclaredMethod("builder")
+              .invoke(null);
+      backendConfigBuilderApply(backendConfigBuilder.getClass(), backendConfigBuilder, config::get);
+      backendConfigConsumer.accept(backendConfigBuilder);
+      backendConfig =
+          (CONFIG) backendConfigBuilder.getClass().getMethod("build").invoke(backendConfigBuilder);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    Backend backend = factory.buildBackend(backendConfig);
+    backend.setupSchema();
+    return backend;
   }
 }

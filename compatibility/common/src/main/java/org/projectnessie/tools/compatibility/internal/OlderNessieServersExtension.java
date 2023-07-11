@@ -58,7 +58,7 @@ public class OlderNessieServersExtension extends AbstractMultiVersionExtension {
     ServerKey serverKey =
         ServerKey.forContext(context, version, "In-Memory", Collections.emptyMap());
     NessieServer nessieServer =
-        nessieServer(classContext(context), serverKey, initializeRepository);
+        nessieServer(classContext(context), serverKey, initializeRepository, c -> {});
 
     Function<Field, Object> fieldValue =
         field ->

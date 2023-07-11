@@ -65,6 +65,6 @@ public class OlderNessieClientsExtension extends AbstractMultiVersionExtension {
                 classContext(context),
                 field,
                 version,
-                ctx -> nessieServer(ctx, serverKey, initializeRepository)));
+                ctx -> nessieServer(ctx, serverKey, initializeRepository, c -> {})));
   }
 }

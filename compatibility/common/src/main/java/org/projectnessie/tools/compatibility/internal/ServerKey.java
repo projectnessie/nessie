@@ -28,18 +28,13 @@ import org.projectnessie.tools.compatibility.api.Version;
 
 /** Value object representing the version, type and configuration of a {@link NessieApi}. */
 final class ServerKey {
-  public static final String STORAGE_KIND_PROPERTY = "nessie.test.storage.kind";
-
   private final Version version;
   private final String storageName;
-  private final StorageKind storageKind;
   private final Map<String, String> config;
 
-  ServerKey(
-      Version version, String storageName, StorageKind storageKind, Map<String, String> config) {
+  ServerKey(Version version, String storageName, Map<String, String> config) {
     this.version = Objects.requireNonNull(version);
     this.storageName = Objects.requireNonNull(storageName);
-    this.storageKind = Objects.requireNonNull(storageKind);
     this.config = Objects.requireNonNull(config);
   }
 
@@ -58,13 +53,7 @@ final class ServerKey {
                         findRepeatableAnnotations(instance, NessieServerProperty.class)
                             .forEach(prop -> config.put(prop.name(), prop.value()))));
 
-    String storeKindStr = config.get(STORAGE_KIND_PROPERTY);
-    StorageKind kind = StorageKind.DATABASE_ADAPTER;
-    if (storeKindStr != null) {
-      kind = StorageKind.valueOf(storeKindStr);
-    }
-
-    return new ServerKey(version, storageName, kind, config);
+    return new ServerKey(version, storageName, config);
   }
 
   Version getVersion() {
@@ -73,10 +62,6 @@ final class ServerKey {
 
   String getStorageName() {
     return storageName;
-  }
-
-  public StorageKind getStorageKind() {
-    return storageKind;
   }
 
   Map<String, String> getConfig() {
@@ -94,29 +79,22 @@ final class ServerKey {
     ServerKey serverKey = (ServerKey) o;
     return Objects.equals(version, serverKey.version)
         && Objects.equals(storageName, serverKey.storageName)
-        && Objects.equals(storageKind, serverKey.storageKind)
         && Objects.equals(config, serverKey.config);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(version, storageName, storageKind, config);
+    return Objects.hash(version, storageName, config);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "server-%s-%s-%s-%s",
+        "server-%s-%s-%s",
         getVersion(),
         storageName,
-        storageKind,
         config.entrySet().stream()
             .map(e -> e.getKey() + '=' + e.getValue())
             .collect(Collectors.joining("_")));
-  }
-
-  public enum StorageKind {
-    DATABASE_ADAPTER,
-    PERSIST,
   }
 }

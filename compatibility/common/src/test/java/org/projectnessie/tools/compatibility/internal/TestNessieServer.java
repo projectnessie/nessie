@@ -18,7 +18,6 @@ package org.projectnessie.tools.compatibility.internal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.tools.compatibility.internal.ServerKey.StorageKind.DATABASE_ADAPTER;
 
 import java.util.Collections;
 import org.assertj.core.api.SoftAssertions;
@@ -50,15 +49,14 @@ class TestNessieServer {
       ExtensionContext ctx = mock(ExtensionContext.class);
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
 
-      ServerKey key =
-          new ServerKey(Version.CURRENT, "In-Memory", DATABASE_ADAPTER, Collections.emptyMap());
+      ServerKey key = new ServerKey(Version.CURRENT, "In-Memory", Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
       soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
           .isInstanceOf(NullPointerException.class)
           .hasMessageStartingWith("No Nessie server for ");
 
-      server = NessieServer.nessieServer(ctx, key, () -> true);
+      server = NessieServer.nessieServer(ctx, key, () -> true, c -> {});
       soft.assertThat(server)
           .isInstanceOf(CurrentNessieServer.class)
           .extracting(s -> s.getUri(NessieApiV1.class))
@@ -76,7 +74,7 @@ class TestNessieServer {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"0.42.0"})
+  @ValueSource(strings = {"0.55.0"})
   void oldNessieVersionServer(String nessieVersion) {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
     NessieServer server;
@@ -91,18 +89,14 @@ class TestNessieServer {
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
 
       ServerKey key =
-          new ServerKey(
-              Version.parseVersion(nessieVersion),
-              "In-Memory",
-              DATABASE_ADAPTER,
-              Collections.emptyMap());
+          new ServerKey(Version.parseVersion(nessieVersion), "In-Memory", Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
       soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
           .isInstanceOf(NullPointerException.class)
           .hasMessageStartingWith("No Nessie server for ");
 
-      server = NessieServer.nessieServer(ctx, key, () -> true);
+      server = NessieServer.nessieServer(ctx, key, () -> true, c -> {});
       soft.assertThat(server)
           .isInstanceOf(OldNessieServer.class)
           .extracting(s -> s.getUri(NessieApiV1.class))

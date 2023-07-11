@@ -18,7 +18,6 @@ package org.projectnessie.tools.compatibility.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,12 +45,10 @@ import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.RollingUpgradesExtension;
 
 @ExtendWith(RollingUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@VersionCondition(minVersion = "0.40.0")
 public class ITRollingUpgrades {
 
   public static final String NO_ANCESTOR =
@@ -145,8 +142,7 @@ public class ITRollingUpgrades {
             tlr.nextLong(),
             tlr.nextInt(1234),
             tlr.nextInt(1234),
-            tlr.nextInt(1234),
-            "cid-" + version);
+            tlr.nextInt(1234));
 
     Branch branch = api.getDefaultBranch();
 
@@ -173,8 +169,7 @@ public class ITRollingUpgrades {
             tlr.nextLong(),
             tlr.nextInt(1234),
             tlr.nextInt(1234),
-            tlr.nextInt(1234),
-            "cidCurrent-" + version);
+            tlr.nextInt(1234));
 
     apiCurrent
         .commitMultipleOperations()
@@ -196,7 +191,10 @@ public class ITRollingUpgrades {
   void verifyContentInOld(ContentKey key, IcebergTable table) throws Exception {
     Map<ContentKey, Content> contents = api.getContent().key(key).refName("main").get();
 
-    assertThat(contents).containsExactly(Maps.immutableEntry(key, table));
+    assertThat(contents)
+        .extractingByKey(key)
+        .extracting(AbstractCompatibilityTests::withoutContentId)
+        .isEqualTo(table);
   }
 
   @ParameterizedTest
@@ -205,6 +203,9 @@ public class ITRollingUpgrades {
   void verifyContentInNew(ContentKey key, IcebergTable table) throws Exception {
     Map<ContentKey, Content> contents = apiCurrent.getContent().key(key).refName("main").get();
 
-    assertThat(contents).containsExactly(Maps.immutableEntry(key, table));
+    assertThat(contents)
+        .extractingByKey(key)
+        .extracting(AbstractCompatibilityTests::withoutContentId)
+        .isEqualTo(table);
   }
 }

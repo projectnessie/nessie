@@ -62,7 +62,7 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
     ServerKey serverKey = buildServerKey(version, context);
 
     NessieServer nessieServer =
-        nessieServer(context, serverKey, initializeRepositorySupplier(context, serverKey));
+        nessieServer(context, serverKey, initializeRepositorySupplier(context, serverKey), c -> {});
 
     populateFields(context, null, version, ctx -> nessieServer);
   }
@@ -91,7 +91,8 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
 
     // Eagerly create the Nessie server instance
     Map<String, String> configuration =
-        Collections.singletonMap("nessie.store.db.path", tempDir.resolve("persist").toString());
+        Collections.singletonMap(
+            "nessie.store.database.path", tempDir.resolve("persist").toString());
 
     return ServerKey.forContext(context, version, "RocksDB", configuration);
   }

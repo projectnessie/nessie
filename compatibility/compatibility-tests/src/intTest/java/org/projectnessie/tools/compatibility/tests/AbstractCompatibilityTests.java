@@ -15,22 +15,23 @@
  */
 package org.projectnessie.tools.compatibility.tests;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.projectnessie.tools.compatibility.api.Version.MERGE_KEY_BEHAVIOR_FIX;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import java.util.Collections;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
-import java.util.function.Function;
 import java.util.stream.Stream;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.client.builder.StreamingUtil;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
@@ -52,6 +53,7 @@ import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
 public abstract class AbstractCompatibilityTests {
@@ -60,7 +62,7 @@ public abstract class AbstractCompatibilityTests {
   @NessieAPI protected NessieApiV2 apiV2;
   @NessieVersion Version version;
 
-  abstract Version getClientVersion();
+  protected abstract Version serverVersion();
 
   Branch createMissingNamespaces(Branch branch, ContentKey namespaceKey)
       throws NessieNotFoundException {
@@ -77,31 +79,12 @@ public abstract class AbstractCompatibilityTests {
     return (Branch) api.getReference().refName(branch.getName()).get();
   }
 
-  @SuppressWarnings("deprecation")
-  Stream<Reference> allReferences() throws NessieNotFoundException {
-    if (getClientVersion().isGreaterThanOrEqual(Version.CLIENT_RESULTS_NATIVE_STREAM)) {
-      return api.getAllReferences().stream();
-    } else {
-      return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
-    }
-  }
-
-  @SuppressWarnings("deprecation")
-  Stream<LogEntry> commitLog(Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
-      throws NessieNotFoundException {
-    if (getClientVersion().isGreaterThanOrEqual(Version.CLIENT_RESULTS_NATIVE_STREAM)) {
-      return configurer.apply(api.getCommitLog()).stream();
-    } else {
-      return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
-    }
-  }
-
   @Test
   void getDefaultBranch() throws Exception {
     Branch defaultBranch = api.getDefaultBranch();
     assertThat(defaultBranch).extracting(Branch::getName).isEqualTo("main");
 
-    assertThat(allReferences()).contains(defaultBranch);
+    assertThat(api.getAllReferences().stream()).contains(defaultBranch);
   }
 
   @Test
@@ -130,7 +113,7 @@ public abstract class AbstractCompatibilityTests {
     assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
     assertThat(config.getMaxSupportedApiVersion()).isBetween(1, 2);
     assertThat(config.getActualApiVersion()).isBetween(0, 2);
-    assertThat(config.getSpecVersion()).isIn(null, "2.0-beta.1", "2.0.0-beta.1");
+    assertThat(config.getSpecVersion()).isIn(null, "2.0-beta.1", "2.0.0-beta.1", "2.0.0");
   }
 
   @Test
@@ -144,7 +127,7 @@ public abstract class AbstractCompatibilityTests {
 
     ContentKey key = ContentKey.of("my", "tables", "table_name");
     branch = createMissingNamespaces(branch, key.getParent());
-    IcebergTable content = IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id");
+    IcebergTable content = IcebergTable.of("metadata-location", 42L, 43, 44, 45);
     String commitMessage = "hello world";
     Put operation = Put.of(key, content);
     Branch branchNew =
@@ -159,7 +142,7 @@ public abstract class AbstractCompatibilityTests {
         .extracting(Branch::getName)
         .isEqualTo(branchName);
 
-    Stream<LogEntry> commitLog = commitLog(b -> b.refName(branchName));
+    Stream<LogEntry> commitLog = api.getCommitLog().refName(branchName).stream();
     assertThat(commitLog)
         .filteredOn(e -> !e.getCommitMeta().getMessage().startsWith("create namespace "))
         .hasSize(1)
@@ -168,7 +151,19 @@ public abstract class AbstractCompatibilityTests {
         .containsExactly(commitMessage);
 
     assertThat(api.getContent().refName(branch.getName()).key(key).get())
-        .containsEntry(key, content);
+        .extracting(m -> m.get(key))
+        .isNotNull()
+        .extracting(AbstractCompatibilityTests::withoutContentId)
+        .isEqualTo(content);
+  }
+
+  static Content withoutContentId(Content c) {
+    try {
+      return (Content)
+          c.getClass().getMethod("withId", String.class).invoke(c, new Object[] {null});
+    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Test
@@ -207,7 +202,6 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @Test
-  @VersionCondition(minVersion = "0.27.0")
   public void namespaceWithProperties() throws NessieNotFoundException, NessieConflictException {
     Branch defaultBranch = api.getDefaultBranch();
     Branch branch = Branch.of("namespaceWithProperties", defaultBranch.getHash());
@@ -253,8 +247,7 @@ public abstract class AbstractCompatibilityTests {
 
     src = createMissingNamespaces(src, key.getParent());
 
-    IcebergTable content =
-        IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-transplant");
+    IcebergTable content = IcebergTable.of("metadata-location", 42L, 43, 44, 45);
     String commitMessage = "hello world";
     Put operation = Put.of(key, content);
     Branch committed =
@@ -269,20 +262,23 @@ public abstract class AbstractCompatibilityTests {
     MergeResponse response =
         api.transplantCommitsIntoBranch()
             .fromRefName(src.getName())
-            .hashesToTransplant(Collections.singletonList(committed.getHash()))
+            .hashesToTransplant(singletonList(committed.getHash()))
             .branch(dest)
             .transplant();
 
-    if (nessieWithMergeResponse()) {
-      assertThat(response).isNotNull();
-    } else {
-      assertThat(response).isNull();
-    }
+    assertThat(response).isNotNull();
   }
 
   @Test
   public void merge() throws NessieNotFoundException, NessieConflictException {
     Branch defaultBranch = api.getDefaultBranch();
+    defaultBranch =
+        api.commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage("common ancestor"))
+            .operation(
+                Put.of(ContentKey.of("something-common"), IcebergTable.of("common", 1, 2, 3, 4)))
+            .branch(defaultBranch)
+            .commit();
     Branch src = Branch.of("merge-src", defaultBranch.getHash());
     Branch dest = Branch.of("merge-dest", defaultBranch.getHash());
 
@@ -293,8 +289,7 @@ public abstract class AbstractCompatibilityTests {
 
     src = createMissingNamespaces(src, key.getParent());
 
-    IcebergTable content =
-        IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-merge");
+    IcebergTable content = IcebergTable.of("metadata-location", 42L, 43, 44, 45);
     String commitMessage = "hello world";
     Put operation = Put.of(key, content);
     Branch committed =
@@ -306,19 +301,21 @@ public abstract class AbstractCompatibilityTests {
 
     MergeResponse response = api.mergeRefIntoBranch().fromRef(committed).branch(dest).merge();
 
-    if (nessieWithMergeResponse()) {
-      assertThat(response).isNotNull();
-    } else {
-      assertThat(response).isNull();
-    }
+    assertThat(response).isNotNull();
   }
 
-  boolean nessieWithMergeResponse() {
-    return version.isGreaterThan(Version.HAS_MERGE_RESPONSE);
-  }
-
+  @Test
   public void mergeBehavior() throws BaseNessieClientServerException {
     Branch defaultBranch = api.getDefaultBranch();
+    ContentKey common = ContentKey.of("something-common");
+    if (ObjId.EMPTY_OBJ_ID.toString().equals(defaultBranch.getHash())) {
+      defaultBranch =
+          api.commitMultipleOperations()
+              .commitMeta(CommitMeta.fromMessage("common ancestor"))
+              .operation(Put.of(common, IcebergTable.of("common", 1, 2, 3, 4)))
+              .branch(defaultBranch)
+              .commit();
+    }
     Branch src = Branch.of("merge-behavior-src", defaultBranch.getHash());
     Branch dest = Branch.of("merge-behavior-dest", defaultBranch.getHash());
 
@@ -344,24 +341,30 @@ public abstract class AbstractCompatibilityTests {
             .mergeMode(key2, MergeBehavior.NORMAL)
             .merge();
 
-    if (nessieWithMergeResponse()) {
-      assertThat(response).isNotNull();
-      assertThat(response.getDetails())
-          .extracting(
-              MergeResponse.ContentKeyDetails::getKey,
-              MergeResponse.ContentKeyDetails::getMergeBehavior,
-              MergeResponse.ContentKeyDetails::getConflictType)
-          .containsExactlyInAnyOrder(
-              tuple(key1, MergeBehavior.DROP, MergeResponse.ContentKeyConflict.NONE),
-              tuple(key2, MergeBehavior.NORMAL, MergeResponse.ContentKeyConflict.NONE));
-    } else {
-      assertThat(response).isNull();
-    }
+    assertThat(response).isNotNull();
+    boolean hasNoMergeKeyBehaviorFix = MERGE_KEY_BEHAVIOR_FIX.isGreaterThan(serverVersion());
+    List<Tuple> expectedDetails =
+        hasNoMergeKeyBehaviorFix
+            ? asList(tuple(key1, MergeBehavior.DROP, null), tuple(key2, MergeBehavior.NORMAL, null))
+            : asList(
+                tuple(common, MergeBehavior.DROP, null),
+                tuple(key1, MergeBehavior.DROP, null),
+                tuple(key2, MergeBehavior.NORMAL, null));
+    assertThat(response.getDetails())
+        .extracting(
+            MergeResponse.ContentKeyDetails::getKey,
+            MergeResponse.ContentKeyDetails::getMergeBehavior,
+            MergeResponse.ContentKeyDetails::getConflict)
+        .containsExactlyInAnyOrderElementsOf(expectedDetails);
 
     Map<ContentKey, Content> contents =
         api.getContent().key(key1).key(key2).refName(dest.getName()).get();
+    Iterable<Tuple> expectedContents =
+        hasNoMergeKeyBehaviorFix
+            ? asList(tuple(key1, "loc1"), tuple(key2, "loc2"))
+            : singletonList(tuple(key2, "loc2"));
     assertThat(contents.entrySet())
         .extracting(Map.Entry::getKey, e -> ((IcebergTable) e.getValue()).getMetadataLocation())
-        .containsExactly(tuple(key2, "loc2"));
+        .containsExactlyInAnyOrderElementsOf(expectedContents);
   }
 }

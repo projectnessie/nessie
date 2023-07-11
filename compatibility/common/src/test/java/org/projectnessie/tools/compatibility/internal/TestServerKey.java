@@ -17,8 +17,6 @@ package org.projectnessie.tools.compatibility.internal;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
-import static org.projectnessie.tools.compatibility.internal.ServerKey.StorageKind.DATABASE_ADAPTER;
-import static org.projectnessie.tools.compatibility.internal.ServerKey.StorageKind.PERSIST;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.util.function.Supplier;
@@ -35,31 +33,24 @@ class TestServerKey {
 
   @Test
   void nulls() {
-    soft.assertThatThrownBy(() -> new ServerKey(null, "abc", DATABASE_ADAPTER, emptyMap()))
+    soft.assertThatThrownBy(() -> new ServerKey(null, "abc", emptyMap()))
         .isInstanceOf(NullPointerException.class);
-    soft.assertThatThrownBy(
-            () -> new ServerKey(Version.CURRENT, null, DATABASE_ADAPTER, emptyMap()))
+    soft.assertThatThrownBy(() -> new ServerKey(Version.CURRENT, null, emptyMap()))
         .isInstanceOf(NullPointerException.class);
-    soft.assertThatThrownBy(() -> new ServerKey(Version.CURRENT, "abc", null, emptyMap()))
-        .isInstanceOf(NullPointerException.class);
-    soft.assertThatThrownBy(() -> new ServerKey(Version.CURRENT, "abc", DATABASE_ADAPTER, null))
+    soft.assertThatThrownBy(() -> new ServerKey(Version.CURRENT, "abc", null))
         .isInstanceOf(NullPointerException.class);
   }
 
   @Test
   void equalsHash() {
     Supplier<ServerKey> factory =
-        () -> new ServerKey(Version.CURRENT, "foo", DATABASE_ADAPTER, singletonMap("key", "value"));
+        () -> new ServerKey(Version.CURRENT, "foo", singletonMap("key", "value"));
 
     soft.assertThat(factory.get())
         .isEqualTo(factory.get())
-        .isNotEqualTo(new ServerKey(Version.CURRENT, "foo", DATABASE_ADAPTER, emptyMap()))
-        .isNotEqualTo(
-            new ServerKey(Version.CURRENT, "bar", DATABASE_ADAPTER, singletonMap("key", "value")))
-        .isNotEqualTo(new ServerKey(Version.CURRENT, "foo", PERSIST, singletonMap("key", "value")))
-        .isNotEqualTo(
-            new ServerKey(
-                Version.NOT_CURRENT, "foo", DATABASE_ADAPTER, singletonMap("key", "value")))
+        .isNotEqualTo(new ServerKey(Version.CURRENT, "foo", emptyMap()))
+        .isNotEqualTo(new ServerKey(Version.CURRENT, "bar", singletonMap("key", "value")))
+        .isNotEqualTo(new ServerKey(Version.NOT_CURRENT, "foo", singletonMap("key", "value")))
         .isNotEqualTo("meep");
   }
 
@@ -67,10 +58,7 @@ class TestServerKey {
   void properties() {
     soft.assertThat(
             new ServerKey(
-                Version.CURRENT,
-                "foo",
-                DATABASE_ADAPTER,
-                ImmutableSortedMap.of("key", "value", "foo", "bar")))
+                Version.CURRENT, "foo", ImmutableSortedMap.of("key", "value", "foo", "bar")))
         .extracting(
             ServerKey::getVersion,
             ServerKey::getStorageName,
@@ -80,6 +68,6 @@ class TestServerKey {
             Version.CURRENT,
             "foo",
             ImmutableSortedMap.of("key", "value", "foo", "bar"),
-            "server-current-foo-DATABASE_ADAPTER-foo=bar_key=value");
+            "server-current-foo-foo=bar_key=value");
   }
 }

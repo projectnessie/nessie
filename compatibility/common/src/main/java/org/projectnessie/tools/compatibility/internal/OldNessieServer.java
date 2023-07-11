@@ -16,19 +16,16 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.projectnessie.tools.compatibility.api.Version.COMPAT_COMMON_DEPENDENCIES_START;
-import static org.projectnessie.tools.compatibility.api.Version.VERSIONED_REST_URI_START;
 import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
+import static org.projectnessie.tools.compatibility.jersey.ServerConfigExtension.SERVER_CONFIG;
 
-import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -51,14 +48,17 @@ final class OldNessieServer implements NessieServer {
   private AutoCloseable jerseyServer;
 
   static OldNessieServer oldNessieServer(
-      ExtensionContext context, ServerKey serverKey, BooleanSupplier initializeRepository) {
+      ExtensionContext context,
+      ServerKey serverKey,
+      BooleanSupplier initializeRepository,
+      Consumer<Object> backendConfigConsumer) {
 
     Store store = extensionStore(context);
 
     ClassLoader classLoader = classLoader(store, serverKey.getVersion());
 
     OldServerConnectionProvider connectionProvider =
-        oldConnectionProvider(store, classLoader, serverKey);
+        oldConnectionProvider(store, classLoader, serverKey, backendConfigConsumer);
 
     return store.getOrComputeIfAbsent(
         serverKey,
@@ -67,10 +67,13 @@ final class OldNessieServer implements NessieServer {
   }
 
   private static OldServerConnectionProvider oldConnectionProvider(
-      Store store, ClassLoader classLoader, ServerKey serverKey) {
+      Store store,
+      ClassLoader classLoader,
+      ServerKey serverKey,
+      Consumer<Object> backendConfigConsumer) {
     return store.getOrComputeIfAbsent(
         connectionProviderKey(serverKey),
-        v -> new OldServerConnectionProvider(serverKey, classLoader),
+        v -> new OldServerConnectionProvider(serverKey, classLoader, backendConfigConsumer),
         OldServerConnectionProvider.class);
   }
 
@@ -94,17 +97,11 @@ final class OldNessieServer implements NessieServer {
   }
 
   static ClassLoader createClassLoader(Version version) {
-    // The 'nessie-jaxrs' has all the necessary dependencies to the DatabaseAdapter
-    // implementations, REST services, Version store implementation, etc. in older versions.
-    // Newer versions declare what is required as runtime dependencies of
-    // `nessie-compatibility-common`, except mongodb
     List<String> artifactIds =
-        version.isGreaterThanOrEqual(COMPAT_COMMON_DEPENDENCIES_START)
-            ? asList(
-                "nessie-compatibility-common",
-                "nessie-versioned-persist-mongodb",
-                "nessie-versioned-persist-mongodb-test")
-            : singletonList("nessie-jaxrs");
+        asList(
+            "nessie-compatibility-common",
+            "nessie-versioned-storage-mongodb",
+            "nessie-versioned-storage-rocksdb");
     try {
       return oldNessieClassLoader(version, artifactIds);
     } catch (DependencyResolutionException e) {
@@ -130,10 +127,6 @@ final class OldNessieServer implements NessieServer {
       tryStart();
     }
 
-    if (serverKey.getVersion().isLessThan(VERSIONED_REST_URI_START)) {
-      return uri;
-    }
-
     return Util.resolveNessieUri(uri, apiType);
   }
 
@@ -148,40 +141,25 @@ final class OldNessieServer implements NessieServer {
       withClassLoader(
           classLoader,
           () -> {
-            Supplier<?> databaseAdapterSupplier = null;
-            Supplier<?> persistsSupplier = null;
-
-            switch (serverKey.getStorageKind()) {
-              case DATABASE_ADAPTER:
-                Object databaseAdapter = createDatabaseAdapter(classLoader);
-                databaseAdapterSupplier = () -> databaseAdapter;
-                break;
-
-              case PERSIST:
-                Object persist = createPersist(classLoader);
-                persistsSupplier = () -> persist;
-                break;
-
-              default:
-                throw new IllegalStateException(
-                    "Unsupported storage kind: " + serverKey.getStorageKind());
-            }
+            Object persist = createPersist(classLoader);
+            Supplier<?> persistsSupplier = () -> persist;
 
             Class<?> jerseyServerClass =
                 classLoader.loadClass("org.projectnessie.tools.compatibility.jersey.JerseyServer");
             try {
+              // Old signature, takes a Supplier<DatabaseAdapter> + Supplier<Persist> - MUST try
+              // this one first!
               jerseyServer =
                   (AutoCloseable)
                       jerseyServerClass
                           .getConstructor(Supplier.class, Supplier.class)
-                          .newInstance(databaseAdapterSupplier, persistsSupplier);
+                          .newInstance(null, persistsSupplier);
             } catch (NoSuchMethodException e) {
-              // Fall back to old constructor signature
               jerseyServer =
                   (AutoCloseable)
                       jerseyServerClass
                           .getConstructor(Supplier.class)
-                          .newInstance(databaseAdapterSupplier);
+                          .newInstance(persistsSupplier);
             }
             uri = (URI) jerseyServerClass.getMethod("getUri").invoke(jerseyServer);
 
@@ -204,68 +182,49 @@ final class OldNessieServer implements NessieServer {
     }
   }
 
-  private Object createDatabaseAdapter(ClassLoader classLoader) throws Exception {
-    Class<?> databaseConnectionProviderClass =
-        classLoader.loadClass(
-            "org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider");
-    Class<?> adaptersFactoryClass =
-        classLoader.loadClass("org.projectnessie.tools.compatibility.jersey.DatabaseAdapters");
-
-    List<Object> createParams = new ArrayList<>();
-    createParams.add(serverKey.getStorageName());
-    createParams.add(connectionProvider.connectionProvider);
-    Method createAdapterMethod;
-    try {
-      createAdapterMethod =
-          adaptersFactoryClass.getMethod(
-              "createDatabaseAdapter", String.class, databaseConnectionProviderClass, Map.class);
-
-      createParams.add(serverKey.getConfig());
-    } catch (NoSuchMethodException e) {
-      // Fallback for the method without the config Map (support older servers)
-      createAdapterMethod =
-          adaptersFactoryClass.getMethod(
-              "createDatabaseAdapter", String.class, databaseConnectionProviderClass);
-    }
-
-    Object databaseAdapter = createAdapterMethod.invoke(null, createParams.toArray());
-
-    // Call eraseRepo + initializeRepo only when requested. This is always true for
-    // old-clients and old-servers test cases (once per test class + Nessie version).
-    // Upgrade tests initialize the repository only once.
-    if (initializeRepository.getAsBoolean()) {
-      LOGGER.info(
-          "Initializing database adapter repository for Nessie Server version {} with {} using {}",
-          serverKey.getVersion(),
-          serverKey.getStorageName(),
-          serverKey.getConfig());
-      try {
-        databaseAdapter.getClass().getMethod("eraseRepo").invoke(databaseAdapter);
-      } catch (NoSuchMethodException e) {
-        // ignore, older Nessie versions do not have the 'eraseRepo' method
-      }
-      databaseAdapter
-          .getClass()
-          .getMethod("initializeRepo", String.class)
-          .invoke(databaseAdapter, "main");
-    }
-
-    return databaseAdapter;
-  }
-
   private Object createPersist(ClassLoader classLoader) throws Exception {
-    Class<?> backendClass =
-        classLoader.loadClass("org.projectnessie.versioned.storage.common.persist.Backend");
-    Class<?> backendsClass =
-        classLoader.loadClass("org.projectnessie.tools.compatibility.jersey.Backends");
+    Object backend = connectionProvider.connectionProvider;
 
-    return backendsClass
-        .getMethod("createPersist", backendClass, Boolean.TYPE, Map.class)
-        .invoke(
-            null,
-            connectionProvider.connectionProvider,
-            initializeRepository.getAsBoolean(),
-            serverKey.getConfig());
+    Class<?> classBackend =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.persist.Backend");
+    Class<?> classPersistFactory =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.persist.PersistFactory");
+    Class<?> classPersist =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.persist.Persist");
+    Class<?> classLogics =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.logic.Logics");
+    Class<?> classStoreConfig =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.config.StoreConfig");
+    Class<?> classStoreConfigAdjustable =
+        classLoader.loadClass(
+            "org.projectnessie.versioned.storage.common.config.StoreConfig$Adjustable");
+    Class<?> classRepositoryLogic =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.logic.RepositoryLogic");
+
+    Object persistFactory = classBackend.getMethod("createFactory").invoke(backend);
+
+    Object storeConfig = classStoreConfigAdjustable.getMethod("empty").invoke(null);
+    storeConfig =
+        classStoreConfigAdjustable
+            .getMethod("fromFunction", Function.class)
+            .invoke(
+                storeConfig,
+                (Function<String, String>) p -> serverKey.getConfig().get("nessie.store." + p));
+    Object persist =
+        classPersistFactory
+            .getMethod("newPersist", classStoreConfig)
+            .invoke(persistFactory, storeConfig);
+
+    if (initializeRepository.getAsBoolean()) {
+      classPersist.getMethod("erase").invoke(persist);
+      Object repositoryLogic =
+          classLogics.getMethod("repositoryLogic", classPersist).invoke(null, persist);
+      classRepositoryLogic
+          .getMethod("initialize", String.class)
+          .invoke(repositoryLogic, SERVER_CONFIG.getDefaultBranch());
+    }
+
+    return persist;
   }
 
   @Override

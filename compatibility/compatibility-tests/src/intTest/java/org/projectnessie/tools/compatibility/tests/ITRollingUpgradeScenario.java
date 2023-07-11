@@ -18,7 +18,6 @@ package org.projectnessie.tools.compatibility.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.google.common.collect.Maps;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,12 +42,10 @@ import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.RollingUpgradesExtension;
 
 @ExtendWith(RollingUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@VersionCondition(minVersion = "0.40.0")
 public class ITRollingUpgradeScenario {
   public static final String NO_ANCESTOR =
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
@@ -105,8 +102,7 @@ public class ITRollingUpgradeScenario {
             tlr.nextLong(),
             tlr.nextInt(1234),
             tlr.nextInt(1234),
-            tlr.nextInt(1234),
-            "cid-" + suffix + "-" + version);
+            tlr.nextInt(1234));
 
     head =
         api.commitMultipleOperations()
@@ -130,7 +126,10 @@ public class ITRollingUpgradeScenario {
   void verifyContentInOld(ContentKey key, IcebergTable table) throws Exception {
     Map<ContentKey, Content> contents = apiOld.getContent().key(key).refName("main").get();
 
-    assertThat(contents).containsExactly(Maps.immutableEntry(key, table));
+    assertThat(contents)
+        .extractingByKey(key)
+        .extracting(AbstractCompatibilityTests::withoutContentId)
+        .isEqualTo(table);
   }
 
   @ParameterizedTest
@@ -139,6 +138,9 @@ public class ITRollingUpgradeScenario {
   void verifyContentInNew(ContentKey key, IcebergTable table) throws Exception {
     Map<ContentKey, Content> contents = apiCurrent.getContent().key(key).refName("main").get();
 
-    assertThat(contents).containsExactly(Maps.immutableEntry(key, table));
+    assertThat(contents)
+        .extractingByKey(key)
+        .extracting(AbstractCompatibilityTests::withoutContentId)
+        .isEqualTo(table);
   }
 }

@@ -17,6 +17,7 @@ package org.projectnessie.tools.compatibility.internal;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.tools.compatibility.api.Version.NEW_STORAGE_MODEL_WITH_COMPAT_TESTING;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ class TestTranslatingVersionNessieApi {
   static void init() throws Exception {
     oldVersionClassLoader =
         OldNessie.oldNessieClassLoader(
-            Version.parseVersion("0.42.0"), singletonList("nessie-client"));
+            NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, singletonList("nessie-client"));
   }
 
   @Test
@@ -428,7 +429,7 @@ class TestTranslatingVersionNessieApi {
     return OldNessieApiHolder.createNessieClient(
         oldVersionClassLoader,
         new ClientKey(
-            Version.parseVersion("0.42.0"),
+            NEW_STORAGE_MODEL_WITH_COMPAT_TESTING,
             "org.projectnessie.client.http.HttpClientBuilder",
             NessieApiV1.class,
             Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));
