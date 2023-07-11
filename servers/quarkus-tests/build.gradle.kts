@@ -53,7 +53,6 @@ dependencies {
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 
   implementation(libs.testcontainers.keycloak) {
-    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
     exclude(
       group = "org.keycloak",
       module = "keycloak-admin-client"
