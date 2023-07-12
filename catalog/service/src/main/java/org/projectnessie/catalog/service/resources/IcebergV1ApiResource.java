@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
 import org.apache.iceberg.MetadataUpdate;
@@ -51,6 +53,7 @@ import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.metrics.MetricsReport;
+import org.apache.iceberg.rest.requests.CommitTransactionRequest;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.RegisterTableRequest;
@@ -68,15 +71,19 @@ import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.api.IcebergV1Api;
 import org.projectnessie.catalog.api.errors.IcebergConflictException;
+import org.projectnessie.catalog.service.spi.DecodedPrefix;
 import org.projectnessie.catalog.service.spi.NamespaceRef;
 import org.projectnessie.catalog.service.spi.TableRef;
 import org.projectnessie.catalog.service.spi.Warehouse;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
@@ -375,6 +382,8 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
     Warehouse warehouse = tenantSpecific.getWarehouse(tableRef.warehouse());
 
+    // fetch existing table
+
     IcebergTable icebergTable = null;
     Branch ref = null;
     TableMetadata base = null;
@@ -395,6 +404,8 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
       notFound = e;
     }
 
+    // check requirements
+
     List<String> failedRequirements = new ArrayList<>();
     for (UpdateRequirement requirement : requirements) {
       try {
@@ -406,6 +417,8 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
     if (!failedRequirements.isEmpty()) {
       throw new IcebergConflictException("CommitFailedException", join(", ", failedRequirements));
     }
+
+    // update tables
 
     TableMetadata.Builder metadataBuilder =
         base != null ? TableMetadata.buildFrom(base) : TableMetadata.buildFromEmpty();
@@ -434,6 +447,8 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
 
     // TODO ensure that the branch-snapshot points to Iceberg's "main":
     //      metadataBuilder.setBranchSnapshot(table.getSnapshotId(), SnapshotRef.MAIN_BRANCH);
+
+    // compute final ref to commit to
 
     if (ref == null) {
       // CREATE table
@@ -465,6 +480,138 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
             .commitWithResponse();
 
     return buildLoadTableResponse(storedMetadata, commit.getTargetBranch(), false);
+  }
+
+  private static class TableToCommit {
+    final UpdateTableRequest tableChange;
+    final ContentKey key;
+    IcebergTable content;
+    TableMetadata base;
+    int newVersion;
+    TableMetadata updatedMetadata;
+    TableMetadata storedMetadata;
+
+    TableToCommit(UpdateTableRequest tableChange, ContentKey key) {
+      this.tableChange = tableChange;
+      this.key = key;
+    }
+
+    ContentKey key() {
+      return key;
+    }
+  }
+
+  @Override
+  public void commitTransaction(String prefix, CommitTransactionRequest commitTransactionRequest)
+      throws IOException, IcebergConflictException {
+    DecodedPrefix decodedPrefix = decodePrefix(prefix);
+    ParsedReference parsedRef = decodedPrefix.parsedReference();
+    Warehouse warehouse = tenantSpecific.getWarehouse(decodedPrefix.warehouse());
+
+    // collect tables by content-key
+
+    Map<ContentKey, TableToCommit> tablesToCommit =
+        commitTransactionRequest.tableChanges().stream()
+            .map(
+                tableChange -> {
+                  TableRef tableReference = decodeTableRef(prefix, tableChange.identifier());
+                  ContentKey contentKey = tableReference.contentKey();
+                  return new TableToCommit(tableChange, contentKey);
+                })
+            .collect(Collectors.toMap(TableToCommit::key, Function.identity()));
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = tenantSpecific.api();
+
+    // fetch existing table
+
+    GetContentBuilder getContents =
+        api.getContent().refName(parsedRef.name()).hashOnRef(parsedRef.hashWithRelativeSpec());
+    tablesToCommit.keySet().stream().forEach(getContents::key);
+    GetMultipleContentsResponse contentsResponse = getContents.getWithResponse();
+    Branch ref = checkBranch(contentsResponse.getEffectiveReference());
+    for (GetMultipleContentsResponse.ContentWithKey contentWithKey :
+        contentsResponse.getContents()) {
+      Content content = contentWithKey.getContent();
+      if (content.getType() != Content.Type.ICEBERG_TABLE) {
+        // TODO do something here
+      }
+      IcebergTable icebergTable = verifyIcebergTable(content);
+      TableToCommit tableToCommit = tablesToCommit.get(contentWithKey.getKey());
+
+      tableToCommit.content = icebergTable;
+      tableToCommit.base = warehouse.metadataIO().loadAndFixTableMetadata(icebergTable);
+      tableToCommit.newVersion =
+          warehouse.metadataIO().parseVersion(icebergTable.getMetadataLocation()) + 1;
+    }
+
+    // check requirements
+
+    List<String> failedRequirements = new ArrayList<>();
+    for (TableToCommit tableToCommit : tablesToCommit.values()) {
+      for (UpdateRequirement requirement : tableToCommit.tableChange.requirements()) {
+        try {
+          requirement.validate(tableToCommit.base);
+        } catch (CommitFailedException failed) {
+          failedRequirements.add(failed.getMessage());
+        }
+      }
+    }
+    if (!failedRequirements.isEmpty()) {
+      throw new IcebergConflictException("CommitFailedException", join(", ", failedRequirements));
+    }
+
+    // update tables
+
+    for (TableToCommit tableToCommit : tablesToCommit.values()) {
+      TableMetadata.Builder metadataBuilder =
+          tableToCommit.base != null
+              ? TableMetadata.buildFrom(tableToCommit.base)
+              : TableMetadata.buildFromEmpty();
+      for (MetadataUpdate update : tableToCommit.tableChange.updates()) {
+        if (update instanceof SetProperties) {
+          SetProperties setProperties = (SetProperties) update;
+          Map<String, String> properties = new HashMap<>(setProperties.updated());
+          // remove the following, just in case
+          properties.keySet().removeAll(CHANGING_PROPERTIES);
+
+          if (properties.isEmpty()) {
+            continue;
+          }
+        }
+
+        // TODO prevent any Iceberg branch-snapshot-ref changes to something else than "main":
+        //      metadataBuilder.setBranchSnapshot(table.getSnapshotId(), SnapshotRef.MAIN_BRANCH);
+
+        update.applyTo(metadataBuilder);
+      }
+
+      // TODO ensure that the branch-snapshot points to Iceberg's "main":
+      //      metadataBuilder.setBranchSnapshot(table.getSnapshotId(), SnapshotRef.MAIN_BRANCH);
+
+      tableToCommit.updatedMetadata = metadataBuilder.build();
+    }
+
+    // store metadata files and generate put-operations
+
+    CommitMultipleOperationsBuilder commitBuilder =
+        api.commitMultipleOperations()
+            .branch(ref)
+            .commitMeta(
+                tenantSpecific.buildCommitMeta(
+                    format(
+                        "Update tables %s",
+                        tablesToCommit.keySet().stream()
+                            .map(ContentKey::toString)
+                            .collect(Collectors.joining(", ")))));
+    for (TableToCommit tableToCommit : tablesToCommit.values()) {
+      tableToCommit.storedMetadata =
+          warehouse.metadataIO().store(tableToCommit.updatedMetadata, tableToCommit.newVersion);
+      ImmutablePut.Builder putOperation = Operation.Put.builder().key(tableToCommit.key);
+      updateIcebergTable(tableToCommit.storedMetadata, tableToCommit.content, putOperation);
+      commitBuilder.operation(putOperation.build());
+    }
+    commitBuilder.commitWithResponse();
   }
 
   private void updateIcebergTable(

@@ -29,6 +29,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import org.apache.iceberg.rest.requests.CommitTransactionRequest;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.RegisterTableRequest;
@@ -197,5 +198,17 @@ public interface IcebergV1Api {
       @PathParam("namespace") @jakarta.ws.rs.PathParam("namespace") String namespace,
       @PathParam("table") @jakarta.ws.rs.PathParam("table") String table,
       @Valid @jakarta.validation.Valid UpdateTableRequest commitTableRequest)
+      throws IOException, IcebergConflictException;
+
+  // Transactions
+
+  @POST
+  @jakarta.ws.rs.POST
+  @Path("/{prefix}/transactions/commit")
+  @jakarta.ws.rs.Path("/{prefix}/transactions/commit")
+  // TODO does 'void' map to "HTTP/204 No Content" ??
+  void commitTransaction(
+      @PathParam("prefix") @jakarta.ws.rs.PathParam("prefix") String prefix,
+      @Valid @jakarta.validation.Valid CommitTransactionRequest commitTransactionRequest)
       throws IOException, IcebergConflictException;
 }
