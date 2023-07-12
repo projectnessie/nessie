@@ -951,7 +951,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             (k, c) -> {});
   }
 
-  static Stream<Arguments> duplicateKeys() {
+  static Stream<Arguments> duplicateKeysNewStorage() {
     ContentKey key = ContentKey.of("my.awesome.table");
     String tableRefState = "table ref state";
     Content createValue1 = newOnRef("no no - not this");
@@ -969,8 +969,46 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @MethodSource("duplicateKeys")
-  void duplicateKeys(Operation operation1, Operation operation2) {
+  @MethodSource("duplicateKeysNewStorage")
+  void duplicateKeysNewStorage(Operation operation1, Operation operation2) {
+    assumeThat(isNewStorageModel()).isTrue();
+
+    BranchName branch = BranchName.of("main");
+    ContentKey key = ContentKey.of("my.awesome.table");
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        CommitMeta.fromMessage("initial"),
+                        Arrays.asList(operation1, operation2)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(key.toString());
+  }
+
+  static Stream<Arguments> duplicateKeysOldStorage() {
+    ContentKey key = ContentKey.of("my.awesome.table");
+    String tableRefState = "table ref state";
+    Content createValue1 = newOnRef("no no - not this");
+    Content createValue2 = newOnRef(tableRefState);
+    return Stream.of(
+        Arguments.of(Put.of(key, createValue1), Put.of(key, createValue2)),
+        Arguments.of(Put.of(key, createValue2), Delete.of(key)),
+        Arguments.of(Put.of(key, createValue2), Unchanged.of(key)),
+        Arguments.of(Delete.of(key), Put.of(key, createValue2)), // re-add => not allowed
+        // Arguments.of(Delete.of(key), Delete.of(key)), // allowed in old storage
+        Arguments.of(Delete.of(key), Unchanged.of(key)),
+        Arguments.of(Unchanged.of(key), Put.of(key, createValue2)),
+        Arguments.of(Unchanged.of(key), Delete.of(key)),
+        Arguments.of(Unchanged.of(key), Unchanged.of(key)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("duplicateKeysOldStorage")
+  void duplicateKeysOldStorage(Operation operation1, Operation operation2) {
+    assumeThat(isNewStorageModel()).isFalse();
+
     BranchName branch = BranchName.of("main");
     ContentKey key = ContentKey.of("my.awesome.table");
     soft.assertThatThrownBy(
