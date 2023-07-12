@@ -141,32 +141,3 @@ plugins.withType<JavaPlugin>().configureEach {
     }
   }
 }
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// IDE
-
-if (!System.getProperty("idea.sync.active").toBoolean()) {
-  idea {
-    module {
-      // Do not index the following folders
-      excludeDirs =
-        excludeDirs +
-          setOf(
-            buildDir.resolve("libs"),
-            buildDir.resolve("reports"),
-            buildDir.resolve("test-results"),
-            buildDir.resolve("classes"),
-            buildDir.resolve("jacoco"),
-            buildDir.resolve("jandex"),
-            buildDir.resolve("quarkus-app"),
-            buildDir.resolve("generated"),
-            buildDir.resolve("docs"),
-            buildDir.resolve("jacoco-report"),
-            buildDir.resolve("openapi"),
-            buildDir.resolve("openapi-extra"),
-            buildDir.resolve("spotless"),
-            buildDir.resolve("tmp")
-          )
-    }
-  }
-}
