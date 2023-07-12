@@ -16,14 +16,6 @@
 
 plugins { `kotlin-dsl` }
 
-repositories {
-  mavenCentral()
-  gradlePluginPortal()
-  if (System.getProperty("withMavenLocal").toBoolean()) {
-    mavenLocal()
-  }
-}
-
 dependencies {
   implementation(gradleKotlinDsl())
   implementation(baselibs.spotless)

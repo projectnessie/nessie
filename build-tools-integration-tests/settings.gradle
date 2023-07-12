@@ -13,3 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import org.gradle.api.initialization.resolve.RepositoriesMode
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+      name = "Apache Snapshots"
+      url = new URI("https://repository.apache.org/content/repositories/snapshots/")
+      mavenContent { snapshotsOnly() }
+    }
+  }
+}
