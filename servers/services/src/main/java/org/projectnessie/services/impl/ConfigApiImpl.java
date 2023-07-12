@@ -43,7 +43,7 @@ public class ConfigApiImpl implements ConfigService {
     }
     return ImmutableNessieConfiguration.builder()
         .from(NessieConfiguration.getBuiltInConfig())
-        .defaultBranch(this.config.getDefaultBranch())
+        .defaultBranch(defaultBranch)
         .actualApiVersion(actualApiVersion)
         .noAncestorHash(info.getNoAncestorHash())
         .repositoryCreationTimestamp(info.getRepositoryCreationTimestamp())
