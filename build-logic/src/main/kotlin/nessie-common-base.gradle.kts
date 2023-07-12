@@ -24,13 +24,6 @@ plugins {
 
 apply<PublishingHelperPlugin>()
 
-repositories {
-  mavenCentral()
-  if (System.getProperty("withMavenLocal").toBoolean()) {
-    mavenLocal()
-  }
-}
-
 jandex { toolVersion.set(libsRequiredVersion("jandex")) }
 
 val sourceSets: SourceSetContainer? by project
