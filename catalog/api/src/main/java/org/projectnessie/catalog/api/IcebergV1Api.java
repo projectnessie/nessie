@@ -31,6 +31,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.RegisterTableRequest;
 import org.apache.iceberg.rest.requests.RenameTableRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
@@ -71,6 +72,16 @@ public interface IcebergV1Api {
       @PathParam("prefix") @jakarta.ws.rs.PathParam("prefix") String prefix,
       @PathParam("namespace") @jakarta.ws.rs.PathParam("namespace") String namespace,
       @Valid @jakarta.validation.Valid CreateTableRequest createTableRequest)
+      throws IOException, IcebergConflictException;
+
+  @POST
+  @jakarta.ws.rs.POST
+  @Path("/{prefix}/namespaces/{namespace}/register")
+  @jakarta.ws.rs.Path("/{prefix}/namespaces/{namespace}/register")
+  LoadTableResponse registerTable(
+      @PathParam("prefix") @jakarta.ws.rs.PathParam("prefix") String prefix,
+      @PathParam("namespace") @jakarta.ws.rs.PathParam("namespace") String namespace,
+      @Valid @jakarta.validation.Valid RegisterTableRequest registerTableRequest)
       throws IOException, IcebergConflictException;
 
   @DELETE

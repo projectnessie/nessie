@@ -47,17 +47,18 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.RegisterTableRequest;
 import org.apache.iceberg.rest.requests.RenameTableRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest.ReportType;
 import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
-import org.apache.iceberg.rest.requests.UpdateTableRequest.UpdateRequirement;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
 import org.apache.iceberg.rest.responses.GetNamespaceResponse;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
@@ -313,6 +314,44 @@ public class IcebergV1ApiResource extends BaseIcebergResource implements Iceberg
     }
 
     return buildLoadTableResponse(table, ref, createTableRequest.stageCreate());
+  }
+
+  @Override
+  public LoadTableResponse registerTable(
+      String prefix, String namespace, RegisterTableRequest registerTableRequest)
+      throws IOException, IcebergConflictException {
+    TableRef tableRef = decodeTableRef(prefix, namespace, registerTableRequest.name());
+    Warehouse warehouse = tenantSpecific.getWarehouse(tableRef.warehouse());
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = tenantSpecific.api();
+
+    GetMultipleContentsResponse tableCheck =
+        api.getContent()
+            .refName(tableRef.referenceName())
+            .key(tableRef.contentKey())
+            .getWithResponse();
+    Branch ref = checkBranch(tableCheck.getEffectiveReference());
+
+    Content c = tableCheck.toContentsMap().get(tableRef.contentKey());
+    if (c != null) {
+      verifyIcebergTable(c);
+      throw new IcebergConflictException(
+          "AlreadyExistsException", "Table already exists: " + tableRef.contentKey());
+    }
+
+    TableMetadata table = warehouse.metadataIO().load(registerTableRequest.metadataLocation());
+
+    ImmutablePut.Builder putOperation = Operation.Put.builder().key(tableRef.contentKey());
+    updateIcebergTable(table, null, putOperation);
+    api.commitMultipleOperations()
+        .branch(ref)
+        .commitMeta(
+            tenantSpecific.buildCommitMeta(format("Create table %s", tableRef.contentKey())))
+        .operation(putOperation.build())
+        .commitWithResponse();
+
+    return buildLoadTableResponse(table, ref, false);
   }
 
   @Override
