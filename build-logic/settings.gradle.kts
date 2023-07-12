@@ -14,6 +14,24 @@
  * limitations under the License.
  */
 
+import java.net.URI
+
 dependencyResolutionManagement {
   versionCatalogs { create("baselibs") { from(files("../gradle/baselibs.versions.toml")) } }
+}
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+    if (System.getProperty("withMavenLocal").toBoolean()) {
+      mavenLocal()
+    }
+    maven {
+      name = "Apache Snapshots"
+      url = URI("https://repository.apache.org/content/repositories/snapshots/")
+      mavenContent { snapshotsOnly() }
+    }
+  }
 }

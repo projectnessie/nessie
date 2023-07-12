@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import java.net.URI
 import java.util.Properties
 
 includeBuild("../build-logic") { name = "nessie-build-logic" }
@@ -30,6 +31,22 @@ pluginManagement {
     gradlePluginPortal()
     if (System.getProperty("withMavenLocal").toBoolean()) {
       mavenLocal()
+    }
+  }
+}
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+    if (System.getProperty("withMavenLocal").toBoolean()) {
+      mavenLocal()
+    }
+    maven {
+      name = "Apache Snapshots"
+      url = URI("https://repository.apache.org/content/repositories/snapshots/")
+      mavenContent { snapshotsOnly() }
     }
   }
 }
