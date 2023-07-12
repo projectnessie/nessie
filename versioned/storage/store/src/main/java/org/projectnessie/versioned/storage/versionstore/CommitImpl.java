@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Objects.requireNonNull;
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
@@ -216,7 +217,7 @@ class CommitImpl extends BaseCommitHelper {
       ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException, ReferenceConflictException {
     int num = operations.size();
-    Set<ContentKey> allKeys = newHashSetWithExpectedSize(num);
+    Map<ContentKey, Operation> allKeys = newHashMapWithExpectedSize(num);
 
     Set<StoreKey> storeKeysForHead =
         expectedIndex() != headIndex() ? newHashSetWithExpectedSize(operations.size()) : null;
@@ -225,7 +226,8 @@ class CommitImpl extends BaseCommitHelper {
     for (int i = 0; i < num; i++) {
       Operation operation = operations.get(i);
       ContentKey key = operation.getKey();
-      checkArgument(allKeys.add(key), "Duplicate key in commit operations: %s", key);
+      Operation previous = allKeys.put(key, operation);
+      checkDuplicateKey(previous, operation);
       StoreKey storeKey = keyToStoreKey(key);
       storeKeys.add(storeKey);
       if (storeKeysForHead != null && operation instanceof Unchanged) {
@@ -234,7 +236,7 @@ class CommitImpl extends BaseCommitHelper {
     }
 
     expectedIndex().loadIfNecessary(new HashSet<>(storeKeys));
-    if (storeKeysForHead != null) {
+    if (storeKeysForHead != null && !storeKeysForHead.isEmpty()) {
       headIndex().loadIfNecessary(storeKeysForHead);
     }
 
@@ -284,6 +286,19 @@ class CommitImpl extends BaseCommitHelper {
     }
 
     validateNamespaces(newContent, deletedKeysAndPayload, headIndex());
+  }
+
+  private static void checkDuplicateKey(Operation previous, Operation current) {
+    if (previous != null) {
+      boolean reAdd =
+          previous instanceof Delete
+              && current instanceof Put
+              && ((Put) current).getValue().getId() == null;
+      if (!reAdd) {
+        throw new IllegalArgumentException(
+            "Duplicate key in commit operations: " + current.getKey());
+      }
+    }
   }
 
   private static void commitAddUnchanged(
@@ -395,13 +410,19 @@ class CommitImpl extends BaseCommitHelper {
     String expectedContentIDString;
 
     StoreIndexElement<CommitOp> existing = expectedIndex.get(storeKey);
+
+    StoreKey deletedKey = null;
     if (existing == null && putValueId != null) {
       // Check for a Delete-op in the same commit, representing a rename operation.
       UUID expectedContentID = UUID.fromString(putValueId);
-      StoreKey deletedKey = deleted.remove(expectedContentID);
-      if (deletedKey != null) {
-        existing = expectedIndex.get(deletedKey);
-      }
+      deletedKey = deleted.remove(expectedContentID);
+    }
+    if (existing != null && putValueId == null && deleted.containsValue(storeKey)) {
+      // Check for a Delete-op with same key in the same commit, representing a re-add operation.
+      deletedKey = storeKey;
+    }
+    if (deletedKey != null) {
+      existing = expectedIndex.get(deletedKey);
     }
 
     boolean exists = false;
@@ -416,18 +437,29 @@ class CommitImpl extends BaseCommitHelper {
                 ? existingContentID.toString()
                 : contentIdFromContent(existingValue);
 
-        checkArgument(
-            putValueId != null, "New value to update existing key '%s' has no content ID", putKey);
+        if (putValueId == null) {
 
-        checkArgument(
-            expectedContentIDString.equals(putValueId),
-            "Key '%s' already exists with content ID %s, which is different from "
-                + "the content ID %s in the operation",
-            putKey,
-            expectedContentIDString,
-            putValueId);
+          // re-add case: the existing content is deleted and the new content is added in the same
+          // commit
+          checkArgument(
+              deletedKey != null,
+              "New value to update existing key '%s' has no content ID",
+              putKey);
 
-        exists = true;
+          existingValue = null;
+
+        } else {
+
+          checkArgument(
+              expectedContentIDString.equals(putValueId),
+              "Key '%s' already exists with content ID %s, which is different from "
+                  + "the content ID %s in the operation",
+              putKey,
+              expectedContentIDString,
+              putValueId);
+
+          exists = true;
+        }
       }
     }
 
