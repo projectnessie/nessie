@@ -42,8 +42,6 @@ import static org.projectnessie.versioned.storage.versionstore.VersionStoreImpl.
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -242,7 +240,7 @@ class CommitImpl extends BaseCommitHelper {
       headIndex().loadIfNecessary(storeKeysForHead);
     }
 
-    BiMap<UUID, StoreKey> deleted = HashBiMap.create();
+    Map<UUID, StoreKey> deleted = new HashMap<>();
     Map<ContentKey, Content> newContent = new HashMap<>();
     Object2IntHashMap<ContentKey> deletedKeysAndPayload =
         new Object2IntHashMap<>(operations.size() * 2, DEFAULT_LOAD_FACTOR, -1);
@@ -398,7 +396,7 @@ class CommitImpl extends BaseCommitHelper {
       StoreKey storeKey,
       Consumer<Obj> contentToStore,
       CommitRetryState commitRetryState,
-      BiMap<UUID, StoreKey> deleted,
+      Map<UUID, StoreKey> deleted,
       Map<ContentKey, Content> newContent,
       ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException {
@@ -419,10 +417,9 @@ class CommitImpl extends BaseCommitHelper {
       UUID expectedContentID = UUID.fromString(putValueId);
       deletedKey = deleted.remove(expectedContentID);
     }
-    if (existing != null && putValueId == null) {
+    if (existing != null && putValueId == null && deleted.containsValue(storeKey)) {
       // Check for a Delete-op with same key in the same commit, representing a re-add operation.
-      UUID expectedContentID = deleted.inverse().get(storeKey);
-      deletedKey = deleted.remove(expectedContentID);
+      deletedKey = storeKey;
     }
     if (deletedKey != null) {
       existing = expectedIndex.get(deletedKey);
@@ -442,7 +439,8 @@ class CommitImpl extends BaseCommitHelper {
 
         if (putValueId == null) {
 
-          // re-add case: the existing content is deleted and the new content is added in the same commit
+          // re-add case: the existing content is deleted and the new content is added in the same
+          // commit
           checkArgument(
               deletedKey != null,
               "New value to update existing key '%s' has no content ID",
