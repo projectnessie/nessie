@@ -288,7 +288,7 @@ class CommitImpl extends BaseCommitHelper {
     validateNamespaces(newContent, deletedKeysAndPayload, headIndex());
   }
 
-  private void checkDuplicateKey(Operation previous, Operation current) {
+  private static void checkDuplicateKey(Operation previous, Operation current) {
     if (previous != null) {
       boolean reAdd =
           previous instanceof Delete
