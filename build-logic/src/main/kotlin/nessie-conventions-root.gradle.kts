@@ -48,12 +48,6 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
       val integrationsDir = projectDir.resolve("integrations")
       val sparkExtensionsDir = integrationsDir.resolve("spark-extensions")
       integrationsDir.resolve("spark-scala.properties").reader().use { sparkScalaProps.load(it) }
-      val sparkExtensionsBuildDirs =
-        sparkScalaProps
-          .getProperty("sparkVersions")
-          .split(",")
-          .map { sparkVersion -> sparkExtensionsDir.resolve("v$sparkVersion/build") }
-          .toSet()
       val buildToolsIT = projectDir.resolve("build-tools-integration-tests")
       excludeDirs =
         excludeDirs +
@@ -71,7 +65,12 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
             integrationsDir.resolve("spark-extensions-base/build"),
             integrationsDir.resolve("spark-extensions-basetests/build")
           ) +
-          sparkExtensionsBuildDirs
+          allprojects.map { prj -> prj.buildDir } +
+          sparkScalaProps
+            .getProperty("sparkVersions")
+            .split(",")
+            .map { sparkVersion -> sparkExtensionsDir.resolve("v$sparkVersion/build") }
+            .toSet()
     }
 
     this.project.settings {
