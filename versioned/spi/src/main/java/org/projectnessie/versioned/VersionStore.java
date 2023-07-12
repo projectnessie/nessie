@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -34,6 +35,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
@@ -114,6 +116,11 @@ public interface VersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException {
     return commit(branch, referenceHash, metadata, operations, x -> {}, (k, c) -> {});
   }
+
+  List<RepositoryConfig> getRepositoryConfig(Set<RepositoryConfig.Type> repositoryConfigTypes);
+
+  RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws ReferenceConflictException;
 
   @FunctionalInterface
   interface CommitValidator {

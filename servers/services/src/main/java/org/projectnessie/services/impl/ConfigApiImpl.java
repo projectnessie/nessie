@@ -15,10 +15,16 @@
  */
 package org.projectnessie.services.impl;
 
+import java.util.List;
+import java.util.Set;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ConfigService;
+import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.VersionStore;
 
@@ -50,5 +56,21 @@ public class ConfigApiImpl implements ConfigService {
         .oldestPossibleCommitTimestamp(info.getOldestPossibleCommitTimestamp())
         .additionalProperties(info.getAdditionalProperties())
         .build();
+  }
+
+  @Override
+  public List<RepositoryConfig> getRepositoryConfig(
+      Set<RepositoryConfig.Type> repositoryConfigTypes) {
+    return store.getRepositoryConfig(repositoryConfigTypes);
+  }
+
+  @Override
+  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws NessieConflictException {
+    try {
+      return store.updateRepositoryConfig(repositoryConfig);
+    } catch (ReferenceConflictException e) {
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
+    }
   }
 }

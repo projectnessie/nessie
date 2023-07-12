@@ -16,11 +16,19 @@
 package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v2.http.HttpConfigApi;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.model.ImmutableRepositoryConfigResponse;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.RepositoryConfig;
+import org.projectnessie.model.RepositoryConfigResponse;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.model.types.RepositoryConfigTypes;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.versioned.VersionStore;
@@ -47,5 +55,22 @@ public class RestV2ConfigResource implements HttpConfigApi {
   @JsonView(Views.V2.class)
   public NessieConfiguration getConfig() {
     return config.getConfig();
+  }
+
+  @Override
+  public RepositoryConfigResponse getRepositoryConfig(List<String> repositoryConfigTypes) {
+    Set<RepositoryConfig.Type> types =
+        repositoryConfigTypes.stream()
+            .map(RepositoryConfigTypes::forName)
+            .collect(Collectors.toSet());
+    return ImmutableRepositoryConfigResponse.builder()
+        .addAllConfigs(config.getRepositoryConfig(types))
+        .build();
+  }
+
+  @Override
+  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws NessieConflictException {
+    return config.updateRepositoryConfig(repositoryConfig);
   }
 }
