@@ -32,10 +32,12 @@ import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.client.api.GetNamespaceBuilder;
 import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.GetReferenceBuilder;
+import org.projectnessie.client.api.GetRepositoryConfigBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.api.UpdateNamespaceBuilder;
+import org.projectnessie.client.api.UpdateRepositoryConfigBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.util.v2api.ClientSideCreateNamespace;
 import org.projectnessie.client.util.v2api.ClientSideDeleteNamespace;
@@ -175,5 +177,15 @@ public class HttpApiV2 implements NessieApiV2 {
   @Override
   public UpdateNamespaceBuilder updateProperties() {
     return new ClientSideUpdateNamespace(this);
+  }
+
+  @Override
+  public GetRepositoryConfigBuilder getRepositoryConfig() {
+    return new HttpGetRepositoryConfig(client);
+  }
+
+  @Override
+  public UpdateRepositoryConfigBuilder updateRepositoryConfig() {
+    return new HttpUpdateRepositoryConfig(client);
   }
 }
