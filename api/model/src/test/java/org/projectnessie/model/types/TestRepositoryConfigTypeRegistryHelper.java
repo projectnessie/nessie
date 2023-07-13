@@ -22,11 +22,11 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.immutables.value.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes.RegistryHelper;
+import org.projectnessie.model.RepositoryConfig;
+import org.projectnessie.model.types.RepositoryConfigTypes.RegistryHelper;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestRegistryHelper {
+public class TestRepositoryConfigTypeRegistryHelper {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
@@ -34,76 +34,76 @@ public class TestRegistryHelper {
     RegistryHelper registryHelper = new RegistryHelper();
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> registryHelper.register(Content.class))
+        .isThrownBy(() -> registryHelper.register(RepositoryConfig.class))
         .withMessage(
-            "Content-type registration: org.projectnessie.model.Content has no @JsonTypeName annotation");
+            "Repository config type registration: org.projectnessie.model.RepositoryConfig has no @JsonTypeName annotation");
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> registryHelper.register(RegistryHelperNoJsonTypeName.class))
         .withMessage(
-            "Content-type registration: org.projectnessie.model.types.TestRegistryHelper$RegistryHelperNoJsonTypeName has no @JsonTypeName annotation");
+            "Repository config type registration: org.projectnessie.model.types.TestRepositoryConfigTypeRegistryHelper$RegistryHelperNoJsonTypeName has no @JsonTypeName annotation");
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> registryHelper.register(RegistryHelperIllegalName.class))
         .withMessage(
-            "Illegal content-type registration: illegal name ' ILLEGAL ' for org.projectnessie.model.types.TestRegistryHelper$RegistryHelperIllegalName");
+            "Illegal repository config type registration: illegal name ' ILLEGAL ' for org.projectnessie.model.types.TestRepositoryConfigTypeRegistryHelper$RegistryHelperIllegalName");
 
     soft.assertThatCode(() -> registryHelper.register(RegistryHelperGood.class))
         .doesNotThrowAnyException();
     soft.assertThatIllegalStateException()
         .isThrownBy(() -> registryHelper.register(RegistryHelperDupe.class))
         .withMessage(
-            "Duplicate content type registration for DUPE/org.projectnessie.model.types.TestRegistryHelper$RegistryHelperDupe, existing: DUPE/org.projectnessie.model.types.TestRegistryHelper$RegistryHelperGood");
+            "Duplicate repository config type registration for DUPE/org.projectnessie.model.types.TestRepositoryConfigTypeRegistryHelper$RegistryHelperDupe, existing: DUPE/org.projectnessie.model.types.TestRepositoryConfigTypeRegistryHelper$RegistryHelperGood");
   }
 
   @Test
   void getUnknown() {
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> ContentTypes.forName("NO_NO_NOT_THERE"))
-        .withMessage("No content type registered for name NO_NO_NOT_THERE");
+        .isThrownBy(() -> RepositoryConfigTypes.forName("NO_NO_NOT_THERE"))
+        .withMessage("No repository config type registered for name NO_NO_NOT_THERE");
   }
 
   @Value.Immutable
-  public abstract static class RegistryHelperNoJsonTypeName extends Content {
+  public abstract static class RegistryHelperNoJsonTypeName implements RepositoryConfig {
     @Override
     public Type getType() {
-      return ContentTypes.forName("JSON_TYPE_NAME");
+      return RepositoryConfigTypes.forName("JSON_TYPE_NAME");
     }
   }
 
   @Value.Immutable
   @JsonTypeName(" ILLEGAL ")
-  public abstract static class RegistryHelperIllegalName extends Content {
+  public abstract static class RegistryHelperIllegalName implements RepositoryConfig {
     @Override
     public Type getType() {
-      return ContentTypes.forName(" ILLEGAL ");
+      return RepositoryConfigTypes.forName(" ILLEGAL ");
     }
   }
 
   @Value.Immutable
   @JsonTypeName("JSON_TYPE_NAME")
-  public abstract static class RegistryHelperNameMismatch extends Content {
+  public abstract static class RegistryHelperNameMismatch implements RepositoryConfig {
     @Override
     public Type getType() {
-      return ContentTypes.forName("JSON_TYPE_NAME");
+      return RepositoryConfigTypes.forName("JSON_TYPE_NAME");
     }
   }
 
   @Value.Immutable
   @JsonTypeName("DUPE")
-  public abstract static class RegistryHelperGood extends Content {
+  public abstract static class RegistryHelperGood implements RepositoryConfig {
     @Override
     public Type getType() {
-      return ContentTypes.forName("DUPE");
+      return RepositoryConfigTypes.forName("DUPE");
     }
   }
 
   @Value.Immutable
   @JsonTypeName("DUPE")
-  public abstract static class RegistryHelperDupe extends Content {
+  public abstract static class RegistryHelperDupe implements RepositoryConfig {
     @Override
     public Type getType() {
-      return ContentTypes.forName("DUPE");
+      return RepositoryConfigTypes.forName("DUPE");
     }
   }
 }

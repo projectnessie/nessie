@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.commontests;
+package org.projectnessie.versioned.tests;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,7 +46,6 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
 
 @SuppressWarnings("unused")
 @ExtendWith(SoftAssertionsExtension.class)
