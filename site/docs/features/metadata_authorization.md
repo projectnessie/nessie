@@ -76,6 +76,10 @@ Available variables within the `<rule_expression>` are: **'op'** / **'role'** / 
 * The **'op'** variable in the `<rule_expression>` refers to the type of operation can be any of the following.
   See [BatchAccessChecker](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/BatchAccessChecker.java)
   and [Check](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/Check.java) types.
+  * Arguments to the CEL script for the following check-types:
+    * **'role'** refers to the user's role and can be any string.
+    * **'ref'** refers to a string representing a branch/tag name or `DETATCHED` for direct access to a commit id.
+    * **'path'** refers to the [content key](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/model/ContentKey.java) for the contents of an object and can be any string
   * `VIEW_REFERENCE`
   * `CREATE_REFERENCE`
   * `DELETE_REFERENCE`
@@ -87,10 +91,12 @@ Available variables within the `<rule_expression>` are: **'op'** / **'role'** / 
   * `UPDATE_ENTITY`
   * `READ_ENTITY_VALUE`
   * `DELETE_ENTITY`
-  * `VIEW_REFLOG`.
-* The **'role'** refers to the user's role and can be any string.
-* The **'ref'** refers to a string representing a branch/tag name or `DETATCHED` for direct access to a commit id.
-* The **'path'** refers to the [content key](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/model/ContentKey.java) for the contents of an object and can be any string
+  * `VIEW_REFLOG` (deprecated)
+* The following values for the **'op'**
+  * `READ_REPOSITORY_CONFIG`
+  * `UPDATE_REPOSITORY_CONFIG`
+  * Arguments to the CEL script for the repository config check-types:
+    * **'type'** argument that refers to the repository config type to be retrieved or updated.
 
 Since all available authorization rule variables are strings, the relevant CEL-specific things that are worth mentioning are shown below:
 
