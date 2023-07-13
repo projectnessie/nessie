@@ -36,7 +36,6 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
@@ -49,7 +48,7 @@ import picocli.CommandLine.Option;
     name = "create-missing-namespaces",
     mixinStandardHelpOptions = true,
     description = "Creates missing namespaces for content keys at branch HEADs.")
-public class CreateMissingNamespaces extends AbstractCommand {
+public class CreateMissingNamespaces extends CommittingCommand {
 
   @Option(
       names = {"-r", "--branch"},
@@ -194,8 +193,7 @@ public class CreateMissingNamespaces extends AbstractCommand {
   }
 
   @VisibleForTesting
-  static void commitCreateNamespaces(
-      NessieApiV2 api, Branch branch, List<ContentKey> missingNamespaces)
+  void commitCreateNamespaces(NessieApiV2 api, Branch branch, List<ContentKey> missingNamespaces)
       throws NessieNotFoundException, NessieConflictException {
     CommitMultipleOperationsBuilder commit = api.commitMultipleOperations().branch(branch);
     for (ContentKey nsKey : missingNamespaces) {
@@ -203,7 +201,7 @@ public class CreateMissingNamespaces extends AbstractCommand {
     }
     commit
         .commitMeta(
-            CommitMeta.fromMessage(
+            commitMetaFromMessage(
                 missingNamespaces.stream()
                     .map(ContentKey::toString)
                     .collect(Collectors.joining(", ", "Create namespaces ", ""))))

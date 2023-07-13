@@ -78,6 +78,8 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
             "delete",
             "--uri",
             NESSIE_API_URI,
+            "--author",
+            "Test Author 123 <test@example.com>",
             "--message",
             "test-message-123",
             "--branch",
@@ -92,6 +94,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
       CommitMeta commitMeta =
           api.getCommitLog().refName(branch.getName()).get().getLogEntries().get(0).getCommitMeta();
       assertThat(commitMeta.getMessage()).contains("test-message-123");
+      assertThat(commitMeta.getAuthor()).isEqualTo("Test Author 123 <test@example.com>");
     }
   }
 }

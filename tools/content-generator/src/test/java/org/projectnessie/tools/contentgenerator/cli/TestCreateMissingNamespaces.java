@@ -18,13 +18,13 @@ package org.projectnessie.tools.contentgenerator.cli;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 import static org.projectnessie.tools.contentgenerator.cli.CreateMissingNamespaces.branchesStream;
 import static org.projectnessie.tools.contentgenerator.cli.CreateMissingNamespaces.collectMissingNamespaceKeys;
-import static org.projectnessie.tools.contentgenerator.cli.CreateMissingNamespaces.commitCreateNamespaces;
 
 import java.net.URI;
 import org.assertj.core.api.SoftAssertions;
@@ -40,9 +40,11 @@ import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
@@ -67,6 +69,7 @@ public class TestCreateMissingNamespaces {
 
   private NessieApiV2 nessieApi;
   private URI uri;
+  private final CreateMissingNamespaces cmd = new CreateMissingNamespaces();
 
   @BeforeEach
   public void setUp(NessieClientFactory clientFactory, @NessieClientUri URI uri) {
@@ -84,7 +87,13 @@ public class TestCreateMissingNamespaces {
     prepareRoundtrip();
 
     ProcessResult result =
-        runGeneratorCmd("create-missing-namespaces", "--verbose", "--uri", uri.toString());
+        runGeneratorCmd(
+            "create-missing-namespaces",
+            "--author",
+            "Author 123",
+            "--verbose",
+            "--uri",
+            uri.toString());
 
     soft.assertThat(result)
         .extracting(
@@ -112,6 +121,13 @@ public class TestCreateMissingNamespaces {
                 "    all namespaces present.",
                 "Successfully processed 4 branches, created 5 namespaces."),
             singletonList(""));
+
+    soft.assertThat(nessieApi.getCommitLog().refName("branch1").stream())
+        .isNotEmpty()
+        .first(type(LogResponse.LogEntry.class))
+        .extracting(LogResponse.LogEntry::getCommitMeta)
+        .extracting(CommitMeta::getAuthor)
+        .isEqualTo("Author 123");
   }
 
   @Test
@@ -312,7 +328,7 @@ public class TestCreateMissingNamespaces {
   public void testCommitCreateNamespaces() throws Exception {
     Branch defaultBranch = nessieApi.getDefaultBranch();
 
-    commitCreateNamespaces(
+    cmd.commitCreateNamespaces(
         nessieApi,
         defaultBranch,
         asList(

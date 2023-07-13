@@ -20,7 +20,6 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
@@ -29,7 +28,7 @@ import picocli.CommandLine.Option;
 
 /** Deletes content objects. */
 @Command(name = "delete", mixinStandardHelpOptions = true, description = "Delete content objects")
-public class DeleteContent extends AbstractCommand {
+public class DeleteContent extends CommittingCommand {
 
   @Option(
       names = {"-r", "--branch"},
@@ -60,7 +59,7 @@ public class DeleteContent extends AbstractCommand {
 
       Branch head =
           api.commitMultipleOperations()
-              .commitMeta(CommitMeta.fromMessage(message))
+              .commitMeta(commitMetaFromMessage(message))
               .branch((Branch) refInfo)
               .operation(Operation.Delete.of(contentKey))
               .commit();
