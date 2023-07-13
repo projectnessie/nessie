@@ -16,19 +16,25 @@
 package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import java.security.Principal;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v2.http.HttpConfigApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.ImmutableRepositoryConfigResponse;
+import org.projectnessie.model.ImmutableUpdateRepositoryConfigResponse;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.RepositoryConfigResponse;
+import org.projectnessie.model.UpdateRepositoryConfigRequest;
+import org.projectnessie.model.UpdateRepositoryConfigResponse;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.model.types.RepositoryConfigTypes;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.versioned.VersionStore;
@@ -42,13 +48,17 @@ public class RestV2ConfigResource implements HttpConfigApi {
 
   // Mandated by CDI 2.0
   public RestV2ConfigResource() {
-    this(null, null);
+    this(null, null, null, null);
   }
 
   @Inject
   @jakarta.inject.Inject
-  public RestV2ConfigResource(ServerConfig config, VersionStore store) {
-    this.config = new ConfigApiImpl(config, store, 2);
+  public RestV2ConfigResource(
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
+    this.config = new ConfigApiImpl(config, store, authorizer, principal, 2);
   }
 
   @Override
@@ -69,8 +79,10 @@ public class RestV2ConfigResource implements HttpConfigApi {
   }
 
   @Override
-  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
-      throws NessieConflictException {
-    return config.updateRepositoryConfig(repositoryConfig);
+  public UpdateRepositoryConfigResponse updateRepositoryConfig(
+      UpdateRepositoryConfigRequest repositoryConfigUpdate) throws NessieConflictException {
+    return ImmutableUpdateRepositoryConfigResponse.builder()
+        .previous(config.updateRepositoryConfig(repositoryConfigUpdate.getConfig()))
+        .build();
   }
 }

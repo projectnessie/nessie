@@ -109,7 +109,9 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
   public void getAllReferences() {
     assertThat(allReferences())
         .anySatisfy(
-            r -> assertThat(r.getName()).isEqualTo(configApi().getConfig().getDefaultBranch()));
+            r ->
+                assertThat(r.getName())
+                    .isEqualTo(configApi().getServerConfig().getDefaultBranch()));
   }
 
   @Test
@@ -416,7 +418,7 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
         numCommits,
         0,
         (Branch) ref,
-        getReference(configApi().getConfig().getDefaultBranch()),
+        getReference(configApi().getServerConfig().getDefaultBranch()),
         numCommits);
 
     // fetching additional metadata for a single tag

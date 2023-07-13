@@ -15,37 +15,45 @@
  */
 package org.projectnessie.services.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.security.Principal;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.RepositoryConfig;
+import org.projectnessie.model.types.GenericRepositoryConfig;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.VersionStore;
 
-public class ConfigApiImpl implements ConfigService {
+public class ConfigApiImpl extends BaseApiImpl implements ConfigService {
 
-  private final VersionStore store;
-  private final ServerConfig config;
   private final int actualApiVersion;
 
-  public ConfigApiImpl(ServerConfig config, VersionStore store, int actualApiVersion) {
-    this.store = store;
-    this.config = config;
+  public ConfigApiImpl(
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal,
+      int actualApiVersion) {
+    super(config, store, authorizer, principal);
     this.actualApiVersion = actualApiVersion;
   }
 
   @Override
   public NessieConfiguration getConfig() {
-    RepositoryInformation info = store.getRepositoryInformation();
+    RepositoryInformation info = getStore().getRepositoryInformation();
     String defaultBranch = info.getDefaultBranch();
     if (defaultBranch == null) {
-      defaultBranch = this.config.getDefaultBranch();
+      defaultBranch = getServerConfig().getDefaultBranch();
     }
     return ImmutableNessieConfiguration.builder()
         .from(NessieConfiguration.getBuiltInConfig())
@@ -61,14 +69,19 @@ public class ConfigApiImpl implements ConfigService {
   @Override
   public List<RepositoryConfig> getRepositoryConfig(
       Set<RepositoryConfig.Type> repositoryConfigTypes) {
-    return store.getRepositoryConfig(repositoryConfigTypes);
+    return getStore().getRepositoryConfig(repositoryConfigTypes);
   }
 
   @Override
   public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
       throws NessieConflictException {
+    checkArgument(
+        !(repositoryConfig instanceof GenericRepositoryConfig),
+        "Repository config type bundle for '%s' is not available on the Nessie server side.",
+        repositoryConfig.getType().name());
+
     try {
-      return store.updateRepositoryConfig(repositoryConfig);
+      return getStore().updateRepositoryConfig(repositoryConfig);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }

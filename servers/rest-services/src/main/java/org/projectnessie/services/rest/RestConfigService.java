@@ -15,8 +15,11 @@
  */
 package org.projectnessie.services.rest;
 
+import java.security.Principal;
+import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.versioned.VersionStore;
@@ -26,12 +29,16 @@ import org.projectnessie.versioned.VersionStore;
 public class RestConfigService extends ConfigApiImpl {
   // Mandated by CDI 2.0
   public RestConfigService() {
-    this(null, null);
+    this(null, null, null, null);
   }
 
   @Inject
   @jakarta.inject.Inject
-  public RestConfigService(ServerConfig config, VersionStore store) {
-    super(config, store, 1);
+  public RestConfigService(
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
+    super(config, store, authorizer, principal, 1);
   }
 }

@@ -110,7 +110,7 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
 
         AuthzPaginationIterator<Diff> authz =
             new AuthzPaginationIterator<Diff>(
-                diffs, super::startAccessCheck, getConfig().accessChecksBatchSize()) {
+                diffs, super::startAccessCheck, getServerConfig().accessChecksBatchSize()) {
               @Override
               protected Set<Check> checksForEntry(Diff entry) {
                 if (entry.getFromValue().isPresent()) {

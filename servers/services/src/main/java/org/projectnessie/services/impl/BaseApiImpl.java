@@ -173,7 +173,7 @@ public abstract class BaseApiImpl {
     }
   }
 
-  protected ServerConfig getConfig() {
+  protected ServerConfig getServerConfig() {
     return config;
   }
 
