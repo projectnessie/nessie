@@ -28,6 +28,7 @@ import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.types.GenericRepositoryConfig;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -69,6 +70,10 @@ public class ConfigApiImpl extends BaseApiImpl implements ConfigService {
   @Override
   public List<RepositoryConfig> getRepositoryConfig(
       Set<RepositoryConfig.Type> repositoryConfigTypes) {
+    BatchAccessChecker check = startAccessCheck();
+    repositoryConfigTypes.forEach(check::canReadRepositoryConfig);
+    check.checkAndThrow();
+
     return getStore().getRepositoryConfig(repositoryConfigTypes);
   }
 
@@ -79,6 +84,8 @@ public class ConfigApiImpl extends BaseApiImpl implements ConfigService {
         !(repositoryConfig instanceof GenericRepositoryConfig),
         "Repository config type bundle for '%s' is not available on the Nessie server side.",
         repositoryConfig.getType().name());
+
+    startAccessCheck().canUpdateRepositoryConfig(repositoryConfig.getType()).checkAndThrow();
 
     try {
       return getStore().updateRepositoryConfig(repositoryConfig);

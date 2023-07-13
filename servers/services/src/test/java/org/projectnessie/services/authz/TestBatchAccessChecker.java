@@ -167,6 +167,12 @@ public class TestBatchAccessChecker {
       case VIEW_REFLOG:
         checker.canViewRefLog();
         break;
+      case READ_REPOSITORY_CONFIG:
+        checker.canReadRepositoryConfig(c.repositoryConfigType());
+        break;
+      case UPDATE_REPOSITORY_CONFIG:
+        checker.canUpdateRepositoryConfig(c.repositoryConfigType());
+        break;
       default:
         throw new IllegalArgumentException("Unsupported: " + c);
     }
