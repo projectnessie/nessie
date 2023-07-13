@@ -956,11 +956,12 @@ public class VersionStoreImpl implements VersionStore {
   @Override
   public List<RepositoryConfig> getRepositoryConfig(
       Set<RepositoryConfig.Type> repositoryConfigTypes) {
-    throw new UnsupportedOperationException("IMPLEMENT ME");
+    return new RepositoryConfigBackend(persist).getConfigs(repositoryConfigTypes);
   }
 
   @Override
-  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig) {
-    throw new UnsupportedOperationException("IMPLEMENT ME");
+  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws ReferenceConflictException {
+    return new RepositoryConfigBackend(persist).updateConfig(repositoryConfig);
   }
 }
