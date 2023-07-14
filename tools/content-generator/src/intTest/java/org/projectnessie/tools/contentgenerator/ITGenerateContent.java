@@ -17,6 +17,7 @@ package org.projectnessie.tools.contentgenerator;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.Content.Type.DELTA_LAKE_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
@@ -26,7 +27,9 @@ import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.LogResponse;
 import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
 class ITGenerateContent extends AbstractContentGeneratorTest {
@@ -47,6 +50,8 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
       ProcessResult proc =
           runGeneratorCmd(
               "generate",
+              "--author",
+              "Test Author 123",
               "-n",
               Integer.toString(numCommits),
               "-u",
@@ -57,7 +62,12 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
 
       assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
       // 1 commit to create the namespaces
-      assertThat(api.getCommitLog().refName(testCaseBranch).stream()).hasSize(numCommits + 1);
+      assertThat(api.getCommitLog().refName(testCaseBranch).stream())
+          .hasSize(numCommits + 1)
+          .first(type(LogResponse.LogEntry.class))
+          .extracting(LogResponse.LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getAuthor)
+          .isEqualTo("Test Author 123");
     }
   }
 }

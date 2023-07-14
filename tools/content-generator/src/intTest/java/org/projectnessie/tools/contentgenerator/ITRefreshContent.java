@@ -115,6 +115,8 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
 
     assertThat(
             runMain(
+                "--author",
+                "Test Author 123",
                 "--key",
                 key1.getElements().get(0),
                 "--key",
@@ -128,8 +130,9 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
         .first()
         .extracting(
             logEntry -> logEntry.getCommitMeta().getMessage(),
+            logEntry -> logEntry.getCommitMeta().getAuthor(),
             logEntry -> Objects.requireNonNull(logEntry.getOperations()).get(0).getKey())
-        .containsExactly("Refresh 1 key(s)", key1);
+        .containsExactly("Refresh 1 key(s)", "Test Author 123", key1);
   }
 
   @Test

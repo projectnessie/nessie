@@ -32,7 +32,6 @@ import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
@@ -44,7 +43,7 @@ import picocli.CommandLine.Option;
     name = "content-refresh",
     mixinStandardHelpOptions = true,
     description = "Get and Put content objects without changes to refresh their storage model")
-public class RefreshContent extends AbstractCommand {
+public class RefreshContent extends CommittingCommand {
 
   @Option(
       names = {"--input"},
@@ -188,7 +187,7 @@ public class RefreshContent extends AbstractCommand {
     String msg = message == null ? ("Refresh " + contentMap.size() + " key(s)") : message;
 
     CommitMultipleOperationsBuilder request =
-        api.commitMultipleOperations().branch(branch).commitMeta(CommitMeta.fromMessage(msg));
+        api.commitMultipleOperations().branch(branch).commitMeta(commitMetaFromMessage(msg));
 
     for (Map.Entry<ContentKey, Content> entry : contentMap.entrySet()) {
       Content content = entry.getValue();

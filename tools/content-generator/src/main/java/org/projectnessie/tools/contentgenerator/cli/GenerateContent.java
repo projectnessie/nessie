@@ -20,7 +20,6 @@ import static org.projectnessie.model.ContentKey.fromPathString;
 import static org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.newKeyGenerator;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -43,7 +42,6 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsResponse;
@@ -61,7 +59,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 
 @Command(name = "generate", mixinStandardHelpOptions = true, description = "Generate commits")
-public class GenerateContent extends AbstractCommand {
+public class GenerateContent extends CommittingCommand {
 
   @Option(
       names = {"-b", "--num-branches"},
@@ -213,13 +211,9 @@ public class GenerateContent extends AbstractCommand {
             api.commitMultipleOperations()
                 .branch(commitToBranch)
                 .commitMeta(
-                    CommitMeta.builder()
-                        .message(
-                            String.format(
-                                "Commit #%d of %d on %s", commitNum, numCommits, branchName))
-                        .author(System.getProperty("user.name"))
-                        .authorTime(Instant.now())
-                        .build());
+                    commitMetaFromMessage(
+                        String.format(
+                            "Commit #%d of %d on %s", commitNum, numCommits, branchName)));
 
         // Collect the namespaces that we do not (yet) know whether those exist.
         Set<ContentKey> namespacesToCheck = new HashSet<>();
