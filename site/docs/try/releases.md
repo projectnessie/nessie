@@ -2,32 +2,6 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
-## 0.65.0 Release (July 14, 2023)
-
-See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.65.0).
-
-* Add Nessie as a Source announcement blog from Dremio website (#7236)
-* Add `--author` option to `content-generator` commands (#7232)
-* Add repository configuration objects (#7233)
-* Fix retrieval of default branch (#7227)
-* Allow re-adds in same commit (#7225)
-* Allow snapshot versions in dependencies (#7224)
-* IDE: Cleanup Idea excludes (#7223)
-* Spark-tests: disable UI (#7222)
-* Compatibility tests: move to new storage model (#6910)
-* Use testcontainers-bom (#7216)
-* Reference keycloak-admin-client-jakarta (#7215)
-* Post Quarkus 3: Remove no longer needed dependency exclusion (#7214)
-* Bump to Quarkus 3.2.0.Final (#6146)
-* CI: Add some missing `--scan` Gradle flags (#7210)
-* Update main README after UI sources moved (#7207)
-* Forbid relative hashes in commits, merges and transplants (#7193)
-* Remove misplaced license header (#7203)
-* More diff-tests (#7192)
-* removed extra tab (#7189)
-* Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
-* IntelliJ: Exclude some more directories from indexing (#7181)
-
 ## 0.64.0 Release (July 03, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.64.0).

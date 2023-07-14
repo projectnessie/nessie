@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.65.0](https://img.shields.io/badge/Version-0.65.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.64.0](https://img.shields.io/badge/Version-0.64.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -111,7 +111,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | tracing.attributes | object | `{}` | Resource attributes to identify the nessie service among other tracing sources. See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service. If left empty, traces will be attached to a service named "Nessie"; to change this, provide a service.name attribute here. |
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
 | tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
-| tracing.sample | string | `"1.0d"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and "1.0d" (inclusive). E.g. "0.5d" means that 50% of the requests will be sampled. |
+| tracing.sample | string | `"all"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and 1.0 (inclusive). E.g. 0.5 means that 50% of the requests will be sampled. |
 | versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-quarkus-cli tool's export/import functionality.) |
 
 ## Using secrets
