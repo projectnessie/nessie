@@ -66,6 +66,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -77,6 +78,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
@@ -949,5 +951,17 @@ public class VersionStoreImpl implements VersionStore {
   @Deprecated
   public Stream<RefLogDetails> getRefLog(Hash refLogId) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public List<RepositoryConfig> getRepositoryConfig(
+      Set<RepositoryConfig.Type> repositoryConfigTypes) {
+    return new RepositoryConfigBackend(persist).getConfigs(repositoryConfigTypes);
+  }
+
+  @Override
+  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws ReferenceConflictException {
+    return new RepositoryConfigBackend(persist).updateConfig(repositoryConfig);
   }
 }

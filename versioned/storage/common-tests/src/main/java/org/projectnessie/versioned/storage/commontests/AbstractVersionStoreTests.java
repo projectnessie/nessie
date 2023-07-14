@@ -23,6 +23,8 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
+import org.projectnessie.versioned.tests.AbstractMergeScenarios;
+import org.projectnessie.versioned.tests.AbstractRepositoryConfig;
 import org.projectnessie.versioned.tests.AbstractVersionStoreTestBase;
 
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
@@ -38,6 +40,13 @@ public class AbstractVersionStoreTests extends AbstractVersionStoreTestBase {
   @Nested
   public class MergeScenarios extends AbstractMergeScenarios {
     public MergeScenarios() {
+      super(AbstractVersionStoreTests.this.store());
+    }
+  }
+
+  @Nested
+  public class RepositoryConfig extends AbstractRepositoryConfig {
+    public RepositoryConfig() {
       super(AbstractVersionStoreTests.this.store());
     }
   }

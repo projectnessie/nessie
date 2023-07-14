@@ -15,7 +15,12 @@
  */
 package org.projectnessie.api.v2;
 
+import java.util.List;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.RepositoryConfigResponse;
+import org.projectnessie.model.UpdateRepositoryConfigRequest;
+import org.projectnessie.model.UpdateRepositoryConfigResponse;
 
 public interface ConfigApi {
 
@@ -25,4 +30,9 @@ public interface ConfigApi {
 
   /** Get the server configuration. */
   NessieConfiguration getConfig();
+
+  RepositoryConfigResponse getRepositoryConfig(List<String> repositoryConfigTypes);
+
+  UpdateRepositoryConfigResponse updateRepositoryConfig(
+      UpdateRepositoryConfigRequest repositoryConfigUpdate) throws NessieConflictException;
 }

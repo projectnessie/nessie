@@ -42,6 +42,10 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.slf4j.api)
 
+  implementation(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)

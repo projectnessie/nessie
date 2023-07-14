@@ -15,12 +15,15 @@
  */
 package org.projectnessie.server.authz;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -45,7 +48,9 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
     getChecks()
         .forEach(
             check -> {
-              if (check.type().isContent()) {
+              if (check.type().isRepositoryConfigType()) {
+                canPerformRepositoryConfig(check, failed);
+              } else if (check.type().isContent()) {
                 canPerformOpOnPath(check, failed);
               } else if (check.type().isRef()) {
                 canPerformOpOnReference(check, failed);
@@ -117,6 +122,20 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
             String.format(
                 "'%s' is not allowed for role '%s' on content '%s'",
                 check.type(), roleName, contentKeyPathString);
+
+    canPerformOp(arguments, check, errorMsgSupplier, failed);
+  }
+
+  private void canPerformRepositoryConfig(Check check, Map<Check, String> failed) {
+    RepositoryConfig.Type repositoryConfigType = requireNonNull(check.repositoryConfigType());
+
+    ImmutableMap<String, Object> arguments = ImmutableMap.of("type", repositoryConfigType.name());
+
+    Supplier<String> errorMsgSupplier =
+        () ->
+            String.format(
+                "'%s' is not allowed for repository config type '%s'",
+                check.type(), repositoryConfigType.name());
 
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }

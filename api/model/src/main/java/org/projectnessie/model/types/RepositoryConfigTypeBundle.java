@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.api;
+package org.projectnessie.model.types;
 
 /**
- * Interface for the Nessie V2 API implementation.
- *
- * <p>At the java client level this API uses the same builder classes and model types as API v1,
- * however the behaviour of some API methods is different.
- *
- * <p>Most changes between v1 and v2 exist at the REST level (HTTP).
+ * Used to provide custom {@link org.projectnessie.model.RepositoryConfig} implementations via the
+ * Java {@link java.util.ServiceLoader service loader} mechanism.
  */
-public interface NessieApiV2 extends NessieApiV1 {
-
-  GetRepositoryConfigBuilder getRepositoryConfig();
-
-  UpdateRepositoryConfigBuilder updateRepositoryConfig();
+public interface RepositoryConfigTypeBundle {
+  void register(RepositoryConfigTypeRegistry repositoryTypeRegistry);
 }

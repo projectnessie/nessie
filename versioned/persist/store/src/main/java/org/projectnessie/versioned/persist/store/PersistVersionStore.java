@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -47,6 +48,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -730,5 +732,18 @@ public class PersistVersionStore implements VersionStore {
                     .operation(e.getOperation())
                     .sourceHashes(e.getSourceHashes())
                     .build());
+  }
+
+  @Override
+  public List<RepositoryConfig> getRepositoryConfig(
+      Set<RepositoryConfig.Type> repositoryConfigTypes) {
+    throw new IllegalArgumentException(
+        "Old database model does not support repository config objects");
+  }
+
+  @Override
+  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig) {
+    throw new IllegalArgumentException(
+        "Old database model does not support repository config objects");
   }
 }

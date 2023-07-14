@@ -15,7 +15,11 @@
  */
 package org.projectnessie.services.spi;
 
+import java.util.List;
+import java.util.Set;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.RepositoryConfig;
 
 /**
  * Server-side interface to services providing user-visible configuration properties.
@@ -26,4 +30,9 @@ import org.projectnessie.model.NessieConfiguration;
 public interface ConfigService {
 
   NessieConfiguration getConfig();
+
+  List<RepositoryConfig> getRepositoryConfig(Set<RepositoryConfig.Type> repositoryConfigTypes);
+
+  RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws NessieConflictException;
 }

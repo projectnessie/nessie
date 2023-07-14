@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -26,6 +27,7 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
@@ -185,5 +187,17 @@ public class EventsVersionStore implements VersionStore {
   @SuppressWarnings("MustBeClosedChecker")
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegate.getRefLog(refLogId);
+  }
+
+  @Override
+  public List<RepositoryConfig> getRepositoryConfig(
+      Set<RepositoryConfig.Type> repositoryConfigTypes) {
+    return delegate.getRepositoryConfig(repositoryConfigTypes);
+  }
+
+  @Override
+  public RepositoryConfig updateRepositoryConfig(RepositoryConfig repositoryConfig)
+      throws ReferenceConflictException {
+    return delegate.updateRepositoryConfig(repositoryConfig);
   }
 }

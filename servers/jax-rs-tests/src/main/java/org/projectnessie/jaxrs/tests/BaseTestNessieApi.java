@@ -15,6 +15,7 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.immutableEntry;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -33,6 +34,7 @@ import static org.projectnessie.model.FetchOption.ALL;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -62,6 +64,7 @@ import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.client.ext.NessieApiVersion;
@@ -90,6 +93,7 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
+import org.projectnessie.model.GarbageCollectorConfig;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -107,7 +111,10 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.types.GenericRepositoryConfig;
+import org.projectnessie.model.types.ImmutableGenericRepositoryConfig;
 
 /** Nessie-API tests. */
 @NessieApiVersions // all versions
@@ -142,6 +149,11 @@ public abstract class BaseTestNessieApi {
   @jakarta.validation.constraints.NotNull
   public NessieApiV1 api() {
     return api;
+  }
+
+  public NessieApiV2 apiV2() {
+    checkState(api instanceof NessieApiV2, "Not using API v2");
+    return (NessieApiV2) api;
   }
 
   public boolean isV2() {
@@ -1679,5 +1691,94 @@ public abstract class BaseTestNessieApi {
                 i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime());
       }
     }
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void createAndUpdateRepositoryConfig() throws Exception {
+    // Dummy to make TestRestInMemoryNaiveClient happy (not fail)
+    api().getConfig();
+
+    assumeTrue(fullPagingSupport());
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
+    RepositoryConfig created =
+        GarbageCollectorConfig.builder()
+            .defaultCutoffPolicy("PT30D")
+            .newFilesGracePeriod(Duration.of(3, ChronoUnit.HOURS))
+            .build();
+    RepositoryConfig updated =
+        GarbageCollectorConfig.builder()
+            .defaultCutoffPolicy("PT10D")
+            .expectedFileCountPerContent(123)
+            .build();
+
+    soft.assertThat(created.getType()).isEqualTo(RepositoryConfig.Type.GARBAGE_COLLECTOR);
+    soft.assertThat(updated.getType()).isEqualTo(RepositoryConfig.Type.GARBAGE_COLLECTOR);
+
+    soft.assertThat(
+            api.getRepositoryConfig()
+                .type(RepositoryConfig.Type.GARBAGE_COLLECTOR)
+                .get()
+                .getConfigs())
+        .isEmpty();
+
+    soft.assertThat(api.updateRepositoryConfig().repositoryConfig(created).update().getPrevious())
+        .isNull();
+
+    soft.assertThat(
+            api.getRepositoryConfig()
+                .type(RepositoryConfig.Type.GARBAGE_COLLECTOR)
+                .get()
+                .getConfigs())
+        .containsExactly(created);
+
+    soft.assertThat(api.updateRepositoryConfig().repositoryConfig(updated).update().getPrevious())
+        .isEqualTo(created);
+
+    soft.assertThat(
+            api.getRepositoryConfig()
+                .type(RepositoryConfig.Type.GARBAGE_COLLECTOR)
+                .get()
+                .getConfigs())
+        .containsExactly(updated);
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void genericRepositoryConfigForbidden() throws Exception {
+    // Dummy to make TestRestInMemoryNaiveClient happy (not fail)
+    api().getConfig();
+
+    assumeTrue(fullPagingSupport());
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
+    RepositoryConfig created =
+        ImmutableGenericRepositoryConfig.builder()
+            .type(
+                new RepositoryConfig.Type() {
+                  @Override
+                  public String name() {
+                    return "FOO_BAR";
+                  }
+
+                  @Override
+                  public Class<? extends RepositoryConfig> type() {
+                    return GenericRepositoryConfig.class;
+                  }
+                })
+            .putAttributes("foo", "bar")
+            .putAttributes("bar", "baz")
+            .build();
+
+    soft.assertThatThrownBy(
+            () -> api.updateRepositoryConfig().repositoryConfig(created).update().getPrevious())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining(
+            "Repository config type bundle for 'FOO_BAR' is not available on the Nessie server side");
   }
 }

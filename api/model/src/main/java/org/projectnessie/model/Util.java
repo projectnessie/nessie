@@ -21,11 +21,15 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.projectnessie.model.types.ContentTypes;
+import org.projectnessie.model.types.RepositoryConfigTypes;
 
 final class Util {
 
@@ -102,6 +106,60 @@ final class Util {
       } else {
         gen.writeString(value.name());
       }
+    }
+  }
+
+  static final class RepositoryConfigTypeDeserializer
+      extends JsonDeserializer<RepositoryConfig.Type> {
+    @Override
+    public RepositoryConfig.Type deserialize(JsonParser p, DeserializationContext ctxt)
+        throws IOException {
+      String name = p.readValueAs(String.class);
+      return name != null ? RepositoryConfigTypes.forName(name) : null;
+    }
+  }
+
+  static final class RepositoryConfigTypeSerializer extends JsonSerializer<RepositoryConfig.Type> {
+    @Override
+    public void serialize(
+        RepositoryConfig.Type value, JsonGenerator gen, SerializerProvider serializers)
+        throws IOException {
+      if (value == null) {
+        gen.writeNull();
+      } else {
+        gen.writeString(value.name());
+      }
+    }
+  }
+
+  static class DurationSerializer extends StdSerializer<Duration> {
+    public DurationSerializer() {
+      this(Duration.class);
+    }
+
+    protected DurationSerializer(Class<Duration> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Duration value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+      gen.writeString(value.toString());
+    }
+  }
+
+  static class DurationDeserializer extends StdDeserializer<Duration> {
+    public DurationDeserializer() {
+      this(null);
+    }
+
+    protected DurationDeserializer(Class<?> vc) {
+      super(vc);
+    }
+
+    @Override
+    public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      return Duration.parse(p.getText());
     }
   }
 }

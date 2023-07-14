@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import org.projectnessie.model.IdentifiedContentKey;
+import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.NamedRef;
 
 public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
@@ -124,5 +125,15 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   @Override
   public BatchAccessChecker canViewRefLog() {
     return can(Check.canViewRefLog());
+  }
+
+  @Override
+  public BatchAccessChecker canReadRepositoryConfig(RepositoryConfig.Type repositoryConfigType) {
+    return can(Check.canReadRepositoryConfig(repositoryConfigType));
+  }
+
+  @Override
+  public BatchAccessChecker canUpdateRepositoryConfig(RepositoryConfig.Type repositoryConfigType) {
+    return can(Check.canUpdateRepositoryConfig(repositoryConfigType));
   }
 }

@@ -153,7 +153,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       AuthzPaginationIterator<ReferenceInfo<CommitMeta>> authz =
           new AuthzPaginationIterator<ReferenceInfo<CommitMeta>>(
-              references, super::startAccessCheck, getConfig().accessChecksBatchSize()) {
+              references, super::startAccessCheck, getServerConfig().accessChecksBatchSize()) {
             @Override
             protected Set<Check> checksForEntry(ReferenceInfo<CommitMeta> entry) {
               return singleton(canViewReference(entry.getNamedRef()));
@@ -175,7 +175,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
           String.format(
-              "Could not find default branch '%s'.", this.getConfig().getDefaultBranch()));
+              "Could not find default branch '%s'.", this.getServerConfig().getDefaultBranch()));
     }
     return pagedResponseHandler.build();
   }
@@ -183,7 +183,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   private GetNamedRefsParams getGetNamedRefsParams(boolean fetchMetadata) {
     return fetchMetadata
         ? GetNamedRefsParams.builder()
-            .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
+            .baseReference(BranchName.of(this.getServerConfig().getDefaultBranch()))
             .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
             .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
             .build()
@@ -273,7 +273,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       // then do not throw a NessieNotFoundException, but re-create the default branch. In all
       // cases, re-throw the exception.
       if (!(ReferenceType.BRANCH.equals(type)
-          && refName.equals(getConfig().getDefaultBranch())
+          && refName.equals(getServerConfig().getDefaultBranch())
           && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
         throw e;
       }
@@ -292,7 +292,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
-    Reference r = getReferenceByName(getConfig().getDefaultBranch(), FetchOption.MINIMAL);
+    Reference r = getReferenceByName(getServerConfig().getDefaultBranch(), FetchOption.MINIMAL);
     checkState(r instanceof Branch, "Default branch isn't a branch");
     return (Branch) r;
   }
@@ -343,7 +343,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           referenceType,
           ref);
       checkArgument(
-          !(ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())),
+          !(ref instanceof BranchName
+              && getServerConfig().getDefaultBranch().equals(ref.getName())),
           "Default branch '%s' cannot be deleted.",
           ref.getName());
 
@@ -852,7 +853,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
         AuthzPaginationIterator<KeyEntry> authz =
             new AuthzPaginationIterator<KeyEntry>(
-                entries, super::startAccessCheck, getConfig().accessChecksBatchSize()) {
+                entries, super::startAccessCheck, getServerConfig().accessChecksBatchSize()) {
               @Override
               protected Set<Check> checksForEntry(KeyEntry entry) {
                 return singleton(canReadContentKey(refWithHash.getValue(), entry.getKey()));
