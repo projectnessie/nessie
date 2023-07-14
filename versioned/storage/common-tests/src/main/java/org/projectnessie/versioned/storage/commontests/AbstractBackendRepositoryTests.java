@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
+import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -66,7 +67,7 @@ public class AbstractBackendRepositoryTests {
                 IntStream.range(0, objs)
                     .mapToObj(
                         x ->
-                            StringObj.stringData(
+                            stringData(
                                 "content-type",
                                 Compression.NONE,
                                 "file-" + x,
