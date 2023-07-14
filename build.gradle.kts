@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+import org.jetbrains.changelog.date
+
 plugins {
   eclipse
   id("nessie-conventions-root")
   alias(libs.plugins.nexus.publish.plugin)
+  alias(libs.plugins.jetbrains.changelog)
 }
 
 apply<ReleaseSupportPlugin>()
@@ -108,4 +111,24 @@ spotless {
     // Must be repeated :( - there's no "addTarget" or so
     target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "build-logic/*.gradle.kts")
   }
+}
+
+changelog {
+  repositoryUrl.set("https://github.com/projectnessie/nessie")
+  title.set("Nessie Changelog")
+  versionPrefix.set("nessie-")
+  header.set(provider { "${version.get()} Release (${date()})" })
+  groups.set(
+    listOf(
+      "Highlights",
+      "Upgrade notes",
+      "Breaking changes",
+      "New Features",
+      "Changes",
+      "Deprecations",
+      "Fixes",
+      "Commits"
+    )
+  )
+  version.set(provider { project.version.toString() })
 }

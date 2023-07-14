@@ -213,6 +213,10 @@ jobs:
         The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
         There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
 
+        ## Changelog
+        
+        $(./gradlew --quiet --console=plain getChangelog --no-header --no-links)
+
         ## Full Changelog (minus renovate commits):
 
         $(cat ${DIR}/release-log)

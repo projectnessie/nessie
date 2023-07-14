@@ -129,6 +129,12 @@ jobs:
         bump-helm-version: 'true'
         bump-site-version: 'true'
 
+    - name: Patch changelog
+      uses: gradle/gradle-build-action@v2
+      with:
+        cache-disabled: true
+        arguments: :patchChangelog
+
     # Updates the site/docs/try/releases.md file, takes the first four lines (the big heading),
     # adds a heading with the version and a note referencing the release notes on GitHub,
     # followed by the Git change log, finalized with the remainder of the
@@ -142,6 +148,10 @@ jobs:
         See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-${RELEASE_VERSION}).
         
         !
+
+        # Add section from CHANGELOG.md for the version to release
+        ./gradlew --quiet --console=plain getChangelog --no-header --no-links >> /tmp/releases.md
+        echo "### Commits" >> /tmp/releases.md
         
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
           --format='format:* %s' ${LAST_TAG}..HEAD . |\
