@@ -103,7 +103,7 @@ public interface HttpConfigApi extends ConfigApi {
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Create or update a repository configuration.",
-      operationId = "getRepositoryConfig")
+      operationId = "updateRepositoryConfig")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
