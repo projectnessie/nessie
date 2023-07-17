@@ -55,13 +55,8 @@ dependencies {
   compileOnly(platform(libs.quarkus.amazon.services.bom))
   compileOnly("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 
-  implementation(libs.testcontainers.keycloak) {
-    exclude(
-      group = "org.keycloak",
-      module = "keycloak-admin-client"
-    ) // Quarkus 3 / Jakarta EE required
-  }
-  implementation(libs.keycloak.admin.client.jakarta)
+  implementation(libs.testcontainers.keycloak)
+  implementation(libs.keycloak.admin.client)
   // Keycloak-admin-client depends on Resteasy.
   // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
   // cause non-existing jackson versions like 2.15.2-jakarta, which then lets the build fail.

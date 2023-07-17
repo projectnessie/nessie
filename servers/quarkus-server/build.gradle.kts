@@ -119,13 +119,8 @@ dependencies {
   intTestRuntimeOnly("org.testcontainers:cassandra")
   intTestRuntimeOnly("org.testcontainers:postgresql")
   intTestRuntimeOnly("org.testcontainers:mongodb")
-  intTestImplementation(project(":nessie-keycloak-testcontainer")) {
-    exclude(
-      group = "org.keycloak",
-      module = "keycloak-admin-client"
-    ) // Quarkus 3 / Jakarta EE required
-  }
-  intTestImplementation(libs.keycloak.admin.client.jakarta)
+  intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestImplementation(libs.keycloak.admin.client)
   intTestRuntimeOnly(project(":nessie-nessie-testcontainer"))
   // Keycloak-admin-client depends on Resteasy.
   // Need to bump Resteasy, because Resteasy < 6.2.4 clashes with our Jackson version management and
