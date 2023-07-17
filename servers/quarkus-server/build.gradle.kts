@@ -110,6 +110,7 @@ dependencies {
   testFixturesApi(libs.bundles.junit.testing)
 
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
+  intTestImplementation(libs.keycloak.admin.client)
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)
