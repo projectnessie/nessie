@@ -9,9 +9,13 @@ in the _To_ column.
 A red cross in the _Rolling Upgrade_ column means that rolling upgrades for the mentioned versions
 are not supported and must be avoided.
 
+**Also read the [release notes](releases.md).**  
+
 | Rolling Upgrade Supported | _From_ Nessie version | _To_ Nessie version |
 |---------------------------|-----------------------|---------------------|
-| :heavy_check_mark:        | 0.40.0 or newer       | 0.65.0 or newer     |
+| :heavy_check_mark:        | 0.61.0 or newer       | 0.65.0 or newer     |
+| :x:                       | 0.40.0 or newer       | 0.61.0 or newer     |
+| :heavy_check_mark:        | 0.40.0 or newer       | 0.60.0 or newer     |
 | :x:                       | < 0.40.0              | 0.40.0 or newer     |
 | :heavy_check_mark:        | 0.26.0 to 0.29.0      | 0.27.0 to 0.30.0    |
 | :x:                       | 0.25.0 or older       | 0.26.0 or newer     |
@@ -23,13 +27,13 @@ See [Releases](releases.md) for release notes.
 
 ## Rolling upgrades target version notes
 
-### Nessie 0.65.0
+### Nessie 0.61.0
 
-The serialized format of internal key-indexes got bumped. For a rolling-upgrade to version 0.65.0 or newer, follow these
+The serialized format of internal key-indexes got bumped. For a rolling-upgrade to version 0.61.0 or newer, follow these
 steps.
 
 1. Deploy Nessie with the system property `nessie.internal.store-index-format-version` set to `1`
-2. Perform the rolling upgrade to 0.65.0 or newer
+2. Perform the rolling upgrade to 0.61.0 or newer
 3. Remove the system property `nessie.internal.store-index-format-version` (or set it to `2`)
 4. Perform a rolling restart
 
