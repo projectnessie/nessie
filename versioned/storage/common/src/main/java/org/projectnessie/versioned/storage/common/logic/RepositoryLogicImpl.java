@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.KEY_REPO_DESCRIPTION;
@@ -26,10 +25,9 @@ import static org.projectnessie.versioned.storage.common.logic.InternalRef.REF_R
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.stringLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
-import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.STRING;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 
@@ -39,7 +37,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -47,10 +44,10 @@ import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsExc
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
+import org.projectnessie.versioned.storage.common.logic.StringLogic.StringValue;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
-import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -132,24 +129,22 @@ final class RepositoryLogicImpl implements RepositoryLogic {
         return null;
       }
 
-      StringObj obj =
-          persist.fetchTypedObj(
-              requireNonNull(
-                  op.value(), "Commit operation for repository description has no value"),
-              STRING,
-              StringObj.class);
+      StringValue value =
+          stringLogic(persist)
+              .fetchString(
+                  requireNonNull(
+                      op.value(), "Commit operation for repository description has no value"));
 
-      return readRepositoryDescription(obj);
+      return readRepositoryDescription(value);
     } catch (ObjNotFoundException e) {
       return null;
     }
   }
 
-  private RepositoryDescription readRepositoryDescription(StringObj stringObj) {
+  private RepositoryDescription readRepositoryDescription(StringValue value) {
     try {
-      return SHARED_OBJECT_MAPPER.readValue(
-          stringObj.text().toByteArray(), RepositoryDescription.class);
-    } catch (IOException e) {
+      return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryDescription.class);
+    } catch (ObjNotFoundException | IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -168,13 +163,16 @@ final class RepositoryLogicImpl implements RepositoryLogic {
 
       repositoryDescription.accept(repoDesc);
 
-      ByteString text = unsafeWrap(SHARED_OBJECT_MAPPER.writeValueAsBytes(repoDesc.build()));
-
-      StringObj string = stringData("application/json", Compression.NONE, null, emptyList(), text);
+      StringObj string =
+          stringLogic(persist)
+              .updateString(
+                  null,
+                  "application/json",
+                  SHARED_OBJECT_MAPPER.writeValueAsBytes(repoDesc.build()));
       // can safely ignore the ID returned from storeObj() - it's fine, if the obj already exists
       persist.storeObj(string);
       b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
-    } catch (ObjTooLargeException | IOException e) {
+    } catch (ObjTooLargeException | ObjNotFoundException | IOException e) {
       throw new RuntimeException(e);
     }
   }

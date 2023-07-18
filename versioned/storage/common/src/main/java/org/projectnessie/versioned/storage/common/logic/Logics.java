@@ -35,4 +35,8 @@ public final class Logics {
   public static IndexesLogic indexesLogic(Persist persist) {
     return new IndexesLogicImpl(persist);
   }
+
+  public static StringLogic stringLogic(Persist persist) {
+    return new StringLogicImpl(persist);
+  }
 }

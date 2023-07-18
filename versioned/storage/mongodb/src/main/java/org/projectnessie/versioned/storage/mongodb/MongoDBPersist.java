@@ -36,6 +36,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
+import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT;
@@ -957,7 +958,7 @@ public class MongoDBPersist implements Persist {
 
           @Override
           StringObj docToObj(ObjId id, Document doc) {
-            return StringObj.stringData(
+            return stringData(
                 id,
                 doc.getString(COL_STRING_CONTENT_TYPE),
                 Compression.valueOf(doc.getString(COL_STRING_COMPRESSION)),

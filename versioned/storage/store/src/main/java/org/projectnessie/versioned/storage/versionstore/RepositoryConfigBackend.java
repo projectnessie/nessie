@@ -16,18 +16,16 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.stringLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
-import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 
@@ -40,7 +38,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.projectnessie.model.RepositoryConfig;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
@@ -58,13 +55,13 @@ import org.projectnessie.versioned.storage.common.logic.CommitRetry;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.logic.StringLogic;
+import org.projectnessie.versioned.storage.common.logic.StringLogic.StringValue;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
-import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.slf4j.Logger;
@@ -96,9 +93,19 @@ class RepositoryConfigBackend {
                   .map(storeKey -> valueObjIdFromIndex(index, storeKey))
                   .toArray(ObjId[]::new));
 
+      StringLogic stringLogic = stringLogic(p);
+
       return Arrays.stream(objs)
           .filter(Objects::nonNull)
           .map(StringObj.class::cast)
+          .map(
+              s -> {
+                try {
+                  return stringLogic.fetchString(s);
+                } catch (ObjNotFoundException e) {
+                  throw new RuntimeException(e);
+                }
+              })
           .map(RepositoryConfigBackend::deserialize)
           .collect(Collectors.toList());
     } catch (ObjNotFoundException | RetryTimeoutException e) {
@@ -131,7 +138,7 @@ class RepositoryConfigBackend {
               StoreIndexElement<CommitOp> existingElement = index.get(storeKey);
               ObjId existingValueId = null;
               UUID existingContentId = null;
-              StringObj existing = null;
+              StringValue existing = null;
               if (existingElement != null) {
                 CommitOp op = existingElement.content();
                 if (op.action().exists()) {
@@ -140,8 +147,7 @@ class RepositoryConfigBackend {
 
                   existing =
                       existingValueId != null
-                          ? p.fetchTypedObj(
-                              requireNonNull(existingValueId), ObjType.STRING, StringObj.class)
+                          ? stringLogic(p).fetchString(requireNonNull(existingValueId))
                           : null;
                 }
               }
@@ -149,7 +155,9 @@ class RepositoryConfigBackend {
                 existingContentId = UUID.randomUUID();
               }
 
-              StringObj newValue = serialize(repositoryConfig);
+              StringObj newValue =
+                  stringLogic(p)
+                      .updateString(existing, "application/json", serialize(repositoryConfig));
 
               if (!requireNonNull(newValue.id()).equals(existingValueId)) {
                 CommitObj committed =
@@ -192,19 +200,18 @@ class RepositoryConfigBackend {
     }
   }
 
-  private static StringObj serialize(RepositoryConfig repositoryConfig) {
+  private static byte[] serialize(RepositoryConfig repositoryConfig) {
     try {
-      ByteString text = unsafeWrap(SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryConfig));
-      return stringData("application/json", Compression.NONE, null, emptyList(), text);
+      return SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryConfig);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static RepositoryConfig deserialize(StringObj value) {
+  private static RepositoryConfig deserialize(StringValue value) {
     try {
-      return SHARED_OBJECT_MAPPER.readValue(value.text().toByteArray(), RepositoryConfig.class);
-    } catch (IOException e) {
+      return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryConfig.class);
+    } catch (ObjNotFoundException | IOException e) {
       throw new RuntimeException(e);
     }
   }
