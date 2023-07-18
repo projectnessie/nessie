@@ -53,11 +53,6 @@ dependencies {
   implementation(platform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 
-  implementation(libs.testcontainers.keycloak) {
-    exclude(
-      group = "org.keycloak",
-      module = "keycloak-admin-client"
-    ) // Quarkus 3 / Jakarta EE required
-  }
-  implementation(libs.keycloak.admin.client.jakarta)
+  implementation(libs.testcontainers.keycloak)
+  implementation(libs.keycloak.admin.client)
 }
