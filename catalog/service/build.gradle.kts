@@ -113,7 +113,6 @@ dependencies {
 
   testFixturesApi("org.apache.iceberg:iceberg-api:$versionIceberg:tests")
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg:tests")
-  testFixturesImplementation(libs.junit4)
 
   testFixturesImplementation(libs.slf4j.api)
   testFixturesRuntimeOnly(libs.logback.classic)

@@ -88,7 +88,6 @@ dependencies {
 
   testFixturesApi("org.apache.iceberg:iceberg-api:$icebergVersion:tests")
   testFixturesApi("org.apache.iceberg:iceberg-core:$icebergVersion:tests")
-  testFixturesApi(libs.junit4)
 
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesApi("io.quarkus:quarkus-junit5")
