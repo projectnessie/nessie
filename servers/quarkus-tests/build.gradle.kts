@@ -44,6 +44,8 @@ dependencies {
   implementation("org.testcontainers:postgresql")
   implementation("org.testcontainers:mongodb")
   implementation(libs.docker.java.api)
+  compileOnly(project(":nessie-keycloak-testcontainer"))
+  compileOnly(project(":nessie-nessie-testcontainer"))
 
   implementation(platform(libs.awssdk.bom))
   implementation("software.amazon.awssdk:dynamodb") {
