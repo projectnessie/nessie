@@ -1706,12 +1706,12 @@ public abstract class BaseTestNessieApi {
 
     RepositoryConfig created =
         GarbageCollectorConfig.builder()
-            .defaultCutoffPolicy("PT30D")
+            .defaultCutoffPolicy("P30D")
             .newFilesGracePeriod(Duration.of(3, ChronoUnit.HOURS))
             .build();
     RepositoryConfig updated =
         GarbageCollectorConfig.builder()
-            .defaultCutoffPolicy("PT10D")
+            .defaultCutoffPolicy("P10D")
             .expectedFileCountPerContent(123)
             .build();
 
@@ -1780,5 +1780,30 @@ public abstract class BaseTestNessieApi {
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining(
             "Repository config type bundle for 'FOO_BAR' is not available on the Nessie server side");
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void invalidCreateRepositoryConfig() throws Exception {
+    // Dummy to make TestRestInMemoryNaiveClient happy (not fail)
+    api().getConfig();
+
+    assumeTrue(fullPagingSupport());
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
+    soft.assertThatThrownBy(
+            () ->
+                api.updateRepositoryConfig()
+                    .repositoryConfig(
+                        GarbageCollectorConfig.builder()
+                            .defaultCutoffPolicy("foo")
+                            .newFilesGracePeriod(Duration.of(3, ChronoUnit.HOURS))
+                            .build())
+                    .update()
+                    .getPrevious())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Failed to parse default-cutoff-value");
   }
 }

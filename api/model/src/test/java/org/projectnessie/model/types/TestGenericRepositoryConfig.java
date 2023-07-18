@@ -86,7 +86,7 @@ public class TestGenericRepositoryConfig {
         GarbageCollectorConfig.builder()
             .expectedFileCountPerContent(42)
             .defaultCutoffPolicy("3")
-            .addPerRefCutoffPolicies(referenceCutoffPolicy("main", "PT30D"))
+            .addPerRefCutoffPolicies(referenceCutoffPolicy("main", "P30D"))
             .build());
   }
 
@@ -124,5 +124,29 @@ public class TestGenericRepositoryConfig {
     soft.assertThat(deserialized)
         .extracting(c -> c.getType().name(), c -> c.getType().type())
         .containsExactly(repositoryConfig.getType().name(), GenericRepositoryConfig.class);
+  }
+
+  static Stream<JsonNode> invalidGCDefaultPolicy() {
+    return Stream.of(
+        new ObjectNode(JsonNodeFactory.instance)
+            .put("type", "GARBAGE_COLLECTOR")
+            .put("defaultCutoffPolicy", "abc"),
+        new ObjectNode(JsonNodeFactory.instance)
+            .put("type", "GARBAGE_COLLECTOR")
+            .put("defaultCutoffPolicy", "11b"),
+        new ObjectNode(JsonNodeFactory.instance)
+            .put("type", "GARBAGE_COLLECTOR")
+            .put("defaultCutoffPolicy", "a1b"),
+        new ObjectNode(JsonNodeFactory.instance)
+            .put("defaultCutoffPolicy", "PT30D")
+            .put("type", "GARBAGE_COLLECTOR"));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void invalidGCDefaultPolicy(JsonNode candidate) throws Exception {
+    String jsonString = MAPPER.writeValueAsString(candidate);
+    soft.assertThatThrownBy(() -> MAPPER.readValue(jsonString, GarbageCollectorConfig.class))
+        .hasMessageContaining("Failed to parse default-cutoff-value");
   }
 }

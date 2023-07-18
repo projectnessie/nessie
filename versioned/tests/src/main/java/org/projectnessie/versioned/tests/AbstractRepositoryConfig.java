@@ -42,12 +42,12 @@ public abstract class AbstractRepositoryConfig extends AbstractNestedVersionStor
   void createAndUpdate() throws Exception {
     ImmutableGarbageCollectorConfig created =
         GarbageCollectorConfig.builder()
-            .defaultCutoffPolicy("PT30D")
+            .defaultCutoffPolicy("P30D")
             .newFilesGracePeriod(Duration.of(3, ChronoUnit.HOURS))
             .build();
     ImmutableGarbageCollectorConfig updated =
         GarbageCollectorConfig.builder()
-            .defaultCutoffPolicy("PT10D")
+            .defaultCutoffPolicy("P10D")
             .expectedFileCountPerContent(123)
             .build();
 

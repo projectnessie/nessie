@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.model.Validation.validateDefaultCutOffPolicy;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Duration;
 import java.util.List;
 import javax.annotation.Nullable;
+import javax.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -57,7 +60,25 @@ public interface GarbageCollectorConfig extends RepositoryConfig {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Pattern(
+      regexp = Validation.DEFAULT_CUT_OFF_POLICY_REGEX,
+      message = Validation.DEFAULT_CUT_OFF_POLICY_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.DEFAULT_CUT_OFF_POLICY_REGEX,
+      message = Validation.DEFAULT_CUT_OFF_POLICY_MESSAGE)
   String getDefaultCutoffPolicy();
+
+  /**
+   * Validation rule using {@link
+   * org.projectnessie.model.Validation#validateDefaultCutOffPolicy(String)}.
+   */
+  @Value.Check
+  default void checkDefaultPolicy() {
+    String defaultCutoffPolicy = getDefaultCutoffPolicy();
+    if (defaultCutoffPolicy != null) {
+      validateDefaultCutOffPolicy(defaultCutoffPolicy);
+    }
+  }
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   List<ReferenceCutoffPolicy> getPerRefCutoffPolicies();

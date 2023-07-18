@@ -17,12 +17,9 @@ package org.projectnessie.gc.tool.cli.options;
 
 import com.google.common.collect.Maps;
 import java.nio.file.Path;
-import java.time.DateTimeException;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -132,35 +129,17 @@ public class MarkOptions {
   }
 
   CutoffPolicy parseCutoffPolicy(String value, Supplier<String> errorMessageSuffix) {
-    value = value.toUpperCase(Locale.ROOT);
-
-    Exception ex;
-    if ("NONE".equals(value)) {
-      return CutoffPolicy.NONE;
-    }
-
     try {
-      return CutoffPolicy.numCommits(Integer.parseInt(value));
-    } catch (NumberFormatException f) {
-      ex = f;
+      return CutoffPolicy.parseStringToCutoffPolicy(value, cutoffPolicyRefTime);
+    } catch (Exception ex) {
+      throw new ParameterException(
+          commandSpec.commandLine(),
+          "Failed to parse cutoff-value '"
+              + value
+              + "' "
+              + errorMessageSuffix.get()
+              + ", must be either the number of commits, a duration (as per java.time.Duration) or an ISO instant (like 2011-12-03T10:15:30Z)",
+          ex);
     }
-    try {
-      return CutoffPolicy.atTimestamp(cutoffPolicyRefTime.minus(Duration.parse(value)).toInstant());
-    } catch (DateTimeException f) {
-      ex.addSuppressed(f);
-    }
-    try {
-      return CutoffPolicy.atTimestamp(ZonedDateTime.parse(value).toInstant());
-    } catch (DateTimeException f) {
-      ex.addSuppressed(f);
-    }
-    throw new ParameterException(
-        commandSpec.commandLine(),
-        "Failed to parse cutoff-value '"
-            + value
-            + "' "
-            + errorMessageSuffix.get()
-            + ", must be either the number of commits, a duration (as per java.time.Duration) or an ISO instant (like 2011-12-03T10:15:30Z)",
-        ex);
   }
 }
