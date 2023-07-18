@@ -16,6 +16,7 @@
 
 import com.github.vlsi.jandex.JandexProcessResources
 import java.io.File
+import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.Action
@@ -77,30 +78,65 @@ fun DependencyHandlerScope.forScala(scalaVersion: String) {
   add("implementation", "org.scala-lang:scala-reflect:$scalaVersion!!")
 }
 
-/**
- * Forces all [Test] tasks to use Java 11 for test execution, which is mandatory for tests using
- * Spark.
- */
-fun Project.forceJava11ForTests() {
-  if (!JavaVersion.current().isJava11) {
-    tasks.withType(Test::class.java).configureEach {
-      val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-      javaLauncher.set(
-        javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(11)) }
-      )
+/** Forces all [Test] tasks to use the given Java version. */
+fun Project.forceJavaVersionForTests(requestedJavaVersion: Int) {
+  tasks.withType(Test::class.java).configureEach {
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    if (requestedJavaVersion != currentJavaVersion) {
+      useJavaVersion(requestedJavaVersion)
+      if (requestedJavaVersion >= 11) {
+        addSparkJvmOptions()
+      }
     }
   }
 }
 
-fun Project.forceJava11ForTestTask(name: String) {
-  if (!JavaVersion.current().isJava11) {
-    tasks.named(name, Test::class.java).configure {
-      val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-      javaLauncher.set(
-        javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(11)) }
-      )
+fun Project.forceJavaVersionForTestTask(name: String, requestedJavaVersion: Int) {
+  tasks.named(name, Test::class.java).configure {
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    if (requestedJavaVersion != currentJavaVersion) {
+      useJavaVersion(requestedJavaVersion)
+      if (requestedJavaVersion >= 11) {
+        addSparkJvmOptions()
+      }
     }
   }
+}
+
+/**
+ * Adds the JPMS options required for Spark to run on Java 17, taken from the
+ * `DEFAULT_MODULE_OPTIONS` constant in `org.apache.spark.launcher.JavaModuleOptions`.
+ */
+fun Test.addSparkJvmOptions() {
+  jvmArgs =
+    jvmArgs +
+      listOf(
+        "-XX:+IgnoreUnrecognizedVMOptions",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens=java.base/java.io=ALL-UNNAMED",
+        "--add-opens=java.base/java.net=ALL-UNNAMED",
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+        "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+        "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+      )
+}
+
+fun Test.useJavaVersion(requestedJavaVersion: Int) {
+  val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
+  logger.info("Configuring Java $requestedJavaVersion for $path test execution")
+  javaLauncher.set(
+    javaToolchains!!.launcherFor {
+      languageVersion.set(JavaLanguageVersion.of(requestedJavaVersion))
+    }
+  )
 }
 
 fun Project.libsRequiredVersion(name: String): String {
@@ -271,15 +307,42 @@ fun Project.useSparkScalaVersionsForProject(
     sparkMajorVersion,
     scalaMajorVersion,
     sparkDependencyVersion(sparkMajorVersion, scalaMajorVersion),
-    scalaDependencyVersion(scalaMajorVersion)
+    scalaDependencyVersion(scalaMajorVersion),
+    javaVersionForSpark(sparkMajorVersion)
   )
+}
+
+/**
+ * Get the newest Java LTS version that is lower than or equal to the currently running Java
+ * version.
+ *
+ * For Spark 3.1 and 3.2, this is always Java 11. For Spark 3.3 and 3.4, this is Java 17 when
+ * running the build on Java 17 or newer, otherwise Java 11.
+ */
+fun javaVersionForSpark(sparkMajorVersion: String): Int {
+  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+  return when (sparkMajorVersion) {
+    "3.1",
+    "3.2" -> 11
+    "3.3",
+    "3.4" ->
+      when {
+        currentJavaVersion >= 17 -> 17
+        else -> 11
+      }
+    else ->
+      throw IllegalArgumentException(
+        "Do not know which Java version Spark $sparkMajorVersion supports"
+      )
+  }
 }
 
 class SparkScalaVersions(
   val sparkMajorVersion: String,
   val scalaMajorVersion: String,
   val sparkVersion: String,
-  val scalaVersion: String
+  val scalaVersion: String,
+  val runtimeJavaVersion: Int
 )
 
 abstract class UnixExecutableTask : DefaultTask() {
