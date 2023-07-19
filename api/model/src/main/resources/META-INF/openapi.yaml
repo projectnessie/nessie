@@ -35,12 +35,13 @@ tags:
     description: End points from the Nessie v2 API
 
 servers:
-  - url: "https://nessie.dremio.cloud/v1/repositories/{repositoryId}/"
-    description: Dremio Arctic Nessie URL
-    variables:
-      repositoryId:
-        description: The repository ID (mandatory) of your Arctic catalog. See "Catalog Endpoint" in "General Information"/"Catalog Settings" on the Dremio Cloud Arctic Catalogs page
-        default: ""
+  # Not documenting Dremio Arctic API URLs here, because the REST version path element is at a different place.
+  # - url: "https://nessie.dremio.cloud/v2/repositories/{repositoryId}/"
+  #   description: Dremio Arctic Nessie URL
+  #   variables:
+  #     repositoryId:
+  #       description: The repository ID (mandatory) of your Arctic catalog. See "Catalog Endpoint" in "General Information"/"Catalog Settings" on the Dremio Cloud Arctic Catalogs page
+  #       default: ""
   - url: "http://{host}:19120/api/"
     description: Nessie Quarkus server running, usually locally, used for development purposes
     variables:
