@@ -13,6 +13,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Add validation of cutoff-definitions in `GarbageCollectorConfig`
+- Fix self-reference in OpenAPI spec
+- Add `servers` section to OpenAPI spec
+
 ### Deprecations
 
 ### Fixes
