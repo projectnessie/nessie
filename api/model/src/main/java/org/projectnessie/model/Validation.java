@@ -95,6 +95,24 @@ public final class Validation {
   public static final Pattern REF_NAME_PATH_ELEMENT_PATTERN =
       Pattern.compile(REF_NAME_PATH_ELEMENT_REGEX);
 
+  /*
+   * Default Cut-Off Policy can be a number or Duration or ISO instant.
+   * Following rules are to validate the same.
+   * */
+  private static final String DURATION_REGEX =
+      "([-+]?)P(?:([-+]?[0-9]+)D)?(T(?:([-+]?[0-9]+)H)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)(?:[.,]([0-9]{0,9}))?S)?)?";
+
+  private static final String ISO_TIME_REGEX =
+      "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,9})?(?:Z|[+-][01]\\d:[0-5]\\d)$";
+
+  private static final String POSITIVE_INTEGER_REGEX = "^[1-9]\\d{0,10}";
+  public static final String DEFAULT_CUT_OFF_POLICY_REGEX =
+      "NONE" + "|" + POSITIVE_INTEGER_REGEX + "|" + DURATION_REGEX + "|" + ISO_TIME_REGEX;
+  public static final String DEFAULT_CUT_OFF_POLICY_MESSAGE =
+      "Default cut-off-policy must be either the number of commits, a duration (as per java.time.Duration) or an ISO instant (like 2011-12-03T10:15:30Z) ";
+  public static final Pattern DEFAULT_CUT_OFF_POLICY_PATTERN =
+      Pattern.compile(DEFAULT_CUT_OFF_POLICY_REGEX, Pattern.CASE_INSENSITIVE);
+
   public static final String HASH_RULE = "consist of the hex representation of 4-32 bytes";
   private static final String REF_RULE =
       "start with a letter, followed by letters, digits, one of the ./_- characters, "
@@ -194,6 +212,26 @@ public final class Validation {
       return referenceName;
     }
     throw new IllegalArgumentException(HASH_MESSAGE + " - but was: " + referenceName);
+  }
+
+  /** Just checks whether a string is a valid cut-off policy or not. */
+  private static boolean isValidDefaultCutoffPolicy(String policy) {
+    Objects.requireNonNull(policy, "policy must not be null");
+    Matcher matcher = DEFAULT_CUT_OFF_POLICY_PATTERN.matcher(policy);
+    return matcher.matches();
+  }
+
+  /**
+   * Validate default cutoff policy.Policies can be one of: - number of commits as an integer value,
+   * - a duration (see java.time.Duration), - an ISO instant, - 'NONE,' means everything's
+   * considered as live
+   */
+  public static void validateDefaultCutOffPolicy(String value) {
+    if (isValidDefaultCutoffPolicy(value)) {
+      return;
+    }
+    throw new IllegalArgumentException(
+        "Failed to parse default-cutoff-value '" + value + "'," + DEFAULT_CUT_OFF_POLICY_MESSAGE);
   }
 
   /**

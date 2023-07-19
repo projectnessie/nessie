@@ -289,4 +289,27 @@ class TestValidation {
       soft.assertThatCode(() -> Validation.validateNoRelativeSpec(hash)).doesNotThrowAnyException();
     }
   }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122",
+        "1P12",
+        "PT10D",
+        "2011-12-03T10:15:30",
+        "2011-12-03 10:15:30"
+      })
+  void invalidDefaultCutOffPolicy(String cutOffPolicy) {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Validation.validateDefaultCutOffPolicy(cutOffPolicy))
+        .withMessageContaining("Failed to parse default-cutoff-value");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"123", "P10D", "p20D", "p10d", "PT20.3S", "P2DT3H4M", "2011-12-03T10:15:30Z"})
+  void validateDefaultCutOffPolicy(String cutOffPolicy) {
+    soft.assertThatCode(() -> Validation.validateDefaultCutOffPolicy(cutOffPolicy))
+        .doesNotThrowAnyException();
+  }
 }

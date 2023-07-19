@@ -15,7 +15,11 @@
  */
 package org.projectnessie.gc.identify;
 
+import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Locale;
 import javax.annotation.Nonnull;
 
 /**
@@ -45,5 +49,40 @@ public interface CutoffPolicy {
 
   static CutoffPolicy numCommits(int commits) {
     return new NumCommitsCutoffPolicy(commits);
+  }
+
+  /**
+   * Parse a string value to the corresponding CutoffPolicy.
+   *
+   * @param value a String value to be parsed to corresponding {@link CutoffPolicy}
+   * @param cutoffPolicyRefTime if string cutOffPolicy is a duration, it must be calculated using a
+   *     --cutoff-ref-time
+   * @throws Exception if a String value is not in expected format, wrap the message with exception.
+   */
+  static CutoffPolicy parseStringToCutoffPolicy(String value, ZonedDateTime cutoffPolicyRefTime)
+      throws Exception {
+    value = value.toUpperCase(Locale.ROOT);
+
+    Exception ex;
+    if ("NONE".equals(value)) {
+      return CutoffPolicy.NONE;
+    }
+
+    try {
+      return CutoffPolicy.numCommits(Integer.parseInt(value));
+    } catch (NumberFormatException f) {
+      ex = f;
+    }
+    try {
+      return CutoffPolicy.atTimestamp(cutoffPolicyRefTime.minus(Duration.parse(value)).toInstant());
+    } catch (DateTimeException f) {
+      ex.addSuppressed(f);
+    }
+    try {
+      return CutoffPolicy.atTimestamp(ZonedDateTime.parse(value).toInstant());
+    } catch (DateTimeException f) {
+      ex.addSuppressed(f);
+    }
+    throw ex;
   }
 }
