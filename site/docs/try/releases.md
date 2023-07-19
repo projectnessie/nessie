@@ -2,6 +2,27 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.65.1 Release (July 19, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.65.1).
+
+### Changes
+- Add validation of cutoff-definitions in `GarbageCollectorConfig`
+- Fix self-reference in OpenAPI spec
+- Add `servers` section to OpenAPI spec
+
+### Commits
+* Ninja: fix test failure
+* Nit: update changelog
+* OpenAPI spec: add `servers` section (#7266)
+* Fix openapi self-reference and type ambiguity (#7264)
+* Validate default-cut-off-policy with gc config/repository APIs (#7265)
+* Allow Java 17 for Spark 3.3+3.4 tests (#7262)
+* Introduce `CHANGELOG.md`, include in release information (#7243)
+* Introduce `StringLogic` for persisted strings (#7238)
+* Bump Keycloak to 22.0.0 (#7254)
+* Revert bot-changes in `server-upgrade.md` (#7244)
+
 ## 0.65.0 Release (July 14, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.65.0).
