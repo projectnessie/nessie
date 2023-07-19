@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.ser.Views;
 
@@ -58,6 +59,7 @@ public interface EntriesResponse extends PaginatedResponse {
     @NotNull
     @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
+    @Schema(ref = "#/components/schemas/Type") // workaround self-referencing 'ref'
     Content.Type getType();
 
     @NotNull
