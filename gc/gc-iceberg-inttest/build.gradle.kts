@@ -111,7 +111,7 @@ nessieQuarkusApp {
   systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
 }
 
-forceJava11ForTests()
+forceJavaVersionForTests(sparkScala.runtimeJavaVersion)
 
 tasks.withType(Test::class.java).configureEach {
   systemProperty("aws.region", "us-east-1")

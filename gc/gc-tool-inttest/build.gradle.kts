@@ -111,4 +111,4 @@ nessieQuarkusApp {
   systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
 }
 
-forceJava11ForTests()
+forceJavaVersionForTests(sparkScala.runtimeJavaVersion)

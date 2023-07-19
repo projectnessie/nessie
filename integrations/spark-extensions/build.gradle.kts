@@ -15,6 +15,7 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import java.lang.IllegalArgumentException
 
 plugins {
   alias(libs.plugins.nessie.run)
@@ -68,7 +69,7 @@ nessieQuarkusApp {
   systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
 }
 
-forceJava11ForTests()
+forceJavaVersionForTests(sparkScala.runtimeJavaVersion)
 
 tasks.named<ShadowJar>("shadowJar").configure {
   dependencies {
