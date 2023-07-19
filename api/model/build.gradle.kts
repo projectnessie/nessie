@@ -57,6 +57,10 @@ dependencies {
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
+
+  intTestImplementation(platform(libs.testcontainers.bom))
+  intTestImplementation("org.testcontainers:testcontainers")
+  intTestImplementation(libs.awaitility)
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
@@ -94,4 +98,10 @@ annotationStripper {
     annotationsToDrop("^jakarta[.].+".toRegex())
     unmodifiedClassesForJavaVersion.set(11)
   }
+}
+
+tasks.named<Test>("intTest").configure {
+  dependsOn(generateOpenApiSpec)
+  systemProperty("openapiSchemaDir", "$buildDir/generated/openapi/META-INF/openapi")
+  systemProperty("redoclyConfDir", "$projectDir/src/redocly")
 }

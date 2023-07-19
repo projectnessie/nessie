@@ -19,9 +19,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.immutables.value.Value;
 
 @Schema(type = SchemaType.OBJECT, title = "UpdateRepositoryConfigRequest")
+@Tag(name = "v2")
 @Value.Immutable
 @JsonSerialize(as = ImmutableUpdateRepositoryConfigRequest.class)
 @JsonDeserialize(as = ImmutableUpdateRepositoryConfigRequest.class)

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.immutables.value.Value;
 import org.projectnessie.model.types.RepositoryConfigTypeIdResolver;
 import org.projectnessie.model.types.RepositoryConfigTypes;
@@ -36,32 +37,35 @@ import org.projectnessie.model.types.RepositoryConfigTypes;
       @DiscriminatorMapping(value = "GARBAGE_COLLECTOR", schema = GarbageCollectorConfig.class)
     },
     discriminatorProperty = "type")
+@Tag(name = "v2")
 @JsonTypeIdResolver(RepositoryConfigTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public interface RepositoryConfig {
 
   /**
-   * Returns the {@link RepositoryConfig.Type} value for this repository config object.
+   * Returns the {@link Type} value for this repository config object.
    *
    * <p>The name of the returned value should match the JSON type name used for serializing the
-   * content object.
+   * repository config object.
    */
   @Value.Redacted
   @JsonIgnore
-  RepositoryConfig.Type getType();
+  Type getType();
 
   @JsonDeserialize(using = Util.RepositoryConfigTypeDeserializer.class)
   @JsonSerialize(using = Util.RepositoryConfigTypeSerializer.class)
   @Schema(
       type = SchemaType.STRING,
+      name = "RepositoryConfigType",
       description =
           "Declares the type of a Nessie repository config object, which is currently only "
               + "GARBAGE_COLLECTOR, which is the discriminator mapping value of the 'RepositoryConfig' type.")
+  @Tag(name = "v2")
   interface Type {
-    RepositoryConfig.Type UNKNOWN = RepositoryConfigTypes.forName("UNKNOWN");
-    RepositoryConfig.Type GARBAGE_COLLECTOR = RepositoryConfigTypes.forName("GARBAGE_COLLECTOR");
+    Type UNKNOWN = RepositoryConfigTypes.forName("UNKNOWN");
+    Type GARBAGE_COLLECTOR = RepositoryConfigTypes.forName("GARBAGE_COLLECTOR");
 
-    /** The name of the content-type. */
+    /** The name of the repository config type. */
     String name();
 
     Class<? extends RepositoryConfig> type();

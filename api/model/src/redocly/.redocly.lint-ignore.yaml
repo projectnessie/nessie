@@ -1,0 +1,158 @@
+# This file instructs Redocly's linter to ignore the rules contained for specific parts of your API.
+# See https://redoc.ly/docs/cli/ for more information.
+openapi.yaml:
+  no-empty-servers:
+    - '#/openapi'
+  no-invalid-media-type-examples:
+    - '#/paths/~1v1~1contents/post/responses/200/content/application~1json/schema'
+    - >-
+      #/paths/~1v1~1contents~1{key}/get/responses/200/content/application~1json/schema
+    - >-
+      #/paths/~1v1~1diffs~1{fromRefWithHash}...{toRefWithHash}/get/responses/200/content/application~1json/schema
+    - '#/components/examples/namespace/value'
+    - '#/components/examples/namespacesResponse/value/namespaces/0'
+    - '#/components/examples/namespacesResponse/value/namespaces/0/type'
+    - '#/components/examples/namespacesResponse/value/namespaces/1'
+    - '#/components/examples/namespacesResponse/value/namespaces/1/type'
+    - '#/components/examples/referencesResponse/value/references/0/type'
+    - '#/components/examples/referencesResponse/value/references/1/type'
+    - '#/components/examples/referencesResponse/value/references/2/type'
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/0/type
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/1/type
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/2/type
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/3/type
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/4/type
+    - >-
+      #/paths/~1v1~1trees~1branch~1{branchName}~1commit/post/requestBody/content/application~1json/schema
+    - '#/components/examples/refObj/value/type'
+    - >-
+      #/paths/~1v1~1trees~1branch~1{branchName}~1merge/post/requestBody/content/application~1json/schema
+    - '#/components/examples/mergeResponseSuccess/value/details/0/conflictType'
+    - '#/components/examples/mergeResponseSuccess/value/wasApplied'
+    - '#/components/examples/mergeResponseSuccess/value/wasSuccessful'
+    - '#/components/examples/mergeResponseFail/value/details/0/conflictType'
+    - '#/components/examples/mergeResponseFail/value/wasApplied'
+    - '#/components/examples/mergeResponseFail/value/wasSuccessful'
+    - >-
+      #/paths/~1v1~1trees~1branch~1{branchName}~1transplant/post/requestBody/content/application~1json/schema
+    - '#/components/examples/refObjNew/value/type'
+    - >-
+      #/paths/~1v1~1trees~1tree~1{ref}~1log/get/responses/200/content/application~1json/schema
+    - '#/components/examples/tagObj/value/type'
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/0/metadata/commitMetaOfHEAD
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/0/metadata/commitMetaOfHEAD/author
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/0/metadata/commitMetaOfHEAD/properties
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/1/metadata/commitMetaOfHEAD
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/1/metadata/commitMetaOfHEAD/author
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/1/metadata/commitMetaOfHEAD/properties
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/3/metadata/commitMetaOfHEAD
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/3/metadata/commitMetaOfHEAD/author
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/3/metadata/commitMetaOfHEAD/properties
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/4/metadata/commitMetaOfHEAD
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/4/metadata/commitMetaOfHEAD/author
+    - >-
+      #/components/examples/referencesResponseWithMetadata/value/references/4/metadata/commitMetaOfHEAD/properties
+    - '#/components/examples/singleReferenceResponse/value/reference/type'
+    - >-
+      #/paths/~1v2~1trees~1{branch}~1history~1commit/post/requestBody/content/application~1json/schema
+    - '#/components/examples/commitResponse/value/targetBranch/type'
+    - '#/components/examples/commitResponse/value/addedContents/0/contentId'
+    - >-
+      #/paths/~1v2~1trees~1{branch}~1history~1merge/post/requestBody/content/application~1json/schema
+    - >-
+      #/paths/~1v2~1trees~1{branch}~1history~1transplant/post/requestBody/content/application~1json/schema
+    - >-
+      #/paths/~1v2~1trees~1{from-ref}~1diff~1{to-ref}/get/responses/200/content/application~1json/schema
+    - >-
+      #/components/examples/singleReferenceResponseWithMetadata/value/reference/metadata/commitMetaOfHEAD
+    - >-
+      #/components/examples/singleReferenceResponseWithMetadata/value/reference/metadata/commitMetaOfHEAD/author
+    - >-
+      #/components/examples/singleReferenceResponseWithMetadata/value/reference/metadata/commitMetaOfHEAD/properties
+    - >-
+      #/components/examples/singleReferenceResponseWithMetadata/value/reference/type
+    - >-
+      #/paths/~1v2~1trees~1{ref}~1contents/get/responses/200/content/application~1json/schema
+    - >-
+      #/paths/~1v2~1trees~1{ref}~1contents/post/responses/200/content/application~1json/schema
+    - >-
+      #/paths/~1v2~1trees~1{ref}~1contents~1{key}/get/responses/200/content/application~1json/schema
+    - >-
+      #/paths/~1v2~1trees~1{ref}~1entries/get/responses/default/content/application~1json/schema
+    - >-
+      #/paths/~1v2~1trees~1{ref}~1history/get/responses/200/content/application~1json/schema
+  operation-summary:
+    - '#/paths/~1v1~1namespaces~1namespace~1{ref}~1{name}/post/summary'
+    - '#/paths/~1v1~1namespaces~1{ref}/get/summary'
+  no-unused-components:
+    - '#/components/schemas/CommitResponse'
+    - '#/components/schemas/DiffResponse'
+    - '#/components/schemas/GetMultipleContentsResponse'
+    - '#/components/schemas/LogResponse'
+    - '#/components/schemas/MergeResponse'
+    - '#/components/schemas/NessieConfiguration'
+    - '#/components/schemas/RepositoryConfigResponse'
+    - '#/components/schemas/RepositoryConfigResponse_V2'
+    - '#/components/schemas/RepositoryConfigType'
+    - '#/components/schemas/SingleReferenceResponse'
+    - '#/components/schemas/UpdateRepositoryConfigRequest'
+    - '#/components/schemas/UpdateRepositoryConfigResponse'
+    - '#/components/schemas/UpdateRepositoryConfigResponse_V2'
+    - '#/components/examples/ContentKey'
+    - '#/components/examples/expr_by_commit_operations_in_namespace'
+    - '#/components/examples/types'
+  security-defined:
+    - '#/paths/~1v1~1config/get'
+    - '#/paths/~1v1~1contents/post'
+    - '#/paths/~1v1~1contents~1{key}/get'
+    - '#/paths/~1v1~1diffs~1{fromRefWithHash}...{toRefWithHash}/get'
+    - '#/paths/~1v1~1namespaces~1namespace~1{ref}~1{name}/get'
+    - '#/paths/~1v1~1namespaces~1namespace~1{ref}~1{name}/put'
+    - '#/paths/~1v1~1namespaces~1namespace~1{ref}~1{name}/post'
+    - '#/paths/~1v1~1namespaces~1namespace~1{ref}~1{name}/delete'
+    - '#/paths/~1v1~1namespaces~1{ref}/get'
+    - '#/paths/~1v1~1reflogs/get'
+    - '#/paths/~1v1~1trees/get'
+    - '#/paths/~1v1~1trees~1branch~1{branchName}~1commit/post'
+    - '#/paths/~1v1~1trees~1branch~1{branchName}~1merge/post'
+    - '#/paths/~1v1~1trees~1branch~1{branchName}~1transplant/post'
+    - '#/paths/~1v1~1trees~1tree/get'
+    - '#/paths/~1v1~1trees~1tree/post'
+    - '#/paths/~1v1~1trees~1tree~1{ref}/get'
+    - '#/paths/~1v1~1trees~1tree~1{ref}~1entries/get'
+    - '#/paths/~1v1~1trees~1tree~1{ref}~1log/get'
+    - '#/paths/~1v1~1trees~1{referenceType}~1{referenceName}/put'
+    - '#/paths/~1v1~1trees~1{referenceType}~1{referenceName}/delete'
+    - '#/paths/~1v2~1config/get'
+    - '#/paths/~1v2~1config~1repository/get'
+    - '#/paths/~1v2~1config~1repository/post'
+    - '#/paths/~1v2~1trees/get'
+    - '#/paths/~1v2~1trees/post'
+    - '#/paths/~1v2~1trees~1{branch}~1history~1commit/post'
+    - '#/paths/~1v2~1trees~1{branch}~1history~1merge/post'
+    - '#/paths/~1v2~1trees~1{branch}~1history~1transplant/post'
+    - '#/paths/~1v2~1trees~1{from-ref}~1diff~1{to-ref}/get'
+    - '#/paths/~1v2~1trees~1{ref}/get'
+    - '#/paths/~1v2~1trees~1{ref}/put'
+    - '#/paths/~1v2~1trees~1{ref}/delete'
+    - '#/paths/~1v2~1trees~1{ref}~1contents/get'
+    - '#/paths/~1v2~1trees~1{ref}~1contents/post'
+    - '#/paths/~1v2~1trees~1{ref}~1contents~1{key}/get'
+    - '#/paths/~1v2~1trees~1{ref}~1entries/get'
+    - '#/paths/~1v2~1trees~1{ref}~1history/get'
