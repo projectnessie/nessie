@@ -66,6 +66,13 @@ dependencies {
 extensions.configure<SmallryeOpenApiExtension> {
   scanDependenciesDisable.set(false)
   infoVersion.set(project.version.toString())
+  infoDescription.set(
+    "Transactional Catalog for Data Lakes\n" +
+      "\n" +
+      "* Git-inspired data version control\n" +
+      "* Cross-table transactions and visibility\n" +
+      "* Works with Apache Iceberg tables"
+  )
   schemaFilename.set("META-INF/openapi/openapi")
   operationIdStrategy.set(OperationIdStrategy.METHOD)
   scanPackages.set(
