@@ -125,5 +125,3 @@ dependencies {
     }
   }
 }
-
-javaPlatform { allowDependencies() }
