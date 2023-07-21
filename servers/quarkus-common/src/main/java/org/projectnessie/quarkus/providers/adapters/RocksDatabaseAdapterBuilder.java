@@ -13,36 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.adapters;
 
-import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.DYNAMO;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.ROCKS;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseClient;
-import org.projectnessie.versioned.persist.dynamodb.ProvidedDynamoClientConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.rocks.RocksDbInstance;
 
-/** DynamoDB version store factory. */
-@StoreType(DYNAMO)
+/** RocksDB version store factory. */
+@StoreType(ROCKS)
 @Dependent
-public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
-  @Inject DynamoDbClient dynamoConfig;
+public class RocksDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
+  @Inject RocksDbInstance rocksDbInstance;
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
   public DatabaseAdapter newDatabaseAdapter() {
-    DynamoDatabaseClient client = new DynamoDatabaseClient();
-    client.configure(ProvidedDynamoClientConfig.of(dynamoConfig));
-    client.initialize();
-
-    return new DynamoDatabaseAdapterFactory()
+    return new RocksDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
-        .withConnector(client)
+        .withConnector(rocksDbInstance)
         .build();
   }
 }

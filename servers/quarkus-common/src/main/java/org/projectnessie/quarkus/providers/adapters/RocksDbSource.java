@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.adapters;
 
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;

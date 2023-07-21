@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.adapters;
 
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -24,7 +24,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
-import org.projectnessie.quarkus.providers.StoreType.Literal;
+import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;

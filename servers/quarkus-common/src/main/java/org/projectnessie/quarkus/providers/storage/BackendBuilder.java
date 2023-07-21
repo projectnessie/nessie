@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.storage;
 
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.storage.common.persist.Backend;
 
-/** Factory interface for creating database adapter instances. */
-public interface DatabaseAdapterBuilder {
+public interface BackendBuilder {
 
-  /**
-   * Creates a new database adapter instance.
-   *
-   * @return new database adapter instance
-   */
-  DatabaseAdapter newDatabaseAdapter();
+  Backend buildBackend();
 }

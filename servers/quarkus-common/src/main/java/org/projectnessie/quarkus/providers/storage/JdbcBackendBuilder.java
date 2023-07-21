@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.JDBC;
 
@@ -23,6 +23,7 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.quarkus.config.QuarkusJdbcConfig;
+import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendConfig;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;

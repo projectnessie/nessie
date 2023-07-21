@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.versionstore;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,6 +28,7 @@ import java.io.IOError;
 import java.util.function.Consumer;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.quarkus.providers.WIthInitializedRepository;
 import org.projectnessie.versioned.EventsVersionStore;
 import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.Result;

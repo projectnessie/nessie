@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.adapters;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;

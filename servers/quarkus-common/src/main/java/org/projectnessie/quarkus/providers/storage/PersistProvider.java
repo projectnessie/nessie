@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
@@ -32,7 +32,8 @@ import java.util.function.BiFunction;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
-import org.projectnessie.quarkus.providers.StoreType.Literal;
+import org.projectnessie.quarkus.providers.WIthInitializedRepository;
+import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
