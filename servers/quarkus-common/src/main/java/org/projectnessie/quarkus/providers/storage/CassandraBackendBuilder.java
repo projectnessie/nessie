@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.CASSANDRA;
 import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig.DEFAULT_DDL_TIMEOUT;
@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Backend;

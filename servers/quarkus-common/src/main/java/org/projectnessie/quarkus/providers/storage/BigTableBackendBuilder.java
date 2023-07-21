@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.BIGTABLE;
 import static org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory.configureDataClient;
@@ -31,6 +31,7 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.projectnessie.quarkus.config.QuarkusBigTableConfig;
+import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendConfig;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Backend;

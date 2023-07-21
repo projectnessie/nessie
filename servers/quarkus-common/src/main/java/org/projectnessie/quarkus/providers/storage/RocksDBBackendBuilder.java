@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.storage;
 
-import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.DYNAMODB;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.ROCKSDB;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import org.projectnessie.quarkus.config.QuarkusRocksConfig;
+import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.common.persist.Backend;
-import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
-import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendFactory;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendConfig;
+import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendFactory;
 
-@StoreType(DYNAMODB)
+@StoreType(ROCKSDB)
 @Dependent
-public class DynamoDBBackendBuilder implements BackendBuilder {
+public class RocksDBBackendBuilder implements BackendBuilder {
 
-  @Inject DynamoDbClient client;
+  @Inject QuarkusRocksConfig config;
 
   @Override
   public Backend buildBackend() {
-    DynamoDBBackendFactory factory = new DynamoDBBackendFactory();
-    DynamoDBBackendConfig c = DynamoDBBackendConfig.builder().client(client).build();
+    RocksDBBackendFactory factory = new RocksDBBackendFactory();
+    RocksDBBackendConfig c = RocksDBBackendConfig.builder().from(config).build();
     return factory.buildBackend(c);
   }
 }

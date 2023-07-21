@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.providers.adapters;
 
-import org.projectnessie.versioned.storage.common.persist.Backend;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Disposes;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.Produces;
+import org.projectnessie.versioned.persist.inmem.InmemoryStore;
 
-public interface BackendBuilder {
+@ApplicationScoped
+public class InmemoryStoreProvider {
 
-  Backend buildBackend();
+  @Produces
+  @Singleton
+  public InmemoryStore inmemoryStore() {
+    return new InmemoryStore();
+  }
+
+  public void dispose(@Disposes InmemoryStore store) {
+    store.close();
+  }
 }
