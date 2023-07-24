@@ -118,7 +118,7 @@ val pullOpenApiSpec by tasks.registering(Sync::class)
 
 pullOpenApiSpec.configure {
   destinationDir = openApiSpecDir
-  from(project.objects.property(Configuration::class).value(openapiSource))
+  from(openapiSource) { include("openapi.yaml") }
 }
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
@@ -133,11 +133,16 @@ quarkus {
     "quarkus.smallrye-openapi.additional-docs-directory",
     openApiSpecDir.toString()
   )
+  quarkusBuildProperties.put("quarkus.smallrye-openapi.info-version", project.version.toString())
+  quarkusBuildProperties.put("quarkus.smallrye-openapi.auto-add-security", "false")
 }
 
-val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
+val quarkusAppPartsBuild = tasks.named("quarkusAppPartsBuild")
 
-quarkusBuild.configure { dependsOn(pullOpenApiSpec) }
+quarkusAppPartsBuild.configure {
+  dependsOn(pullOpenApiSpec)
+  inputs.files(openapiSource)
+}
 
 tasks.withType<Test>().configureEach {
   systemProperty(
@@ -146,6 +151,8 @@ tasks.withType<Test>().configureEach {
   )
   systemProperty("keycloak.docker.tag", libs.versions.keycloak.get())
 }
+
+val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.
