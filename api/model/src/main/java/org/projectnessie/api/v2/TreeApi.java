@@ -91,8 +91,15 @@ public interface TreeApi {
               regexp = Validation.REF_NAME_REGEX,
               message = Validation.REF_NAME_MESSAGE)
           String name,
-      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
-          Reference.ReferenceType type,
+      @Valid
+          @jakarta.validation.Valid
+          @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = Validation.REF_TYPE_REGEX, message = Validation.REF_TYPE_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_TYPE_REGEX,
+              message = Validation.REF_TYPE_MESSAGE)
+          String type,
       @Valid @jakarta.validation.Valid @Nullable @jakarta.annotation.Nullable Reference sourceRef)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -186,7 +193,13 @@ public interface TreeApi {
    * @param type Optional expected type of reference being assigned. Will be validated if present.
    */
   SingleReferenceResponse assignReference(
-      @Valid @jakarta.validation.Valid Reference.ReferenceType type,
+      @Valid
+          @jakarta.validation.Valid
+          @Pattern(regexp = Validation.REF_TYPE_REGEX, message = Validation.REF_TYPE_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_TYPE_REGEX,
+              message = Validation.REF_TYPE_MESSAGE)
+          String type,
       @Valid
           @jakarta.validation.Valid
           @NotNull
@@ -208,7 +221,13 @@ public interface TreeApi {
    * @param type Optional expected type of reference being deleted. Will be validated if present.
    */
   SingleReferenceResponse deleteReference(
-      @Valid @jakarta.validation.Valid Reference.ReferenceType type,
+      @Valid
+          @jakarta.validation.Valid
+          @Pattern(regexp = Validation.REF_TYPE_REGEX, message = Validation.REF_TYPE_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_TYPE_REGEX,
+              message = Validation.REF_TYPE_MESSAGE)
+          String type,
       @Valid
           @jakarta.validation.Valid
           @NotNull

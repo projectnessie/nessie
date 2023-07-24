@@ -72,6 +72,9 @@ public final class Validation {
   public static final String REF_NAME_RAW_REGEX =
       "(?:[A-Za-z](?:(?:(?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9_-])?)|-";
   public static final String REF_NAME_REGEX = "^" + REF_NAME_RAW_REGEX + "$";
+
+  public static final String REF_TYPE_RAW_REGEX = "BRANCH|branch|TAG|tag";
+  public static final String REF_TYPE_REGEX = "^(" + REF_TYPE_RAW_REGEX + ")$";
   public static final String REF_NAME_OR_HASH_REGEX =
       "^(?:(" + HASH_RAW_REGEX + ")|(" + REF_NAME_RAW_REGEX + "))$";
   public static final String REF_NAME_PATH_REGEX =
@@ -143,6 +146,10 @@ public final class Validation {
           + ", optionally followed by a "
           + RELATIVE_COMMIT_SPEC_RULE;
   public static final String REF_NAME_MESSAGE = "Reference name must " + REF_RULE;
+
+  public static final String REF_TYPE_RULE = "be either 'branch' or 'tag'";
+  public static final String REF_TYPE_MESSAGE = "Reference type name must " + REF_TYPE_RULE;
+
   public static final String REF_NAME_OR_HASH_MESSAGE =
       "Reference must be either a reference name or hash, " + REF_RULE + " or " + HASH_RULE;
   public static final String FORBIDDEN_REF_NAME_MESSAGE =
