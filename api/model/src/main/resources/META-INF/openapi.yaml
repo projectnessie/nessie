@@ -42,39 +42,24 @@ servers:
   #     repositoryId:
   #       description: The repository ID (mandatory) of your Arctic catalog. See "Catalog Endpoint" in "General Information"/"Catalog Settings" on the Dremio Cloud Arctic Catalogs page
   #       default: ""
-  - url: "http://{host}:19120/api"
-    description: Nessie Quarkus server running, usually locally, used for development purposes
-    variables:
-      host:
-        description: The host address for the specified server
-        default: localhost
-  - url: "{scheme}://{host}/{basePath}"
-    description: Generic server URL, port inferred from the scheme
-    variables:
-      scheme:
-        description: Either http or https.
-        default: https
-      host:
-        description: The server's host name
-        default: localhost
-      basePath:
-        description: Nessie Core API base path.
-        default: "/api/"
   - url: "{scheme}://{host}:{port}/{basePath}"
-    description: Generic base server URL, with all parts configurable
+    description: Nessie REST API endpoint.
     variables:
       scheme:
         description: The scheme of the URI, either http or https.
-        default: https
+        default: http
       host:
         description: The host address for the specified server
         default: localhost
       port:
         description: The port used when addressing the host
-        default: "443"
+        default: "19120"
       basePath:
-        description: Nessie Core API base path.
-        default: "/api/"
+        description: |
+          Nessie Core API base path.
+          When using the Swagger UI from Quarkus from the `/q/swagger-ui` URL, leave the `basePath` value empty.
+          Otherwise use `/api/` for `basePath`.
+        default: ""
 
 paths: {} # inferred from java annotations
 
