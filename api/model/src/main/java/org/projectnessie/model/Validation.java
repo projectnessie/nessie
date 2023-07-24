@@ -74,7 +74,7 @@ public final class Validation {
   public static final String REF_NAME_REGEX = "^" + REF_NAME_RAW_REGEX + "$";
 
   public static final String REF_TYPE_RAW_REGEX = "BRANCH|branch|TAG|tag";
-  public static final String REF_TYPE_REGEX = "^" + REF_TYPE_RAW_REGEX + "$";
+  public static final String REF_TYPE_REGEX = "^(" + REF_TYPE_RAW_REGEX + ")$";
   public static final String REF_NAME_OR_HASH_REGEX =
       "^(?:(" + HASH_RAW_REGEX + ")|(" + REF_NAME_RAW_REGEX + "))$";
   public static final String REF_NAME_PATH_REGEX =
