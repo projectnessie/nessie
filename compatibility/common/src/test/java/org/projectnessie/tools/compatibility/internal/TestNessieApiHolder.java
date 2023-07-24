@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.tools.compatibility.api.Version.NEW_STORAGE_MODEL_WITH_COMPAT_TESTING;
+import static org.projectnessie.tools.compatibility.internal.Helper.CLOSE_RESOURCES;
 
 import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Proxy;
@@ -31,8 +32,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.junit.jupiter.engine.execution.ExtensionValuesStore;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
+import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
 
@@ -42,8 +43,8 @@ class TestNessieApiHolder {
 
   @Test
   void currentVersionServer() {
-    ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
-    try {
+    try (NamespacedHierarchicalStore<Namespace> valuesStore =
+        new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
 
       ExtensionContext ctx = mock(ExtensionContext.class);
@@ -68,15 +69,13 @@ class TestNessieApiHolder {
       } finally {
         apiHolder.close();
       }
-    } finally {
-      valuesStore.closeAllStoredCloseableValues();
     }
   }
 
   @Test
   void oldVersionServer() {
-    ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
-    try {
+    try (NamespacedHierarchicalStore<ExtensionContext.Namespace> valuesStore =
+        new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
 
       ExtensionContext ctx = mock(ExtensionContext.class);
@@ -105,8 +104,6 @@ class TestNessieApiHolder {
       } finally {
         apiHolder.close();
       }
-    } finally {
-      valuesStore.closeAllStoredCloseableValues();
     }
   }
 }
