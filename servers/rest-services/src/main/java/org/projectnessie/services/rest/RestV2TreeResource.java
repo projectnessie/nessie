@@ -15,12 +15,14 @@
  */
 package org.projectnessie.services.rest;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
+import java.util.Locale;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v2.http.HttpTreeApi;
@@ -145,9 +147,12 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
-  public SingleReferenceResponse createReference(
-      String name, Reference.ReferenceType type, Reference reference)
+  public SingleReferenceResponse createReference(String name, String type, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
+
+    Reference.ReferenceType referenceType = parseReferenceType(type);
+    checkArgument(referenceType != null, "Mandatory reference type missing");
+
     String fromRefName = null;
     String fromHash = null;
     if (reference != null) {
@@ -155,7 +160,7 @@ public class RestV2TreeResource implements HttpTreeApi {
       fromHash = reference.getHash();
     }
 
-    Reference created = tree().createReference(name, type, fromHash, fromRefName);
+    Reference created = tree().createReference(name, referenceType, fromHash, fromRefName);
     return SingleReferenceResponse.builder().reference(created).build();
   }
 
@@ -286,10 +291,9 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
-  public SingleReferenceResponse assignReference(
-      Reference.ReferenceType type, String ref, Reference assignTo)
+  public SingleReferenceResponse assignReference(String type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    ParsedReference reference = parseRefPathString(ref, type);
+    ParsedReference reference = parseRefPathString(ref, parseReferenceType(type));
     Reference updated =
         tree()
             .assignReference(
@@ -299,13 +303,20 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
-  public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
+  public SingleReferenceResponse deleteReference(String type, String ref)
       throws NessieConflictException, NessieNotFoundException {
-    ParsedReference reference = parseRefPathString(ref, type);
+    ParsedReference reference = parseRefPathString(ref, parseReferenceType(type));
     Reference deleted =
         tree()
             .deleteReference(reference.type(), reference.name(), reference.hashWithRelativeSpec());
     return SingleReferenceResponse.builder().reference(deleted).build();
+  }
+
+  private static Reference.ReferenceType parseReferenceType(String type) {
+    if (type == null) {
+      return null;
+    }
+    return Reference.ReferenceType.valueOf(type.toUpperCase(Locale.ROOT));
   }
 
   @JsonView(Views.V2.class)

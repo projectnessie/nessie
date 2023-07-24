@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientUri;
@@ -70,6 +71,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Tag;
 
 /** REST specific tests. */
 public abstract class BaseTestNessieRest extends BaseTestNessieApi {
@@ -659,20 +661,50 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
   @NessieApiVersions(versions = {NessieApiVersion.V2})
   @Test
-  public void paramConverterInvalidValue() {
+  public void referenceTypeInvalidValue() {
     NessieError nessieError =
         rest()
             .delete(
-                "trees/test%402e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d?type=X")
+                "trees/test@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d?type=X")
             .then()
             .statusCode(400)
             .extract()
             .as(NessieError.class);
-    assertThat(nessieError)
+    soft.assertThat(nessieError)
         .extracting(NessieError::getStatus, NessieError::getErrorCode)
         .containsExactly(400, ErrorCode.BAD_REQUEST);
-    assertThat(nessieError.getMessage())
-        .contains("No enum constant org.projectnessie.model.Reference.ReferenceType.X");
+    soft.assertThat(nessieError.getMessage())
+        .contains("Reference type name must be either 'branch' or 'tag'");
+
+    nessieError =
+        rest()
+            .body("{\"type\": \"TAG\", \"name\": \"name\", \"hash\": \"feedbeef\"}")
+            .put(
+                "trees/test@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d?type=X")
+            .then()
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError)
+        .extracting(NessieError::getStatus, NessieError::getErrorCode)
+        .containsExactly(400, ErrorCode.BAD_REQUEST);
+    soft.assertThat(nessieError.getMessage())
+        .contains("Reference type name must be either 'branch' or 'tag'");
+
+    nessieError =
+        rest()
+            .queryParam("name", "branch")
+            .queryParam("type", "X")
+            .post("trees")
+            .then()
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError)
+        .extracting(NessieError::getStatus, NessieError::getErrorCode)
+        .containsExactly(400, ErrorCode.BAD_REQUEST);
+    soft.assertThat(nessieError.getMessage())
+        .contains("Reference type name must be either 'branch' or 'tag'");
   }
 
   @NessieApiVersions(versions = {NessieApiVersion.V2})
@@ -797,5 +829,91 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .as(NessieError.class);
     assertThat(error.getMessage())
         .contains("Relative hash not allowed in commit, merge or transplant operations");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @Test
+  public void assignAndDeleteRefWithoutType() throws Exception {
+    Branch branch = createBranchV2("assignAndDeleteRefWithoutType");
+    String initial = branch.getHash();
+    branch = commitV2(branch, ContentKey.of("foo"), IcebergTable.of("a", 1, 2, 3, 4));
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
+    Branch testBranch1 =
+        (Branch)
+            api.createReference()
+                .sourceRefName(branch.getName())
+                .reference(Branch.of("branch1", branch.getHash()))
+                .create();
+    Branch testBranch2 =
+        (Branch)
+            api.createReference()
+                .sourceRefName(branch.getName())
+                .reference(Branch.of("branch2", branch.getHash()))
+                .create();
+    Tag testTag1 =
+        (Tag)
+            api.createReference()
+                .sourceRefName(branch.getName())
+                .reference(Tag.of("tag1", branch.getHash()))
+                .create();
+    Tag testTag2 =
+        (Tag)
+            api.createReference()
+                .sourceRefName(branch.getName())
+                .reference(Tag.of("tag2", branch.getHash()))
+                .create();
+
+    soft.assertThat(
+            rest()
+                .body(
+                    "{\"type\": \"BRANCH\", \"name\": \""
+                        + testBranch1.getName()
+                        + "\", \"hash\": \""
+                        + initial
+                        + "\"}")
+                .put("trees/{name}@{hash}", testBranch1.getName(), testBranch1.getHash())
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(SingleReferenceResponse.class))
+        .extracting(SingleReferenceResponse::getReference)
+        .isEqualTo(Branch.of(testBranch1.getName(), initial));
+    soft.assertThat(
+            rest()
+                .delete("trees/{name}@{hash}", testBranch2.getName(), testBranch2.getHash())
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(SingleReferenceResponse.class))
+        .extracting(SingleReferenceResponse::getReference)
+        .isEqualTo(testBranch2);
+
+    soft.assertThat(
+            rest()
+                .body(
+                    "{\"type\": \"TAG\", \"name\": \""
+                        + testTag1.getName()
+                        + "\", \"hash\": \""
+                        + initial
+                        + "\"}")
+                .put("trees/{name}@{hash}", testTag1.getName(), testTag1.getHash())
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(SingleReferenceResponse.class))
+        .extracting(SingleReferenceResponse::getReference)
+        .isEqualTo(Tag.of("tag1", initial));
+    soft.assertThat(
+            rest()
+                .delete("trees/{name}@{hash}", testTag2.getName(), testTag2.getHash())
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(SingleReferenceResponse.class))
+        .extracting(SingleReferenceResponse::getReference)
+        .isEqualTo(testTag2);
   }
 }

@@ -150,7 +150,7 @@ public interface HttpTreeApi extends TreeApi {
               examples = {@ExampleObject(ref = "referenceType")})
           @QueryParam("type")
           @jakarta.ws.rs.QueryParam("type")
-          Reference.ReferenceType type,
+          String type,
       @RequestBody(
               required = true,
               description = "Source reference data from which the new reference is to be created.",
@@ -432,7 +432,7 @@ public interface HttpTreeApi extends TreeApi {
               examples = {@ExampleObject(ref = "referenceType")})
           @QueryParam("type")
           @jakarta.ws.rs.QueryParam("type")
-          Reference.ReferenceType type,
+          String type,
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = CHECKED_REF_DESCRIPTION,
@@ -490,7 +490,7 @@ public interface HttpTreeApi extends TreeApi {
               examples = {@ExampleObject(ref = "referenceType")})
           @QueryParam("type")
           @jakarta.ws.rs.QueryParam("type")
-          Reference.ReferenceType type,
+          String type,
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = CHECKED_REF_DESCRIPTION,
