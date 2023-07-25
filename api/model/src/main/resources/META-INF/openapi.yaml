@@ -342,7 +342,6 @@ components:
         commitMeta:
           author: "authorName <authorName@example.com>"
           authorTime: "2021-04-07T14:42:25.534748Z"
-          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
           message: "Example Commit Message"
           properties:
             additionalProp1: "xxx"
@@ -353,11 +352,9 @@ components:
           - type: PUT
             key:
               elements:
-                - example
-                - key
+                - table1
             content:
               type: ICEBERG_TABLE
-              id: b874b5d5-f926-4eed-9be7-b2380d9810c0
               metadataLocation: "/path/to/metadata/"
               snapshotId: 1
               schemaId: 2
