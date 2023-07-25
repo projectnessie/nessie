@@ -15,9 +15,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Add/fix `info` section in OpenAPI spec, add templates to `servers` section
+
 ### Deprecations
 
 ### Fixes
+
+- Fix handling of not present and wrong reference-type for create/assign/delete-reference API calls
 
 ### Commits
 
