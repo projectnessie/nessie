@@ -21,6 +21,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.tools.compatibility.internal.Helper.CLOSE_RESOURCES;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +34,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.junit.jupiter.engine.execution.ExtensionValuesStore;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
+import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 
 @SuppressWarnings({"Convert2Lambda", "unchecked", "rawtypes"})
 @ExtendWith(SoftAssertionsExtension.class)
@@ -43,53 +44,57 @@ class TestGlobalForClass {
 
   @Test
   void globalForClass() {
-    Store store = new NamespaceAwareStore(new ExtensionValuesStore(null), Util.NAMESPACE);
+    try (NamespacedHierarchicalStore<ExtensionContext.Namespace> valuesStore =
+        new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
+      Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
 
-    ExtensionContext ctx = mock(ExtensionContext.class);
-    when(ctx.getRoot()).thenReturn(ctx);
-    when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-    when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.MyClass]");
+      ExtensionContext ctx = mock(ExtensionContext.class);
+      when(ctx.getRoot()).thenReturn(ctx);
+      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.MyClass]");
 
-    GlobalForClass first = GlobalForClass.globalForClass(ctx);
+      GlobalForClass first = GlobalForClass.globalForClass(ctx);
 
-    Function<String, List> listCreator =
-        spy(
-            new Function<String, List>() {
-              @Override
-              public List apply(String s) {
-                return new ArrayList<>();
-              }
-            });
+      Function<String, List> listCreator =
+          spy(
+              new Function<String, List>() {
+                @Override
+                public List apply(String s) {
+                  return new ArrayList<>();
+                }
+              });
 
-    soft.assertThat(first.getOrCompute("my-key", listCreator, List.class)).isInstanceOf(List.class);
-    verify(listCreator).apply("my-key");
+      soft.assertThat(first.getOrCompute("my-key", listCreator, List.class))
+          .isInstanceOf(List.class);
+      verify(listCreator).apply("my-key");
 
-    when(ctx.getRoot()).thenReturn(ctx);
-    when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-    when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.MyClass]");
+      when(ctx.getRoot()).thenReturn(ctx);
+      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.MyClass]");
 
-    GlobalForClass second = GlobalForClass.globalForClass(ctx);
+      GlobalForClass second = GlobalForClass.globalForClass(ctx);
 
-    soft.assertThat(second).isSameAs(first);
+      soft.assertThat(second).isSameAs(first);
 
-    listCreator =
-        spy(
-            new Function<String, List>() {
-              @Override
-              public List apply(String s) {
-                return new ArrayList<>();
-              }
-            });
-    soft.assertThat(second.getOrCompute("my-key", listCreator, List.class))
-        .isInstanceOf(List.class);
-    verifyNoInteractions(listCreator);
+      listCreator =
+          spy(
+              new Function<String, List>() {
+                @Override
+                public List apply(String s) {
+                  return new ArrayList<>();
+                }
+              });
+      soft.assertThat(second.getOrCompute("my-key", listCreator, List.class))
+          .isInstanceOf(List.class);
+      verifyNoInteractions(listCreator);
 
-    when(ctx.getRoot()).thenReturn(ctx);
-    when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-    when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.AnotherClass]");
+      when(ctx.getRoot()).thenReturn(ctx);
+      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.AnotherClass]");
 
-    GlobalForClass forOtherClass = GlobalForClass.globalForClass(ctx);
+      GlobalForClass forOtherClass = GlobalForClass.globalForClass(ctx);
 
-    soft.assertThat(forOtherClass).isNotSameAs(first);
+      soft.assertThat(forOtherClass).isNotSameAs(first);
+    }
   }
 }
