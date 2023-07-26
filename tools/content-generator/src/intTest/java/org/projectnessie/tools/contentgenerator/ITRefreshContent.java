@@ -257,4 +257,44 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     assertThat(newHead).isNotEqualTo(head); // No extra commits
     assertThat(Objects.requireNonNull(newHead.getOperations()).get(0).getKey()).isEqualTo(key1);
   }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3, 4, 5, 6, 100})
+  void refreshAllKeys(int batchSize) throws IOException {
+    create(table1, key1);
+    create(table2, key2);
+    create(table3, key3);
+    IcebergTable stored1 = get(key1);
+    IcebergTable stored2 = get(key2);
+    IcebergTable stored3 = get(key3);
+
+    assertThat(
+            runMain(
+                "--all", "--batch", String.valueOf(batchSize), "--message", "Test refresh message"))
+        .isEqualTo(0);
+
+    assertThat(get(key1)).isEqualTo(stored1);
+    assertThat(get(key2)).isEqualTo(stored2);
+    assertThat(get(key3)).isEqualTo(stored3);
+
+    int numEntries =
+        3 + 1 + 1; // 3 test keys + the "first" namespace from the superclass + the "test" namespace
+    int numRefreshCommits = (numEntries / batchSize) + (numEntries % batchSize > 0 ? 1 : 0);
+
+    assertThat(log(numRefreshCommits))
+        .allSatisfy(
+            logEntry ->
+                assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
+        .flatExtracting(
+            logEntry ->
+                Objects.requireNonNull(logEntry.getOperations()).stream()
+                    .map(Operation::getKey)
+                    .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(
+            key1,
+            key2,
+            key3,
+            key1.getNamespace().toContentKey(),
+            CONTENT_KEY.getNamespace().toContentKey());
+  }
 }

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterators;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,9 +32,11 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
@@ -44,6 +47,13 @@ import picocli.CommandLine.Option;
     mixinStandardHelpOptions = true,
     description = "Get and Put content objects without changes to refresh their storage model")
 public class RefreshContent extends CommittingCommand {
+
+  @Option(
+      names = {"--all"},
+      description =
+          "Refresh all active keys in all branches (supersedes --storage-model, --skip-tags, "
+              + "--input, --key and --ref).")
+  private boolean all;
 
   @Option(
       names = {"--input"},
@@ -91,7 +101,9 @@ public class RefreshContent extends CommittingCommand {
   @Override
   public void execute() throws BaseNessieClientServerException {
     try (NessieApiV2 api = createNessieApiInstance()) {
-      if (input == null) {
+      if (all) {
+        refreshAll(api);
+      } else if (input == null) {
         Reference reference = api.getReference().refName(ref).get();
         refresh(api, reference, Collections.singletonList(ContentKey.of(keyElements)));
       } else {
@@ -101,6 +113,27 @@ public class RefreshContent extends CommittingCommand {
           throw new IllegalStateException(e);
         }
       }
+    }
+  }
+
+  private void refreshAll(NessieApiV2 api) throws NessieNotFoundException {
+    api.getAllReferences().stream().forEach(r -> refreshAll(api, r));
+  }
+
+  private void refreshAll(NessieApiV2 api, Reference ref) {
+    if (ref.getType() != Reference.ReferenceType.BRANCH) {
+      return;
+    }
+
+    try {
+      Iterators.partition(
+              api.getEntries().reference(ref).withContent(false).stream()
+                  .map(EntriesResponse.Entry::getName)
+                  .iterator(),
+              batchSize)
+          .forEachRemaining(batch -> refresh(api, ref, batch));
+    } catch (NessieNotFoundException ex) {
+      throw new RuntimeException(ex);
     }
   }
 
@@ -155,8 +188,7 @@ public class RefreshContent extends CommittingCommand {
     }
   }
 
-  private void refresh(NessieApiV2 api, Reference ref, List<ContentKey> keys)
-      throws BaseNessieClientServerException {
+  private void refresh(NessieApiV2 api, Reference ref, List<ContentKey> keys) {
     if (!(ref instanceof Branch)) {
       if (skipTags) {
         spec.commandLine()
@@ -171,9 +203,13 @@ public class RefreshContent extends CommittingCommand {
     GetContentBuilder request = api.getContent().reference(ref);
     keys.forEach(request::key);
 
-    Map<ContentKey, Content> contentMap = request.get();
+    try {
+      Map<ContentKey, Content> contentMap = request.get();
 
-    commitSameContent(api, (Branch) ref, contentMap);
+      commitSameContent(api, (Branch) ref, contentMap);
+    } catch (BaseNessieClientServerException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   private void commitSameContent(
