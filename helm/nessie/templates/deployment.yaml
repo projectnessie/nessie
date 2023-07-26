@@ -4,6 +4,9 @@ metadata:
   name: {{ include "nessie.fullname" . }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
+    {{- if .Values.podLabels }}
+    {{- toYaml .Values.podLabels | nindent 4 }}
+    {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
