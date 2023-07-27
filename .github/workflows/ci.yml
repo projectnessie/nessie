@@ -843,7 +843,7 @@ jobs:
 
       - name: Set up & Start Minikube
         if: env.WF_EXEC != 'false'
-        uses: medyagh/setup-minikube@v0.0.13
+        uses: medyagh/setup-minikube@v0.0.14
         with:
           # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
           kubernetes-version: stable
