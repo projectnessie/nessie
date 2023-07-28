@@ -165,6 +165,9 @@ serviceAccount:
 # -- Annotations to apply to nessie pods.
 podAnnotations: {}
 
+# -- Additional Labels to apply to nessie pods.
+podLabels: {}
+
 # -- Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
 podSecurityContext:
   {}
