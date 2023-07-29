@@ -1,4 +1,4 @@
-mkdocs==1.4.3
+mkdocs==1.5.1
 mkdocs-material==9.1.19
 mkdocs-minify-plugin==0.6.4
 mkdocs-redirects==1.2.1
