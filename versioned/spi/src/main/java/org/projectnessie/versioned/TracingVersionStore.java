@@ -105,6 +105,16 @@ public class TracingVersionStore implements VersionStore {
         () -> delegate.hashOnReference(namedReference, hashOnReference, relativeLookups));
   }
 
+  @Override
+  public Hash resolveHash(Hash hash, List<RelativeCommitSpec> relativeLookups)
+      throws ReferenceNotFoundException {
+    return callWithOneException(
+        tracer,
+        "ResolveHash",
+        b -> b.setAttribute(TAG_HASH, safeToString(hash)),
+        () -> delegate.resolveHash(hash, relativeLookups));
+  }
+
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override

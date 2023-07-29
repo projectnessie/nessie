@@ -323,8 +323,7 @@ public class RefMapping {
     return startCommit;
   }
 
-  @VisibleForTesting
-  CommitObj relativeSpec(CommitObj startCommit, List<RelativeCommitSpec> relativespecs)
+  public CommitObj relativeSpec(CommitObj startCommit, List<RelativeCommitSpec> relativespecs)
       throws ReferenceNotFoundException {
     CommitLogic commitLogic = commitLogic(persist);
     for (RelativeCommitSpec spec : relativespecs) {

@@ -497,6 +497,17 @@ class TestEventsVersionStore {
   }
 
   @Test
+  void testResolveHash() throws ReferenceNotFoundException {
+    when(delegate.resolveHash(hash1, emptyList())).thenReturn(hash1);
+    EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
+    Hash actualHash = versionStore.resolveHash(hash1, emptyList());
+    assertThat(actualHash).isEqualTo(hash1);
+    verify(delegate).resolveHash(eq(hash1), eq(emptyList()));
+    verifyNoMoreInteractions(delegate);
+    verifyNoInteractions(sink);
+  }
+
+  @Test
   void testNoAncestor() throws ReferenceNotFoundException {
     when(delegate.noAncestorHash()).thenReturn(hash1);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);

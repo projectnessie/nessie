@@ -140,6 +140,13 @@ public class PersistVersionStore implements VersionStore {
     return databaseAdapter.hashOnReference(namedReference, hashOnReference);
   }
 
+  @Override
+  public Hash resolveHash(Hash hash, List<RelativeCommitSpec> relativeLookups) {
+    checkArgument(
+        relativeLookups.isEmpty(), "Relative lookups not supported for old database model");
+    return hash;
+  }
+
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override

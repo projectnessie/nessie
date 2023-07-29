@@ -16,11 +16,18 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.util.Streams.stream;
 import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BARE;
 import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META;
 import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.OMIT;
+import static org.projectnessie.versioned.RelativeCommitSpec.Type.N_TH_PARENT;
+import static org.projectnessie.versioned.RelativeCommitSpec.Type.N_TH_PREDECESSOR;
+import static org.projectnessie.versioned.RelativeCommitSpec.Type.TIMESTAMP_MILLIS_EPOCH;
+import static org.projectnessie.versioned.RelativeCommitSpec.relativeCommitSpec;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -304,5 +311,41 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
           .containsAll(branches)
           .containsAll(tags);
     }
+  }
+
+  @Test
+  void resolveHash() throws VersionStoreException, InterruptedException {
+    assumeThat(isNewStorageModel()).isTrue();
+
+    BranchName branch = BranchName.of("resolveHash");
+    store().create(branch, Optional.empty());
+
+    Hash c1 = commit("c1").toBranch(branch);
+    Instant i = Instant.now();
+    Thread.sleep(100);
+    Hash c2 = commit("c2").toBranch(branch);
+    Thread.sleep(100);
+    commit("c3").toBranch(branch);
+
+    soft.assertThat(
+            store().resolveHash(c2, singletonList(relativeCommitSpec(N_TH_PREDECESSOR, "1"))))
+        .isEqualTo(c1);
+
+    soft.assertThat(store().resolveHash(c2, singletonList(relativeCommitSpec(N_TH_PARENT, "1"))))
+        .isEqualTo(c1);
+
+    soft.assertThat(
+            store()
+                .resolveHash(c2, singletonList(relativeCommitSpec(TIMESTAMP_MILLIS_EPOCH, 0L, i))))
+        .isEqualTo(c1);
+
+    // c2 + timestamp in the future => c2 (even if c3 is closer)
+    soft.assertThat(
+            store()
+                .resolveHash(
+                    c2,
+                    singletonList(
+                        relativeCommitSpec(TIMESTAMP_MILLIS_EPOCH, 0L, i.plusSeconds(60)))))
+        .isEqualTo(c2);
   }
 }

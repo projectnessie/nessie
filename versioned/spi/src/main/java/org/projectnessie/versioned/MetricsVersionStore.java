@@ -72,6 +72,12 @@ public final class MetricsVersionStore implements VersionStore {
         () -> delegate.hashOnReference(namedReference, hashOnReference, relativeLookups));
   }
 
+  @Override
+  public Hash resolveHash(Hash hash, List<RelativeCommitSpec> relativeLookups)
+      throws ReferenceNotFoundException {
+    return delegate1Ex("resolvehash", () -> delegate.resolveHash(hash, relativeLookups));
+  }
+
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override

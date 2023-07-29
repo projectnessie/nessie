@@ -195,6 +195,21 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
+  public Hash resolveHash(Hash hash, List<RelativeCommitSpec> relativeLookups)
+      throws ReferenceNotFoundException {
+    if (relativeLookups.isEmpty()) {
+      return hash;
+    }
+    try {
+      CommitObj commit = commitLogic(persist).fetchCommit(hashToObjId(hash));
+      commit = new RefMapping(persist).relativeSpec(commit, relativeLookups);
+      return commit != null ? objIdToHash(commit.id()) : NO_ANCESTOR;
+    } catch (ObjNotFoundException e) {
+      throw referenceNotFound(e);
+    }
+  }
+
+  @Override
   public ReferenceCreatedResult create(NamedRef namedRef, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     ReferenceLogic referenceLogic = referenceLogic(persist);

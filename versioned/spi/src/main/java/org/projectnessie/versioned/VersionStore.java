@@ -64,6 +64,22 @@ public interface VersionStore {
       throws ReferenceNotFoundException;
 
   /**
+   * Resolves the given hash by applying the relative lookup specs and returns the resolved hash.
+   *
+   * <p>If {@code relativeLookups} is empty, {@code hash} will be returned.
+   *
+   * <p>Contrary to {@link #hashOnReference(NamedRef, Optional, List)}, this method does not
+   * validate that the hash is reachable from any reference.
+   *
+   * @param hash The starting hash
+   * @param relativeLookups The relative lookup specs to apply
+   * @return The resolved hash
+   * @throws ReferenceNotFoundException if the hash does not exist
+   */
+  Hash resolveHash(Hash hash, List<RelativeCommitSpec> relativeLookups)
+      throws ReferenceNotFoundException;
+
+  /**
    * Retrieve the hash for "no ancestor" (or "beginning of time"), which is a hash for which no
    * commit exists. "no ancestor" or "beginning of time" are the initial hash of the default branch
    * and branches that are created via {@link #create(NamedRef, Optional)} without specifying the
