@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.projectnessie.versioned;
+
 import static java.time.Instant.EPOCH;
 import static java.time.Instant.ofEpochSecond;
 import static java.util.Arrays.asList;
@@ -36,7 +38,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.versioned.RelativeCommitSpec;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestRelativeCommitSpec {
