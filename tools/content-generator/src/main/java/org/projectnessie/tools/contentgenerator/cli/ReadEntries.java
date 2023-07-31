@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
+import java.io.PrintWriter;
 import java.util.List;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
@@ -40,29 +41,31 @@ public class ReadEntries extends AbstractCommand {
 
   @Override
   public void execute() throws NessieNotFoundException {
+    PrintWriter out = spec.commandLine().getOut();
+
     try (NessieApiV2 api = createNessieApiInstance()) {
-      spec.commandLine().getOut().printf("Listing entries for reference '%s'.%n%n", ref);
+      out.printf("Listing entries for reference '%s'.%n%n", ref);
       api.getEntries().refName(ref).withContent(withContent).stream()
           .forEach(
               entry -> {
-                spec.commandLine().getOut().printf("Key: %s%n", entry.getName());
+                out.printf("Key: %s%n", entry.getName());
                 if (isVerbose()) {
                   List<String> key = entry.getName().getElements();
                   for (int i = 0; i < key.size(); i++) {
-                    spec.commandLine().getOut().printf("  key[%d]: %s%n", i, key.get(i));
+                    out.printf("  key[%d]: %s%n", i, key.get(i));
                   }
                 }
 
-                spec.commandLine().getOut().printf("Type: %s%n", entry.getType());
-                spec.commandLine().getOut().printf("Content ID: %s%n", entry.getContentId());
+                out.printf("Type: %s%n", entry.getType());
+                out.printf("Content ID: %s%n", entry.getContentId());
 
                 if (entry.getContent() != null) {
-                  spec.commandLine().getOut().printf("Value: %s%n", entry.getContent());
+                  out.printf("Value: %s%n", entry.getContent());
                 }
 
-                spec.commandLine().getOut().println();
+                out.println();
               });
-      spec.commandLine().getOut().printf("Done listing entries.%n");
+      out.printf("Done listing entries.%n");
     }
   }
 }
