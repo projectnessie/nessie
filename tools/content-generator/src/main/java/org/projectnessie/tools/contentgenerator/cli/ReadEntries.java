@@ -22,9 +22,10 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(
-    name = "list-entries",
+    name = "entries",
     mixinStandardHelpOptions = true,
-    description = "List entries (keys) with the associated object type and ID.")
+    description =
+        "List entries (keys) with the associated object type, ID and (optionally) content.")
 public class ReadEntries extends AbstractCommand {
 
   @Option(

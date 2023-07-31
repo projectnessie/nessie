@@ -41,7 +41,7 @@ class ITReadEntries extends AbstractContentGeneratorTest {
   @Test
   void listEntries() {
     ProcessResult proc =
-        runGeneratorCmd("list-entries", "--uri", NESSIE_API_URI, "--ref", branch.getName());
+        runGeneratorCmd("entries", "--uri", NESSIE_API_URI, "--ref", branch.getName());
 
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
@@ -52,8 +52,7 @@ class ITReadEntries extends AbstractContentGeneratorTest {
   @Test
   void listEntriesVerbose() {
     ProcessResult proc =
-        runGeneratorCmd(
-            "list-entries", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose");
+        runGeneratorCmd("entries", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose");
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
@@ -68,7 +67,7 @@ class ITReadEntries extends AbstractContentGeneratorTest {
   void listEntriesWithContent() {
     ProcessResult proc =
         runGeneratorCmd(
-            "list-entries", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--with-content");
+            "entries", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--with-content");
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
