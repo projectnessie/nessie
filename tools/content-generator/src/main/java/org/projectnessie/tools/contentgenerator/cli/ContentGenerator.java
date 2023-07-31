@@ -24,6 +24,7 @@ import picocli.CommandLine;
     versionProvider = NessieVersionProvider.class,
     subcommands = {
       GenerateContent.class,
+      ReadEntries.class,
       ReadCommits.class,
       ReadReferences.class,
       ReadContent.class,
