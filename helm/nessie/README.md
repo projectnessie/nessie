@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.65.1](https://img.shields.io/badge/Version-0.65.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.66.0](https://img.shields.io/badge/Version-0.66.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -87,6 +87,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | mongodb.secret.username | string | `"mongodb_username"` | The secret key storing the MongoDB username. |
 | nodeSelector | object | `{}` | Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector. |
 | podAnnotations | object | `{}` | Annotations to apply to nessie pods. |
+| podLabels | object | `{}` | Additional Labels to apply to nessie pods. |
 | podSecurityContext | object | `{}` | Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
 | postgres.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database"` | The Postgres JDBC connection string. |
 | postgres.secret.name | string | `"postgres-creds"` | The secret name to pull Postgres credentials from. |

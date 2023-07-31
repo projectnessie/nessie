@@ -2,6 +2,37 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.66.0 Release (July 31, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.66.0).
+
+### New Features
+- New `entries` command in Content-Generator tool
+- New `--all` option to the `content-refresh` Content-Generator tool command
+- Helm chart: add `podLabels` for Nessie Pods
+
+### Changes
+- Add/fix `info` section in OpenAPI spec, add templates to `servers` section
+
+### Fixes
+- Fix handling of not present and wrong reference-type for create/assign/delete-reference API calls
+
+### Commits
+* Ninja: update CHANGELOG
+* Add new `entries` command to `content-generator` (#7296)
+* Make AbstractTestRestApiPersist extend BaseTestNessieRest (#7304)
+* Move TestRelativeCommitSpec to right package (#7306)
+* Add podLabels for Nessie Pods (#7287)
+* Add `--all` option to the `content-refresh` command (#7292)
+* Fix examples in openapi.yaml (#7291)
+* Nit: update changelog (#7290)
+* Correct handling of reference-type query parameter (#7282)
+* Fix Quarkus Swagger UI (#7281)
+* Move classes in quarkus-common, no change in functionality (#7275)
+* Nit: Remove superfluous `allowDependencies` (#7273)
+* Add OpenAPI info/description (#7270)
+* Backport Keycloak and Nessie testcontainers (#7255)
+
 ## 0.65.1 Release (July 19, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.65.1).
