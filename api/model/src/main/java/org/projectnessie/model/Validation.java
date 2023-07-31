@@ -124,17 +124,16 @@ public final class Validation {
   public static final String HASH_MESSAGE = "Hash must " + HASH_RULE;
 
   public static final String RELATIVE_COMMIT_SPEC_RULE =
-      "numeric timestamp (milliseconds since epoch), "
-          + "optionally followed relative pointers: "
+      "be either "
           + "'~' + a number representing the n-th predecessor of a commit, "
-          + "'^' + a number representing the n-th parent within a commit or "
-          + "'*' + a number representing the created timestamp in milliseconds since epoch of a commit";
+          + "'^' + a number representing the n-th parent within a commit, or "
+          + "'*' + a number representing the created timestamp of a commit, in milliseconds since epoch or in ISO-8601 format";
   public static final String HASH_OR_RELATIVE_COMMIT_SPEC_RULE =
-      "consist of either a valid commit hash ("
+      "consist of either a valid commit hash (which in turn must "
           + HASH_RULE
-          + "), a valid relative part ("
+          + "), or a valid relative part (which must "
           + RELATIVE_COMMIT_SPEC_RULE
-          + "), or both";
+          + "), or both.";
   public static final String HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE =
       "Hash with optional relative part must " + HASH_OR_RELATIVE_COMMIT_SPEC_RULE;
 
@@ -142,10 +141,8 @@ public final class Validation {
       "Reference name must "
           + REF_RULE
           + ", optionally followed "
-          + "by @ and a commit hash, which must "
-          + HASH_RULE
-          + ", optionally followed by a "
-          + RELATIVE_COMMIT_SPEC_RULE;
+          + "by @ and a hash with optional relative part. "
+          + HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
   public static final String REF_NAME_MESSAGE = "Reference name must " + REF_RULE;
 
   public static final String REF_TYPE_RULE = "be either 'branch' or 'tag'";
