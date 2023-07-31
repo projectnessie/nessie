@@ -270,7 +270,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN BRANCH %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), invalidHash))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(Validation.HASH_MESSAGE + " - but was: " + invalidHash);
+        .hasMessageContaining(Validation.HASH_RULE)
+        .hasMessageContaining(" - but was: " + invalidHash);
     assertThatThrownBy(
             () ->
                 sql(
@@ -320,7 +321,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN TAG %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), invalidHash))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(Validation.HASH_MESSAGE + " - but was: " + invalidHash);
+        .hasMessageContaining(Validation.HASH_RULE)
+        .hasMessageContaining(" - but was: " + invalidHash);
     assertThatThrownBy(
             () ->
                 sql(
