@@ -169,6 +169,9 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse getReferenceByName(GetReferenceParams params)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(params.getRef());
+    checkArgument(
+        reference.hashWithRelativeSpec() == null,
+        "Hashes are not allowed when fetching a reference by name");
     return SingleReferenceResponse.builder()
         .reference(tree().getReferenceByName(reference.name(), params.fetchOption()))
         .build();

@@ -15,10 +15,8 @@
  */
 package org.projectnessie.services.spi;
 
-import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
-import static org.projectnessie.model.Validation.HASH_REGEX;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_REGEX;
 
@@ -92,8 +90,12 @@ public interface TreeService {
       ReferenceType type,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hash,
       @Valid
           @jakarta.validation.Valid
@@ -162,8 +164,12 @@ public interface TreeService {
       FetchOption fetchOption,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String oldestHashLimit,
       @Valid
           @jakarta.validation.Valid
@@ -202,7 +208,15 @@ public interface TreeService {
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash,
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
-      List<String> hashesToTransplant,
+      List<
+              @Pattern(
+                  regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+                  message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+              @jakarta.validation.constraints.Pattern(
+                  regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+                  message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+              String>
+          hashesToTransplant,
       @Valid
           @jakarta.validation.Valid
           @NotBlank
@@ -255,8 +269,12 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotBlank
           @jakarta.validation.constraints.NotBlank
-          @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String fromHash,
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,

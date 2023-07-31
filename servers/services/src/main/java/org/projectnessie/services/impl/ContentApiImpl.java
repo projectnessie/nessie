@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.impl;
 
+import static org.projectnessie.services.hash.HashValidators.ANY_HASH;
+
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,7 @@ import org.projectnessie.model.Tag;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.hash.ResolvedHash;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentResult;
@@ -58,7 +61,8 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
   public ContentResponse getContent(
       ContentKey key, String namedRef, String hashOnRef, boolean withDocumentation)
       throws NessieNotFoundException {
-    WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    ResolvedHash ref =
+        getHashResolver().resolveHashOnRef(namedRef, hashOnRef, "Expected hash", ANY_HASH);
     try {
       ContentResult obj = getStore().getValue(ref.getHash(), key);
       BatchAccessChecker accessCheck = startAccessCheck();
@@ -78,7 +82,8 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       String namedRef, String hashOnRef, List<ContentKey> keys, boolean withDocumentation)
       throws NessieNotFoundException {
     try {
-      WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+      ResolvedHash ref =
+          getHashResolver().resolveHashOnRef(namedRef, hashOnRef, "Expected hash", ANY_HASH);
 
       BatchAccessChecker check = startAccessCheck().canViewReference(ref.getValue());
 
