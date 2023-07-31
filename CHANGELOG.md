@@ -13,6 +13,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- New `entries` command in Content-Generator tool
+- New `--all` option to the `content-refresh` Content-Generator tool command
+- Helm chart: add `podLabels` for Nessie Pods
+
 ### Changes
 
 - Add/fix `info` section in OpenAPI spec, add templates to `servers` section
