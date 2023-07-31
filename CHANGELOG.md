@@ -8,12 +8,14 @@ as necessary. Empty sections will not end in the release notes.
 ### Highlights
 
 ### Upgrade notes
+- This release upgrades the Nessie API spec to 2.1.1.
 
 ### Breaking changes
 
 ### New Features
 
 ### Changes
+- Support for relative hashes has been standardized and is now allowed in all v2 endpoints
 
 ### Deprecations
 
