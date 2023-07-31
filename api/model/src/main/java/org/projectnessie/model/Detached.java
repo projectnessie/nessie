@@ -15,7 +15,7 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateHashOrRelativeSpec;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -52,6 +53,12 @@ public interface Detached extends Reference {
   @NotEmpty
   @jakarta.validation.constraints.NotEmpty
   @Value.Parameter(order = 1)
+  @Pattern(
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   String getHash();
 
   @Nullable
@@ -60,11 +67,13 @@ public interface Detached extends Reference {
   @Value.Parameter(order = 2)
   ReferenceMetadata getMetadata();
 
-  /** Validation rule using {@link Validation#validateReferenceName(String)}. */
+  /** Validation rule using {@link Validation#validateHashOrRelativeSpec(String)}. */
   @Value.Check
   @Override
   default void checkHash() {
-    validateHash(getHash());
+    // Note: a detached hash must have a start commit ID (absolute part); this is going to be
+    // checked by the service layer.
+    validateHashOrRelativeSpec(getHash());
   }
 
   @Override

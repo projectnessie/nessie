@@ -28,6 +28,7 @@ import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
+import javax.validation.constraints.Pattern;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -71,6 +72,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Validation;
 import org.projectnessie.model.ser.Views;
 
 @Consumes(MediaType.APPLICATION_JSON)
@@ -268,8 +270,8 @@ public interface HttpTreeApi extends TreeApi {
   @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-  @Path("{ref}/history")
-  @jakarta.ws.rs.Path("{ref}/history")
+  @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history")
   @Operation(
       summary = "Get commit log for a particular reference",
       description =
@@ -603,6 +605,7 @@ public interface HttpTreeApi extends TreeApi {
   @JsonView(Views.V2.class)
   GetMultipleContentsResponse getSeveralContents(
       @Parameter(
+              schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = REF_PARAMETER_DESCRIPTION,
               examples = {
                 @ExampleObject(ref = "ref"),
@@ -624,6 +627,12 @@ public interface HttpTreeApi extends TreeApi {
                 @ExampleObject(ref = "refDefault"),
                 @ExampleObject(ref = "refDetached"),
               })
+          @Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           @PathParam("ref")
           @jakarta.ws.rs.PathParam("ref")
           String ref,

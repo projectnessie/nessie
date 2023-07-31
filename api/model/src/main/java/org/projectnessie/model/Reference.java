@@ -15,7 +15,7 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateHashOrRelativeSpec;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -78,12 +78,15 @@ public interface Reference extends Base {
       message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   String getHash();
 
-  /** Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}. */
+  /**
+   * Validation rule using {@link
+   * org.projectnessie.model.Validation#validateHashOrRelativeSpec(String)}.
+   */
   @Value.Check
   default void checkHash() {
     String hash = getHash();
     if (hash != null) {
-      validateHash(hash);
+      validateHashOrRelativeSpec(hash);
     }
   }
 
