@@ -40,9 +40,9 @@ import static org.projectnessie.services.cel.CELUtil.VAR_OPERATIONS;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
-import static org.projectnessie.services.hash.HashValidators.ANY_HASH;
-import static org.projectnessie.services.hash.HashValidators.REQUIRED_UNAMBIGUOUS_HASH;
-import static org.projectnessie.services.hash.HashValidators.UNAMBIGUOUS_HASH;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
+import static org.projectnessie.services.hash.HashValidator.REQUIRED_UNAMBIGUOUS_HASH;
+import static org.projectnessie.services.hash.HashValidator.UNAMBIGUOUS_HASH;
 import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 
 import com.google.common.base.Strings;
@@ -266,7 +266,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
 
     BatchAccessChecker check = startAccessCheck().canCreateReference(namedReference);
-    Optional<Hash> targetHashObj = Optional.empty();
+    Optional<Hash> targetHashObj;
     try {
       ResolvedHash targetRef =
           getHashResolver()
@@ -282,6 +282,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
         throw e;
       }
+      targetHashObj = Optional.empty();
     }
     check.checkAndThrow();
 

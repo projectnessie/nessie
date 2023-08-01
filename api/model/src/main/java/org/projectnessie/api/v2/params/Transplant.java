@@ -73,7 +73,7 @@ public interface Transplant extends BaseMergeTransplant {
   String getMessage();
 
   /**
-   * Lists the hashes of commits that should be transplanted into the target branch.
+   * The hashes of commits that should be transplanted into the target branch.
    *
    * <p>Since Nessie spec 2.1.1, hashes can be absolute or relative.
    */

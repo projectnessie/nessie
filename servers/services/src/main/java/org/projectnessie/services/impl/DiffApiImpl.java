@@ -18,7 +18,7 @@ package org.projectnessie.services.impl;
 import static java.util.Collections.singleton;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canViewReference;
-import static org.projectnessie.services.hash.HashValidators.ANY_HASH;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;

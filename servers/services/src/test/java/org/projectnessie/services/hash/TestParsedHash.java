@@ -65,8 +65,6 @@ class TestParsedHash {
   @Test
   void parseNoAncestor() {
     Optional<ParsedHash> parsed = ParsedHash.parse(NO_ANCESTOR.asString() + "~1", NO_ANCESTOR);
-    assertThat(parsed).isPresent();
-    assertThat(parsed.get().getAbsolutePart()).isPresent();
-    assertThat(parsed.get().getAbsolutePart().get()).isSameAs(NO_ANCESTOR);
+    assertThat(parsed.flatMap(ParsedHash::getAbsolutePart)).containsSame(NO_ANCESTOR);
   }
 }

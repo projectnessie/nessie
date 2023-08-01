@@ -56,8 +56,8 @@ public interface ResolvedHash extends WithHash<NamedRef> {
   Optional<Hash> getHead();
 
   /**
-   * The effective resolved hash; never null. Will either be {@link #getProvidedHash()} if present,
-   * or otherwise, {@link #getHead()}.
+   * The effective resolved hash, never {@code null}. Will either be {@link #getProvidedHash()} if
+   * present, or {@link #getHead()} otherwise.
    */
   @Override
   Hash getHash();

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
-import static org.projectnessie.services.hash.HashValidators.ANY_HASH;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 
 import java.security.Principal;
 import java.util.List;

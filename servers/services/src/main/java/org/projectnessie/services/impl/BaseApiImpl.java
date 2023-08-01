@@ -49,7 +49,7 @@ public abstract class BaseApiImpl {
   private final VersionStore store;
   private final Authorizer authorizer;
   private final Supplier<Principal> principal;
-  private final HashResolver hashResolver;
+  private HashResolver hashResolver;
 
   protected BaseApiImpl(
       ServerConfig config,
@@ -60,7 +60,6 @@ public abstract class BaseApiImpl {
     this.store = store;
     this.authorizer = authorizer;
     this.principal = principal;
-    this.hashResolver = new HashResolver(config, store);
   }
 
   /**
@@ -111,6 +110,9 @@ public abstract class BaseApiImpl {
   }
 
   protected HashResolver getHashResolver() {
+    if (hashResolver == null) {
+      this.hashResolver = new HashResolver(config, store);
+    }
     return hashResolver;
   }
 

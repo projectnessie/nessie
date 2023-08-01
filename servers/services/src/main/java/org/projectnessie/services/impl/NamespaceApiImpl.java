@@ -19,7 +19,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.model.Validation.validateHash;
-import static org.projectnessie.services.hash.HashValidators.ANY_HASH;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 

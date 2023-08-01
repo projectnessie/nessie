@@ -17,13 +17,12 @@ package org.projectnessie.services.hash;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static org.projectnessie.services.hash.HashValidators.ANY_HASH;
-import static org.projectnessie.services.hash.HashValidators.REQUIRED_UNAMBIGUOUS_HASH;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
+import static org.projectnessie.services.hash.HashValidator.REQUIRED_UNAMBIGUOUS_HASH;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -37,7 +36,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.RelativeCommitSpec;
 import org.projectnessie.versioned.VersionStore;
 
-public class HashResolver {
+public final class HashResolver {
 
   private final ServerConfig config;
   private final VersionStore store;
@@ -72,16 +71,16 @@ public class HashResolver {
    *
    * <p>If {@code namedRef} is null, the default branch will be used.
    *
-   * <p>The parameter {name} is used for error messages.
+   * <p>The parameter {@code name} is used for error messages.
    *
    * <p>A hash validator must be provided to perform extra validations on the parsed hashed. If no
-   * extra validation is required, {@link HashValidators#ANY_HASH} can be used.
+   * extra validation is required, {@link HashValidator#ANY_HASH} can be used.
    */
   public ResolvedHash resolveHashOnRef(
       @Nullable @jakarta.annotation.Nullable String namedRef,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       String name,
-      BiConsumer<String, ParsedHash> validator)
+      HashValidator validator)
       throws NessieReferenceNotFoundException {
     if (null == namedRef) {
       namedRef = config.getDefaultBranch();
@@ -113,13 +112,13 @@ public class HashResolver {
    * <p>This is useful to compute more hashes against a first resolved hash, e.g. when
    * transplanting.
    *
-   * <p>See {@link #resolveHashOnRef(String, String, String, BiConsumer)} for important caveats.
+   * <p>See {@link #resolveHashOnRef(String, String, String, HashValidator)} for important caveats.
    */
   public ResolvedHash resolveHashOnRef(
       ResolvedHash head,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       String name,
-      BiConsumer<String, ParsedHash> validator)
+      HashValidator validator)
       throws ReferenceNotFoundException {
     return resolveHashOnRef(
         head.getNamedRef(), head.getHead().orElse(null), hashOnRef, name, validator);
@@ -132,21 +131,21 @@ public class HashResolver {
    * <p>Either {@code currentHead} or {@code hashOnRef} must be non-null. It's the caller's
    * responsibility to validate that any user-provided input meets this requirement.
    *
-   * <p>See {@link #resolveHashOnRef(String, String, String, BiConsumer)} for important caveats.
+   * <p>See {@link #resolveHashOnRef(String, String, String, HashValidator)} for important caveats.
    */
   public ResolvedHash resolveHashOnRef(
       NamedRef ref,
       @Nullable @jakarta.annotation.Nullable Hash currentHead,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       String name,
-      BiConsumer<String, ParsedHash> validator)
+      HashValidator validator)
       throws ReferenceNotFoundException {
     checkState(currentHead != null || hashOnRef != null);
     Optional<ParsedHash> parsed = ParsedHash.parse(hashOnRef, store.noAncestorHash());
     if (ref == DetachedRef.INSTANCE) {
-      validator = validator.andThen(REQUIRED_UNAMBIGUOUS_HASH);
+      validator = validator.and(REQUIRED_UNAMBIGUOUS_HASH);
     }
-    validator.accept(name, parsed.orElse(null));
+    validator.validate(name, parsed.orElse(null));
     Hash startOrHead = parsed.flatMap(ParsedHash::getAbsolutePart).orElse(currentHead);
     checkState(startOrHead != null);
     List<RelativeCommitSpec> relativeParts =
