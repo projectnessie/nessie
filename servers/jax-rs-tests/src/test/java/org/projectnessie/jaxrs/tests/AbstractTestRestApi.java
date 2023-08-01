@@ -31,4 +31,9 @@ abstract class AbstractTestRestApi extends BaseTestNessieRest {
 
   @RegisterExtension
   static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+
+  @Override
+  protected boolean isNewModel() {
+    return false;
+  }
 }

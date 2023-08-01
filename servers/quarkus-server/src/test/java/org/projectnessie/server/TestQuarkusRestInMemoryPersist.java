@@ -17,7 +17,9 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import org.junit.jupiter.api.Nested;
 import org.projectnessie.client.ext.NessieApiVersions;
+import org.projectnessie.jaxrs.tests.BaseTestNessieRest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 @QuarkusTest
@@ -29,4 +31,13 @@ class TestQuarkusRestInMemoryPersist extends AbstractQuarkusRestWithMetrics {
   protected boolean fullPagingSupport() {
     return true;
   }
+
+  @Override
+  protected boolean isNewModel() {
+    return true;
+  }
+
+  // See https://github.com/quarkusio/quarkus/issues/35104
+  @Nested
+  class RelativeReferences extends BaseTestNessieRest.RelativeReferences {}
 }

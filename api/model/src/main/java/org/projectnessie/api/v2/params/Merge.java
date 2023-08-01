@@ -21,8 +21,7 @@ import static org.projectnessie.api.v2.doc.ApiDoc.FETCH_ADDITION_INFO_DESCRIPTIO
 import static org.projectnessie.api.v2.doc.ApiDoc.FROM_REF_NAME_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MERGE_MODES_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.RETURN_CONFLICTS_AS_RESULT_DESCRIPTION;
-import static org.projectnessie.model.Validation.validateHash;
-import static org.projectnessie.model.Validation.validateNoRelativeSpec;
+import static org.projectnessie.model.Validation.validateHashOrRelativeSpec;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -89,24 +88,30 @@ public interface Merge extends BaseMergeTransplant {
   @JsonInclude(Include.NON_NULL)
   CommitMeta getCommitMeta();
 
+  /**
+   * The hash of the commit from {@linkplain #getFromRefName() the source ref} to merge.
+   *
+   * <p>Since Nessie spec 2.1.1, the hash can be absolute or relative.
+   */
   @NotBlank
   @jakarta.validation.constraints.NotBlank
-  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @Pattern(
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   String getFromHash();
 
   /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
-   * (String)}.
+   * Validation rule using {@link
+   * org.projectnessie.model.Validation#validateHashOrRelativeSpec(String)} (String)}.
    */
   @Value.Check
   default void checkHash() {
     String hash = getFromHash();
     if (hash != null) {
-      validateNoRelativeSpec(hash);
-      validateHash(hash);
+      validateHashOrRelativeSpec(hash);
     }
   }
 }

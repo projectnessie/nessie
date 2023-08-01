@@ -18,6 +18,7 @@ package org.projectnessie.services.impl;
 import static java.util.Collections.singleton;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canViewReference;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
@@ -37,6 +38,7 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.hash.ResolvedHash;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.versioned.Diff;
@@ -73,10 +75,11 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
       List<ContentKey> requestedKeys,
       String filter)
       throws NessieNotFoundException {
-    WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
-    WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
-    NamedRef fromNamedRef = from.getValue();
-    NamedRef toNamedRef = to.getValue();
+    ResolvedHash from =
+        getHashResolver().resolveHashOnRef(fromRef, fromHash, "From hash", ANY_HASH);
+    ResolvedHash to = getHashResolver().resolveHashOnRef(toRef, toHash, "To hash", ANY_HASH);
+    NamedRef fromNamedRef = from.getNamedRef();
+    NamedRef toNamedRef = to.getNamedRef();
     fromReference.accept(from);
     toReference.accept(to);
 

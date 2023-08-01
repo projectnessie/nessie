@@ -31,4 +31,10 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 @TestProfile(QuarkusTestProfileInmemory.class)
 @NessieApiVersions(versions = NessieApiVersion.V1)
 @NessieClientResponseFactory(ValidatingApiV1ResponseFactory.class)
-class TestQuarkusWithOlderRestApiV1ClientInMemory extends AbstractQuarkusRest {}
+class TestQuarkusWithOlderRestApiV1ClientInMemory extends AbstractQuarkusRest {
+
+  @Override
+  protected boolean isNewModel() {
+    return false;
+  }
+}

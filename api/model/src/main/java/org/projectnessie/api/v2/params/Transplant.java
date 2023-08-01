@@ -21,19 +21,20 @@ import static org.projectnessie.api.v2.doc.ApiDoc.FETCH_ADDITION_INFO_DESCRIPTIO
 import static org.projectnessie.api.v2.doc.ApiDoc.FROM_REF_NAME_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MERGE_MODES_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.RETURN_CONFLICTS_AS_RESULT_DESCRIPTION;
-import static org.projectnessie.model.Validation.validateHash;
-import static org.projectnessie.model.Validation.validateNoRelativeSpec;
+import static org.projectnessie.model.Validation.validateHashOrRelativeSpec;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
+import org.projectnessie.model.Validation;
 
 @Schema(
     type = SchemaType.OBJECT,
@@ -71,23 +72,35 @@ public interface Transplant extends BaseMergeTransplant {
   @jakarta.validation.constraints.Size(min = 1)
   String getMessage();
 
+  /**
+   * The hashes of commits that should be transplanted into the target branch.
+   *
+   * <p>Since Nessie spec 2.1.1, hashes can be absolute or relative.
+   */
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Size
   @jakarta.validation.constraints.Size(min = 1)
-  List<String> getHashesToTransplant();
+  List<
+          @Pattern(
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+          String>
+      getHashesToTransplant();
 
   /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
-   * (String)}.
+   * Validation rule using {@link
+   * org.projectnessie.model.Validation#validateHashOrRelativeSpec(String)} (String)}.
    */
   @Value.Check
   default void checkHashes() {
     List<String> hashes = getHashesToTransplant();
     if (hashes != null) {
       for (String hash : hashes) {
-        validateNoRelativeSpec(hash);
-        validateHash(hash);
+        validateHashOrRelativeSpec(hash);
       }
     }
   }

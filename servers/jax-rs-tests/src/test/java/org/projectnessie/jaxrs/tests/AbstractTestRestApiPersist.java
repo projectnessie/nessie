@@ -35,4 +35,9 @@ abstract class AbstractTestRestApiPersist extends BaseTestNessieRest {
   protected boolean fullPagingSupport() {
     return true;
   }
+
+  @Override
+  protected boolean isNewModel() {
+    return true;
+  }
 }

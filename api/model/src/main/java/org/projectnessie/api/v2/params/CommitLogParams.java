@@ -15,6 +15,9 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
+
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.QueryParam;
@@ -22,7 +25,6 @@ import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
 import org.projectnessie.model.FetchOption;
-import org.projectnessie.model.Validation;
 
 /**
  * The purpose of this class is to include optional parameters that can be passed to {@code
@@ -35,10 +37,12 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
   @jakarta.annotation.Nullable
-  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @Pattern(
+      regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
+      regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
       description =
           "Hash on the given ref to identify the commit where the operation of fetching the log "

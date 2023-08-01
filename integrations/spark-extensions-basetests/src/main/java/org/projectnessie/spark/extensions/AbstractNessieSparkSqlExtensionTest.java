@@ -270,16 +270,20 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN BRANCH %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), invalidHash))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(Validation.HASH_MESSAGE + " - but was: " + invalidHash);
+        // TODO enable this when Nessie lib will be >= 0.61
+        // .hasMessage(
+        //     Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE
+        //         + " - but was: "
+        //         + invalidHash)
+        .hasMessageContaining(Validation.HASH_RULE)
+        .hasMessageContaining(" - but was: " + invalidHash);
     assertThatThrownBy(
             () ->
                 sql(
                     "ASSIGN BRANCH %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", unknownHash, defaultBranch()));
+        .hasMessage(String.format("Commit '%s' not found", unknownHash));
     assertThatThrownBy(
             () ->
                 sql(
@@ -320,16 +324,20 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN TAG %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), invalidHash))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(Validation.HASH_MESSAGE + " - but was: " + invalidHash);
+        // TODO enable this when Nessie lib will be >= 0.61
+        // .hasMessage(
+        //     Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE
+        //         + " - but was: "
+        //         + invalidHash)
+        .hasMessageContaining(Validation.HASH_RULE)
+        .hasMessageContaining(" - but was: " + invalidHash);
     assertThatThrownBy(
             () ->
                 sql(
                     "ASSIGN TAG %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", unknownHash, defaultBranch()));
+        .hasMessage(String.format("Commit '%s' not found", unknownHash));
     assertThatThrownBy(
             () ->
                 sql(
@@ -456,8 +464,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, randomHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
-            String.format("Could not find commit '%s' in reference '%s'.", randomHash, refName));
+        .hasMessage(String.format("Commit '%s' not found", randomHash));
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, invalidTimestamp))
         .isInstanceOf(NessieNotFoundException.class)
@@ -467,8 +474,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageStartingWith(
-            String.format("Could not find commit '%s' in reference '%s'", invalidHash, refName));
+        .hasMessage(String.format("Commit '%s' not found", invalidHash));
   }
 
   @Test

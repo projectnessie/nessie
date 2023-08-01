@@ -22,6 +22,18 @@ well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
+# 2.1.1
+
+* Released with Nessie version 0.67.0.
+* Support for relative hashes was extended to the entire v2 API. 
+  * Path parameters and request entities, such as `Reference`, `Merge` and `Transplant`, now 
+    consistently support relative hashes. 
+  * Ambiguous hashes (that is, hashes that are implicitly resolved against the current HEAD, e.g.
+    `~1`) are not allowed in writing operations.
+* API v2 `GetReferenceByName` endpoint now returns a `BAD_REQUEST` error if the reference name 
+  contains any hash (absolute or relative). Previously, the server would silently ignore the
+  hash and return the reference if it existed.
+
 # 2.1.0
 
 * Released with Nessie version 0.61.0.

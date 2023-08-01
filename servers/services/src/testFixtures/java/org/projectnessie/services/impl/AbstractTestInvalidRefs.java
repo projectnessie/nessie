@@ -37,29 +37,21 @@ public abstract class AbstractTestInvalidRefs extends BaseTestServiceImpl {
     createCommits(branch, 1, commits, currentHash);
     assertThatThrownBy(() -> commitLog(branch.getName(), MINIMAL, null, invalidHash, null))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageContaining(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
+        .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
 
     assertThatThrownBy(() -> entries(branch.getName(), invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageContaining(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
+        .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
 
     assertThatThrownBy(() -> contents(branch.getName(), invalidHash, ContentKey.of("table0")))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageContaining(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
+        .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
 
     assertThatThrownBy(
             () ->
                 contentApi()
                     .getContent(ContentKey.of("table0"), branch.getName(), invalidHash, false))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageContaining(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
+        .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
   }
 }

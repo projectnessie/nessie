@@ -19,6 +19,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
@@ -54,17 +55,16 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.hash.ResolvedHash;
 import org.projectnessie.services.spi.NamespaceService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
@@ -82,7 +82,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       throws NessieReferenceNotFoundException {
     Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
 
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
+    ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
     try {
 
       try {
@@ -128,7 +128,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   @Override
   public void deleteNamespace(String refName, Namespace namespaceToDelete)
       throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
+    ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
     try {
       Namespace namespace = getNamespace(namespaceToDelete, refWithHash.getHash());
       Delete delete = Delete.of(namespace.toContentKey());
@@ -163,7 +163,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       if (hashOnRef != null) {
         validateHash(hashOnRef);
       }
-      return getNamespace(namespace, namedRefWithHashOrThrow(refName, hashOnRef).getHash());
+      ResolvedHash resolved =
+          getHashResolver().resolveHashOnRef(refName, hashOnRef, "Hash", ANY_HASH);
+      return getNamespace(namespace, resolved.getHash());
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
     }
@@ -201,7 +203,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
     if (hashOnRef != null) {
       validateHash(hashOnRef);
     }
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, hashOnRef);
+    ResolvedHash refWithHash =
+        getHashResolver().resolveHashOnRef(refName, hashOnRef, "Hash", ANY_HASH);
     try {
       // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)
       // which will make it impossible to use the `Namespace` object itself as an identifier to
@@ -262,7 +265,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Set<String> propertyRemovals)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     try {
-      WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
+      ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
 
       Namespace namespace = getNamespace(namespaceToUpdate, refWithHash.getHash());
       Map<String, String> properties = new HashMap<>(namespace.getProperties());

@@ -17,6 +17,7 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.FORBIDDEN_REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_PATTERN;
@@ -24,6 +25,7 @@ import static org.projectnessie.model.Validation.RELATIVE_COMMIT_SPEC_PART_PATTE
 import static org.projectnessie.model.Validation.isForbiddenReferenceName;
 import static org.projectnessie.model.Validation.validateForbiddenReferenceName;
 import static org.projectnessie.model.Validation.validateHash;
+import static org.projectnessie.model.Validation.validateHashOrRelativeSpec;
 import static org.projectnessie.model.Validation.validateReferenceName;
 import static org.projectnessie.model.Validation.validateReferenceNameOrHash;
 
@@ -112,6 +114,31 @@ class TestValidation {
   }
 
   @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "1122334455667788990011223344556677889900112233445566778899001122",
+        "abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122",
+        "0011223344556677",
+        "11223344556677889900",
+        "cafebabedeadbeef",
+        "CAFEBABEDEADBEEF",
+        "caffee20",
+        "20caffee",
+        "20caff22",
+        "~2",
+        "^3",
+        "*1234567890",
+        "*2023-07-27T16:14:23.123456Z",
+        "1122334455667788990011223344556677889900112233445566778899001122~2",
+        "11223344556677889900^3",
+        "cafebabedeadbeef*1234567890",
+        "cafebabedeadbeef*2023-07-27T16:14:23.123456Z",
+      })
+  void validHashOrRelativeSpecs(String hash) {
+    soft.assertThatCode(() -> validateHashOrRelativeSpec(hash)).doesNotThrowAnyException();
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"", "abc/", ".foo", "abc/def/../blah", "abc/de..blah", "abc/de@{blah"})
   void invalidHashes(String hash) {
     String referenceName = "thisIsAValidName";
@@ -119,11 +146,14 @@ class TestValidation {
         .isThrownBy(() -> validateHash(hash))
         .withMessage(HASH_MESSAGE + " - but was: " + hash);
     soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> validateHashOrRelativeSpec(hash))
+        .withMessage(HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + hash);
+    soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Branch.of(referenceName, hash))
-        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+        .withMessage(HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + hash);
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Tag.of(referenceName, hash))
-        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+        .withMessage(HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + hash);
   }
 
   @ParameterizedTest
@@ -156,10 +186,10 @@ class TestValidation {
   void validNamesAndInvalidHashes(String referenceName, String hash) {
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Branch.of(referenceName, hash))
-        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+        .withMessage(HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + hash);
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Tag.of(referenceName, hash))
-        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+        .withMessage(HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + hash);
   }
 
   @ParameterizedTest
@@ -249,45 +279,6 @@ class TestValidation {
     soft.assertThat(matcher.group(1)).isEqualTo(ref);
     soft.assertThat(matcher.group(2)).isEqualTo(hashOnRef);
     soft.assertThat(matcher.group(3)).isEqualTo(relativeSpec);
-  }
-
-  @ParameterizedTest
-  @CsvSource({
-    ",false",
-    "'',false",
-    "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,false",
-    "~1,true",
-    "^2,true",
-    "*2021-04-07T14:42:25.534748Z,true",
-    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~1,true",
-    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1^2,true",
-    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1*2021-04-07T14:42:25.534748Z,true",
-  })
-  void hasRelativeSpec(String hash, boolean expected) {
-    soft.assertThat(Validation.hasRelativeSpec(hash)).isEqualTo(expected);
-  }
-
-  @ParameterizedTest
-  @CsvSource({
-    ",false",
-    "'',false",
-    "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,false",
-    "~1,true",
-    "^2,true",
-    "*2021-04-07T14:42:25.534748Z,true",
-    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~1,true",
-    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1^2,true",
-    "6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1*2021-04-07T14:42:25.534748Z,true",
-  })
-  void validateNoRelativeSpec(String hash, boolean errorExpected) {
-    if (errorExpected) {
-      soft.assertThatIllegalArgumentException()
-          .isThrownBy(() -> Validation.validateNoRelativeSpec(hash))
-          .withMessageContaining(
-              "Relative hash not allowed in commit, merge or transplant operations");
-    } else {
-      soft.assertThatCode(() -> Validation.validateNoRelativeSpec(hash)).doesNotThrowAnyException();
-    }
   }
 
   @ParameterizedTest
