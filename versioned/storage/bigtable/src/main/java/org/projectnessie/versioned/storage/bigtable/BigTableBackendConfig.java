@@ -29,10 +29,7 @@ public interface BigTableBackendConfig {
   @jakarta.annotation.Nullable
   BigtableTableAdminClient tableAdminClient();
 
-  @Value.Default
-  default Optional<String> tablePrefix() {
-    return Optional.empty();
-  }
+  Optional<String> tablePrefix();
 
   static ImmutableBigTableBackendConfig.Builder builder() {
     return ImmutableBigTableBackendConfig.builder();
