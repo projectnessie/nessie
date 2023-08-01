@@ -278,9 +278,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN BRANCH %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", unknownHash, defaultBranch()));
+        .hasMessage(String.format("Commit '%s' not found", unknownHash));
     assertThatThrownBy(
             () ->
                 sql(
@@ -329,9 +327,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN TAG %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
-            String.format(
-                "Could not find commit '%s' in reference '%s'.", unknownHash, defaultBranch()));
+        .hasMessage(String.format("Commit '%s' not found", unknownHash));
     assertThatThrownBy(
             () ->
                 sql(
@@ -458,8 +454,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, randomHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(
-            String.format("Could not find commit '%s' in reference '%s'.", randomHash, refName));
+        .hasMessage(String.format("Commit '%s' not found", randomHash));
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, invalidTimestamp))
         .isInstanceOf(NessieNotFoundException.class)
@@ -469,8 +464,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessageStartingWith(
-            String.format("Could not find commit '%s' in reference '%s'", invalidHash, refName));
+        .hasMessage(String.format("Commit '%s' not found", invalidHash));
   }
 
   @Test

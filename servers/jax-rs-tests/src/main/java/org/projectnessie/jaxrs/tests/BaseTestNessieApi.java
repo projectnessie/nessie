@@ -79,7 +79,6 @@ import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
-import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -374,36 +373,10 @@ public abstract class BaseTestNessieApi {
       api().deleteTag().tag(tag).delete();
     }
 
-    // We cannot delete a branch if the expected hash is not reachable from its HEAD. Here,
-    // the expected hash is not reachable anymore, because the branch was reassigned to main
-    // previously.
-    // In such cases we expect a not-found error.
     AbstractThrowableAssert<?, ? extends Throwable> deleteConflict =
         isV2()
             ? soft.assertThatThrownBy(() -> api().deleteBranch().branch(branch).getAndDelete())
             : soft.assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete());
-    deleteConflict
-        .isInstanceOf(NessieReferenceNotFoundException.class)
-        .hasMessageContaining("Could not find commit");
-
-    // Move the HEAD of the branch from main to a new commit.
-    Branch branchWithNewCommit =
-        prepCommit(
-                branchAssigned,
-                "commit",
-                Put.of(ContentKey.of("key"), Namespace.of("key")),
-                dummyPut("key", "foo"))
-            .commit();
-
-    // We cannot delete a branch if the expected hash is reachable from HEAD, but is not HEAD. Here,
-    // the expected hash is not the HEAD anymore, because the branch was updated to
-    // branchWithNewCommit above.
-    // In such cases we expect a conflict.
-    deleteConflict =
-        isV2()
-            ? soft.assertThatThrownBy(
-                () -> api().deleteBranch().branch(branchAssigned).getAndDelete())
-            : soft.assertThatThrownBy(() -> api().deleteBranch().branch(branchAssigned).delete());
     deleteConflict
         .isInstanceOf(NessieReferenceConflictException.class)
         .asInstanceOf(type(NessieReferenceConflictException.class))
@@ -412,12 +385,11 @@ public abstract class BaseTestNessieApi {
         .extracting(Conflict::conflictType)
         .containsExactly(ConflictType.UNEXPECTED_HASH);
 
-    // Delete branch with new commit as expected HEAD: OK
     if (isV2()) {
-      Branch deleted = api().deleteBranch().branch(branchWithNewCommit).getAndDelete();
-      soft.assertThat(deleted).isEqualTo(branchWithNewCommit);
+      Branch deleted = api().deleteBranch().branch(branchAssigned).getAndDelete();
+      soft.assertThat(deleted).isEqualTo(branchAssigned);
     } else {
-      api().deleteBranch().branch(branchWithNewCommit).delete();
+      api().deleteBranch().branch(branchAssigned).delete();
     }
 
     soft.assertThat(api().getAllReferences().get().getReferences())

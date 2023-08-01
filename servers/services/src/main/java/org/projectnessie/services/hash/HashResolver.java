@@ -22,7 +22,6 @@ import static org.projectnessie.services.hash.HashValidators.REQUIRED_UNAMBIGUOU
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
@@ -153,8 +152,12 @@ public class HashResolver {
     List<RelativeCommitSpec> relativeParts =
         parsed.map(ParsedHash::getRelativeParts).orElse(Collections.emptyList());
     Optional<Hash> resolved = Optional.of(startOrHead);
-    if (!Objects.equals(startOrHead, currentHead) || !relativeParts.isEmpty()) {
-      resolved = Optional.ofNullable(store.hashOnReference(ref, resolved, relativeParts));
+    if (!relativeParts.isEmpty()) {
+      // Resolve the hash against DETACHED because we are only interested in
+      // resolving the hash, not checking if it is on the branch. This will
+      // be done later on.
+      resolved =
+          Optional.ofNullable(store.hashOnReference(DetachedRef.INSTANCE, resolved, relativeParts));
     }
     return ResolvedHash.of(ref, resolved, Optional.ofNullable(currentHead));
   }
