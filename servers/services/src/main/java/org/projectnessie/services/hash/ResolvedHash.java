@@ -62,7 +62,7 @@ public interface ResolvedHash extends WithHash<NamedRef> {
   @Override
   Hash getHash();
 
-  @Value.Derived
+  @Value.NonAttribute
   @Override
   default NamedRef getValue() {
     return getNamedRef();

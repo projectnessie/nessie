@@ -388,7 +388,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String pageToken,
       PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException {
-    // FIXME we should only allow named references when no paging is defined
 
     try {
 
