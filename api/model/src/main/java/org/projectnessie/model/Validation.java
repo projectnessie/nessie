@@ -235,9 +235,9 @@ public final class Validation {
   }
 
   /**
-   * Validates whether a string is a valid hash.
+   * Validates whether a string is a valid hash with optional relative specs.
    *
-   * <p>The rules are: <em>{@value #HASH_RULE}</em>
+   * <p>The rules are: <em>{@value #HASH_OR_RELATIVE_COMMIT_SPEC_RULE}</em>
    *
    * @param referenceName the reference name string to test.
    */
