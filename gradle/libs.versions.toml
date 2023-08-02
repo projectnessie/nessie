@@ -26,7 +26,7 @@ opentelemetryAlpha = "1.25.0-alpha"
 opentracing = "0.33.0"
 picocli = "4.7.4"
 protobuf = "3.23.4"
-quarkus = "3.2.2.Final"
+quarkus = "3.2.3.Final"
 slf4j = "1.7.36"
 undertow = "2.2.24.Final"
 
