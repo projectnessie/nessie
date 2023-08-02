@@ -15,7 +15,6 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import java.lang.IllegalArgumentException
 
 plugins {
   alias(libs.plugins.nessie.run)
