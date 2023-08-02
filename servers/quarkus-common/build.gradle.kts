@@ -45,13 +45,14 @@ dependencies {
   implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-rocksdb"))
   implementation(project(":nessie-versioned-storage-store"))
-  implementation(project(":nessie-versioned-storage-telemetry"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-mongodb-client")
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
+  implementation("io.quarkus:quarkus-opentelemetry")
+  implementation("io.quarkus:quarkus-micrometer")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation("software.amazon.awssdk:apache-client") {
@@ -63,7 +64,6 @@ dependencies {
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
 
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
-  implementation("io.opentelemetry:opentelemetry-api")
   implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable
   implementation("io.micrometer:micrometer-core")
 

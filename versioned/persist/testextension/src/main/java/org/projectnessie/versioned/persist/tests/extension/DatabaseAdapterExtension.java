@@ -48,7 +48,6 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
-import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -235,9 +234,6 @@ public class DatabaseAdapterExtension
       assign = databaseAdapter;
     } else if (VersionStore.class.isAssignableFrom(type)) {
       VersionStore store = new PersistVersionStore(databaseAdapter);
-      if (nessieDbAdapter.withTracing()) {
-        store = new TracingVersionStore(store);
-      }
       assign = store;
     } else {
       throw new IllegalStateException("Cannot assign to " + annotatedElement);

@@ -34,7 +34,6 @@ dependencies {
   implementation("org.projectnessie.nessie:nessie-versioned-storage-mongodb")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-rocksdb")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-store")
-  implementation("org.projectnessie.nessie:nessie-versioned-storage-telemetry")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-testextension")
 
   testImplementation(platform("org.junit:junit-bom:5.10.0"))

@@ -81,10 +81,6 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-storage-telemetry</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie.nessie</groupId>
       <artifactId>nessie-versioned-storage-testextension</artifactId>
     </dependency>
     <dependency>

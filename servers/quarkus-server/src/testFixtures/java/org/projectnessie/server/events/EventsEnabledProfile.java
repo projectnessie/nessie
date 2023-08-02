@@ -26,8 +26,6 @@ public class EventsEnabledProfile extends BaseConfigProfile {
   public static final Map<String, String> EVENTS_CONFIG =
       ImmutableMap.<String, String>builder()
           .put("nessie.version.store.events.enable", "true")
-          .put("nessie.version.store.trace.enable", "true")
-          .put("nessie.version.store.metrics.enable", "true")
           .put("quarkus.micrometer.enabled", "true")
           .put("quarkus.otel.traces.sampler", "always_on")
           .put("nessie.version.store.events.retry.initial-delay", "PT0.1S")
