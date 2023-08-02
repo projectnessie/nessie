@@ -8,6 +8,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Highlights
 
 ### Upgrade notes
+- Tracing and metrics have been migrated to Quarkus "native". The options to en/disable metrics and tracing have been removed. Please remove the options `nessie.version.store.trace.enable`, `nessie.version.store.metrics.enable` from your Nessie settings.
 
 ### Breaking changes
 
@@ -16,6 +17,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Changes
 - Nessie API spec upgraded to 2.1.1
 - Support for relative hashes has been standardized and is now allowed in all v2 endpoints
+- Migrate to Quarkus metrics and tracing
 
 ### Deprecations
 
