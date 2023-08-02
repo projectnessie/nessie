@@ -40,14 +40,12 @@ import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.NES
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.STATUS_TAG_NAME;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Collection;
-import java.util.List;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.DeliveryStatus;
 
@@ -64,21 +62,6 @@ public class MetricsAssertions {
 
   public void assertMicrometerDisabled() {
     assertThat(registry.isResolvable()).isFalse();
-  }
-
-  public void assertNoNessieMetrics() {
-    assertThat(registry.isResolvable()).isTrue();
-    List<Meter> meters = registry.get().getMeters();
-    assertThat(meters)
-        .extracting(Meter::getId)
-        .extracting(Meter.Id::getName)
-        .doesNotContain(
-            NESSIE_RESULTS_TOTAL,
-            NESSIE_EVENTS_TOTAL,
-            NESSIE_EVENTS_SUCCESSFUL,
-            NESSIE_EVENTS_FAILED,
-            NESSIE_EVENTS_REJECTED,
-            NESSIE_EVENTS_RETRIES);
   }
 
   // Note: the assertions below rely on the predefined subscriber behavior, see MockEventSubscriber
