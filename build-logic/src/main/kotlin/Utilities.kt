@@ -84,9 +84,9 @@ fun Project.forceJavaVersionForTests(requestedJavaVersion: Int) {
     val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
     if (requestedJavaVersion != currentJavaVersion) {
       useJavaVersion(requestedJavaVersion)
-      if (requestedJavaVersion >= 11) {
-        addSparkJvmOptions()
-      }
+    }
+    if (requestedJavaVersion >= 11) {
+      addSparkJvmOptions()
     }
   }
 }
@@ -96,9 +96,9 @@ fun Project.forceJavaVersionForTestTask(name: String, requestedJavaVersion: Int)
     val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
     if (requestedJavaVersion != currentJavaVersion) {
       useJavaVersion(requestedJavaVersion)
-      if (requestedJavaVersion >= 11) {
-        addSparkJvmOptions()
-      }
+    }
+    if (requestedJavaVersion >= 11) {
+      addSparkJvmOptions()
     }
   }
 }
@@ -111,6 +111,7 @@ fun Test.addSparkJvmOptions() {
   jvmArgs =
     jvmArgs +
       listOf(
+        // Spark 3.3+
         "-XX:+IgnoreUnrecognizedVMOptions",
         "--add-opens=java.base/java.lang=ALL-UNNAMED",
         "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
@@ -125,7 +126,9 @@ fun Test.addSparkJvmOptions() {
         "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
         "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
         "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
-        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED",
+        // Spark 3.4+
+        "-Djdk.reflect.useDirectMethodHandle=false"
       )
 }
 
