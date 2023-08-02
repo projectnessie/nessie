@@ -28,7 +28,6 @@ import jakarta.inject.Named;
 import java.security.Principal;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.projectnessie.events.quarkus.config.QuarkusEventConfig;
 import org.projectnessie.events.service.EventSubscribers;
 import org.projectnessie.versioned.Result;
 
@@ -41,7 +40,6 @@ public class QuarkusResultCollectorFactory {
   @RequestScoped
   @LookupIfProperty(name = "nessie.version.store.events.enable", stringValue = "true")
   public Consumer<Result> newResultCollector(
-      QuarkusEventConfig config,
       EventSubscribers subscribers,
       EventBus bus,
       DeliveryOptions options,
@@ -52,14 +50,14 @@ public class QuarkusResultCollectorFactory {
     Principal principal = users.isResolvable() ? users.get().get() : null;
     String repositoryId = repositoryIds.isResolvable() ? repositoryIds.get() : "";
     Consumer<Result> collector;
-    if (config.isMetricsEnabled() && registries.isResolvable()) {
+    if (registries.isResolvable()) {
       collector =
           new QuarkusMetricsResultCollector(
               subscribers, repositoryId, principal, bus, options, registries.get());
     } else {
       collector = new QuarkusResultCollector(subscribers, repositoryId, principal, bus, options);
     }
-    if (config.isTracingEnabled() && tracers.isResolvable()) {
+    if (tracers.isResolvable()) {
       String user = principal != null ? principal.getName() : null;
       collector = new QuarkusTracingResultCollector(collector, user, tracers.get());
     }

@@ -44,13 +44,13 @@ public class EventDeliveryFactory {
       @Any Instance<MeterRegistry> registries) {
     this.config = config;
     this.vertx = vertx;
-    this.tracer = extractInstance(config.isTracingEnabled(), tracers);
-    this.registry = extractInstance(config.isMetricsEnabled(), registries);
+    this.tracer = extractInstance(tracers);
+    this.registry = extractInstance(registries);
     this.clock = registry == null ? null : new MicrometerClockAdapter(config.getClock());
   }
 
-  private static <T> T extractInstance(boolean enabled, Instance<T> instances) {
-    return enabled && instances != null && instances.isResolvable() ? instances.get() : null;
+  private static <T> T extractInstance(Instance<T> instances) {
+    return instances != null && instances.isResolvable() ? instances.get() : null;
   }
 
   public EventDelivery create(

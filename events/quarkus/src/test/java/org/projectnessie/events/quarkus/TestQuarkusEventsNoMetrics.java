@@ -28,8 +28,8 @@ import org.projectnessie.events.quarkus.assertions.TracingAssertions;
 import org.projectnessie.events.quarkus.scenarios.EventScenarios;
 
 @QuarkusTest
-@TestProfile(TestQuarkusEventsWithExtensionsDisabled.Profile.class)
-class TestQuarkusEventsWithExtensionsDisabled {
+@TestProfile(TestQuarkusEventsNoMetrics.Profile.class)
+class TestQuarkusEventsNoMetrics {
 
   @Inject EventScenarios scenarios;
   @Inject EventAssertions events;
@@ -44,59 +44,58 @@ class TestQuarkusEventsWithExtensionsDisabled {
   }
 
   @Test
-  public void testCommitWithExtensionsDisabled() {
+  void testCommitNoMetrics() {
     scenarios.commit();
     events.awaitAndAssertCommitEvents(true);
-    tracing.assertOpenTelemetryDisabled();
+    tracing.awaitAndAssertCommitTraces(true);
     metrics.assertMicrometerDisabled();
   }
 
   @Test
-  public void testMergeWithExtensionsDisabled() {
+  public void testMergeNoMetrics() {
     scenarios.merge();
     events.awaitAndAssertMergeEvents(true);
-    tracing.assertOpenTelemetryDisabled();
+    tracing.awaitAndAssertMergeTraces(true);
     metrics.assertMicrometerDisabled();
   }
 
   @Test
-  public void testTransplantWithExtensionsDisabled() {
+  public void testTransplantNoMetrics() {
     scenarios.transplant();
     events.awaitAndAssertTransplantEvents(true);
-    tracing.assertOpenTelemetryDisabled();
+    tracing.awaitAndAssertTransplantTraces(true);
     metrics.assertMicrometerDisabled();
   }
 
   @Test
-  public void testReferenceCreatedWithExtensionsDisabled() {
+  public void testReferenceCreatedNoMetrics() {
     scenarios.referenceCreated();
     events.awaitAndAssertReferenceCreatedEvents(true);
-    tracing.assertOpenTelemetryDisabled();
+    tracing.awaitAndAssertReferenceCreatedTraces(true);
     metrics.assertMicrometerDisabled();
   }
 
   @Test
-  public void testReferenceDeletedWithExtensionsDisabled() {
+  public void testReferenceDeletedNoMetrics() {
     scenarios.referenceDeleted();
     events.awaitAndAssertReferenceDeletedEvents(true);
-    tracing.assertOpenTelemetryDisabled();
+    tracing.awaitAndAssertReferenceDeletedTraces(true);
     metrics.assertMicrometerDisabled();
   }
 
   @Test
-  public void testReferenceUpdatedWithExtensionsDisabled() {
+  public void testReferenceUpdatedNoMetrics() {
     scenarios.referenceUpdated();
     events.awaitAndAssertReferenceUpdatedEvents(true);
-    tracing.assertOpenTelemetryDisabled();
+    tracing.awaitAndAssertReferenceUpdatedTraces(true);
     metrics.assertMicrometerDisabled();
   }
 
-  public static class Profile extends TestQuarkusEventsWithTracingAndMetrics.Profile {
+  public static class Profile extends TestQuarkusEvents.Profile {
 
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> map = new HashMap<>(super.getConfigOverrides());
-      map.put("quarkus.opentelemetry.enabled", "false");
       map.put("quarkus.micrometer.enabled", "false");
       return map;
     }

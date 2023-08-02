@@ -28,8 +28,8 @@ import org.projectnessie.events.quarkus.assertions.TracingAssertions;
 import org.projectnessie.events.quarkus.scenarios.EventScenarios;
 
 @QuarkusTest
-@TestProfile(TestQuarkusEventsWithAuthDisabled.Profile.class)
-class TestQuarkusEventsWithAuthDisabled {
+@TestProfile(TestQuarkusEventsNoAuth.Profile.class)
+class TestQuarkusEventsNoAuth {
 
   @Inject EventScenarios scenarios;
   @Inject EventAssertions events;
@@ -91,7 +91,7 @@ class TestQuarkusEventsWithAuthDisabled {
     metrics.awaitAndAssertReferenceUpdatedMetrics();
   }
 
-  public static class Profile extends TestQuarkusEventsWithTracingAndMetrics.Profile {
+  public static class Profile extends TestQuarkusEvents.Profile {
 
     @Override
     public Map<String, String> getConfigOverrides() {
