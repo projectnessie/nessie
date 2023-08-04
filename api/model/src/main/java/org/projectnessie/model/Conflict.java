@@ -81,7 +81,7 @@ public interface Conflict {
     /** A namespace must be empty before it can be deleted. */
     NAMESPACE_NOT_EMPTY,
 
-    /** Reference is not at the expected hash. */
+    /** Reference is not at the expected hash, reported for reference assignment and deletion. */
     UNEXPECTED_HASH,
 
     /** Generic key conflict, reported for merges and transplants. */
