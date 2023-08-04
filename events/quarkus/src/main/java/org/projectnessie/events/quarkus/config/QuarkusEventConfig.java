@@ -36,16 +36,6 @@ public interface QuarkusEventConfig extends EventConfig {
   @WithDefault("true")
   boolean isEnabled();
 
-  /** Whether metrics for events are enabled (enabled by default). */
-  @WithName("metrics.enable")
-  @WithDefault("true")
-  boolean isMetricsEnabled();
-
-  /** Whether tracing for events is enabled (enabled by default). */
-  @WithName("trace.enable")
-  @WithDefault("true")
-  boolean isTracingEnabled();
-
   @WithName("static-properties")
   @WithDefault("{}")
   @Override

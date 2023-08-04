@@ -48,48 +48,48 @@ class TestQuarkusEvents {
   public void testCommit() {
     scenarios.commit();
     events.awaitAndAssertCommitEvents(true);
-    tracing.assertNoNessieTraces();
-    metrics.assertNoNessieMetrics();
+    tracing.awaitAndAssertCommitTraces(true);
+    metrics.awaitAndAssertCommitMetrics();
   }
 
   @Test
   public void testMerge() {
     scenarios.merge();
     events.awaitAndAssertMergeEvents(true);
-    tracing.assertNoNessieTraces();
-    metrics.assertNoNessieMetrics();
+    tracing.awaitAndAssertMergeTraces(true);
+    metrics.awaitAndAssertMergeMetrics();
   }
 
   @Test
   public void testTransplant() {
     scenarios.transplant();
     events.awaitAndAssertTransplantEvents(true);
-    tracing.assertNoNessieTraces();
-    metrics.assertNoNessieMetrics();
+    tracing.awaitAndAssertTransplantTraces(true);
+    metrics.awaitAndAssertTransplantMetrics();
   }
 
   @Test
   public void testReferenceCreated() {
     scenarios.referenceCreated();
     events.awaitAndAssertReferenceCreatedEvents(true);
-    tracing.assertNoNessieTraces();
-    metrics.assertNoNessieMetrics();
+    tracing.awaitAndAssertReferenceCreatedTraces(true);
+    metrics.awaitAndAssertReferenceCreatedMetrics();
   }
 
   @Test
   public void testReferenceDeleted() {
     scenarios.referenceDeleted();
     events.awaitAndAssertReferenceDeletedEvents(true);
-    tracing.assertNoNessieTraces();
-    metrics.assertNoNessieMetrics();
+    tracing.awaitAndAssertReferenceDeletedTraces(true);
+    metrics.awaitAndAssertReferenceDeletedMetrics();
   }
 
   @Test
   public void testReferenceUpdated() {
     scenarios.referenceUpdated();
     events.awaitAndAssertReferenceUpdatedEvents(true);
-    tracing.assertNoNessieTraces();
-    metrics.assertNoNessieMetrics();
+    tracing.awaitAndAssertReferenceUpdatedTraces(true);
+    metrics.awaitAndAssertReferenceUpdatedMetrics();
   }
 
   public static class Profile implements QuarkusTestProfile {
@@ -97,13 +97,12 @@ class TestQuarkusEvents {
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> map = new HashMap<>();
-      // Events and auth enabled, event tracing and event metrics disabled by default
-      map.put("nessie.server.authentication.enabled", "true");
+      // Events and auth enabled
       map.put("nessie.version.store.events.enable", "true");
-      map.put("nessie.version.store.events.trace.enable", "false");
-      map.put("nessie.version.store.events.metrics.enable", "false");
+      map.put("nessie.server.authentication.enabled", "true");
       // Extensions all enabled by default
       map.put("quarkus.micrometer.enabled", "true");
+      map.put("quarkus.otel.enabled", "true");
       // Sample everything
       map.put("quarkus.otel.traces.sampler", "always_on");
       // Enable retries + reduce backoff
@@ -111,6 +110,8 @@ class TestQuarkusEvents {
       map.put("nessie.version.store.events.retry.initial-delay", "PT0.01S");
       // Test config properties
       map.put("nessie.version.store.events.static-properties.foo", "bar");
+      // Speed up trace exports
+      map.put("quarkus.otel.bsp.schedule.delay", "100");
       return map;
     }
   }

@@ -109,7 +109,6 @@ public class TestPublishedPoms {
     "nessie-versioned-storage-mongodb",
     "nessie-versioned-storage-rocksdb",
     "nessie-versioned-storage-store",
-    "nessie-versioned-storage-telemetry",
     "nessie-versioned-storage-testextension",
   })
   void checkMainPom(String artifactId) throws Exception {

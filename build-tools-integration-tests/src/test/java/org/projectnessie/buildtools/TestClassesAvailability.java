@@ -38,8 +38,6 @@ public class TestClassesAvailability {
     "org.projectnessie.versioned.storage.mongodb.MongoDBBackendFactory",
     // from nessie-versioned-storage-cache
     "org.projectnessie.versioned.storage.cache.PersistCaches",
-    // from nessie-versioned-storage-telemetry
-    "org.projectnessie.versioned.storage.telemetry.TelemetryPersistFactory",
     // from nessie-versioned-storage-testextension
     "org.projectnessie.versioned.storage.testextension.PersistExtension",
     // from nessie-client

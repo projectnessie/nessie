@@ -17,7 +17,6 @@ package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
-import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -28,10 +27,10 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.util.function.BiFunction;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.quarkus.providers.NotObserved;
 import org.projectnessie.quarkus.providers.WIthInitializedRepository;
 import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
@@ -40,7 +39,6 @@ import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
-import org.projectnessie.versioned.storage.telemetry.TelemetryPersistFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,11 +56,9 @@ public class PersistProvider {
   private final VersionStoreConfig versionStoreConfig;
   private final ServerConfig serverConfig;
   private final QuarkusStoreConfig storeConfig;
-  private final Instance<Tracer> opentelemetryTracer;
 
   @Inject
   public PersistProvider(
-      @Any Instance<Tracer> opentelemetryTracer,
       @Any Instance<BackendBuilder> backendBuilder,
       @Any Instance<Backend> backend,
       VersionStoreConfig versionStoreConfig,
@@ -73,7 +69,6 @@ public class PersistProvider {
     this.versionStoreConfig = versionStoreConfig;
     this.storeConfig = storeConfig;
     this.serverConfig = serverConfig;
-    this.opentelemetryTracer = opentelemetryTracer;
   }
 
   @Produces
@@ -118,7 +113,7 @@ public class PersistProvider {
   @Produces
   @Singleton
   @Startup
-  @Default
+  @NotObserved
   public Persist producePersist() {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
     if (!versionStoreType.isNewStorage()) {
@@ -134,23 +129,8 @@ public class PersistProvider {
 
     LOGGER.info("Creating/opening version store {} ...", versionStoreType);
 
-    BiFunction<Persist, String, Persist> wrapPersistTracing = (p, name) -> p;
-    String tracingInfo = "without tracing";
-    if (versionStoreConfig.isTracingEnabled()) {
-      if (opentelemetryTracer.isUnsatisfied()) {
-        LOGGER.warn(
-            "OpenTelemetry is enabled, but not available, forgot to add quarkus-opentelemetry?");
-      } else {
-        Tracer t = opentelemetryTracer.get();
-        TelemetryPersistFactory pf = TelemetryPersistFactory.forTracer(t);
-        wrapPersistTracing = pf::wrap;
-        tracingInfo = "with OpenTelemetry tracing";
-      }
-    }
-
     PersistFactory persistFactory = b.createFactory();
     Persist persist = persistFactory.newPersist(storeConfig);
-    persist = wrapPersistTracing.apply(persist, persist.name());
 
     String info = b.configInfo();
     if (!info.isEmpty()) {
@@ -162,13 +142,12 @@ public class PersistProvider {
     if (cacheCapacityMB > 0) {
       CacheBackend cacheBackend = PersistCaches.newBackend(1024L * 1024L * cacheCapacityMB);
       persist = cacheBackend.wrap(persist);
-      persist = wrapPersistTracing.apply(persist, "Cache");
       cacheInfo = "with " + cacheCapacityMB + " MB objects cache";
     } else {
       cacheInfo = "without objects cache";
     }
 
-    LOGGER.info("Using {} version store{}, {}, {}", versionStoreType, info, cacheInfo, tracingInfo);
+    LOGGER.info("Using {} version store{}, {}", versionStoreType, info, cacheInfo);
 
     return persist;
   }

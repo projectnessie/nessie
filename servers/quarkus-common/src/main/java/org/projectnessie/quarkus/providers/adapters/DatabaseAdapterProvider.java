@@ -24,10 +24,11 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.quarkus.providers.NotObserved;
+import org.projectnessie.quarkus.providers.WIthInitializedRepository;
 import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,8 @@ public class DatabaseAdapterProvider {
   @Produces
   @Singleton
   @Startup
+  @NotObserved
+  @WIthInitializedRepository
   public DatabaseAdapter produceDatabaseAdapter() {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
     if (versionStoreType.isNewStorage()) {
@@ -64,10 +67,6 @@ public class DatabaseAdapterProvider {
     DatabaseAdapter databaseAdapter =
         databaseAdapterBuilder.select(new Literal(versionStoreType)).get().newDatabaseAdapter();
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
-
-    if (storeConfig.isTracingEnabled()) {
-      databaseAdapter = new TracingDatabaseAdapter(databaseAdapter);
-    }
 
     return databaseAdapter;
   }

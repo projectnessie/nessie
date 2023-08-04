@@ -28,8 +28,8 @@ import org.projectnessie.events.quarkus.assertions.TracingAssertions;
 import org.projectnessie.events.quarkus.scenarios.EventScenarios;
 
 @QuarkusTest
-@TestProfile(TestQuarkusEventsWithTracing.Profile.class)
-class TestQuarkusEventsWithTracing {
+@TestProfile(TestQuarkusEventsNoTracing.Profile.class)
+class TestQuarkusEventsNoTracing {
 
   @Inject EventScenarios scenarios;
   @Inject EventAssertions events;
@@ -44,51 +44,51 @@ class TestQuarkusEventsWithTracing {
   }
 
   @Test
-  void testCommitWithTracing() {
+  public void testCommitNoTracing() {
     scenarios.commit();
     events.awaitAndAssertCommitEvents(true);
-    tracing.awaitAndAssertCommitTraces(true);
-    metrics.assertNoNessieMetrics();
+    tracing.assertOpenTelemetryDisabled();
+    metrics.awaitAndAssertCommitMetrics();
   }
 
   @Test
-  public void testMergeWithTracing() {
+  public void testMergeNoTracing() {
     scenarios.merge();
     events.awaitAndAssertMergeEvents(true);
-    tracing.awaitAndAssertMergeTraces(true);
-    metrics.assertNoNessieMetrics();
+    tracing.assertOpenTelemetryDisabled();
+    metrics.awaitAndAssertMergeMetrics();
   }
 
   @Test
-  public void testTransplantWithTracing() {
+  public void testTransplantNoTracing() {
     scenarios.transplant();
     events.awaitAndAssertTransplantEvents(true);
-    tracing.awaitAndAssertTransplantTraces(true);
-    metrics.assertNoNessieMetrics();
+    tracing.assertOpenTelemetryDisabled();
+    metrics.awaitAndAssertTransplantMetrics();
   }
 
   @Test
-  public void testReferenceCreatedWithTracing() {
+  public void testReferenceCreatedNoTracing() {
     scenarios.referenceCreated();
     events.awaitAndAssertReferenceCreatedEvents(true);
-    tracing.awaitAndAssertReferenceCreatedTraces(true);
-    metrics.assertNoNessieMetrics();
+    tracing.assertOpenTelemetryDisabled();
+    metrics.awaitAndAssertReferenceCreatedMetrics();
   }
 
   @Test
-  public void testReferenceDeletedWithTracing() {
+  public void testReferenceDeletedNoTracing() {
     scenarios.referenceDeleted();
     events.awaitAndAssertReferenceDeletedEvents(true);
-    tracing.awaitAndAssertReferenceDeletedTraces(true);
-    metrics.assertNoNessieMetrics();
+    tracing.assertOpenTelemetryDisabled();
+    metrics.awaitAndAssertReferenceDeletedMetrics();
   }
 
   @Test
-  public void testReferenceUpdatedWithTracing() {
+  public void testReferenceUpdatedNoTracing() {
     scenarios.referenceUpdated();
     events.awaitAndAssertReferenceUpdatedEvents(true);
-    tracing.awaitAndAssertReferenceUpdatedTraces(true);
-    metrics.assertNoNessieMetrics();
+    tracing.assertOpenTelemetryDisabled();
+    metrics.awaitAndAssertReferenceUpdatedMetrics();
   }
 
   public static class Profile extends TestQuarkusEvents.Profile {
@@ -96,7 +96,7 @@ class TestQuarkusEventsWithTracing {
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> map = new HashMap<>(super.getConfigOverrides());
-      map.put("nessie.version.store.events.trace.enable", "true");
+      map.put("quarkus.otel.enabled", "false");
       return map;
     }
   }

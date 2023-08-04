@@ -2,6 +2,29 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.67.0 Release (August 02, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.67.0).
+
+### Upgrade notes
+- Tracing and metrics have been migrated to Quarkus "native". The options to en/disable metrics and tracing have been removed. Please remove the options `nessie.version.store.trace.enable`, `nessie.version.store.metrics.enable` from your Nessie settings.
+
+### Changes
+- Nessie API spec upgraded to 2.1.1
+- Support for relative hashes has been standardized and is now allowed in all v2 endpoints
+- Migrate to Quarkus metrics and tracing
+
+### Commits
+* Ninja: CHANGELOG
+* Fix running Spark 3.3+ ITs on Java==17 (#7322)
+* Nit: remove unused import (#7321)
+* Fix NesQuEIT IntelliJ import (#7320)
+* Remove metrics.enable and trace.enable properties in QuarkusEventConfig (#7319)
+* Move to Quarkus provided observability (#6954)
+* Extend relative hash support to whole API v2 (#7308)
+* Add .python-version to .gitignore (#7313)
+* Simplify BigTableBackendConfig.tablePrefix declaration (#7309)
+
 ## 0.66.0 Release (July 31, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.66.0).
