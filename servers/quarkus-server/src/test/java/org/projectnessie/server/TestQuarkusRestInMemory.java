@@ -17,8 +17,6 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.junit.jupiter.api.Nested;
-import org.projectnessie.jaxrs.tests.BaseTestNessieRest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest
@@ -29,8 +27,4 @@ class TestQuarkusRestInMemory extends AbstractQuarkusRestWithMetrics {
   protected boolean isNewModel() {
     return false;
   }
-
-  // See https://github.com/quarkusio/quarkus/issues/35104
-  @Nested
-  class RelativeReferences extends BaseTestNessieRest.RelativeReferences {}
 }
