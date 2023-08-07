@@ -13,7 +13,7 @@ image:
 # -- The default logging level for the nessie server.
 logLevel: INFO
 
-# -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC.
+# -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE.
 # (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using
 # one of these legacy version store types, migrate your existing repositories to the new version
 # store types using the nessie-quarkus-cli tool's export/import functionality.)
@@ -78,6 +78,33 @@ postgres:
     username: postgres_username
     # -- The secret key storing the Postgres password.
     password: postgres_password
+
+# BigTable settings. Only required when using BIGTABLE version store type; ignored otherwise.
+bigtable:
+  # -- The Google Cloud project ID.
+  projectId: my-gcp-project
+  # -- The Google Cloud Bigtable instance ID.
+  instanceId: nessie-bigtable
+  # -- The Google Cloud Bigtable app profile ID.
+  appProfileId: default
+  # -- The secret to use to authenticate against BigTable.
+  # When provided, it is assumed that authentication will use a service account JSON key.
+  # See https://cloud.google.com/iam/docs/keys-create-delete for details on how to create a
+  # service account key.
+  # If left empty, then Workload Identity usage is assumed instead; in this case, make sure that
+  # the pod's service account has been granted access to BigTable.
+  # See https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to
+  # for details on how to create a suitable service account.
+  # Important: when using Workload Identity, unless the cluster is in Autopilot mode, it is also
+  # required to add the following nodeSelector label:
+  # iam.gke.io/gke-metadata-server-enabled: "true"
+  # This is not done automatically by this chart because this selector would be invalid for
+  # Autopilot clusters.
+  secret: {}
+    # # -- The secret name to pull a valid Google Cloud service account key from.
+    # name: bigtable-creds
+    # # -- The secret key storing the Google Cloud service account JSON key.
+    # key: sa_json
 
 # -- Advanced configuration.
 # You can pass here any valid Nessie or Quarkus configuration property.

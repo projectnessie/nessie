@@ -44,6 +44,11 @@ spec:
             - name: rocks-storage
               mountPath: /rocks-nessie
           {{- end }}
+          {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
+          volumeMounts:
+            - name: bigtable-creds
+              mountPath: /bigtable-nessie
+          {{- end }}
           env:
             - name: NESSIE_VERSION_STORE_TYPE
               value: {{ .Values.versionStoreType }}
@@ -142,6 +147,19 @@ spec:
               value: {{ .Values.postgres.jdbcUrl }}
             {{- end }}
 
+            {{- if eq .Values.versionStoreType "BIGTABLE" }}
+            - name: QUARKUS_GOOGLE_CLOUD_PROJECT_ID
+              value: {{ .Values.bigtable.projectId }}
+            - name: NESSIE_VERSION_STORE_PERSIST_BIGTABLE_INSTANCE_ID
+              value: {{ .Values.bigtable.instanceId }}
+            - name: NESSIE_VERSION_STORE_PERSIST_BIGTABLE_APP_PROFILE_ID
+              value: {{ .Values.bigtable.appProfileId }}
+            {{- if .Values.bigtable.secret }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /bigtable-nessie/sa_credentials.json
+            {{- end }}
+            {{- end }}
+
             {{- if .Values.authentication.enabled }}
             - name: NESSIE_SERVER_AUTHENTICATION_ENABLED
               value: {{ .Values.authentication.enabled | quote }}
@@ -225,6 +243,15 @@ spec:
         - name: rocks-storage
           persistentVolumeClaim:
             claimName: {{ include "nessie.fullname" . }}
+      {{- end }}
+      {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
+      volumes:
+        - name: bigtable-creds
+          secret:
+            secretName: {{ .Values.bigtable.secret.name }}
+            items:
+              - key: {{ .Values.bigtable.secret.key }}
+                path: sa_credentials.json
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
