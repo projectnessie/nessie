@@ -220,7 +220,7 @@ spec:
             timeoutSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- if eq .Values.versionStoreType "ROCKS" }}
+      {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
       volumes:
         - name: rocks-storage
           persistentVolumeClaim:
