@@ -59,3 +59,5 @@ tasks.named("compileJava").configure { finalizedBy(shadowJar) }
 tasks.named("processResources").configure { finalizedBy(shadowJar) }
 
 tasks.named("jar").configure { dependsOn("processJandexIndex", "generateReflectionConfig") }
+
+tasks.named("sourcesJar").configure { dependsOn("generateReflectionConfig") }
