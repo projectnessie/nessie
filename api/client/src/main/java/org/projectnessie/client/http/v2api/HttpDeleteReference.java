@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.builder;
+package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.api.DeleteReferenceBuilder;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Reference;
 
-public abstract class BaseAssignBranchBuilder extends BaseOnBranchBuilder<AssignBranchBuilder>
-    implements AssignBranchBuilder {
+final class HttpDeleteReference extends BaseHttpDeleteReference<DeleteReferenceBuilder, Reference>
+    implements DeleteReferenceBuilder {
 
-  protected Reference assignTo;
-
-  @Override
-  public AssignBranchBuilder assignTo(Reference assignTo) {
-    this.assignTo = assignTo;
-    return this;
+  HttpDeleteReference(HttpClient client) {
+    super(client, null);
   }
 }

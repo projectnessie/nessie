@@ -28,4 +28,10 @@ public interface NessieApiV2 extends NessieApiV1 {
   GetRepositoryConfigBuilder getRepositoryConfig();
 
   UpdateRepositoryConfigBuilder updateRepositoryConfig();
+
+  /** Delete a branch or a tag. */
+  DeleteReferenceBuilder deleteReference();
+
+  /** Update a branch or a tag (make it point to an arbitrary commit). */
+  AssignReferenceBuilder assignReference();
 }

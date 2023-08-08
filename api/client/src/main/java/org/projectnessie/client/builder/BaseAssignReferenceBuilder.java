@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v2api;
+package org.projectnessie.client.builder;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
-final class HttpAssignBranch extends BaseHttpAssignReference<AssignBranchBuilder, Branch>
-    implements AssignBranchBuilder {
+public abstract class BaseAssignReferenceBuilder<R> extends BaseOnReferenceBuilder<R> {
 
-  HttpAssignBranch(HttpClient client) {
-    super(client, Reference.ReferenceType.BRANCH);
+  protected Reference assignTo;
+
+  protected BaseAssignReferenceBuilder(Reference.ReferenceType assumedType) {
+    super(assumedType);
+  }
+
+  @SuppressWarnings("unchecked")
+  public R assignTo(Reference assignTo) {
+    this.assignTo = assignTo;
+    return (R) this;
   }
 }

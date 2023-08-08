@@ -16,12 +16,14 @@
 package org.projectnessie.client.http.v2api;
 
 import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.api.AssignReferenceBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceBuilder;
 import org.projectnessie.client.api.CreateReferenceBuilder;
 import org.projectnessie.client.api.DeleteBranchBuilder;
 import org.projectnessie.client.api.DeleteNamespaceBuilder;
+import org.projectnessie.client.api.DeleteReferenceBuilder;
 import org.projectnessie.client.api.DeleteTagBuilder;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetCommitLogBuilder;
@@ -126,6 +128,16 @@ public class HttpApiV2 implements NessieApiV2 {
   @Override
   public DeleteBranchBuilder deleteBranch() {
     return new HttpDeleteBranch(client);
+  }
+
+  @Override
+  public AssignReferenceBuilder assignReference() {
+    return new HttpAssignReference(client);
+  }
+
+  @Override
+  public DeleteReferenceBuilder deleteReference() {
+    return new HttpDeleteReference(client);
   }
 
   @Override

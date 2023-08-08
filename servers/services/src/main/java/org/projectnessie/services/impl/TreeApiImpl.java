@@ -308,6 +308,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ReferenceType referenceType, String referenceName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
+      checkArgument(expectedHash != null, "Expected hash must be provided");
 
       ResolvedHash oldRef =
           getHashResolver()

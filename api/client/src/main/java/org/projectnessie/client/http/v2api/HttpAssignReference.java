@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.builder;
+package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.client.api.AssignTagBuilder;
+import org.projectnessie.client.api.AssignReferenceBuilder;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Reference;
 
-public abstract class BaseAssignTagBuilder extends BaseOnTagBuilder<AssignTagBuilder>
-    implements AssignTagBuilder {
+final class HttpAssignReference extends BaseHttpAssignReference<AssignReferenceBuilder, Reference>
+    implements AssignReferenceBuilder {
 
-  protected Reference assignTo;
-
-  @Override
-  public AssignTagBuilder assignTo(Reference assignTo) {
-    this.assignTo = assignTo;
-    return this;
+  HttpAssignReference(HttpClient client) {
+    super(client, null);
   }
 }

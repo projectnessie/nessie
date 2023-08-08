@@ -15,24 +15,54 @@
  */
 package org.projectnessie.client.builder;
 
-import org.projectnessie.client.api.OnReferenceBuilder;
+import org.projectnessie.model.Reference;
 
-abstract class BaseOnReferenceBuilder<R extends OnReferenceBuilder<R>>
-    implements OnReferenceBuilder<R> {
+public abstract class BaseOnReferenceBuilder<R> {
   protected String refName;
   protected String hashOnRef;
+  protected Reference.ReferenceType type;
+
+  public BaseOnReferenceBuilder() {
+    this(null);
+  }
+
+  public BaseOnReferenceBuilder(Reference.ReferenceType assumedType) {
+    this.type = assumedType;
+  }
 
   @SuppressWarnings("unchecked")
-  @Override
+  public R branchName(String branchName) {
+    this.refName = branchName;
+    this.type = Reference.ReferenceType.BRANCH;
+    return (R) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public R tagName(String tagName) {
+    this.refName = tagName;
+    this.type = Reference.ReferenceType.TAG;
+    return (R) this;
+  }
+
+  @SuppressWarnings("unchecked")
   public R refName(String refName) {
     this.refName = refName;
     return (R) this;
   }
 
   @SuppressWarnings("unchecked")
-  @Override
   public R hashOnRef(String hashOnRef) {
     this.hashOnRef = hashOnRef;
+    return (R) this;
+  }
+
+  public R hash(String hashOnRef) {
+    return hashOnRef(hashOnRef);
+  }
+
+  @SuppressWarnings("unchecked")
+  public R refType(Reference.ReferenceType referenceType) {
+    this.type = referenceType;
     return (R) this;
   }
 }
