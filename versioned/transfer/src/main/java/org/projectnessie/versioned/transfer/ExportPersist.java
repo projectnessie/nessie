@@ -27,7 +27,9 @@ import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.r
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -102,35 +104,27 @@ final class ExportPersist extends ExportCommon {
 
     ReferenceLogic referenceLogic = referenceLogic(persist);
     CommitLogic commitLogic = commitLogic(persist);
+    Deque<ObjId> commitsToProcess = new ArrayDeque<>();
     referenceLogic
         .queryReferences(referencesQuery())
-        .forEachRemaining(
-            ref ->
-                scanCommitLogChain(
-                    commitLogic.commitLog(commitLogQuery(ref.pointer())),
-                    identify,
-                    commitHandler,
-                    commitLogic));
+        .forEachRemaining(ref -> commitsToProcess.push(ref.pointer()));
 
-    return identify.finish();
-  }
-
-  private void scanCommitLogChain(
-      Iterator<CommitObj> commitIter,
-      IdentifyHeadsAndForkPoints identify,
-      Consumer<CommitObj> commitHandler,
-      CommitLogic commitLogic) {
-    while (commitIter.hasNext()) {
-      CommitObj commit = commitIter.next();
-      if (!identify.handleCommit(commit)) {
-        break;
-      }
-      commitHandler.accept(commit);
-      for (ObjId objId : commit.secondaryParents()) {
-        scanCommitLogChain(
-            commitLogic.commitLog(commitLogQuery(objId)), identify, commitHandler, commitLogic);
+    while (!commitsToProcess.isEmpty()) {
+      ObjId id = commitsToProcess.pop();
+      Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
+      while (commitIter.hasNext()) {
+        CommitObj commit = commitIter.next();
+        if (!identify.handleCommit(commit)) {
+          break;
+        }
+        commitHandler.accept(commit);
+        for (ObjId objId : commit.secondaryParents()) {
+          commitsToProcess.push(objId);
+        }
       }
     }
+
+    return identify.finish();
   }
 
   private HeadsAndForkPoints scanDatabase(Consumer<CommitObj> commitHandler) {

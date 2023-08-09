@@ -462,6 +462,7 @@ public class ITExportImport {
                 })
             .build());
 
+    // Delete the temp branch so that the secondary parent won't be directly reachable anymore.
     adapter.delete(branchTemp, Optional.empty());
   }
 }
