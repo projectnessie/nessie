@@ -95,22 +95,29 @@ final class ExportDatabaseAdapter extends ExportCommon {
 
     try (Stream<ReferenceInfo<ByteString>> namedRefs =
         databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
-      Deque<Hash> commitsToProcess = new ArrayDeque<>();
-      namedRefs.map(ReferenceInfo::getHash).forEach(commitsToProcess::push);
-      while (!commitsToProcess.isEmpty()) {
-        Hash hash = commitsToProcess.pop();
-        try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
-          commits.forEach(
-              commit -> {
-                if (identify.handleCommit(commit)) {
-                  commitHandler.accept(commit);
-                  for (Hash h : commit.getAdditionalParents()) {
-                    commitsToProcess.push(h);
+      namedRefs
+          .map(ReferenceInfo::getHash)
+          .forEach(
+              head -> {
+                Deque<Hash> commitsToProcess = new ArrayDeque<>();
+                commitsToProcess.push(head);
+                while (!commitsToProcess.isEmpty()) {
+                  Hash hash = commitsToProcess.pop();
+                  try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
+                    commits.forEach(
+                        commit -> {
+                          if (identify.handleCommit(commit)) {
+                            commitHandler.accept(commit);
+                            for (Hash h : commit.getAdditionalParents()) {
+                              commitsToProcess.push(h);
+                            }
+                          }
+                        });
+                  } catch (ReferenceNotFoundException e) {
+                    throw new RuntimeException(e);
                   }
                 }
               });
-        }
-      }
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
     }

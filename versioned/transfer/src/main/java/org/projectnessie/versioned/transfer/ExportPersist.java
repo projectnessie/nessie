@@ -104,25 +104,26 @@ final class ExportPersist extends ExportCommon {
 
     ReferenceLogic referenceLogic = referenceLogic(persist);
     CommitLogic commitLogic = commitLogic(persist);
-    Deque<ObjId> commitsToProcess = new ArrayDeque<>();
     referenceLogic
         .queryReferences(referencesQuery())
-        .forEachRemaining(ref -> commitsToProcess.push(ref.pointer()));
-
-    while (!commitsToProcess.isEmpty()) {
-      ObjId id = commitsToProcess.pop();
-      Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
-      while (commitIter.hasNext()) {
-        CommitObj commit = commitIter.next();
-        if (!identify.handleCommit(commit)) {
-          break;
-        }
-        commitHandler.accept(commit);
-        for (ObjId objId : commit.secondaryParents()) {
-          commitsToProcess.push(objId);
-        }
-      }
-    }
+        .forEachRemaining(
+            ref -> {
+              Deque<ObjId> commitsToProcess = new ArrayDeque<>();
+              commitsToProcess.push(ref.pointer());
+              while (!commitsToProcess.isEmpty()) {
+                ObjId id = commitsToProcess.pop();
+                Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
+                while (commitIter.hasNext()) {
+                  CommitObj commit = commitIter.next();
+                  if (identify.handleCommit(commit)) {
+                    commitHandler.accept(commit);
+                    for (ObjId objId : commit.secondaryParents()) {
+                      commitsToProcess.push(objId);
+                    }
+                  }
+                }
+              }
+            });
 
     return identify.finish();
   }
