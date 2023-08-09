@@ -36,10 +36,11 @@ import com.google.cloud.bigtable.data.v2.models.Mutation;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -157,15 +158,15 @@ final class BigTableBackend implements Backend {
 
   @Override
   public void eraseRepositories(Set<String> repositoryIds) {
-    List<String> toDelete = new ArrayList<>(repositoryIds);
+    Queue<String> toDelete = new ArrayDeque<>(repositoryIds);
     eraseRepositoriesAdminClient(toDelete);
     eraseRepositoriesNoAdminClient(toDelete);
   }
 
-  private void eraseRepositoriesAdminClient(List<String> repositoryIds) {
+  private void eraseRepositoriesAdminClient(Queue<String> repositoryIds) {
     if (tableAdminClient != null) {
       while (!repositoryIds.isEmpty()) {
-        String repoId = repositoryIds.get(0);
+        String repoId = repositoryIds.peek();
         ByteString prefix = copyFromUtf8(repoId + ':');
         try {
           tableAdminClient.dropRowRange(tableRefs, prefix);
@@ -174,7 +175,7 @@ final class BigTableBackend implements Backend {
           LOGGER.warn("Could not erase repo with admin client, switching to data client", e);
           return;
         }
-        repositoryIds.remove(repoId);
+        repositoryIds.poll();
       }
     }
   }
