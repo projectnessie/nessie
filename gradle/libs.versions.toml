@@ -38,7 +38,7 @@ junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit
 
 [libraries]
 agroal-pool = { module = "io.agroal:agroal-pool", version = "2.2" }
-agrona = { module = "org.agrona:agrona", version = "1.19.0" }
+agrona = { module = "org.agrona:agrona", version = "1.19.1" }
 antlr-antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
 antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
 assertj-core = { module = "org.assertj:assertj-core", version = "3.24.2" }
