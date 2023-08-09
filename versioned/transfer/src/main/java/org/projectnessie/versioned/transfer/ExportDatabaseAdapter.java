@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
@@ -27,6 +26,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -97,15 +97,9 @@ final class ExportDatabaseAdapter extends ExportCommon {
           .map(ReferenceInfo::getHash)
           .forEach(
               head -> {
-                try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(head)) {
-                  for (Iterator<CommitLogEntry> commitIter = commits.iterator();
-                      commitIter.hasNext(); ) {
-                    CommitLogEntry commit = commitIter.next();
-                    if (!identify.handleCommit(commit)) {
-                      break;
-                    }
-                    commitHandler.accept(commit);
-                  }
+                try {
+                  scanCommitLogChain(
+                      databaseAdapter.commitLog(head), identify, commitHandler, databaseAdapter);
                 } catch (ReferenceNotFoundException e) {
                   throw new RuntimeException(e);
                 }
@@ -116,6 +110,27 @@ final class ExportDatabaseAdapter extends ExportCommon {
     }
 
     return identify.finish();
+  }
+
+  private void scanCommitLogChain(
+      Stream<CommitLogEntry> commits,
+      IdentifyHeadsAndForkPoints identify,
+      Consumer<CommitLogEntry> commitHandler,
+      DatabaseAdapter databaseAdapter) {
+    commits.forEach(
+        commit -> {
+          if (identify.handleCommit(commit)) {
+            commitHandler.accept(commit);
+            for (Hash hash : commit.getAdditionalParents()) {
+              try {
+                scanCommitLogChain(
+                    databaseAdapter.commitLog(hash), identify, commitHandler, databaseAdapter);
+              } catch (ReferenceNotFoundException e) {
+                throw new RuntimeException(e);
+              }
+            }
+          }
+        });
   }
 
   @Override
