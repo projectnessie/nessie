@@ -25,9 +25,8 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_REFS;
 
+import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.NotFoundException;
-import com.google.api.gax.rpc.ResourceExhaustedException;
-import com.google.api.gax.rpc.UnavailableException;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.models.CreateTableRequest;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
@@ -171,11 +170,8 @@ final class BigTableBackend implements Backend {
         try {
           tableAdminClient.dropRowRange(tableRefs, prefix);
           tableAdminClient.dropRowRange(tableObjs, prefix);
-        } catch (ResourceExhaustedException e) {
-          LOGGER.warn("DropRowRange quota exceeded, trying the non-admin path", e);
-          return;
-        } catch (UnavailableException e) {
-          LOGGER.warn("DropRowRange operation unavailable, trying the non-admin path", e);
+        } catch (ApiException e) {
+          LOGGER.warn("Could not erase repo with admin client, switching to data client", e);
           return;
         }
         repositoryIds.remove(repoId);
