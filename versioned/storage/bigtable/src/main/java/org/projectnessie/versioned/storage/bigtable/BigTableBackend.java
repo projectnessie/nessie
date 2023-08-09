@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_REFS;
 
+import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.models.CreateTableRequest;
@@ -35,8 +36,11 @@ import com.google.cloud.bigtable.data.v2.models.Mutation;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.protobuf.ByteString;
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -154,32 +158,37 @@ final class BigTableBackend implements Backend {
 
   @Override
   public void eraseRepositories(Set<String> repositoryIds) {
-    if (!eraseRepositoriesAdminClient(repositoryIds)) {
-      eraseRepositoriesNoAdminClient(repositoryIds);
+    Queue<String> toDelete = new ArrayDeque<>(repositoryIds);
+    eraseRepositoriesAdminClient(toDelete);
+    eraseRepositoriesNoAdminClient(toDelete);
+  }
+
+  private void eraseRepositoriesAdminClient(Queue<String> repositoryIds) {
+    if (tableAdminClient != null) {
+      while (!repositoryIds.isEmpty()) {
+        String repoId = repositoryIds.peek();
+        ByteString prefix = copyFromUtf8(repoId + ':');
+        try {
+          tableAdminClient.dropRowRange(tableRefs, prefix);
+          tableAdminClient.dropRowRange(tableObjs, prefix);
+        } catch (ApiException e) {
+          LOGGER.warn("Could not erase repo with admin client, switching to data client", e);
+          return;
+        }
+        repositoryIds.poll();
+      }
     }
   }
 
-  private boolean eraseRepositoriesAdminClient(Set<String> repositoryIds) {
-    if (tableAdminClient == null) {
-      return false;
+  private void eraseRepositoriesNoAdminClient(Collection<String> repositoryIds) {
+    if (!repositoryIds.isEmpty()) {
+      List<ByteString> prefixes =
+          repositoryIds.stream()
+              .map(repoId -> copyFromUtf8(repoId + ':'))
+              .collect(Collectors.toList());
+      eraseRepositoriesTable(tableRefs, prefixes);
+      eraseRepositoriesTable(tableObjs, prefixes);
     }
-
-    for (String repoId : repositoryIds) {
-      ByteString prefix = copyFromUtf8(repoId + ':');
-      tableAdminClient.dropRowRange(tableRefs, prefix);
-      tableAdminClient.dropRowRange(tableObjs, prefix);
-    }
-
-    return true;
-  }
-
-  private void eraseRepositoriesNoAdminClient(Set<String> repositoryIds) {
-    List<ByteString> prefixes =
-        repositoryIds.stream()
-            .map(repoId -> copyFromUtf8(repoId + ':'))
-            .collect(Collectors.toList());
-    eraseRepositoriesTable(tableRefs, prefixes);
-    eraseRepositoriesTable(tableObjs, prefixes);
   }
 
   private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {
