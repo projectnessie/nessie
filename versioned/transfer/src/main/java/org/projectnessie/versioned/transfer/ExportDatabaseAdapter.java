@@ -97,9 +97,8 @@ final class ExportDatabaseAdapter extends ExportCommon {
           .map(ReferenceInfo::getHash)
           .forEach(
               head -> {
-                try {
-                  scanCommitLogChain(
-                      databaseAdapter.commitLog(head), identify, commitHandler, databaseAdapter);
+                try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(head)) {
+                  scanCommitLogChain(commits, identify, commitHandler, databaseAdapter);
                 } catch (ReferenceNotFoundException e) {
                   throw new RuntimeException(e);
                 }
@@ -122,9 +121,8 @@ final class ExportDatabaseAdapter extends ExportCommon {
           if (identify.handleCommit(commit)) {
             commitHandler.accept(commit);
             for (Hash hash : commit.getAdditionalParents()) {
-              try {
-                scanCommitLogChain(
-                    databaseAdapter.commitLog(hash), identify, commitHandler, databaseAdapter);
+              try (Stream<CommitLogEntry> secondaryLineage = databaseAdapter.commitLog(hash)) {
+                scanCommitLogChain(secondaryLineage, identify, commitHandler, databaseAdapter);
               } catch (ReferenceNotFoundException e) {
                 throw new RuntimeException(e);
               }
