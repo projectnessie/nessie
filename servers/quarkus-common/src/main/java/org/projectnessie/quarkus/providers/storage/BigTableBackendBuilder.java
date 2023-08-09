@@ -114,32 +114,38 @@ public class BigTableBackendBuilder implements BackendBuilder {
       LOGGER.info("Creating Google BigTable data client...");
       BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());
 
-      BigtableTableAdminSettings.Builder adminSettings =
-          bigTableConfig.emulatorHost().isPresent()
-              ? BigtableTableAdminSettings.newBuilderForEmulator(
-                      bigTableConfig.emulatorHost().get(), bigTableConfig.emulatorPort())
-                  .setCredentialsProvider(NoCredentialsProvider.create())
-              : BigtableTableAdminSettings.newBuilder().setCredentialsProvider(credentialsProvider);
-      adminSettings.setProjectId(projectId).setInstanceId(bigTableConfig.instanceId());
-      bigTableConfig.mtlsEndpoint().ifPresent(adminSettings.stubSettings()::setMtlsEndpoint);
-      bigTableConfig.quotaProjectId().ifPresent(adminSettings.stubSettings()::setQuotaProjectId);
-      bigTableConfig.endpoint().ifPresent(adminSettings.stubSettings()::setEndpoint);
+      BigtableTableAdminClient tableAdminClient = null;
+      if (bigTableConfig.noTableAdminClient()) {
+        LOGGER.info("Google BigTable table admin client creation disabled.");
+      } else {
 
-      LOGGER.info("Creating Google BigTable table admin client...");
-      BigtableTableAdminClient tableAdminClient =
-          BigtableTableAdminClient.create(adminSettings.build());
+        BigtableTableAdminSettings.Builder adminSettings =
+            bigTableConfig.emulatorHost().isPresent()
+                ? BigtableTableAdminSettings.newBuilderForEmulator(
+                        bigTableConfig.emulatorHost().get(), bigTableConfig.emulatorPort())
+                    .setCredentialsProvider(NoCredentialsProvider.create())
+                : BigtableTableAdminSettings.newBuilder()
+                    .setCredentialsProvider(credentialsProvider);
+        adminSettings.setProjectId(projectId).setInstanceId(bigTableConfig.instanceId());
+        bigTableConfig.mtlsEndpoint().ifPresent(adminSettings.stubSettings()::setMtlsEndpoint);
+        bigTableConfig.quotaProjectId().ifPresent(adminSettings.stubSettings()::setQuotaProjectId);
+        bigTableConfig.endpoint().ifPresent(adminSettings.stubSettings()::setEndpoint);
 
-      // Check whether the admin client actually works (Google cloud API access could be disabled).
-      // If not, we cannot even check whether tables need to be created, if necessary.
-      try {
-        tableAdminClient.listTables();
-      } catch (PermissionDeniedException e) {
-        LOGGER.warn(
-            "Google BigTable table admin client cannot list tables due to {}.", e.toString());
+        LOGGER.info("Creating Google BigTable table admin client...");
+        tableAdminClient = BigtableTableAdminClient.create(adminSettings.build());
+
+        // Check whether the admin client actually works (Google cloud API access could be
+        // disabled). If not, we cannot even check whether tables need to be created, if necessary.
         try {
-          tableAdminClient.close();
-        } finally {
-          tableAdminClient = null;
+          tableAdminClient.listTables();
+        } catch (PermissionDeniedException e) {
+          LOGGER.warn(
+              "Google BigTable table admin client cannot list tables due to {}.", e.toString());
+          try {
+            tableAdminClient.close();
+          } finally {
+            tableAdminClient = null;
+          }
         }
       }
 

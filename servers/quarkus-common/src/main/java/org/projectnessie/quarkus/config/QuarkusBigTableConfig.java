@@ -42,6 +42,9 @@ public interface QuarkusBigTableConfig {
 
   Map<String, String> jwtAudienceMapping();
 
+  @WithDefault("false")
+  boolean noTableAdminClient();
+
   @WithDefault("8086")
   int emulatorPort();
 }
