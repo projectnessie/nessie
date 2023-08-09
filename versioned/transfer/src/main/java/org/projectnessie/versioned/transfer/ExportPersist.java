@@ -105,19 +105,32 @@ final class ExportPersist extends ExportCommon {
     referenceLogic
         .queryReferences(referencesQuery())
         .forEachRemaining(
-            ref -> {
-              for (Iterator<CommitObj> commitIter =
-                      commitLogic.commitLog(commitLogQuery(ref.pointer()));
-                  commitIter.hasNext(); ) {
-                CommitObj commit = commitIter.next();
-                if (!identify.handleCommit(commit)) {
-                  break;
-                }
-                commitHandler.accept(commit);
-              }
-            });
+            ref ->
+                scanCommitLogChain(
+                    commitLogic.commitLog(commitLogQuery(ref.pointer())),
+                    identify,
+                    commitHandler,
+                    commitLogic));
 
     return identify.finish();
+  }
+
+  private void scanCommitLogChain(
+      Iterator<CommitObj> commitIter,
+      IdentifyHeadsAndForkPoints identify,
+      Consumer<CommitObj> commitHandler,
+      CommitLogic commitLogic) {
+    while (commitIter.hasNext()) {
+      CommitObj commit = commitIter.next();
+      if (!identify.handleCommit(commit)) {
+        break;
+      }
+      commitHandler.accept(commit);
+      for (ObjId objId : commit.secondaryParents()) {
+        scanCommitLogChain(
+            commitLogic.commitLog(commitLogQuery(objId)), identify, commitHandler, commitLogic);
+      }
+    }
   }
 
   private HeadsAndForkPoints scanDatabase(Consumer<CommitObj> commitHandler) {
