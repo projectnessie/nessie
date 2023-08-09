@@ -37,6 +37,8 @@ import com.google.cloud.bigtable.data.v2.models.Mutation;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -156,40 +158,40 @@ final class BigTableBackend implements Backend {
 
   @Override
   public void eraseRepositories(Set<String> repositoryIds) {
-    if (!eraseRepositoriesAdminClient(repositoryIds)) {
-      eraseRepositoriesNoAdminClient(repositoryIds);
-    }
+    List<String> toDelete = new ArrayList<>(repositoryIds);
+    eraseRepositoriesAdminClient(toDelete);
+    eraseRepositoriesNoAdminClient(toDelete);
   }
 
-  private boolean eraseRepositoriesAdminClient(Set<String> repositoryIds) {
-    if (tableAdminClient == null) {
-      return false;
-    }
-
-    for (String repoId : repositoryIds) {
-      ByteString prefix = copyFromUtf8(repoId + ':');
-      try {
-        tableAdminClient.dropRowRange(tableRefs, prefix);
-        tableAdminClient.dropRowRange(tableObjs, prefix);
-      } catch (ResourceExhaustedException e) {
-        LOGGER.warn("DropRowRange quota exceeded, trying the non-admin path", e);
-        return false;
-      } catch (UnavailableException e) {
-        LOGGER.warn("DropRowRange operation unavailable, trying the non-admin path", e);
-        return false;
+  private void eraseRepositoriesAdminClient(List<String> repositoryIds) {
+    if (tableAdminClient != null) {
+      while (!repositoryIds.isEmpty()) {
+        String repoId = repositoryIds.get(0);
+        ByteString prefix = copyFromUtf8(repoId + ':');
+        try {
+          tableAdminClient.dropRowRange(tableRefs, prefix);
+          tableAdminClient.dropRowRange(tableObjs, prefix);
+        } catch (ResourceExhaustedException e) {
+          LOGGER.warn("DropRowRange quota exceeded, trying the non-admin path", e);
+          return;
+        } catch (UnavailableException e) {
+          LOGGER.warn("DropRowRange operation unavailable, trying the non-admin path", e);
+          return;
+        }
+        repositoryIds.remove(repoId);
       }
     }
-
-    return true;
   }
 
-  private void eraseRepositoriesNoAdminClient(Set<String> repositoryIds) {
-    List<ByteString> prefixes =
-        repositoryIds.stream()
-            .map(repoId -> copyFromUtf8(repoId + ':'))
-            .collect(Collectors.toList());
-    eraseRepositoriesTable(tableRefs, prefixes);
-    eraseRepositoriesTable(tableObjs, prefixes);
+  private void eraseRepositoriesNoAdminClient(Collection<String> repositoryIds) {
+    if (!repositoryIds.isEmpty()) {
+      List<ByteString> prefixes =
+          repositoryIds.stream()
+              .map(repoId -> copyFromUtf8(repoId + ':'))
+              .collect(Collectors.toList());
+      eraseRepositoriesTable(tableRefs, prefixes);
+      eraseRepositoriesTable(tableObjs, prefixes);
+    }
   }
 
   private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {
