@@ -111,7 +111,7 @@ final class ExportPersist extends ExportCommon {
               Deque<ObjId> commitsToProcess = new ArrayDeque<>();
               commitsToProcess.offerFirst(ref.pointer());
               while (!commitsToProcess.isEmpty()) {
-                ObjId id = commitsToProcess.pollFirst();
+                ObjId id = commitsToProcess.removeFirst();
                 if (identify.isCommitNew(id)) {
                   Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
                   while (commitIter.hasNext()) {
@@ -122,7 +122,7 @@ final class ExportPersist extends ExportCommon {
                     commitHandler.accept(commit);
                     for (ObjId parentId : commit.secondaryParents()) {
                       if (identify.isCommitNew(parentId)) {
-                        commitsToProcess.offerLast(parentId);
+                        commitsToProcess.addLast(parentId);
                       }
                     }
                   }
