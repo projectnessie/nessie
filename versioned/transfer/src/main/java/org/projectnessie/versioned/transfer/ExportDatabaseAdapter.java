@@ -104,20 +104,24 @@ final class ExportDatabaseAdapter extends ExportCommon {
                 commitsToProcess.push(head);
                 while (!commitsToProcess.isEmpty()) {
                   Hash hash = commitsToProcess.pop();
-                  try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
-                    for (Iterator<CommitLogEntry> commitIter = commits.iterator();
-                      commitIter.hasNext(); ) {
-                      CommitLogEntry commit = commitIter.next();
-                      if (!identify.handleCommit(commit)) {
-                        break;
+                  if (identify.isCommitNew(hash)) {
+                    try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
+                      for (Iterator<CommitLogEntry> commitIter = commits.iterator();
+                          commitIter.hasNext(); ) {
+                        CommitLogEntry commit = commitIter.next();
+                        if (!identify.handleCommit(commit)) {
+                          break;
+                        }
+                        commitHandler.accept(commit);
+                        for (Hash parent : commit.getAdditionalParents()) {
+                          if (identify.isCommitNew(parent)) {
+                            commitsToProcess.push(parent);
+                          }
+                        }
                       }
-                      commitHandler.accept(commit);
-                      for (Hash h : commit.getAdditionalParents()) {
-                        commitsToProcess.push(h);
-                      }
+                    } catch (ReferenceNotFoundException e) {
+                      throw new RuntimeException(e);
                     }
-                  } catch (ReferenceNotFoundException e) {
-                    throw new RuntimeException(e);
                   }
                 }
               });

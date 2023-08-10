@@ -89,6 +89,11 @@ public final class ReferencesUtil {
       return handleCommit(entry.getHash(), entry.getParents().get(0));
     }
 
+    public boolean isCommitNew(Hash commitId) {
+      int cv = commits.getValue(commitId);
+      return (cv & MASK_COMMIT_SEEN) == 0;
+    }
+
     public boolean handleCommit(Hash commitId, Hash parent) {
 
       int cv = commits.getValue(commitId);
