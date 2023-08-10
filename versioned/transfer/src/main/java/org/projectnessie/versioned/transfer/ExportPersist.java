@@ -109,7 +109,7 @@ final class ExportPersist extends ExportCommon {
         .forEachRemaining(
             ref -> {
               Deque<ObjId> commitsToProcess = new ArrayDeque<>();
-              commitsToProcess.push(ref.pointer());
+              commitsToProcess.offerFirst(ref.pointer());
               while (!commitsToProcess.isEmpty()) {
                 ObjId id = commitsToProcess.pollFirst();
                 if (identify.isCommitNew(id)) {

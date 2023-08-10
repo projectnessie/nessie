@@ -101,7 +101,7 @@ final class ExportDatabaseAdapter extends ExportCommon {
           .forEach(
               head -> {
                 Deque<Hash> commitsToProcess = new ArrayDeque<>();
-                commitsToProcess.push(head);
+                commitsToProcess.offerFirst(head);
                 while (!commitsToProcess.isEmpty()) {
                   Hash hash = commitsToProcess.pollFirst();
                   if (identify.isCommitNew(hash)) {
