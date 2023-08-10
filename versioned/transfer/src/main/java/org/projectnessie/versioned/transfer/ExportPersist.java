@@ -115,11 +115,12 @@ final class ExportPersist extends ExportCommon {
                 Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
                 while (commitIter.hasNext()) {
                   CommitObj commit = commitIter.next();
-                  if (identify.handleCommit(commit)) {
-                    commitHandler.accept(commit);
-                    for (ObjId objId : commit.secondaryParents()) {
-                      commitsToProcess.push(objId);
-                    }
+                  if (!identify.handleCommit(commit)) {
+                    break;
+                  }
+                  commitHandler.accept(commit);
+                  for (ObjId objId : commit.secondaryParents()) {
+                    commitsToProcess.push(objId);
                   }
                 }
               }

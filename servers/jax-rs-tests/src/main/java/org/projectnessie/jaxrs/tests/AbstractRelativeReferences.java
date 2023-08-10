@@ -288,7 +288,7 @@ public abstract class AbstractRelativeReferences {
   void commitUnambiguous() {
     Set<ContentKey> keys =
         outer
-            .prepareCommitV2("base@" + c2 + "~1", key3, table3, 2, false)
+            .prepareCommitV2("@" + c2 + "~1", key3, table3, 2, false)
             .statusCode(200)
             .extract()
             .as(CommitResponse.class)

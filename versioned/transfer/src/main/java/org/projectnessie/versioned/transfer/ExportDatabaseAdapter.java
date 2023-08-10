@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
@@ -104,20 +105,23 @@ final class ExportDatabaseAdapter extends ExportCommon {
                 while (!commitsToProcess.isEmpty()) {
                   Hash hash = commitsToProcess.pop();
                   try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
-                    commits.forEach(
-                        commit -> {
-                          if (identify.handleCommit(commit)) {
-                            commitHandler.accept(commit);
-                            for (Hash h : commit.getAdditionalParents()) {
-                              commitsToProcess.push(h);
-                            }
-                          }
-                        });
+                    for (Iterator<CommitLogEntry> commitIter = commits.iterator();
+                      commitIter.hasNext(); ) {
+                      CommitLogEntry commit = commitIter.next();
+                      if (!identify.handleCommit(commit)) {
+                        break;
+                      }
+                      commitHandler.accept(commit);
+                      for (Hash h : commit.getAdditionalParents()) {
+                        commitsToProcess.push(h);
+                      }
+                    }
                   } catch (ReferenceNotFoundException e) {
                     throw new RuntimeException(e);
                   }
                 }
               });
+
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
     }
