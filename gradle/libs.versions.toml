@@ -169,7 +169,7 @@ wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version
 [plugins]
 annotations-stripper = { id = "org.projectnessie.annotation-stripper", version = "0.1.2" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.1.0" }
-gatling = { id = "io.gatling.gradle", version = "3.9.5.3" }
+gatling = { id = "io.gatling.gradle", version = "3.9.5.5" }
 jmh = { id = "me.champeau.jmh", version = "0.7.1" }
 nessie-reflectionconfig = { id = "org.projectnessie.buildsupport.reflectionconfig", version.ref = "nessieBuildPlugins" }
 nessie-run = { id = "org.projectnessie", version = "0.30.6" }
