@@ -27,7 +27,9 @@ import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.r
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -106,14 +108,25 @@ final class ExportPersist extends ExportCommon {
         .queryReferences(referencesQuery())
         .forEachRemaining(
             ref -> {
-              for (Iterator<CommitObj> commitIter =
-                      commitLogic.commitLog(commitLogQuery(ref.pointer()));
-                  commitIter.hasNext(); ) {
-                CommitObj commit = commitIter.next();
-                if (!identify.handleCommit(commit)) {
-                  break;
+              Deque<ObjId> commitsToProcess = new ArrayDeque<>();
+              commitsToProcess.offerFirst(ref.pointer());
+              while (!commitsToProcess.isEmpty()) {
+                ObjId id = commitsToProcess.removeFirst();
+                if (identify.isCommitNew(id)) {
+                  Iterator<CommitObj> commitIter = commitLogic.commitLog(commitLogQuery(id));
+                  while (commitIter.hasNext()) {
+                    CommitObj commit = commitIter.next();
+                    if (!identify.handleCommit(commit)) {
+                      break;
+                    }
+                    commitHandler.accept(commit);
+                    for (ObjId parentId : commit.secondaryParents()) {
+                      if (identify.isCommitNew(parentId)) {
+                        commitsToProcess.addLast(parentId);
+                      }
+                    }
+                  }
                 }
-                commitHandler.accept(commit);
               }
             });
 

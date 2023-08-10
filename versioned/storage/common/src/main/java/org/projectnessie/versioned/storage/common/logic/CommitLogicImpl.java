@@ -1126,6 +1126,7 @@ final class CommitLogicImpl implements CommitLogic {
 
         if (identify.handleCommit(commit)) {
           commitHandler.accept(commit);
+          // no need to bother with secondary parents, we are scanning everything anyway
         }
       }
     }

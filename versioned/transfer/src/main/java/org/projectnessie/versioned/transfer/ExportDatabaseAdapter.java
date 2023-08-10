@@ -19,6 +19,8 @@ import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -27,6 +29,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -97,17 +100,29 @@ final class ExportDatabaseAdapter extends ExportCommon {
           .map(ReferenceInfo::getHash)
           .forEach(
               head -> {
-                try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(head)) {
-                  for (Iterator<CommitLogEntry> commitIter = commits.iterator();
-                      commitIter.hasNext(); ) {
-                    CommitLogEntry commit = commitIter.next();
-                    if (!identify.handleCommit(commit)) {
-                      break;
+                Deque<Hash> commitsToProcess = new ArrayDeque<>();
+                commitsToProcess.offerFirst(head);
+                while (!commitsToProcess.isEmpty()) {
+                  Hash hash = commitsToProcess.removeFirst();
+                  if (identify.isCommitNew(hash)) {
+                    try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
+                      for (Iterator<CommitLogEntry> commitIter = commits.iterator();
+                          commitIter.hasNext(); ) {
+                        CommitLogEntry commit = commitIter.next();
+                        if (!identify.handleCommit(commit)) {
+                          break;
+                        }
+                        commitHandler.accept(commit);
+                        for (Hash parent : commit.getAdditionalParents()) {
+                          if (identify.isCommitNew(parent)) {
+                            commitsToProcess.addLast(parent);
+                          }
+                        }
+                      }
+                    } catch (ReferenceNotFoundException e) {
+                      throw new RuntimeException(e);
                     }
-                    commitHandler.accept(commit);
                   }
-                } catch (ReferenceNotFoundException e) {
-                  throw new RuntimeException(e);
                 }
               });
 

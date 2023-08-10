@@ -54,6 +54,11 @@ public class IdentifyHeadsAndForkPoints {
     return handleCommit(entry.id(), entry.directParent());
   }
 
+  public boolean isCommitNew(ObjId commitId) {
+    int cv = commits.getValue(commitId);
+    return (cv & MASK_COMMIT_SEEN) == 0;
+  }
+
   public boolean handleCommit(ObjId commitId, ObjId parent) {
 
     int cv = commits.getValue(commitId);

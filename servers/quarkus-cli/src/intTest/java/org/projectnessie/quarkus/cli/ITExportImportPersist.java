@@ -303,6 +303,39 @@ public class ITExportImportPersist {
         IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
   }
 
+  @Test
+  public void testExportImportMergeCommit(
+      QuarkusMainLauncher launcher, Persist persist, @TempDir Path tempDir) throws Exception {
+
+    populateRepositoryWithMergeCommit(persist);
+
+    Path zipFile = tempDir.resolve("export.zip");
+    LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains("Exporting from a MONGODB version store...")
+        .contains(
+            "Exported Nessie repository, 4 commits into 1 files, 2 named references into 1 files.");
+    soft.assertThat(zipFile).isRegularFile();
+
+    result =
+        launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .containsPattern(
+            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+        .contains("Importing into a MONGODB version store...")
+        .contains("Imported Nessie repository, 4 commits, 2 named references.")
+        .contains("Import finalization finished, total duration: ");
+
+    checkValues(
+        persist,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta3", 44, 43, 44, 45, "id123"));
+  }
+
   private void checkValues(Persist persist, String ref, ContentKey key, Content value)
       throws ReferenceNotFoundException {
     VersionStoreImpl store = new VersionStoreImpl(persist);
@@ -313,13 +346,14 @@ public class ITExportImportPersist {
         .containsExactly(tuple(key, value));
   }
 
+  private final UUID contentId = UUID.randomUUID();
+
   private void populateRepository(Persist persist) throws Exception {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     CommitLogic commitLogic = commitLogic(persist);
 
     Reference refMain = referenceLogic.getReference("refs/heads/main");
 
-    UUID contentId = UUID.randomUUID();
     StoreWorker storeWorker = DefaultStoreWorker.instance();
     int payload = payloadForContent(ICEBERG_TABLE);
     ByteString contentMain =
@@ -362,5 +396,61 @@ public class ITExportImportPersist {
                 .build(),
             emptyList());
     referenceLogic.assignReference(refFoo, requireNonNull(foo).id());
+  }
+
+  private void populateRepositoryWithMergeCommit(Persist persist) throws Exception {
+    populateRepository(persist);
+    ReferenceLogic referenceLogic = referenceLogic(persist);
+    CommitLogic commitLogic = commitLogic(persist);
+    Reference refMain = referenceLogic.getReference("refs/heads/main");
+
+    StoreWorker storeWorker = DefaultStoreWorker.instance();
+    int payload = payloadForContent(ICEBERG_TABLE);
+    ByteString contentTemp =
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta3", 44, 43, 44, 45, "id123"));
+    ByteString contentMain =
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+
+    ContentValueObj valueMain = contentValue(contentId.toString(), payload, contentMain);
+    ContentValueObj valueTemp = contentValue(contentId.toString(), payload, contentTemp);
+
+    soft.assertThat(persist.storeObj(valueTemp)).isTrue();
+
+    StoreKey key = keyToStoreKey(ContentKey.of("namespace123", "table123"));
+
+    CommitObj temp =
+        commitLogic.doCommit(
+            newCommitBuilder()
+                .parentCommitId(refMain.pointer())
+                .addAdds(
+                    commitAdd(
+                        key,
+                        payload,
+                        requireNonNull(valueTemp.id()),
+                        requireNonNull(valueMain.id()),
+                        contentId))
+                .message("hello commit on temp")
+                .headers(EMPTY_COMMIT_HEADERS)
+                .build(),
+            emptyList());
+
+    CommitObj merge =
+        commitLogic.doCommit(
+            newCommitBuilder()
+                .parentCommitId(refMain.pointer())
+                .addSecondaryParents(requireNonNull(temp).id())
+                .addAdds(
+                    commitAdd(
+                        key,
+                        payload,
+                        requireNonNull(valueTemp.id()),
+                        requireNonNull(valueMain.id()),
+                        contentId))
+                .message("merge commit from temp into main")
+                .headers(EMPTY_COMMIT_HEADERS)
+                .build(),
+            emptyList());
+
+    referenceLogic.assignReference(refMain, requireNonNull(merge).id());
   }
 }

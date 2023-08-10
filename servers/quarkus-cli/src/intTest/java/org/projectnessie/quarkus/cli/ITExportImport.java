@@ -28,7 +28,9 @@ import io.quarkus.test.junit.main.QuarkusMainTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -47,6 +49,8 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -58,6 +62,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 @QuarkusMainTest
@@ -289,6 +294,38 @@ public class ITExportImport {
         IcebergTable.of("meta", 42L, 43, 44, 45));
   }
 
+  @Test
+  public void testExportImportMergeCommit(
+      QuarkusMainLauncher launcher, DatabaseAdapter adapter, @TempDir Path tempDir)
+      throws Exception {
+
+    populateRepositoryWithMergeCommit(adapter);
+
+    Path zipFile = tempDir.resolve("export.zip");
+    LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains(
+            "Exported Nessie repository, 4 commits into 1 files, 2 named references into 1 files.");
+    soft.assertThat(zipFile).isRegularFile();
+
+    result =
+        launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .containsPattern(
+            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+        .contains("Imported Nessie repository, 4 commits, 2 named references.")
+        .contains("Import finalization finished, total duration: ");
+
+    checkValues(
+        adapter,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta3", 44, 43, 44, 45, "id123"));
+  }
+
   private void checkValues(
       DatabaseAdapter adapter, String ref, ContentKey key, IcebergTable expected)
       throws ReferenceNotFoundException {
@@ -315,6 +352,9 @@ public class ITExportImport {
             expected.getSortOrderId());
   }
 
+  static String namespaceId = UUID.randomUUID().toString();
+  static String tableId = UUID.randomUUID().toString();
+
   private static void populateRepository(DatabaseAdapter adapter)
       throws ReferenceConflictException,
           ReferenceNotFoundException,
@@ -325,8 +365,6 @@ public class ITExportImport {
     ByteString commitMeta =
         CommitMetaSerializer.METADATA_SERIALIZER.toBytes(CommitMeta.fromMessage("hello"));
     ContentKey key = ContentKey.of("namespace123", "table123");
-    String namespaceId = UUID.randomUUID().toString();
-    String tableId = UUID.randomUUID().toString();
     CommitResult<CommitLogEntry> main =
         adapter.commit(
             ImmutableCommitParams.builder()
@@ -365,5 +403,66 @@ public class ITExportImport {
                         .toStoreOnReferenceState(
                             IcebergTable.of("meta2", 43, 43, 44, 45, "id123"))))
             .build());
+  }
+
+  private void populateRepositoryWithMergeCommit(DatabaseAdapter adapter) throws Exception {
+    populateRepository(adapter);
+
+    BranchName branchMain = BranchName.of("main");
+    BranchName branchTemp = BranchName.of("temp");
+
+    Hash mainHead = adapter.namedRef("main", GetNamedRefsParams.DEFAULT).getHash();
+    adapter.create(branchTemp, mainHead);
+
+    ContentKey key = ContentKey.of("namespace123", "table123");
+    CommitResult<CommitLogEntry> temp =
+        adapter.commit(
+            ImmutableCommitParams.builder()
+                .toBranch(branchTemp)
+                .commitMetaSerialized(
+                    CommitMetaSerializer.METADATA_SERIALIZER.toBytes(
+                        CommitMeta.fromMessage("hello from temp")))
+                .addPuts(
+                    KeyWithBytes.of(
+                        key.getParent(),
+                        ContentId.of(namespaceId),
+                        (byte) payloadForContent(NAMESPACE),
+                        DefaultStoreWorker.instance()
+                            .toStoreOnReferenceState(
+                                Namespace.builder()
+                                    .id(namespaceId)
+                                    .addElements("namespace123")
+                                    .build())),
+                    KeyWithBytes.of(
+                        key,
+                        ContentId.of(tableId),
+                        (byte) payloadForContent(ICEBERG_TABLE),
+                        DefaultStoreWorker.instance()
+                            .toStoreOnReferenceState(
+                                IcebergTable.of("meta3", 44, 43, 44, 45, tableId))))
+                .build());
+
+    adapter.merge(
+        MergeParams.builder()
+            .mergeFromHash(temp.getCommitHash())
+            .fromRef(branchTemp)
+            .toBranch(branchMain)
+            .keepIndividualCommits(false)
+            .updateCommitMetadata(
+                new MetadataRewriter<>() {
+                  @Override
+                  public ByteString rewriteSingle(ByteString metadata) {
+                    return ByteString.copyFromUtf8(metadata.toStringUtf8() + " merged");
+                  }
+
+                  @Override
+                  public ByteString squash(List<ByteString> metadata, int numCommits) {
+                    return rewriteSingle(metadata.get(0));
+                  }
+                })
+            .build());
+
+    // Delete the temp branch so that the secondary parent won't be directly reachable anymore.
+    adapter.delete(branchTemp, Optional.empty());
   }
 }
