@@ -18,6 +18,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+- Secondary commit parents are now properly exported and imported
 
 ### Commits
 
