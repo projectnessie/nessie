@@ -103,7 +103,7 @@ final class ExportDatabaseAdapter extends ExportCommon {
                 Deque<Hash> commitsToProcess = new ArrayDeque<>();
                 commitsToProcess.push(head);
                 while (!commitsToProcess.isEmpty()) {
-                  Hash hash = commitsToProcess.pop();
+                  Hash hash = commitsToProcess.pollFirst();
                   if (identify.isCommitNew(hash)) {
                     try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(hash)) {
                       for (Iterator<CommitLogEntry> commitIter = commits.iterator();
@@ -115,7 +115,7 @@ final class ExportDatabaseAdapter extends ExportCommon {
                         commitHandler.accept(commit);
                         for (Hash parent : commit.getAdditionalParents()) {
                           if (identify.isCommitNew(parent)) {
-                            commitsToProcess.push(parent);
+                            commitsToProcess.offerLast(parent);
                           }
                         }
                       }
