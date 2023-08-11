@@ -15,18 +15,19 @@
  */
 package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.client.builder.BaseOnReferenceBuilder;
+import org.projectnessie.client.builder.BaseChangeReferenceBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
 
-abstract class BaseHttpDeleteReference<R, T extends Reference> extends BaseOnReferenceBuilder<R> {
+abstract class BaseHttpDeleteReference<T extends Reference, B>
+    extends BaseChangeReferenceBuilder<B> {
+
   private final HttpClient client;
 
-  BaseHttpDeleteReference(HttpClient client, Reference.ReferenceType assumedType) {
-    super(assumedType);
+  BaseHttpDeleteReference(HttpClient client) {
     this.client = client;
   }
 
@@ -40,7 +41,7 @@ abstract class BaseHttpDeleteReference<R, T extends Reference> extends BaseOnRef
         client
             .newRequest()
             .path("trees/{ref}")
-            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
+            .resolveTemplate("ref", Reference.toPathString(refName, expectedHash))
             .queryParam("type", type != null ? type.name() : null)
             .unwrap(NessieConflictException.class, NessieNotFoundException.class)
             .delete()

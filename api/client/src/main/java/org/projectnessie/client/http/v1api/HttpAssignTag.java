@@ -20,7 +20,7 @@ import org.projectnessie.client.builder.BaseAssignReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.Tag;
 
 final class HttpAssignTag extends BaseAssignReferenceBuilder<AssignTagBuilder>
@@ -29,13 +29,18 @@ final class HttpAssignTag extends BaseAssignReferenceBuilder<AssignTagBuilder>
   private final NessieApiClient client;
 
   HttpAssignTag(NessieApiClient client) {
-    super(Reference.ReferenceType.TAG);
     this.client = client;
+    refType(ReferenceType.TAG);
+  }
+
+  @Override
+  public AssignTagBuilder tagName(String tagName) {
+    return refName(tagName);
   }
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignReference(Reference.ReferenceType.TAG, refName, hashOnRef, assignTo);
+    client.getTreeApi().assignReference(ReferenceType.TAG, refName, expectedHash, assignTo);
   }
 
   @Override

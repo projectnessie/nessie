@@ -18,11 +18,18 @@ package org.projectnessie.client.http.v2api;
 import org.projectnessie.client.api.DeleteBranchBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 
-final class HttpDeleteBranch extends BaseHttpDeleteReference<DeleteBranchBuilder, Branch>
+final class HttpDeleteBranch extends BaseHttpDeleteReference<Branch, DeleteBranchBuilder>
     implements DeleteBranchBuilder {
+
   HttpDeleteBranch(HttpClient client) {
-    super(client, Reference.ReferenceType.BRANCH);
+    super(client);
+    refType(ReferenceType.BRANCH);
+  }
+
+  @Override
+  public DeleteBranchBuilder branchName(String branchName) {
+    return refName(branchName);
   }
 }

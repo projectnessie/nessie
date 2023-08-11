@@ -17,13 +17,9 @@ package org.projectnessie.client.builder;
 
 import org.projectnessie.model.Reference;
 
-public abstract class BaseAssignReferenceBuilder<R> extends BaseOnReferenceBuilder<R> {
+public abstract class BaseAssignReferenceBuilder<R> extends BaseChangeReferenceBuilder<R> {
 
   protected Reference assignTo;
-
-  protected BaseAssignReferenceBuilder(Reference.ReferenceType assumedType) {
-    super(assumedType);
-  }
 
   @SuppressWarnings("unchecked")
   public R assignTo(Reference assignTo) {

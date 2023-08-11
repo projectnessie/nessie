@@ -22,12 +22,12 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
 
-abstract class BaseHttpAssignReference<R, T extends Reference>
-    extends BaseAssignReferenceBuilder<R> {
+abstract class BaseHttpAssignReference<T extends Reference, B>
+    extends BaseAssignReferenceBuilder<B> {
+
   private final HttpClient client;
 
-  BaseHttpAssignReference(HttpClient client, Reference.ReferenceType assumedType) {
-    super(assumedType);
+  BaseHttpAssignReference(HttpClient client) {
     this.client = client;
   }
 
@@ -41,7 +41,7 @@ abstract class BaseHttpAssignReference<R, T extends Reference>
         client
             .newRequest()
             .path("trees/{ref}")
-            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
+            .resolveTemplate("ref", Reference.toPathString(refName, expectedHash))
             .queryParam("type", type != null ? type.name() : null)
             .unwrap(NessieNotFoundException.class, NessieConflictException.class)
             .put(assignTo)

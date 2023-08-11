@@ -29,15 +29,20 @@ final class HttpAssignBranch extends BaseAssignReferenceBuilder<AssignBranchBuil
   private final NessieApiClient client;
 
   HttpAssignBranch(NessieApiClient client) {
-    super(Reference.ReferenceType.BRANCH);
     this.client = client;
+    refType(Reference.ReferenceType.BRANCH);
+  }
+
+  @Override
+  public AssignBranchBuilder branchName(String branchName) {
+    return refName(branchName);
   }
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
     client
         .getTreeApi()
-        .assignReference(Reference.ReferenceType.BRANCH, refName, hashOnRef, assignTo);
+        .assignReference(Reference.ReferenceType.BRANCH, refName, expectedHash, assignTo);
   }
 
   @Override

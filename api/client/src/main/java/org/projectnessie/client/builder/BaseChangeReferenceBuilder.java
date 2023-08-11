@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,32 @@
  */
 package org.projectnessie.client.builder;
 
-import org.projectnessie.client.api.OnReferenceBuilder;
+import org.projectnessie.client.api.ChangeReferenceBuilder;
+import org.projectnessie.model.Reference.ReferenceType;
 
-abstract class BaseOnReferenceBuilder<R extends OnReferenceBuilder<R>>
-    implements OnReferenceBuilder<R> {
+public abstract class BaseChangeReferenceBuilder<B> implements ChangeReferenceBuilder<B> {
   protected String refName;
-  protected String hashOnRef;
+  protected String expectedHash;
+  protected ReferenceType type;
 
   @SuppressWarnings("unchecked")
   @Override
-  public R refName(String refName) {
-    this.refName = refName;
-    return (R) this;
+  public B refName(String name) {
+    this.refName = name;
+    return (B) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public R hashOnRef(String hashOnRef) {
-    this.hashOnRef = hashOnRef;
-    return (R) this;
+  public B refType(ReferenceType referenceType) {
+    this.type = referenceType;
+    return (B) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public B hash(String hash) {
+    this.expectedHash = hash;
+    return (B) this;
   }
 }

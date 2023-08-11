@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.api;
 
+import org.projectnessie.model.Reference;
+
 /**
  * Interface for the Nessie V2 API implementation.
  *
@@ -30,8 +32,36 @@ public interface NessieApiV2 extends NessieApiV1 {
   UpdateRepositoryConfigBuilder updateRepositoryConfig();
 
   /** Delete a branch or a tag. */
-  DeleteReferenceBuilder deleteReference();
+  DeleteReferenceBuilder<Reference> deleteReference();
 
   /** Update a branch or a tag (make it point to an arbitrary commit). */
-  AssignReferenceBuilder assignReference();
+  AssignReferenceBuilder<Reference> assignReference();
+
+  /**
+   * @deprecated Use {@code assignReference().asTag()} instead.
+   */
+  @Override
+  @Deprecated
+  AssignTagBuilder assignTag();
+
+  /**
+   * @deprecated Use {@code assignReference().asBranch()} instead.
+   */
+  @Override
+  @Deprecated
+  AssignBranchBuilder assignBranch();
+
+  /**
+   * @deprecated Use {@code deleteReference().asTag()} instead.
+   */
+  @Override
+  @Deprecated
+  DeleteTagBuilder deleteTag();
+
+  /**
+   * @deprecated Use {@code deleteReference().asBranch()} instead.
+   */
+  @Override
+  @Deprecated
+  DeleteBranchBuilder deleteBranch();
 }

@@ -17,25 +17,38 @@ package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 
 /**
  * Request builder for deleting references.
  *
  * @since {@link NessieApiV2}
  */
-public interface DeleteReferenceBuilder extends OnReferenceBuilder<DeleteReferenceBuilder> {
+public interface DeleteReferenceBuilder<T>
+    extends ChangeReferenceBuilder<DeleteReferenceBuilder<Reference>> {
 
-  DeleteReferenceBuilder refType(Reference.ReferenceType referenceType);
+  @SuppressWarnings("unchecked")
+  default DeleteReferenceBuilder<Branch> asBranch() {
+    refType(Reference.ReferenceType.BRANCH);
+    return (DeleteReferenceBuilder<Branch>) this;
+  }
 
+  @SuppressWarnings("unchecked")
+  default DeleteReferenceBuilder<Tag> asTag() {
+    refType(Reference.ReferenceType.TAG);
+    return (DeleteReferenceBuilder<Tag>) this;
+  }
+
+  @SuppressWarnings("unchecked")
   @Override
-  default DeleteReferenceBuilder reference(Reference reference) {
-    refType(reference.getType());
-    return OnReferenceBuilder.super.reference(reference);
+  default <R extends Reference> DeleteReferenceBuilder<R> reference(R reference) {
+    return (DeleteReferenceBuilder<R>) ChangeReferenceBuilder.super.reference(reference);
   }
 
   void delete() throws NessieConflictException, NessieNotFoundException;
 
   /** Deletes the reference and returns its information as it was just before deletion. */
-  Reference getAndDelete() throws NessieNotFoundException, NessieConflictException;
+  T getAndDelete() throws NessieNotFoundException, NessieConflictException;
 }

@@ -19,28 +19,42 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 
 /**
  * Request builder for assigning references.
  *
  * @since {@link NessieApiV2}
  */
-public interface AssignReferenceBuilder extends OnReferenceBuilder<AssignReferenceBuilder> {
-  AssignReferenceBuilder assignTo(
+public interface AssignReferenceBuilder<T extends Reference>
+    extends ChangeReferenceBuilder<AssignReferenceBuilder<Reference>> {
+
+  @SuppressWarnings("unchecked")
+  default AssignReferenceBuilder<Branch> asBranch() {
+    refType(Reference.ReferenceType.BRANCH);
+    return (AssignReferenceBuilder<Branch>) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  default AssignReferenceBuilder<Tag> asTag() {
+    refType(Reference.ReferenceType.TAG);
+    return (AssignReferenceBuilder<Tag>) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  default <R extends Reference> AssignReferenceBuilder<R> reference(R reference) {
+    return (AssignReferenceBuilder<R>) ChangeReferenceBuilder.super.reference(reference);
+  }
+
+  AssignReferenceBuilder<T> assignTo(
       @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
           Reference assignTo);
-
-  AssignReferenceBuilder refType(Reference.ReferenceType referenceType);
-
-  @Override
-  default AssignReferenceBuilder reference(Reference reference) {
-    refType(reference.getType());
-    return OnReferenceBuilder.super.reference(reference);
-  }
 
   void assign() throws NessieNotFoundException, NessieConflictException;
 
   /** Assigns the reference to the specified hash and returns its updated information. */
-  Reference assignAndGet() throws NessieNotFoundException, NessieConflictException;
+  T assignAndGet() throws NessieNotFoundException, NessieConflictException;
 }

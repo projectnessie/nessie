@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v2api;
+package org.projectnessie.client.api;
 
-import org.projectnessie.client.api.AssignReferenceBuilder;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Reference;
 
-final class HttpAssignReference
-    extends BaseHttpAssignReference<Reference, AssignReferenceBuilder<Reference>>
-    implements AssignReferenceBuilder<Reference> {
+public interface ChangeReferenceBuilder<B> {
 
-  HttpAssignReference(HttpClient client) {
-    super(client);
+  B refType(Reference.ReferenceType referenceType);
+
+  B refName(String name);
+
+  B hash(String hash);
+
+  @SuppressWarnings("unchecked")
+  default <R extends Reference> ChangeReferenceBuilder<?> reference(R reference) {
+    refName(reference.getName());
+    hash(reference.getHash());
+    refType(reference.getType());
+    return this;
   }
 }

@@ -19,10 +19,11 @@ import org.projectnessie.client.api.DeleteReferenceBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Reference;
 
-final class HttpDeleteReference extends BaseHttpDeleteReference<DeleteReferenceBuilder, Reference>
-    implements DeleteReferenceBuilder {
+final class HttpDeleteReference
+    extends BaseHttpDeleteReference<Reference, DeleteReferenceBuilder<Reference>>
+    implements DeleteReferenceBuilder<Reference> {
 
   HttpDeleteReference(HttpClient client) {
-    super(client, null);
+    super(client);
   }
 }

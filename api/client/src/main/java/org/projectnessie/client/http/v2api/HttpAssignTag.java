@@ -17,13 +17,19 @@ package org.projectnessie.client.http.v2api;
 
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.Tag;
 
-final class HttpAssignTag extends BaseHttpAssignReference<AssignTagBuilder, Tag>
+final class HttpAssignTag extends BaseHttpAssignReference<Tag, AssignTagBuilder>
     implements AssignTagBuilder {
 
   HttpAssignTag(HttpClient client) {
-    super(client, Reference.ReferenceType.TAG);
+    super(client);
+    refType(ReferenceType.TAG);
+  }
+
+  @Override
+  public AssignTagBuilder tagName(String tagName) {
+    return refName(tagName);
   }
 }

@@ -59,9 +59,11 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.projectnessie.client.api.AssignReferenceBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
+import org.projectnessie.client.api.DeleteReferenceBuilder;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
@@ -496,7 +498,7 @@ public abstract class BaseTestNessieApi {
                 apiV2()
                     .assignReference()
                     .refName(ref0.getName())
-                    .hashOnRef(ref0.getHash())
+                    .hash(ref0.getHash())
                     .refType(anotherType)
                     .assignTo(main1)
                     .assign())
@@ -512,7 +514,7 @@ public abstract class BaseTestNessieApi {
         apiV2()
             .assignReference()
             .refName(ref.getName())
-            .hashOnRef(ref.getHash())
+            .hash(ref.getHash())
             .assignTo(main)
             .assignAndGet();
     soft.assertThat(ref)
@@ -523,10 +525,20 @@ public abstract class BaseTestNessieApi {
         apiV2()
             .assignReference()
             .refName(ref.getName())
-            .hashOnRef(ref.getHash())
+            .hash(ref.getHash())
             .refType(ref.getType())
             .assignTo(main1)
             .assignAndGet();
+    soft.assertThat(ref)
+        .extracting(Reference::getName, Reference::getHash)
+        .containsExactly(ref0.getName(), main1.getHash());
+
+    AssignReferenceBuilder<Reference> assignRequest =
+        apiV2().assignReference().refName(ref.getName()).hash(ref.getHash()).assignTo(main1);
+    ref =
+        referenceType == ReferenceType.BRANCH
+            ? assignRequest.asBranch().assignAndGet()
+            : assignRequest.asTag().assignAndGet();
     soft.assertThat(ref)
         .extracting(Reference::getName, Reference::getHash)
         .containsExactly(ref0.getName(), main1.getHash());
@@ -539,8 +551,7 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(deleted).isEqualTo(ref);
 
     ref = createReference(ref0, main.getName());
-    deleted =
-        apiV2().deleteReference().refName(ref.getName()).hashOnRef(ref.getHash()).getAndDelete();
+    deleted = apiV2().deleteReference().refName(ref.getName()).hash(ref.getHash()).getAndDelete();
     soft.assertThat(deleted).isEqualTo(ref);
 
     ref = createReference(ref0, main.getName());
@@ -549,7 +560,7 @@ public abstract class BaseTestNessieApi {
                 apiV2()
                     .deleteReference()
                     .refName(ref0.getName())
-                    .hashOnRef(ref0.getHash())
+                    .hash(ref0.getHash())
                     .refType(anotherType)
                     .delete())
         .isInstanceOf(NessieBadRequestException.class)
@@ -559,9 +570,18 @@ public abstract class BaseTestNessieApi {
         apiV2()
             .deleteReference()
             .refName(ref.getName())
-            .hashOnRef(ref.getHash())
+            .hash(ref.getHash())
             .refType(ref.getType())
             .getAndDelete();
+    soft.assertThat(deleted).isEqualTo(ref);
+
+    ref = createReference(ref0, main.getName());
+    DeleteReferenceBuilder<Reference> deleteRequest =
+        apiV2().deleteReference().refName(ref.getName()).hash(ref.getHash());
+    deleted =
+        referenceType == ReferenceType.BRANCH
+            ? deleteRequest.asBranch().getAndDelete()
+            : deleteRequest.asTag().getAndDelete();
     soft.assertThat(deleted).isEqualTo(ref);
   }
 

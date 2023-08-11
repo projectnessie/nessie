@@ -18,12 +18,18 @@ package org.projectnessie.client.http.v2api;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 
-final class HttpAssignBranch extends BaseHttpAssignReference<AssignBranchBuilder, Branch>
+final class HttpAssignBranch extends BaseHttpAssignReference<Branch, AssignBranchBuilder>
     implements AssignBranchBuilder {
 
   HttpAssignBranch(HttpClient client) {
-    super(client, Reference.ReferenceType.BRANCH);
+    super(client);
+    refType(ReferenceType.BRANCH);
+  }
+
+  @Override
+  public AssignBranchBuilder branchName(String branchName) {
+    return refName(branchName);
   }
 }
