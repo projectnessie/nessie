@@ -48,7 +48,6 @@ final class ImportPersistV1 extends ImportPersistCommon {
 
   @Override
   void prepareRepository() {
-    persist.erase();
     repositoryLogic(persist).initialize("main", false, b -> {});
   }
 
