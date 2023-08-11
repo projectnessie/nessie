@@ -38,6 +38,8 @@ public interface NessieApiV2 extends NessieApiV1 {
   AssignReferenceBuilder<Reference> assignReference();
 
   /**
+   * {@inheritDoc}
+   *
    * @deprecated Use {@code assignReference().asTag()} instead.
    */
   @Override
@@ -45,6 +47,8 @@ public interface NessieApiV2 extends NessieApiV1 {
   AssignTagBuilder assignTag();
 
   /**
+   * {@inheritDoc}
+   *
    * @deprecated Use {@code assignReference().asBranch()} instead.
    */
   @Override
@@ -52,6 +56,8 @@ public interface NessieApiV2 extends NessieApiV1 {
   AssignBranchBuilder assignBranch();
 
   /**
+   * {@inheritDoc}
+   *
    * @deprecated Use {@code deleteReference().asTag()} instead.
    */
   @Override
@@ -59,6 +65,8 @@ public interface NessieApiV2 extends NessieApiV1 {
   DeleteTagBuilder deleteTag();
 
   /**
+   * {@inheritDoc}
+   *
    * @deprecated Use {@code deleteReference().asBranch()} instead.
    */
   @Override
