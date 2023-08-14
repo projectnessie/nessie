@@ -12,6 +12,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Breaking changes
 
 ### New Features
+- Support BigTable in Helm charts
 
 ### Changes
 - Java client API to assign/delete reference operations without specifying a concrete reference type
@@ -21,6 +22,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 - Secondary commit parents are now properly exported and imported
+- Fix volume declarations for RocksDB in Helm
+- Remove unnecessary repository-deletion when importing a legacy Nessie repo
 
 ### Commits
 
