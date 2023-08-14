@@ -60,7 +60,7 @@ final class StringLogicImpl implements StringLogic {
     // diffs.
 
     ByteString text = unsafeWrap(stringValueUtf8);
-    return stringData("application/json", Compression.NONE, null, emptyList(), text);
+    return stringData(contentType, Compression.NONE, null, emptyList(), text);
   }
 
   @Override
