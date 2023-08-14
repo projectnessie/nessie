@@ -485,6 +485,11 @@ final class IndexesLogicImpl implements IndexesLogic {
 
     // HEAD commit first
     List<ObjId> commitsToUpdate = findCommitsWithIncompleteIndex(commitId);
+
+    if (commitsToUpdate.isEmpty()) {
+      return;
+    }
+
     // Let the HEAD be the last element in the list, and the oldest commit being at index #0
     Collections.reverse(commitsToUpdate);
 
