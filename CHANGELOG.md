@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 ### Changes
+- Java client API to assign/delete reference operations without specifying a concrete reference type
+  (no change to REST API).
 
 ### Deprecations
 

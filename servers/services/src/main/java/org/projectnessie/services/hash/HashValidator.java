@@ -17,7 +17,6 @@ package org.projectnessie.services.hash;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Objects;
 import javax.annotation.Nullable;
 
 @FunctionalInterface
@@ -28,7 +27,7 @@ public interface HashValidator {
 
   /** Validates that a hash has been provided (absolute or relative). */
   HashValidator REQUIRED_HASH =
-      (name, parsed) -> Objects.requireNonNull(parsed, String.format("%s must be provided.", name));
+      (name, parsed) -> checkArgument(parsed != null, String.format("%s must be provided.", name));
 
   /**
    * Validates that, if a hash was provided, it is unambiguous. A hash is unambiguous if it starts

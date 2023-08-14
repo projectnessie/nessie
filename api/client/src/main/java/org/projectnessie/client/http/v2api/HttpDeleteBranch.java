@@ -16,38 +16,20 @@
 package org.projectnessie.client.http.v2api;
 
 import org.projectnessie.client.api.DeleteBranchBuilder;
-import org.projectnessie.client.builder.BaseOnBranchBuilder;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Reference;
-import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Reference.ReferenceType;
 
-final class HttpDeleteBranch extends BaseOnBranchBuilder<DeleteBranchBuilder>
+final class HttpDeleteBranch extends BaseHttpDeleteReference<Branch, DeleteBranchBuilder>
     implements DeleteBranchBuilder {
-  private final HttpClient client;
 
   HttpDeleteBranch(HttpClient client) {
-    this.client = client;
+    super(client);
+    refType(ReferenceType.BRANCH);
   }
 
   @Override
-  public void delete() throws NessieConflictException, NessieNotFoundException {
-    getAndDelete();
-  }
-
-  @Override
-  public Branch getAndDelete() throws NessieNotFoundException, NessieConflictException {
-    return (Branch)
-        client
-            .newRequest()
-            .path("trees/{ref}")
-            .resolveTemplate("ref", Reference.toPathString(branchName, hash))
-            .queryParam("type", Reference.ReferenceType.BRANCH.name())
-            .unwrap(NessieConflictException.class, NessieNotFoundException.class)
-            .delete()
-            .readEntity(SingleReferenceResponse.class)
-            .getReference();
+  public DeleteBranchBuilder branchName(String branchName) {
+    return refName(branchName);
   }
 }

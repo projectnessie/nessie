@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.builder;
+package org.projectnessie.client.api;
 
-import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.model.Reference;
 
-public abstract class BaseAssignTagBuilder extends BaseOnTagBuilder<AssignTagBuilder>
-    implements AssignTagBuilder {
+public interface ChangeReferenceBuilder<B> {
 
-  protected Reference assignTo;
+  B refType(Reference.ReferenceType referenceType);
 
-  @Override
-  public AssignTagBuilder assignTo(Reference assignTo) {
-    this.assignTo = assignTo;
+  B refName(String name);
+
+  B hash(String hash);
+
+  @SuppressWarnings("unchecked")
+  default <R extends Reference> ChangeReferenceBuilder<?> reference(R reference) {
+    refName(reference.getName());
+    hash(reference.getHash());
+    refType(reference.getType());
     return this;
   }
 }

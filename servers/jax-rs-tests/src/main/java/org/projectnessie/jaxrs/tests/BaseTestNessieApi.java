@@ -57,9 +57,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.projectnessie.client.api.AssignReferenceBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
+import org.projectnessie.client.api.DeleteReferenceBuilder;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
@@ -110,6 +114,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.Tag;
@@ -449,6 +454,135 @@ public abstract class BaseTestNessieApi {
               () -> api().deleteTag().tag(Tag.of(refName, main.getHash())).getAndDelete())
           .isInstanceOf(NessieNotFoundException.class);
     }
+  }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceType.class)
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void referencesUntyped(ReferenceType referenceType) throws Exception {
+    Branch main = api().getDefaultBranch();
+    soft.assertThat(api().getAllReferences().get().getReferences()).containsExactly(main);
+
+    Branch main1 =
+        prepCommit(
+                main,
+                "commit",
+                Put.of(ContentKey.of("key"), Namespace.of("key")),
+                dummyPut("key", "foo"))
+            .commit();
+
+    Reference ref0;
+    ReferenceType anotherType;
+    switch (referenceType) {
+      case TAG:
+        ref0 = Tag.of("tag1", main.getHash());
+        anotherType = ReferenceType.BRANCH;
+        break;
+      case BRANCH:
+        ref0 = Branch.of("branch1", main.getHash());
+        anotherType = ReferenceType.TAG;
+        break;
+      default:
+        throw new IllegalStateException("Unsupported ref type: " + referenceType);
+    }
+
+    Reference ref = createReference(ref0, main.getName());
+
+    soft.assertThatThrownBy(
+            () -> apiV2().assignReference().refName(ref0.getName()).assignTo(main1).assign())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Expected hash must be provided");
+
+    soft.assertThatThrownBy(
+            () ->
+                apiV2()
+                    .assignReference()
+                    .refName(ref0.getName())
+                    .hash(ref0.getHash())
+                    .refType(anotherType)
+                    .assignTo(main1)
+                    .assign())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageMatching(".*Expected reference type .+ does not match existing reference.*");
+
+    ref = apiV2().assignReference().reference(ref).assignTo(main1).assignAndGet();
+    soft.assertThat(ref)
+        .extracting(Reference::getName, Reference::getHash)
+        .containsExactly(ref0.getName(), main1.getHash());
+
+    ref =
+        apiV2()
+            .assignReference()
+            .refName(ref.getName())
+            .hash(ref.getHash())
+            .assignTo(main)
+            .assignAndGet();
+    soft.assertThat(ref)
+        .extracting(Reference::getName, Reference::getHash)
+        .containsExactly(ref0.getName(), main.getHash());
+
+    ref =
+        apiV2()
+            .assignReference()
+            .refName(ref.getName())
+            .hash(ref.getHash())
+            .refType(ref.getType())
+            .assignTo(main1)
+            .assignAndGet();
+    soft.assertThat(ref)
+        .extracting(Reference::getName, Reference::getHash)
+        .containsExactly(ref0.getName(), main1.getHash());
+
+    AssignReferenceBuilder<Reference> assignRequest =
+        apiV2().assignReference().refName(ref.getName()).hash(ref.getHash()).assignTo(main1);
+    ref =
+        referenceType == ReferenceType.BRANCH
+            ? assignRequest.asBranch().assignAndGet()
+            : assignRequest.asTag().assignAndGet();
+    soft.assertThat(ref)
+        .extracting(Reference::getName, Reference::getHash)
+        .containsExactly(ref0.getName(), main1.getHash());
+
+    soft.assertThatThrownBy(() -> apiV2().deleteReference().refName(ref0.getName()).delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Expected hash must be provided");
+
+    Reference deleted = apiV2().deleteReference().reference(ref).getAndDelete();
+    soft.assertThat(deleted).isEqualTo(ref);
+
+    ref = createReference(ref0, main.getName());
+    deleted = apiV2().deleteReference().refName(ref.getName()).hash(ref.getHash()).getAndDelete();
+    soft.assertThat(deleted).isEqualTo(ref);
+
+    ref = createReference(ref0, main.getName());
+    soft.assertThatThrownBy(
+            () ->
+                apiV2()
+                    .deleteReference()
+                    .refName(ref0.getName())
+                    .hash(ref0.getHash())
+                    .refType(anotherType)
+                    .delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageMatching(".*Expected reference type .+ does not match existing reference.*");
+
+    deleted =
+        apiV2()
+            .deleteReference()
+            .refName(ref.getName())
+            .hash(ref.getHash())
+            .refType(ref.getType())
+            .getAndDelete();
+    soft.assertThat(deleted).isEqualTo(ref);
+
+    ref = createReference(ref0, main.getName());
+    DeleteReferenceBuilder<Reference> deleteRequest =
+        apiV2().deleteReference().refName(ref.getName()).hash(ref.getHash());
+    deleted =
+        referenceType == ReferenceType.BRANCH
+            ? deleteRequest.asBranch().getAndDelete()
+            : deleteRequest.asTag().getAndDelete();
+    soft.assertThat(deleted).isEqualTo(ref);
   }
 
   @Test

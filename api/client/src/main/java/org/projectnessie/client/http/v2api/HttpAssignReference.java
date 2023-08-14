@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.builder;
+package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.api.AssignReferenceBuilder;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.Reference;
 
-public abstract class BaseAssignBranchBuilder extends BaseOnBranchBuilder<AssignBranchBuilder>
-    implements AssignBranchBuilder {
+final class HttpAssignReference
+    extends BaseHttpAssignReference<Reference, AssignReferenceBuilder<Reference>>
+    implements AssignReferenceBuilder<Reference> {
 
-  protected Reference assignTo;
-
-  @Override
-  public AssignBranchBuilder assignTo(Reference assignTo) {
-    this.assignTo = assignTo;
-    return this;
+  HttpAssignReference(HttpClient client) {
+    super(client);
   }
 }

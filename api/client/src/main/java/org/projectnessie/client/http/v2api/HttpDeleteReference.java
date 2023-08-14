@@ -15,21 +15,15 @@
  */
 package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.client.api.AssignBranchBuilder;
+import org.projectnessie.client.api.DeleteReferenceBuilder;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.model.Branch;
-import org.projectnessie.model.Reference.ReferenceType;
+import org.projectnessie.model.Reference;
 
-final class HttpAssignBranch extends BaseHttpAssignReference<Branch, AssignBranchBuilder>
-    implements AssignBranchBuilder {
+final class HttpDeleteReference
+    extends BaseHttpDeleteReference<Reference, DeleteReferenceBuilder<Reference>>
+    implements DeleteReferenceBuilder<Reference> {
 
-  HttpAssignBranch(HttpClient client) {
+  HttpDeleteReference(HttpClient client) {
     super(client);
-    refType(ReferenceType.BRANCH);
-  }
-
-  @Override
-  public AssignBranchBuilder branchName(String branchName) {
-    return refName(branchName);
   }
 }
