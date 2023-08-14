@@ -45,6 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
@@ -233,5 +234,27 @@ public class AbstractRepositoryLogicTests {
 
     soft.assertThat(newHashSet(referenceLogic.queryReferences(referencesQuery())))
         .isEqualTo(refQuery);
+  }
+
+  @Test
+  public void updateRepositoryDescription() throws RetryTimeoutException {
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
+
+    repositoryLogic.initialize("main");
+
+    RepositoryDescription initial = requireNonNull(repositoryLogic.fetchRepositoryDescription());
+
+    RepositoryDescription updated =
+        RepositoryDescription.builder()
+            .defaultBranchName("main")
+            .putProperties("updated", "true")
+            .oldestPossibleCommitTime(Instant.ofEpochSecond(12345))
+            .repositoryCreatedTime(Instant.ofEpochSecond(456789))
+            .build();
+
+    RepositoryDescription previous = repositoryLogic.updateRepositoryDescription(updated);
+
+    soft.assertThat(previous).isEqualTo(initial);
+    soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(updated);
   }
 }

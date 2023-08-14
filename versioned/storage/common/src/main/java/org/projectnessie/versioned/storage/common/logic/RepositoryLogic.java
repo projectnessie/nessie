@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.common.logic;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 
 /** Logic to setup/initialize a Nessie repository. */
 public interface RepositoryLogic {
@@ -32,6 +33,9 @@ public interface RepositoryLogic {
   @Nullable
   @jakarta.annotation.Nullable
   RepositoryDescription fetchRepositoryDescription();
+
+  RepositoryDescription updateRepositoryDescription(RepositoryDescription repositoryDescription)
+      throws RetryTimeoutException;
 
   boolean repositoryExists();
 }

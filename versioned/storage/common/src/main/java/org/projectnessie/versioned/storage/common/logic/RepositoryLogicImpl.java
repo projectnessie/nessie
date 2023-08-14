@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.KEY_REPO_DESCRIPTION;
@@ -33,17 +34,23 @@ import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
+import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
+import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
+import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
+import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.logic.StringLogic.StringValue;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -135,16 +142,24 @@ final class RepositoryLogicImpl implements RepositoryLogic {
                   requireNonNull(
                       op.value(), "Commit operation for repository description has no value"));
 
-      return readRepositoryDescription(value);
+      return deserialize(value);
     } catch (ObjNotFoundException e) {
       return null;
     }
   }
 
-  private RepositoryDescription readRepositoryDescription(StringValue value) {
+  private RepositoryDescription deserialize(StringValue value) {
     try {
       return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryDescription.class);
     } catch (ObjNotFoundException | IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static byte[] serialize(RepositoryDescription repositoryDescription) {
+    try {
+      return SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryDescription);
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -169,11 +184,46 @@ final class RepositoryLogicImpl implements RepositoryLogic {
                   null,
                   "application/json",
                   SHARED_OBJECT_MAPPER.writeValueAsBytes(repoDesc.build()));
-      // can safely ignore the ID returned from storeObj() - it's fine, if the obj already exists
+      // can safely ignore the response from storeObj() - it's fine, if the obj already exists
       persist.storeObj(string);
-      b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
+      b.addAdds(
+          commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, UUID.randomUUID()));
     } catch (ObjTooLargeException | ObjNotFoundException | IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public RepositoryDescription updateRepositoryDescription(
+      RepositoryDescription repositoryDescription) throws RetryTimeoutException {
+    try {
+      Reference reference = Objects.requireNonNull(persist.fetchReference(REF_REPO.name()));
+      return commitRetry(
+          persist,
+          (p, retryState) -> {
+            try {
+              StringValue existing =
+                  stringLogic(persist)
+                      .updateStringOnRef(
+                          reference,
+                          KEY_REPO_DESCRIPTION,
+                          b -> b.message("Update repository description"),
+                          "application/json",
+                          serialize(repositoryDescription));
+              return existing != null ? deserialize(existing) : null;
+            } catch (RefConditionFailedException | CommitConflictException e) {
+              throw new RetryException();
+            } catch (ObjNotFoundException | RefNotFoundException e) {
+              throw new CommitWrappedException(e);
+            }
+          });
+    } catch (CommitConflictException e) {
+      throw new RuntimeException(
+          "An unexpected internal error happened while committing a repository description update");
+    } catch (CommitWrappedException e) {
+      throw new RuntimeException(
+          "An unexpected internal error happened while committing a repository description update",
+          e.getCause());
     }
   }
 
