@@ -41,6 +41,9 @@ dependencies {
   compileOnly(libs.h2)
   compileOnly(libs.postgresql)
 
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+
   testFixturesApi(project(":nessie-versioned-persist-adapter"))
   testFixturesApi(project(":nessie-versioned-persist-serialize"))
   testFixturesApi(project(":nessie-versioned-spi"))
