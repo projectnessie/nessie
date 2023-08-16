@@ -76,9 +76,8 @@ public class TestMigrationToPersist extends BaseExportImport {
 
   @Override
   void prepareTargetRepo() {
-    // Initialize repository w/o a default branch
     persist.erase();
-    repositoryLogic(persist).initialize("main", false, b -> {});
+    // Don't initialize the repository, since the import with Persist already does that.
   }
 
   @Override
