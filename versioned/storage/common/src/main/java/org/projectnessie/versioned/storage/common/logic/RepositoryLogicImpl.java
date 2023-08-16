@@ -197,11 +197,11 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   public RepositoryDescription updateRepositoryDescription(
       RepositoryDescription repositoryDescription) throws RetryTimeoutException {
     try {
-      Reference reference = Objects.requireNonNull(persist.fetchReference(REF_REPO.name()));
       return commitRetry(
           persist,
           (p, retryState) -> {
             try {
+              Reference reference = Objects.requireNonNull(persist.fetchReference(REF_REPO.name()));
               StringValue existing =
                   stringLogic(persist)
                       .updateStringOnRef(
