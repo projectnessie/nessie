@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
-
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -76,9 +74,8 @@ public class TestMigrationToPersist extends BaseExportImport {
 
   @Override
   void prepareTargetRepo() {
-    // Initialize repository w/o a default branch
     persist.erase();
-    repositoryLogic(persist).initialize("main", false, b -> {});
+    // Don't initialize the repository, since the import with Persist already does that.
   }
 
   @Override
