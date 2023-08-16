@@ -34,6 +34,16 @@ public interface RepositoryLogic {
   @jakarta.annotation.Nullable
   RepositoryDescription fetchRepositoryDescription();
 
+  /**
+   * Updates the repository description, and returns the previous description, or {@code null} if
+   * there was no previous description.
+   *
+   * @param repositoryDescription the new description.
+   * @return the previous description, or {@code null} if there was no previous description.
+   * @throws RetryTimeoutException if the update failed after all retries.
+   */
+  @Nullable
+  @jakarta.annotation.Nullable
   RepositoryDescription updateRepositoryDescription(RepositoryDescription repositoryDescription)
       throws RetryTimeoutException;
 
