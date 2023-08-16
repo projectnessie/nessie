@@ -202,6 +202,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
             runMain(
                 "--input",
                 input.getAbsolutePath(),
+                "--format=CONTENT_INFO_JSON",
                 "--batch",
                 String.valueOf(batchSize),
                 "--message",
@@ -241,6 +242,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
             runMain(
                 "--input",
                 input.getAbsolutePath(),
+                "--format=CONTENT_INFO_JSON",
                 "--storage-model",
                 "TEST_MODEL" // Note: this does not match input data
                 ))
@@ -249,7 +251,13 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     assertThat(get(key1)).isEqualTo(stored1);
     assertThat(log(1).get(0)).isEqualTo(head); // No extra commits
 
-    assertThat(runMain("--input", input.getAbsolutePath(), "--storage-model", "GLOBAL_STATE"))
+    assertThat(
+            runMain(
+                "--input",
+                input.getAbsolutePath(),
+                "--format=CONTENT_INFO_JSON",
+                "--storage-model",
+                "GLOBAL_STATE"))
         .isEqualTo(0);
 
     assertThat(get(key1)).isEqualTo(stored1);

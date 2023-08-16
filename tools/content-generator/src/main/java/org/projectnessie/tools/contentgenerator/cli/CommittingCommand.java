@@ -28,8 +28,14 @@ public abstract class CommittingCommand extends AbstractCommand {
           "Commit author for changes made by this command (optional, defaults to the USER env. var.)")
   private String author;
 
-  protected CommitMeta commitMetaFromMessage(String message) {
-    ImmutableCommitMeta.Builder builder = CommitMeta.builder().message(message);
+  @CommandLine.Option(
+      names = {"-m", "--message"},
+      description = "Commit message to use (auto-generated if not set).")
+  private String message;
+
+  protected CommitMeta commitMetaFromMessage(String defaultMessage) {
+    ImmutableCommitMeta.Builder builder =
+        CommitMeta.builder().message(message == null ? defaultMessage : message);
 
     if (author != null && !author.isEmpty()) {
       builder.author(author);
