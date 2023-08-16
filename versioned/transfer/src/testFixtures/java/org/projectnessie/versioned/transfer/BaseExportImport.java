@@ -239,6 +239,8 @@ public abstract class BaseExportImport {
 
     ImportResult importResult = importRepo();
 
+    checkRepositoryDescription();
+
     List<ReferenceInfo<CommitMeta>> sourceNamedRefs = namedRefs(sourceVersionStore());
     List<ReferenceInfo<CommitMeta>> targetNamedRefs = namedRefs(targetVersionStore());
     soft.assertThat(targetNamedRefs).containsExactlyInAnyOrderElementsOf(sourceNamedRefs);
@@ -297,6 +299,8 @@ public abstract class BaseExportImport {
     List<Hash> expectForkPoints = asHashes(headsAndForks.getForkPointsList());
     soft.assertThat(importForkPoints).containsExactlyInAnyOrderElementsOf(expectForkPoints);
   }
+
+  protected abstract void checkRepositoryDescription();
 
   static List<Hash> asHashes(List<ByteString> ids) {
     return ids.stream().map(Hash::of).collect(Collectors.toList());

@@ -18,6 +18,7 @@ package org.projectnessie.versioned.transfer;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.ADD;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.REMOVE;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
@@ -26,15 +27,20 @@ import static org.projectnessie.versioned.storage.common.objtypes.ContentValueOb
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
 import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
+import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.logic.ImmutableRepositoryDescription;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -106,6 +112,23 @@ abstract class ImportPersistCommon extends ImportCommon {
       persist.flush();
     }
     return commitCount;
+  }
+
+  @Override
+  void markRepositoryImported() {
+    RepositoryLogic repositoryLogic = repositoryLogic(importer.persist());
+    RepositoryDescription initialDescription =
+        requireNonNull(repositoryLogic.fetchRepositoryDescription());
+    ImmutableRepositoryDescription updatedDescription =
+        ImmutableRepositoryDescription.builder()
+            .from(initialDescription)
+            .repositoryImportedTime(Instant.now())
+            .build();
+    try {
+      repositoryLogic.updateRepositoryDescription(updatedDescription);
+    } catch (RetryTimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   abstract void processCommit(Commit commit) throws IOException, ObjTooLargeException;

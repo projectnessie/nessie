@@ -183,6 +183,7 @@ public abstract class AbstractExportImport {
                     case "eraseRepo":
                     case "initializeRepo":
                     case "delete":
+                    case "updateRepositoryDescription":
                       return null;
                     case "getConfig":
                       return config;

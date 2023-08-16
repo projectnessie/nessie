@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -50,6 +51,8 @@ public interface RepositoryDescription {
 
     Builder defaultBranchName(String defaultBranchName);
 
+    Builder repositoryImportedTime(Instant repositoryImportedTime);
+
     RepositoryDescription build();
   }
 
@@ -71,6 +74,16 @@ public interface RepositoryDescription {
   Map<String, String> properties();
 
   String defaultBranchName();
+
+  /**
+   * The timestamp when the repository has been fully imported. This information is only present if
+   * the repository was imported using a recent version of Nessie CLI.
+   */
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
+  @Nullable
+  @jakarta.annotation.Nullable
+  Instant repositoryImportedTime();
 
   /**
    * Used to serialize an instant to ISO-8601 format. Required because not all platforms we work

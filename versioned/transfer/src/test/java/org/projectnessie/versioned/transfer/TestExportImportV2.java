@@ -15,7 +15,9 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.io.IOException;
 import java.util.EnumSet;
@@ -25,6 +27,7 @@ import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
@@ -104,5 +107,15 @@ public class TestExportImportV2 extends BaseExportImport {
         .map(CommitObj.class::cast)
         .filter(o -> o.commitType() != CommitType.INTERNAL)
         .map(o -> Hash.of(o.id().asBytes()));
+  }
+
+  @Override
+  protected void checkRepositoryDescription() {
+    RepositoryDescription description =
+        requireNonNull(repositoryLogic(persistImport).fetchRepositoryDescription());
+    soft.assertThat(description.defaultBranchName()).isEqualTo("main");
+    soft.assertThat(description.repositoryCreatedTime()).isNotNull();
+    soft.assertThat(description.oldestPossibleCommitTime()).isNotNull();
+    soft.assertThat(description.repositoryImportedTime()).isNotNull();
   }
 }
