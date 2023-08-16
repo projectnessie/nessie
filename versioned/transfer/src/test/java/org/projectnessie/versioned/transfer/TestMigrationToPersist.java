@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
-
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.EnumSet;
