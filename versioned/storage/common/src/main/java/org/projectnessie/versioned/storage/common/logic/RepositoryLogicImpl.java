@@ -207,7 +207,9 @@ final class RepositoryLogicImpl implements RepositoryLogic {
                       .updateStringOnRef(
                           reference,
                           KEY_REPO_DESCRIPTION,
-                          b -> b.message("Update repository description"),
+                          b ->
+                              b.message("Update repository description")
+                                  .commitType(CommitType.INTERNAL),
                           "application/json",
                           serialize(repositoryDescription));
               return existing != null ? deserialize(existing) : null;
