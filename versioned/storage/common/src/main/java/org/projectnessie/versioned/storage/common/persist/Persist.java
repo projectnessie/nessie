@@ -225,8 +225,8 @@ public interface Persist {
    * logic interfaces to ensure a stable and deterministic ID generation.
    *
    * @param obj the object to store
-   * @return the non-null object ID if the object was stored as a new record or {@code null} if an
-   *     object with the same ID already exists.
+   * @return {@code true}, if the object was stored as a new record or {@code false} if an object
+   *     with the same ID already exists.
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
    *     "soft" size restriction in {@link #config()}
    * @see #storeObjs(Obj[])
