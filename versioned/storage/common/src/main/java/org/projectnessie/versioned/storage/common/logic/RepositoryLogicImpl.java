@@ -200,7 +200,6 @@ final class RepositoryLogicImpl implements RepositoryLogic {
             .from(newDescription)
             .oldestPossibleCommitTime(existingDescription.oldestPossibleCommitTime())
             .repositoryCreatedTime(existingDescription.repositoryCreatedTime())
-            .defaultBranchName(existingDescription.defaultBranchName())
             .build();
     byte[] serialized = serialize(sanitizedDescription);
     try {

@@ -248,8 +248,8 @@ public class AbstractRepositoryLogicTests {
     RepositoryDescription updated =
         RepositoryDescription.builder()
             .putProperties("updated", "true")
-            // read-only properties, should be ignored
             .defaultBranchName("main2")
+            // the following attributes are read-only, should not be updated
             .oldestPossibleCommitTime(Instant.ofEpochSecond(12345))
             .repositoryCreatedTime(Instant.ofEpochSecond(456789))
             .build();
@@ -262,6 +262,7 @@ public class AbstractRepositoryLogicTests {
             ImmutableRepositoryDescription.builder()
                 .from(initial)
                 .putProperties("updated", "true")
+                .defaultBranchName("main2")
                 .build());
   }
 }
