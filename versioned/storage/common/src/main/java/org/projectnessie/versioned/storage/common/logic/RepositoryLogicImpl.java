@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -186,8 +185,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
                   SHARED_OBJECT_MAPPER.writeValueAsBytes(repoDesc.build()));
       // can safely ignore the response from storeObj() - it's fine, if the obj already exists
       persist.storeObj(string);
-      b.addAdds(
-          commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, UUID.randomUUID()));
+      b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
     } catch (ObjTooLargeException | ObjNotFoundException | IOException e) {
       throw new RuntimeException(e);
     }

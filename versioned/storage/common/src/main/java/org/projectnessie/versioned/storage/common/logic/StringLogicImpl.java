@@ -102,21 +102,23 @@ final class StringLogicImpl implements StringLogic {
     CommitObj head = commitLogic.headCommit(reference);
     StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndexOrEmpty(head);
     StoreIndexElement<CommitOp> existingElement = index.get(storeKey);
+
+    // If we are updating an existing string, reuse its content-id (which may be null,
+    // e.g. for repo descriptions). Otherwise, generate a new content-id.
     ObjId existingValueId = null;
-    UUID existingContentId = null;
-    StringValue existing = null;
+    UUID contentId = null;
     if (existingElement != null) {
       CommitOp op = existingElement.content();
       if (op.action().exists()) {
         existingValueId = op.value();
-        existingContentId = op.contentId();
-        existing = existingValueId != null ? fetchString(requireNonNull(existingValueId)) : null;
+        contentId = op.contentId();
       }
-    }
-    if (existingContentId == null) {
-      existingContentId = UUID.randomUUID();
+    } else {
+      contentId = UUID.randomUUID();
     }
 
+    StringValue existing =
+        existingValueId != null ? fetchString(requireNonNull(existingValueId)) : null;
     StringObj newValue = updateString(existing, contentType, stringValueUtf8);
 
     ObjId newValueId = newValue.id();
@@ -125,7 +127,7 @@ final class StringLogicImpl implements StringLogic {
           CreateCommit.newCommitBuilder()
               .parentCommitId(reference.pointer())
               .headers(EMPTY_COMMIT_HEADERS)
-              .addAdds(commitAdd(storeKey, 0, newValueId, existingValueId, existingContentId));
+              .addAdds(commitAdd(storeKey, 0, newValueId, existingValueId, contentId));
       commitEnhancer.accept(builder);
       CommitObj committed = commitLogic.doCommit(builder.build(), singletonList(newValue));
       persist.updateReferencePointer(reference, requireNonNull(committed).id());
