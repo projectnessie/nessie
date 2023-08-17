@@ -28,7 +28,7 @@ picocli = "4.7.4"
 protobuf = "3.24.0"
 quarkus = "3.2.4.Final"
 slf4j = "1.7.36"
-undertow = "2.2.24.Final"
+undertow = "2.3.8.Final"
 
 # Docker image tags
 postgresContainerTag = "14"
