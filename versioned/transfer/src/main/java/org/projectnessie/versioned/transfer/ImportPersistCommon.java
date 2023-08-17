@@ -27,7 +27,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.ContentValueOb
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
@@ -122,7 +121,7 @@ abstract class ImportPersistCommon extends ImportCommon {
     ImmutableRepositoryDescription updatedDescription =
         ImmutableRepositoryDescription.builder()
             .from(initialDescription)
-            .repositoryImportedTime(Instant.now())
+            .repositoryImportedTime(importer.persist().config().clock().instant())
             .build();
     try {
       repositoryLogic.updateRepositoryDescription(updatedDescription);

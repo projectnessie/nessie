@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -198,7 +197,9 @@ final class ImportDatabaseAdapter extends ImportCommon {
           initial ->
               ImmutableRepoDescription.builder()
                   .from(initial)
-                  .putProperties(RepoDescription.IMPORTED_AT_KEY, Instant.now().toString())
+                  .putProperties(
+                      RepoDescription.IMPORTED_AT_KEY,
+                      importer.databaseAdapter().getConfig().getClock().instant().toString())
                   .build());
     } catch (ReferenceConflictException e) {
       throw new RuntimeException(e);
