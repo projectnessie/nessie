@@ -117,8 +117,7 @@ final class StringLogicImpl implements StringLogic {
       contentId = UUID.randomUUID();
     }
 
-    StringValue existing =
-        existingValueId != null ? fetchString(requireNonNull(existingValueId)) : null;
+    StringValue existing = existingValueId != null ? fetchString(existingValueId) : null;
     StringObj newValue = updateString(existing, contentType, stringValueUtf8);
 
     ObjId newValueId = newValue.id();
