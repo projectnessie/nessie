@@ -37,9 +37,7 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
@@ -190,19 +188,5 @@ final class ImportDatabaseAdapter extends ImportCommon {
   void importFinalize(HeadsAndForks headsAndForks) {}
 
   @Override
-  void markRepositoryImported() {
-    DatabaseAdapter databaseAdapter = requireNonNull(importer.databaseAdapter());
-    try {
-      databaseAdapter.updateRepositoryDescription(
-          initial ->
-              ImmutableRepoDescription.builder()
-                  .from(initial)
-                  .putProperties(
-                      RepoDescription.IMPORTED_AT_KEY,
-                      importer.databaseAdapter().getConfig().getClock().instant().toString())
-                  .build());
-    } catch (ReferenceConflictException e) {
-      throw new RuntimeException(e);
-    }
-  }
+  void markRepositoryImported() {}
 }

@@ -27,7 +27,6 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
@@ -116,8 +115,5 @@ public class TestExportImportV1 extends BaseExportImport {
   }
 
   @Override
-  protected void checkRepositoryDescription() {
-    RepoDescription description = adapterImport.fetchRepositoryDescription();
-    soft.assertThat(description.getProperties()).containsKey(RepoDescription.IMPORTED_AT_KEY);
-  }
+  protected void checkRepositoryDescription() {}
 }

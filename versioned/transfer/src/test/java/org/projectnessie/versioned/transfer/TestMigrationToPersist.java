@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.google.errorprone.annotations.MustBeClosed;
@@ -115,7 +116,8 @@ public class TestMigrationToPersist extends BaseExportImport {
 
   @Override
   protected void checkRepositoryDescription() {
-    RepositoryDescription description = repositoryLogic(persist).fetchRepositoryDescription();
+    RepositoryDescription description =
+        requireNonNull(repositoryLogic(persist).fetchRepositoryDescription());
     soft.assertThat(description.defaultBranchName()).isEqualTo("main");
     soft.assertThat(description.repositoryCreatedTime()).isNotNull();
     soft.assertThat(description.oldestPossibleCommitTime()).isNotNull();

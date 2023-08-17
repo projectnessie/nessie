@@ -22,7 +22,6 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface RepoDescription {
   RepoDescription DEFAULT = builder().repoVersion(0).build();
-  String IMPORTED_AT_KEY = "IMPORTED_AT";
 
   /** A logical version number describing the logical data model. */
   int getRepoVersion();
