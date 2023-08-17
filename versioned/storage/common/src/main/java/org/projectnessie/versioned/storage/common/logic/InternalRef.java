@@ -54,8 +54,7 @@ public interface InternalRef {
   InternalRef REF_REFS = internalReference("refs");
 
   /**
-   * Internal reference with always exactly one commit that serves as a reference for when the
-   * repository has been created.
+   * Internal reference that points to the current {@link RepositoryDescription}.
    *
    * <p>The actual information is available via {@link #KEY_REPO_DESCRIPTION} from the HEAD commit.
    */
