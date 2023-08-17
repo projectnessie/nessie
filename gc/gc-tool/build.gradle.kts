@@ -61,6 +61,7 @@ dependencies {
   implementation(platform(libs.awssdk.bom))
   runtimeOnly("software.amazon.awssdk:s3")
   runtimeOnly("software.amazon.awssdk:url-connection-client")
+  runtimeOnly("software.amazon.awssdk:sts")
 
   implementation(libs.picocli)
   annotationProcessor(libs.picocli.codegen)

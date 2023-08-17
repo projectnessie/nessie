@@ -24,6 +24,7 @@ as necessary. Empty sections will not end in the release notes.
 - Secondary commit parents are now properly exported and imported
 - Fix volume declarations for RocksDB in Helm
 - Remove unnecessary repository-deletion when importing a legacy Nessie repo
+- GC Tool uber-jar now includes AWS STS classes
 
 ### Commits
 
