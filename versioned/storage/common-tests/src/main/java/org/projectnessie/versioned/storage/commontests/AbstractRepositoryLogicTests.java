@@ -48,6 +48,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
+import org.projectnessie.versioned.storage.common.logic.ImmutableRepositoryDescription;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
@@ -246,8 +247,9 @@ public class AbstractRepositoryLogicTests {
 
     RepositoryDescription updated =
         RepositoryDescription.builder()
-            .defaultBranchName("main")
             .putProperties("updated", "true")
+            // read-only properties, should be ignored
+            .defaultBranchName("main2")
             .oldestPossibleCommitTime(Instant.ofEpochSecond(12345))
             .repositoryCreatedTime(Instant.ofEpochSecond(456789))
             .build();
@@ -255,6 +257,11 @@ public class AbstractRepositoryLogicTests {
     RepositoryDescription previous = repositoryLogic.updateRepositoryDescription(updated);
 
     soft.assertThat(previous).isEqualTo(initial);
-    soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(updated);
+    soft.assertThat(repositoryLogic.fetchRepositoryDescription())
+        .isEqualTo(
+            ImmutableRepositoryDescription.builder()
+                .from(initial)
+                .putProperties("updated", "true")
+                .build());
   }
 }

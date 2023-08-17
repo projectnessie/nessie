@@ -34,7 +34,6 @@ import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -147,7 +146,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
     }
   }
 
-  private RepositoryDescription deserialize(StringValue value) {
+  private static RepositoryDescription deserialize(StringValue value) {
     try {
       return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryDescription.class);
     } catch (ObjNotFoundException | IOException e) {
@@ -192,16 +191,26 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   }
 
   @Override
-  public RepositoryDescription updateRepositoryDescription(
-      RepositoryDescription repositoryDescription) throws RetryTimeoutException {
+  public RepositoryDescription updateRepositoryDescription(RepositoryDescription newDescription)
+      throws RetryTimeoutException {
+    // prevent modification of read-only attributes
+    RepositoryDescription existingDescription = requireNonNull(fetchRepositoryDescription());
+    RepositoryDescription sanitizedDescription =
+        ImmutableRepositoryDescription.builder()
+            .from(newDescription)
+            .oldestPossibleCommitTime(existingDescription.oldestPossibleCommitTime())
+            .repositoryCreatedTime(existingDescription.repositoryCreatedTime())
+            .defaultBranchName(existingDescription.defaultBranchName())
+            .build();
+    byte[] serialized = serialize(sanitizedDescription);
     try {
-      return commitRetry(
-          persist,
-          (p, retryState) -> {
-            try {
-              Reference reference = Objects.requireNonNull(persist.fetchReference(REF_REPO.name()));
-              StringValue existing =
-                  stringLogic(persist)
+      StringValue existing =
+          commitRetry(
+              persist,
+              (p, retryState) -> {
+                try {
+                  Reference reference = requireNonNull(persist.fetchReference(REF_REPO.name()));
+                  return stringLogic(persist)
                       .updateStringOnRef(
                           reference,
                           KEY_REPO_DESCRIPTION,
@@ -209,14 +218,14 @@ final class RepositoryLogicImpl implements RepositoryLogic {
                               b.message("Update repository description")
                                   .commitType(CommitType.INTERNAL),
                           "application/json",
-                          serialize(repositoryDescription));
-              return existing != null ? deserialize(existing) : null;
-            } catch (RefConditionFailedException | CommitConflictException e) {
-              throw new RetryException();
-            } catch (ObjNotFoundException | RefNotFoundException e) {
-              throw new CommitWrappedException(e);
-            }
-          });
+                          serialized);
+                } catch (RefConditionFailedException | CommitConflictException e) {
+                  throw new RetryException();
+                } catch (ObjNotFoundException | RefNotFoundException e) {
+                  throw new CommitWrappedException(e);
+                }
+              });
+      return existing != null ? deserialize(existing) : null;
     } catch (CommitConflictException e) {
       throw new RuntimeException(
           "An unexpected internal error happened while committing a repository description update");
