@@ -16,16 +16,12 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static java.lang.String.format;
-import static java.util.Collections.singletonList;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
-import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.stringLogic;
-import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 
@@ -35,7 +31,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -50,9 +45,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutExcepti
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
-import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry;
-import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.logic.StringLogic;
@@ -130,49 +123,14 @@ class RepositoryConfigBackend {
             }
 
             try {
-              CommitLogic commitLogic = commitLogic(p);
-              IndexesLogic indexesLogic = indexesLogic(p);
-              CommitObj head = commitLogic.headCommit(reference);
-              StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndexOrEmpty(head);
-
-              StoreIndexElement<CommitOp> existingElement = index.get(storeKey);
-              ObjId existingValueId = null;
-              UUID existingContentId = null;
-              StringValue existing = null;
-              if (existingElement != null) {
-                CommitOp op = existingElement.content();
-                if (op.action().exists()) {
-                  existingValueId = op.value();
-                  existingContentId = op.contentId();
-
-                  existing =
-                      existingValueId != null
-                          ? stringLogic(p).fetchString(requireNonNull(existingValueId))
-                          : null;
-                }
-              }
-              if (existingContentId == null) {
-                existingContentId = UUID.randomUUID();
-              }
-
-              StringObj newValue =
-                  stringLogic(p)
-                      .updateString(existing, "application/json", serialize(repositoryConfig));
-
-              if (!requireNonNull(newValue.id()).equals(existingValueId)) {
-                CommitObj committed =
-                    commitLogic.doCommit(
-                        CreateCommit.newCommitBuilder()
-                            .message("Update config " + type.name())
-                            .parentCommitId(reference.pointer())
-                            .headers(EMPTY_COMMIT_HEADERS)
-                            .addAdds(
-                                commitAdd(
-                                    storeKey, 0, newValue.id(), existingValueId, existingContentId))
-                            .build(),
-                        singletonList(newValue));
-                p.updateReferencePointer(reference, committed.id());
-              }
+              StringValue existing =
+                  stringLogic(persist)
+                      .updateStringOnRef(
+                          reference,
+                          storeKey,
+                          b -> b.message("Update config " + type.name()),
+                          "application/json",
+                          serialize(repositoryConfig));
               return existing != null ? deserialize(existing) : null;
             } catch (ObjNotFoundException | RefNotFoundException | RefConditionFailedException e) {
               throw new CommitWrappedException(e);
