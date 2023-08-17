@@ -120,8 +120,8 @@ final class StringLogicImpl implements StringLogic {
     StringValue existing = existingValueId != null ? fetchString(existingValueId) : null;
     StringObj newValue = updateString(existing, contentType, stringValueUtf8);
 
-    ObjId newValueId = newValue.id();
-    if (!requireNonNull(newValueId).equals(existingValueId)) {
+    ObjId newValueId = requireNonNull(newValue.id());
+    if (!newValueId.equals(existingValueId)) {
       CreateCommit.Builder builder =
           CreateCommit.newCommitBuilder()
               .parentCommitId(reference.pointer())
