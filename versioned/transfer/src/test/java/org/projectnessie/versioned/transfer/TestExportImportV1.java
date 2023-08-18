@@ -113,4 +113,7 @@ public class TestExportImportV1 extends BaseExportImport {
   Stream<Hash> scanAllTargetCommits() {
     return adapterImport.scanAllCommitLogEntries().map(CommitLogEntry::getHash);
   }
+
+  @Override
+  protected void checkRepositoryDescription() {}
 }

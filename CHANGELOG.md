@@ -8,6 +8,9 @@ as necessary. Empty sections will not end in the release notes.
 ### Highlights
 
 ### Upgrade notes
+- If a repository has been imported using Nessie CLI 0.68.0 or higher, then this repo cannot be
+  later served by a Nessie server whose version is lower than 0.68.0. This is due to a change in the
+  internal repository description format.
 
 ### Breaking changes
 

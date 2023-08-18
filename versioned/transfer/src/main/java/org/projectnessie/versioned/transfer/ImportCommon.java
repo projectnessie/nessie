@@ -51,6 +51,7 @@ abstract class ImportCommon {
     importFinalize(headsAndForks);
     importer.progressListener().progress(ProgressEvent.END_FINALIZE);
 
+    markRepositoryImported();
     importer.progressListener().progress(ProgressEvent.FINISHED);
 
     return ImmutableImportResult.builder()
@@ -68,4 +69,6 @@ abstract class ImportCommon {
   abstract long importCommits() throws IOException;
 
   abstract void importFinalize(HeadsAndForks headsAndForks);
+
+  abstract void markRepositoryImported();
 }

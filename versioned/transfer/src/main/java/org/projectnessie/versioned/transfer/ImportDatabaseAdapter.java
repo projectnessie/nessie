@@ -186,4 +186,7 @@ final class ImportDatabaseAdapter extends ImportCommon {
 
   @Override
   void importFinalize(HeadsAndForks headsAndForks) {}
+
+  @Override
+  void markRepositoryImported() {}
 }

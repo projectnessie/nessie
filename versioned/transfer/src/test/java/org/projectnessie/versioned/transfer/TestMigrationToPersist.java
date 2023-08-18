@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -31,6 +34,7 @@ import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtens
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
@@ -108,5 +112,15 @@ public class TestMigrationToPersist extends BaseExportImport {
         .map(CommitObj.class::cast)
         .filter(o -> o.commitType() != CommitType.INTERNAL)
         .map(o -> Hash.of(o.id().asBytes()));
+  }
+
+  @Override
+  protected void checkRepositoryDescription() {
+    RepositoryDescription description =
+        requireNonNull(repositoryLogic(persist).fetchRepositoryDescription());
+    soft.assertThat(description.defaultBranchName()).isEqualTo("main");
+    soft.assertThat(description.repositoryCreatedTime()).isNotNull();
+    soft.assertThat(description.oldestPossibleCommitTime()).isNotNull();
+    soft.assertThat(description.repositoryImportedTime()).isNotNull();
   }
 }
