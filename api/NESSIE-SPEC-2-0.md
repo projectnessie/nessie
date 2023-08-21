@@ -22,6 +22,13 @@ well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
+# 2.1.2
+
+* Released with Nessie version 0.68.0.
+* The `createReference` and `assignReference` endpoints now return a `BAD_REQUEST` error if the target reference
+  does not specify any hash. Previously, the server would silently resolve a missing hash to the HEAD of the target
+  reference.
+
 # 2.1.1
 
 * Released with Nessie version 0.67.0.

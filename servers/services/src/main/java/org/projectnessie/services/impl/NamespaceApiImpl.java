@@ -19,7 +19,6 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.model.Validation.validateHash;
-import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
@@ -163,8 +162,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       if (hashOnRef != null) {
         validateHash(hashOnRef);
       }
-      ResolvedHash resolved =
-          getHashResolver().resolveHashOnRef(refName, hashOnRef, "Hash", ANY_HASH);
+      ResolvedHash resolved = getHashResolver().resolveHashOnRef(refName, hashOnRef);
       return getNamespace(namespace, resolved.getHash());
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
@@ -203,8 +201,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
     if (hashOnRef != null) {
       validateHash(hashOnRef);
     }
-    ResolvedHash refWithHash =
-        getHashResolver().resolveHashOnRef(refName, hashOnRef, "Hash", ANY_HASH);
+    ResolvedHash refWithHash = getHashResolver().resolveHashOnRef(refName, hashOnRef);
     try {
       // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)
       // which will make it impossible to use the `Namespace` object itself as an identifier to

@@ -56,7 +56,10 @@ abstract class AbstractTestBasicOperations {
 
   void getCatalog(String branch) throws BaseNessieClientServerException {
     if (branch != null) {
-      api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").create();
+      api.createReference()
+          .reference(Branch.of(branch, api.getDefaultBranch().getHash()))
+          .sourceRefName("main")
+          .create();
     }
   }
 

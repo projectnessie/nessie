@@ -148,7 +148,8 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   private Branch createBranchV1(String name) {
-    Branch test = ImmutableBranch.builder().name(name).build();
+    Branch main = rest().get("trees/tree").then().statusCode(200).extract().as(Branch.class);
+    Branch test = ImmutableBranch.builder().name(name).hash(main.getHash()).build();
     return rest().body(test).post("trees/tree").then().statusCode(200).extract().as(Branch.class);
   }
 
@@ -412,11 +413,23 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   Branch createBranchV2(String branchName) {
-    // Note: no request body means creating the new branch from the HEAD of the default branch.
+    Reference main =
+        rest()
+            .get("trees/-")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(SingleReferenceResponse.class)
+            .getReference();
+    return createBranchV2(branchName, main);
+  }
+
+  Branch createBranchV2(String branchName, Reference ref) {
     return (Branch)
         rest()
             .queryParam("name", branchName)
             .queryParam("type", Reference.ReferenceType.BRANCH.name())
+            .body(ref)
             .post("trees")
             .then()
             .statusCode(200)
@@ -425,11 +438,11 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .getReference();
   }
 
-  Branch createBranchV2(String branchName, Reference ref) {
-    return (Branch)
+  Tag createTagV2(String tagName, Reference ref) {
+    return (Tag)
         rest()
-            .queryParam("name", branchName)
-            .queryParam("type", Reference.ReferenceType.BRANCH.name())
+            .queryParam("name", tagName)
+            .queryParam("type", Reference.ReferenceType.TAG.name())
             .body(ref)
             .post("trees")
             .then()

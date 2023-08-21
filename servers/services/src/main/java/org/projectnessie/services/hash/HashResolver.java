@@ -17,8 +17,6 @@ package org.projectnessie.services.hash;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
-import static org.projectnessie.services.hash.HashValidator.REQUIRED_UNAMBIGUOUS_HASH;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,12 +55,12 @@ public final class HashResolver {
     checkArgument(
         namedRef == null || !namedRef.equals(DetachedRef.REF_NAME),
         "Cannot resolve DETACHED to HEAD");
-    return resolveHashOnRef(namedRef, null, "", ANY_HASH);
+    return resolveHashOnRef(namedRef, null);
   }
 
   /**
    * Resolves the given {@code namedRef} to {@code hashOnRef} if present, otherwise to its current
-   * HEAD, if available.
+   * HEAD, if available. Uses the {@link HashValidator#DEFAULT} instance.
    *
    * <p>Throws if the reference does not exist, the hash is invalid, or is not present on the
    * reference.
@@ -70,16 +68,21 @@ public final class HashResolver {
    * <p>If {@code namedRef} is {@link DetachedRef}, then a non-null {@code hashOnRef} is required.
    *
    * <p>If {@code namedRef} is null, the default branch will be used.
-   *
-   * <p>The parameter {@code name} is used for error messages.
-   *
-   * <p>A hash validator must be provided to perform extra validations on the parsed hashed. If no
-   * extra validation is required, {@link HashValidator#ANY_HASH} can be used.
+   */
+  public ResolvedHash resolveHashOnRef(
+      @Nullable @jakarta.annotation.Nullable String namedRef,
+      @Nullable @jakarta.annotation.Nullable String hashOnRef)
+      throws NessieReferenceNotFoundException {
+    return resolveHashOnRef(namedRef, hashOnRef, HashValidator.DEFAULT);
+  }
+
+  /**
+   * Same as {@link #resolveHashOnRef(String, String)} but allows to pass a custom {@link
+   * HashValidator}.
    */
   public ResolvedHash resolveHashOnRef(
       @Nullable @jakarta.annotation.Nullable String namedRef,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      String name,
       HashValidator validator)
       throws NessieReferenceNotFoundException {
     if (null == namedRef) {
@@ -94,12 +97,8 @@ public final class HashResolver {
         ReferenceInfo<CommitMeta> refInfo = store.getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);
         ref = refInfo.getNamedRef();
         currentHead = refInfo.getHash();
-        // Shortcut: use HEAD, if hashOnRef is null or empty
-        if (hashOnRef == null || hashOnRef.isEmpty()) {
-          return ResolvedHash.of(ref, Optional.empty(), Optional.of(currentHead));
-        }
       }
-      return resolveHashOnRef(ref, currentHead, hashOnRef, name, validator);
+      return resolveHashOnRef(ref, currentHead, hashOnRef, validator);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -112,16 +111,14 @@ public final class HashResolver {
    * <p>This is useful to compute more hashes against a first resolved hash, e.g. when
    * transplanting.
    *
-   * <p>See {@link #resolveHashOnRef(String, String, String, HashValidator)} for important caveats.
+   * <p>See {@link #resolveHashOnRef(String, String)} for important caveats.
    */
   public ResolvedHash resolveHashOnRef(
       ResolvedHash head,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      String name,
       HashValidator validator)
       throws ReferenceNotFoundException {
-    return resolveHashOnRef(
-        head.getNamedRef(), head.getHead().orElse(null), hashOnRef, name, validator);
+    return resolveHashOnRef(head.getNamedRef(), head.getHead().orElse(null), hashOnRef, validator);
   }
 
   /**
@@ -131,33 +128,30 @@ public final class HashResolver {
    * <p>Either {@code currentHead} or {@code hashOnRef} must be non-null. It's the caller's
    * responsibility to validate that any user-provided input meets this requirement.
    *
-   * <p>See {@link #resolveHashOnRef(String, String, String, HashValidator)} for important caveats.
+   * <p>See {@link #resolveHashOnRef(String, String)} for important caveats.
    */
   public ResolvedHash resolveHashOnRef(
       NamedRef ref,
       @Nullable @jakarta.annotation.Nullable Hash currentHead,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      String name,
       HashValidator validator)
       throws ReferenceNotFoundException {
     checkState(currentHead != null || hashOnRef != null);
     Optional<ParsedHash> parsed = ParsedHash.parse(hashOnRef, store.noAncestorHash());
     if (ref == DetachedRef.INSTANCE) {
-      validator = validator.and(REQUIRED_UNAMBIGUOUS_HASH);
+      validator.hashMustBePresent().hashMustNotBeAmbiguous();
     }
-    validator.validate(name, parsed.orElse(null));
-    Hash startOrHead = parsed.flatMap(ParsedHash::getAbsolutePart).orElse(currentHead);
-    checkState(startOrHead != null);
+    validator.validate(ref, parsed.orElse(null));
+    Hash resolved = parsed.flatMap(ParsedHash::getAbsolutePart).orElse(currentHead);
+    checkState(resolved != null);
     List<RelativeCommitSpec> relativeParts =
         parsed.map(ParsedHash::getRelativeParts).orElse(Collections.emptyList());
-    Optional<Hash> resolved = Optional.of(startOrHead);
     if (!relativeParts.isEmpty()) {
       // Resolve the hash against DETACHED because we are only interested in
       // resolving the hash, not checking if it is on the branch. This will
       // be done later on.
-      resolved =
-          Optional.ofNullable(store.hashOnReference(DetachedRef.INSTANCE, resolved, relativeParts));
+      resolved = store.hashOnReference(DetachedRef.INSTANCE, Optional.of(resolved), relativeParts);
     }
-    return ResolvedHash.of(ref, resolved, Optional.ofNullable(currentHead));
+    return ResolvedHash.of(ref, Optional.ofNullable(currentHead), resolved);
   }
 }
