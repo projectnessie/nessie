@@ -56,6 +56,8 @@ dependencies {
 
   api("org.jboss.weld.se:weld-se-core")
 
+  api(libs.hibernate.validator.cdi)
+
   compileOnly(libs.microprofile.openapi)
 
   testCompileOnly(libs.microprofile.openapi)
