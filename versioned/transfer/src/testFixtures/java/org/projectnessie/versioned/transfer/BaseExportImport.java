@@ -139,8 +139,8 @@ public abstract class BaseExportImport {
                   Hash b = vs.create(branch, Optional.of(vs.noAncestorHash())).getHash();
                   b = commit10(vs, 0, branch, b);
 
-                  vs.delete(BranchName.of("a"), Optional.of(a));
-                  vs.delete(BranchName.of("b"), Optional.of(b));
+                  vs.delete(BranchName.of("a"), a);
+                  vs.delete(BranchName.of("b"), b);
 
                   headsAndForks.addHeads(a.asBytes());
                   deleted.accept(a.asBytes());

@@ -332,7 +332,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .canAssignRefToHash(oldRef.getNamedRef())
           .checkAndThrow();
 
-      getStore().assign(oldRef.getNamedRef(), Optional.of(oldRef.getHash()), newRef.getHash());
+      getStore().assign(oldRef.getNamedRef(), oldRef.getHash(), newRef.getHash());
       return RefUtil.toReference(oldRef.getNamedRef(), newRef.getHash());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -371,7 +371,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   expectedHash,
                   new HashValidator("Expected hash").hashMustBeUnambiguous());
 
-      Hash deletedAthash = getStore().delete(ref, Optional.of(refToDelete.getHash())).getHash();
+      Hash deletedAthash = getStore().delete(ref, refToDelete.getHash()).getHash();
       return RefUtil.toReference(ref, deletedAthash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);

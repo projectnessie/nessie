@@ -383,9 +383,9 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(NamedRef ref, Hash expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return databaseAdapter.assign(ref, expectedHash, targetHash);
+    return databaseAdapter.assign(ref, Optional.of(expectedHash), targetHash);
   }
 
   @Override
@@ -395,9 +395,9 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef ref, Hash hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return databaseAdapter.delete(ref, hash);
+    return databaseAdapter.delete(ref, Optional.of(hash));
   }
 
   @Nonnull

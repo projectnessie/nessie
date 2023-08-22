@@ -244,8 +244,7 @@ public interface VersionStore {
    * not match.
    *
    * @param ref The named ref to be assigned
-   * @param expectedHash The current head of the NamedRef to validate before updating. If not
-   *     present, force assignment.
+   * @param expectedHash The current head of the NamedRef to validate before updating (required).
    * @param targetHash The hash that this ref should refer to.
    * @return A {@link ReferenceAssignedResult} containing the previous and current head of the
    *     reference
@@ -254,7 +253,7 @@ public interface VersionStore {
    * @throws ReferenceConflictException if {@code expectedHash} is not empty and its value doesn't
    *     match the stored hash for {@code ref}
    */
-  ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  ReferenceAssignedResult assign(NamedRef ref, Hash expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -278,14 +277,14 @@ public interface VersionStore {
    * <p>Throws exception if the optional hash does not match the provided ref.
    *
    * @param ref The NamedRef to be deleted.
-   * @param hash An optional hash. If provided, this operation will only succeed if the branch is
-   *     pointing at the provided
+   * @param hash The expected hash (required). The operation will only succeed if the branch is
+   *     pointing at the provided hash.
    * @return A {@link ReferenceDeletedResult} containing the head of the deleted reference
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    * @throws ReferenceConflictException if {@code hash} doesn't match the stored hash for {@code
    *     ref}
    */
-  ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
+  ReferenceDeletedResult delete(NamedRef ref, Hash hash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

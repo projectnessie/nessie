@@ -1190,7 +1190,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 .fromRef(source)
                 .fromHash(sourceHead)
                 .toBranch(target)
-                .expectedHash(Optional.ofNullable(targetHead))
+                .expectedHash(Optional.of(targetHead))
                 .putMergeKeyBehaviors(key1, MergeKeyBehavior.of(key1, MergeBehavior.DROP))
                 .putMergeKeyBehaviors(key2, MergeKeyBehavior.of(key2, MergeBehavior.DROP))
                 .dryRun(dryRun)

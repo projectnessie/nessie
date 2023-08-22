@@ -407,11 +407,11 @@ class TestEventsVersionStore {
             .previousHash(hash1)
             .currentHash(hash2)
             .build();
-    when(delegate.assign(branch1, Optional.of(hash1), hash2)).thenReturn(expectedResult);
+    when(delegate.assign(branch1, hash1, hash2)).thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    ReferenceAssignedResult actualResult = versionStore.assign(branch1, Optional.of(hash1), hash2);
+    ReferenceAssignedResult actualResult = versionStore.assign(branch1, hash1, hash2);
     assertThat(actualResult).isEqualTo(expectedResult);
-    verify(delegate).assign(branch1, Optional.of(hash1), hash2);
+    verify(delegate).assign(branch1, hash1, hash2);
     verify(sink).accept(expectedResult);
     verifyNoMoreInteractions(delegate, sink);
   }
@@ -419,15 +419,14 @@ class TestEventsVersionStore {
   @ParameterizedTest
   @ValueSource(classes = {ReferenceNotFoundException.class, ReferenceConflictException.class})
   void testAssignFailure(Class<? extends VersionStoreException> e) throws Exception {
-    when(delegate.assign(branch1, Optional.of(hash1), hash2))
+    when(delegate.assign(branch1, hash1, hash2))
         .thenAnswer(
             invocation -> {
               throw e.getConstructor(String.class).newInstance("irrelevant");
             });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    assertThatThrownBy(() -> versionStore.assign(branch1, Optional.of(hash1), hash2))
-        .isInstanceOf(e);
-    verify(delegate).assign(branch1, Optional.of(hash1), hash2);
+    assertThatThrownBy(() -> versionStore.assign(branch1, hash1, hash2)).isInstanceOf(e);
+    verify(delegate).assign(branch1, hash1, hash2);
     verifyNoMoreInteractions(delegate, sink);
   }
 
@@ -462,11 +461,11 @@ class TestEventsVersionStore {
   void testDeleteSuccess() throws Exception {
     ReferenceDeletedResult expectedResult =
         ImmutableReferenceDeletedResult.builder().namedRef(branch1).hash(hash2).build();
-    when(delegate.delete(branch1, Optional.of(hash1))).thenReturn(expectedResult);
+    when(delegate.delete(branch1, hash1)).thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    ReferenceDeletedResult actualResult = versionStore.delete(branch1, Optional.of(hash1));
+    ReferenceDeletedResult actualResult = versionStore.delete(branch1, hash1);
     assertThat(actualResult).isEqualTo(expectedResult);
-    verify(delegate).delete(branch1, Optional.of(hash1));
+    verify(delegate).delete(branch1, hash1);
     verify(sink).accept(expectedResult);
     verifyNoMoreInteractions(delegate, sink);
   }
@@ -474,14 +473,14 @@ class TestEventsVersionStore {
   @ParameterizedTest
   @ValueSource(classes = {ReferenceNotFoundException.class, ReferenceConflictException.class})
   void testDeleteFailure(Class<? extends VersionStoreException> e) throws Exception {
-    when(delegate.delete(branch1, Optional.of(hash1)))
+    when(delegate.delete(branch1, hash1))
         .thenAnswer(
             invocation -> {
               throw e.getConstructor(String.class).newInstance("irrelevant");
             });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    assertThatThrownBy(() -> versionStore.delete(branch1, Optional.of(hash1))).isInstanceOf(e);
-    verify(delegate).delete(branch1, Optional.of(hash1));
+    assertThatThrownBy(() -> versionStore.delete(branch1, hash1)).isInstanceOf(e);
+    verify(delegate).delete(branch1, hash1);
     verifyNoMoreInteractions(delegate, sink);
   }
 

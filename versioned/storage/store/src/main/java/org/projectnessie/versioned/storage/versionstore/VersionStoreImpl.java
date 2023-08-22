@@ -237,8 +237,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public ReferenceAssignedResult assign(
-      NamedRef namedRef, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(NamedRef namedRef, Hash expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     String refName = namedRefToRefName(namedRef);
     ReferenceLogic referenceLogic = referenceLogic(persist);
@@ -250,18 +249,16 @@ public class VersionStoreImpl implements VersionStore {
     }
 
     try {
-      if (expectedHash.isPresent()) {
-        CommitObj head = commitLogic(persist).headCommit(expected);
-        Hash currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
-        verifyExpectedHash(currentCommitId, namedRef, expectedHash);
-        expected =
-            reference(
-                refName,
-                hashToObjId(expectedHash.get()),
-                false,
-                expected.createdAtMicros(),
-                expected.extendedInfoObj());
-      }
+      CommitObj head = commitLogic(persist).headCommit(expected);
+      Hash currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
+      verifyExpectedHash(currentCommitId, namedRef, expectedHash);
+      expected =
+          reference(
+              refName,
+              hashToObjId(expectedHash),
+              false,
+              expected.createdAtMicros(),
+              expected.extendedInfoObj());
 
       ObjId newPointer = hashToObjId(targetHash);
       if (!EMPTY_OBJ_ID.equals(newPointer) && persist.fetchObjType(newPointer) != COMMIT) {
@@ -286,17 +283,14 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public ReferenceDeletedResult delete(NamedRef namedRef, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef namedRef, Hash hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     String refName = namedRefToRefName(namedRef);
     ReferenceLogic referenceLogic = referenceLogic(persist);
 
     ObjId expected = EMPTY_OBJ_ID;
     try {
-      expected =
-          hash.isPresent()
-              ? hashToObjId(hash.get())
-              : referenceLogic.getReference(refName).pointer();
+      expected = hashToObjId(hash);
       referenceLogic.deleteReference(refName, expected);
       return ImmutableReferenceDeletedResult.builder()
           .namedRef(namedRef)

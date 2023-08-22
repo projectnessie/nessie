@@ -61,33 +61,27 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
 
     final Hash anotherCommit = commit("Another commit").toBranch(branch);
     ReferenceAssignedResult referenceAssignedResult =
-        store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
+        store().assign(TagName.of("tag2"), commit, anotherCommit);
     soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(commit);
     soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(anotherCommit);
     soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(TagName.of("tag2"));
 
-    referenceAssignedResult = store().assign(TagName.of("tag3"), Optional.empty(), anotherCommit);
+    referenceAssignedResult = store().assign(TagName.of("tag3"), commit, anotherCommit);
     soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(commit);
     soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(anotherCommit);
     soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(TagName.of("tag3"));
 
-    soft.assertThatThrownBy(
-            () -> store().assign(BranchName.of("baz"), Optional.empty(), anotherCommit))
+    soft.assertThatThrownBy(() -> store().assign(BranchName.of("baz"), commit, anotherCommit))
         .isInstanceOf(ReferenceNotFoundException.class);
-    soft.assertThatThrownBy(
-            () -> store().assign(TagName.of("unknowon-tag"), Optional.empty(), anotherCommit))
+    soft.assertThatThrownBy(() -> store().assign(TagName.of("unknowon-tag"), commit, anotherCommit))
         .isInstanceOf(ReferenceNotFoundException.class);
 
-    soft.assertThatThrownBy(
-            () -> store().assign(TagName.of("tag1"), Optional.of(initialHash), commit))
+    soft.assertThatThrownBy(() -> store().assign(TagName.of("tag1"), initialHash, commit))
+        .isInstanceOf(ReferenceConflictException.class);
+    soft.assertThatThrownBy(() -> store().assign(TagName.of("tag1"), initialHash, anotherCommit))
         .isInstanceOf(ReferenceConflictException.class);
     soft.assertThatThrownBy(
-            () -> store().assign(TagName.of("tag1"), Optional.of(initialHash), anotherCommit))
-        .isInstanceOf(ReferenceConflictException.class);
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .assign(TagName.of("tag1"), Optional.of(commit), Hash.of("1234567890abcdef")))
+            () -> store().assign(TagName.of("tag1"), commit, Hash.of("1234567890abcdef")))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     soft.assertThat(commitsList(branch, false))
@@ -127,7 +121,7 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
     BranchName testBranch = BranchName.of("testBranch");
     Hash testBranchHash = store.create(testBranch, Optional.empty()).getHash();
     ReferenceAssignedResult referenceAssignedResult =
-        store.assign(testBranch, Optional.of(testBranchHash), main.getHash());
+        store.assign(testBranch, testBranchHash, main.getHash());
     soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(main.getHash());
     soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(testBranchHash);
     soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(testBranch);
@@ -137,7 +131,7 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
 
     TagName testTag = TagName.of("testTag");
     Hash testTagHash = store.create(testTag, Optional.empty()).getHash();
-    referenceAssignedResult = store.assign(testTag, Optional.of(testTagHash), main.getHash());
+    referenceAssignedResult = store.assign(testTag, testTagHash, main.getHash());
     soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(main.getHash());
     soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(testTagHash);
     soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(testTag);

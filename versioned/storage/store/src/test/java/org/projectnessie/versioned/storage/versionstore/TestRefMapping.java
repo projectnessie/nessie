@@ -315,17 +315,12 @@ public class TestRefMapping {
     soft.assertThatCode(
             () ->
                 RefMapping.verifyExpectedHash(
-                    Hash.of("1234"), BranchName.of("foo-branch"), Optional.of(Hash.of("1234"))))
-        .doesNotThrowAnyException();
-    soft.assertThatCode(
-            () ->
-                RefMapping.verifyExpectedHash(
-                    Hash.of("1234"), BranchName.of("foo-branch"), Optional.empty()))
+                    Hash.of("1234"), BranchName.of("foo-branch"), Hash.of("1234")))
         .doesNotThrowAnyException();
     soft.assertThatThrownBy(
             () ->
                 RefMapping.verifyExpectedHash(
-                    Hash.of("1234"), BranchName.of("foo-branch"), Optional.of(Hash.of("5678"))))
+                    Hash.of("1234"), BranchName.of("foo-branch"), Hash.of("5678")))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("Named-reference 'foo-branch' is not at expected hash '5678', but at '1234'.");
   }
