@@ -81,8 +81,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       throws NessieReferenceNotFoundException {
     Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
 
-    ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
     try {
+      ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
 
       try {
         Optional<Content> explicitlyCreatedNamespace =
@@ -127,8 +127,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   @Override
   public void deleteNamespace(String refName, Namespace namespaceToDelete)
       throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
-    ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
     try {
+      ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
       Namespace namespace = getNamespace(namespaceToDelete, refWithHash.getHash());
       Delete delete = Delete.of(namespace.toContentKey());
 
@@ -201,8 +201,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
     if (hashOnRef != null) {
       validateHash(hashOnRef);
     }
-    ResolvedHash refWithHash = getHashResolver().resolveHashOnRef(refName, hashOnRef);
     try {
+      ResolvedHash refWithHash = getHashResolver().resolveHashOnRef(refName, hashOnRef);
       // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)
       // which will make it impossible to use the `Namespace` object itself as an identifier to
       // subtract the set of explicitly created namespaces from the set of implicitly created ones.

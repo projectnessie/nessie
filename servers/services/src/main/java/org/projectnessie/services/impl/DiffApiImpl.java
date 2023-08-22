@@ -75,18 +75,22 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
       List<ContentKey> requestedKeys,
       String filter)
       throws NessieNotFoundException {
-    ResolvedHash from =
-        getHashResolver().resolveHashOnRef(fromRef, fromHash, new HashValidator("From hash"));
-    ResolvedHash to =
-        getHashResolver().resolveHashOnRef(toRef, toHash, new HashValidator("To hash"));
-    NamedRef fromNamedRef = from.getNamedRef();
-    NamedRef toNamedRef = to.getNamedRef();
-    fromReference.accept(from);
-    toReference.accept(to);
-
-    startAccessCheck().canViewReference(fromNamedRef).canViewReference(toNamedRef).checkAndThrow();
 
     try {
+      ResolvedHash from =
+          getHashResolver().resolveHashOnRef(fromRef, fromHash, new HashValidator("From hash"));
+      ResolvedHash to =
+          getHashResolver().resolveHashOnRef(toRef, toHash, new HashValidator("To hash"));
+      NamedRef fromNamedRef = from.getNamedRef();
+      NamedRef toNamedRef = to.getNamedRef();
+      fromReference.accept(from);
+      toReference.accept(to);
+
+      startAccessCheck()
+          .canViewReference(fromNamedRef)
+          .canViewReference(toNamedRef)
+          .checkAndThrow();
+
       Predicate<ContentKey> contentKeyPredicate = null;
       if (requestedKeys != null && !requestedKeys.isEmpty()) {
         contentKeyPredicate = new HashSet<>(requestedKeys)::contains;

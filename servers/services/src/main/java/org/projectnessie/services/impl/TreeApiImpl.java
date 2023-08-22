@@ -270,14 +270,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   new HashValidator("Target hash").hashMustBePresent().hashMustNotBeAmbiguous());
       check.canViewReference(targetRef.getNamedRef());
       targetHashObj = Optional.of(targetRef.getHash());
-    } catch (NessieNotFoundException e) {
+    } catch (ReferenceNotFoundException e) {
       // If the default-branch does not exist and hashOnRef points to the "beginning of time",
       // then do not throw a NessieNotFoundException, but re-create the default branch. In all
       // cases, re-throw the exception.
       if (!(ReferenceType.BRANCH.equals(type)
           && refName.equals(getServerConfig().getDefaultBranch())
           && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
-        throw e;
+        throw new NessieReferenceNotFoundException(e.getMessage(), e);
       }
       targetHashObj = Optional.empty();
     }
@@ -876,12 +876,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ContentKey prefixKey,
       List<ContentKey> requestedKeys)
       throws NessieNotFoundException {
-    ResolvedHash refWithHash =
-        getHashResolver().resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
-
-    effectiveReference.accept(refWithHash);
 
     try {
+      ResolvedHash refWithHash =
+          getHashResolver()
+              .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
+
+      effectiveReference.accept(refWithHash);
       Predicate<ContentKey> contentKeyPredicate = null;
       if (requestedKeys != null && !requestedKeys.isEmpty()) {
         contentKeyPredicate = new HashSet<>(requestedKeys)::contains;
@@ -1042,16 +1043,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     CommitMeta commitMeta = operations.getCommitMeta();
     validateCommitMeta(commitMeta);
 
-    ResolvedHash toRef =
-        getHashResolver()
-            .resolveHashOnRef(
-                branch,
-                expectedHash,
-                new HashValidator("Reference to commit into", "Expected hash")
-                    .refMustBeBranch()
-                    .hashMustBePresent()
-                    .hashMustNotBeAmbiguous());
-
     List<org.projectnessie.versioned.Operation> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
@@ -1059,6 +1050,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
     try {
       ImmutableCommitResponse.Builder commitResponse = ImmutableCommitResponse.builder();
+
+      ResolvedHash toRef =
+          getHashResolver()
+              .resolveHashOnRef(
+                  branch,
+                  expectedHash,
+                  new HashValidator("Reference to commit into", "Expected hash")
+                      .refMustBeBranch()
+                      .hashMustBePresent()
+                      .hashMustNotBeAmbiguous());
 
       Hash newHash =
           getStore()

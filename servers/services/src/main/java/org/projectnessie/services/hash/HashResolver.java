@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.DetachedRef;
@@ -51,7 +50,7 @@ public final class HashResolver {
    * <p>If {@code namedRef} is null, the default branch will be used.
    */
   public ResolvedHash resolveToHead(@Nullable @jakarta.annotation.Nullable String namedRef)
-      throws NessieReferenceNotFoundException {
+      throws ReferenceNotFoundException {
     checkArgument(
         namedRef == null || !namedRef.equals(DetachedRef.REF_NAME),
         "Cannot resolve DETACHED to HEAD");
@@ -72,7 +71,7 @@ public final class HashResolver {
   public ResolvedHash resolveHashOnRef(
       @Nullable @jakarta.annotation.Nullable String namedRef,
       @Nullable @jakarta.annotation.Nullable String hashOnRef)
-      throws NessieReferenceNotFoundException {
+      throws ReferenceNotFoundException {
     return resolveHashOnRef(namedRef, hashOnRef, HashValidator.DEFAULT);
   }
 
@@ -84,24 +83,20 @@ public final class HashResolver {
       @Nullable @jakarta.annotation.Nullable String namedRef,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       HashValidator validator)
-      throws NessieReferenceNotFoundException {
+      throws ReferenceNotFoundException {
     if (null == namedRef) {
       namedRef = config.getDefaultBranch();
     }
-    try {
-      NamedRef ref;
-      Hash currentHead = null;
-      if (DetachedRef.REF_NAME.equals(namedRef)) {
-        ref = DetachedRef.INSTANCE;
-      } else {
-        ReferenceInfo<CommitMeta> refInfo = store.getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);
-        ref = refInfo.getNamedRef();
-        currentHead = refInfo.getHash();
-      }
-      return resolveHashOnRef(ref, currentHead, hashOnRef, validator);
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    NamedRef ref;
+    Hash currentHead = null;
+    if (DetachedRef.REF_NAME.equals(namedRef)) {
+      ref = DetachedRef.INSTANCE;
+    } else {
+      ReferenceInfo<CommitMeta> refInfo = store.getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);
+      ref = refInfo.getNamedRef();
+      currentHead = refInfo.getHash();
     }
+    return resolveHashOnRef(ref, currentHead, hashOnRef, validator);
   }
 
   /**
@@ -117,7 +112,7 @@ public final class HashResolver {
       ResolvedHash head,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       HashValidator validator)
-      throws NessieReferenceNotFoundException {
+      throws ReferenceNotFoundException {
     return resolveHashOnRef(head.getNamedRef(), head.getHead().orElse(null), hashOnRef, validator);
   }
 
@@ -135,7 +130,7 @@ public final class HashResolver {
       @Nullable @jakarta.annotation.Nullable Hash currentHead,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       HashValidator validator)
-      throws NessieReferenceNotFoundException {
+      throws ReferenceNotFoundException {
     checkState(currentHead != null || hashOnRef != null);
     Optional<ParsedHash> parsed = ParsedHash.parse(hashOnRef, store.noAncestorHash());
     if (ref == DetachedRef.INSTANCE) {
@@ -150,12 +145,7 @@ public final class HashResolver {
       // Resolve the hash against DETACHED because we are only interested in
       // resolving the hash, not checking if it is on the branch. This will
       // be done later on.
-      try {
-        resolved =
-            store.hashOnReference(DetachedRef.INSTANCE, Optional.of(resolved), relativeParts);
-      } catch (ReferenceNotFoundException e) {
-        throw new NessieReferenceNotFoundException(e.getMessage(), e);
-      }
+      resolved = store.hashOnReference(DetachedRef.INSTANCE, Optional.of(resolved), relativeParts);
     }
     return ResolvedHash.of(ref, Optional.ofNullable(currentHead), resolved);
   }

@@ -60,9 +60,10 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
   public ContentResponse getContent(
       ContentKey key, String namedRef, String hashOnRef, boolean withDocumentation)
       throws NessieNotFoundException {
-    ResolvedHash ref =
-        getHashResolver().resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
     try {
+      ResolvedHash ref =
+          getHashResolver()
+              .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
       ContentResult obj = getStore().getValue(ref.getHash(), key);
       BatchAccessChecker accessCheck = startAccessCheck();
       if (obj != null) {
