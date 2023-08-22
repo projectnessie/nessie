@@ -893,14 +893,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
       }
 
+      int filterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
       Predicate<KeyEntry> filterPredicate = filterEntries(filter);
+      if (filterDepth > 0) {
+        filterPredicate = filterPredicate.and(e -> e.getKey().elements().size() >= filterDepth);
+      }
 
       try (PaginationIterator<KeyEntry> entries =
           getStore()
               .getKeys(
                   refWithHash.getHash(),
                   pagingToken,
-                  withContent,
+                  withContent ? filterPredicate : null,
                   VersionStore.KeyRestrictions.builder()
                       .minKey(minKey)
                       .maxKey(maxKey)
@@ -917,9 +921,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
 
-        if (namespaceDepth != null && namespaceDepth > 0) {
-          int depth = namespaceDepth;
-          filterPredicate = filterPredicate.and(e -> e.getKey().elements().size() >= depth);
+        if (filterDepth > 0) {
           Set<ContentKey> seen = new HashSet<>();
           while (authz.hasNext()) {
             KeyEntry key = authz.next();
@@ -937,7 +939,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                         key.getKey().type(),
                         key.getKey().lastElement().contentId());
 
-            entry = maybeTruncateToDepth(entry, depth);
+            entry = maybeTruncateToDepth(entry, filterDepth);
 
             // add implicit namespace entries only once (single parent of multiple real entries)
             if (seen.add(entry.getName())) {

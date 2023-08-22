@@ -133,14 +133,14 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.getKeys(
                         BranchName.of("this-one-should-not-exist"),
                         null,
-                        false,
+                        null,
                         NO_KEY_RESTRICTIONS)),
         new ReferenceNotFoundFunction("getKeys/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
                 s ->
                     s.getKeys(
-                        TagName.of("this-one-should-not-exist"), null, false, NO_KEY_RESTRICTIONS)),
+                        TagName.of("this-one-should-not-exist"), null, null, NO_KEY_RESTRICTIONS)),
         new ReferenceNotFoundFunction("getKeys/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
@@ -148,7 +148,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.getKeys(
                         Hash.of("12341234123412341234123412341234123412341234"),
                         null,
-                        false,
+                        null,
                         NO_KEY_RESTRICTIONS)),
         // assign()
         new ReferenceNotFoundFunction("assign/branch/ok")

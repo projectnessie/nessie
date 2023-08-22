@@ -118,7 +118,7 @@ public class ContentOpsBench {
   @Benchmark
   public void getKeys(BenchmarkParam param, Blackhole bh) throws Exception {
     PaginationIterator<KeyEntry> iter =
-        param.versionStore.getKeys(param.ref.getNamedRef(), null, false, NO_KEY_RESTRICTIONS);
+        param.versionStore.getKeys(param.ref.getNamedRef(), null, null, NO_KEY_RESTRICTIONS);
     while (iter.hasNext()) {
       bh.consume(iter.next());
     }

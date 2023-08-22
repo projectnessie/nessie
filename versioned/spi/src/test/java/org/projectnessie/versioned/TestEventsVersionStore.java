@@ -545,11 +545,11 @@ class TestEventsVersionStore {
 
   @Test
   void testGetKeys() throws Exception {
-    when(delegate.getKeys(branch1, "token1", false, NO_KEY_RESTRICTIONS))
+    when(delegate.getKeys(branch1, "token1", null, NO_KEY_RESTRICTIONS))
         .thenReturn(iteratorKeyEntries);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     PaginationIterator<KeyEntry> result =
-        versionStore.getKeys(branch1, "token1", false, NO_KEY_RESTRICTIONS);
+        versionStore.getKeys(branch1, "token1", null, NO_KEY_RESTRICTIONS);
     assertThat(result).isSameAs(iteratorKeyEntries);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);

@@ -134,7 +134,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Delete delete = Delete.of(namespace.toContentKey());
 
       try (PaginationIterator<KeyEntry> keys =
-          getStore().getKeys(refWithHash.getHash(), null, false, NO_KEY_RESTRICTIONS)) {
+          getStore().getKeys(refWithHash.getHash(), null, null, NO_KEY_RESTRICTIONS)) {
         while (keys.hasNext()) {
           KeyEntry k = keys.next();
           if (Namespace.of(k.getKey().contentKey().getElements())
@@ -295,7 +295,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Hash hash,
       Predicate<KeyEntry> earlyFilterPredicate)
       throws ReferenceNotFoundException {
-    PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null, false, NO_KEY_RESTRICTIONS);
+    PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null, null, NO_KEY_RESTRICTIONS);
     return stream(spliteratorUnknownSize(iter, 0), false)
         .onClose(iter::close)
         .filter(earlyFilterPredicate)

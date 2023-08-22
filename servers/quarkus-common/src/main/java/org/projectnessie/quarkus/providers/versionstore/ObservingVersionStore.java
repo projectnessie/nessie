@@ -27,8 +27,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
@@ -207,10 +209,10 @@ public class ObservingVersionStore implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(
       @SpanAttribute(TAG_REF) Ref ref,
       String pagingToken,
-      boolean withContent,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> withContentPredicate,
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    return delegate.getKeys(ref, pagingToken, withContent, keyRestrictions);
+    return delegate.getKeys(ref, pagingToken, withContentPredicate, keyRestrictions);
   }
 
   @WithSpan

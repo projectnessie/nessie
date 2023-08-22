@@ -93,7 +93,7 @@ final class ExportContents extends ExportCommon {
 
     long seq = 0;
     try (PaginationIterator<KeyEntry> entries =
-        store.getKeys(ref.getNamedRef(), null, false, NO_KEY_RESTRICTIONS)) {
+        store.getKeys(ref.getNamedRef(), null, null, NO_KEY_RESTRICTIONS)) {
       while (true) {
         List<KeyEntry> batch = take(exporter.contentsBatchSize(), entries);
         if (batch.isEmpty()) {

@@ -41,6 +41,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -546,7 +547,10 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
+      Ref ref,
+      String pagingToken,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> withContentPredicate,
+      KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
     checkArgument(
@@ -562,7 +566,14 @@ public class PersistVersionStore implements VersionStore {
     return new FilteringPaginationIterator<KeyListEntry, KeyEntry>(
         source.iterator(),
         entry -> {
-          if (withContent) {
+          KeyEntry keyEntry =
+              KeyEntry.of(
+                  identifiedContentKeyFromContent(
+                      entry.getKey(),
+                      contentTypeForPayload(entry.getPayload()),
+                      entry.getContentId().getId(),
+                      elements -> null));
+          if (withContentPredicate != null && withContentPredicate.test(keyEntry)) {
             try {
               ContentAndState cs =
                   databaseAdapter
@@ -580,12 +591,7 @@ public class PersistVersionStore implements VersionStore {
               throw new IllegalStateException("Reference no longer exists", e);
             }
           }
-          return KeyEntry.of(
-              identifiedContentKeyFromContent(
-                  entry.getKey(),
-                  contentTypeForPayload(entry.getPayload()),
-                  entry.getContentId().getId(),
-                  elements -> null));
+          return keyEntry;
         }) {
       @Override
       protected String computeTokenForCurrent() {

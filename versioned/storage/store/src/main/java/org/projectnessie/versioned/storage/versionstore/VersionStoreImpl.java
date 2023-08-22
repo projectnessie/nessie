@@ -544,7 +544,10 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
+      Ref ref,
+      String pagingToken,
+      Predicate<KeyEntry> withContentPredicate,
+      KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     KeyRanges keyRanges = keyRanges(pagingToken, keyRestrictions);
 
@@ -591,20 +594,32 @@ public class VersionStoreImpl implements VersionStore {
             ContentKey key = storeKeyToKey(indexElement.key());
             CommitOp commitOp = indexElement.content();
             Content.Type contentType = contentTypeForPayload(commitOp.payload());
-
-            if (withContent) {
-              Content c =
-                  contentMapping.fetchContent(
-                      requireNonNull(
-                          indexElement.content().value(), "Required value pointer is null"));
-              return KeyEntry.of(buildIdentifiedKey(key, index, c, x -> null), c);
-            }
+            Content content = null;
 
             UUID contentId = commitOp.contentId();
-            String contentIdString =
-                contentId != null ? contentId.toString() : contentIdFromContent(commitOp);
-            return KeyEntry.of(
-                buildIdentifiedKey(key, index, contentType, contentIdString, x -> null));
+            String contentIdString;
+            if (contentId != null) {
+              contentIdString = contentId.toString();
+            } else {
+              // this should only be hit by imported legacy nessie repos
+              content =
+                  contentMapping.fetchContent(
+                      requireNonNull(commitOp.value(), "Required value pointer is null"));
+              contentIdString = content.getId();
+            }
+            KeyEntry keyEntry =
+                KeyEntry.of(
+                    buildIdentifiedKey(key, index, contentType, contentIdString, x -> null));
+
+            if (withContentPredicate != null && withContentPredicate.test(keyEntry)) {
+              if (content == null) {
+                content =
+                    contentMapping.fetchContent(
+                        requireNonNull(commitOp.value(), "Required value pointer is null"));
+              }
+              return KeyEntry.of(buildIdentifiedKey(key, index, content, x -> null), content);
+            }
+            return keyEntry;
           } catch (ObjNotFoundException e) {
             throw new RuntimeException("Could not fetch or map content", e);
           }
@@ -626,12 +641,6 @@ public class VersionStoreImpl implements VersionStore {
         return pagingToken(copyFromUtf8(storeKey.rawString())).asString();
       }
     };
-  }
-
-  private String contentIdFromContent(CommitOp commitOp) throws ObjNotFoundException {
-    return new ContentMapping(persist)
-        .fetchContent(requireNonNull(commitOp.value(), "Required value pointer is null"))
-        .getId();
   }
 
   @Override

@@ -22,8 +22,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
@@ -153,9 +155,12 @@ public class EventsVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
+      Ref ref,
+      String pagingToken,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> withContentPredicate,
+      KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    return delegate.getKeys(ref, pagingToken, withContent, keyRestrictions);
+    return delegate.getKeys(ref, pagingToken, withContentPredicate, keyRestrictions);
   }
 
   @Override

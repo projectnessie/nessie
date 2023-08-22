@@ -200,19 +200,19 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(initialCommit, "Initial Commit", base));
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {
+        store().getKeys(branch, null, null, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(keyT1, keyT2, keyT4);
     }
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(secondCommit, null, false, NO_KEY_RESTRICTIONS)) {
+        store().getKeys(secondCommit, null, null, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(keyT1, keyT4);
     }
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(initialCommit, null, false, NO_KEY_RESTRICTIONS)) {
+        store().getKeys(initialCommit, null, null, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(keyT1, keyT2, keyT3);
     }
@@ -303,7 +303,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(initialCommit, "Initial Commit", base));
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {
+        store().getKeys(branch, null, null, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     }
@@ -924,7 +924,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
                         try (PaginationIterator<KeyEntry> ignore =
-                            store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {}
+                            store().getKeys(branch, null, null, NO_KEY_RESTRICTIONS)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }
