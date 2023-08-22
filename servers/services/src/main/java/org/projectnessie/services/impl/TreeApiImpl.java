@@ -893,11 +893,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
       }
 
-      int filterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
-      Predicate<KeyEntry> filterPredicate = filterEntries(filter);
+      Predicate<KeyEntry> paramFilterPredicate = filterEntries(filter);
+      final int filterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
       if (filterDepth > 0) {
-        filterPredicate = filterPredicate.and(e -> e.getKey().elements().size() >= filterDepth);
+        paramFilterPredicate =
+            paramFilterPredicate.and(e -> e.getKey().elements().size() >= filterDepth);
       }
+      final Predicate<KeyEntry> filterPredicate = paramFilterPredicate;
 
       try (PaginationIterator<KeyEntry> entries =
           getStore()
@@ -917,6 +919,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                 entries, super::startAccessCheck, getServerConfig().accessChecksBatchSize()) {
               @Override
               protected Set<Check> checksForEntry(KeyEntry entry) {
+                if (!filterPredicate.test(entry)) {
+                  return Collections.emptySet();
+                }
                 return singleton(canReadContentKey(refWithHash.getValue(), entry.getKey()));
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
