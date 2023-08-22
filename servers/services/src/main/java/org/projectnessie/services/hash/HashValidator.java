@@ -18,6 +18,7 @@ package org.projectnessie.services.hash;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
@@ -27,22 +28,22 @@ public final class HashValidator {
 
   public static final HashValidator DEFAULT = new HashValidator();
 
-  private final String refName;
-  private final String hashName;
+  private final String refDescription;
+  private final String hashDescription;
 
-  private HashValidation validation = (namedRef, parsed) -> {};
+  private BiConsumer<NamedRef, ParsedHash> validator = (namedRef, parsed) -> {};
 
   public HashValidator() {
     this("Hash");
   }
 
-  public HashValidator(String hashName) {
-    this("Reference", hashName);
+  public HashValidator(String hashDescription) {
+    this("Reference", hashDescription);
   }
 
-  public HashValidator(String refName, String hashName) {
-    this.refName = refName;
-    this.hashName = hashName;
+  public HashValidator(String refDescription, String hashDescription) {
+    this.refDescription = refDescription;
+    this.hashDescription = hashDescription;
   }
 
   /**
@@ -53,27 +54,40 @@ public final class HashValidator {
    */
   public void validate(
       NamedRef namedRef, @Nullable @jakarta.annotation.Nullable ParsedHash parsed) {
-    validation.validate(namedRef, parsed);
+    validator.accept(namedRef, parsed);
   }
 
   /** Validates that a named ref is a branch. */
   @CanIgnoreReturnValue
   public HashValidator refMustBeBranch() {
-    validation = validation.and(HashValidation.refMustBeBranch(refName));
+    validator =
+        validator.andThen(
+            (namedRef, parsed) ->
+                checkArgument(
+                    namedRef instanceof BranchName, "%s must be a branch.", refDescription));
     return this;
   }
 
   /** Validates that a named ref is a branch or a tag. */
   @CanIgnoreReturnValue
   public HashValidator refMustBeBranchOrTag() {
-    validation = validation.and(HashValidation.refMustBeBranchOrTag(refName));
+    validator =
+        validator.andThen(
+            (namedRef, parsed) ->
+                checkArgument(
+                    namedRef instanceof BranchName || namedRef instanceof TagName,
+                    "%s must be a branch or a tag.",
+                    refDescription));
     return this;
   }
 
   /** Validates that a hash has been provided (absolute or relative). */
   @CanIgnoreReturnValue
   public HashValidator hashMustBePresent() {
-    validation = validation.and(HashValidation.hashMustBePresent(hashName));
+    validator =
+        validator.andThen(
+            (namedRef, parsed) ->
+                checkArgument(parsed != null, "%s must be provided.", hashDescription));
     return this;
   }
 
@@ -84,55 +98,13 @@ public final class HashValidator {
    */
   @CanIgnoreReturnValue
   public HashValidator hashMustNotBeAmbiguous() {
-    validation = validation.and(HashValidation.hashMustNotBeAmbiguous(hashName));
+    validator =
+        validator.andThen(
+            (namedRef, parsed) ->
+                checkArgument(
+                    parsed == null || parsed.getAbsolutePart().isPresent(),
+                    "%s must contain a starting commit ID.",
+                    hashDescription));
     return this;
-  }
-
-  @FunctionalInterface
-  private interface HashValidation {
-
-    static HashValidation refMustBeBranch(String refName) {
-      return (namedRef, parsed) ->
-          checkArgument(namedRef instanceof BranchName, "%s must be a branch.", refName);
-    }
-
-    static HashValidation refMustBeBranchOrTag(String refName) {
-      return (namedRef, parsed) ->
-          checkArgument(
-              namedRef instanceof BranchName || namedRef instanceof TagName,
-              "%s must be a branch or a tag.",
-              refName);
-    }
-
-    static HashValidation hashMustBePresent(String hashName) {
-      return (namedRef, parsed) -> checkArgument(parsed != null, "%s must be provided.", hashName);
-    }
-
-    static HashValidation hashMustNotBeAmbiguous(String hashName) {
-      return (namedRef, parsed) ->
-          checkArgument(
-              parsed == null || parsed.getAbsolutePart().isPresent(),
-              "%s must contain a starting commit ID.",
-              hashName);
-    }
-
-    /**
-     * Validates the provided ref and hash.
-     *
-     * @param namedRef the namedRef, required.
-     * @param parsed the parsed hash, or {@code null} if no hash was provided
-     */
-    void validate(NamedRef namedRef, @Nullable @jakarta.annotation.Nullable ParsedHash parsed);
-
-    /**
-     * Returns a new {@link HashValidator} that validates against both {@code this} and {@code
-     * other}.
-     */
-    default HashValidation and(HashValidation other) {
-      return (namedRef, parsed) -> {
-        validate(namedRef, parsed);
-        other.validate(namedRef, parsed);
-      };
-    }
   }
 }
