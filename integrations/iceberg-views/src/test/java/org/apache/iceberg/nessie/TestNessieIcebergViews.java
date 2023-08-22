@@ -83,7 +83,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
   public void beforeEach() throws Exception {
     try {
       api.commitMultipleOperations()
-          .branchName(branch)
+          .branch(reference)
           .commitMeta(fromMessage(CREATE_REQUIRED_NAMESPACES))
           .operation(Put.of(ContentKey.of("db"), Namespace.of("db")))
           .operation(Put.of(ContentKey.of("nessie"), Namespace.of("nessie")))

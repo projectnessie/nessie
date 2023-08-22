@@ -56,9 +56,9 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 @NessieBackend(InmemoryBackendTestFactory.class)
 public class BaseIcebergTest {
 
-  @NessiePersist static Persist perssit;
+  @NessiePersist static Persist persist;
 
-  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> perssit);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 
   @TempDir public Path temp;
 
@@ -66,6 +66,7 @@ public class BaseIcebergTest {
   protected NessieApiV1 api;
   protected Configuration hadoopConfig;
   protected final String branch;
+  protected Branch reference;
   protected String uri;
 
   public BaseIcebergTest(String branch) {
@@ -87,7 +88,9 @@ public class BaseIcebergTest {
                 throw new RuntimeException(e);
               }
             });
-    api.createReference().reference(Branch.of(branch, null)).create();
+    reference =
+        (Branch)
+            api.createReference().reference(Branch.of(branch, defaultBranch.getHash())).create();
   }
 
   @BeforeEach

@@ -47,7 +47,6 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.Reference;
 import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
@@ -190,29 +189,32 @@ public class TestCreateMissingNamespaces {
 
   protected void prepareRoundtrip() throws Exception {
     Branch defaultBranch = nessieApi.getDefaultBranch();
-    Reference branch1 =
-        nessieApi
-            .createReference()
-            .sourceRefName(defaultBranch.getName())
-            .reference(Branch.of("branch1", defaultBranch.getHash()))
-            .create();
-    Reference branch2 =
-        nessieApi
-            .createReference()
-            .sourceRefName(defaultBranch.getName())
-            .reference(Branch.of("branch2", defaultBranch.getHash()))
-            .create();
-    Reference branch3 =
-        nessieApi
-            .createReference()
-            .sourceRefName(defaultBranch.getName())
-            .reference(Branch.of("branch3", defaultBranch.getHash()))
-            .create();
+    Branch branch1 =
+        (Branch)
+            nessieApi
+                .createReference()
+                .sourceRefName(defaultBranch.getName())
+                .reference(Branch.of("branch1", defaultBranch.getHash()))
+                .create();
+    Branch branch2 =
+        (Branch)
+            nessieApi
+                .createReference()
+                .sourceRefName(defaultBranch.getName())
+                .reference(Branch.of("branch2", defaultBranch.getHash()))
+                .create();
+    Branch branch3 =
+        (Branch)
+            nessieApi
+                .createReference()
+                .sourceRefName(defaultBranch.getName())
+                .reference(Branch.of("branch3", defaultBranch.getHash()))
+                .create();
 
     nessieApi
         .commitMultipleOperations()
         .commitMeta(fromMessage("foo"))
-        .branchName(branch1.getName())
+        .branch(branch1)
         .operation(Put.of(ContentKey.of("a", "b", "Table"), IcebergTable.of("meta1", 1, 2, 3, 4)))
         .operation(Put.of(ContentKey.of("a", "b", "Data"), IcebergTable.of("meta2", 1, 2, 3, 4)))
         .operation(Put.of(ContentKey.of("Data"), IcebergTable.of("meta3", 1, 2, 3, 4)))
@@ -222,14 +224,14 @@ public class TestCreateMissingNamespaces {
     nessieApi
         .commitMultipleOperations()
         .commitMeta(fromMessage("foo"))
-        .branchName(branch2.getName())
+        .branch(branch2)
         .operation(Put.of(ContentKey.of("x", "y", "Table"), IcebergTable.of("meta1", 1, 2, 3, 4)))
         .commit();
 
     nessieApi
         .commitMultipleOperations()
         .commitMeta(fromMessage("foo"))
-        .branchName(branch3.getName())
+        .branch(branch3)
         .operation(Put.of(ContentKey.of("Table"), IcebergTable.of("meta1", 1, 2, 3, 4)))
         .commit();
   }
@@ -269,17 +271,19 @@ public class TestCreateMissingNamespaces {
   @Test
   public void testCollectMissingNamespaceKeys() throws Exception {
     Branch defaultBranch = nessieApi.getDefaultBranch();
-    nessieApi
-        .createReference()
-        .sourceRefName(defaultBranch.getName())
-        .reference(Branch.of("branch", defaultBranch.getHash()))
-        .create();
+    Branch branch =
+        (Branch)
+            nessieApi
+                .createReference()
+                .sourceRefName(defaultBranch.getName())
+                .reference(Branch.of("branch", defaultBranch.getHash()))
+                .create();
 
     Branch head =
         nessieApi
             .commitMultipleOperations()
             .commitMeta(fromMessage("foo"))
-            .branchName("branch")
+            .branch(branch)
             .operation(
                 Put.of(ContentKey.of("a", "b", "Table"), IcebergTable.of("meta1", 1, 2, 3, 4)))
             .operation(
