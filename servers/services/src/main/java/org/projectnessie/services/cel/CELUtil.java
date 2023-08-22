@@ -171,13 +171,14 @@ public final class CELUtil {
     if (model instanceof Operation) {
       return new OperationForCelImpl((Operation) model);
     }
-    if (model instanceof KeyEntry) {
-      return new KeyEntryForCelImpl((KeyEntry) model);
-    }
     if (model instanceof ContentKey) {
       return new KeyForCelImpl((ContentKey) model);
     }
     return model;
+  }
+
+  public static Object forCel(ContentKey key, Content.Type type) {
+    return new KeyEntryForCelImpl(key, type);
   }
 
   private static class KeyForCelImpl extends AbstractKeyedEntity {
@@ -198,26 +199,33 @@ public final class CELUtil {
     }
   }
 
+  /**
+   * the class does not wrap a {@link KeyEntry} because we need to be able to evaluate {@link
+   * java.util.function.BiPredicate}&lt;ContentKey, Content.Type&gt; as early as possible to avoid
+   * redundant work.
+   */
   private static class KeyEntryForCelImpl extends AbstractKeyedEntity implements KeyEntryForCel {
-    private final KeyEntry entry;
+    private final ContentKey key;
+    private final Content.Type type;
 
-    private KeyEntryForCelImpl(KeyEntry entry) {
-      this.entry = entry;
+    private KeyEntryForCelImpl(ContentKey key, Content.Type type) {
+      this.key = key;
+      this.type = type;
     }
 
     @Override
     protected ContentKey key() {
-      return entry.getKey().contentKey();
+      return key;
     }
 
     @Override
     public String getContentType() {
-      return entry.getKey().type().name();
+      return type.name();
     }
 
     @Override
     public String toString() {
-      return entry.toString();
+      return "KeyEntryForCelImpl{" + "key=" + key + ", type=" + type + "}";
     }
   }
 

@@ -36,8 +36,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -556,8 +556,15 @@ public class PersistVersionStore implements VersionStore {
         "Key ranges not supported by the storage model in use");
     Hash hash = refToHash(ref);
 
+    BiPredicate<ContentKey, Content.Type> contentKeyPredicate =
+        keyRestrictions.contentKeyPredicate();
+    KeyFilterPredicate keyPred =
+        contentKeyPredicate != null
+            ? (k, c, t) -> contentKeyPredicate.test(k, contentTypeForPayload(t))
+            : KeyFilterPredicate.ALLOW_ALL;
+
     @SuppressWarnings("MustBeClosedChecker")
-    Stream<KeyListEntry> source = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL);
+    Stream<KeyListEntry> source = databaseAdapter.keys(hash, keyPred);
 
     return new FilteringPaginationIterator<KeyListEntry, KeyEntry>(
         source.iterator(),
@@ -648,12 +655,15 @@ public class PersistVersionStore implements VersionStore {
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
 
-    @SuppressWarnings("MustBeClosedChecker")
-    Stream<Difference> source =
-        databaseAdapter.diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL);
+    BiPredicate<ContentKey, Content.Type> contentKeyPredicate =
+        keyRestrictions.contentKeyPredicate();
+    KeyFilterPredicate keyPred =
+        contentKeyPredicate != null
+            ? (k, c, t) -> contentKeyPredicate.test(k, contentTypeForPayload(t))
+            : KeyFilterPredicate.ALLOW_ALL;
 
-    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
-    Predicate<ContentKey> keyPred = contentKeyPredicate != null ? contentKeyPredicate : x -> true;
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<Difference> source = databaseAdapter.diff(fromHash, toHash, keyPred);
 
     return new FilteringPaginationIterator<Difference, Diff>(
         source.iterator(),
@@ -685,8 +695,7 @@ public class PersistVersionStore implements VersionStore {
                   : null;
           return Diff.of(
               fromKey, toKey, Optional.ofNullable(fromContent), Optional.ofNullable(toContent));
-        },
-        d -> keyPred.test(d.getKey())) {
+        }) {
       @Override
       protected String computeTokenForCurrent() {
         throw new IllegalArgumentException("Paging not supported by the storage model in use");

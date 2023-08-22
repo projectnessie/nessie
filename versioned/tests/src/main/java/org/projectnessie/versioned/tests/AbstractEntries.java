@@ -151,7 +151,7 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
             keysAsList(
                 initialCommit,
                 KeyRestrictions.builder()
-                    .contentKeyPredicate(k -> k.toPathString().startsWith(key2.toPathString()))
+                    .contentKeyPredicate((k, t) -> k.toPathString().startsWith(key2.toPathString()))
                     .build()))
         .map(e -> e.getKey().contentKey())
         .containsExactlyInAnyOrder(key2, key2a, key2b, key2c, key2d, key23, key23a, key23b);
