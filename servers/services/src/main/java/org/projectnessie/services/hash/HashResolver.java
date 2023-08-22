@@ -117,7 +117,7 @@ public final class HashResolver {
       ResolvedHash head,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       HashValidator validator)
-      throws ReferenceNotFoundException {
+      throws NessieReferenceNotFoundException {
     return resolveHashOnRef(head.getNamedRef(), head.getHead().orElse(null), hashOnRef, validator);
   }
 
@@ -135,7 +135,7 @@ public final class HashResolver {
       @Nullable @jakarta.annotation.Nullable Hash currentHead,
       @Nullable @jakarta.annotation.Nullable String hashOnRef,
       HashValidator validator)
-      throws ReferenceNotFoundException {
+      throws NessieReferenceNotFoundException {
     checkState(currentHead != null || hashOnRef != null);
     Optional<ParsedHash> parsed = ParsedHash.parse(hashOnRef, store.noAncestorHash());
     if (ref == DetachedRef.INSTANCE) {
@@ -150,7 +150,12 @@ public final class HashResolver {
       // Resolve the hash against DETACHED because we are only interested in
       // resolving the hash, not checking if it is on the branch. This will
       // be done later on.
-      resolved = store.hashOnReference(DetachedRef.INSTANCE, Optional.of(resolved), relativeParts);
+      try {
+        resolved =
+            store.hashOnReference(DetachedRef.INSTANCE, Optional.of(resolved), relativeParts);
+      } catch (ReferenceNotFoundException e) {
+        throw new NessieReferenceNotFoundException(e.getMessage(), e);
+      }
     }
     return ResolvedHash.of(ref, Optional.ofNullable(currentHead), resolved);
   }
