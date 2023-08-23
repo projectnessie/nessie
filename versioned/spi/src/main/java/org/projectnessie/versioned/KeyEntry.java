@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.common.base.Preconditions;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
@@ -40,6 +41,8 @@ public interface KeyEntry {
 
   static KeyEntry of(
       IdentifiedContentKey key, @NotNull @jakarta.validation.constraints.NotNull Content content) {
+    Preconditions.checkArgument(key.type().equals(content.getType()));
+    Preconditions.checkArgument(key.lastElement().contentId().equals(content.getId()));
     return builder().key(key).content(content).build();
   }
 }

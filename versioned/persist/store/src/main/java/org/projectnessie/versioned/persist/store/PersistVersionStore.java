@@ -582,10 +582,7 @@ public class PersistVersionStore implements VersionStore {
                       .get(entry.getKey());
               if (cs != null) {
                 ContentResult content = mapContentAndState(entry.getKey(), cs);
-                return KeyEntry.of(
-                    identifiedContentKeyFromContent(
-                        entry.getKey(), content.content(), elements -> null),
-                    content.content());
+                return KeyEntry.of(keyEntry.getKey(), content.content());
               }
             } catch (ReferenceNotFoundException e) {
               throw new IllegalStateException("Reference no longer exists", e);

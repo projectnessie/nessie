@@ -893,20 +893,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
       }
 
-      Predicate<KeyEntry> paramFilterPredicate = filterEntries(filter);
-      final int filterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
-      if (filterDepth > 0) {
-        paramFilterPredicate =
-            paramFilterPredicate.and(e -> e.getKey().elements().size() >= filterDepth);
+      final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
+      if (namespaceFilterDepth > 0) {
+        Predicate<ContentKey> depthFilter = e -> e.getElementCount() >= namespaceFilterDepth;
+        contentKeyPredicate =
+            contentKeyPredicate == null ? depthFilter : contentKeyPredicate.and(depthFilter);
       }
-      final Predicate<KeyEntry> filterPredicate = paramFilterPredicate;
+      final Predicate<KeyEntry> filterPredicate = filterEntries(filter);
+      final Predicate<KeyEntry> withContentPredicate = withContent ? filterPredicate : null;
 
       try (PaginationIterator<KeyEntry> entries =
           getStore()
               .getKeys(
                   refWithHash.getHash(),
                   pagingToken,
-                  withContent ? filterPredicate : null,
+                  withContentPredicate,
                   VersionStore.KeyRestrictions.builder()
                       .minKey(minKey)
                       .maxKey(maxKey)
@@ -926,7 +927,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
 
-        if (filterDepth > 0) {
+        if (namespaceFilterDepth > 0) {
           Set<ContentKey> seen = new HashSet<>();
           while (authz.hasNext()) {
             KeyEntry key = authz.next();
@@ -944,7 +945,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                         key.getKey().type(),
                         key.getKey().lastElement().contentId());
 
-            entry = maybeTruncateToDepth(entry, filterDepth);
+            entry = maybeTruncateToDepth(entry, namespaceFilterDepth);
 
             // add implicit namespace entries only once (single parent of multiple real entries)
             if (seen.add(entry.getName())) {

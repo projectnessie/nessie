@@ -617,7 +617,7 @@ public class VersionStoreImpl implements VersionStore {
                     contentMapping.fetchContent(
                         requireNonNull(commitOp.value(), "Required value pointer is null"));
               }
-              return KeyEntry.of(buildIdentifiedKey(key, index, content, x -> null), content);
+              return KeyEntry.of(keyEntry.getKey(), content);
             }
             return keyEntry;
           } catch (ObjNotFoundException e) {
