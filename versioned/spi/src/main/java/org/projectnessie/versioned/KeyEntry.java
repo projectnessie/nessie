@@ -41,8 +41,16 @@ public interface KeyEntry {
 
   static KeyEntry of(
       IdentifiedContentKey key, @NotNull @jakarta.validation.constraints.NotNull Content content) {
-    Preconditions.checkArgument(key.type().equals(content.getType()));
-    Preconditions.checkArgument(key.lastElement().contentId().equals(content.getId()));
+    Preconditions.checkArgument(
+        key.type().equals(content.getType()),
+        "Content type from key '%s' does not match actual type of content: %s",
+        key.type(),
+        content);
+    Preconditions.checkArgument(
+        key.lastElement().contentId().equals(content.getId()),
+        "Content id from key '%s' does not match actual id of content: %s",
+        key,
+        content);
     return builder().key(key).content(content).build();
   }
 }

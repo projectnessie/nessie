@@ -211,12 +211,12 @@ public class ITExportImportPersist {
         persist,
         "main",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+        IcebergTable.of("meta", 42, 43, 44, 45, contentIdStr));
     checkValues(
         persist,
         "branch-foo",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta2", 43, 43, 44, 45, "id123"));
+        IcebergTable.of("meta2", 43, 43, 44, 45, contentIdStr));
   }
 
   @Test
@@ -257,12 +257,12 @@ public class ITExportImportPersist {
         persist,
         "main",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+        IcebergTable.of("meta", 42, 43, 44, 45, contentIdStr));
     checkValues(
         persist,
         "branch-foo",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta2", 43, 43, 44, 45, "id123"));
+        IcebergTable.of("meta2", 43, 43, 44, 45, contentIdStr));
   }
 
   @Test
@@ -300,7 +300,7 @@ public class ITExportImportPersist {
         persist,
         "main",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+        IcebergTable.of("meta", 42, 43, 44, 45, contentIdStr));
   }
 
   @Test
@@ -333,7 +333,7 @@ public class ITExportImportPersist {
         persist,
         "main",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta3", 44, 43, 44, 45, "id123"));
+        IcebergTable.of("meta3", 44, 43, 44, 45, contentIdStr));
   }
 
   private void checkValues(Persist persist, String ref, ContentKey key, Content value)
@@ -347,6 +347,7 @@ public class ITExportImportPersist {
   }
 
   private final UUID contentId = UUID.randomUUID();
+  private final String contentIdStr = contentId.toString();
 
   private void populateRepository(Persist persist) throws Exception {
     ReferenceLogic referenceLogic = referenceLogic(persist);
@@ -357,12 +358,12 @@ public class ITExportImportPersist {
     StoreWorker storeWorker = DefaultStoreWorker.instance();
     int payload = payloadForContent(ICEBERG_TABLE);
     ByteString contentMain =
-        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, contentIdStr));
     ByteString contentFoo =
-        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta2", 43, 43, 44, 45, "id123"));
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta2", 43, 43, 44, 45, contentIdStr));
 
-    ContentValueObj valueMain = contentValue(contentId.toString(), payload, contentMain);
-    ContentValueObj valueFoo = contentValue(contentId.toString(), payload, contentFoo);
+    ContentValueObj valueMain = contentValue(contentIdStr, payload, contentMain);
+    ContentValueObj valueFoo = contentValue(contentIdStr, payload, contentFoo);
 
     soft.assertThat(persist.storeObj(valueMain)).isTrue();
     StoreKey key = keyToStoreKey(ContentKey.of("namespace123", "table123"));
@@ -407,12 +408,12 @@ public class ITExportImportPersist {
     StoreWorker storeWorker = DefaultStoreWorker.instance();
     int payload = payloadForContent(ICEBERG_TABLE);
     ByteString contentTemp =
-        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta3", 44, 43, 44, 45, "id123"));
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta3", 44, 43, 44, 45, contentIdStr));
     ByteString contentMain =
-        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, contentIdStr));
 
-    ContentValueObj valueMain = contentValue(contentId.toString(), payload, contentMain);
-    ContentValueObj valueTemp = contentValue(contentId.toString(), payload, contentTemp);
+    ContentValueObj valueMain = contentValue(contentIdStr, payload, contentMain);
+    ContentValueObj valueTemp = contentValue(contentIdStr, payload, contentTemp);
 
     soft.assertThat(persist.storeObj(valueTemp)).isTrue();
 
