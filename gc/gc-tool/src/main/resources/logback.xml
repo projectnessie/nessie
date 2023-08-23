@@ -24,7 +24,7 @@
     </encoder>
   </appender>
   <root>
-    <level value="\${log.level.console:-INFO}"/>
+    <level value="${log.level.console:-INFO}"/>
     <appender-ref ref="console"/>
   </root>
 </configuration>
