@@ -391,6 +391,20 @@ public abstract class AbstractPersistenceSpi {
   }
 
   @Test
+  void identifyDuplicateContentReferences() throws Exception {
+    LiveSetVals vals1 = new LiveSetVals();
+    vals1.startIdentify();
+    soft.assertThat(persistenceSpi.addIdentifiedLiveContent(vals1.id, vals1.refs.stream()))
+        .isEqualTo(vals1.refs.size());
+    for (ContentReference ref : vals1.refs) {
+      soft.assertThat(persistenceSpi.addIdentifiedLiveContent(vals1.id, Stream.of(ref)))
+          .isEqualTo(0L);
+    }
+    soft.assertThat(persistenceSpi.addIdentifiedLiveContent(vals1.id, vals1.refs.stream()))
+        .isEqualTo(0L);
+  }
+
+  @Test
   void identifiedContents() throws Exception {
     LiveSetVals vals1 = new LiveSetVals();
     vals1.startIdentify();

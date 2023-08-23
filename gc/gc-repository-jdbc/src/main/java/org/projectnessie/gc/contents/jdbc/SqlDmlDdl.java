@@ -72,7 +72,8 @@ final class SqlDmlDdl {
   @Language("SQL")
   static final String INSERT_FILE_DELETIONS =
       "INSERT INTO gc_file_deletions \n"
-          + "    (live_set_id, base_uri, path_uri, modification_timestamp) VALUES (?, ?, ?, ?)";
+          + "    (live_set_id, base_uri, path_uri, modification_timestamp) VALUES (?, ?, ?, ?) \n"
+          + "    ON CONFLICT DO NOTHING";
 
   @Language("SQL")
   static final String SELECT_FILE_DELETIONS =
@@ -109,7 +110,8 @@ final class SqlDmlDdl {
   @Language("SQL")
   static final String INSERT_CONTENT_LOCATION =
       "INSERT INTO gc_live_set_content_locations \n"
-          + "    (live_set_id, content_id, base_location) VALUES (?, ?, ?)";
+          + "    (live_set_id, content_id, base_location) VALUES (?, ?, ?) \n"
+          + "    ON CONFLICT DO NOTHING";
 
   @Language("SQL")
   static final String SELECT_CONTENT_LOCATION =
@@ -158,7 +160,8 @@ final class SqlDmlDdl {
   static final String ADD_CONTENT =
       "INSERT INTO gc_live_set_contents \n"
           + "    (live_set_id, content_id, commit_id, content_key, content_type, metadata_location, snapshot_id) \n"
-          + "    VALUES (?, ?, ?, ?, ?, ?, ?)";
+          + "    VALUES (?, ?, ?, ?, ?, ?, ?) \n"
+          + "    ON CONFLICT DO NOTHING";
 
   @Language("SQL")
   static final String SELECT_CONTENT_REFERENCES =

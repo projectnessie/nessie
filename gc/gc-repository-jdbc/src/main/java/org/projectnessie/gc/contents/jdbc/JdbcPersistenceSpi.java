@@ -234,14 +234,9 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
               throw new UnsupportedOperationException(
                   "Unsupported content type " + ref.contentType());
             }
-            try {
-              // TODO add batch updates
-              stmt.executeUpdate();
+            // TODO add batch updates
+            if (stmt.executeUpdate() != 0) {
               count++;
-            } catch (SQLException e) {
-              if (!isIntegrityConstraintViolation(e)) {
-                throw e;
-              }
             }
           }
           return count;
@@ -271,13 +266,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
           stmt.setString(2, contentId);
           for (URI baseLocation : baseLocations) {
             stmt.setString(3, baseLocation.toString());
-            try {
-              stmt.executeUpdate();
-            } catch (SQLException e) {
-              if (!isIntegrityConstraintViolation(e)) {
-                throw e;
-              }
-            }
+            stmt.executeUpdate();
           }
           return null;
         },
@@ -378,13 +367,8 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
             stmt.setString(2, f.base().toString());
             stmt.setString(3, f.path().toString());
             stmt.setLong(4, f.modificationTimeMillisEpoch());
-            try {
-              stmt.executeUpdate();
+            if (stmt.executeUpdate() != 0) {
               count++;
-            } catch (SQLException e) {
-              if (!isIntegrityConstraintViolation(e)) {
-                throw e;
-              }
             }
           }
           return count;

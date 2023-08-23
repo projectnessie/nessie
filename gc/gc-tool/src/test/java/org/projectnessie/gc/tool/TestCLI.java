@@ -63,7 +63,7 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestCLI {
 
-  public static final String JDBC_URL = "jdbc:h2:mem:nessie_gc;DB_CLOSE_DELAY=-1";
+  public static final String JDBC_URL = "jdbc:h2:mem:nessie_gc;MODE=PostgreSQL;DB_CLOSE_DELAY=-1";
   @NessiePersist static Persist perssit;
 
   @InjectSoftAssertions private SoftAssertions soft;
