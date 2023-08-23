@@ -112,17 +112,17 @@ public class TracingAssertions {
             // result collector (parent span)
             "nessie.results",
             // collector -> service (Vert.x)
-            "nessie.events.service send",
+            "nessie.events.service publish",
             "nessie.events.service receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.COMMIT send",
+            "nessie.events.subscribers.COMMIT publish",
             "nessie.events.subscribers.COMMIT receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.CONTENT_STORED send",
+            "nessie.events.subscribers.CONTENT_STORED publish",
             "nessie.events.subscribers.CONTENT_STORED receive",
             "nessie.events.subscribers.CONTENT_STORED receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.CONTENT_REMOVED send",
+            "nessie.events.subscribers.CONTENT_REMOVED publish",
             "nessie.events.subscribers.CONTENT_REMOVED receive",
             "nessie.events.subscribers.CONTENT_REMOVED receive",
             // delivery to subscriber 1
@@ -172,20 +172,20 @@ public class TracingAssertions {
             // result collector (parent span)
             "nessie.results",
             // collector -> service (Vert.x)
-            "nessie.events.service send",
+            "nessie.events.service publish",
             "nessie.events.service receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.MERGE send",
+            "nessie.events.subscribers.MERGE publish",
             "nessie.events.subscribers.MERGE receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.COMMIT send",
+            "nessie.events.subscribers.COMMIT publish",
             "nessie.events.subscribers.COMMIT receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.CONTENT_STORED send",
+            "nessie.events.subscribers.CONTENT_STORED publish",
             "nessie.events.subscribers.CONTENT_STORED receive",
             "nessie.events.subscribers.CONTENT_STORED receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.CONTENT_REMOVED send",
+            "nessie.events.subscribers.CONTENT_REMOVED publish",
             "nessie.events.subscribers.CONTENT_REMOVED receive",
             "nessie.events.subscribers.CONTENT_REMOVED receive",
             // delivery to subscriber 1
@@ -239,20 +239,20 @@ public class TracingAssertions {
             // result collector (parent span)
             "nessie.results",
             // collector -> service (Vert.x)
-            "nessie.events.service send",
+            "nessie.events.service publish",
             "nessie.events.service receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.TRANSPLANT send",
+            "nessie.events.subscribers.TRANSPLANT publish",
             "nessie.events.subscribers.TRANSPLANT receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.COMMIT send",
+            "nessie.events.subscribers.COMMIT publish",
             "nessie.events.subscribers.COMMIT receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.CONTENT_STORED send",
+            "nessie.events.subscribers.CONTENT_STORED publish",
             "nessie.events.subscribers.CONTENT_STORED receive",
             "nessie.events.subscribers.CONTENT_STORED receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.CONTENT_REMOVED send",
+            "nessie.events.subscribers.CONTENT_REMOVED publish",
             "nessie.events.subscribers.CONTENT_REMOVED receive",
             "nessie.events.subscribers.CONTENT_REMOVED receive",
             // delivery to subscriber 1
@@ -307,10 +307,10 @@ public class TracingAssertions {
             // result collector (parent span)
             "nessie.results",
             // collector -> service (Vert.x)
-            "nessie.events.service send",
+            "nessie.events.service publish",
             "nessie.events.service receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.REFERENCE_CREATED send",
+            "nessie.events.subscribers.REFERENCE_CREATED publish",
             "nessie.events.subscribers.REFERENCE_CREATED receive",
             "nessie.events.subscribers.REFERENCE_CREATED receive",
             // delivery to subscriber 1
@@ -340,10 +340,10 @@ public class TracingAssertions {
             // result collector (parent span)
             "nessie.results",
             // collector -> service (Vert.x)
-            "nessie.events.service send",
+            "nessie.events.service publish",
             "nessie.events.service receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.REFERENCE_DELETED send",
+            "nessie.events.subscribers.REFERENCE_DELETED publish",
             "nessie.events.subscribers.REFERENCE_DELETED receive",
             "nessie.events.subscribers.REFERENCE_DELETED receive",
             // delivery to subscriber 1
@@ -380,10 +380,10 @@ public class TracingAssertions {
             // result collector (parent span)
             "nessie.results",
             // collector -> service (Vert.x)
-            "nessie.events.service send",
+            "nessie.events.service publish",
             "nessie.events.service receive",
             // service -> subscriber handlers (Vert.x)
-            "nessie.events.subscribers.REFERENCE_UPDATED send",
+            "nessie.events.subscribers.REFERENCE_UPDATED publish",
             "nessie.events.subscribers.REFERENCE_UPDATED receive",
             "nessie.events.subscribers.REFERENCE_UPDATED receive",
             // delivery to subscriber 1
