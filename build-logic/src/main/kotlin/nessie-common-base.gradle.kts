@@ -36,6 +36,7 @@ sourceSets?.withType(SourceSet::class.java)?.configureEach {
     if ("main" != sourceSet.name) {
       // No Jandex for non-main
       jandexBuildAction.set(JandexBuildAction.NONE)
+      enabled = false
     }
     if (!project.plugins.hasPlugin("io.quarkus")) {
       dependsOn(tasks.named(sourceSet.classesTaskName))
