@@ -20,6 +20,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Changes
 - Java client API to assign/delete reference operations without specifying a concrete reference type
   (no change to REST API).
+- Creating and assigning references now requires a target hash to be specified.
 
 ### Deprecations
 

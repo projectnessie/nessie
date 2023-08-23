@@ -50,7 +50,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     assertThat(
             api()
                 .createReference()
-                .reference(Branch.of("testAdminUserIsAllowedAllBranch", null))
+                .reference(
+                    Branch.of(
+                        "testAdminUserIsAllowedAllBranch", api().getDefaultBranch().getHash()))
                 .create()
                 .getHash())
         .isNotNull();
@@ -62,7 +64,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     assertThat(
             api()
                 .createReference()
-                .reference(Branch.of("allowedBranchForTestUser", null))
+                .reference(
+                    Branch.of("allowedBranchForTestUser", api().getDefaultBranch().getHash()))
                 .create()
                 .getHash())
         .isNotNull();
@@ -75,7 +78,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             () ->
                 api()
                     .createReference()
-                    .reference(Branch.of("disallowedBranchForTestUser", null))
+                    .reference(
+                        Branch.of(
+                            "disallowedBranchForTestUser", api().getDefaultBranch().getHash()))
                     .create())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
@@ -88,14 +93,22 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @TestSecurity(user = "admin_user")
   void testDeleteBranchAdmin() throws BaseNessieClientServerException {
     Reference branch =
-        api().createReference().reference(Branch.of("testDeleteBranchAdmin", null)).create();
+        api()
+            .createReference()
+            .reference(Branch.of("testDeleteBranchAdmin", api().getDefaultBranch().getHash()))
+            .create();
     api().deleteBranch().branch((Branch) branch).delete();
   }
 
   @Test
   @TestSecurity(user = "delete_branch_disallowed_user")
   void testDeleteBranchDisallowed() throws BaseNessieClientServerException {
-    api().createReference().reference(Branch.of("testDeleteBranchDisallowed", null)).create();
+    Branch main = api().getDefaultBranch();
+    api()
+        .createReference()
+        .reference(Branch.of("testDeleteBranchDisallowed", main.getHash()))
+        .sourceRefName(main.getName())
+        .create();
     assertThatThrownBy(
             () ->
                 api()
@@ -197,7 +210,10 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @TestSecurity(user = "admin_user")
   void testReadEntityAllowed() throws Exception {
     Reference ref =
-        api().createReference().reference(Branch.of("testReadEntityAllowed", null)).create();
+        api()
+            .createReference()
+            .reference(Branch.of("testReadEntityAllowed", api().getDefaultBranch().getHash()))
+            .create();
     ContentKey key = ContentKey.of("testKey");
     addContent((Branch) ref, Put.of(key, IcebergTable.of("test", 1, 2, 3, 4)));
     assertThat(api().getContent().refName(ref.getName()).key(key).get().get(key)).isNotNull();
@@ -229,7 +245,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     String role = "test_user2";
     ContentKey key = ContentKey.of("allowed-some");
     String branchName = "allowedBranchForTestUser2";
-    Branch branch = createBranch(Branch.of(branchName, null));
+    Branch branch = createBranch(Branch.of(branchName, api().getDefaultBranch().getHash()));
 
     api()
         .commitMultipleOperations()
@@ -252,7 +268,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCanCommitButNotDeleteEntity() throws BaseNessieClientServerException {
     String role = "test_user3";
     ContentKey key = ContentKey.of("allowed-some");
-    Branch branch = createBranch(Branch.of("allowedBranchForTestUser3", null));
+    Branch branch =
+        createBranch(Branch.of("allowedBranchForTestUser3", api().getDefaultBranch().getHash()));
 
     Branch b =
         api()
@@ -283,7 +300,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCanCommitButNotUpdateEntity() throws BaseNessieClientServerException {
     String role = "test_user4";
     ContentKey key = ContentKey.of("allowed-some");
-    Branch branch = createBranch(Branch.of("allowedBranchForTestUser4", null));
+    Branch branch =
+        createBranch(Branch.of("allowedBranchForTestUser4", api().getDefaultBranch().getHash()));
 
     assertThatThrownBy(
             () ->
@@ -305,9 +323,10 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCanReadTargetBranchDuringAssign() throws BaseNessieClientServerException {
     String branchName = "adminCanReadWhenAssigning";
     String targetBranchName = "targetBranchForAssign";
-    Branch branch = createBranch(Branch.of(branchName, null));
+    Branch main = api().getDefaultBranch();
+    Branch branch = createBranch(Branch.of(branchName, main.getHash()));
 
-    Branch targetBranch = createBranch(Branch.of(targetBranchName, null));
+    Branch targetBranch = createBranch(Branch.of(targetBranchName, main.getHash()));
 
     addContent(
         targetBranch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
@@ -348,9 +367,10 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCanReadTargetBranchDuringTransplant() throws BaseNessieClientServerException {
     String branchName = "adminCanReadWhenTransplanting";
     String targetBranchName = "targetBranchForTransplant";
-    Branch branch = createBranch(Branch.of(branchName, null));
+    Branch main = api().getDefaultBranch();
+    Branch branch = createBranch(Branch.of(branchName, main.getHash()));
 
-    Branch targetBranch = createBranch(Branch.of(targetBranchName, null));
+    Branch targetBranch = createBranch(Branch.of(targetBranchName, main.getHash()));
 
     addContent(branch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
@@ -375,9 +395,10 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCannotReadTargetBranch() throws BaseNessieClientServerException {
     String role = "user1";
     String branchName = "allowedBranchForUser1";
-    Branch branch = createBranch(Branch.of(branchName, null));
+    Branch main = api().getDefaultBranch();
+    Branch branch = createBranch(Branch.of(branchName, main.getHash()));
     String disallowedBranch = "disallowedBranchForUser1";
-    createBranch(Branch.of(disallowedBranch, null));
+    createBranch(Branch.of(disallowedBranch, main.getHash()));
 
     String errorMessage =
         String.format(

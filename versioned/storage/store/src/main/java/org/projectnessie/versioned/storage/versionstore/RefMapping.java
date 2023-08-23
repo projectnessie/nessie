@@ -184,11 +184,10 @@ public class RefMapping {
   }
 
   public static void verifyExpectedHash(
-      Hash referenceCurrentHead, NamedRef reference, Optional<Hash> expectedHead)
+      Hash referenceCurrentHead, NamedRef reference, Hash expectedHead)
       throws ReferenceConflictException {
-    if (expectedHead.isPresent() && !referenceCurrentHead.equals(expectedHead.get())) {
-      throw referenceConflictException(
-          reference, expectedHead.get(), hashToObjId(referenceCurrentHead));
+    if (!referenceCurrentHead.equals(expectedHead)) {
+      throw referenceConflictException(reference, expectedHead, hashToObjId(referenceCurrentHead));
     }
   }
 

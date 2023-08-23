@@ -198,8 +198,6 @@ public interface TreeService {
           String branchName,
       @Valid
           @jakarta.validation.Valid
-          @NotNull
-          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
@@ -247,8 +245,6 @@ public interface TreeService {
           String branchName,
       @Valid
           @jakarta.validation.Valid
-          @NotNull
-          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
@@ -267,8 +263,6 @@ public interface TreeService {
           String fromRefName,
       @Valid
           @jakarta.validation.Valid
-          @NotBlank
-          @jakarta.validation.constraints.NotBlank
           @Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
@@ -329,8 +323,6 @@ public interface TreeService {
           String branch,
       @Valid
           @jakarta.validation.Valid
-          @NotNull
-          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)

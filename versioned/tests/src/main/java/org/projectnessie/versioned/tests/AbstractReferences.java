@@ -107,7 +107,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThatThrownBy(() -> store().create(branch, Optional.of(hash)))
         .isInstanceOf(ReferenceAlreadyExistsException.class);
 
-    ReferenceDeletedResult referenceDeletedResult = store().delete(branch, Optional.of(hash));
+    ReferenceDeletedResult referenceDeletedResult = store().delete(branch, hash);
     soft.assertThat(referenceDeletedResult.getHash()).isEqualTo(hash);
     soft.assertThat(referenceDeletedResult.getNamedRef()).isEqualTo(branch);
 
@@ -117,7 +117,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
         store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
       soft.assertThat(stream(str).filter(this::filterMainBranch)).hasSize(2); // bar + baz
     }
-    soft.assertThatThrownBy(() -> store().delete(branch, Optional.of(hash)))
+    soft.assertThatThrownBy(() -> store().delete(branch, hash))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
@@ -176,7 +176,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThat(commitsList(anotherTag, false)).hasSize(1);
     soft.assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
 
-    ReferenceDeletedResult referenceDeletedResult = store().delete(tag, Optional.of(initialHash));
+    ReferenceDeletedResult referenceDeletedResult = store().delete(tag, initialHash);
     soft.assertThat(referenceDeletedResult.getHash()).isEqualTo(initialHash);
     soft.assertThat(referenceDeletedResult.getNamedRef()).isEqualTo(tag);
 
@@ -186,7 +186,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
         store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
       soft.assertThat(stream(str).filter(this::filterMainBranch)).hasSize(2); // foo + another-tag
     }
-    soft.assertThatThrownBy(() -> store().delete(tag, Optional.of(initialHash)))
+    soft.assertThatThrownBy(() -> store().delete(tag, initialHash))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 

@@ -24,6 +24,7 @@ import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -48,6 +49,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Tag;
 
 /** A set of tests specifically aimed at testing relative references in API v2. */
 public abstract class AbstractRelativeReferences {
@@ -87,6 +89,8 @@ public abstract class AbstractRelativeReferences {
          etl1          c3
                          \
          etl2             c4 -- c5
+                           |
+                          tag1
     */
     assumeTrue(outer.isNewModel());
     Branch base = outer.createBranchV2("base");
@@ -100,19 +104,20 @@ public abstract class AbstractRelativeReferences {
     Branch etl2 = outer.createBranchV2("etl2", etl1);
     etl2 = outer.commitV2(etl2, key4, table4);
     c4 = etl2.getHash();
+    outer.createTagV2("tag1", etl2);
     etl2 = outer.commitV2(etl2, key5, table5);
     c5 = etl2.getHash();
   }
 
   /**
-   * Can create a reference from a hash that is unambiguous. Expect a 200 response with the created
-   * reference.
+   * Can create a reference from a branch + unambiguous target hash. Expect a 200 response with the
+   * created reference.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void createReferenceUnambiguous() {
+  public void createReferenceFromBranchUnambiguous() {
     Reference reference =
-        expectReference(
+        expectBranch(
             rest()
                 .queryParam("name", "branch1")
                 .queryParam("type", "branch")
@@ -123,30 +128,12 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Can create a reference from a hash that is unambiguous and DETACHED. Expect a 200 response with
-   * the created reference.
+   * Cannot create a reference from a branch + ambiguous target hash (writing operation). The hash
+   * must contain a starting commit ID. Expect a BAD_REQUEST error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void createReferenceUnambiguousDetached() {
-    Reference reference =
-        expectReference(
-            rest()
-                .queryParam("name", "branch1")
-                .queryParam("type", "branch")
-                .body(Detached.of(c2 + "~1"))
-                .post("trees"));
-    assertThat(reference.getName()).isEqualTo("branch1");
-    assertThat(reference.getHash()).isEqualTo(c1);
-  }
-
-  /**
-   * Cannot create a reference from a hash that is ambiguous (writing operation). The hash must
-   * contain a starting commit ID. Expect a BAD_REQUEST error.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void createReferenceAmbiguous() {
+  public void createReferenceFromBranchAmbiguous() {
     NessieError error =
         expectError(
             rest()
@@ -158,137 +145,437 @@ public abstract class AbstractRelativeReferences {
     checkError(error, BAD_REQUEST, "Target hash must contain a starting commit ID.");
   }
 
-  /**
-   * Can assign a reference from a hash that is unambiguous, but the hash is not the current hash of
-   * the reference. Expect a REFERENCE_CONFLICT error.
-   */
+  /** Cannot create a reference from a branch + missing target hash. Expect a BAD_REQUEST error. */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceFromUnambiguousConflict() {
-    NessieError error = expectError(rest().body(etl1).put("trees/base@{hash}", c2 + "~1"), 409);
-    checkError(
-        error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'base' is not at expected hash");
-  }
-
-  /**
-   * Can assign a reference from a hash that is unambiguous, and the hash is the current HEAD of the
-   * reference. Expect a 200 response.
-   *
-   * <p>This is a convoluted case as the only way to use a relative reference that resolves to the
-   * HEAD of a branch is to use a timestamp in the future that resolves to the HEAD itself.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceFromUnambiguousSuccess() {
-    Reference base =
-        expectReference(
-            rest().body(etl1).put("trees/base@{hash}", c2 + "*" + Instant.now().plusSeconds(60)));
-    outer.soft.assertThat(base.getHash()).isEqualTo(c3);
-  }
-
-  /**
-   * Cannot assign a reference from a hash that is ambiguous (writing operation). The hash must
-   * contain a starting commit ID. Expect a BAD_REQUEST error.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceFromAmbiguous() {
-    NessieError error = expectError(rest().body(etl1).put("trees/base@{hash}", "^1"), 400);
-    checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
-  }
-
-  /**
-   * Cannot assign a reference from a DETACHED hash that is ambiguous (DETACHED requires
-   * unambiguous). The hash must contain a starting commit ID. Expect a BAD_REQUEST error.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceFromAmbiguousDetached() {
-    NessieError error = expectError(rest().body(etl1).put("trees/@~1"), 400);
-    checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
-  }
-
-  /**
-   * Can assign a reference to a hash that is unambiguous. Expect a 200 response with the updated
-   * reference.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceToUnambiguous() {
-    etl1 =
-        expectReference(
-            rest().body(Branch.of("base", c2 + "~1")).put("trees/etl1@{hash}", etl1.getHash()));
-    outer.soft.assertThat(etl1.getHash()).isEqualTo(c1);
-  }
-
-  /**
-   * Can assign a reference to a hash that is unambiguous adn DETACHED. Expect a 200 response with
-   * the updated reference.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceToUnambiguousDetached() {
-    etl1 =
-        expectReference(
-            rest().body(Detached.of(c2 + "~1")).put("trees/etl1@{hash}", etl1.getHash()));
-    outer.soft.assertThat(etl1.getHash()).isEqualTo(c1);
-  }
-
-  /**
-   * Cannot assign a reference to a hash that is ambiguous (writing operation). The hash must
-   * contain a starting commit ID. Expect a BAD_REQUEST error.
-   */
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void assignReferenceToAmbiguous() {
+  public void createReferenceFromBranchHead() {
     NessieError error =
         expectError(
             rest()
-                .body(Branch.of("base", "*2023-01-01T00:00:00.000Z"))
-                .put("trees/etl1@{hash}", etl1.getHash()),
+                .queryParam("name", "branch1")
+                .queryParam("type", "branch")
+                .body(Branch.of("etl2", null))
+                .post("trees"),
+            400);
+    checkError(error, BAD_REQUEST, "Target hash must be provided.");
+  }
+
+  /**
+   * Can create a reference from a tag + unambiguous target hash. Expect a 200 response with the
+   * created reference.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void createReferenceFromTagUnambiguous() {
+    Reference reference =
+        expectBranch(
+            rest()
+                .queryParam("name", "branch1")
+                .queryParam("type", "branch")
+                .body(Tag.of("tag1", c4 + "~1"))
+                .post("trees"));
+    assertThat(reference.getName()).isEqualTo("branch1");
+    assertThat(reference.getHash()).isEqualTo(c3);
+  }
+
+  /**
+   * Cannot create a reference from a tag + ambiguous target hash (writing operation). The hash must
+   * contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void createReferenceFromTagAmbiguous() {
+    NessieError error =
+        expectError(
+            rest()
+                .queryParam("name", "branch1")
+                .queryParam("type", "branch")
+                .body(Tag.of("tag1", "~1"))
+                .post("trees"),
+            400);
+    checkError(error, BAD_REQUEST, "Target hash must contain a starting commit ID.");
+  }
+
+  /** Cannot create a reference from a tag + missing target hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void createReferenceFromTagHead() {
+    NessieError error =
+        expectError(
+            rest()
+                .queryParam("name", "branch1")
+                .queryParam("type", "branch")
+                .body(Tag.of("tag1", null))
+                .post("trees"),
+            400);
+    checkError(error, BAD_REQUEST, "Target hash must be provided.");
+  }
+
+  /**
+   * Can create a reference from a DETACHED + unambiguous target hash. Expect a 200 response with
+   * the created reference.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void createReferenceFromDetachedUnambiguous() {
+    Reference reference =
+        expectBranch(
+            rest()
+                .queryParam("name", "branch1")
+                .queryParam("type", "branch")
+                .body(Detached.of(c2 + "~1"))
+                .post("trees"));
+    assertThat(reference.getName()).isEqualTo("branch1");
+    assertThat(reference.getHash()).isEqualTo(c1);
+  }
+
+  /**
+   * Cannot create a reference from a DETACHED + ambiguous target hash (writing operation). The hash
+   * must contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void createReferenceFromDetachedAmbiguous() {
+    NessieError error =
+        expectError(
+            rest()
+                .queryParam("name", "branch1")
+                .queryParam("type", "branch")
+                .body(Detached.of("~1"))
+                .post("trees"),
             400);
     checkError(error, BAD_REQUEST, "Target hash must contain a starting commit ID.");
   }
 
   /**
-   * Can delete a reference that is unambiguous, but the hash is not the current HEAD of the
-   * reference. Expect a REFERENCE_CONFLICT error.
+   * Can assign a reference from a branch + unambiguous expected hash, and the hash is the current
+   * HEAD of the reference. Expect a 200 response.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void deleteReferenceUnambiguousConflict() {
-    NessieError error = expectError(rest().delete("trees/base@{hash}", c2 + "~1"), 409);
+  public void assignReferenceFromBranchUnambiguous() {
+    Reference base = expectBranch(rest().body(etl1).put("trees/base@{hash}", c3 + "~1"));
+    outer.soft.assertThat(base.getHash()).isEqualTo(c3);
+  }
+
+  /**
+   * Cannot assign a reference from a branch + unambiguous expected hash, when the hash is not the
+   * current head of the reference. Expect a REFERENCE_CONFLICT error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromBranchUnambiguousNotAtExpectedHash() {
+    NessieError error = expectError(rest().body(etl1).put("trees/base@{hash}", c3 + "~2"), 409);
     checkError(
         error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'base' is not at expected hash");
   }
 
   /**
-   * Can delete a reference that is unambiguous, and the hash is the current HEAD of the reference.
-   * Expect a 200 response with the deleted reference.
-   *
-   * <p>This is a convoluted case as the only way to use a relative reference that resolves to the
-   * HEAD of a branch is to use a timestamp in the future that resolves to the HEAD itself.
+   * Cannot assign a reference from a branch + unambiguous expected hash, when the hash is not
+   * reachable from the current head of the reference. Expect a REFERENCE_CONFLICT error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  public void deleteReferenceUnambiguousSuccess() {
-    Reference base =
-        expectReference(
-            rest().delete("trees/base@{hash}", c2 + "*" + Instant.now().plusSeconds(60)));
+  public void assignReferenceFromBranchUnambiguousExpectedHashUnreachable() {
+    NessieError error = expectError(rest().body(etl1).put("trees/base@{hash}", c5 + "~1"), 409);
+    checkError(
+        error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'base' is not at expected hash");
+  }
+
+  /**
+   * Cannot assign a reference from a branch + unambiguous expected hash, when the hash does not
+   * exist. Expect a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromBranchUnambiguousExpectedHashNonExistent() {
+    NessieError error = expectError(rest().body(etl1).put("trees/base@cafebabe~1"), 404);
+    checkError(error, ErrorCode.REFERENCE_NOT_FOUND, "Commit 'cafebabe' not found");
+  }
+
+  /**
+   * Cannot assign a reference from a branch + ambiguous expected hash (writing operation). The hash
+   * must contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromBranchAmbiguous() {
+    NessieError error = expectError(rest().body(etl1).put("trees/base@{hash}", "^1"), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
+  }
+
+  /**
+   * Cannot assign a reference from a branch + missing expected hash. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromBranchHead() {
+    NessieError error = expectError(rest().body(etl1).put("trees/base"), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must be provided.");
+  }
+
+  /**
+   * Can assign a reference from a tag + unambiguous expected hash, and the hash is the current HEAD
+   * of the reference. Expect a 200 response.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromTagUnambiguous() {
+    Reference base = expectTag(rest().body(etl1).put("trees/tag1@{hash}", c5 + "~1"));
+    outer.soft.assertThat(base.getHash()).isEqualTo(c3);
+  }
+
+  /**
+   * Cannot assign a reference from a tag + unambiguous expected hash, when the hash is not the
+   * current head of the reference. Expect a REFERENCE_CONFLICT error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromTagUnambiguousNotAtExpectedHash() {
+    NessieError error = expectError(rest().body(etl1).put("trees/tag1@{hash}", c5 + "~2"), 409);
+    checkError(
+        error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'tag1' is not at expected hash");
+  }
+
+  /**
+   * Cannot assign a reference from a tag + unambiguous expected hash, when the hash is not
+   * reachable from the current head of the reference. Expect a REFERENCE_CONFLICT error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromTagUnambiguousExpectedHashUnreachable() {
+    NessieError error =
+        expectError(
+            rest()
+                .body(etl1)
+                .put(
+                    "trees/tag1@{hash}",
+                    c5 + "*" + Instant.now().plusSeconds(60) /* resolves to c5 itself */),
+            409);
+    checkError(
+        error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'tag1' is not at expected hash");
+  }
+
+  /**
+   * Cannot assign a reference from a tag + unambiguous expected hash, when the hash does not exist.
+   * Expect a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromTagUnambiguousExpectedHashNonExistent() {
+    NessieError error = expectError(rest().body(etl1).put("trees/tag1@cafebabe~1"), 404);
+    checkError(error, ErrorCode.REFERENCE_NOT_FOUND, "Commit 'cafebabe' not found");
+  }
+
+  /**
+   * Cannot assign a reference from a tag + ambiguous expected hash (writing operation). The hash
+   * must contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromTagAmbiguous() {
+    NessieError error = expectError(rest().body(etl1).put("trees/tag1@{hash}", "~1"), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
+  }
+
+  /** Cannot assign a reference from a tag + missing expected hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromTagHead() {
+    NessieError error = expectError(rest().body(etl1).put("trees/tag1"), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must be provided.");
+  }
+
+  /**
+   * Cannot assign a reference from a DETACHED ref (assign-from ref must be a branch or a tag).
+   * Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromDetachedUnambiguous() {
+    NessieError error = expectError(rest().body(etl1).put("trees/@{hash}", c2 + "~1"), 400);
+    checkError(error, BAD_REQUEST, "Assignment target must be a branch or a tag.");
+  }
+
+  /**
+   * Cannot assign a reference from a DETACHED ref (assign-from ref must be a branch or a tag).
+   * Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceFromDetachedAmbiguous() {
+    NessieError error = expectError(rest().body(etl1).put("trees/@{hash}", "~1"), 400);
+    checkError(error, BAD_REQUEST, "Assignment target must be a branch or a tag.");
+  }
+
+  /**
+   * Can assign a reference to a branch + unambiguous target hash. Expect a 200 response with the
+   * updated reference.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToBranchUnambiguous() {
+    etl1 =
+        expectBranch(
+            rest().body(Branch.of("base", c2 + "~1")).put("trees/etl1@{hash}", etl1.getHash()));
+    outer.soft.assertThat(etl1.getHash()).isEqualTo(c1);
+  }
+
+  /** Cannot assign a reference to a branch + ambiguous target hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToBranchAmbiguous() {
+    NessieError error =
+        expectError(
+            rest().body(Branch.of("etl2", "~1")).put("trees/etl1@{hash}", etl1.getHash()), 400);
+    checkError(error, BAD_REQUEST, "Target hash must contain a starting commit ID.");
+  }
+
+  /** Cannot assign a reference to a branch + missing target hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToBranchHead() {
+    NessieError error =
+        expectError(
+            rest().body(Branch.of("base", null)).put("trees/etl1@{hash}", etl1.getHash()), 400);
+    checkError(error, BAD_REQUEST, "Target hash must be provided.");
+  }
+
+  /**
+   * Can assign a reference to a tag + unambiguous target hash. Expect a 200 response with the
+   * updated reference.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToTagUnambiguous() {
+    etl1 =
+        expectBranch(
+            rest().body(Tag.of("tag1", c4 + "~1")).put("trees/etl1@{hash}", etl1.getHash()));
+    outer.soft.assertThat(etl1.getHash()).isEqualTo(c3);
+  }
+
+  /**
+   * Cannot assign a reference to a tag + ambiguous target hash (writing operation). Expect a
+   * BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToTagAmbiguous() {
+    NessieError error =
+        expectError(
+            rest().body(Tag.of("tag1", "~1")).put("trees/etl1@{hash}", etl1.getHash()), 400);
+    checkError(error, BAD_REQUEST, "Target hash must contain a starting commit ID.");
+  }
+
+  /** Cannot assign a reference to a tag + missing target hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToTagHead() {
+    NessieError error =
+        expectError(
+            rest().body(Tag.of("tag1", null)).put("trees/etl1@{hash}", etl1.getHash()), 400);
+    checkError(error, BAD_REQUEST, "Target hash must be provided.");
+  }
+
+  /**
+   * Can assign a reference to a DETACHED + unambiguous target hash. Expect a 200 response with the
+   * updated reference.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToDetachedUnambiguous() {
+    etl1 =
+        expectBranch(rest().body(Detached.of(c2 + "~1")).put("trees/etl1@{hash}", etl1.getHash()));
+    outer.soft.assertThat(etl1.getHash()).isEqualTo(c1);
+  }
+
+  /**
+   * Cannot assign a reference to a DETACHED + ambiguous target hash (writing operation). The hash
+   * must contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void assignReferenceToDetachedAmbiguous() {
+    NessieError error =
+        expectError(rest().body(Detached.of("~1")).put("trees/etl1@{hash}", etl1.getHash()), 400);
+    checkError(error, BAD_REQUEST, "Target hash must contain a starting commit ID.");
+  }
+
+  /**
+   * Can delete a reference at an unambiguous expected hash, and the hash is the current HEAD of the
+   * reference. Expect a 200 response with the deleted reference.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void deleteReferenceUnambiguous() {
+    Reference base = expectBranch(rest().delete("trees/base@{hash}", c3 + "~1"));
     outer.soft.assertThat(base.getHash()).isEqualTo(c2);
   }
 
   /**
-   * Can commit to a reference that is unambiguous, even if the hash is not the current HEAD of the
-   * reference, since there are no conflicts between the expected hash and HEAD. Expect a 200
-   * response with the add contents.
+   * Cannot delete a reference at an unambiguous expected hash, when the hash is not the current
+   * HEAD of the reference. Expect a REFERENCE_CONFLICT error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void commitUnambiguous() {
+  public void deleteReferenceUnambiguousNotAtExpectedHash() {
+    NessieError error = expectError(rest().delete("trees/base@{hash}", c3 + "~2"), 409);
+    checkError(
+        error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'base' is not at expected hash");
+  }
+
+  /**
+   * Cannot delete a reference at an unambiguous expected hash, when the hash is not reachable from
+   * the current HEAD of the reference. Expect a REFERENCE_CONFLICT error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void deleteReferenceUnambiguousExpectedHashUnreachable() {
+    NessieError error = expectError(rest().delete("trees/base@{hash}", c5 + "~1"), 409);
+    checkError(
+        error, ErrorCode.REFERENCE_CONFLICT, "Named-reference 'base' is not at expected hash");
+  }
+
+  /**
+   * Cannot delete a reference at an unambiguous expected hash, when the hash does not exist. Expect
+   * a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void deleteReferenceUnambiguousExpectedHashNonExistent() {
+    NessieError error = expectError(rest().delete("trees/base@{hash}", "cafebabe~1"), 404);
+    checkError(error, ErrorCode.REFERENCE_NOT_FOUND, "Commit 'cafebabe' not found");
+  }
+
+  /**
+   * Cannot delete a reference at an ambiguous expected hash (writing operation). The hash must
+   * contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void deleteReferenceAmbiguous() {
+    NessieError error = expectError(rest().delete("trees/base@{hash}", "^1"), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
+  }
+
+  /** Cannot delete a reference without expected hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void deleteReferenceHead() {
+    NessieError error = expectError(rest().delete("trees/base"), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must be provided.");
+  }
+
+  /**
+   * Can commit to a branch + unambiguous expected hash, and the hash is the current HEAD of the
+   * reference. Expect a 200 response with the add contents.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void commitToBranchUnambiguous() {
     Set<ContentKey> keys =
         outer
-            .prepareCommitV2("base@" + c2 + "~1", key3, table3, 2, false)
+            .prepareCommitV2("base@" + c3 + "~1", key3, table3, 2, false)
             .statusCode(200)
             .extract()
             .as(CommitResponse.class)
@@ -298,55 +585,256 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Cannot commit to a reference that is ambiguous (writing operation). The hash must contain a
-   * starting commit ID. Expect a BAD_REQUEST error.
+   * Can commit to a branch + unambiguous expected hash, even if the hash is not the current HEAD of
+   * the reference, since there are no conflicts between the expected hash and HEAD. Expect a 200
+   * response with the add contents.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void commitAmbiguous() {
+  void commitToBranchUnambiguousNotAtExpectedHash() {
+    Set<ContentKey> keys =
+        outer
+            .prepareCommitV2("base@" + c3 + "~2", key3, table3, 2, false)
+            .statusCode(200)
+            .extract()
+            .as(CommitResponse.class)
+            .toAddedContentsMap()
+            .keySet();
+    assertThat(keys).containsOnly(key3);
+  }
+
+  /**
+   * Cannot commit to a branch + unambiguous expected hash, when the hash is not reachable from the
+   * current HEAD of the reference. Expect a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void commitToBranchUnambiguousUnreachable() {
+    NessieError error =
+        expectError(outer.prepareCommitV2("base@" + c5 + "~1", key3, table3, 2, false), 404);
+    checkError(
+        error,
+        ErrorCode.REFERENCE_NOT_FOUND,
+        "Could not find commit '" + c4 + "' in reference 'base'");
+  }
+
+  /**
+   * Cannot commit to a branch + unambiguous expected hash, when the hash does not exist. Expect a
+   * REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void commitToBranchUnambiguousNonExistent() {
+    NessieError error =
+        expectError(outer.prepareCommitV2("base@cafebabe~1", key3, table3, 2, false), 404);
+    checkError(error, ErrorCode.REFERENCE_NOT_FOUND, "Commit 'cafebabe' not found");
+  }
+
+  /**
+   * Cannot commit to a branch + ambiguous expected hash (writing operation). The hash must contain
+   * a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void commitToBranchAmbiguous() {
     NessieError error =
         expectError(
             outer.prepareCommitV2("base*2023-01-01T00:00:00.000Z", key3, table3, 2, false), 400);
     checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
   }
 
+  /** Cannot commit to a branch without expected hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitToBranchHead() {
+    NessieError error = expectError(outer.prepareCommitV2("base", key3, table3, 2, false), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must be provided.");
+  }
+
   /**
-   * Can merge from a reference that is unambiguous. Expect a 200 response with the merge result.
+   * Cannot commit to a tag + unambiguous expected hash (target reference must be a branch), even if
+   * the hash is unambiguous.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void mergeFromUnambiguous() {
+  public void commitToTagUnambiguous() {
+    NessieError error =
+        expectError(outer.prepareCommitV2("tag1@" + c4 + "~1", key3, table3, 2, false), 400);
+    checkError(error, BAD_REQUEST, "Reference to commit into must be a branch.");
+  }
+
+  /** Cannot commit to a tag + ambiguous expected hash (target reference must be a branch). */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitToTagAmbiguous() {
+    NessieError error = expectError(outer.prepareCommitV2("tag1@~1", key3, table3, 2, false), 400);
+    checkError(error, BAD_REQUEST, "Reference to commit into must be a branch.");
+  }
+
+  /** Cannot commit to a tag without expected hash (target reference must be a branch). */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitToTagHead() {
+    NessieError error = expectError(outer.prepareCommitV2("tag1", key3, table3, 2, false), 400);
+    checkError(error, BAD_REQUEST, "Reference to commit into must be a branch.");
+  }
+
+  /**
+   * Cannot commit to a DETACHED ref (target reference must be a branch). Expect a BAD_REQUEST
+   * error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitToDetachedUnambiguous() {
+    NessieError error =
+        expectError(outer.prepareCommitV2("@" + c5 + "~1", key3, table3, 2, false), 400);
+    checkError(error, BAD_REQUEST, "Reference to commit into must be a branch.");
+  }
+
+  /**
+   * Cannot commit to a DETACHED ref (target reference must be a branch). Expect a BAD_REQUEST
+   * error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitToDetachedAmbiguous() {
+    NessieError error = expectError(outer.prepareCommitV2("@~1", key3, table3, 2, false), 400);
+    checkError(error, BAD_REQUEST, "Reference to commit into must be a branch.");
+  }
+
+  /**
+   * Can merge from a branch + unambiguous source hash. Expect a 200 response with the merge result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void mergeFromBranchUnambiguous() {
     MergeResponse response = expectMerge(outer.prepareMergeV2("base@" + c2, "etl2", c5 + "~2", 2));
     checkMerge(response, c2, c2);
   }
 
   /**
-   * Cannot merge from a reference that is ambiguous (writing operation). The hash must contain a
-   * starting commit ID. Expect a BAD_REQUEST error.
+   * Cannot merge from a reference + ambiguous source hash (writing operation). The hash must
+   * contain a starting commit ID. Expect a BAD_REQUEST error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void mergeFromAmbiguous() {
+  void mergeFromBranchAmbiguous() {
     NessieError error =
         expectError(
             outer.prepareMergeV2("base@" + c2, "etl1", "*2023-01-01T00:00:00.000Z", 2), 400);
     checkError(error, BAD_REQUEST, "Source hash must contain a starting commit ID.");
   }
 
+  /** Cannot merge from a reference without source hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeFromBranchHead() {
+    NessieError error = expectError(outer.prepareMergeV2("base@" + c2, "etl1", null, 2), 400);
+    checkError(error, BAD_REQUEST, "Source hash must be provided.");
+  }
+
   /**
-   * Can merge to a reference that is unambiguous, even if the hash is not the current HEAD of the
-   * reference, since for merges and transplants, the expected hash is purely informational. Expect
-   * a 200 response with the merge result.
+   * Can merge from a tag + unambiguous source hash. Expect a 200 response with the merge result.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void mergeToUnambiguous() {
-    MergeResponse response = expectMerge(outer.prepareMergeV2("base@" + c2 + "~1", "etl1", c3, 2));
+  public void mergeFromTagUnambiguous() {
+    MergeResponse response = expectMerge(outer.prepareMergeV2("base@" + c2, "tag1", c5 + "~1", 2));
     checkMerge(response, c2, c2);
   }
 
   /**
-   * Cannot merge to a reference that is ambiguous (writing operation). The hash must contain a
+   * Cannot merge from a tag + ambiguous source hash (writing operation). The hash must contain a
+   * starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeFromTagAmbiguous() {
+    NessieError error = expectError(outer.prepareMergeV2("base@" + c2, "tag1", "~2", 2), 400);
+    checkError(error, BAD_REQUEST, "Source hash must contain a starting commit ID.");
+  }
+
+  /** Cannot merge from a tag without source hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeFromTagHead() {
+    NessieError error = expectError(outer.prepareMergeV2("base@" + c2, "tag1", null, 2), 400);
+    checkError(error, BAD_REQUEST, "Source hash must be provided.");
+  }
+
+  /**
+   * Can merge from a DETACHED ref + unambiguous source hash. Expect a 200 response with the merge
+   * result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeFromDetachedUnambiguous() {
+    MergeResponse response =
+        expectMerge(outer.prepareMergeV2("base@" + c2, "DETACHED", c5 + "~2", 2));
+    checkMerge(response, c2, c2);
+  }
+
+  /**
+   * Cannot merge from a DETACHED ref + ambiguous source hash (writing operation). The hash must
+   * contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeFromDetachedAmbiguous() {
+    NessieError error = expectError(outer.prepareMergeV2("base@" + c2, "DETACHED", "~2", 2), 400);
+    checkError(error, BAD_REQUEST, "Source hash must contain a starting commit ID.");
+  }
+
+  /**
+   * Can merge to a branch + unambiguous expected hash, and the hash is the current HEAD of the
+   * reference. Expect a 200 response with the merge result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void mergeToBranchUnambiguous() {
+    MergeResponse response = expectMerge(outer.prepareMergeV2("base@" + c3 + "~1", "etl1", c3, 2));
+    checkMerge(response, c2, c2);
+  }
+
+  /**
+   * Can merge to a branch + unambiguous expected hash, even if the hash is not the current HEAD of
+   * the reference, since for merges and transplants, the expected hash is purely informational.
+   * Expect a 200 response with the merge result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void mergeToBranchUnambiguousNotAtExpectedHash() {
+    MergeResponse response = expectMerge(outer.prepareMergeV2("base@" + c3 + "~2", "etl1", c3, 2));
+    checkMerge(response, c2, c2);
+  }
+
+  /**
+   * Cannot merge to a branch + unambiguous expected hash, when the hash is not reachable from the
+   * current HEAD of the reference. Expect a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void mergeToBranchUnambiguousExpectedHashUnreachable() {
+    NessieError error = expectError(outer.prepareMergeV2("base@" + c5 + "~1", "etl1", c3, 2), 404);
+    checkError(
+        error,
+        ErrorCode.REFERENCE_NOT_FOUND,
+        "Could not find commit '" + c4 + "' in reference 'base'");
+  }
+
+  /**
+   * Cannot merge to a branch + unambiguous expected hash, when the hash does not exist. Expect a
+   * REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void mergeToBranchUnambiguousExpectedHashNonExistent() {
+    NessieError error = expectError(outer.prepareMergeV2("base@cafebabe~1", "etl1", c3, 2), 404);
+    checkError(error, ErrorCode.REFERENCE_NOT_FOUND, "Commit 'cafebabe' not found");
+  }
+
+  /**
+   * Cannot merge to a branch + ambiguous expected hash (writing operation). The hash must contain a
    * starting commit ID. Expect a BAD_REQUEST error.
    *
    * <p>Note: since for merges and transplants, the expected hash is purely informational, ambiguous
@@ -354,19 +842,79 @@ public abstract class AbstractRelativeReferences {
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void mergeToAmbiguous() {
+  void mergeToBranchAmbiguous() {
     NessieError error =
         expectError(outer.prepareMergeV2("base@*2023-01-01T00:00:00.000Z", "etl1", c3, 2), 400);
     checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
   }
 
+  /** Cannot merge to a branch without expected hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeToBranchHead() {
+    NessieError error = expectError(outer.prepareMergeV2("base", "etl1", c3, 2), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must be provided.");
+  }
+
   /**
-   * Can transplant from a reference that is unambiguous. Expect a 200 response with the transplant
-   * result.
+   * Cannot merge to a tag (target reference must be a branch), even with unambiguous expected hash.
+   * Expect a BAD_REQUEST error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void transplantFromUnambiguous() {
+  public void mergeToTagUnambiguous() {
+    NessieError error = expectError(outer.prepareMergeV2("tag1@" + c4 + "~1", "etl1", c3, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to merge into must be a branch.");
+  }
+
+  /** Cannot merge to a tag (target reference must be a branch). Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeToTagAmbiguous() {
+    NessieError error = expectError(outer.prepareMergeV2("tag1@~1", "etl1", c3, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to merge into must be a branch.");
+  }
+
+  /**
+   * Cannot merge to a tag without expected hash (target reference must be a branch). Expect a
+   * BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeToTagHead() {
+    NessieError error = expectError(outer.prepareMergeV2("tag1", "etl1", c3, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to merge into must be a branch.");
+  }
+
+  /**
+   * Cannot merge to a DETACHED ref (target reference must be a branch), even with unambiguous
+   * expected hash. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeToDetachedUnambiguous() {
+    NessieError error = expectError(outer.prepareMergeV2("@" + c5 + "~1", "etl1", c3, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to merge into must be a branch.");
+  }
+
+  /**
+   * Cannot merge to a DETACHED ref (target reference must be a branch). Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void mergeToDetachedAmbiguous() {
+    NessieError error =
+        expectError(outer.prepareMergeV2("@*2023-01-01T00:00:00.000Z", "etl1", c3, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to merge into must be a branch.");
+  }
+
+  /**
+   * Can transplant from a reference + unambiguous source hashes. Expect a 200 response with the
+   * transplant result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void transplantFromBranchUnambiguous() {
     List<String> hashes =
         Arrays.asList(
             c5 + "~1", // c4
@@ -377,12 +925,12 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Cannot transplant from a reference that is ambiguous (writing operation). The hash must contain
-   * a starting commit ID. Expect a BAD_REQUEST error.
+   * Cannot transplant from a reference + ambiguous source hashes (writing operation). The hash must
+   * contain a starting commit ID. Expect a BAD_REQUEST error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void transplantFromAmbiguous() {
+  void transplantFromBranchAmbiguous() {
     List<String> hashes = Arrays.asList(c5, "~1");
     NessieError error =
         expectError(outer.prepareTransplantV2("base@" + c2, "etl2", hashes, 2), 400);
@@ -393,34 +941,201 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Can transplant to a reference that is unambiguous, even if the hash is not the current HEAD of
-   * the reference, since for merges and transplants, the expected hash is purely informational.
-   * Expect a 200 response with the transplant result.
+   * Can transplant from a tag + unambiguous source hash. Expect a 200 response with the transplant
+   * result.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void transplantToUnambiguous() {
-    List<String> hashes = Arrays.asList(c3, c4, c5);
+  public void transplantFromTagUnambiguous() {
+    List<String> hashes = Collections.singletonList(c4 + "~1");
     MergeResponse response =
-        expectMerge(outer.prepareTransplantV2("base@" + c2 + "~1", "etl2", hashes, 2));
+        expectMerge(outer.prepareTransplantV2("base@" + c2, "tag1", hashes, 2));
     outer.soft.assertThat(response.getEffectiveTargetHash()).isEqualTo(c2);
   }
 
   /**
-   * Cannot transplant to a reference that is ambiguous (writing operation). The hash must contain a
-   * starting commit ID. Expect a BAD_REQUEST error.
+   * Cannot transplant from a tag + ambiguous source hash (writing operation). The hash must contain
+   * a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantFromTagAmbiguous() {
+    List<String> hashes = Collections.singletonList("~1");
+    NessieError error =
+        expectError(outer.prepareTransplantV2("base@" + c2, "tag1", hashes, 2), 400);
+    outer
+        .soft
+        .assertThat(error.getMessage())
+        .contains("Hash to transplant must contain a starting commit ID.");
+  }
+
+  /**
+   * Can transplant from a DETACHED ref + unambiguous source hash. Expect a 200 response with the
+   * transplant result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantFromDetachedUnambiguous() {
+    List<String> hashes = Collections.singletonList(c5 + "~1");
+    MergeResponse response =
+        expectMerge(outer.prepareTransplantV2("base@" + c2, "DETACHED", hashes, 2));
+    outer.soft.assertThat(response.getEffectiveTargetHash()).isEqualTo(c2);
+  }
+
+  /**
+   * Cannot transplant from a DETACHED ref + ambiguous source hash (writing operation). The hash
+   * must contain a starting commit ID. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantFromDetachedAmbiguous() {
+    List<String> hashes = Collections.singletonList("~1");
+    NessieError error =
+        expectError(outer.prepareTransplantV2("base@" + c2, "DETACHED", hashes, 2), 400);
+    outer
+        .soft
+        .assertThat(error.getMessage())
+        .contains("Hash to transplant must contain a starting commit ID.");
+  }
+
+  /**
+   * Can transplant to a branch + unambiguous expected hash, and the hash is the current HEAD of the
+   * reference. Expect a 200 response with the transplant result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void transplantToBranchUnambiguous() {
+    List<String> hashes = Arrays.asList(c3, c4, c5);
+    MergeResponse response =
+        expectMerge(outer.prepareTransplantV2("base@" + c3 + "~1", "etl2", hashes, 2));
+    outer.soft.assertThat(response.getEffectiveTargetHash()).isEqualTo(c2);
+  }
+
+  /**
+   * Can transplant to a branch + unambiguous expected hash, even if the hash is not the current
+   * HEAD of the reference, since for merges and transplants, the expected hash is purely
+   * informational. Expect a 200 response with the transplant result.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void transplantToBranchUnambiguousNotAtExpectedHash() {
+    List<String> hashes = Arrays.asList(c3, c4, c5);
+    MergeResponse response =
+        expectMerge(outer.prepareTransplantV2("base@" + c3 + "~2", "etl2", hashes, 2));
+    outer.soft.assertThat(response.getEffectiveTargetHash()).isEqualTo(c2);
+  }
+
+  /**
+   * Cannot transplant to a branch + unambiguous expected hash, when the hash is not reachable from
+   * the current HEAD of the reference. Expect a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void transplantToBranchUnambiguousExpectedHashUnreachable() {
+    List<String> hashes = Arrays.asList(c3, c4, c5);
+    NessieError error =
+        expectError(outer.prepareTransplantV2("base@" + c5 + "~1", "etl2", hashes, 2), 404);
+    checkError(
+        error,
+        ErrorCode.REFERENCE_NOT_FOUND,
+        "Could not find commit '" + c4 + "' in reference 'base'");
+  }
+
+  /**
+   * Cannot transplant to a branch + unambiguous expected hash, when the hash does not exist. Expect
+   * a REFERENCE_NOT_FOUND error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void transplantToBranchUnambiguousExpectedHashNonExistent() {
+    List<String> hashes = Arrays.asList(c3, c4, c5);
+    NessieError error =
+        expectError(outer.prepareTransplantV2("base@cafebabe~1", "etl2", hashes, 2), 404);
+    checkError(error, ErrorCode.REFERENCE_NOT_FOUND, "Commit 'cafebabe' not found");
+  }
+
+  /**
+   * Cannot transplant to a branch + ambiguous expected hash (writing operation). The hash must
+   * contain a starting commit ID. Expect a BAD_REQUEST error.
    *
    * <p>Note: since for merges and transplants, the expected hash is purely informational, ambiguous
    * hashes could in theory be allowed, but this would be confusing to users.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void transplantToAmbiguous() {
+  void transplantToBranchAmbiguous() {
     List<String> hashes = Arrays.asList(c5, c4);
     NessieError error =
         expectError(
             outer.prepareTransplantV2("base@*2023-01-01T00:00:00.000Z", "etl2", hashes, 2), 400);
     checkError(error, BAD_REQUEST, "Expected hash must contain a starting commit ID.");
+  }
+
+  /** Cannot transplant to a branch without expected hash. Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantToBranchHead() {
+    List<String> hashes = Arrays.asList(c5, c4);
+    NessieError error = expectError(outer.prepareTransplantV2("base", "etl2", hashes, 2), 400);
+    checkError(error, BAD_REQUEST, "Expected hash must be provided.");
+  }
+
+  /**
+   * Cannot transplant to a tag (target reference must be a branch), even with unambiguous expected
+   * hash. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantToTagUnambiguous() {
+    List<String> hashes = Arrays.asList(c3, c4, c5);
+    NessieError error =
+        expectError(outer.prepareTransplantV2("tag1@" + c4 + "~1", "etl2", hashes, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to transplant into must be a branch.");
+  }
+
+  /** Cannot transplant to a tag (target reference must be a branch). Expect a BAD_REQUEST error. */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantToTagAmbiguous() {
+    List<String> hashes = Arrays.asList(c5, c4);
+    NessieError error = expectError(outer.prepareTransplantV2("tag1@~1", "etl2", hashes, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to transplant into must be a branch.");
+  }
+
+  /** Cannot transplant to a tag without expected hash (target reference must be a branch). */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantToTagHead() {
+    List<String> hashes = Arrays.asList(c5, c4);
+    NessieError error = expectError(outer.prepareTransplantV2("tag1", "etl2", hashes, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to transplant into must be a branch.");
+  }
+
+  /**
+   * Cannot transplant to a DETACHED ref (target reference must be a branch), even with unambiguous
+   * expected hash. Expect a BAD_REQUEST error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantToDetachedUnambiguous() {
+    List<String> hashes = Arrays.asList(c3, c4, c5);
+    NessieError error =
+        expectError(outer.prepareTransplantV2("@" + c5 + "~1", "etl2", hashes, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to transplant into must be a branch.");
+  }
+
+  /**
+   * Cannot transplant to a DETACHED ref (target reference must be a branch). Expect a BAD_REQUEST
+   * error.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void transplantToDetachedAmbiguous() {
+    List<String> hashes = Arrays.asList(c5, c4);
+    NessieError error =
+        expectError(
+            outer.prepareTransplantV2("@*2023-01-01T00:00:00.000Z", "etl2", hashes, 2), 400);
+    checkError(error, BAD_REQUEST, "Reference to transplant into must be a branch.");
   }
 
   /**
@@ -696,10 +1411,7 @@ public abstract class AbstractRelativeReferences {
     checkError(error, BAD_REQUEST, "Youngest hash must contain a starting commit ID.");
   }
 
-  /**
-   * Can get the commit log with an oldest hash that is unambiguous. Expect a 200 response with the
-   * log.
-   */
+  /** Can get the commit log with an oldest unambiguous hash. Expect a 200 response with the log. */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void getCommitLogOldestHashUnambiguous() {
@@ -709,8 +1421,8 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Can get the commit log with an oldest hash that is unambiguous on a DETACHED ref. Expect a 200
-   * response with the log.
+   * Can get the commit log with an oldest unambiguous hash on a DETACHED ref. Expect a 200 response
+   * with the log.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
@@ -722,8 +1434,8 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Can get the commit log with an oldest hash that is ambiguous (reading operation). Expect a 200
-   * response with the log.
+   * Can get the commit log with an oldest ambiguous hash (reading operation). Expect a 200 response
+   * with the log.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
@@ -734,8 +1446,8 @@ public abstract class AbstractRelativeReferences {
   }
 
   /**
-   * Cannot get the commit log with an oldest hash that is ambiguous on a DETACHED ref (DETACHED
-   * requires unambiguous). Expect a BAD_REQUEST error.
+   * Cannot get the commit log with an oldest ambiguous hash on a DETACHED ref (DETACHED requires
+   * unambiguous). Expect a BAD_REQUEST error.
    */
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
@@ -789,7 +1501,7 @@ public abstract class AbstractRelativeReferences {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void getDiffFromRefAmbiguousDetached() {
     NessieError error = expectError(rest().get("trees/@{from}/diff/base@{to}", "~1", "~2"), 400);
-    checkError(error, BAD_REQUEST, "From hash must contain a starting commit ID.");
+    checkError(error, BAD_REQUEST, "\"From\" hash must contain a starting commit ID.");
   }
 
   /**
@@ -800,11 +1512,16 @@ public abstract class AbstractRelativeReferences {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void getDiffToRefAmbiguousDetached() {
     NessieError error = expectError(rest().get("trees/base@{from}/diff/@{to}", "~1", "~2"), 400);
-    checkError(error, BAD_REQUEST, "To hash must contain a starting commit ID.");
+    checkError(error, BAD_REQUEST, "\"To\" hash must contain a starting commit ID.");
   }
 
-  private static Branch expectReference(Response base) {
+  private static Branch expectBranch(Response base) {
     return (Branch)
+        base.then().statusCode(200).extract().as(SingleReferenceResponse.class).getReference();
+  }
+
+  private static Tag expectTag(Response base) {
+    return (Tag)
         base.then().statusCode(200).extract().as(SingleReferenceResponse.class).getReference();
   }
 

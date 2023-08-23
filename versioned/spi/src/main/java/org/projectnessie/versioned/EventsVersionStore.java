@@ -86,7 +86,7 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(NamedRef ref, Hash expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     ReferenceAssignedResult result = delegate.assign(ref, expectedHash, targetHash);
     resultSink.accept(result);
@@ -103,7 +103,7 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef ref, Hash hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     ReferenceDeletedResult result = delegate.delete(ref, hash);
     resultSink.accept(result);

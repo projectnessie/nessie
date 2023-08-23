@@ -406,8 +406,8 @@ public abstract class BaseTestNessieApi {
     soft.assertThatThrownBy(() -> createReference(Tag.of("tag2", null), main.getName()))
         .isInstanceOf(NessieBadRequestException.class);
 
-    Reference branch2 = createReference(Branch.of("branch2", null), main.getName());
-    soft.assertThat(branch2).isEqualTo(Branch.of("branch2", EMPTY));
+    soft.assertThatThrownBy(() -> createReference(Branch.of("branch2", null), main.getName()))
+        .isInstanceOf(NessieBadRequestException.class);
 
     // not exist
 
@@ -589,7 +589,10 @@ public abstract class BaseTestNessieApi {
   public void referencesWithLimitInFirstPage() throws Exception {
     assumeFalse(pagingSupported(api().getAllReferences()));
     // Verify that result limiting produces expected errors when paging is not supported
-    api().createReference().reference(Branch.of("branch", null)).create();
+    api()
+        .createReference()
+        .reference(Branch.of("branch", api().getDefaultBranch().getHash()))
+        .create();
     assertThatThrownBy(() -> api().getAllReferences().maxRecords(1).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Paging not supported");

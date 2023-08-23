@@ -157,7 +157,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                 s ->
                     s.assign(
                         BranchName.of("this-one-should-not-exist"),
-                        Optional.empty(),
+                        s.noAncestorHash(),
                         s.noAncestorHash())),
         new ReferenceNotFoundFunction("assign/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -165,15 +165,17 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                 s ->
                     s.assign(
                         BranchName.of("main"),
-                        Optional.empty(),
+                        s.noAncestorHash(),
                         Hash.of("12341234123412341234123412341234123412341234"))),
         // delete()
         new ReferenceNotFoundFunction("delete/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.delete(BranchName.of("this-one-should-not-exist"), Optional.empty())),
+            .function(
+                s -> s.delete(BranchName.of("this-one-should-not-exist"), s.noAncestorHash())),
         new ReferenceNotFoundFunction("delete/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.delete(BranchName.of("this-one-should-not-exist"), Optional.empty())),
+            .function(
+                s -> s.delete(BranchName.of("this-one-should-not-exist"), s.noAncestorHash())),
         // create()
         new ReferenceNotFoundFunction("create/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")

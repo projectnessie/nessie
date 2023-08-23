@@ -172,18 +172,20 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
     // Tag without sourceRefName & null hash
     soft.assertThatThrownBy(() -> treeApi().createReference(tagName1, TAG, null, null))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Tag-creation requires a target named-reference and hash.");
+        .hasMessageContaining("Target hash must be provided.");
     // Tag without hash
     soft.assertThatThrownBy(() -> treeApi().createReference(tagName1, TAG, null, main.getName()))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Tag-creation requires a target named-reference and hash.");
+        .hasMessageContaining("Target hash must be provided.");
     // legit Tag with name + hash
     Tag refTag1 = createTag(tagName2, main);
     soft.assertThat(refTag1).isEqualTo(Tag.of(tagName2, main.getHash()));
 
     // Branch without hash
-    Reference refBranch1 = treeApi().createReference(branchName1, BRANCH, null, main.getName());
-    soft.assertThat(refBranch1).isEqualTo(Branch.of(branchName1, main.getHash()));
+    soft.assertThatThrownBy(
+            () -> treeApi().createReference(branchName1, BRANCH, null, main.getName()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Target hash must be provided");
     // Branch with name + hash
     Reference refBranch2 =
         treeApi().createReference(branchName2, BRANCH, main.getHash(), main.getName());

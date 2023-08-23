@@ -141,17 +141,17 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     soft.assertThat(commitsList(commitHash, false))
         .contains(commit(commitHash, "Some commit", initialHash));
 
-    soft.assertThatThrownBy(() -> store().delete(branch, Optional.of(initialHash)))
+    soft.assertThatThrownBy(() -> store().delete(branch, initialHash))
         .isInstanceOf(ReferenceConflictException.class);
 
-    store().delete(branch, Optional.of(anotherCommitHash));
+    store().delete(branch, anotherCommitHash);
     soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty(), emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
     try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
       soft.assertThat(stream(str).filter(this::filterMainBranch)).isEmpty();
     }
-    soft.assertThatThrownBy(() -> store().delete(branch, Optional.of(commitHash)))
+    soft.assertThatThrownBy(() -> store().delete(branch, commitHash))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 

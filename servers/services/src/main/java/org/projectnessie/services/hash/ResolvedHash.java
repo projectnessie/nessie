@@ -15,8 +15,6 @@
  */
 package org.projectnessie.services.hash;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.util.Optional;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.DetachedRef;
@@ -37,28 +35,12 @@ public interface ResolvedHash extends WithHash<NamedRef> {
   NamedRef getNamedRef();
 
   /**
-   * The user-provided hash. Only present if a hash was actually provided and successfully parsed;
-   * will be empty if the hash was implicitly resolved to the ref's HEAD.
-   *
-   * <p>If this is empty, then {@link #getHead()} is guaranteed to be non-empty.
-   *
-   * <p>If the provided hash had relative specs, this hash will be the result of resolving those
-   * specs against its absolute part, or the ref's HEAD if it doesn't have an absolute part.
-   */
-  Optional<Hash> getProvidedHash();
-
-  /**
    * The ref's HEAD, if available. Will always be empty for {@link DetachedRef}. Exposed mostly to
    * avoid re-fetching the HEAD many times.
-   *
-   * <p>If this is empty, then {@link #getProvidedHash()} is guaranteed to be non-empty.
    */
   Optional<Hash> getHead();
 
-  /**
-   * The effective resolved hash, never {@code null}. Will either be {@link #getProvidedHash()} if
-   * present, or {@link #getHead()} otherwise.
-   */
+  /** The effective resolved hash, never {@code null}. */
   @Override
   Hash getHash();
 
@@ -68,16 +50,7 @@ public interface ResolvedHash extends WithHash<NamedRef> {
     return getNamedRef();
   }
 
-  static ResolvedHash of(NamedRef ref, Optional<Hash> providedHash, Optional<Hash> head) {
-    checkState(
-        providedHash.isPresent() || head.isPresent(),
-        "Either providedHash or head must be present");
-    Hash effective = providedHash.orElseGet(head::get);
-    return ImmutableResolvedHash.builder()
-        .namedRef(ref)
-        .providedHash(providedHash)
-        .head(head)
-        .hash(effective)
-        .build();
+  static ResolvedHash of(NamedRef ref, Optional<Hash> head, Hash resolved) {
+    return ImmutableResolvedHash.builder().namedRef(ref).head(head).hash(resolved).build();
   }
 }

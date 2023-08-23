@@ -19,7 +19,6 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.model.Validation.validateHash;
-import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
@@ -82,8 +81,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       throws NessieReferenceNotFoundException {
     Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
 
-    ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
     try {
+      ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
 
       try {
         Optional<Content> explicitlyCreatedNamespace =
@@ -128,8 +127,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   @Override
   public void deleteNamespace(String refName, Namespace namespaceToDelete)
       throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
-    ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
     try {
+      ResolvedHash refWithHash = getHashResolver().resolveToHead(refName);
       Namespace namespace = getNamespace(namespaceToDelete, refWithHash.getHash());
       Delete delete = Delete.of(namespace.toContentKey());
 
@@ -163,8 +162,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       if (hashOnRef != null) {
         validateHash(hashOnRef);
       }
-      ResolvedHash resolved =
-          getHashResolver().resolveHashOnRef(refName, hashOnRef, "Hash", ANY_HASH);
+      ResolvedHash resolved = getHashResolver().resolveHashOnRef(refName, hashOnRef);
       return getNamespace(namespace, resolved.getHash());
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
@@ -203,9 +201,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
     if (hashOnRef != null) {
       validateHash(hashOnRef);
     }
-    ResolvedHash refWithHash =
-        getHashResolver().resolveHashOnRef(refName, hashOnRef, "Hash", ANY_HASH);
     try {
+      ResolvedHash refWithHash = getHashResolver().resolveHashOnRef(refName, hashOnRef);
       // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)
       // which will make it impossible to use the `Namespace` object itself as an identifier to
       // subtract the set of explicitly created namespaces from the set of implicitly created ones.

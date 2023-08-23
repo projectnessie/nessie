@@ -40,9 +40,6 @@ import static org.projectnessie.services.cel.CELUtil.VAR_OPERATIONS;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
-import static org.projectnessie.services.hash.HashValidator.ANY_HASH;
-import static org.projectnessie.services.hash.HashValidator.REQUIRED_UNAMBIGUOUS_HASH;
-import static org.projectnessie.services.hash.HashValidator.UNAMBIGUOUS_HASH;
 import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 
 import com.google.common.base.Strings;
@@ -105,6 +102,7 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.hash.HashValidator;
 import org.projectnessie.services.hash.ResolvedHash;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.services.spi.TreeService;
@@ -260,27 +258,26 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throws NessieNotFoundException, NessieConflictException {
     Validation.validateForbiddenReferenceName(refName);
     NamedRef namedReference = toNamedRef(type, refName);
-    if (type == ReferenceType.TAG && targetHash == null) {
-      throw new IllegalArgumentException(
-          "Tag-creation requires a target named-reference and hash.");
-    }
 
     BatchAccessChecker check = startAccessCheck().canCreateReference(namedReference);
     Optional<Hash> targetHashObj;
     try {
       ResolvedHash targetRef =
           getHashResolver()
-              .resolveHashOnRef(sourceRefName, targetHash, "Target hash", UNAMBIGUOUS_HASH);
+              .resolveHashOnRef(
+                  sourceRefName,
+                  targetHash,
+                  new HashValidator("Target hash").hashMustBeUnambiguous());
       check.canViewReference(targetRef.getNamedRef());
-      targetHashObj = targetRef.getProvidedHash();
-    } catch (NessieNotFoundException e) {
+      targetHashObj = Optional.of(targetRef.getHash());
+    } catch (ReferenceNotFoundException e) {
       // If the default-branch does not exist and hashOnRef points to the "beginning of time",
       // then do not throw a NessieNotFoundException, but re-create the default branch. In all
       // cases, re-throw the exception.
       if (!(ReferenceType.BRANCH.equals(type)
           && refName.equals(getServerConfig().getDefaultBranch())
           && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
-        throw e;
+        throw new NessieReferenceNotFoundException(e.getMessage(), e);
       }
       targetHashObj = Optional.empty();
     }
@@ -308,16 +305,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ReferenceType referenceType, String referenceName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      checkArgument(expectedHash != null, "Expected hash must be provided");
 
       ResolvedHash oldRef =
           getHashResolver()
               .resolveHashOnRef(
-                  referenceName, expectedHash, "Expected hash", REQUIRED_UNAMBIGUOUS_HASH);
+                  referenceName,
+                  expectedHash,
+                  new HashValidator("Assignment target", "Expected hash")
+                      .refMustBeBranchOrTag()
+                      .hashMustBeUnambiguous());
       ResolvedHash newRef =
           getHashResolver()
               .resolveHashOnRef(
-                  assignTo.getName(), assignTo.getHash(), "Target hash", UNAMBIGUOUS_HASH);
+                  assignTo.getName(),
+                  assignTo.getHash(),
+                  new HashValidator("Target hash").hashMustBeUnambiguous());
 
       checkArgument(
           referenceType == null || referenceType == RefUtil.referenceType(oldRef.getNamedRef()),
@@ -330,7 +332,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .canAssignRefToHash(oldRef.getNamedRef())
           .checkAndThrow();
 
-      getStore().assign(oldRef.getNamedRef(), oldRef.getProvidedHash(), newRef.getHash());
+      getStore().assign(oldRef.getNamedRef(), oldRef.getHash(), newRef.getHash());
       return RefUtil.toReference(oldRef.getNamedRef(), newRef.getHash());
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -367,10 +369,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   resolved.getNamedRef(),
                   resolved.getHash(),
                   expectedHash,
-                  "Expected hash",
-                  REQUIRED_UNAMBIGUOUS_HASH);
+                  new HashValidator("Expected hash").hashMustBeUnambiguous());
 
-      Hash deletedAthash = getStore().delete(ref, refToDelete.getProvidedHash()).getHash();
+      Hash deletedAthash = getStore().delete(ref, refToDelete.getHash()).getHash();
       return RefUtil.toReference(ref, deletedAthash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -397,8 +398,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .resolveHashOnRef(
                   namedRef,
                   null == pageToken ? youngestHash : pageToken,
-                  null == pageToken ? "Youngest hash" : "Token pagination hash",
-                  ANY_HASH);
+                  new HashValidator(null == pageToken ? "Youngest hash" : "Token pagination hash"));
 
       startAccessCheck().canListCommitLog(endRef.getNamedRef()).checkAndThrow();
 
@@ -406,10 +406,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           oldestHashLimit == null
               ? null
               : getHashResolver()
-                  .resolveHashOnRef(endRef, oldestHashLimit, "Oldest hash", ANY_HASH)
-                  .getProvidedHash()
-                  .map(Hash::asString)
-                  .orElse(null);
+                  .resolveHashOnRef(endRef, oldestHashLimit, new HashValidator("Oldest hash"))
+                  .getHash()
+                  .asString();
 
       boolean fetchAll = FetchOption.isFetchAll(fetchOption);
       Set<Check> successfulChecks = new HashSet<>();
@@ -620,15 +619,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ResolvedHash fromRef =
           getHashResolver()
               .resolveHashOnRef(
-                  fromRefName, lastHash, "Hash to transplant", REQUIRED_UNAMBIGUOUS_HASH);
+                  fromRefName,
+                  lastHash,
+                  new HashValidator("Hash to transplant").hashMustBeUnambiguous());
 
       ResolvedHash toRef =
           getHashResolver()
               .resolveHashOnRef(
-                  branchName, expectedHash, "Expected hash", REQUIRED_UNAMBIGUOUS_HASH);
-
-      checkArgument(
-          toRef.getNamedRef() instanceof BranchName, "Can only transplant into branches.");
+                  branchName,
+                  expectedHash,
+                  new HashValidator("Reference to transplant into", "Expected hash")
+                      .refMustBeBranch()
+                      .hashMustBeUnambiguous());
 
       startAccessCheck()
           .canViewReference(fromRef.getNamedRef())
@@ -639,7 +641,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       for (String hash : hashesToTransplant) {
         transplants.add(
             getHashResolver()
-                .resolveHashOnRef(fromRef, hash, "Hash to transplant", REQUIRED_UNAMBIGUOUS_HASH)
+                .resolveHashOnRef(
+                    fromRef, hash, new HashValidator("Hash to transplant").hashMustBeUnambiguous())
                 .getHash());
       }
 
@@ -655,22 +658,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   TransplantOp.builder()
                       .fromRef(fromRef.getNamedRef())
                       .toBranch((BranchName) toRef.getNamedRef())
-                      .expectedHash(toRef.getProvidedHash())
+                      .expectedHash(Optional.of(toRef.getHash()))
                       .sequenceToTransplant(transplants)
                       .updateCommitMetadata(
                           commitMetaUpdate(
                               commitMeta,
                               numCommits ->
                                   String.format(
-                                      "Transplanted %d commits from %s at %s into %s%s",
+                                      "Transplanted %d commits from %s at %s into %s at %s",
                                       numCommits,
                                       fromRefName,
                                       lastHash,
                                       branchName,
-                                      toRef
-                                          .getProvidedHash()
-                                          .map(h -> " at " + h.asString())
-                                          .orElse(""))))
+                                      toRef.getHash().asString())))
                       .mergeKeyBehaviors(keyMergeBehaviors(keyMergeBehaviors))
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))
@@ -710,11 +710,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       ResolvedHash fromRef =
           getHashResolver()
-              .resolveHashOnRef(fromRefName, fromHash, "Source hash", REQUIRED_UNAMBIGUOUS_HASH);
+              .resolveHashOnRef(
+                  fromRefName, fromHash, new HashValidator("Source hash").hashMustBeUnambiguous());
       ResolvedHash toRef =
           getHashResolver()
               .resolveHashOnRef(
-                  branchName, expectedHash, "Expected hash", REQUIRED_UNAMBIGUOUS_HASH);
+                  branchName,
+                  expectedHash,
+                  new HashValidator("Reference to merge into", "Expected hash")
+                      .refMustBeBranch()
+                      .hashMustBeUnambiguous());
 
       checkArgument(toRef.getNamedRef() instanceof BranchName, "Can only merge into branches.");
 
@@ -730,21 +735,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .fromRef(fromRef.getNamedRef())
                       .fromHash(fromRef.getHash())
                       .toBranch((BranchName) toRef.getNamedRef())
-                      .expectedHash(toRef.getProvidedHash())
+                      .expectedHash(Optional.of(toRef.getHash()))
                       .updateCommitMetadata(
                           commitMetaUpdate(
                               commitMeta,
                               numCommits ->
                                   // numCommits is always 1 for merges
                                   String.format(
-                                      "Merged %s at %s into %s%s",
+                                      "Merged %s at %s into %s at %s",
                                       fromRefName,
                                       fromRef.getHash().asString(),
                                       branchName,
-                                      toRef
-                                          .getProvidedHash()
-                                          .map(h -> " at " + h.asString())
-                                          .orElse(""))))
+                                      toRef.getHash().asString())))
                       .mergeKeyBehaviors(keyMergeBehaviors(keyMergeBehaviors))
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))
@@ -863,12 +865,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ContentKey prefixKey,
       List<ContentKey> requestedKeys)
       throws NessieNotFoundException {
-    ResolvedHash refWithHash =
-        getHashResolver().resolveHashOnRef(namedRef, hashOnRef, "Expected hash", ANY_HASH);
-
-    effectiveReference.accept(refWithHash);
 
     try {
+      ResolvedHash refWithHash =
+          getHashResolver()
+              .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
+
+      effectiveReference.accept(refWithHash);
       Predicate<ContentKey> contentKeyPredicate = null;
       if (requestedKeys != null && !requestedKeys.isEmpty()) {
         contentKeyPredicate = new HashSet<>(requestedKeys)::contains;
@@ -1029,12 +1032,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     CommitMeta commitMeta = operations.getCommitMeta();
     validateCommitMeta(commitMeta);
 
-    ResolvedHash toRef =
-        getHashResolver()
-            .resolveHashOnRef(branch, expectedHash, "Expected hash", REQUIRED_UNAMBIGUOUS_HASH);
-
-    checkArgument(toRef.getNamedRef() instanceof BranchName, "Can only commit into branches.");
-
     List<org.projectnessie.versioned.Operation> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
@@ -1043,11 +1040,20 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     try {
       ImmutableCommitResponse.Builder commitResponse = ImmutableCommitResponse.builder();
 
+      ResolvedHash toRef =
+          getHashResolver()
+              .resolveHashOnRef(
+                  branch,
+                  expectedHash,
+                  new HashValidator("Reference to commit into", "Expected hash")
+                      .refMustBeBranch()
+                      .hashMustBeUnambiguous());
+
       Hash newHash =
           getStore()
               .commit(
                   (BranchName) toRef.getNamedRef(),
-                  toRef.getProvidedHash(),
+                  Optional.of(toRef.getHash()),
                   commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
                   ops,
                   createCommitValidator((BranchName) toRef.getNamedRef()),

@@ -144,7 +144,7 @@ public class ObservingVersionStore implements VersionStore {
   @Timed(value = PREFIX, histogram = true)
   public ReferenceAssignedResult assign(
       @SpanAttribute(TAG_REF) NamedRef ref,
-      @SpanAttribute(TAG_EXPECTED_HASH) Optional<Hash> expectedHash,
+      @SpanAttribute(TAG_EXPECTED_HASH) Hash expectedHash,
       @SpanAttribute(TAG_TARGET_HASH) Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return delegate.assign(ref, expectedHash, targetHash);
@@ -166,7 +166,7 @@ public class ObservingVersionStore implements VersionStore {
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
   public ReferenceDeletedResult delete(
-      @SpanAttribute(TAG_REF) NamedRef ref, @SpanAttribute(TAG_HASH) Optional<Hash> hash)
+      @SpanAttribute(TAG_REF) NamedRef ref, @SpanAttribute(TAG_HASH) Hash hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return delegate.delete(ref, hash);
   }

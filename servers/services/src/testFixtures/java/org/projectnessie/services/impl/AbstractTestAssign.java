@@ -44,9 +44,18 @@ public abstract class AbstractTestAssign extends BaseTestServiceImpl {
     String testTag = "testTag";
     Reference testTagRef = createTag(testTag, main);
     soft.assertThat(testTagRef.getHash()).isNotNull();
-    treeApi().assignReference(TAG, testTag, testTagRef.getHash(), refMode.transform(main));
-    testTagRef = getReference(testTag);
-    soft.assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
+    Reference transformed = refMode.transform(main);
+    String expectedHash = testTagRef.getHash();
+    if (refMode == ReferenceMode.NAME_ONLY) {
+      soft.assertThatThrownBy(
+              () -> treeApi().assignReference(TAG, testTag, expectedHash, transformed))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Target hash must be provided");
+    } else {
+      treeApi().assignReference(TAG, testTag, expectedHash, transformed);
+      testTagRef = getReference(testTag);
+      soft.assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
+    }
   }
 
   @ParameterizedTest
@@ -62,15 +71,23 @@ public abstract class AbstractTestAssign extends BaseTestServiceImpl {
     soft.assertThat(branch.getHash()).isNotEqualTo(main.getHash());
 
     // Assign the test branch to main
-    Branch assignedBranch =
-        (Branch)
-            treeApi()
-                .assignReference(
-                    BRANCH, branch.getName(), branch.getHash(), refMode.transform(main));
-    soft.assertThat(assignedBranch.getHash()).isEqualTo(main.getHash());
+    Reference transformed = refMode.transform(main);
+    if (refMode == ReferenceMode.NAME_ONLY) {
+      soft.assertThatThrownBy(
+              () ->
+                  treeApi()
+                      .assignReference(BRANCH, branch.getName(), branch.getHash(), transformed))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Target hash must be provided");
+    } else {
+      Branch assignedBranch =
+          (Branch)
+              treeApi().assignReference(BRANCH, branch.getName(), branch.getHash(), transformed);
+      soft.assertThat(assignedBranch.getHash()).isEqualTo(main.getHash());
 
-    Reference currentBranch = getReference(branch.getName());
-    soft.assertThat(assignedBranch).isEqualTo(currentBranch);
+      Reference currentBranch = getReference(branch.getName());
+      soft.assertThat(assignedBranch).isEqualTo(currentBranch);
+    }
   }
 
   @ParameterizedTest
@@ -86,11 +103,19 @@ public abstract class AbstractTestAssign extends BaseTestServiceImpl {
     soft.assertThat(tag.getHash()).isNotEqualTo(main.getHash());
 
     // Assign the test tag to main
-    Tag assignedTag =
-        (Tag) treeApi().assignReference(TAG, tag.getName(), tag.getHash(), refMode.transform(main));
-    soft.assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
+    Reference transformed = refMode.transform(main);
+    if (refMode == ReferenceMode.NAME_ONLY) {
+      soft.assertThatThrownBy(
+              () -> treeApi().assignReference(TAG, tag.getName(), tag.getHash(), transformed))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Target hash must be provided");
+    } else {
+      Tag assignedTag =
+          (Tag) treeApi().assignReference(TAG, tag.getName(), tag.getHash(), transformed);
+      soft.assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
 
-    Reference currentTag = getReference(tag.getName());
-    soft.assertThat(assignedTag).isEqualTo(currentTag);
+      Reference currentTag = getReference(tag.getName());
+      soft.assertThat(assignedTag).isEqualTo(currentTag);
+    }
   }
 }
