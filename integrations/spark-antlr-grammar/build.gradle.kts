@@ -36,7 +36,7 @@ tasks.named<AntlrTask>("generateGrammarSource").configure {
   arguments.add("-visitor")
   doLast(
     ReplaceInFiles(
-      fileTree(project.buildDir.resolve("generated-src/antlr/main")).matching {
+      fileTree(project.layout.buildDirectory.dir("generated-src/antlr/main")).matching {
         include("**/*.java")
       },
       mapOf(

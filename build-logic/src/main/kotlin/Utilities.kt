@@ -44,7 +44,6 @@ import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
-import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.module
 import org.gradle.kotlin.dsl.project
@@ -249,7 +248,7 @@ fun loadProperties(file: File): Properties {
 
 /** Hack for Jandex-Plugin (removed later). */
 fun Project.useBuildSubDirectory(buildSubDir: String) {
-  buildDir = file("$buildDir/$buildSubDir")
+  project.layout.buildDirectory.set(layout.buildDirectory.dir(buildSubDir).get())
 
   // TODO open an issue for the Jandex plugin - it configures the task's output directory too
   //  early, so re-assigning the output directory (project.buildDir=...) to a different path

@@ -114,22 +114,22 @@ dependencies {
 
 val pullOpenApiSpec by tasks.registering(Sync::class)
 
+val openApiSpecDir = layout.buildDirectory.dir("openapi-extra")
+
 pullOpenApiSpec.configure {
-  destinationDir = openApiSpecDir
+  destinationDir = openApiSpecDir.get().asFile
   from(openapiSource) { include("openapi.yaml") }
 }
-
-val openApiSpecDir = buildDir.resolve("openapi-extra")
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.store-schema-directory",
-    buildDir.resolve("openapi").toString()
+    layout.buildDirectory.asFile.map { it.resolve("openapi") }.get().toString()
   )
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.additional-docs-directory",
-    openApiSpecDir.toString()
+    openApiSpecDir.get().toString()
   )
   quarkusBuildProperties.put("quarkus.smallrye-openapi.info-version", project.version.toString())
   quarkusBuildProperties.put("quarkus.smallrye-openapi.auto-add-security", "false")

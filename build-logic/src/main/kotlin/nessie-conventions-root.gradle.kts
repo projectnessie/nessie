@@ -74,7 +74,7 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
             integrationsDir.resolve("spark-extensions-base/build"),
             integrationsDir.resolve("spark-extensions-basetests/build")
           ) +
-          allprojects.map { prj -> prj.buildDir } +
+          allprojects.map { prj -> prj.layout.buildDirectory.asFile.get() } +
           sparkScalaProps
             .getProperty("sparkVersions")
             .split(",")
