@@ -21,7 +21,6 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
-import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
 
 /** Deletes content objects. */
@@ -32,7 +31,7 @@ import picocli.CommandLine.Command;
 public class DeleteContent extends BulkCommittingCommand {
 
   @Override
-  protected void processBatch(NessieApiV2 api, Reference ref, List<ContentKey> keys) {
+  protected void processBatch(NessieApiV2 api, Branch ref, List<ContentKey> keys) {
     String defaultMsg =
         keys.size() == 1 ? "Delete " + keys.get(0) : "Delete " + keys.size() + " keys.";
 
@@ -40,7 +39,7 @@ public class DeleteContent extends BulkCommittingCommand {
       Branch head =
           api.commitMultipleOperations()
               .commitMeta(commitMetaFromMessage(defaultMsg))
-              .branch((Branch) ref)
+              .branch(ref)
               .operations(keys.stream().map(Operation.Delete::of).collect(Collectors.toList()))
               .commit();
 

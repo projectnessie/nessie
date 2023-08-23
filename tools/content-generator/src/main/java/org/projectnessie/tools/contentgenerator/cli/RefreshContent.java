@@ -25,7 +25,6 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
-import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
 
 @Command(
@@ -35,14 +34,14 @@ import picocli.CommandLine.Command;
 public class RefreshContent extends BulkCommittingCommand {
 
   @Override
-  protected void processBatch(NessieApiV2 api, Reference ref, List<ContentKey> keys) {
+  protected void processBatch(NessieApiV2 api, Branch ref, List<ContentKey> keys) {
     GetContentBuilder request = api.getContent().reference(ref);
     keys.forEach(request::key);
 
     try {
       Map<ContentKey, Content> contentMap = request.get();
 
-      commitSameContent(api, (Branch) ref, contentMap);
+      commitSameContent(api, ref, contentMap);
     } catch (BaseNessieClientServerException ex) {
       throw new RuntimeException(ex);
     }

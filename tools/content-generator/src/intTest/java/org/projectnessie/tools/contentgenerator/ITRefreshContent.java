@@ -142,7 +142,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void skipTags() throws NessieNotFoundException, NessieConflictException {
+  void failOnExplicitTagArgument() throws NessieNotFoundException, NessieConflictException {
     create(table3, key3);
     IcebergTable stored3 = get(key3);
 
@@ -159,11 +159,6 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     assertThat(runMain("--key", key3.toString(), "--ref", tagName)).isEqualTo(1);
 
     assertThat(log(1, tag).get(0)).isEqualTo(head); // no new commits
-    assertThat(get(key3)).isEqualTo(stored3);
-
-    assertThat(runMain("--key", key3.toString(), "--ref", tagName, "--skip-tags")).isEqualTo(0);
-
-    assertThat(log(1, tag).get(0)).isEqualTo(head); // still no new commits
     assertThat(get(key3)).isEqualTo(stored3);
   }
 

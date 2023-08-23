@@ -83,12 +83,6 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
   private String storageModel;
 
   @Option(
-      names = {"--skip-tags"},
-      description =
-          "If set, input references that are not branches will be ignored (as opposed to reported as errors).")
-  private boolean skipTags;
-
-  @Option(
       names = {"-k", "--key"},
       paramLabel = "<key element>",
       description =
@@ -101,13 +95,17 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
       description = "The number of keys to group for processing (read and/or write operations).")
   private int batchSize;
 
-  protected abstract void processBatch(NessieApiV2 api, Reference ref, List<ContentKey> keys);
+  protected abstract void processBatch(NessieApiV2 api, Branch ref, List<ContentKey> keys);
 
-  private Reference referenceFromOptions(NessieApiV2 api) throws NessieNotFoundException {
+  private Branch branchFromOptions(NessieApiV2 api) throws NessieNotFoundException {
     if (ref == null) {
       return api.getDefaultBranch();
     } else {
-      return api.getReference().refName(ref).get();
+      Reference reference = api.getReference().refName(ref).get();
+      if (!(reference instanceof Branch)) {
+        throw new IllegalArgumentException("Content can only be committed to branches: " + ref);
+      }
+      return (Branch) reference;
     }
   }
 
@@ -117,7 +115,7 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
       if (all) {
         processAll(api);
       } else if (input == null) {
-        process(api, referenceFromOptions(api), singletonList(ContentKey.of(keyElements)));
+        processBatch(api, branchFromOptions(api), singletonList(ContentKey.of(keyElements)));
       } else {
         try (FileInputStream inputStream = new FileInputStream(input)) {
           if (format == null) {
@@ -127,7 +125,7 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
 
           switch (format) {
             case CSV_KEYS:
-              processLines(api, referenceFromOptions(api), inputStream);
+              processLines(api, branchFromOptions(api), inputStream);
               break;
             case CONTENT_INFO_JSON:
               processJson(api, inputStream);
@@ -147,7 +145,7 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
   }
 
   private void processAll(NessieApiV2 api, Reference ref) {
-    if (ref.getType() != Reference.ReferenceType.BRANCH) {
+    if (!(ref instanceof Branch)) {
       return;
     }
 
@@ -157,13 +155,13 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
                   .map(EntriesResponse.Entry::getName)
                   .iterator(),
               batchSize)
-          .forEachRemaining(batch -> process(api, ref, batch));
+          .forEachRemaining(batch -> processBatch(api, (Branch) ref, batch));
     } catch (NessieNotFoundException ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private void processLines(NessieApiV2 api, Reference ref, InputStream input) throws IOException {
+  private void processLines(NessieApiV2 api, Branch ref, InputStream input) throws IOException {
     Function<String, ContentKey> parseKey;
     if (separator == null) {
       parseKey = ContentKey::fromPathString;
@@ -225,27 +223,15 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
 
     for (Map.Entry<String, List<ContentKey>> entry : perRef.entrySet()) {
       Reference reference = api.getReference().refName(entry.getKey()).get();
-      process(api, reference, entry.getValue());
-    }
-  }
-
-  private void process(NessieApiV2 api, Reference ref, List<ContentKey> keys) {
-    if (!(ref instanceof Branch)) {
-      if (skipTags) {
-        spec.commandLine()
-            .getOut()
-            .printf("Skipped %d keys because %s is not a branch.%n", keys.size(), ref);
-        return;
-      } else {
-        throw new IllegalArgumentException("Content can only be committed to branches: " + ref);
+      if (!(reference instanceof Branch)) {
+        continue; // automatically skip tags when processing JSON input
       }
+      processBatch(api, (Branch) reference, entry.getValue());
     }
-
-    processBatch(api, ref, keys);
   }
 
   public enum InputFormat {
     CONTENT_INFO_JSON,
-    CSV_KEYS;
+    CSV_KEYS,
   }
 }
