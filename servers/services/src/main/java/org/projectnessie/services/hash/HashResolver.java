@@ -133,9 +133,6 @@ public final class HashResolver {
       throws ReferenceNotFoundException {
     checkState(currentHead != null || hashOnRef != null);
     Optional<ParsedHash> parsed = ParsedHash.parse(hashOnRef, store.noAncestorHash());
-    if (ref == DetachedRef.INSTANCE) {
-      validator.hashMustBePresent().hashMustNotBeAmbiguous();
-    }
     validator.validate(ref, parsed.orElse(null));
     Hash resolved = parsed.flatMap(ParsedHash::getAbsolutePart).orElse(currentHead);
     checkState(resolved != null);

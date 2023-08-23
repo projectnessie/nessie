@@ -267,7 +267,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .resolveHashOnRef(
                   sourceRefName,
                   targetHash,
-                  new HashValidator("Target hash").hashMustBePresent().hashMustNotBeAmbiguous());
+                  new HashValidator("Target hash").hashMustBeUnambiguous());
       check.canViewReference(targetRef.getNamedRef());
       targetHashObj = Optional.of(targetRef.getHash());
     } catch (ReferenceNotFoundException e) {
@@ -313,14 +313,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   expectedHash,
                   new HashValidator("Assignment target", "Expected hash")
                       .refMustBeBranchOrTag()
-                      .hashMustBePresent()
-                      .hashMustNotBeAmbiguous());
+                      .hashMustBeUnambiguous());
       ResolvedHash newRef =
           getHashResolver()
               .resolveHashOnRef(
                   assignTo.getName(),
                   assignTo.getHash(),
-                  new HashValidator("Target hash").hashMustBePresent().hashMustNotBeAmbiguous());
+                  new HashValidator("Target hash").hashMustBeUnambiguous());
 
       checkArgument(
           referenceType == null || referenceType == RefUtil.referenceType(oldRef.getNamedRef()),
@@ -370,7 +369,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   resolved.getNamedRef(),
                   resolved.getHash(),
                   expectedHash,
-                  new HashValidator("Expected hash").hashMustBePresent().hashMustNotBeAmbiguous());
+                  new HashValidator("Expected hash").hashMustBeUnambiguous());
 
       Hash deletedAthash = getStore().delete(ref, Optional.of(refToDelete.getHash())).getHash();
       return RefUtil.toReference(ref, deletedAthash);
@@ -622,9 +621,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .resolveHashOnRef(
                   fromRefName,
                   lastHash,
-                  new HashValidator("Hash to transplant")
-                      .hashMustBePresent()
-                      .hashMustNotBeAmbiguous());
+                  new HashValidator("Hash to transplant").hashMustBeUnambiguous());
 
       ResolvedHash toRef =
           getHashResolver()
@@ -633,8 +630,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   expectedHash,
                   new HashValidator("Reference to transplant into", "Expected hash")
                       .refMustBeBranch()
-                      .hashMustBePresent()
-                      .hashMustNotBeAmbiguous());
+                      .hashMustBeUnambiguous());
 
       startAccessCheck()
           .canViewReference(fromRef.getNamedRef())
@@ -646,11 +642,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         transplants.add(
             getHashResolver()
                 .resolveHashOnRef(
-                    fromRef,
-                    hash,
-                    new HashValidator("Hash to transplant")
-                        .hashMustBePresent()
-                        .hashMustNotBeAmbiguous())
+                    fromRef, hash, new HashValidator("Hash to transplant").hashMustBeUnambiguous())
                 .getHash());
       }
 
@@ -719,9 +711,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ResolvedHash fromRef =
           getHashResolver()
               .resolveHashOnRef(
-                  fromRefName,
-                  fromHash,
-                  new HashValidator("Source hash").hashMustBePresent().hashMustNotBeAmbiguous());
+                  fromRefName, fromHash, new HashValidator("Source hash").hashMustBeUnambiguous());
       ResolvedHash toRef =
           getHashResolver()
               .resolveHashOnRef(
@@ -729,8 +719,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   expectedHash,
                   new HashValidator("Reference to merge into", "Expected hash")
                       .refMustBeBranch()
-                      .hashMustBePresent()
-                      .hashMustNotBeAmbiguous());
+                      .hashMustBeUnambiguous());
 
       checkArgument(toRef.getNamedRef() instanceof BranchName, "Can only merge into branches.");
 
@@ -1058,8 +1047,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   expectedHash,
                   new HashValidator("Reference to commit into", "Expected hash")
                       .refMustBeBranch()
-                      .hashMustBePresent()
-                      .hashMustNotBeAmbiguous());
+                      .hashMustBeUnambiguous());
 
       Hash newHash =
           getStore()

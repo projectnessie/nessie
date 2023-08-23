@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 
@@ -32,8 +33,7 @@ public final class HashValidator {
 
   private boolean refMustBeBranch;
   private boolean refMustBeBranchOrTag;
-  private boolean hashMustBePresent;
-  private boolean hashMustNotBeAmbiguous;
+  private boolean hashMustBeUnambiguous;
 
   public HashValidator() {
     this("Hash");
@@ -65,12 +65,10 @@ public final class HashValidator {
           "%s must be a branch or a tag.",
           refDescription);
     }
-    if (hashMustBePresent) {
+    if (hashMustBeUnambiguous || namedRef == DetachedRef.INSTANCE) {
       checkArgument(parsed != null, "%s must be provided.", hashDescription);
-    }
-    if (hashMustNotBeAmbiguous) {
       checkArgument(
-          parsed == null || parsed.getAbsolutePart().isPresent(),
+          parsed.getAbsolutePart().isPresent(),
           "%s must contain a starting commit ID.",
           hashDescription);
     }
@@ -90,21 +88,14 @@ public final class HashValidator {
     return this;
   }
 
-  /** Validates that a hash has been provided (absolute or relative). */
-  @CanIgnoreReturnValue
-  public HashValidator hashMustBePresent() {
-    hashMustBePresent = true;
-    return this;
-  }
-
   /**
-   * Validates that, if a hash was provided, it is unambiguous. A hash is unambiguous if it starts
-   * with an absolute part, because it will always resolve to the same hash, even if it also has
-   * relative parts.
+   * Validates that a hash is unambiguous. A hash is unambiguous if it is present and starts with an
+   * absolute part, because it will always resolve to the same hash, even if it also has relative
+   * parts.
    */
   @CanIgnoreReturnValue
-  public HashValidator hashMustNotBeAmbiguous() {
-    hashMustNotBeAmbiguous = true;
+  public HashValidator hashMustBeUnambiguous() {
+    hashMustBeUnambiguous = true;
     return this;
   }
 }
