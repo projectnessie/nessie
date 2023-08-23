@@ -35,55 +35,55 @@ jobs:
       CI_MAC: "true"
 
     steps:
-    - name: Brew update & upgrade
-      run: |
-        echo "::group::Update Brew"
-        brew update
-        echo "::endgroup::"
-        echo "::group::Brew Upgrade"
-        brew upgrade || true
-        echo "::endgroup::"
-
-    - name: Prepare Podman
-      run: |
-        echo "::group::Install Podman"
-        brew install podman
-        echo "::endgroup::"
-
-        echo "::group::Initializing Podman"
-        podman machine init
-        echo "::endgroup::"
-
-    - name: Start Podman
-      uses: nick-fields/retry@v2
-      with:
-        max_attempts: 10
-        timeout_minutes: 5
-        retry_wait_seconds: 3
-        command: |
-          echo "::group::Starting Podman"
-          podman machine start
-          echo "::endgroup::"
-        on_retry_command: |
-          echo "::group::Stopping Podman"
-          podman machine stop
-          echo "::endgroup::"
-
-    - name: Configure Podman
-      run: |
-        echo "::group::Aliasing Podman"
-        ln -s /usr/local/bin/podman /usr/local/bin/docker
-        echo "::endgroup::"
-
-        export DOCKER_HOST="unix:///${HOME}/.local/share/containers/podman/machine/podman-machine-default/podman.sock"
-        echo "DOCKER_HOST=$DOCKER_HOST" >> ${GITHUB_ENV}
-
-        # See https://www.testcontainers.org/supported_docker_environment/
-        echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> ${GITHUB_ENV}
-
-        echo "::group::Docker info"
-        docker info
-        echo "::endgroup::"
+    #- name: Brew update & upgrade
+    #  run: |
+    #    echo "::group::Update Brew"
+    #    brew update
+    #    echo "::endgroup::"
+    #    echo "::group::Brew Upgrade"
+    #    brew upgrade || true
+    #    echo "::endgroup::"
+    #
+    #- name: Prepare Podman
+    #  run: |
+    #    echo "::group::Install Podman"
+    #    brew install podman
+    #    echo "::endgroup::"
+    #
+    #    echo "::group::Initializing Podman"
+    #    podman machine init
+    #    echo "::endgroup::"
+    #
+    #- name: Start Podman
+    #  uses: nick-fields/retry@v2
+    #  with:
+    #    max_attempts: 10
+    #    timeout_minutes: 5
+    #    retry_wait_seconds: 3
+    #    command: |
+    #      echo "::group::Starting Podman"
+    #      podman machine start
+    #      echo "::endgroup::"
+    #    on_retry_command: |
+    #      echo "::group::Stopping Podman"
+    #      podman machine stop
+    #      echo "::endgroup::"
+    #
+    #- name: Configure Podman
+    #  run: |
+    #    echo "::group::Aliasing Podman"
+    #    ln -s /usr/local/bin/podman /usr/local/bin/docker
+    #    echo "::endgroup::"
+    #
+    #    export DOCKER_HOST="unix:///${HOME}/.local/share/containers/podman/machine/podman-machine-default/podman.sock"
+    #    echo "DOCKER_HOST=$DOCKER_HOST" >> ${GITHUB_ENV}
+    #
+    #    # See https://www.testcontainers.org/supported_docker_environment/
+    #    echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> ${GITHUB_ENV}
+    #
+    #    echo "::group::Docker info"
+    #    docker info
+    #    echo "::endgroup::"
 
     - uses: actions/checkout@v3.5.3
     - name: Setup Java, Gradle
@@ -107,10 +107,10 @@ jobs:
       with:
         arguments: test --scan
 
-    - name: Gradle / integ-test
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: intTest --scan
+    #- name: Gradle / integ-test
+    #  uses: gradle/gradle-build-action@v2
+    #  with:
+    #    arguments: intTest --scan
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3

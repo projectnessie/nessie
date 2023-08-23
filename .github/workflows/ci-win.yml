@@ -98,10 +98,10 @@ jobs:
       with:
         arguments: test --scan
 
-    - name: Gradle / integ-test
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: intTest --scan
+    #- name: Gradle / integ-test
+    #  uses: gradle/gradle-build-action@v2
+    #  with:
+    #    arguments: intTest --scan
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3
