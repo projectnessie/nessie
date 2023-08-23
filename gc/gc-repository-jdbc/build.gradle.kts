@@ -49,17 +49,23 @@ dependencies {
   compileOnly(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-gc-base-tests"))
+  testFixturesApi(project(":nessie-gc-base"))
+  testFixturesApi(project(":nessie-gc-base-tests"))
 
-  testRuntimeOnly(libs.logback.classic)
+  testFixturesRuntimeOnly(libs.logback.classic)
 
-  testImplementation(libs.guava)
+  testFixturesApi(libs.guava)
 
-  testImplementation(platform(libs.jackson.bom))
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testFixturesApi(platform(libs.jackson.bom))
+  testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testCompileOnly(libs.microprofile.openapi)
+  testFixturesCompileOnly(libs.microprofile.openapi)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
+
+  intTestImplementation(libs.postgresql)
+  intTestImplementation(platform(libs.testcontainers.bom))
+  intTestImplementation("org.testcontainers:postgresql")
+  intTestRuntimeOnly(libs.docker.java.api)
 }

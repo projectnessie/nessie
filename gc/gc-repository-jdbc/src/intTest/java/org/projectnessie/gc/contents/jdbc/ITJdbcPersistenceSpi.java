@@ -15,12 +15,28 @@
  */
 package org.projectnessie.gc.contents.jdbc;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-public class TestJdbcPersistenceSpi extends AbstractJdbcPersistenceSpi {
+public class ITJdbcPersistenceSpi extends AbstractJdbcPersistenceSpi {
+
+  private static PostgreSQLContainer<?> container;
 
   @BeforeAll
   static void createDataSource() throws Exception {
-    initDataSource("jdbc:h2:mem:nessie;MODE=PostgreSQL");
+
+    String version = System.getProperty("it.nessie.container.postgres.tag", "latest");
+    container = new PostgreSQLContainer<>("postgres:" + version);
+    container.start();
+
+    initDataSource(container.getJdbcUrl());
+  }
+
+  @AfterAll
+  static void stopContainer() {
+    if (container != null) {
+      container.stop();
+    }
   }
 }
