@@ -706,6 +706,9 @@ jobs:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}
 
+      - name: Free disk space
+        uses: ./.github/actions/free-disk-space
+
       - name: Setup runner
         uses: ./.github/actions/setup-runner
         with:
