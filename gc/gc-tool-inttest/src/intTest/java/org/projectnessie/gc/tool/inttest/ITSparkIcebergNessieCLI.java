@@ -41,7 +41,7 @@ import org.projectnessie.spark.extensions.SparkSqlTestBase;
 @ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
 public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
 
-  public static final String JDBC_URL = "jdbc:h2:mem:gc_int_test;DB_CLOSE_DELAY=-1";
+  public static final String JDBC_URL = "jdbc:h2:mem:gc_int_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1";
 
   @InjectSoftAssertions private SoftAssertions soft;
 
