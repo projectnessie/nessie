@@ -927,51 +927,31 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
 
-        if (namespaceFilterDepth > 0) {
-          Set<ContentKey> seen = new HashSet<>();
-          while (authz.hasNext()) {
-            KeyEntry key = authz.next();
+        Set<ContentKey> seenNamespaces = namespaceFilterDepth > 0 ? new HashSet<>() : null;
+        while (authz.hasNext()) {
+          KeyEntry key = authz.next();
 
-            if (!filterPredicate.test(key)) {
-              continue;
-            }
-
-            Content c = key.getContent();
-            Entry entry =
-                c != null
-                    ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
-                    : Entry.entry(
-                        key.getKey().contentKey(),
-                        key.getKey().type(),
-                        key.getKey().lastElement().contentId());
-
-            entry = maybeTruncateToDepth(entry, namespaceFilterDepth);
-
-            // add implicit namespace entries only once (single parent of multiple real entries)
-            if (seen.add(entry.getName())) {
-              if (!pagedResponseHandler.addEntry(entry)) {
-                pagedResponseHandler.hasMore(authz.tokenForCurrent());
-                break;
-              }
-            }
+          if (!filterPredicate.test(key)) {
+            continue;
           }
-        } else {
-          while (authz.hasNext()) {
-            KeyEntry key = authz.next();
 
-            if (!filterPredicate.test(key)) {
-              continue;
-            }
+          Content c = key.getContent();
+          Entry entry =
+              c != null
+                  ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
+                  : Entry.entry(
+                      key.getKey().contentKey(),
+                      key.getKey().type(),
+                      key.getKey().lastElement().contentId());
 
-            Content c = key.getContent();
-            Entry entry =
-                c != null
-                    ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
-                    : Entry.entry(
-                        key.getKey().contentKey(),
-                        key.getKey().type(),
-                        key.getKey().lastElement().contentId());
+          if (namespaceFilterDepth > 0) {
+            entry = maybeTruncateToDepth(entry, namespaceFilterDepth);
+          }
 
+          // add implicit namespace entries only once (single parent of multiple real entries)
+          if (seenNamespaces == null
+              || !Content.Type.NAMESPACE.equals(entry.getType())
+              || seenNamespaces.add(entry.getName())) {
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
               break;
