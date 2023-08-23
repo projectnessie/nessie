@@ -16,6 +16,15 @@
 package org.projectnessie.quarkus.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.hashNotFound;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.objectNotFound;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,20 +33,30 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
+import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.versionstore.ContentMapping;
+import org.projectnessie.versioned.storage.versionstore.RefMapping;
+import org.projectnessie.versioned.storage.versionstore.TypeMapping;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import picocli.CommandLine;
 
@@ -98,8 +117,22 @@ public class CheckContent extends BaseCommand {
   private final AtomicInteger keysProcessed = new AtomicInteger();
   private final AtomicInteger errorDetected = new AtomicInteger();
 
+  private Ops ops;
+  private JsonGenerator generator;
+
+  @Override
+  protected Integer callWithPersist() throws Exception {
+    ops = new PersistOps();
+    return check();
+  }
+
   @Override
   protected Integer callWithDatabaseAdapter() throws Exception {
+    ops = new DatabaseAdapterOps();
+    return check();
+  }
+
+  private Integer check() throws Exception {
     warnOnInMemory();
 
     if (outputSpec != null) {
@@ -127,7 +160,7 @@ public class CheckContent extends BaseCommand {
   private void check(PrintWriter out) throws Exception {
     // Note: Do not use try-with-resources to avoid closing the output. The caller takes care of
     // that.
-    JsonGenerator generator =
+    generator =
         new ObjectMapper()
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .getFactory()
@@ -135,32 +168,15 @@ public class CheckContent extends BaseCommand {
 
     generator.writeStartArray();
 
-    check(generator);
+    Hash hash = hash();
+    if (keyElements != null && !keyElements.isEmpty()) {
+      check(hash, List.of(ContentKey.of(keyElements)));
+    } else {
+      ops.iterateKeys(hash);
+    }
 
     generator.writeEndArray();
     generator.flush();
-  }
-
-  private void check(JsonGenerator generator) throws Exception {
-    Hash hash = hash();
-    if (keyElements != null && !keyElements.isEmpty()) {
-      check(hash, List.of(ContentKey.of(keyElements)), generator);
-    } else {
-      List<ContentKey> batch = new ArrayList<>(batchSize);
-      try (Stream<KeyListEntry> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
-        keys.forEach(
-            keyListEntry -> {
-              batch.add(keyListEntry.getKey());
-
-              if (batch.size() >= batchSize) {
-                check(hash, batch, generator);
-                batch.clear();
-              }
-            });
-
-        check(hash, batch, generator); // check remaining keys
-      }
-    }
   }
 
   private Hash hash() throws ReferenceNotFoundException {
@@ -173,44 +189,36 @@ public class CheckContent extends BaseCommand {
       effectiveRef = serverConfig.getDefaultBranch();
     }
 
-    ReferenceInfo<ByteString> main =
-        databaseAdapter.namedRef(effectiveRef, GetNamedRefsParams.DEFAULT);
-    return main.getHash();
+    return ops.resolveRefHead(effectiveRef);
   }
 
-  private void check(Hash hash, List<ContentKey> keys, JsonGenerator generator) {
-    Map<ContentKey, ContentAndState> values;
+  private void check(Hash hash, List<ContentKey> keys) {
+    Map<ContentKey, Content> values;
     try {
-      values = databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
+      values = ops.fetchValues(hash, keys);
     } catch (Exception e) {
-      keys.forEach(k -> report(generator, k, e, null));
+      keys.forEach(k -> report(k, e, null));
       return;
     }
 
     keys.forEach(
         k -> {
           if (values.get(k) == null) {
-            report(generator, k, new IllegalArgumentException("Missing content"), null);
+            report(k, new IllegalArgumentException("Missing content"), null);
           }
         });
 
     values.forEach(
-        (k, contentAndState) -> {
+        (k, value) -> {
           try {
-            Object value =
-                DefaultStoreWorker.instance()
-                    .valueFromStore(
-                        contentAndState.getPayload(),
-                        contentAndState.getRefState(),
-                        contentAndState::getGlobalState);
-            report(generator, k, null, value);
+            report(k, null, value);
           } catch (Exception e) {
-            report(generator, k, e, null);
+            report(k, e, null);
           }
         });
   }
 
-  private void report(JsonGenerator generator, ContentKey key, Throwable error, Object content) {
+  private void report(ContentKey key, Throwable error, Object content) {
     keysProcessed.incrementAndGet();
     if (error != null) {
       errorDetected.incrementAndGet();
@@ -221,7 +229,7 @@ public class CheckContent extends BaseCommand {
     }
 
     ImmutableCheckContentEntry.Builder builder = ImmutableCheckContentEntry.builder();
-    builder.key(ContentKey.of(key.getElements()));
+    builder.key(key);
     builder.status(error == null ? "OK" : "ERROR");
 
     if (error != null) {
@@ -253,6 +261,118 @@ public class CheckContent extends BaseCommand {
 
     } catch (Exception e) {
       throw new AssertionError(e);
+    }
+  }
+
+  interface Ops {
+
+    Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException;
+
+    void iterateKeys(Hash hash) throws ReferenceNotFoundException;
+
+    Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
+        throws ReferenceNotFoundException;
+  }
+
+  class PersistOps implements Ops {
+
+    private StoreIndex<CommitOp> index;
+
+    @Override
+    public Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
+      return objIdToHash(new RefMapping(persist).resolveNamedRef(effectiveRef).pointer());
+    }
+
+    @Override
+    public void iterateKeys(Hash hash) throws ReferenceNotFoundException {
+      Iterator<StoreIndexElement<CommitOp>> result = index(hash).iterator(null, null, true);
+      List<ContentKey> batch = new ArrayList<>(batchSize);
+      result.forEachRemaining(
+          indexElement -> {
+            ContentKey key = storeKeyToKey(indexElement.key());
+            batch.add(key);
+            if (batch.size() >= batchSize) {
+              check(hash, batch);
+              batch.clear();
+            }
+          });
+      check(hash, batch); // check remaining keys
+    }
+
+    @Override
+    public Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
+        throws ReferenceNotFoundException {
+      // Eagerly bulk-(pre)fetch the requested keys
+      index(hash)
+          .loadIfNecessary(
+              keys.stream().map(TypeMapping::keyToStoreKey).collect(Collectors.toSet()));
+      Map<ObjId, ContentKey> idsToKeys = new HashMap<>(keys.size());
+      for (ContentKey key : keys) {
+        StoreKey storeKey = keyToStoreKey(key);
+        StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
+        if (indexElement != null && indexElement.content().action().exists()) {
+          idsToKeys.put(
+              requireNonNull(indexElement.content().value(), "Required value pointer is null"),
+              key);
+        }
+      }
+      ContentMapping contentMapping = new ContentMapping(persist);
+      try {
+        return contentMapping.fetchContents(idsToKeys);
+      } catch (ObjNotFoundException e) {
+        throw objectNotFound(e);
+      }
+    }
+
+    private StoreIndex<CommitOp> index(Hash hash) throws ReferenceNotFoundException {
+      if (index == null) {
+        try {
+          CommitObj c = commitLogic(persist).fetchCommit(hashToObjId(hash));
+          index = indexesLogic(persist).buildCompleteIndexOrEmpty(c);
+        } catch (ObjNotFoundException e) {
+          throw hashNotFound(hash);
+        }
+      }
+      return index;
+    }
+  }
+
+  class DatabaseAdapterOps implements Ops {
+    @Override
+    public Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
+      return databaseAdapter.namedRef(effectiveRef, GetNamedRefsParams.DEFAULT).getHash();
+    }
+
+    @Override
+    public void iterateKeys(Hash hash) throws ReferenceNotFoundException {
+      List<ContentKey> batch = new ArrayList<>(batchSize);
+      try (Stream<KeyListEntry> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
+        keys.forEach(
+            keyListEntry -> {
+              batch.add(keyListEntry.getKey());
+              if (batch.size() >= batchSize) {
+                check(hash, batch);
+                batch.clear();
+              }
+            });
+      }
+      check(hash, batch); // check remaining keys
+    }
+
+    @Override
+    public Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
+        throws ReferenceNotFoundException {
+      return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
+          .map(
+              entry ->
+                  Map.entry(
+                      entry.getKey(),
+                      DefaultStoreWorker.instance()
+                          .valueFromStore(
+                              entry.getValue().getPayload(),
+                              entry.getValue().getRefState(),
+                              entry.getValue()::getGlobalState)))
+          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
   }
 }
