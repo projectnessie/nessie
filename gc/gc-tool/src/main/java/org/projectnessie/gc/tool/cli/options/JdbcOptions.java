@@ -23,6 +23,10 @@ import org.projectnessie.gc.contents.jdbc.AgroalJdbcDataSourceProvider;
 import picocli.CommandLine;
 
 public class JdbcOptions {
+  @CommandLine.Option(
+      names = "--jdbc",
+      description = "Flag whether to use the JDBC contents storage.")
+  boolean jdbc;
 
   @CommandLine.Option(
       names = "--jdbc-url",
