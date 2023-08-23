@@ -74,6 +74,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -546,7 +547,7 @@ public class VersionStoreImpl implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(
       Ref ref,
       String pagingToken,
-      Predicate<KeyEntry> loadContentPredicate,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> loadContentPredicate,
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     KeyRanges keyRanges = keyRanges(pagingToken, keyRestrictions);
