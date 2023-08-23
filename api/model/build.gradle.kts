@@ -109,6 +109,11 @@ annotationStripper {
 
 tasks.named<Test>("intTest").configure {
   dependsOn(generateOpenApiSpec)
-  systemProperty("openapiSchemaDir", "$buildDir/generated/openapi/META-INF/openapi")
+  systemProperty(
+    "openapiSchemaDir",
+    project.layout.buildDirectory.asFile
+      .map { it.resolve("generated/openapi/META-INF/openapi") }
+      .get()
+  )
   systemProperty("redoclyConfDir", "$projectDir/src/redocly")
 }

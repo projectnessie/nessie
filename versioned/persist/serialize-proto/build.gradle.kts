@@ -41,7 +41,9 @@ extensions.configure<ProtobufExtension> {
 tasks.named<GenerateProtoTask>("generateProto").configure {
   doLast(
     ReplaceInFiles(
-      fileTree(project.buildDir.resolve("generated/source/proto/main")),
+      fileTree(
+        project.layout.buildDirectory.asFile.map { it.resolve("generated/source/proto/main") }
+      ),
       mapOf("com.google.protobuf" to "org.projectnessie.nessie.relocated.protobuf")
     )
   )

@@ -36,9 +36,8 @@ tasks.named<AntlrTask>("generateGrammarSource").configure {
   arguments.add("-visitor")
   doLast(
     ReplaceInFiles(
-      fileTree(project.buildDir.resolve("generated-src/antlr/main")).matching {
-        include("**/*.java")
-      },
+      fileTree(project.layout.buildDirectory.asFile.map { it.resolve("generated-src/antlr/main") })
+        .matching { include("**/*.java") },
       mapOf(
         "import org.antlr.v4.runtime." to "import org.projectnessie.shaded.org.antlr.v4.runtime.",
         "// PACKAGE_PLACEHOLDER" to "package org.apache.spark.sql.catalyst.parser.extensions;"

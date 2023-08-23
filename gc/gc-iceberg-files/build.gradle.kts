@@ -75,7 +75,7 @@ dependencies {
 
 tasks.withType(Test::class.java).configureEach {
   systemProperty("aws.region", "us-east-1")
-  val tmpdir = project.buildDir.resolve("tmpdir")
+  val tmpdir = project.layout.buildDirectory.get().asFile.resolve("tmpdir")
   jvmArgumentProviders.add(
     CommandLineArgumentProvider {
       tmpdir.mkdirs()

@@ -119,13 +119,13 @@ pullOpenApiSpec.configure {
   from(openapiSource) { include("openapi.yaml") }
 }
 
-val openApiSpecDir = buildDir.resolve("openapi-extra")
+val openApiSpecDir = layout.buildDirectory.asFile.map { it.resolve("openapi-extra") }.get()
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.store-schema-directory",
-    buildDir.resolve("openapi").toString()
+    layout.buildDirectory.asFile.map { it.resolve("openapi") }.get().toString()
   )
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.additional-docs-directory",

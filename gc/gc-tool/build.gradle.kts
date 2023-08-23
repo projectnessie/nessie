@@ -111,7 +111,10 @@ val generateAutoComplete by
 
     dependsOn(compileJava)
 
-    val completionScriptsDir = project.buildDir.resolve("classes/java/main/META-INF/completion")
+    val completionScriptsDir =
+      project.layout.buildDirectory.asFile
+        .map { it.resolve("classes/java/main/META-INF/completion") }
+        .get()
 
     doFirst { completionScriptsDir.mkdirs() }
 
@@ -139,12 +142,14 @@ val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
 val unixExecutable by tasks.registering(UnixExecutableTask::class)
 
+val nessieGcExecutable = layout.buildDirectory.asFile.map { it.resolve("executable/nessie-gc") }
+
 unixExecutable.configure {
   group = "build"
   description = "Generates the Unix executable"
 
   dependsOn(shadowJar)
-  executable.set(buildDir.resolve("executable").resolve("nessie-gc"))
+  executable.set(nessieGcExecutable.get())
   template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
   sourceJar.set(shadowJar.get().archiveFile)
 }
@@ -159,7 +164,7 @@ val execSmokeTest by tasks.registering(Exec::class)
 execSmokeTest.configure {
   description = "Verify that the generated nessie-gc executable works"
   enabled = Os.isFamily(Os.FAMILY_UNIX)
-  val exec = buildDir.resolve("executable").resolve("nessie-gc")
+  val exec = nessieGcExecutable.get()
   inputs.file(exec).withPathSensitivity(PathSensitivity.RELATIVE)
   dependsOn(unixExecutable)
   executable(exec)
