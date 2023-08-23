@@ -1501,7 +1501,7 @@ public abstract class AbstractRelativeReferences {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void getDiffFromRefAmbiguousDetached() {
     NessieError error = expectError(rest().get("trees/@{from}/diff/base@{to}", "~1", "~2"), 400);
-    checkError(error, BAD_REQUEST, "From hash must contain a starting commit ID.");
+    checkError(error, BAD_REQUEST, "\"From\" hash must contain a starting commit ID.");
   }
 
   /**
@@ -1512,7 +1512,7 @@ public abstract class AbstractRelativeReferences {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void getDiffToRefAmbiguousDetached() {
     NessieError error = expectError(rest().get("trees/base@{from}/diff/@{to}", "~1", "~2"), 400);
-    checkError(error, BAD_REQUEST, "To hash must contain a starting commit ID.");
+    checkError(error, BAD_REQUEST, "\"To\" hash must contain a starting commit ID.");
   }
 
   private static Branch expectBranch(Response base) {

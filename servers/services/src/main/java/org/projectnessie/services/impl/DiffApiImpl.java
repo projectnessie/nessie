@@ -78,9 +78,9 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
 
     try {
       ResolvedHash from =
-          getHashResolver().resolveHashOnRef(fromRef, fromHash, new HashValidator("From hash"));
+          getHashResolver().resolveHashOnRef(fromRef, fromHash, new HashValidator("\"From\" hash"));
       ResolvedHash to =
-          getHashResolver().resolveHashOnRef(toRef, toHash, new HashValidator("To hash"));
+          getHashResolver().resolveHashOnRef(toRef, toHash, new HashValidator("\"To\" hash"));
       NamedRef fromNamedRef = from.getNamedRef();
       NamedRef toNamedRef = to.getNamedRef();
       fromReference.accept(from);
