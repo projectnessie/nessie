@@ -248,9 +248,7 @@ fun loadProperties(file: File): Properties {
 
 /** Hack for Jandex-Plugin (removed later). */
 fun Project.useBuildSubDirectory(buildSubDir: String) {
-  project.layout.buildDirectory.set(
-    layout.buildDirectory.asFile.map { it.resolve(buildSubDir) }.get()
-  )
+  project.layout.buildDirectory.set(layout.buildDirectory.dir(buildSubDir).get())
 
   // TODO open an issue for the Jandex plugin - it configures the task's output directory too
   //  early, so re-assigning the output directory (project.buildDir=...) to a different path

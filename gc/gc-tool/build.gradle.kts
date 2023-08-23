@@ -112,18 +112,16 @@ val generateAutoComplete by
     dependsOn(compileJava)
 
     val completionScriptsDir =
-      project.layout.buildDirectory.asFile
-        .map { it.resolve("classes/java/main/META-INF/completion") }
-        .get()
+      project.layout.buildDirectory.dir("classes/java/main/META-INF/completion")
 
-    doFirst { completionScriptsDir.mkdirs() }
+    doFirst { mkdir(completionScriptsDir) }
 
     mainClass.set("picocli.AutoComplete")
     classpath(configurations.named("runtimeClasspath"), compileJava)
     args(
       "--force",
       "-o",
-      completionScriptsDir.resolve("nessie-gc-completion").toString(),
+      completionScriptsDir.get().dir("nessie-gc-completion").toString(),
       mainClassName
     )
 
@@ -142,14 +140,14 @@ val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
 val unixExecutable by tasks.registering(UnixExecutableTask::class)
 
-val nessieGcExecutable = layout.buildDirectory.asFile.map { it.resolve("executable/nessie-gc") }
+val nessieGcExecutable = layout.buildDirectory.file("executable/nessie-gc")
 
 unixExecutable.configure {
   group = "build"
   description = "Generates the Unix executable"
 
   dependsOn(shadowJar)
-  executable.set(nessieGcExecutable.get())
+  executable.set(nessieGcExecutable)
   template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
   sourceJar.set(shadowJar.get().archiveFile)
 }

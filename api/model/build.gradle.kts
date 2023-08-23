@@ -111,9 +111,7 @@ tasks.named<Test>("intTest").configure {
   dependsOn(generateOpenApiSpec)
   systemProperty(
     "openapiSchemaDir",
-    project.layout.buildDirectory.asFile
-      .map { it.resolve("generated/openapi/META-INF/openapi") }
-      .get()
+    project.layout.buildDirectory.dir("generated/openapi/META-INF/openapi").get().toString()
   )
   systemProperty("redoclyConfDir", "$projectDir/src/redocly")
 }

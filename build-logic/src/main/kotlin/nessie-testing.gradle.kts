@@ -62,9 +62,9 @@ components {
 
 if (plugins.hasPlugin("io.quarkus")) {
   // This directory somehow disappears... Maybe some weird Quarkus code.
-  val testFixturesDir = layout.buildDirectory.asFile.map { it.resolve("resources/testFixtures") }
-  tasks.named("quarkusGenerateCodeTests").configure { doFirst { testFixturesDir.get().mkdirs() } }
-  tasks.withType<Test>().configureEach { doFirst { testFixturesDir.get().mkdirs() } }
+  val testFixturesDir = layout.buildDirectory.dir("resources/testFixtures")
+  tasks.named("quarkusGenerateCodeTests").configure { doFirst { mkdir(testFixturesDir) } }
+  tasks.withType<Test>().configureEach { doFirst { mkdir(testFixturesDir) } }
 }
 
 tasks.withType<Test>().configureEach {
