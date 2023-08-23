@@ -19,7 +19,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class ITJdbcPersistenceSpi extends AbstractJdbcPersistenceSpi {
+public class ITPostgresPersistenceSpi extends AbstractJdbcPersistenceSpi {
 
   private static PostgreSQLContainer<?> container;
 
