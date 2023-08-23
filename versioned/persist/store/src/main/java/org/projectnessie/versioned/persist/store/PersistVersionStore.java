@@ -549,7 +549,7 @@ public class PersistVersionStore implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(
       Ref ref,
       String pagingToken,
-      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> withContentPredicate,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> loadContentPredicate,
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
@@ -573,7 +573,7 @@ public class PersistVersionStore implements VersionStore {
                       contentTypeForPayload(entry.getPayload()),
                       entry.getContentId().getId(),
                       elements -> null));
-          if (withContentPredicate != null && withContentPredicate.test(keyEntry)) {
+          if (loadContentPredicate != null && loadContentPredicate.test(keyEntry)) {
             try {
               ContentAndState cs =
                   databaseAdapter

@@ -546,7 +546,7 @@ public class VersionStoreImpl implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(
       Ref ref,
       String pagingToken,
-      Predicate<KeyEntry> withContentPredicate,
+      Predicate<KeyEntry> loadContentPredicate,
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     KeyRanges keyRanges = keyRanges(pagingToken, keyRestrictions);
@@ -611,7 +611,7 @@ public class VersionStoreImpl implements VersionStore {
                 KeyEntry.of(
                     buildIdentifiedKey(key, index, contentType, contentIdString, x -> null));
 
-            if (withContentPredicate != null && withContentPredicate.test(keyEntry)) {
+            if (loadContentPredicate != null && loadContentPredicate.test(keyEntry)) {
               if (content == null) {
                 content =
                     contentMapping.fetchContent(

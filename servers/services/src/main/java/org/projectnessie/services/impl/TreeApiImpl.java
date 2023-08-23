@@ -893,6 +893,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
       }
 
+      // apply filter as early as possible to avoid work (i.e. content loading, authz checks)
+      // for entries that we will eventually throw away
       final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
       if (namespaceFilterDepth > 0) {
         Predicate<ContentKey> depthFilter = e -> e.getElementCount() >= namespaceFilterDepth;
@@ -900,14 +902,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             contentKeyPredicate == null ? depthFilter : contentKeyPredicate.and(depthFilter);
       }
       final Predicate<KeyEntry> filterPredicate = filterEntries(filter);
-      final Predicate<KeyEntry> withContentPredicate = withContent ? filterPredicate : null;
+      final Predicate<KeyEntry> loadContentPredicate = withContent ? filterPredicate : null;
 
       try (PaginationIterator<KeyEntry> entries =
           getStore()
               .getKeys(
                   refWithHash.getHash(),
                   pagingToken,
-                  withContentPredicate,
+                  loadContentPredicate,
                   VersionStore.KeyRestrictions.builder()
                       .minKey(minKey)
                       .maxKey(maxKey)

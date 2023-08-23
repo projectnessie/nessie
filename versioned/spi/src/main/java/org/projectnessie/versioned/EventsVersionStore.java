@@ -157,10 +157,10 @@ public class EventsVersionStore implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(
       Ref ref,
       String pagingToken,
-      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> withContentPredicate,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> loadContentPredicate,
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    return delegate.getKeys(ref, pagingToken, withContentPredicate, keyRestrictions);
+    return delegate.getKeys(ref, pagingToken, loadContentPredicate, keyRestrictions);
   }
 
   @Override

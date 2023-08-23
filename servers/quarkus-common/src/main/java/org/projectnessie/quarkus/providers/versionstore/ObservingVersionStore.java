@@ -209,10 +209,10 @@ public class ObservingVersionStore implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(
       @SpanAttribute(TAG_REF) Ref ref,
       String pagingToken,
-      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> withContentPredicate,
+      @Nullable @jakarta.annotation.Nullable Predicate<KeyEntry> loadContentPredicate,
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    return delegate.getKeys(ref, pagingToken, withContentPredicate, keyRestrictions);
+    return delegate.getKeys(ref, pagingToken, loadContentPredicate, keyRestrictions);
   }
 
   @WithSpan
