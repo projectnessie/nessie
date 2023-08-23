@@ -311,7 +311,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .resolveHashOnRef(
                   referenceName,
                   expectedHash,
-                  new HashValidator("Reference to assign from", "Expected hash")
+                  new HashValidator("Assignment target", "Expected hash")
                       .refMustBeBranchOrTag()
                       .hashMustBePresent()
                       .hashMustNotBeAmbiguous());

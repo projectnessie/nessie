@@ -394,7 +394,7 @@ public abstract class AbstractRelativeReferences {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   public void assignReferenceFromDetachedUnambiguous() {
     NessieError error = expectError(rest().body(etl1).put("trees/@{hash}", c2 + "~1"), 400);
-    checkError(error, BAD_REQUEST, "Reference to assign from must be a branch or a tag.");
+    checkError(error, BAD_REQUEST, "Assignment target must be a branch or a tag.");
   }
 
   /**
@@ -405,7 +405,7 @@ public abstract class AbstractRelativeReferences {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   public void assignReferenceFromDetachedAmbiguous() {
     NessieError error = expectError(rest().body(etl1).put("trees/@{hash}", "~1"), 400);
-    checkError(error, BAD_REQUEST, "Reference to assign from must be a branch or a tag.");
+    checkError(error, BAD_REQUEST, "Assignment target must be a branch or a tag.");
   }
 
   /**
