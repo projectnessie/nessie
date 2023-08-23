@@ -18,7 +18,6 @@ package org.projectnessie.services.hash;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
@@ -31,7 +30,10 @@ public final class HashValidator {
   private final String refDescription;
   private final String hashDescription;
 
-  private BiConsumer<NamedRef, ParsedHash> validator = (namedRef, parsed) -> {};
+  private boolean refMustBeBranch;
+  private boolean refMustBeBranchOrTag;
+  private boolean hashMustBePresent;
+  private boolean hashMustNotBeAmbiguous;
 
   public HashValidator() {
     this("Hash");
@@ -54,40 +56,44 @@ public final class HashValidator {
    */
   public void validate(
       NamedRef namedRef, @Nullable @jakarta.annotation.Nullable ParsedHash parsed) {
-    validator.accept(namedRef, parsed);
+    if (refMustBeBranch) {
+      checkArgument(namedRef instanceof BranchName, "%s must be a branch.", refDescription);
+    }
+    if (refMustBeBranchOrTag) {
+      checkArgument(
+          namedRef instanceof BranchName || namedRef instanceof TagName,
+          "%s must be a branch or a tag.",
+          refDescription);
+    }
+    if (hashMustBePresent) {
+      checkArgument(parsed != null, "%s must be provided.", hashDescription);
+    }
+    if (hashMustNotBeAmbiguous) {
+      checkArgument(
+          parsed == null || parsed.getAbsolutePart().isPresent(),
+          "%s must contain a starting commit ID.",
+          hashDescription);
+    }
   }
 
   /** Validates that a named ref is a branch. */
   @CanIgnoreReturnValue
   public HashValidator refMustBeBranch() {
-    validator =
-        validator.andThen(
-            (namedRef, parsed) ->
-                checkArgument(
-                    namedRef instanceof BranchName, "%s must be a branch.", refDescription));
+    refMustBeBranch = true;
     return this;
   }
 
   /** Validates that a named ref is a branch or a tag. */
   @CanIgnoreReturnValue
   public HashValidator refMustBeBranchOrTag() {
-    validator =
-        validator.andThen(
-            (namedRef, parsed) ->
-                checkArgument(
-                    namedRef instanceof BranchName || namedRef instanceof TagName,
-                    "%s must be a branch or a tag.",
-                    refDescription));
+    refMustBeBranchOrTag = true;
     return this;
   }
 
   /** Validates that a hash has been provided (absolute or relative). */
   @CanIgnoreReturnValue
   public HashValidator hashMustBePresent() {
-    validator =
-        validator.andThen(
-            (namedRef, parsed) ->
-                checkArgument(parsed != null, "%s must be provided.", hashDescription));
+    hashMustBePresent = true;
     return this;
   }
 
@@ -98,13 +104,7 @@ public final class HashValidator {
    */
   @CanIgnoreReturnValue
   public HashValidator hashMustNotBeAmbiguous() {
-    validator =
-        validator.andThen(
-            (namedRef, parsed) ->
-                checkArgument(
-                    parsed == null || parsed.getAbsolutePart().isPresent(),
-                    "%s must contain a starting commit ID.",
-                    hashDescription));
+    hashMustNotBeAmbiguous = true;
     return this;
   }
 }
