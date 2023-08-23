@@ -560,8 +560,14 @@ public class PersistVersionStore implements VersionStore {
         "Key ranges not supported by the storage model in use");
     Hash hash = refToHash(ref);
 
+    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
+    KeyFilterPredicate keyPred =
+        contentKeyPredicate != null
+            ? (k, c, t) -> contentKeyPredicate.test(k)
+            : KeyFilterPredicate.ALLOW_ALL;
+
     @SuppressWarnings("MustBeClosedChecker")
-    Stream<KeyListEntry> source = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL);
+    Stream<KeyListEntry> source = databaseAdapter.keys(hash, keyPred);
 
     return new FilteringPaginationIterator<KeyListEntry, KeyEntry>(
         source.iterator(),
