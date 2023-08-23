@@ -1,0 +1,89 @@
+# Merge a "patch branch"
+name: 'Free disk space'
+description: 'Free runner disk space'
+runs:
+  using: "composite"
+  steps:
+    - name: Disk usage
+      shell: bash
+      run: df -h
+      # (as of 2023-08-23:)
+      # Filesystem      Size  Used Avail Use% Mounted on
+      # /dev/root        84G   62G   22G  74% /
+      # tmpfs           3.4G  172K  3.4G   1% /dev/shm
+      # tmpfs           1.4G  1.1M  1.4G   1% /run
+      # tmpfs           5.0M     0  5.0M   0% /run/lock
+      # /dev/sda15      105M  6.1M   99M   6% /boot/efi
+      # /dev/sdb1        14G  4.1G  9.0G  31% /mnt
+      # tmpfs           694M   12K  694M   1% /run/user/1001
+    - name: List docker images
+      shell: bash
+      run: docker image ls -a
+    - name: Remove unused Docker images
+      shell: bash
+      # (as of 2023-08-23:)
+      # REPOSITORY       TAG         IMAGE ID       CREATED        SIZE
+      # node             14          1d12470fa662   4 months ago   912MB
+      # node             14-alpine   0dac3dc27b1a   4 months ago   119MB
+      # node             16          ebdc80ddefea   6 days ago     909MB
+      # node             16-alpine   2573171e0124   12 days ago    118MB
+      # node             18          95d8a703ee8c   6 days ago     1.09GB
+      # node             18-alpine   50c7e33a9de1   12 days ago    176MB
+      # buildpack-deps   buster      0053f1bb059a   7 days ago     802MB
+      # buildpack-deps   bullseye    eac77ea4e8a0   7 days ago     833MB
+      # debian           10          de08540e8ff0   7 days ago     114MB
+      # debian           11          07585eb55737   7 days ago     124MB
+      # alpine           3.16        187eae39ad94   2 weeks ago    5.54MB
+      # alpine           3.17        1e0b8b5322fc   2 weeks ago    7.05MB
+      # alpine           3.18        7e01a0d0a1dc   2 weeks ago    7.33MB
+      # ubuntu           22.04       01f29b872827   2 weeks ago    77.8MB
+      # ubuntu           20.04       6df894023726   3 weeks ago    72.8MB
+      # ubuntu           18.04       f9a80a55f492   2 months ago   63.2MB
+      # moby/buildkit    latest      896276ced360   2 weeks ago    172MB
+      run: |
+        docker image rm \
+          node:14 \
+          node:14-alpine \
+          node:16 \
+          node:16-alpine \
+          node:18 \
+          node:18-alpine \
+          buildpack-deps:buster \
+          buildpack-deps:bullseye \
+          moby/buildkit:latest \
+          alpine:3.16 \
+          alpine:3.17 \
+          alpine:3.18 \
+          debian:10 \
+          debian:11 \
+          ubuntu:22.04 \
+          ubuntu:20.04 \
+          ubuntu:18.04
+    - name: Delete unneeded files
+      shell: bash
+      run: |
+        # 2.2G	/usr/share/dotnet
+        sudo rm -rf /usr/share/dotnet
+        # 1.7G	/usr/share/swift
+        sudo rm -rf /usr/share/swift
+        # 13G	/usr/local/lib/android
+        sudo rm -rf /usr/local/lib/android
+        # 8.3G	/opt/hostedtoolcache/CodeQL
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        # 1.5G	/opt/hostedtoolcache/go
+        sudo rm -rf /opt/hostedtoolcache/go
+    - name: Disk usage
+      shell: bash
+      run: df -h
+      # (as of 2023-08-23:)
+      # Filesystem      Size  Used Avail Use% Mounted on
+      # /dev/root        84G   62G   22G  74% /
+      # tmpfs           3.4G  172K  3.4G   1% /dev/shm
+      # tmpfs           1.4G  1.1M  1.4G   1% /run
+      # tmpfs           5.0M     0  5.0M   0% /run/lock
+      # /dev/sda15      105M  6.1M   99M   6% /boot/efi
+      # /dev/sdb1        14G  4.1G  9.0G  31% /mnt
+      # tmpfs           694M   12K  694M   1% /run/user/1001
+    - name: List docker images
+      shell: bash
+      run: docker image ls -a
