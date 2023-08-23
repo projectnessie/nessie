@@ -82,19 +82,19 @@ public class TestCLI {
         // missing contents-storage option
         arguments(
             singletonList("gc"),
-            "Error: Missing required argument (specify one of these): ([--inmemory] | [--jdbc-url="),
+            "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
         arguments(
             singletonList("mark-live"),
-            "Error: Missing required argument (specify one of these): ([--inmemory] | [--jdbc-url="),
+            "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
         arguments(
             asList("sweep", "--live-set-id=00000000-0000-0000-0000-000000000000"),
-            "Error: Missing required argument (specify one of these): ([--inmemory] | [--jdbc-url="),
+            "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
         arguments(
             asList("deferred-deletes", "--live-set-id=00000000-0000-0000-0000-000000000000"),
-            "Error: Missing required argument (specify one of these): ([--inmemory] | [--jdbc-url="),
+            "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
         arguments(
             asList("list-deferred", "--live-set-id=00000000-0000-0000-0000-000000000000"),
-            "Error: Missing required argument (specify one of these): ([--inmemory] | [--jdbc-url="),
+            "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
         // incomplete jdbc auth
         arguments(
             asList("mark-live", "--jdbc-url", "jdbc:foo//bar", "--jdbc-user", "user"),
