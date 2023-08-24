@@ -35,7 +35,7 @@ jobs:
       CI_MAC: "true"
 
     steps:
-    - uses: actions/checkout@v3.5.3
+    - uses: actions/checkout@v3.6.0
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
