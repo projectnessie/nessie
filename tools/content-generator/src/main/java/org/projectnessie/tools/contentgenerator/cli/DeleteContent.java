@@ -16,55 +16,36 @@
 package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
-import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
 /** Deletes content objects. */
-@Command(name = "delete", mixinStandardHelpOptions = true, description = "Delete content objects")
-public class DeleteContent extends CommittingCommand {
-
-  @Option(
-      names = {"-r", "--branch"},
-      description = "Name of the branch where to make changes, defaults to 'main'")
-  private String ref = "main";
-
-  @Option(
-      names = {"-k", "--key"},
-      description = "Content key to delete",
-      required = true)
-  private List<String> key;
-
-  @Option(
-      names = {"-m", "--message"},
-      description = "Commit message (auto-generated if not set)")
-  private String message;
+@Command(
+    name = "delete",
+    mixinStandardHelpOptions = true,
+    description = "Delete selected content objects")
+public class DeleteContent extends BulkCommittingCommand {
 
   @Override
-  public void execute() throws NessieNotFoundException, NessieConflictException {
-    try (NessieApiV2 api = createNessieApiInstance()) {
-      ContentKey contentKey = ContentKey.of(key);
+  protected void processBatch(NessieApiV2 api, Branch ref, List<ContentKey> keys) {
+    String defaultMsg =
+        keys.size() == 1 ? "Delete " + keys.get(0) : "Delete " + keys.size() + " keys.";
 
-      Reference refInfo = api.getReference().refName(ref).get();
-
-      if (message == null) {
-        message = "Delete: " + contentKey;
-      }
-
+    try {
       Branch head =
           api.commitMultipleOperations()
-              .commitMeta(commitMetaFromMessage(message))
-              .branch((Branch) refInfo)
-              .operation(Operation.Delete.of(contentKey))
+              .commitMeta(commitMetaFromMessage(defaultMsg))
+              .branch(ref)
+              .operations(keys.stream().map(Operation.Delete::of).collect(Collectors.toList()))
               .commit();
 
-      spec.commandLine().getOut().printf("Deleted %s in %s%n", contentKey, head);
+      spec.commandLine().getOut().printf("Deleted %s keys in %s%n", keys.size(), head);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 }

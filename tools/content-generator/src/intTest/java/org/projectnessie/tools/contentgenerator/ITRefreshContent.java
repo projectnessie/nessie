@@ -85,7 +85,11 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   }
 
   private IcebergTable get(ContentKey key) throws NessieNotFoundException {
-    return (IcebergTable) api.getContent().refName("main").key(key).get().get(key);
+    return get("main", key);
+  }
+
+  private IcebergTable get(String refName, ContentKey key) throws NessieNotFoundException {
+    return (IcebergTable) api.getContent().refName(refName).key(key).get().get(key);
   }
 
   private List<LogResponse.LogEntry> log(int depth) throws NessieNotFoundException {
@@ -142,7 +146,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void skipTags() throws NessieNotFoundException, NessieConflictException {
+  void failOnExplicitTagArgument() throws NessieNotFoundException, NessieConflictException {
     create(table3, key3);
     IcebergTable stored3 = get(key3);
 
@@ -160,15 +164,9 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
 
     assertThat(log(1, tag).get(0)).isEqualTo(head); // no new commits
     assertThat(get(key3)).isEqualTo(stored3);
-
-    assertThat(runMain("--key", key3.toString(), "--ref", tagName, "--skip-tags")).isEqualTo(0);
-
-    assertThat(log(1, tag).get(0)).isEqualTo(head); // still no new commits
-    assertThat(get(key3)).isEqualTo(stored3);
   }
 
-  private void writeInputFile(File file, String storageModel, ContentKey... keys)
-      throws IOException {
+  private void writeInputFile(File file, ContentKey... keys) throws IOException {
     String ref = api.getDefaultBranch().getName();
     MAPPER.writeValue(
         file,
@@ -176,12 +174,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
             .map(
                 k ->
                     ImmutableMap.of(
-                        "reference",
-                        ref,
-                        "storageModel",
-                        storageModel,
-                        "key",
-                        ImmutableMap.of("elements", k.getElements())))
+                        "reference", ref, "key", ImmutableMap.of("elements", k.getElements())))
             .collect(Collectors.toList()));
   }
 
@@ -196,12 +189,13 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     IcebergTable stored3 = get(key3);
 
     File input = new File(tempDir, "refresh-keys.json");
-    writeInputFile(input, "TEST_MODEL", key1, key2, key3);
+    writeInputFile(input, key1, key2, key3);
 
     assertThat(
             runMain(
                 "--input",
                 input.getAbsolutePath(),
+                "--format=CONTENT_INFO_JSON",
                 "--batch",
                 String.valueOf(batchSize),
                 "--message",
@@ -227,35 +221,41 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void refreshWithModelFilter(@TempDir File tempDir) throws IOException {
+  void partialRefreshFromFileWithRefOveride(@TempDir File tempDir) throws IOException {
     create(table1, key1);
     IcebergTable stored1 = get(key1);
 
-    File input = new File(tempDir, "refresh-keys-filtered.json");
-    // Note: the "unknown" key will be ignored
-    writeInputFile(input, "GLOBAL_STATE", key1, ContentKey.of("unknown", "key"));
+    Branch main = api.getDefaultBranch();
+    Reference ref = api.createReference().reference(Branch.of("test", main.getHash())).create();
 
-    LogResponse.LogEntry head = log(1).get(0);
+    File input = new File(tempDir, "refresh-keys.json");
+    writeInputFile(input, key1, key2);
 
     assertThat(
             runMain(
                 "--input",
                 input.getAbsolutePath(),
-                "--storage-model",
-                "TEST_MODEL" // Note: this does not match input data
-                ))
+                "--format=CONTENT_INFO_JSON",
+                "--branch",
+                ref.getName(),
+                "--message",
+                "Test refresh message"))
         .isEqualTo(0);
 
-    assertThat(get(key1)).isEqualTo(stored1);
-    assertThat(log(1).get(0)).isEqualTo(head); // No extra commits
+    assertThat(api.getDefaultBranch()).isEqualTo(main);
 
-    assertThat(runMain("--input", input.getAbsolutePath(), "--storage-model", "GLOBAL_STATE"))
-        .isEqualTo(0);
+    assertThat(log(1, api.getReference().refName(ref.getName()).get()))
+        .allSatisfy(
+            logEntry ->
+                assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
+        .flatExtracting(
+            logEntry ->
+                Objects.requireNonNull(logEntry.getOperations()).stream()
+                    .map(Operation::getKey)
+                    .collect(Collectors.toList()))
+        .containsExactly(key1); // Note: key2 is not present
 
-    assertThat(get(key1)).isEqualTo(stored1);
-    LogResponse.LogEntry newHead = log(1).get(0);
-    assertThat(newHead).isNotEqualTo(head); // No extra commits
-    assertThat(Objects.requireNonNull(newHead.getOperations()).get(0).getKey()).isEqualTo(key1);
+    assertThat(get(ref.getName(), key1)).isEqualTo(stored1);
   }
 
   @ParameterizedTest
