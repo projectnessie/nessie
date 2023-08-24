@@ -2,6 +2,68 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.68.0 Release (August 24, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.68.0).
+
+### Upgrade notes
+- If a repository has been imported using Nessie CLI 0.68.0 or higher, then this repo cannot be
+  later served by a Nessie server whose version is lower than 0.68.0. This is due to a change in the
+  internal repository description format.
+
+### New Features
+- Support BigTable in Helm charts
+- NessieCLI check-content command is now compatible with Nessie's new storage model
+
+### Changes
+- Java client API to assign/delete reference operations without specifying a concrete reference type
+  (no change to REST API).
+- Creating and assigning references now requires a target hash to be specified.
+
+### Fixes
+- Secondary commit parents are now properly exported and imported
+- Fix volume declarations for RocksDB in Helm
+- Remove unnecessary repository-deletion when importing a legacy Nessie repo
+- GC Tool uber-jar now includes AWS STS classes
+- GC Tool now logs at `INFO` instead of `DEBUG`
+- GC Tool now correctly works against PostgreSQL
+
+### Commits
+* Add Value.Check to Entry + KeyEntry (#7420)
+* BigTable: use Batcher consistently for bulk mutations (#7416)
+* CI: Disable tests in Windows + macOS jobs (#7403)
+* Support reading arguments from a file in the `delete` CLI command (#7382)
+* Make check-content command compatible with new model (#7411)
+* Ninja: changelog
+* Gradle: Replace deprecated `Project.buildDir` (#7412)
+* Build/Gradle/Jandex/Quarkus: Attempt to fix the occasional `ConcurrentModificiationException` (#7413)
+* GC: Allow configuring gc-tool JDBC via env only (#7410)
+* GC: Fix duplicate-key error w/ PostgreSQL (#7409)
+* Enforce expected hash presence when creating and assigning references (#7396)
+* GC: Fix log level property interpolation and default to INFO (#7407)
+* CI: Free disk space for NesQuEIT (#7402)
+* Include Hibernate Validator in nessie-jaxrs-testextension (#7395)
+* Mark repository as imported (#7380)
+* Bump undertow from 2.2.24 to 2.2.26 (#7388)
+* Add runtime dependency to AWS STS in the GC tool (#7385)
+* Ability to update the repository description (#7376)
+* Fix compilation warning (#7381)
+* Don't initialize the repo in Persist Import tests (#7378)
+* Fix javadocs of Persist.storeObj (#7377)
+* Protect against IOBE in IndexesLogicImpl.completeIndexesInCommitChain (#7371)
+* Remove unused API v2 java client classes (#7370)
+* Propagate content type from method parameter (#7369)
+* Ninja: changelog
+* Support assign/delete reference without type in Java client (#7348)
+* Remove call to Persist.erase in ImportPersistV1.prepareRepository (#7363)
+* Export secondary parents (#7356)
+* Retry erase repo with non-admin path if DropRowRange fails (#7352)
+* Add Quarkus config option to disable BigTable admin client (#7353)
+* Add support for BigTable in Helm chart (#7345)
+* Fix volume declaration for ROCKSDB storage (#7344)
+* Minor javadoc clarification for ConflictType.UNEXPECTED_HASH (#7333)
+* Remove workaround for Quarkus #35104 (#7315)
+
 ## 0.67.0 Release (August 02, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.67.0).

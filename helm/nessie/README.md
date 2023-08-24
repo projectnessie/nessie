@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.67.0](https://img.shields.io/badge/Version-0.67.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.68.0](https://img.shields.io/badge/Version-0.68.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -63,6 +63,10 @@ $ helm uninstall --namespace nessie-ns nessie
 | autoscaling.minReplicas | int | `1` | The minimum number of replicas to maintain. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Optional; set to zero or empty to disable. |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Optional; set to zero or empty to disable. |
+| bigtable.appProfileId | string | `"default"` | The Google Cloud Bigtable app profile ID. |
+| bigtable.instanceId | string | `"nessie-bigtable"` | The Google Cloud Bigtable instance ID. |
+| bigtable.projectId | string | `"my-gcp-project"` | The Google Cloud project ID. |
+| bigtable.secret | object | `{}` | The secret to use to authenticate against BigTable. When provided, it is assumed that authentication will use a service account JSON key. See https://cloud.google.com/iam/docs/keys-create-delete for details on how to create a service account key. If left empty, then Workload Identity usage is assumed instead; in this case, make sure that the pod's service account has been granted access to BigTable. See https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to for details on how to create a suitable service account. Important: when using Workload Identity, unless the cluster is in Autopilot mode, it is also required to add the following nodeSelector label: iam.gke.io/gke-metadata-server-enabled: "true" This is not done automatically by this chart because this selector would be invalid for Autopilot clusters. |
 | cassandra.auth | object | `{}` |  |
 | cassandra.contactPoints | string | `nil` |  |
 | cassandra.keyspace | string | `"nessie"` |  |
@@ -113,7 +117,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
 | tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
 | tracing.sample | string | `"1.0d"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and "1.0d" (inclusive). E.g. "0.5d" means that 50% of the requests will be sampled. |
-| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-quarkus-cli tool's export/import functionality.) |
+| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-quarkus-cli tool's export/import functionality.) |
 
 ## Using secrets
 
