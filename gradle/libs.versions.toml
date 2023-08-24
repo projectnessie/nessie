@@ -172,7 +172,7 @@ errorprone = { id = "net.ltgt.errorprone", version = "3.1.0" }
 gatling = { id = "io.gatling.gradle", version = "3.9.5.5" }
 jmh = { id = "me.champeau.jmh", version = "0.7.1" }
 nessie-reflectionconfig = { id = "org.projectnessie.buildsupport.reflectionconfig", version.ref = "nessieBuildPlugins" }
-nessie-run = { id = "org.projectnessie", version = "0.30.6" }
+nessie-run = { id = "org.projectnessie", version = "0.30.7" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "1.3.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
