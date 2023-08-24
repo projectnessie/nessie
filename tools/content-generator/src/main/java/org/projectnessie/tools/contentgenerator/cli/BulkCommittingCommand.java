@@ -64,8 +64,10 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
       names = {"-F", "--format"},
       description =
           "The format of the input file. CSV_KEYS means one content key per line (separated key elements or "
-              + "URL path encoded whole key). CONTENT_INFO_JSON means a JSON array of 'ContentInfoEntry' objects from "
-              + "the 'content-info' CLI command.")
+              + "URL path encoded whole key). CONTENT_INFO_JSON means a JSON array of objects having a 'key' "
+              + "attribute (with an 'elements' string array inside defining the content key) and a 'reference' "
+              + "attribute defining the name of reference holding the object (tags are automatically "
+              + "ignored). If --branch is set, it overrides the 'reference' attribute.")
   private InputFormat format;
 
   @Option(
@@ -74,13 +76,6 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
           "The fields separator for CVS input files (if not set, each line is interpreted as a URL path "
               + "encoded key string).")
   private String separator;
-
-  @Option(
-      names = {"--storage-model"},
-      description =
-          "If set, only those entries that have the specified storage model will be processed. "
-              + "This option is applicable only to JSON input files. (ignored if --input is not set).")
-  private String storageModel;
 
   @Option(
       names = {"-k", "--key"},
@@ -211,12 +206,7 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
           .elements()
           .forEachRemaining(n -> keyElements.add(n.asText()));
 
-      String refName = node.required("reference").asText();
-
-      String model = node.get("storageModel").asText();
-      if (storageModel != null && !storageModel.equals(model)) {
-        continue;
-      }
+      String refName = ref == null ? node.required("reference").asText() : ref;
 
       perRef.computeIfAbsent(refName, key -> new ArrayList<>()).add(ContentKey.of(keyElements));
     }
