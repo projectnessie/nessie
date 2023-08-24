@@ -196,7 +196,7 @@ final class BigTableBackend implements Backend {
 
     Query query =
         Query.create(tableId)
-            .filter(FILTERS.chain().filter(FILTERS.value().strip()).filter(repoFilter(prefixes)));
+            .filter(FILTERS.chain().filter(repoFilter(prefixes)).filter(FILTERS.value().strip()));
 
     try (Batcher<RowMutationEntry, Void> batcher = dataClient.newBulkMutationBatcher(tableId)) {
       ServerStream<Row> rows = dataClient.readRows(query);

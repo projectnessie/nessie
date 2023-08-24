@@ -138,10 +138,13 @@ public class BigTablePersist implements Persist {
       bulkFetch(
           backend.tableRefs, names, r, this::dbKey, BigTablePersist::referenceFromRow, name -> {});
       return r;
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     } catch (ApiException e) {
       throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
@@ -357,10 +360,13 @@ public class BigTablePersist implements Persist {
       }
 
       return r;
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     } catch (ApiException e) {
       throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
