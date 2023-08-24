@@ -79,6 +79,22 @@ public interface EntriesResponse extends PaginatedResponse {
     @jakarta.annotation.Nullable // for V1 backwards compatibility
     Content getContent();
 
+    @Value.Check
+    default void verify() {
+      Content content = getContent();
+      if (content == null) {
+        return;
+      }
+      if (!content.getType().equals(getType())) {
+        throw new IllegalArgumentException(
+            "Content type '" + getType() + "' does not match actual type of content: " + content);
+      }
+      if (!content.getId().equals(getContentId())) {
+        throw new IllegalArgumentException(
+            "Content id '" + getContentId() + "' does not match actual id of content: " + content);
+      }
+    }
+
     static Entry entry(ContentKey name, Content.Type type) {
       return entry(name, type, (String) null);
     }

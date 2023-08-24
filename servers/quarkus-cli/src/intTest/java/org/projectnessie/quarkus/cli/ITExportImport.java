@@ -323,7 +323,7 @@ public class ITExportImport {
         adapter,
         "main",
         ContentKey.of("namespace123", "table123"),
-        IcebergTable.of("meta3", 44, 43, 44, 45, "id123"));
+        IcebergTable.of("meta3", 44, 43, 44, 45, tableId));
   }
 
   private void checkValues(
@@ -397,11 +397,11 @@ public class ITExportImport {
             .addPuts(
                 KeyWithBytes.of(
                     key,
-                    ContentId.of("id123"),
+                    ContentId.of(tableId),
                     (byte) payloadForContent(ICEBERG_TABLE),
                     DefaultStoreWorker.instance()
                         .toStoreOnReferenceState(
-                            IcebergTable.of("meta2", 43, 43, 44, 45, "id123"))))
+                            IcebergTable.of("meta2", 43, 43, 44, 45, tableId))))
             .build());
   }
 
