@@ -203,7 +203,6 @@ final class BigTableBackend implements Backend {
       for (Row row : rows) {
         batcher.add(RowMutationEntry.create(row.getKey()).deleteRow());
       }
-      batcher.sendOutstanding();
     } catch (ApiException e) {
       throw apiException(e);
     } catch (InterruptedException e) {

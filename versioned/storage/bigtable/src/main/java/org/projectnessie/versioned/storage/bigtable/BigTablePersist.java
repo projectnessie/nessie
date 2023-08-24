@@ -489,7 +489,6 @@ public class BigTablePersist implements Persist {
         ByteString key = dbKey(id);
         batcher.add(RowMutationEntry.create(key).deleteRow());
       }
-      batcher.sendOutstanding();
     } catch (ApiException e) {
       throw apiException(e);
     } catch (InterruptedException e) {
@@ -545,7 +544,6 @@ public class BigTablePersist implements Persist {
             RowMutationEntry.create(key)
                 .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
       }
-      batcher.sendOutstanding();
     } catch (ApiException e) {
       throw apiException(e);
     } catch (InterruptedException e) {
@@ -683,7 +681,6 @@ public class BigTablePersist implements Persist {
           }
           idx++;
         }
-        batcher.sendOutstanding();
       }
     }
 
