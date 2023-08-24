@@ -65,6 +65,13 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
       retrySettings.setMaxRetryDelay(maxRetryDelay);
     }
 
+    stubSettings
+        .bulkMutateRowsSettings()
+        .setBatchingSettings(
+            stubSettings.bulkMutateRowsSettings().getBatchingSettings().toBuilder()
+                .setElementCountThreshold((long) BigTableConstants.MAX_BULK_MUTATIONS)
+                .build());
+
     // Enable tracing & metrics
     BigtableDataSettings.enableOpenCensusStats();
     BigtableDataSettings.enableGfeOpenCensusStats();

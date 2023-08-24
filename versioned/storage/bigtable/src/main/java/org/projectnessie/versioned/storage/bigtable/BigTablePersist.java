@@ -25,7 +25,6 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableBackend.REPO_
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CELL_TIMESTAMP;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_BULK_MUTATIONS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_BULK_READS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
@@ -40,7 +39,6 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.Batcher;
 import com.google.api.gax.rpc.ApiException;
-import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
@@ -49,6 +47,7 @@ import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.common.collect.AbstractIterator;
 import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
@@ -139,10 +138,13 @@ public class BigTablePersist implements Persist {
       bulkFetch(
           backend.tableRefs, names, r, this::dbKey, BigTablePersist::referenceFromRow, name -> {});
       return r;
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     } catch (ApiException e) {
       throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
@@ -358,10 +360,13 @@ public class BigTablePersist implements Persist {
       }
 
       return r;
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     } catch (ApiException e) {
       throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
@@ -475,17 +480,20 @@ public class BigTablePersist implements Persist {
 
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
-    BulkMutation bulk = BulkMutation.create(backend.tableObjs);
-    for (ObjId id : ids) {
-      ByteString key = dbKey(id);
-      bulk.add(key, Mutation.create().deleteRow());
-      if (bulk.getEntryCount() == MAX_BULK_MUTATIONS) {
-        backend.client().bulkMutateRows(bulk);
-        bulk = BulkMutation.create(backend.tableObjs);
-      }
+    if (ids.length == 0) {
+      return;
     }
-    if (bulk.getEntryCount() > 0) {
-      backend.client().bulkMutateRows(bulk);
+    try (Batcher<RowMutationEntry, Void> batcher =
+        backend.client().newBulkMutationBatcher(backend.tableObjs)) {
+      for (ObjId id : ids) {
+        ByteString key = dbKey(id);
+        batcher.add(RowMutationEntry.create(key).deleteRow());
+      }
+    } catch (ApiException e) {
+      throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
@@ -519,26 +527,28 @@ public class BigTablePersist implements Persist {
       return;
     }
 
-    BulkMutation bulkMutation = BulkMutation.create(backend.tableObjs);
-    for (Obj obj : objs) {
-      ObjId id = obj.id();
-      checkArgument(id != null, "Obj to store must have a non-null ID");
+    try (Batcher<RowMutationEntry, Void> batcher =
+        backend.client().newBulkMutationBatcher(backend.tableObjs)) {
+      for (Obj obj : objs) {
+        ObjId id = obj.id();
+        checkArgument(id != null, "Obj to store must have a non-null ID");
 
-      ByteString key = dbKey(id);
+        ByteString key = dbKey(id);
 
-      ByteString serialized =
-          unsafeWrap(
-              serializeObj(
-                  obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit()));
+        ByteString serialized =
+            unsafeWrap(
+                serializeObj(
+                    obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit()));
 
-      bulkMutation.add(
-          key, Mutation.create().setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
-    }
-
-    try {
-      backend.client().bulkMutateRows(bulkMutation);
+        batcher.add(
+            RowMutationEntry.create(key)
+                .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
+      }
     } catch (ApiException e) {
       throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
@@ -671,7 +681,6 @@ public class BigTablePersist implements Persist {
           }
           idx++;
         }
-        batcher.sendOutstanding();
       }
     }
 
