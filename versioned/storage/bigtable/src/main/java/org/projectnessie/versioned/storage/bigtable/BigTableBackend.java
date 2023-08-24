@@ -21,24 +21,25 @@ import static com.google.protobuf.ByteString.copyFromUtf8;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_BULK_MUTATIONS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.TABLE_REFS;
+import static org.projectnessie.versioned.storage.bigtable.BigTablePersist.apiException;
 
+import com.google.api.gax.batching.Batcher;
 import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.NotFoundException;
+import com.google.api.gax.rpc.ServerStream;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.models.CreateTableRequest;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
-import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.Filters;
-import com.google.cloud.bigtable.data.v2.models.Mutation;
+import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.protobuf.ByteString;
 import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -192,43 +193,35 @@ final class BigTableBackend implements Backend {
   }
 
   private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {
-    BulkMutation bulkDelete = BulkMutation.create(tableId);
 
-    Filters.InterleaveFilter repoFilter = FILTERS.interleave();
-    for (ByteString prefix : prefixes) {
-      repoFilter.filter(FILTERS.key().regex(prefix.concat(REPO_REGEX_SUFFIX)));
-    }
+    Query query =
+        Query.create(tableId)
+            .filter(FILTERS.chain().filter(FILTERS.value().strip()).filter(repoFilter(prefixes)));
 
-    Query.QueryPaginator paginator = Query.create(tableId).filter(repoFilter).createPaginator(100);
-    Iterator<Row> rows = dataClient.readRows(nextQuery(paginator)).iterator();
-    while (true) {
-      ByteString lastKey = null;
-      while (rows.hasNext()) {
-        Row row = rows.next();
-        lastKey = row.getKey();
-        if (prefixes.stream().anyMatch(prefix -> row.getKey().startsWith(prefix))) {
-          bulkDelete.add(row.getKey(), Mutation.create().deleteRow());
-        }
-
-        if (bulkDelete.getEntryCount() == MAX_BULK_MUTATIONS) {
-          dataClient.bulkMutateRows(bulkDelete);
-          bulkDelete = BulkMutation.create(tableId);
-        }
+    try (Batcher<RowMutationEntry, Void> batcher = dataClient.newBulkMutationBatcher(tableId)) {
+      ServerStream<Row> rows = dataClient.readRows(query);
+      for (Row row : rows) {
+        batcher.add(RowMutationEntry.create(row.getKey()).deleteRow());
       }
-      if (lastKey == null) {
-        break;
-      }
-      paginator.advance(lastKey);
-      rows = dataClient.readRows(nextQuery(paginator)).iterator();
-    }
-
-    if (bulkDelete.getEntryCount() > 0) {
-      dataClient.bulkMutateRows(bulkDelete);
+      batcher.sendOutstanding();
+    } catch (ApiException e) {
+      throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
-  private static Query nextQuery(Query.QueryPaginator paginator) {
-    return paginator.getNextQuery().filter(FILTERS.limit().cellsPerRow(1));
+  private static Filter repoFilter(List<ByteString> prefixes) {
+    if (prefixes.size() == 1) {
+      return FILTERS.key().regex(prefixes.get(0).concat(REPO_REGEX_SUFFIX));
+    } else {
+      Filters.InterleaveFilter filter = FILTERS.interleave();
+      for (ByteString prefix : prefixes) {
+        filter.filter(FILTERS.key().regex(prefix.concat(REPO_REGEX_SUFFIX)));
+      }
+      return filter;
+    }
   }
 
   @Override
