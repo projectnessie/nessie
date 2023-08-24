@@ -16,7 +16,7 @@ jobs:
     if: github.repository_owner == 'projectnessie'
 
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v3.6.0
 
       - name: Sync images
         env:

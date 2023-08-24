@@ -23,7 +23,7 @@ jobs:
       SPARK_LOCAL_IP: localhost
 
     steps:
-    - uses: actions/checkout@v3.5.3
+    - uses: actions/checkout@v3.6.0
     - name: Setup runner
       uses: ./.github/actions/setup-runner
       with:
