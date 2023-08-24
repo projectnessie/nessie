@@ -29,6 +29,8 @@ as necessary. Empty sections will not end in the release notes.
 - Fix volume declarations for RocksDB in Helm
 - Remove unnecessary repository-deletion when importing a legacy Nessie repo
 - GC Tool uber-jar now includes AWS STS classes
+- GC Tool now logs at `INFO` instead of `DEBUG`
+- GC Tool now correctly works against PostgreSQL
 
 ### Commits
 
