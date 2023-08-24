@@ -48,14 +48,8 @@ public class NessieCliTestExtension
   private static final String ADAPTER_KEY = "adapter";
 
   @Override
-  public void beforeAll(ExtensionContext context) {
-    // Maintain one MongoDB instance for all tests (store it in the root context).
-    LocalMongoResource mongo =
-        context
-            .getRoot()
-            .getStore(NAMESPACE)
-            .getOrComputeIfAbsent(
-                MONGO_KEY, key -> new LocalMongoResource(), LocalMongoResource.class);
+  public void beforeAll(ExtensionContext context) throws Exception {
+    LocalMongoResource mongo = getOrCreateMongo(context);
 
     // Quarkus runtime will pick up relevant values from java system properties.
     System.setProperty("quarkus.mongodb.connection-string", mongo.getConnectionString());
@@ -65,42 +59,10 @@ public class NessieCliTestExtension
   @Override
   public void beforeEach(ExtensionContext context) {
     // Use one DatabaseAdapter instance for all tests (adapters are stateless)
-    DatabaseAdapter adapter =
-        context
-            .getRoot()
-            .getStore(NAMESPACE)
-            .getOrComputeIfAbsent(
-                ADAPTER_KEY, key -> createAdapter(context), DatabaseAdapter.class);
-
+    DatabaseAdapter adapter = getOrCreateAdapter(context);
     // ... but reset the repo for each test.
     adapter.eraseRepo();
     adapter.initializeRepo("main");
-  }
-
-  private DatabaseAdapter createAdapter(ExtensionContext context) {
-    LocalMongoResource mongo = context.getStore(NAMESPACE).get(MONGO_KEY, LocalMongoResource.class);
-
-    if (mongo == null) {
-      throw new IllegalStateException("MongoDB was not initialized");
-    }
-
-    MongoDatabaseClient client = new MongoDatabaseClient();
-    client.configure(
-        ImmutableMongoClientConfig.builder()
-            .connectionString(mongo.getConnectionString())
-            .databaseName(mongo.getDatabaseName())
-            .build());
-
-    client.initialize();
-
-    return new MongoDatabaseAdapterFactory()
-        .newBuilder()
-        .withConfig(
-            ImmutableAdjustableNonTransactionalDatabaseAdapterConfig.builder()
-                .repositoryId(BaseConfigProfile.TEST_REPO_ID)
-                .build())
-        .withConnector(client)
-        .build();
   }
 
   @Override
@@ -112,12 +74,43 @@ public class NessieCliTestExtension
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext context)
       throws ParameterResolutionException {
-    DatabaseAdapter adapter = context.getStore(NAMESPACE).get(ADAPTER_KEY, DatabaseAdapter.class);
+    return getOrCreateAdapter(context);
+  }
 
-    if (adapter == null) {
-      throw new IllegalStateException("DatabaseAdapter was not initialized");
-    }
+  private DatabaseAdapter getOrCreateAdapter(ExtensionContext context) {
+    return context
+        .getRoot()
+        .getStore(NAMESPACE)
+        .getOrComputeIfAbsent(ADAPTER_KEY, key -> createAdapter(context), DatabaseAdapter.class);
+  }
 
-    return adapter;
+  private LocalMongoResource getOrCreateMongo(ExtensionContext context) {
+    // Maintain one MongoDB instance for all tests (store it in the root context).
+    return context
+        .getRoot()
+        .getStore(NAMESPACE)
+        .getOrComputeIfAbsent(MONGO_KEY, key -> new LocalMongoResource(), LocalMongoResource.class);
+  }
+
+  private DatabaseAdapter createAdapter(ExtensionContext context) {
+
+    LocalMongoResource mongo = getOrCreateMongo(context);
+
+    MongoDatabaseClient client = new MongoDatabaseClient();
+    client.configure(
+        ImmutableMongoClientConfig.builder()
+            .connectionString(mongo.getConnectionString())
+            .databaseName(mongo.getDatabaseName())
+            .build());
+    client.initialize();
+
+    return new MongoDatabaseAdapterFactory()
+        .newBuilder()
+        .withConfig(
+            ImmutableAdjustableNonTransactionalDatabaseAdapterConfig.builder()
+                .repositoryId(BaseConfigProfile.TEST_REPO_ID)
+                .build())
+        .withConnector(client)
+        .build();
   }
 }

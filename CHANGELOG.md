@@ -16,6 +16,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 - Support BigTable in Helm charts
+- NessieCLI check-content command is now compatible with Nessie's new storage model
 
 ### Changes
 - Java client API to assign/delete reference operations without specifying a concrete reference type
