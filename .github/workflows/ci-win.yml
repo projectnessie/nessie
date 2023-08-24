@@ -47,35 +47,6 @@ jobs:
         path: hadoop-winutils
         ref: d018bd9c919dee1448b95519351cc591a6338a00
 
-    #- name: Pull Hadoop
-    #  # A local Hadoop setup is required on Windows, very sad...
-    #  run: |
-    #    cd $HOME
-    #    Invoke-WebRequest -Uri https://dlcdn.apache.org/hadoop/common/hadoop-3.3.2/hadoop-3.3.2.tar.gz -TimeoutSec 60 -MaximumRetryCount 10 -OutFile hadoop-3.3.2.tar.gz
-    #
-    #- name: Setup Hadoop
-    #  # A local Hadoop setup is required on Windows, very sad...
-    #  run: |
-    #    echo "::group::Extract hadoop-3.3.2.tar.gz"
-    #    cd $HOME
-    #    mkdir hadoop-3.3.2
-    #    cd hadoop-3.3.2
-    #    7z e ..\hadoop-3.3.2.tar.gz
-    #    echo "::endgroup::"
-    #    echo "HADOOP_HOME=$HOME\hadoop-3.3.2" >> $env:GITHUB_ENV
-    #
-    #- name: Add Hadoop winutils
-    #  run: |
-    #    cd hadoop-winutils\hadoop-3.2.2\bin
-    #    copy *.dll $HADOOP_HOME\bin
-    #    copy *.exp $HADOOP_HOME\bin
-    #    copy *.lib $HADOOP_HOME\bin
-    #    copy *.pdb $HADOOP_HOME\bin
-    #    copy *.exe $HADOOP_HOME\bin
-    #    copy *.dll C:\windows\system32
-    #    cd ..\..\..
-    #    rm -r -fo hadoop-winutils
-
     - uses: actions/checkout@v3.5.3
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
@@ -90,25 +61,3 @@ jobs:
       with:
         cache-read-only: true
         arguments: assemble --scan
-
-    #- name: Gradle / unit test
-    #  uses: gradle/gradle-build-action@v2
-    #  env:
-    #    SPARK_LOCAL_IP: localhost
-    #  with:
-    #    arguments: test --scan
-    #
-    #- name: Gradle / integ-test
-    #  uses: gradle/gradle-build-action@v2
-    #  with:
-    #    arguments: intTest --scan
-    #
-    #- name: Capture Test Reports
-    #  uses: actions/upload-artifact@v3
-    #  if: ${{ failure() }}
-    #  with:
-    #    name: test-results
-    #    path: |
-    #      **/build/reports/*
-    #      **/build/test-results/*
-    #    retention-days: 3
