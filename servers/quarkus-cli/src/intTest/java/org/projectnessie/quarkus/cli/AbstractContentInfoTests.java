@@ -20,86 +20,77 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 
-import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import java.util.Comparator;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
-import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.ReferenceInfo;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.Hash;
 
 @QuarkusMainTest
-@TestProfile(QuarkusCliTestProfileMongo.class)
-@ExtendWith(NessieCliTestExtension.class)
-class ITContentInfo extends BaseContentTest<ContentInfoEntry> {
+abstract class AbstractContentInfoTests {
 
   private static final IcebergTable table1 = IcebergTable.of("meta_111", 1, 2, 3, 4, "111");
   private static final IcebergTable table2 = IcebergTable.of("meta_222", 2, 3, 4, 5, "222");
   private static final IcebergTable table3 = IcebergTable.of("meta_333", 2, 3, 4, 5, "333");
 
-  ITContentInfo() {
-    super(ContentInfoEntry.class);
+  private final BaseContentTest<ContentInfoEntry> outer;
+
+  AbstractContentInfoTests(BaseContentTest<ContentInfoEntry> outer) {
+    this.outer = outer;
   }
 
   @Test
   public void testEmptyRepo(QuarkusMainLauncher launcher) {
-    launchNoFile(launcher, "content-info");
-    assertThat(result.exitCode()).isEqualTo(0);
+    outer.launchNoFile(launcher, "content-info");
+    assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 
   @Test
   public void testNonExistingKey(QuarkusMainLauncher launcher) throws Exception {
-    launch(launcher, "content-info", "-k", "namespace123", "-k", "unknown12345");
-    assertThat(entries).hasSize(1);
-    assertThat(entries)
+    outer.launch(launcher, "content-info", "-k", "namespace123", "-k", "unknown12345");
+    assertThat(outer.entries).hasSize(1);
+    assertThat(outer.entries)
         .first()
         .extracting(ContentInfoEntry::getKey, ContentInfoEntry::getErrorMessage)
         .containsExactly(ContentKey.of("namespace123", "unknown12345"), "Missing content");
-    assertThat(result.exitCode()).isEqualTo(3);
+    assertThat(outer.result.exitCode()).isEqualTo(3);
   }
 
   @Test
-  public void testDetached(QuarkusMainLauncher launcher, DatabaseAdapter adapter) throws Exception {
-    commit(table1, adapter);
+  public void testDetached(QuarkusMainLauncher launcher) throws Exception {
+    outer.commit(table1);
 
-    ReferenceInfo<ByteString> main = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
-    launch(launcher, "content-info", "--hash", main.getHash().asString());
-    assertThat(entries).hasSize(2);
-    assertThat(entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    Hash head = outer.getMainHead();
+    outer.launch(launcher, "content-info", "--hash", head.asString());
+    assertThat(outer.entries).hasSize(2);
+    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getReference,
             ContentInfoEntry::getDistanceFromHead,
             ContentInfoEntry::getHash)
         .containsExactly(
-            tuple(ContentKey.of("test_namespace"), "DETACHED", 0L, main.getHash().asString()),
-            tuple(
-                ContentKey.of("test_namespace", "table_111"),
-                "DETACHED",
-                0L,
-                main.getHash().asString()));
-    assertThat(result.exitCode()).isEqualTo(0);
+            tuple(ContentKey.of("test_namespace"), "DETACHED", 0L, head.asString()),
+            tuple(ContentKey.of("test_namespace", "table_111"), "DETACHED", 0L, head.asString()));
+    assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2, 3, 4, 100})
-  public void testValidData(int batchSize, QuarkusMainLauncher launcher, DatabaseAdapter adapter)
-      throws Exception {
+  public void testValidData(int batchSize, QuarkusMainLauncher launcher) throws Exception {
 
-    commit(table1, adapter);
-    commit(table2, adapter);
-    commit(table3, adapter);
+    outer.commit(table1);
+    outer.commit(table2);
+    outer.commit(table3);
 
-    launch(launcher, "content-info", "--batch", "" + batchSize);
-    assertThat(entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    outer.launch(launcher, "content-info", "--batch", "" + batchSize);
+    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getStorageModel,
@@ -110,20 +101,19 @@ class ITContentInfo extends BaseContentTest<ContentInfoEntry> {
             tuple(ContentKey.of("test_namespace", "table_111"), "ON_REF_STATE", 1L, 2L),
             tuple(ContentKey.of("test_namespace", "table_222"), "ON_REF_STATE", 2L, 1L),
             tuple(ContentKey.of("test_namespace", "table_333"), "ON_REF_STATE", 3L, 0L));
-    assertThat(result.exitCode()).isEqualTo(0);
+    assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 
   @Test
-  public void testGlobalState(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
-      throws Exception {
+  public void testGlobalState(QuarkusMainLauncher launcher) throws Exception {
 
     ByteString emptyContent = ObjectTypes.Content.newBuilder().build().toByteString();
 
-    commit(table1, adapter);
-    commit(table2, adapter, emptyContent);
+    outer.commit(table1);
+    outer.commit(table2, emptyContent);
 
-    launch(launcher, "content-info", "--summary");
-    assertThat(entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    outer.launch(launcher, "content-info", "--summary");
+    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getStorageModel,
@@ -132,23 +122,22 @@ class ITContentInfo extends BaseContentTest<ContentInfoEntry> {
             tuple(ContentKey.of("test_namespace"), "ON_REF_STATE", "main"),
             tuple(ContentKey.of("test_namespace", "table_111"), "ON_REF_STATE", "main"),
             tuple(ContentKey.of("test_namespace", "table_222"), "GLOBAL_STATE", "main"));
-    assertThat(result.exitCode()).isEqualTo(0);
+    assertThat(outer.result.exitCode()).isEqualTo(0);
 
-    assertThat(result.getOutput())
+    assertThat(outer.result.getOutput())
         .contains("Processed 3 keys: 1 entries have global state; 0 missing entries.");
   }
 
   @Test
-  public void testInvalidData(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
-      throws Exception {
+  public void testInvalidData(QuarkusMainLauncher launcher) throws Exception {
 
     ByteString invalidContent = ByteString.copyFrom(new byte[] {1, 2, 3});
 
-    commit(table1, adapter);
-    commit(table2, adapter, invalidContent);
+    outer.commit(table1);
+    outer.commit(table2, invalidContent);
 
-    launch(launcher, "content-info");
-    assertThat(entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    outer.launch(launcher, "content-info");
+    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getType,
@@ -172,6 +161,6 @@ class ITContentInfo extends BaseContentTest<ContentInfoEntry> {
                 "UNKNOWN",
                 "Failure parsing data",
                 true));
-    assertThat(result.exitCode()).isEqualTo(0);
+    assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 }

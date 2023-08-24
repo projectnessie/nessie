@@ -19,22 +19,22 @@ import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 @QuarkusMainTest
-@TestProfile(QuarkusCliTestProfilePersistMongo.class)
-@ExtendWith(NessieCliPersistTestExtension.class)
-class ITCheckContentPersist extends BaseContentPersistTest<CheckContentEntry> {
+@TestProfile(QuarkusCliTestProfileMongo.class)
+@ExtendWith(NessieCliTestExtension.class)
+class ITCheckContentDatabaseAdapter extends BaseContentDatabaseAdapterTest<CheckContentEntry> {
 
-  ITCheckContentPersist(Persist persist) {
-    super(persist, CheckContentEntry.class);
+  ITCheckContentDatabaseAdapter(DatabaseAdapter adapter) {
+    super(adapter, CheckContentEntry.class);
   }
 
   @Nested
-  class PersistCheckContentTests extends AbstractCheckContentTests {
+  class DatabaseAdapterCheckContentTests extends AbstractCheckContentTests {
 
-    PersistCheckContentTests() {
-      super(ITCheckContentPersist.this);
+    DatabaseAdapterCheckContentTests() {
+      super(ITCheckContentDatabaseAdapter.this);
     }
   }
 }

@@ -25,19 +25,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.CommitMetaSerializer;
-import org.projectnessie.versioned.persist.adapter.ContentId;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
-import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 abstract class BaseContentTest<OutputType> {
@@ -49,6 +43,10 @@ abstract class BaseContentTest<OutputType> {
 
   protected LaunchResult result;
   protected List<OutputType> entries;
+
+  protected boolean testNamespaceCreated;
+
+  protected Namespace namespace;
 
   BaseContentTest(Class<OutputType> outputClass) {
     this.outputClass = outputClass;
@@ -76,48 +74,22 @@ abstract class BaseContentTest<OutputType> {
     result = launcher.launch(cmdArgs.toArray(new String[0]));
   }
 
-  protected void commit(IcebergTable table, DatabaseAdapter adapter) throws Exception {
-    commit(table, adapter, DefaultStoreWorker.instance().toStoreOnReferenceState(table));
+  protected void commit(IcebergTable table) throws Exception {
+    commit(table, DefaultStoreWorker.instance().toStoreOnReferenceState(table));
   }
 
-  protected void commit(IcebergTable table, DatabaseAdapter adapter, ByteString serialized)
-      throws Exception {
-    commit(table.getId(), (byte) payloadForContent(table), serialized, adapter);
+  protected void commit(IcebergTable table, ByteString serialized) throws Exception {
+    commit(
+        ContentKey.of("test_namespace", "table_" + table.getId()),
+        table.getId(),
+        (byte) payloadForContent(table),
+        serialized,
+        true);
   }
 
-  private boolean testNamespaceCreated;
-  protected Namespace namespace;
+  protected abstract void commit(
+      ContentKey key, String contentId, byte payload, ByteString value, boolean createNamespace)
+      throws Exception;
 
-  protected void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)
-      throws Exception {
-    ContentKey key = ContentKey.of("test_namespace", "table_" + testId);
-    ContentId id = ContentId.of(testId);
-
-    ImmutableCommitParams.Builder c =
-        ImmutableCommitParams.builder()
-            .toBranch(BranchName.of("main"))
-            .commitMetaSerialized(
-                CommitMetaSerializer.METADATA_SERIALIZER.toBytes(CommitMeta.fromMessage(testId)));
-
-    if (!testNamespaceCreated) {
-      namespace =
-          Namespace.builder()
-              .id(UUID.randomUUID().toString())
-              .addElements("test_namespace")
-              .build();
-      ByteString namespaceValue = DefaultStoreWorker.instance().toStoreOnReferenceState(namespace);
-      byte nsPayload = (byte) DefaultStoreWorker.payloadForContent(namespace);
-      c.addPuts(
-          KeyWithBytes.of(
-              ContentKey.of("test_namespace"),
-              ContentId.of(namespace.getId()),
-              nsPayload,
-              namespaceValue));
-      testNamespaceCreated = true;
-    }
-
-    c.addPuts(KeyWithBytes.of(key, id, payload, value));
-
-    adapter.commit(c.build());
-  }
+  protected abstract Hash getMainHead() throws ReferenceNotFoundException;
 }
