@@ -57,6 +57,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -872,9 +873,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
 
       effectiveReference.accept(refWithHash);
-      Predicate<ContentKey> contentKeyPredicate = null;
+      BiPredicate<ContentKey, Content.Type> contentKeyPredicate = null;
       if (requestedKeys != null && !requestedKeys.isEmpty()) {
-        contentKeyPredicate = new HashSet<>(requestedKeys)::contains;
+        Set<ContentKey> requestedKeysSet = new HashSet<>(requestedKeys);
+        contentKeyPredicate = (key, type) -> requestedKeysSet.contains(key);
         if (prefixKey == null) {
           // Populate minKey/maxKey if not set or if those would query "more" keys.
           ContentKey minRequested = null;
@@ -896,7 +898,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
       }
 
-      Predicate<KeyEntry> filterPredicate = filterEntries(filter);
+      // apply filter as early as possible to avoid work (i.e. content loading, authz checks)
+      // for entries that we will eventually throw away
+      final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
+      if (namespaceFilterDepth > 0) {
+        BiPredicate<ContentKey, Content.Type> depthFilter =
+            (key, type) -> key.getElementCount() >= namespaceFilterDepth;
+        contentKeyPredicate = combinePredicateWithAnd(contentKeyPredicate, depthFilter);
+      }
+      BiPredicate<ContentKey, Content.Type> filterPredicate = filterEntries(filter);
+      contentKeyPredicate = combinePredicateWithAnd(contentKeyPredicate, filterPredicate);
 
       try (PaginationIterator<KeyEntry> entries =
           getStore()
@@ -920,53 +931,27 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
 
-        if (namespaceDepth != null && namespaceDepth > 0) {
-          int depth = namespaceDepth;
-          filterPredicate = filterPredicate.and(e -> e.getKey().elements().size() >= depth);
-          Set<ContentKey> seen = new HashSet<>();
-          while (authz.hasNext()) {
-            KeyEntry key = authz.next();
+        Set<ContentKey> seenNamespaces = namespaceFilterDepth > 0 ? new HashSet<>() : null;
+        while (authz.hasNext()) {
+          KeyEntry key = authz.next();
 
-            if (!filterPredicate.test(key)) {
-              continue;
-            }
+          Content c = key.getContent();
+          Entry entry =
+              c != null
+                  ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
+                  : Entry.entry(
+                      key.getKey().contentKey(),
+                      key.getKey().type(),
+                      key.getKey().lastElement().contentId());
 
-            Content c = key.getContent();
-            Entry entry =
-                c != null
-                    ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
-                    : Entry.entry(
-                        key.getKey().contentKey(),
-                        key.getKey().type(),
-                        key.getKey().lastElement().contentId());
-
-            entry = maybeTruncateToDepth(entry, depth);
-
-            // add implicit namespace entries only once (single parent of multiple real entries)
-            if (seen.add(entry.getName())) {
-              if (!pagedResponseHandler.addEntry(entry)) {
-                pagedResponseHandler.hasMore(authz.tokenForCurrent());
-                break;
-              }
-            }
+          if (namespaceFilterDepth > 0) {
+            entry = maybeTruncateToDepth(entry, namespaceFilterDepth);
           }
-        } else {
-          while (authz.hasNext()) {
-            KeyEntry key = authz.next();
 
-            if (!filterPredicate.test(key)) {
-              continue;
-            }
-
-            Content c = key.getContent();
-            Entry entry =
-                c != null
-                    ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
-                    : Entry.entry(
-                        key.getKey().contentKey(),
-                        key.getKey().type(),
-                        key.getKey().lastElement().contentId());
-
+          // add implicit namespace entries only once (single parent of multiple real entries)
+          if (seenNamespaces == null
+              || !Content.Type.NAMESPACE.equals(entry.getType())
+              || seenNamespaces.add(entry.getName())) {
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
               break;
@@ -991,14 +976,25 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return entry;
   }
 
+  private static BiPredicate<ContentKey, Content.Type> combinePredicateWithAnd(
+      BiPredicate<ContentKey, Content.Type> a, BiPredicate<ContentKey, Content.Type> b) {
+    if (a == null) {
+      return b;
+    }
+    if (b == null) {
+      return a;
+    }
+    return a.and(b);
+  }
+
   /**
    * Produces the predicate for key-entry filtering.
    *
    * @param filter The filter to filter by
    */
-  protected Predicate<KeyEntry> filterEntries(String filter) {
+  protected BiPredicate<ContentKey, Content.Type> filterEntries(String filter) {
     if (Strings.isNullOrEmpty(filter)) {
-      return x -> true;
+      return null;
     }
 
     final Script script;
@@ -1013,8 +1009,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
-    return entry -> {
-      Map<String, Object> arguments = ImmutableMap.of(VAR_ENTRY, CELUtil.forCel(entry));
+    return (key, type) -> {
+      Map<String, Object> arguments = ImmutableMap.of(VAR_ENTRY, CELUtil.forCel(key, type));
 
       try {
         return script.execute(Boolean.class, arguments);

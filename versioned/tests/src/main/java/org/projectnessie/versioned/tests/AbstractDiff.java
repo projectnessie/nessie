@@ -329,7 +329,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
                 initial,
                 secondCommit,
                 KeyRestrictions.builder()
-                    .contentKeyPredicate(k -> k1.equals(k) || k3.equals(k))
+                    .contentKeyPredicate((k, t) -> k1.equals(k) || k3.equals(k))
                     .build()))
         .extracting(Diff::getFromKey, Diff::getToKey)
         .containsExactlyInAnyOrder(tuple(null, ik1), tuple(null, ik3));
@@ -338,7 +338,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
             diffAsList(
                 initial,
                 secondCommit,
-                KeyRestrictions.builder().contentKeyPredicate(k -> false).build()))
+                KeyRestrictions.builder().contentKeyPredicate((k, t) -> false).build()))
         .isEmpty();
   }
 

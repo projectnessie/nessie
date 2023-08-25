@@ -69,6 +69,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -558,14 +559,17 @@ public class VersionStoreImpl implements VersionStore {
         indexElement ->
             indexElement.content().action().exists()
                 && indexElement.key().endsWithElement(CONTENT_DISCRIMINATOR);
-    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
+    BiPredicate<ContentKey, Content.Type> contentKeyPredicate =
+        keyRestrictions.contentKeyPredicate();
     if (contentKeyPredicate != null) {
       keyPredicate =
           keyPredicate.and(
               indexElement -> {
                 ContentKey key = storeKeyToKey(indexElement.key());
                 // Note: key==null, if not the "main universe" or not a "content" discriminator
-                return key != null && contentKeyPredicate.test(key);
+                return key != null
+                    && contentKeyPredicate.test(
+                        key, contentTypeForPayload(indexElement.content().payload()));
               });
     }
 
@@ -584,19 +588,26 @@ public class VersionStoreImpl implements VersionStore {
           try {
             ContentKey key = storeKeyToKey(indexElement.key());
             CommitOp commitOp = indexElement.content();
-            Content.Type contentType = contentTypeForPayload(commitOp.payload());
 
             if (withContent) {
               Content c =
                   contentMapping.fetchContent(
-                      requireNonNull(
-                          indexElement.content().value(), "Required value pointer is null"));
+                      requireNonNull(commitOp.value(), "Required value pointer is null"));
               return KeyEntry.of(buildIdentifiedKey(key, index, c, x -> null), c);
             }
 
             UUID contentId = commitOp.contentId();
-            String contentIdString =
-                contentId != null ? contentId.toString() : contentIdFromContent(commitOp);
+            String contentIdString;
+            if (contentId == null) {
+              // this should only be hit by imported legacy nessie repos
+              Content c =
+                  contentMapping.fetchContent(
+                      requireNonNull(commitOp.value(), "Required value pointer is null"));
+              contentIdString = c.getId();
+            } else {
+              contentIdString = contentId.toString();
+            }
+            Content.Type contentType = contentTypeForPayload(commitOp.payload());
             return KeyEntry.of(
                 buildIdentifiedKey(key, index, contentType, contentIdString, x -> null));
           } catch (ObjNotFoundException e) {
@@ -620,12 +631,6 @@ public class VersionStoreImpl implements VersionStore {
         return pagingToken(copyFromUtf8(storeKey.rawString())).asString();
       }
     };
-  }
-
-  private String contentIdFromContent(CommitOp commitOp) throws ObjNotFoundException {
-    return new ContentMapping(persist)
-        .fetchContent(requireNonNull(commitOp.value(), "Required value pointer is null"))
-        .getId();
   }
 
   @Override
@@ -859,12 +864,15 @@ public class VersionStoreImpl implements VersionStore {
 
     ContentMapping contentMapping = new ContentMapping(persist);
 
-    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
+    BiPredicate<ContentKey, Content.Type> contentKeyPredicate =
+        keyRestrictions.contentKeyPredicate();
     Predicate<DiffEntry> keyPred =
         contentKeyPredicate != null
             ? d -> {
               ContentKey key = storeKeyToKey(d.key());
-              return key != null && contentKeyPredicate.test(key);
+              return key != null
+                  && (contentKeyPredicate.test(key, contentTypeForPayload(d.fromPayload()))
+                      || contentKeyPredicate.test(key, contentTypeForPayload(d.toPayload())));
             }
             : x -> true;
 

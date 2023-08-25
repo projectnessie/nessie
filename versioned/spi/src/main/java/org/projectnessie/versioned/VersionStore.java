@@ -24,13 +24,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.MergeBehavior;
@@ -350,7 +351,7 @@ public interface VersionStore {
     /** Filter predicate, can be {@code null}. */
     @Nullable
     @jakarta.annotation.Nullable
-    Predicate<ContentKey> contentKeyPredicate();
+    BiPredicate<ContentKey, Content.Type> contentKeyPredicate();
 
     static ImmutableKeyRestrictions.Builder builder() {
       return ImmutableKeyRestrictions.builder();

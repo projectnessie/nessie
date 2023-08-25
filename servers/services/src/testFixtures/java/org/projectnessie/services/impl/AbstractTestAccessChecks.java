@@ -21,6 +21,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
@@ -35,6 +36,7 @@ import static org.projectnessie.services.authz.Check.canViewReference;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -51,6 +53,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
@@ -313,6 +316,41 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
             });
 
     assertKeys.accept(asList(keyAllowed1, keyAllowed2));
+  }
+
+  @Test
+  public void entriesAreFilteredBeforeAccessCheck() throws Exception {
+    Branch main = createBranch("entriesAreFilteredBeforeAccessCheck");
+
+    ContentKey someTableKey = ContentKey.of("sometablekey");
+
+    Branch commit =
+        commit(
+                main,
+                CommitMeta.builder().message("whatever").build(),
+                Put.of(someTableKey, IcebergTable.of(someTableKey.getName(), 42, 42, 42, 42)))
+            .getTargetBranch();
+
+    setBatchAccessChecker(
+        x ->
+            new AbstractBatchAccessChecker() {
+              @Override
+              public Map<Check, String> check() {
+                getChecks()
+                    .forEach(
+                        check -> {
+                          if (Content.Type.ICEBERG_TABLE.equals(check.contentType())) {
+                            throw new IllegalArgumentException("ALWAYS FAIL FOR TABLE ENTRY");
+                          }
+                        });
+                return Collections.emptyMap();
+              }
+            });
+
+    assertThat(entries(commit, null, "entry.contentType!='ICEBERG_TABLE'")).isEmpty();
+
+    assertThatThrownBy(() -> entries(commit, null, "entry.contentType=='ICEBERG_TABLE'"))
+        .hasMessageContaining("ALWAYS FAIL FOR TABLE ENTRY");
   }
 
   @Test
