@@ -34,7 +34,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -285,17 +284,20 @@ public class CheckContent extends BaseCommand {
 
     @Override
     public void iterateKeys(Hash hash) throws ReferenceNotFoundException {
-      Iterator<StoreIndexElement<CommitOp>> result = index(hash).iterator(null, null, true);
       List<ContentKey> batch = new ArrayList<>(batchSize);
-      result.forEachRemaining(
-          indexElement -> {
-            ContentKey key = storeKeyToKey(indexElement.key());
-            batch.add(key);
-            if (batch.size() >= batchSize) {
-              check(hash, batch);
-              batch.clear();
-            }
-          });
+      index(hash)
+          .iterator(null, null, true)
+          .forEachRemaining(
+              indexElement -> {
+                if (indexElement.content().action().exists()) {
+                  ContentKey key = storeKeyToKey(indexElement.key());
+                  batch.add(key);
+                  if (batch.size() >= batchSize) {
+                    check(hash, batch);
+                    batch.clear();
+                  }
+                }
+              });
       check(hash, batch); // check remaining keys
     }
 

@@ -43,16 +43,21 @@ abstract class BaseContentDatabaseAdapterTest<OutputType> extends BaseContentTes
 
   @Override
   protected void commit(
-      ContentKey key, String contentId, byte payload, ByteString value, boolean createNamespace)
+      ContentKey key,
+      UUID contentId,
+      byte payload,
+      ByteString value,
+      boolean createNamespace,
+      boolean add)
       throws Exception {
-    ContentId id = ContentId.of(contentId);
+    ContentId id = ContentId.of(contentId.toString());
 
     ImmutableCommitParams.Builder c =
         ImmutableCommitParams.builder()
             .toBranch(BranchName.of("main"))
             .commitMetaSerialized(
                 CommitMetaSerializer.METADATA_SERIALIZER.toBytes(
-                    CommitMeta.fromMessage(contentId)));
+                    CommitMeta.fromMessage(contentId.toString())));
 
     if (createNamespace && !testNamespaceCreated) {
       namespace =
@@ -72,7 +77,11 @@ abstract class BaseContentDatabaseAdapterTest<OutputType> extends BaseContentTes
       testNamespaceCreated = true;
     }
 
-    c.addPuts(KeyWithBytes.of(key, id, payload, value));
+    if (add) {
+      c.addPuts(KeyWithBytes.of(key, id, payload, value));
+    } else {
+      c.addDeletes(key);
+    }
 
     adapter.commit(c.build());
   }
