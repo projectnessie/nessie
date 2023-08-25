@@ -25,6 +25,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
@@ -75,20 +77,37 @@ abstract class BaseContentTest<OutputType> {
   }
 
   protected void commit(IcebergTable table) throws Exception {
-    commit(table, DefaultStoreWorker.instance().toStoreOnReferenceState(table));
+    commit(table, true);
+  }
+
+  protected void commit(IcebergTable table, boolean add) throws Exception {
+    ByteString serialized = DefaultStoreWorker.instance().toStoreOnReferenceState(table);
+    commit(
+        ContentKey.of("test_namespace", "table_" + table.getId()),
+        UUID.fromString(Objects.requireNonNull(table.getId())),
+        (byte) payloadForContent(table),
+        serialized,
+        true,
+        add);
   }
 
   protected void commit(IcebergTable table, ByteString serialized) throws Exception {
     commit(
         ContentKey.of("test_namespace", "table_" + table.getId()),
-        table.getId(),
+        UUID.fromString(Objects.requireNonNull(table.getId())),
         (byte) payloadForContent(table),
         serialized,
+        true,
         true);
   }
 
   protected abstract void commit(
-      ContentKey key, String contentId, byte payload, ByteString value, boolean createNamespace)
+      ContentKey key,
+      UUID contentId,
+      byte payload,
+      ByteString value,
+      boolean createNamespace,
+      boolean add)
       throws Exception;
 
   protected abstract Hash getMainHead() throws ReferenceNotFoundException;

@@ -24,7 +24,7 @@ import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
-import java.util.Comparator;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -38,10 +38,20 @@ import org.projectnessie.versioned.testworker.OnRefOnly;
 @QuarkusMainTest
 abstract class AbstractCheckContentTests {
 
-  private static final IcebergTable table1 = IcebergTable.of("meta_111", 1, 2, 3, 4, "111");
-  private static final IcebergTable table2 = IcebergTable.of("meta_222", 2, 3, 4, 5, "222");
-  private static final IcebergTable table3 = IcebergTable.of("meta_333", 3, 4, 5, 6, "333");
-  private static final IcebergTable table4 = IcebergTable.of("meta_444", 4, 5, 6, 7, "444");
+  private static final UUID CID_1 = UUID.randomUUID();
+  private static final UUID CID_2 = UUID.randomUUID();
+  private static final UUID CID_3 = UUID.randomUUID();
+  private static final UUID CID_4 = UUID.randomUUID();
+
+  private static final IcebergTable table1 =
+      IcebergTable.of("meta_111", 1, 2, 3, 4, CID_1.toString());
+  private static final IcebergTable table2 =
+      IcebergTable.of("meta_222", 2, 3, 4, 5, CID_2.toString());
+  private static final IcebergTable table3 =
+      IcebergTable.of("meta_333", 3, 4, 5, 6, CID_3.toString());
+  private static final IcebergTable table4 =
+      IcebergTable.of("meta_444", 4, 5, 6, 7, CID_4.toString());
+
   private final BaseContentTest<CheckContentEntry> outer;
 
   AbstractCheckContentTests(BaseContentTest<CheckContentEntry> outer) {
@@ -75,10 +85,11 @@ abstract class AbstractCheckContentTests {
     ContentKey k1 = ContentKey.of("table123");
     outer.commit(
         k1,
-        "id123",
+        UUID.randomUUID(),
         (byte) payloadForContent(Content.Type.ICEBERG_TABLE),
         ByteString.copyFrom(new byte[] {1, 2, 3}),
-        false);
+        false,
+        true);
 
     outer.launch(launcher, "check-content");
     assertThat(outer.entries)
@@ -109,22 +120,22 @@ abstract class AbstractCheckContentTests {
 
     // Note: SimpleStoreWorker will not be able to parse IcebergTable objects
     outer.launch(launcher, "check-content", "--summary", "--batch=" + batchSize);
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(
             CheckContentEntry::getKey,
             CheckContentEntry::getStatus,
             e -> e.getErrorMessage() != null && !e.getErrorMessage().isEmpty(),
             e -> e.getExceptionStackTrace() != null && !e.getExceptionStackTrace().isEmpty())
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(
                 ContentKey.of("test_namespace"),
                 batchSize > 1 ? "ERROR" : "OK",
                 batchSize > 1,
                 batchSize > 1),
-            tuple(ContentKey.of("test_namespace", "table_111"), "ERROR", true, true),
-            tuple(ContentKey.of("test_namespace", "table_222"), "ERROR", true, true),
-            tuple(ContentKey.of("test_namespace", "table_333"), "ERROR", true, true),
-            tuple(ContentKey.of("test_namespace", "table_444"), "ERROR", true, true));
+            tuple(ContentKey.of("test_namespace", "table_" + CID_1), "ERROR", true, true),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_2), "ERROR", true, true),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_3), "ERROR", true, true),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_4), "ERROR", true, true));
     assertThat(outer.result.exitCode()).isEqualTo(EXIT_CODE_CONTENT_ERROR);
     assertThat(outer.result.getOutputStream())
         .contains(format("Detected %d errors in 5 keys.", batchSize > 1 ? 5 : 4));
@@ -137,13 +148,27 @@ abstract class AbstractCheckContentTests {
     outer.commit(table2);
 
     outer.launch(launcher, "check-content", "--show-content");
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(
             CheckContentEntry::getKey, CheckContentEntry::getStatus, CheckContentEntry::getContent)
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(ContentKey.of("test_namespace"), "OK", outer.namespace),
-            tuple(ContentKey.of("test_namespace", "table_111"), "OK", table1),
-            tuple(ContentKey.of("test_namespace", "table_222"), "OK", table2));
+            tuple(ContentKey.of("test_namespace", "table_" + CID_1), "OK", table1),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_2), "OK", table2));
+    assertThat(outer.result.exitCode()).isEqualTo(0);
+  }
+
+  @Test
+  public void testValidDataDeletedKey(QuarkusMainLauncher launcher) throws Exception {
+
+    outer.commit(table1); // PUT
+    outer.commit(table1, false); // DELETE
+
+    outer.launch(launcher, "check-content", "--show-content");
+    assertThat(outer.entries.stream())
+        .extracting(
+            CheckContentEntry::getKey, CheckContentEntry::getStatus, CheckContentEntry::getContent)
+        .containsExactly(tuple(ContentKey.of("test_namespace"), "OK", outer.namespace));
     assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 
@@ -166,9 +191,9 @@ abstract class AbstractCheckContentTests {
     outer.launchNoFile(
         launcher, "check-content", "-s", "--show-content", "--output", "-"); // '-' for STDOUT
     assertThat(outer.result.getOutputStream())
-        .anySatisfy(line -> assertThat(line).contains("table_111"));
+        .anySatisfy(line -> assertThat(line).contains("table_" + CID_1));
     assertThat(outer.result.getOutputStream())
-        .anySatisfy(line -> assertThat(line).contains("table_222"));
+        .anySatisfy(line -> assertThat(line).contains("table_" + CID_2));
     assertThat(outer.result.getOutputStream())
         .anySatisfy(line -> assertThat(line).contains("meta_111"));
     assertThat(outer.result.getOutputStream())
@@ -191,20 +216,22 @@ abstract class AbstractCheckContentTests {
 
     Hash hash = outer.getMainHead();
 
-    OnRefOnly val = onRef("123", "222");
+    UUID contentId = UUID.randomUUID();
+    OnRefOnly val = onRef("123", contentId.toString());
     outer.commit(
         ContentKey.of("test_namespace", "table_" + val.getId()),
-        val.getId(),
+        contentId,
         (byte) payloadForContent(val),
         val.serialized(),
+        true,
         true);
 
     outer.launch(launcher, "check-content", "--hash", hash.asString());
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(CheckContentEntry::getKey, CheckContentEntry::getStatus)
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(ContentKey.of("test_namespace"), "OK"),
-            tuple(ContentKey.of("test_namespace", "table_111"), "OK"));
+            tuple(ContentKey.of("test_namespace", "table_" + CID_1), "OK"));
     assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 }

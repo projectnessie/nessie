@@ -22,7 +22,7 @@ import static org.projectnessie.model.Content.Type.NAMESPACE;
 
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
-import java.util.Comparator;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -35,9 +35,16 @@ import org.projectnessie.versioned.Hash;
 @QuarkusMainTest
 abstract class AbstractContentInfoTests {
 
-  private static final IcebergTable table1 = IcebergTable.of("meta_111", 1, 2, 3, 4, "111");
-  private static final IcebergTable table2 = IcebergTable.of("meta_222", 2, 3, 4, 5, "222");
-  private static final IcebergTable table3 = IcebergTable.of("meta_333", 2, 3, 4, 5, "333");
+  private static final UUID CID_1 = UUID.randomUUID();
+  private static final UUID CID_2 = UUID.randomUUID();
+  private static final UUID CID_3 = UUID.randomUUID();
+
+  private static final IcebergTable table1 =
+      IcebergTable.of("meta_111", 1, 2, 3, 4, CID_1.toString());
+  private static final IcebergTable table2 =
+      IcebergTable.of("meta_222", 2, 3, 4, 5, CID_2.toString());
+  private static final IcebergTable table3 =
+      IcebergTable.of("meta_333", 3, 4, 5, 6, CID_3.toString());
 
   private final BaseContentTest<ContentInfoEntry> outer;
 
@@ -69,15 +76,19 @@ abstract class AbstractContentInfoTests {
     Hash head = outer.getMainHead();
     outer.launch(launcher, "content-info", "--hash", head.asString());
     assertThat(outer.entries).hasSize(2);
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getReference,
             ContentInfoEntry::getDistanceFromHead,
             ContentInfoEntry::getHash)
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(ContentKey.of("test_namespace"), "DETACHED", 0L, head.asString()),
-            tuple(ContentKey.of("test_namespace", "table_111"), "DETACHED", 0L, head.asString()));
+            tuple(
+                ContentKey.of("test_namespace", "table_" + CID_1),
+                "DETACHED",
+                0L,
+                head.asString()));
     assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 
@@ -90,17 +101,17 @@ abstract class AbstractContentInfoTests {
     outer.commit(table3);
 
     outer.launch(launcher, "content-info", "--batch", "" + batchSize);
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getStorageModel,
             ContentInfoEntry::getDistanceFromRoot,
             ContentInfoEntry::getDistanceFromHead)
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(ContentKey.of("test_namespace"), "ON_REF_STATE", 1L, 2L),
-            tuple(ContentKey.of("test_namespace", "table_111"), "ON_REF_STATE", 1L, 2L),
-            tuple(ContentKey.of("test_namespace", "table_222"), "ON_REF_STATE", 2L, 1L),
-            tuple(ContentKey.of("test_namespace", "table_333"), "ON_REF_STATE", 3L, 0L));
+            tuple(ContentKey.of("test_namespace", "table_" + CID_1), "ON_REF_STATE", 1L, 2L),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_2), "ON_REF_STATE", 2L, 1L),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_3), "ON_REF_STATE", 3L, 0L));
     assertThat(outer.result.exitCode()).isEqualTo(0);
   }
 
@@ -113,15 +124,15 @@ abstract class AbstractContentInfoTests {
     outer.commit(table2, emptyContent);
 
     outer.launch(launcher, "content-info", "--summary");
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getStorageModel,
             ContentInfoEntry::getReference)
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(ContentKey.of("test_namespace"), "ON_REF_STATE", "main"),
-            tuple(ContentKey.of("test_namespace", "table_111"), "ON_REF_STATE", "main"),
-            tuple(ContentKey.of("test_namespace", "table_222"), "GLOBAL_STATE", "main"));
+            tuple(ContentKey.of("test_namespace", "table_" + CID_1), "ON_REF_STATE", "main"),
+            tuple(ContentKey.of("test_namespace", "table_" + CID_2), "GLOBAL_STATE", "main"));
     assertThat(outer.result.exitCode()).isEqualTo(0);
 
     assertThat(outer.result.getOutput())
@@ -137,7 +148,7 @@ abstract class AbstractContentInfoTests {
     outer.commit(table2, invalidContent);
 
     outer.launch(launcher, "content-info");
-    assertThat(outer.entries.stream().sorted(Comparator.comparing(ContentInfoEntry::getKey)))
+    assertThat(outer.entries.stream())
         .extracting(
             ContentInfoEntry::getKey,
             ContentInfoEntry::getType,
@@ -147,16 +158,16 @@ abstract class AbstractContentInfoTests {
                 e.getExceptionStackTrace() != null
                     && e.getExceptionStackTrace()
                         .contains("Protocol message contained an invalid tag"))
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple(ContentKey.of("test_namespace"), NAMESPACE, "ON_REF_STATE", null, false),
             tuple(
-                ContentKey.of("test_namespace", "table_111"),
+                ContentKey.of("test_namespace", "table_" + CID_1),
                 ICEBERG_TABLE,
                 "ON_REF_STATE",
                 null,
                 false),
             tuple(
-                ContentKey.of("test_namespace", "table_222"),
+                ContentKey.of("test_namespace", "table_" + CID_2),
                 ICEBERG_TABLE,
                 "UNKNOWN",
                 "Failure parsing data",

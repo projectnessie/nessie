@@ -33,6 +33,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Builder;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -50,14 +51,19 @@ abstract class BaseContentPersistTest<OutputType> extends BaseContentTest<Output
 
   @Override
   protected void commit(
-      ContentKey key, String contentId, byte payload, ByteString value, boolean createNamespace)
+      ContentKey key,
+      UUID contentId,
+      byte payload,
+      ByteString value,
+      boolean createNamespace,
+      boolean add)
       throws Exception {
 
     Reference refMain = referenceLogic(persist).getReference("refs/heads/main");
     Builder builder =
         newCommitBuilder()
             .parentCommitId(refMain.pointer())
-            .message(contentId)
+            .message(contentId.toString())
             .headers(EMPTY_COMMIT_HEADERS);
 
     if (createNamespace && !testNamespaceCreated) {
@@ -79,10 +85,15 @@ abstract class BaseContentPersistTest<OutputType> extends BaseContentTest<Output
       testNamespaceCreated = true;
     }
 
-    ContentValueObj valueObj = contentValue(contentId, payload, value);
-    persist.storeObj(valueObj);
-
-    builder.addAdds(commitAdd(keyToStoreKey(key), payload, valueObj.id(), null, UUID.randomUUID()));
+    ContentValueObj valueObj = contentValue(contentId.toString(), payload, value);
+    if (add) {
+      persist.storeObj(valueObj);
+      // Note: cannot PUT an existing value for now (missing expected value)
+      builder.addAdds(commitAdd(keyToStoreKey(key), payload, valueObj.id(), null, contentId));
+    } else {
+      builder.addRemoves(
+          Remove.commitRemove(keyToStoreKey(key), payload, valueObj.id(), contentId));
+    }
 
     CommitLogic commitLogic = commitLogic(persist);
     CommitObj commit = commitLogic.doCommit(builder.build(), Collections.emptyList());

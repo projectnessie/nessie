@@ -18,6 +18,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+- Nessie CLI: check-content command was incorrectly reporting deleted keys as missing content, when
+  using new storage model.
 
 ### Commits
 
