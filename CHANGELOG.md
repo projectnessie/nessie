@@ -20,6 +20,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 - Nessie CLI: check-content command was incorrectly reporting deleted keys as missing content, when
   using new storage model.
+- GC Tool handles JDBC config via environment correctly
 
 ### Commits
 
