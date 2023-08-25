@@ -30,9 +30,13 @@ import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.immutables.value.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Value.Immutable
 public abstract class AgroalJdbcDataSourceProvider implements JdbcDataSourceProvider {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AgroalJdbcDataSourceProvider.class);
 
   public static Builder builder() {
     return ImmutableAgroalJdbcDataSourceProvider.builder();
@@ -65,7 +69,12 @@ public abstract class AgroalJdbcDataSourceProvider implements JdbcDataSourceProv
     Builder addAllSecurityProviders(Iterable<? extends AgroalSecurityProvider> securityProviders);
 
     default Builder usernamePasswordCredentials(String jdbcUser, String jdbcPassword) {
-      addCredentials(new NamePrincipal(jdbcUser), new SimplePassword(jdbcPassword));
+      if (jdbcUser != null) {
+        addCredentials(new NamePrincipal(jdbcUser));
+      }
+      if (jdbcPassword != null) {
+        addCredentials(new SimplePassword(jdbcPassword));
+      }
       return this;
     }
 
@@ -125,6 +134,27 @@ public abstract class AgroalJdbcDataSourceProvider implements JdbcDataSourceProv
         dataSourceConfiguration.connectionPoolConfiguration();
     AgroalConnectionFactoryConfigurationSupplier connectionFactoryConfiguration =
         poolConfiguration.connectionFactoryConfiguration();
+
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Connecting to JDBC URL {}", jdbcUrl());
+      for (Object credential : credentials()) {
+        if (credential instanceof NamePrincipal) {
+          LOGGER.debug(
+              "Connecting using name principal {}", ((NamePrincipal) credential).getName());
+        } else if (credential instanceof SimplePassword) {
+          LOGGER.debug("Connecting using given password (not logged)");
+        }
+      }
+
+      LOGGER.debug(
+          "JDBC pool options: initial-size={}, max-size={}, min-size={}, connection-lifetime={}, acquisition-timeout={}",
+          poolInitialSize(),
+          poolMaxSize(),
+          poolMinSize(),
+          poolConnectionLifetime(),
+          poolAcquisitionTimeout());
+      jdbcProperties().forEach((k, v) -> LOGGER.debug("Using JDBC property {}={}", k, v));
+    }
 
     poolConfiguration
         .initialSize(poolInitialSize())

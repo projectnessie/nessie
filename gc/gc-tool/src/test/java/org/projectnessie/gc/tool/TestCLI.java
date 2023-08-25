@@ -95,13 +95,6 @@ public class TestCLI {
         arguments(
             asList("list-deferred", "--live-set-id=00000000-0000-0000-0000-000000000000"),
             "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
-        // incomplete jdbc auth
-        arguments(
-            asList("mark-live", "--jdbc-url", "jdbc:foo//bar", "--jdbc-user", "user"),
-            "Error: Missing required argument(s): --jdbc-password"),
-        arguments(
-            asList("mark-live", "--jdbc-url", "jdbc:foo//bar", "--jdbc-password", "pass"),
-            "Error: Missing required argument(s): --jdbc-user="),
         // No live-set-id
         arguments(
             asList("sweep", "--jdbc-url", "jdbc:foo//bar"),
