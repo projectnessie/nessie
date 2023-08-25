@@ -34,9 +34,6 @@ public class JdbcOptions {
       required = true)
   String url;
 
-  @CommandLine.ArgGroup(exclusive = false)
-  JdbcUserPassword userPassword;
-
   @CommandLine.Option(
       names = "--jdbc-properties",
       description = "JDBC parameters.",
@@ -44,29 +41,23 @@ public class JdbcOptions {
       split = ",")
   Map<String, String> properties = new HashMap<>();
 
+  @CommandLine.Option(
+      names = "--jdbc-user",
+      description = "JDBC user name used to authenticate the database access.")
+  String user;
+
+  @CommandLine.Option(
+      names = "--jdbc-password",
+      description = "JDBC password used to authenticate the database access.")
+  String password;
+
   public DataSource createDataSource() throws SQLException {
     AgroalJdbcDataSourceProvider.Builder jdbcDsBuilder =
-        AgroalJdbcDataSourceProvider.builder().jdbcUrl(url);
-    if (userPassword != null) {
-      jdbcDsBuilder.usernamePasswordCredentials(userPassword.user, userPassword.password);
-    }
+        AgroalJdbcDataSourceProvider.builder()
+            .jdbcUrl(url)
+            .usernamePasswordCredentials(user, password);
     properties.forEach(jdbcDsBuilder::putJdbcProperties);
     AgroalJdbcDataSourceProvider dataSourceProvider = jdbcDsBuilder.build();
     return dataSourceProvider.dataSource();
-  }
-
-  static class JdbcUserPassword {
-
-    @CommandLine.Option(
-        names = "--jdbc-user",
-        description = "JDBC user name used to authenticate the database access.",
-        required = true)
-    String user;
-
-    @CommandLine.Option(
-        names = "--jdbc-password",
-        description = "JDBC password used to authenticate the database access.",
-        required = true)
-    String password;
   }
 }
