@@ -142,8 +142,7 @@ public abstract class AgroalJdbcDataSourceProvider implements JdbcDataSourceProv
           LOGGER.debug(
               "Connecting using name principal {}", ((NamePrincipal) credential).getName());
         } else if (credential instanceof SimplePassword) {
-          LOGGER.debug("Connecting using given password principal");
-          System.err.println("WORD " + ((SimplePassword) credential).getWord());
+          LOGGER.debug("Connecting using given password (not logged)");
         }
       }
 
