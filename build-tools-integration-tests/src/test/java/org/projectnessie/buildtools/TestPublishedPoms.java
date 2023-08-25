@@ -77,6 +77,9 @@ public class TestPublishedPoms {
       "maven-central", "default", "https://repo1.maven.org/maven2/")
       .build());
     repositories.add(new RemoteRepository.Builder(
+      "apache-snapshots", "default", "https://repository.apache.org/content/repositories/snapshots/")
+      .build());
+    repositories.add(new RemoteRepository.Builder(
       "nessie-maven", "default", "https://storage.googleapis.com/nessie-maven")
       .build());
   }

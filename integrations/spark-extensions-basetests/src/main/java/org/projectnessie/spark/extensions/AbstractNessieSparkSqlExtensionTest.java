@@ -283,7 +283,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN BRANCH %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(String.format("Commit '%s' not found", unknownHash));
+        .hasMessageMatching(String.format(".*[Cc]ommit '%s'.*", unknownHash))
+        .hasMessageMatching(".* not (found|find).*");
     assertThatThrownBy(
             () ->
                 sql(
@@ -337,7 +338,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                     "ASSIGN TAG %s TO %s AT %s IN nessie",
                     additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(String.format("Commit '%s' not found", unknownHash));
+        .hasMessageMatching(String.format(".*[Cc]ommit '%s'.*", unknownHash))
+        .hasMessageMatching(".* not (found|find).*");
     assertThatThrownBy(
             () ->
                 sql(
@@ -464,7 +466,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, randomHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(String.format("Commit '%s' not found", randomHash));
+        .hasMessageMatching(String.format(".*[Cc]ommit '%s'.*", randomHash))
+        .hasMessageMatching(".* not (found|find).*");
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, invalidTimestamp))
         .isInstanceOf(NessieNotFoundException.class)
@@ -474,7 +477,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
-        .hasMessage(String.format("Commit '%s' not found", invalidHash));
+        .hasMessageMatching(String.format(".*[Cc]ommit '%s'.*", invalidHash))
+        .hasMessageMatching(".* not (found|find).*");
   }
 
   @Test

@@ -108,6 +108,10 @@ public interface Operation {
     @JsonView(Views.V2.class)
     Documentation getDocumentation();
 
+    static ImmutablePut.Builder builder() {
+      return ImmutablePut.builder();
+    }
+
     static Put of(ContentKey key, Content content) {
       return ImmutablePut.builder().key(key).content(content).build();
     }

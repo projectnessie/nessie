@@ -91,6 +91,7 @@ jobs:
             -x :nessie-quarkus:compileAll
             -x :nessie-quarkus-cli:compileAll
             -x :nessie-events-quarkus:compileAll
+            -x :nessie-catalog-server:compileAll
             --scan
 
       - name: Gradle / Compile Quarkus
@@ -100,6 +101,7 @@ jobs:
             :nessie-quarkus:compileAll
             :nessie-quarkus-cli:compileAll
             :nessie-events-quarkus:compileAll
+            :nessie-catalog-server:compileAll
             --scan
 
       - name: Gradle / Checkstyle
@@ -162,6 +164,7 @@ jobs:
             -x :nessie-quarkus:test
             -x :nessie-quarkus-cli:test
             -x :nessie-events-quarkus:test
+            -x :nessie-catalog-server:test
             --scan
 
       - name: Capture Test Reports
@@ -209,6 +212,7 @@ jobs:
             :nessie-client:test
             :nessie-quarkus:test
             :nessie-events-quarkus:test
+            :nessie-catalog-server:test
             --scan
 
       - name: Dump quarkus.log
@@ -277,6 +281,8 @@ jobs:
             -x :nessie-quarkus:intTest \
             -x :nessie-quarkus-cli:intTest \
             -x :nessie-events-quarkus:intTest \
+            -x :nessie-catalog-server:intTest \
+            -x :nessie-catalog-server-its:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
             $(cat ../spark-prjs.txt) \
@@ -416,6 +422,8 @@ jobs:
             :nessie-quarkus:intTest
             :nessie-quarkus-cli:intTest
             :nessie-events-quarkus:intTest
+            :nessie-catalog-server:intTest
+            :nessie-catalog-server-its:intTest
             --scan
 
       - name: Dump quarkus.log
