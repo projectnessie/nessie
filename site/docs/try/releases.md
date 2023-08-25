@@ -2,6 +2,23 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.69.0 Release (August 25, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.69.0).
+
+### Fixes
+- Nessie CLI: check-content command was incorrectly reporting deleted keys as missing content, when
+  using new storage model.
+- GC Tool handles JDBC config via environment correctly
+
+### Commits
+* Ninja: changelog
+* GC: Finally fix JDBC values specified via environment (#7425)
+* Make check-content not report deleted keys (#7427)
+* Remove unused org.openapitools:openapi-generator-cli dependency (#7426)
+* Move OTel wrappers to the modules defining corresponding interfaces (#7423)
+* Pushdown filters in TreeApiImpl.getEntries (#7415)
+
 ## 0.68.0 Release (August 24, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.68.0).
