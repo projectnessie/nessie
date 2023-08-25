@@ -308,22 +308,26 @@ public class CheckContent extends BaseCommand {
       index(hash)
           .loadIfNecessary(
               keys.stream().map(TypeMapping::keyToStoreKey).collect(Collectors.toSet()));
-      Map<ObjId, ContentKey> idsToKeys = new HashMap<>(keys.size());
+      ContentMapping contentMapping = new ContentMapping(persist);
+      Map<ContentKey, Content> values = new HashMap<>(keys.size());
       for (ContentKey key : keys) {
         StoreKey storeKey = keyToStoreKey(key);
         StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
         if (indexElement != null && indexElement.content().action().exists()) {
-          idsToKeys.put(
-              requireNonNull(indexElement.content().value(), "Required value pointer is null"),
-              key);
+          // Note: we deliberately avoid bulk-fetching contents because
+          // legacy repos could have the very same content id stored
+          // under 2 different content keys.
+          try {
+            ObjId objId =
+                requireNonNull(indexElement.content().value(), "Required value pointer is null");
+            Content content = contentMapping.fetchContent(objId);
+            values.put(key, content);
+          } catch (ObjNotFoundException e) {
+            throw objectNotFound(e);
+          }
         }
       }
-      ContentMapping contentMapping = new ContentMapping(persist);
-      try {
-        return contentMapping.fetchContents(idsToKeys);
-      } catch (ObjNotFoundException e) {
-        throw objectNotFound(e);
-      }
+      return values;
     }
 
     private StoreIndex<CommitOp> index(Hash hash) throws ReferenceNotFoundException {
