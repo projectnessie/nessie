@@ -31,6 +31,10 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
 
+  compileOnly(platform(libs.opentelemetry.instrumentation.bom.alpha))
+  compileOnly("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations")
+  compileOnly(libs.micrometer.core)
+
   compileOnly(libs.errorprone.annotations)
   implementation(libs.agrona)
   implementation(libs.guava)
