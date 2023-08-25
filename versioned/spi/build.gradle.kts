@@ -30,6 +30,10 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
   compileOnly(libs.microprofile.openapi)
 
+  compileOnly(platform(libs.opentelemetry.instrumentation.bom.alpha))
+  compileOnly("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations")
+  compileOnly(libs.micrometer.core)
+
   implementation(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 

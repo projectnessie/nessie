@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.versionstore;
+package org.projectnessie.versioned;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import jakarta.inject.Singleton;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -33,34 +32,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.RepositoryConfig;
-import org.projectnessie.quarkus.providers.NotObserved;
-import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.CommitResult;
-import org.projectnessie.versioned.ContentResult;
-import org.projectnessie.versioned.Diff;
-import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.KeyEntry;
-import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.Operation;
-import org.projectnessie.versioned.Ref;
-import org.projectnessie.versioned.RefLogDetails;
-import org.projectnessie.versioned.RefLogNotFoundException;
-import org.projectnessie.versioned.ReferenceAlreadyExistsException;
-import org.projectnessie.versioned.ReferenceAssignedResult;
-import org.projectnessie.versioned.ReferenceConflictException;
-import org.projectnessie.versioned.ReferenceCreatedResult;
-import org.projectnessie.versioned.ReferenceDeletedResult;
-import org.projectnessie.versioned.ReferenceInfo;
-import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.RelativeCommitSpec;
-import org.projectnessie.versioned.RepositoryInformation;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
-@Singleton
 public class ObservingVersionStore implements VersionStore {
   private final VersionStore delegate;
 
@@ -74,7 +47,7 @@ public class ObservingVersionStore implements VersionStore {
   private static final String TAG_FROM = "from";
   private static final String TAG_TO = "to";
 
-  public ObservingVersionStore(@NotObserved VersionStore delegate) {
+  public ObservingVersionStore(VersionStore delegate) {
     this.delegate = delegate;
   }
 
