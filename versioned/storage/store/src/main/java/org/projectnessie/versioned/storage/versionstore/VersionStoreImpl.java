@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -721,24 +720,8 @@ public class VersionStoreImpl implements VersionStore {
       IndexesLogic indexesLogic = indexesLogic(persist);
       StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(head, Optional.empty());
 
-      // Eagerly bulk-(pre)fetch the requested keys
-      index.loadIfNecessary(
-          keys.stream().map(TypeMapping::keyToStoreKey).collect(Collectors.toSet()));
-
-      Map<ObjId, ContentKey> idsToKeys = newHashMapWithExpectedSize(keys.size());
-      for (ContentKey key : keys) {
-        StoreKey storeKey = keyToStoreKey(key);
-        StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
-        if (indexElement == null || !indexElement.content().action().exists()) {
-          continue;
-        }
-
-        idsToKeys.put(
-            requireNonNull(indexElement.content().value(), "Required value pointer is null"), key);
-      }
-
       ContentMapping contentMapping = new ContentMapping(persist);
-      return contentMapping.fetchContents(idsToKeys).entrySet().stream()
+      return contentMapping.fetchContents(index, keys).entrySet().stream()
           .collect(
               Collectors.toMap(
                   Map.Entry::getKey,
