@@ -27,10 +27,16 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.AUTHO
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.COMMITTER;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.CONTENT_DISCRIMINATOR;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.MAIN_UNIVERSE;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -111,6 +117,33 @@ public class TestContentMapping {
     soft.assertThat(obj).extracting(Content::getId).isEqualTo(content.getId()).isEqualTo(newId);
 
     soft.assertThat(obj).isEqualTo(content);
+  }
+
+  @ParameterizedTest
+  @MethodSource("contentSamples")
+  public void sameContentOnMultipleKeys(Content contentWithoutId) throws Exception {
+    ContentMapping contentMapping = new ContentMapping(persist);
+
+    String newId = UUID.randomUUID().toString();
+    Content content = contentWithoutId.withId(newId);
+
+    int payload = payloadForContent(content);
+    ContentValueObj value = contentMapping.buildContent(content, payload);
+    ObjId id = value.id();
+    persist.storeObj(value);
+
+    List<ContentKey> dupKeys =
+        IntStream.rangeClosed(1, 3)
+            .mapToObj(i -> ContentKey.of("dupContent" + i))
+            .collect(Collectors.toList());
+
+    StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
+    dupKeys.forEach(k -> index.add(indexElement(keyToStoreKey(k), commitOp(Action.ADD, 1, id))));
+
+    Map<ContentKey, Content> contents = contentMapping.fetchContents(index, dupKeys);
+    soft.assertThat(contents)
+        .containsAllEntriesOf(
+            dupKeys.stream().collect(Collectors.toMap(Function.identity(), e -> content)));
   }
 
   @Test

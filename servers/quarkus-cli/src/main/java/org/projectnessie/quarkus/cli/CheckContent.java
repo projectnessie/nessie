@@ -16,13 +16,11 @@
 package org.projectnessie.quarkus.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.hashNotFound;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.objectNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
@@ -33,7 +31,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,14 +45,10 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
-import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
-import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.versionstore.ContentMapping;
 import org.projectnessie.versioned.storage.versionstore.RefMapping;
-import org.projectnessie.versioned.storage.versionstore.TypeMapping;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import picocli.CommandLine;
 
@@ -304,23 +297,10 @@ public class CheckContent extends BaseCommand {
     @Override
     public Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
         throws ReferenceNotFoundException {
-      // Eagerly bulk-(pre)fetch the requested keys
-      index(hash)
-          .loadIfNecessary(
-              keys.stream().map(TypeMapping::keyToStoreKey).collect(Collectors.toSet()));
-      Map<ObjId, ContentKey> idsToKeys = new HashMap<>(keys.size());
-      for (ContentKey key : keys) {
-        StoreKey storeKey = keyToStoreKey(key);
-        StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
-        if (indexElement != null && indexElement.content().action().exists()) {
-          idsToKeys.put(
-              requireNonNull(indexElement.content().value(), "Required value pointer is null"),
-              key);
-        }
-      }
+      StoreIndex<CommitOp> index = index(hash);
       ContentMapping contentMapping = new ContentMapping(persist);
       try {
-        return contentMapping.fetchContents(idsToKeys);
+        return contentMapping.fetchContents(index, keys);
       } catch (ObjNotFoundException e) {
         throw objectNotFound(e);
       }
