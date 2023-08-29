@@ -19,6 +19,9 @@ import static org.projectnessie.client.ext.MultiVersionApiTest.apiVersion;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -88,7 +91,16 @@ public abstract class NessieClientResolver implements ParameterResolver {
   private NessieClientFactory clientFactoryForContext(ExtensionContext extensionContext) {
     NessieApiVersion apiVersion = apiVersion(extensionContext);
     URI uri = resolvedNessieUri(extensionContext);
-    Object testInstance = extensionContext.getTestInstance().orElse(null);
+    List<NessieClientCustomizer> customizers =
+        extensionContext
+            .getTestInstances()
+            .map(
+                i ->
+                    i.getAllInstances().stream()
+                        .filter(ti -> ti instanceof NessieClientCustomizer)
+                        .map(ti -> (NessieClientCustomizer) ti)
+                        .collect(Collectors.toList()))
+            .orElse(Collections.emptyList());
 
     Class<? extends HttpResponseFactory> responseFactoryClass =
         extensionContext
@@ -97,8 +109,15 @@ public abstract class NessieClientResolver implements ParameterResolver {
             .map(NessieClientResponseFactory::value)
             .orElse(null);
 
-    if (testInstance instanceof NessieClientCustomizer) {
-      NessieClientCustomizer testCustomizer = (NessieClientCustomizer) testInstance;
+    if (!customizers.isEmpty()) {
+      NessieClientCustomizer testCustomizer =
+          (builder, version) -> {
+            for (NessieClientCustomizer customizer : customizers) {
+              builder = customizer.configure(builder, version);
+            }
+            return builder;
+          };
+
       return new ClientFactory(uri, apiVersion, responseFactoryClass) {
         @Nonnull
         @jakarta.annotation.Nonnull
