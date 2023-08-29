@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.69.2 Release (August 29, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.69.2).
+
+### Fixes
+
+- Nessie CLI: check-content command was incorrectly reporting deleted keys as missing content, when
+  using new storage model.
+- GC Tool handles JDBC config via environment correctly
+
+### Commits
+* Process outer test instances in clientFactoryForContext (#7444)
+
 ## 0.69.1 Release (August 28, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.69.1).
