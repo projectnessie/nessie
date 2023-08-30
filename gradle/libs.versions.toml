@@ -164,7 +164,7 @@ threeten-extra = { module = "org.threeten:threeten-extra", version = "1.7.2" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
-wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version = "2.35.0" }
+wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version = "3.0.0" }
 
 [plugins]
 annotations-stripper = { id = "org.projectnessie.annotation-stripper", version = "0.1.2" }
