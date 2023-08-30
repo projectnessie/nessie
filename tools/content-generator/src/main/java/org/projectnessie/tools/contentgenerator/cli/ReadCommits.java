@@ -34,12 +34,18 @@ public class ReadCommits extends AbstractCommand {
       description = "Name of the branch/tag to read the commit log from, defaults to 'main'")
   private String ref = "main";
 
+  @Option(
+      names = {"-H", "--hash"},
+      description =
+          "Hash of the commit to read content from, defaults to HEAD. Relative lookups are accepted.")
+  private String hash;
+
   @Override
   public void execute() throws NessieNotFoundException {
     try (NessieApiV2 api = createNessieApiInstance()) {
       spec.commandLine().getOut().printf("Reading commits for ref '%s'\n\n", ref);
       FetchOption fetchOption = isVerbose() ? FetchOption.ALL : FetchOption.MINIMAL;
-      api.getCommitLog().refName(ref).fetch(fetchOption).stream()
+      api.getCommitLog().refName(ref).hashOnRef(hash).fetch(fetchOption).stream()
           .forEach(
               logEntry -> {
                 CommitMeta commitMeta = logEntry.getCommitMeta();

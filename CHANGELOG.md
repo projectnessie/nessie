@@ -12,6 +12,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Breaking changes
 
 ### New Features
+- Content Generator tool: added new `--hash` parameter to `commits`, `content` and `entries` 
+  commands.
 
 ### Changes
 
