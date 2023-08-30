@@ -14,8 +14,7 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 - Content Generator tool: added new `--hash` parameter to `commits`, `content` and `entries` 
   commands.
-- Content Generator tool: new `--full-hashes` option to `commits` command to print full hashes
-  instead of abbreviated hashes.
+- Content Generator tool: commit hashes are now printed in full when running the `commits` command.
 
 ### Changes
 

@@ -40,11 +40,6 @@ public class ReadCommits extends AbstractCommand {
           "Hash of the commit to read content from, defaults to HEAD. Relative lookups are accepted.")
   private String hash;
 
-  @Option(
-      names = {"-f", "--full-hashes"},
-      description = "Show full hashes instead of short hashes.")
-  private boolean fullHashes = false;
-
   @Override
   public void execute() throws NessieNotFoundException {
     try (NessieApiV2 api = createNessieApiInstance()) {
@@ -58,7 +53,7 @@ public class ReadCommits extends AbstractCommand {
                     .getOut()
                     .printf(
                         "%s\t%s\t%s [%s]\n",
-                        formatHash(commitMeta),
+                        Objects.requireNonNull(commitMeta.getHash()),
                         commitMeta.getAuthorTime(),
                         commitMeta.getMessage(),
                         commitMeta.getAuthor());
@@ -78,13 +73,5 @@ public class ReadCommits extends AbstractCommand {
               });
       spec.commandLine().getOut().printf("\nDone reading commits for ref '%s'\n\n", ref);
     }
-  }
-
-  private String formatHash(CommitMeta commitMeta) {
-    String hash = Objects.requireNonNull(commitMeta.getHash());
-    if (fullHashes) {
-      return hash;
-    }
-    return hash.substring(0, 8);
   }
 }
