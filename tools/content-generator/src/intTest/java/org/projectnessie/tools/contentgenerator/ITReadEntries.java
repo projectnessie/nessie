@@ -21,10 +21,14 @@ import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGe
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Operation;
 import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
 class ITReadEntries extends AbstractContentGeneratorTest {
@@ -73,5 +77,45 @@ class ITReadEntries extends AbstractContentGeneratorTest {
 
     assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
     assertThat(output).anySatisfy(s -> assertThat(s).contains("testMeta"));
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {"%1$s|true", "%2$s|false", "%2$s~1|true"},
+      delimiter = '|')
+  void listEntriesWithHash(String hash, boolean expectContent) throws Exception {
+
+    String c1 = branch.getHash();
+    try (NessieApiV2 api = buildNessieApi()) {
+      branch =
+          api.commitMultipleOperations()
+              .branchName(branch.getName())
+              .hash(c1)
+              .commitMeta(CommitMeta.fromMessage("Second commit"))
+              .operation(Operation.Delete.of(CONTENT_KEY))
+              .commit();
+    }
+    String c2 = branch.getHash();
+
+    ProcessResult proc =
+        runGeneratorCmd(
+            "entries",
+            "--uri",
+            NESSIE_API_URI,
+            "--ref",
+            branch.getName(),
+            "--hash",
+            String.format(hash, c1, c2),
+            "--with-content");
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
+
+    if (expectContent) {
+      assertThat(output).contains("Key: " + CONTENT_KEY).contains("Type: ICEBERG_TABLE");
+    } else {
+      assertThat(output)
+          .doesNotContain("Key: " + CONTENT_KEY)
+          .doesNotContain("Type: ICEBERG_TABLE");
+    }
   }
 }

@@ -35,6 +35,12 @@ public class ReadContent extends AbstractCommand {
   private String ref = "main";
 
   @Option(
+      names = {"-H", "--hash"},
+      description =
+          "Hash of the commit to read content from, defaults to HEAD. Relative lookups are accepted.")
+  private String hash;
+
+  @Option(
       names = {"-k", "--key"},
       description = "Content key to use",
       required = true)
@@ -46,7 +52,7 @@ public class ReadContent extends AbstractCommand {
       ContentKey contentKey = ContentKey.of(key);
       spec.commandLine().getOut().printf("Reading content for key '%s'\n\n", contentKey);
       GetMultipleContentsResponse contents =
-          api.getContent().refName(ref).key(contentKey).getWithResponse();
+          api.getContent().refName(ref).hashOnRef(hash).key(contentKey).getWithResponse();
       Map<ContentKey, Content> contentMap = contents.toContentsMap();
       spec.commandLine().getOut().printf("Content at '%s'\n", contents.getEffectiveReference());
       for (Map.Entry<ContentKey, Content> entry : contentMap.entrySet()) {

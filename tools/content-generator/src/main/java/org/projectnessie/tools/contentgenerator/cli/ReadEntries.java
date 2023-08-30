@@ -35,6 +35,12 @@ public class ReadEntries extends AbstractCommand {
   private String ref = "main";
 
   @Option(
+      names = {"-H", "--hash"},
+      description =
+          "Hash of the commit to read content from, defaults to HEAD. Relative lookups are accepted.")
+  private String hash;
+
+  @Option(
       names = {"-C", "--with-content"},
       description = "Include content for each entry.")
   private boolean withContent;
@@ -45,7 +51,7 @@ public class ReadEntries extends AbstractCommand {
 
     try (NessieApiV2 api = createNessieApiInstance()) {
       out.printf("Listing entries for reference '%s'.%n%n", ref);
-      api.getEntries().refName(ref).withContent(withContent).stream()
+      api.getEntries().refName(ref).hashOnRef(hash).withContent(withContent).stream()
           .forEach(
               entry -> {
                 out.printf("Key: %s%n", entry.getName());
