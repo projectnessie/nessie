@@ -17,17 +17,22 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.Namespace;
@@ -39,6 +44,7 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.KeyRestrictions;
 import org.projectnessie.versioned.paging.PaginationIterator;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractEntries extends AbstractNestedVersionStore {
@@ -163,6 +169,37 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
     }
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 49, 50, 51, 100, 101})
+  void getKeys(int numKeys) throws Exception {
+    assumeThat(isNewStorageModel()).isTrue();
+
+    BranchName branch = BranchName.of("foo");
+    Hash head = store().create(branch, Optional.empty()).getHash();
+
+    List<Tuple> expected = new ArrayList<>();
+    if (numKeys > 0) {
+      CommitBuilder commit = commit("Initial Commit");
+      for (int i = 0; i < numKeys; i++) {
+        ContentKey key = ContentKey.of("key" + i);
+        OnRefOnly value = newOnRef("key" + i);
+        commit.put(key, value);
+        expected.add(tuple(key, value));
+      }
+      head = commit.toBranch(branch);
+    }
+
+    try (PaginationIterator<KeyEntry> iter =
+        store().getKeys(head, null, true, NO_KEY_RESTRICTIONS)) {
+      soft.assertThat(iter)
+          .toIterable()
+          .extracting(
+              keyEntry -> keyEntry.getKey().contentKey(),
+              keyEntry -> keyEntry.getContent().withId(null))
+          .containsExactlyInAnyOrderElementsOf(expected);
+    }
+  }
+
   @Test
   void entries() throws Exception {
     BranchName branch = BranchName.of("foo");
@@ -185,15 +222,15 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
     ContentResult content23a = store().getValue(commit, key23a);
 
     try (PaginationIterator<KeyEntry> iter =
-        store.getKeys(commit, null, false, NO_KEY_RESTRICTIONS)) {
+        store.getKeys(commit, null, true, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(iter)
           .toIterable()
-          .extracting(KeyEntry::getKey)
+          .extracting(KeyEntry::getKey, KeyEntry::getContent)
           .containsExactlyInAnyOrder(
-              content2.identifiedKey(),
-              content2a.identifiedKey(),
-              content23.identifiedKey(),
-              content23a.identifiedKey());
+              tuple(content2.identifiedKey(), content2.content()),
+              tuple(content2a.identifiedKey(), content2a.content()),
+              tuple(content23.identifiedKey(), content23.content()),
+              tuple(content23a.identifiedKey(), content23a.content()));
     }
 
     if (isNewStorageModel()) {

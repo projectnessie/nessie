@@ -17,6 +17,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 - Content Generator tool: commit hashes are now printed in full when running the `commits` command.
+- For a "get-keys" operation that requests the content objects as well, the content objects are now
+  fetched using bulk-requests.
 
 ### Deprecations
 
