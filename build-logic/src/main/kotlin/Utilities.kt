@@ -30,6 +30,7 @@ import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.resources.TextResource
 import org.gradle.api.tasks.InputFile
@@ -162,9 +163,11 @@ fun testLogLevel(minVerbose: String): String {
   return requested.name
 }
 
+fun isIncludedInNesQuEIT(gradle: Gradle): Boolean =
+  "tools-integration-tests" == gradle.parent?.rootProject?.name
+
 /** Check whether the current build is run in the context of integrations-testing. */
-fun isIntegrationsTestingEnabled() =
-  System.getProperty("nessie.integrationsTesting.enable").toBoolean()
+fun Project.isIncludedInNesQuEIT(): Boolean = isIncludedInNesQuEIT(gradle)
 
 /**
  * Adds an `implementation` dependency to `nessie-client` using the Nessie version supported by the
@@ -173,7 +176,7 @@ fun isIntegrationsTestingEnabled() =
  */
 fun Project.nessieClientForIceberg(): Dependency {
   val dependencyHandlerScope = DependencyHandlerScope.of(dependencies)
-  return if (!isIntegrationsTestingEnabled()) {
+  return if (!isIncludedInNesQuEIT()) {
     val clientVersion = libsRequiredVersion("nessieClientVersion")
     dependencies.create(
       if (clientVersion >= "0.50.1") "org.projectnessie.nessie:nessie-client:$clientVersion"
@@ -204,7 +207,7 @@ fun DependencyHandlerScope.nessieProject(
   artifactId: String,
   configuration: String? = null
 ): ModuleDependency {
-  return if (!isIntegrationsTestingEnabled()) {
+  return if (!isIncludedInNesQuEIT(project(":").dependencyProject.gradle)) {
     project(":$artifactId", configuration)
   } else {
     module(NessieProjects.groupIdForArtifact(artifactId), artifactId, configuration = configuration)
@@ -235,7 +238,7 @@ private class NessieProjects {
 }
 
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
-fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()
+fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar") || isIncludedInNesQuEIT()
 
 fun Project.quarkusPackageType(): String = if (quarkusFatJar()) "uber-jar" else "fast-jar"
 
