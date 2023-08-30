@@ -151,9 +151,10 @@ if (gradle.parent != null && ideSyncActive) {
   }
 }
 
-// Cannot use isIntegrationsTestingEnabled() in build-logic/src/main/kotlin/Utilities.kt, because
-// settings.gradle is evaluated before build-logic.
-if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
+// Cannot use isIncludedInNesQuEIT() in build-logic/src/main/kotlin/Utilities.kt, because
+// settings.gradle is evaluated before build-logic, also the the parent's rootProject is not
+// available here.
+if (gradle.parent == null) {
   loadProjects("gradle/projects.iceberg.properties", groupIdIntegrations)
 
   val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
