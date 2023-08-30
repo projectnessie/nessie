@@ -16,7 +16,6 @@
 package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.List;
-import java.util.Objects;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -53,7 +52,7 @@ public class ReadCommits extends AbstractCommand {
                     .getOut()
                     .printf(
                         "%s\t%s\t%s [%s]\n",
-                        Objects.requireNonNull(commitMeta.getHash()),
+                        commitMeta.getHash(),
                         commitMeta.getAuthorTime(),
                         commitMeta.getMessage(),
                         commitMeta.getAuthor());

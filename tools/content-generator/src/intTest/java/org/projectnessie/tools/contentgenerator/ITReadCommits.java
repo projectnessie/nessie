@@ -62,16 +62,6 @@ class ITReadCommits extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void readCommitsFullHashes() {
-    ProcessResult proc =
-        runGeneratorCmd(
-            "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--full-hashes");
-    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
-    List<String> output = proc.getStdOutLines();
-    assertThat(output).anySatisfy(s -> assertThat(s).matches("[0-9a-f]{32}.*" + COMMIT_MSG + ".*"));
-  }
-
-  @Test
   void readCommitsVerbose() throws Exception {
     ProcessResult proc =
         runGeneratorCmd("commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose");
