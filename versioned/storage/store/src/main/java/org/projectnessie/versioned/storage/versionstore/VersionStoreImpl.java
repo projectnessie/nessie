@@ -58,6 +58,8 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.store
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 
+import com.google.common.collect.AbstractIterator;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -73,6 +75,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -139,6 +142,7 @@ import org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.Committ
 
 public class VersionStoreImpl implements VersionStore {
 
+  public static final int GET_KEYS_CONTENT_BATCH_SIZE = 50;
   private final Persist persist;
 
   @SuppressWarnings("unused")
@@ -554,23 +558,8 @@ public class VersionStoreImpl implements VersionStore {
         index.iterator(keyRanges.beginStoreKey(), keyRanges.endStoreKey(), false);
     ContentMapping contentMapping = new ContentMapping(persist);
 
-    Predicate<StoreIndexElement<CommitOp>> keyPredicate =
-        indexElement ->
-            indexElement.content().action().exists()
-                && indexElement.key().endsWithElement(CONTENT_DISCRIMINATOR);
     BiPredicate<ContentKey, Content.Type> contentKeyPredicate =
         keyRestrictions.contentKeyPredicate();
-    if (contentKeyPredicate != null) {
-      keyPredicate =
-          keyPredicate.and(
-              indexElement -> {
-                ContentKey key = storeKeyToKey(indexElement.key());
-                // Note: key==null, if not the "main universe" or not a "content" discriminator
-                return key != null
-                    && contentKeyPredicate.test(
-                        key, contentTypeForPayload(indexElement.content().payload()));
-              });
-    }
 
     Predicate<StoreIndexElement<CommitOp>> stopPredicate;
     ContentKey prefixKey = keyRestrictions.prefixKey();
@@ -581,44 +570,99 @@ public class VersionStoreImpl implements VersionStore {
       stopPredicate = x -> false;
     }
 
-    return new FilteringPaginationIterator<>(
-        result,
-        indexElement -> {
-          try {
-            ContentKey key = storeKeyToKey(indexElement.key());
-            CommitOp commitOp = indexElement.content();
+    // "Base" iterator, which maps StoreIndexElement objects to ContentKey and CommitOp and also
+    // filters out non-content keys and non-live CommitOps.
+    Iterator<ContentKeyWithCommitOp> keyAndOp =
+        new AbstractIterator<>() {
+          @CheckForNull
+          @Override
+          protected ContentKeyWithCommitOp computeNext() {
+            while (true) {
+              if (!result.hasNext()) {
+                return endOfData();
+              }
 
-            if (withContent) {
-              Content c =
-                  contentMapping.fetchContent(
-                      requireNonNull(commitOp.value(), "Required value pointer is null"));
-              return KeyEntry.of(buildIdentifiedKey(key, index, c, x -> null), c);
-            }
+              StoreIndexElement<CommitOp> indexElement = result.next();
 
-            UUID contentId = commitOp.contentId();
-            String contentIdString;
-            if (contentId == null) {
-              // this should only be hit by imported legacy nessie repos
-              Content c =
-                  contentMapping.fetchContent(
-                      requireNonNull(commitOp.value(), "Required value pointer is null"));
-              contentIdString = c.getId();
-            } else {
-              contentIdString = contentId.toString();
+              if (stopPredicate.test(indexElement)) {
+                return endOfData();
+              }
+
+              StoreKey storeKey = indexElement.key();
+
+              if (!indexElement.content().action().exists()
+                  || !indexElement.key().endsWithElement(CONTENT_DISCRIMINATOR)) {
+                continue;
+              }
+
+              ContentKey key = storeKeyToKey(storeKey);
+
+              if (contentKeyPredicate != null
+                  && !contentKeyPredicate.test(
+                      key, contentTypeForPayload(indexElement.content().payload()))) {
+                continue;
+              }
+
+              return new ContentKeyWithCommitOp(storeKey, key, indexElement.content());
             }
-            Content.Type contentType = contentTypeForPayload(commitOp.payload());
-            return KeyEntry.of(
-                buildIdentifiedKey(key, index, contentType, contentIdString, x -> null));
-          } catch (ObjNotFoundException e) {
-            throw new RuntimeException("Could not fetch or map content", e);
           }
-        },
-        keyPredicate,
-        stopPredicate) {
+        };
+
+    // "Fetch content" iterator - same as the "base" iterator when not fetching the content,
+    // fetches contents in batches if 'withContent == true'.
+    Iterator<ContentKeyWithCommitOp> fetchContent =
+        withContent
+            ? new AbstractIterator<>() {
+              final List<ContentKeyWithCommitOp> batch =
+                  new ArrayList<>(GET_KEYS_CONTENT_BATCH_SIZE);
+
+              Iterator<ContentKeyWithCommitOp> current;
+
+              @CheckForNull
+              @Override
+              protected ContentKeyWithCommitOp computeNext() {
+                Iterator<ContentKeyWithCommitOp> c = current;
+                if (c != null && c.hasNext()) {
+                  return c.next();
+                }
+
+                for (int i = 0; i < GET_KEYS_CONTENT_BATCH_SIZE; i++) {
+                  if (!keyAndOp.hasNext()) {
+                    break;
+                  }
+                  batch.add(keyAndOp.next());
+                }
+
+                if (batch.isEmpty()) {
+                  current = null;
+                  return endOfData();
+                }
+
+                try {
+                  Map<ContentKey, Content> contents =
+                      contentMapping.fetchContents(
+                          index, batch.stream().map(op -> op.key).collect(Collectors.toList()));
+                  for (ContentKeyWithCommitOp op : batch) {
+                    op.content = contents.get(op.key);
+                  }
+                } catch (ObjNotFoundException e) {
+                  throw new RuntimeException("Could not fetch or map content", e);
+                }
+                current = new ArrayList<>(batch).iterator();
+                batch.clear();
+                return current.next();
+              }
+            }
+            : keyAndOp;
+
+    // "Final" iterator, adding functionality for paging. Needs to be a separate instance, because
+    // we cannot use the "base" iterator to provide the token for the "current" entry.
+    return new PaginationIterator<>() {
+      ContentKeyWithCommitOp current;
+
       @Override
-      protected String computeTokenForCurrent() {
-        StoreIndexElement<CommitOp> c = current();
-        return c != null ? token(c.key()) : null;
+      public String tokenForCurrent() {
+        return token(current.storeKey);
       }
 
       @Override
@@ -629,7 +673,58 @@ public class VersionStoreImpl implements VersionStore {
       private String token(StoreKey storeKey) {
         return pagingToken(copyFromUtf8(storeKey.rawString())).asString();
       }
+
+      @Override
+      public boolean hasNext() {
+        return fetchContent.hasNext();
+      }
+
+      @Override
+      public KeyEntry next() {
+        ContentKeyWithCommitOp c = current = fetchContent.next();
+
+        if (c.content != null) {
+          return KeyEntry.of(buildIdentifiedKey(c.key, index, c.content, x -> null), c.content);
+        }
+
+        try {
+          UUID contentId = c.commitOp.contentId();
+          String contentIdString;
+          if (contentId == null) {
+            // this should only be hit by imported legacy nessie repos
+            if (c.content == null) {
+              c.content =
+                  contentMapping.fetchContent(
+                      requireNonNull(c.commitOp.value(), "Required value pointer is null"));
+            }
+            contentIdString = c.content.getId();
+          } else {
+            contentIdString = contentId.toString();
+          }
+          Content.Type contentType = contentTypeForPayload(c.commitOp.payload());
+          return KeyEntry.of(
+              buildIdentifiedKey(c.key, index, contentType, contentIdString, x -> null));
+        } catch (ObjNotFoundException e) {
+          throw new RuntimeException("Could not fetch or map content", e);
+        }
+      }
+
+      @Override
+      public void close() {}
     };
+  }
+
+  static final class ContentKeyWithCommitOp {
+    final StoreKey storeKey;
+    final ContentKey key;
+    final CommitOp commitOp;
+    Content content;
+
+    ContentKeyWithCommitOp(StoreKey storeKey, ContentKey key, CommitOp commitOp) {
+      this.storeKey = storeKey;
+      this.key = key;
+      this.commitOp = commitOp;
+    }
   }
 
   @Override
