@@ -537,12 +537,15 @@ final class IndexesLogicImpl implements IndexesLogic {
 
       StoreIndex<CommitOp> newIndex;
       ObjId referenceIndex;
+      List<IndexStripe> indexStripes;
       if (parent != null) {
         newIndex = incrementalIndexForUpdate(parent, Optional.empty());
         referenceIndex = parent.referenceIndex();
+        indexStripes = parent.referenceIndexStripes();
       } else {
         newIndex = newStoreIndex(COMMIT_OP_SERIALIZER);
         referenceIndex = null;
+        indexStripes = Collections.emptyList();
       }
 
       commitOperations(current).forEach(newIndex::add);
@@ -552,6 +555,7 @@ final class IndexesLogicImpl implements IndexesLogic {
               .from(current)
               .incompleteIndex(false)
               .referenceIndex(referenceIndex)
+              .referenceIndexStripes(indexStripes)
               .incrementalIndex(newIndex.serialize())
               .build();
       newCommit = commitLogic.updateCommit(newCommit);
