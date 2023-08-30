@@ -16,6 +16,7 @@ as necessary. Empty sections will not end in the release notes.
   commands.
 
 ### Changes
+- Content Generator tool: commit hashes are now printed in full when running the `commits` command.
 
 ### Deprecations
 
