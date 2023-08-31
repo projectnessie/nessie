@@ -18,7 +18,6 @@ package org.projectnessie.versioned.storage.commontests;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
@@ -44,13 +43,12 @@ import static org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.ba
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.common.config.StoreConfig.Adjustable;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
@@ -345,18 +343,14 @@ public class AbstractIndexesLogicTests {
     soft.assertThat(indexesLogic.commitOperations(commit)).containsExactly(add1, add2, remove1);
   }
 
-  private static final String LARGE_STRING =
-      IntStream.range(0, 100).mapToObj(i -> "x").collect(joining());
-
   @SuppressWarnings("unused")
-  static Adjustable persistWithSmallIndexSizeWithStripes(Adjustable config) {
+  static StoreConfig.Adjustable persistWithSmallIndexSize(StoreConfig.Adjustable config) {
     return config.withMaxIncrementalIndexSize(200);
   }
 
   @Test
   void completeIndexesInCommitChainWithStripes(
-      @NessiePersist(configMethod = "persistWithSmallIndexSizeWithStripes") Persist persist)
-      throws Exception {
+      @NessiePersist(configMethod = "persistWithSmallIndexSize") Persist persist) throws Exception {
 
     ObjId currentId = fiveIncompleteCommitsWithThreeOpsEach(persist);
 
