@@ -205,6 +205,9 @@ spec:
               value: {{ .Values.tracing.sample | quote }}
             {{- end }}
             {{- end }}
+            {{- else }}
+            - name: QUARKUS_OTEL_SDK_DISABLED
+              value: "true"
             {{- end }}
 
             {{ list .Values.advancedConfig "" | include "nessie.propsToEnvVars" | nindent 12 }}
