@@ -163,8 +163,7 @@ fun testLogLevel(minVerbose: String): String {
   return requested.name
 }
 
-fun isIncludedInNesQuEIT(gradle: Gradle): Boolean =
-  "tools-integration-tests" == gradle.parent?.rootProject?.name
+fun isIncludedInNesQuEIT(gradle: Gradle): Boolean = "NesQuEIT" == gradle.parent?.rootProject?.name
 
 /** Check whether the current build is run in the context of integrations-testing. */
 fun Project.isIncludedInNesQuEIT(): Boolean = isIncludedInNesQuEIT(gradle)
