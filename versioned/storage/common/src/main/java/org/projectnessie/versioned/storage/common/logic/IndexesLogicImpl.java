@@ -564,9 +564,7 @@ final class IndexesLogicImpl implements IndexesLogic {
         int parents = Math.min(parentsPerCommit - 1, parent.tail().size());
         List<ObjId> tail = new ArrayList<>(parents + 1);
         tail.add(parent.id());
-        for (int j = 0; j < parents; j++) {
-          tail.add(parent.tail().get(j));
-        }
+        tail.addAll(parent.tail().subList(0, parents));
         c.tail(tail);
       }
 
