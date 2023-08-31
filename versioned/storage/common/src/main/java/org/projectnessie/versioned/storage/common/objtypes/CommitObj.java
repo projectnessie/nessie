@@ -101,6 +101,9 @@ public interface CommitObj extends Obj {
     Builder addTail(ObjId element);
 
     @CanIgnoreReturnValue
+    Builder tail(Iterable<? extends ObjId> elements);
+
+    @CanIgnoreReturnValue
     Builder addSecondaryParents(ObjId element);
 
     @CanIgnoreReturnValue

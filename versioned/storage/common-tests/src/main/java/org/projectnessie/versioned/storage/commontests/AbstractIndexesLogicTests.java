@@ -42,12 +42,14 @@ import static org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.ba
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -343,9 +345,11 @@ public class AbstractIndexesLogicTests {
     soft.assertThat(indexesLogic.commitOperations(commit)).containsExactly(add1, add2, remove1);
   }
 
+  private static final int SMALL_INCREMENTAL_INDEX_SIZE = 200;
+
   @SuppressWarnings("unused")
   static StoreConfig.Adjustable persistWithSmallIndexSize(StoreConfig.Adjustable config) {
-    return config.withMaxIncrementalIndexSize(200);
+    return config.withMaxIncrementalIndexSize(SMALL_INCREMENTAL_INDEX_SIZE);
   }
 
   @Test
@@ -394,7 +398,7 @@ public class AbstractIndexesLogicTests {
           commitBuilder()
               .id(randomObjId())
               .addTail(parentId)
-              .created(System.nanoTime())
+              .created(TimeUnit.SECONDS.toMicros(i + 1))
               .seq(i)
               .message("Commit " + (i + 1))
               .headers(EMPTY_COMMIT_HEADERS)
@@ -410,7 +414,12 @@ public class AbstractIndexesLogicTests {
       }
 
       // incremental index has size 175, max configured is 200
-      c.incrementalIndex(index.serialize());
+      ByteString serialized = index.serialize();
+      // Ensure the 3 keys fit into the incremental index...
+      soft.assertThat(serialized.size()).isLessThan(SMALL_INCREMENTAL_INDEX_SIZE);
+      // but four keys don't -> force spill out
+      soft.assertThat(serialized.size() * 4 / 3).isGreaterThan(SMALL_INCREMENTAL_INDEX_SIZE);
+      c.incrementalIndex(serialized);
       CommitObj commit = c.build();
       persist.storeObj(commit);
       current = commit;

@@ -61,6 +61,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj.Builder;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
@@ -508,6 +509,8 @@ final class IndexesLogicImpl implements IndexesLogic {
             ? null
             : persist.fetchTypedObj(current.directParent(), COMMIT, CommitObj.class);
 
+    int parentsPerCommit = persist.config().parentsPerCommit();
+
     for (int i = 0; i < totalCommits; i++) {
       if (i > 0 && (i % 100) == 0) {
         // perform a bulk-load against the database, populates the cache
@@ -550,17 +553,24 @@ final class IndexesLogicImpl implements IndexesLogic {
 
       commitOperations(current).forEach(newIndex::add);
 
-      CommitObj newCommit =
+      Builder c =
           commitBuilder()
               .from(current)
               .incompleteIndex(false)
               .referenceIndex(referenceIndex)
               .referenceIndexStripes(indexStripes)
-              .incrementalIndex(newIndex.serialize())
-              .build();
-      newCommit = commitLogic.updateCommit(newCommit);
+              .incrementalIndex(newIndex.serialize());
 
-      parent = newCommit;
+      if (parent != null) {
+        c.tail(Collections.singleton(parent.id()));
+        List<ObjId> parentTail = parent.tail();
+        int amount = Math.min(parentsPerCommit - 1, parentTail.size());
+        for (int j = 0; j < amount; j++) {
+          c.addTail(parentTail.get(j));
+        }
+      }
+
+      parent = commitLogic.updateCommit(c.build());
       current = null;
     }
   }
