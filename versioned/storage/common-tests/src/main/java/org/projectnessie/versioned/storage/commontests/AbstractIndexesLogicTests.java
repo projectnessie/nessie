@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.commontests;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
@@ -41,14 +42,16 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 import static org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.basicIndexTestSet;
 
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.versioned.storage.common.config.StoreConfig.Adjustable;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
@@ -342,41 +345,71 @@ public class AbstractIndexesLogicTests {
     soft.assertThat(indexesLogic.commitOperations(commit)).containsExactly(add1, add2, remove1);
   }
 
+  private static final String LARGE_STRING =
+      IntStream.range(0, 100).mapToObj(i -> "x").collect(joining());
+
+  @SuppressWarnings("unused")
+  static Adjustable persistWithSmallIndexSizeWithStripes(Adjustable config) {
+    return config.withMaxIncrementalIndexSize(200);
+  }
+
   @Test
-  void completeIndexesInCommitChainWithStripes() throws Exception {
+  void completeIndexesInCommitChainWithStripes(
+      @NessiePersist(configMethod = "persistWithSmallIndexSizeWithStripes") Persist persist)
+      throws Exception {
 
-    // Create 10 commits with 100 PUTs each;
-    // Commit N is thus expected to have 100 * N index entries in total.
-    CommitObj parent = null;
-    for (int i = 1; i <= 10; i++) {
+    ObjId currentId = fiveIncompleteCommitsWithThreeOpsEach(persist);
 
-      ObjId parentCommitId = parent == null ? EMPTY_OBJ_ID : parent.id();
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    indexesLogic.completeIndexesInCommitChain(currentId, () -> {});
+
+    for (int i = 5; i > 0; i--) {
+      CommitObj current = persist.fetchTypedObj(currentId, ObjType.COMMIT, CommitObj.class);
+      if (i > 1) {
+        // All commits except commit 1 should have stripes
+        soft.assertThat(current.referenceIndexStripes()).isNotEmpty();
+      }
+      int actualElementCount =
+          indexesLogic.incrementalIndexFromCommit(current).elementCount()
+              + (current.hasReferenceIndex()
+                  ? requireNonNull(indexesLogic.buildReferenceIndexOnly(current)).elementCount()
+                  : 0);
+      int expectedElementCount = i * 3;
+      soft.assertThat(actualElementCount).isEqualTo(expectedElementCount);
+      currentId = current.directParent();
+    }
+  }
+
+  private ObjId fiveIncompleteCommitsWithThreeOpsEach(Persist persist) throws ObjTooLargeException {
+
+    String[][] keys =
+        new String[][] {
+          {"abcd", "bcde", "cdef"},
+          {"efgh", "fghi", "ghij"},
+          {"hijk", "ijkl", "jklm"},
+          {"klmn", "lmno", "mnop"},
+          {"nopq", "opqr", "pqrs"},
+        };
+
+    CommitObj current = null;
+    for (int i = 0; i < 5; i++) {
+
+      ObjId parentId = current == null ? EMPTY_OBJ_ID : current.id();
 
       CommitObj.Builder c =
           commitBuilder()
               .id(randomObjId())
-              .addTail(parentCommitId)
+              .addTail(parentId)
               .created(System.nanoTime())
               .seq(i)
-              .message("Commit " + i)
+              .message("Commit " + (i + 1))
               .headers(EMPTY_COMMIT_HEADERS)
               .incompleteIndex(true);
+
       StoreIndex<CommitOp> index = newStoreIndex(CommitOp.COMMIT_OP_SERIALIZER);
 
-      Random random = new Random();
-
-      for (int j = 0; j < 100; j++) {
-
-        // Use large keys to increase chances of ObjTooLargeException which
-        // in turn will trigger the striped index logic.
-        String key =
-            random
-                .ints('0', 'z' + 1)
-                .limit(100)
-                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                .toString();
-
-        StoreKey k = key(key);
+      for (int j = 0; j < 3; j++) {
+        StoreKey k = key(keys[i][j]);
         UUID cid = new UUID(123L, j);
         ObjId v = randomObjId();
         index.add(indexElement(k, commitOp(ADD, 42, v, cid)));
@@ -384,25 +417,9 @@ public class AbstractIndexesLogicTests {
 
       c.incrementalIndex(index.serialize());
       CommitObj commit = c.build();
-
       persist.storeObj(commit);
-      parent = commit;
+      current = commit;
     }
-
-    IndexesLogic indexesLogic = indexesLogic(persist);
-    indexesLogic.completeIndexesInCommitChain(parent.id(), () -> {});
-
-    ObjId currentId = parent.id();
-    for (int i = 10; i > 0; i--) {
-      CommitObj current = persist.fetchTypedObj(currentId, ObjType.COMMIT, CommitObj.class);
-      int expectedElementCount = i * 100;
-      int actualElementCount =
-          indexesLogic.incrementalIndexFromCommit(current).elementCount()
-              + (current.hasReferenceIndex()
-                  ? requireNonNull(indexesLogic.buildReferenceIndexOnly(current)).elementCount()
-                  : 0);
-      soft.assertThat(actualElementCount).isEqualTo(expectedElementCount);
-      currentId = current.directParent();
-    }
+    return current.id();
   }
 }

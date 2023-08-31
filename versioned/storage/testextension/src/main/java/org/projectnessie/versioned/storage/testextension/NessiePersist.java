@@ -20,6 +20,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
@@ -27,18 +29,16 @@ import java.lang.annotation.Target;
 public @interface NessiePersist {
 
   /**
-   * Optional: name of method to update the {@link
-   * org.projectnessie.versioned.storage.common.config.StoreConfig configuration} for the {@link
-   * org.projectnessie.versioned.storage.common.persist.Persist}.
+   * Optional: name of method to update the {@linkplain StoreConfig.Adjustable configuration} for
+   * the {@link Persist}.
    *
    * <p>The method must be
    *
    * <ul>
    *   <li>static
    *   <li>not private
-   *   <li>have a single parameter {@code
-   *       org.projectnessie.versioned.storage.common.config.StoreConfig}
-   *   <li>return {@code org.projectnessie.versioned.storage.common.config.StoreConfig}
+   *   <li>have a single parameter {@link StoreConfig.Adjustable}
+   *   <li>return {@link StoreConfig.Adjustable}
    * </ul>
    *
    * <p>Example:
@@ -47,7 +47,7 @@ public @interface NessiePersist {
    *   &#64;NessiePersist(configMethod = "applyTestClock")
    *   protected static Persist persist;
    *
-   *   static StoreConfig applyTestClock(StoreConfig config) {
+   *   static StoreConfig.Adjustable applyTestClock(StoreConfig.Adjustable config) {
    *     return ...
    *   }
    * </code></pre>
