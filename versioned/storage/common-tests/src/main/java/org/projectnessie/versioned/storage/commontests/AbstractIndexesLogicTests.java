@@ -41,12 +41,17 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 import static org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.basicIndexTestSet;
 
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
@@ -56,6 +61,7 @@ import org.projectnessie.versioned.storage.common.logic.SuppliedCommitIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
@@ -337,5 +343,87 @@ public class AbstractIndexesLogicTests {
         .containsExactly(add1, add2, incrementalAdd1, incrementalRemove2, remove1);
 
     soft.assertThat(indexesLogic.commitOperations(commit)).containsExactly(add1, add2, remove1);
+  }
+
+  private static final int SMALL_INCREMENTAL_INDEX_SIZE = 200;
+
+  @SuppressWarnings("unused")
+  static StoreConfig.Adjustable persistWithSmallIndexSize(StoreConfig.Adjustable config) {
+    return config.withMaxIncrementalIndexSize(SMALL_INCREMENTAL_INDEX_SIZE);
+  }
+
+  @Test
+  void completeIndexesInCommitChainWithStripes(
+      @NessiePersist(configMethod = "persistWithSmallIndexSize") Persist persist) throws Exception {
+
+    ObjId currentId = fiveIncompleteCommitsWithThreeOpsEach(persist);
+
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    indexesLogic.completeIndexesInCommitChain(currentId, () -> {});
+
+    for (int i = 5; i > 0; i--) {
+      CommitObj current = persist.fetchTypedObj(currentId, ObjType.COMMIT, CommitObj.class);
+      if (i > 1) {
+        // All commits except commit 1 should have stripes
+        soft.assertThat(current.referenceIndexStripes()).isNotEmpty();
+      }
+      int actualElementCount =
+          indexesLogic.incrementalIndexFromCommit(current).elementCount()
+              + (current.hasReferenceIndex()
+                  ? requireNonNull(indexesLogic.buildReferenceIndexOnly(current)).elementCount()
+                  : 0);
+      int expectedElementCount = i * 3;
+      soft.assertThat(actualElementCount).isEqualTo(expectedElementCount);
+      currentId = current.directParent();
+    }
+  }
+
+  private ObjId fiveIncompleteCommitsWithThreeOpsEach(Persist persist) throws ObjTooLargeException {
+
+    String[][] keys =
+        new String[][] {
+          {"abcd", "bcde", "cdef"},
+          {"efgh", "fghi", "ghij"},
+          {"hijk", "ijkl", "jklm"},
+          {"klmn", "lmno", "mnop"},
+          {"nopq", "opqr", "pqrs"},
+        };
+
+    CommitObj current = null;
+    for (int i = 0; i < 5; i++) {
+
+      ObjId parentId = current == null ? EMPTY_OBJ_ID : current.id();
+
+      CommitObj.Builder c =
+          commitBuilder()
+              .id(randomObjId())
+              .addTail(parentId)
+              .created(TimeUnit.SECONDS.toMicros(i + 1))
+              .seq(i)
+              .message("Commit " + (i + 1))
+              .headers(EMPTY_COMMIT_HEADERS)
+              .incompleteIndex(true);
+
+      StoreIndex<CommitOp> index = newStoreIndex(CommitOp.COMMIT_OP_SERIALIZER);
+
+      for (int j = 0; j < 3; j++) {
+        StoreKey k = key(keys[i][j]);
+        UUID cid = new UUID(123L, j);
+        ObjId v = randomObjId();
+        index.add(indexElement(k, commitOp(ADD, 42, v, cid)));
+      }
+
+      // incremental index has size 175, max configured is 200
+      ByteString serialized = index.serialize();
+      // Ensure the 3 keys fit into the incremental index...
+      soft.assertThat(serialized.size()).isLessThan(SMALL_INCREMENTAL_INDEX_SIZE);
+      // but four keys don't -> force spill out
+      soft.assertThat(serialized.size() * 4 / 3).isGreaterThan(SMALL_INCREMENTAL_INDEX_SIZE);
+      c.incrementalIndex(serialized);
+      CommitObj commit = c.build();
+      persist.storeObj(commit);
+      current = commit;
+    }
+    return current.id();
   }
 }

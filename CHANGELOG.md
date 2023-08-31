@@ -23,6 +23,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+- Fixed potential index corruption when importing repositories with many keys into the new storage 
+  model that could cause some contents to become inaccessible.
 
 ### Commits
 

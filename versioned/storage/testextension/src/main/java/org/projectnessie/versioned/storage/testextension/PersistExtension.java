@@ -245,7 +245,7 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
           findMethod(
                   context.getRequiredTestClass(),
                   persistAnnotation.configMethod(),
-                  StoreConfig.class)
+                  StoreConfig.Adjustable.class)
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(

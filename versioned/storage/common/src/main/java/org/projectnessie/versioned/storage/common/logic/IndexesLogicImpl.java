@@ -508,6 +508,8 @@ final class IndexesLogicImpl implements IndexesLogic {
             ? null
             : persist.fetchTypedObj(current.directParent(), COMMIT, CommitObj.class);
 
+    int parentsPerCommit = persist.config().parentsPerCommit();
+
     for (int i = 0; i < totalCommits; i++) {
       if (i > 0 && (i % 100) == 0) {
         // perform a bulk-load against the database, populates the cache
@@ -537,26 +539,36 @@ final class IndexesLogicImpl implements IndexesLogic {
 
       StoreIndex<CommitOp> newIndex;
       ObjId referenceIndex;
+      List<IndexStripe> indexStripes;
       if (parent != null) {
         newIndex = incrementalIndexForUpdate(parent, Optional.empty());
         referenceIndex = parent.referenceIndex();
+        indexStripes = parent.referenceIndexStripes();
       } else {
         newIndex = newStoreIndex(COMMIT_OP_SERIALIZER);
         referenceIndex = null;
+        indexStripes = Collections.emptyList();
       }
 
       commitOperations(current).forEach(newIndex::add);
 
-      CommitObj newCommit =
+      CommitObj.Builder c =
           commitBuilder()
               .from(current)
               .incompleteIndex(false)
               .referenceIndex(referenceIndex)
-              .incrementalIndex(newIndex.serialize())
-              .build();
-      newCommit = commitLogic.updateCommit(newCommit);
+              .referenceIndexStripes(indexStripes)
+              .incrementalIndex(newIndex.serialize());
 
-      parent = newCommit;
+      if (parent != null) {
+        int parents = Math.min(parentsPerCommit - 1, parent.tail().size());
+        List<ObjId> tail = new ArrayList<>(parents + 1);
+        tail.add(parent.id());
+        tail.addAll(parent.tail().subList(0, parents));
+        c.tail(tail);
+      }
+
+      parent = commitLogic.updateCommit(c.build());
       current = null;
     }
   }
