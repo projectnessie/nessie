@@ -409,6 +409,7 @@ public class AbstractIndexesLogicTests {
         index.add(indexElement(k, commitOp(ADD, 42, v, cid)));
       }
 
+      // incremental index has size 175, max configured is 200
       c.incrementalIndex(index.serialize());
       CommitObj commit = c.build();
       persist.storeObj(commit);
