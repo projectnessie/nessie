@@ -2,6 +2,34 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.70.0 Release (August 31, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.0).
+
+### New Features
+
+- Content Generator tool: added new `--hash` parameter to `commits`, `content` and `entries` 
+  commands.
+
+### Changes
+
+- Content Generator tool: commit hashes are now printed in full when running the `commits` command.
+- For a "get-keys" operation that requests the content objects as well, the content objects are now
+  fetched using bulk-requests.
+
+### Fixes
+
+- Fixed potential index corruption when importing repositories with many keys into the new storage 
+  model that could cause some contents to become inaccessible.
+
+### Commits
+* Propagate index stripes from parent to child commits (#7452)
+* Build: fix removal of superfluous system-property for NesQuEIT (#7455)
+* Build: remove superfluous system-property hack (#7451)
+* Bulk-fetch contents for get-keys (#7450)
+* Print full hashes in `commits` command (#7449)
+* Add --hash parameter to content-generator commands (#7448)
+
 ## 0.69.2 Release (August 29, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.69.2).
