@@ -45,33 +45,48 @@ public class ReadEntries extends AbstractCommand {
       description = "Include content for each entry.")
   private boolean withContent;
 
+  @Option(
+      names = {"-L", "--limit"},
+      description =
+          "Limit the number of entries to read. A value <= 0 means unlimited. Defaults to 0.")
+  private long limit = 0;
+
   @Override
   public void execute() throws NessieNotFoundException {
     PrintWriter out = spec.commandLine().getOut();
 
     try (NessieApiV2 api = createNessieApiInstance()) {
-      out.printf("Listing entries for reference '%s'.%n%n", ref);
-      api.getEntries().refName(ref).hashOnRef(hash).withContent(withContent).stream()
-          .forEach(
-              entry -> {
-                out.printf("Key: %s%n", entry.getName());
-                if (isVerbose()) {
-                  List<String> key = entry.getName().getElements();
-                  for (int i = 0; i < key.size(); i++) {
-                    out.printf("  key[%d]: %s%n", i, key.get(i));
-                  }
-                }
+      out.printf(
+          "Listing %s entries for reference '%s' @ %s...%n%n",
+          limit > 0 ? "up to " + String.format("%,d", limit) : "all",
+          ref,
+          hash == null ? "HEAD" : hash);
+      long count =
+          api.getEntries().refName(ref).hashOnRef(hash).withContent(withContent).stream()
+              .limit(limit > 0 ? limit : Long.MAX_VALUE)
+              .peek(
+                  entry -> {
+                    out.printf("Key: %s%n", entry.getName());
+                    if (isVerbose()) {
+                      List<String> key = entry.getName().getElements();
+                      for (int i = 0; i < key.size(); i++) {
+                        out.printf("  key[%d]: %s%n", i, key.get(i));
+                      }
+                    }
 
-                out.printf("Type: %s%n", entry.getType());
-                out.printf("Content ID: %s%n", entry.getContentId());
+                    out.printf("Type: %s%n", entry.getType());
+                    out.printf("Content ID: %s%n", entry.getContentId());
 
-                if (entry.getContent() != null) {
-                  out.printf("Value: %s%n", entry.getContent());
-                }
+                    if (entry.getContent() != null) {
+                      out.printf("Value: %s%n", entry.getContent());
+                    }
 
-                out.println();
-              });
-      out.printf("Done listing entries.%n");
+                    out.println();
+                  })
+              .count();
+      out.printf(
+          "%nDone listing %,d entries for reference '%s' @ %s.%n%n",
+          count, ref, hash == null ? "HEAD" : hash);
     }
   }
 }

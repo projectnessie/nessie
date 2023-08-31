@@ -39,38 +39,57 @@ public class ReadCommits extends AbstractCommand {
           "Hash of the commit to read content from, defaults to HEAD. Relative lookups are accepted.")
   private String hash;
 
+  @Option(
+      names = {"-L", "--limit"},
+      description =
+          "Limit the number of commits to read. A value <= 0 means unlimited. Defaults to 0.")
+  private long limit = 0;
+
   @Override
   public void execute() throws NessieNotFoundException {
     try (NessieApiV2 api = createNessieApiInstance()) {
-      spec.commandLine().getOut().printf("Reading commits for ref '%s'\n\n", ref);
+      spec.commandLine()
+          .getOut()
+          .printf(
+              "Reading %s commits for reference '%s' @ %s...%n%n",
+              limit > 0 ? "up to " + String.format("%,d", limit) : "all",
+              ref,
+              hash == null ? "HEAD" : hash);
       FetchOption fetchOption = isVerbose() ? FetchOption.ALL : FetchOption.MINIMAL;
-      api.getCommitLog().refName(ref).hashOnRef(hash).fetch(fetchOption).stream()
-          .forEach(
-              logEntry -> {
-                CommitMeta commitMeta = logEntry.getCommitMeta();
-                spec.commandLine()
-                    .getOut()
-                    .printf(
-                        "%s\t%s\t%s [%s]\n",
-                        commitMeta.getHash(),
-                        commitMeta.getAuthorTime(),
-                        commitMeta.getMessage(),
-                        commitMeta.getAuthor());
+      long count =
+          api.getCommitLog().refName(ref).hashOnRef(hash).fetch(fetchOption).stream()
+              .limit(limit > 0 ? limit : Long.MAX_VALUE)
+              .peek(
+                  logEntry -> {
+                    CommitMeta commitMeta = logEntry.getCommitMeta();
+                    spec.commandLine()
+                        .getOut()
+                        .printf(
+                            "%s\t%s\t%s [%s]\n",
+                            commitMeta.getHash(),
+                            commitMeta.getAuthorTime(),
+                            commitMeta.getMessage(),
+                            commitMeta.getAuthor());
 
-                List<Operation> operations = logEntry.getOperations();
-                if (operations != null) {
-                  for (Operation op : operations) {
-                    spec.commandLine().getOut().printf("  %s\n", op);
-                    if (isVerbose()) {
-                      List<String> key = op.getKey().getElements();
-                      for (int i = 0; i < key.size(); i++) {
-                        spec.commandLine().getOut().printf("    key[%d]: %s\n", i, key.get(i));
+                    List<Operation> operations = logEntry.getOperations();
+                    if (operations != null) {
+                      for (Operation op : operations) {
+                        spec.commandLine().getOut().printf("  %s\n", op);
+                        if (isVerbose()) {
+                          List<String> key = op.getKey().getElements();
+                          for (int i = 0; i < key.size(); i++) {
+                            spec.commandLine().getOut().printf("    key[%d]: %s\n", i, key.get(i));
+                          }
+                        }
                       }
                     }
-                  }
-                }
-              });
-      spec.commandLine().getOut().printf("\nDone reading commits for ref '%s'\n\n", ref);
+                  })
+              .count();
+      spec.commandLine()
+          .getOut()
+          .printf(
+              "%nDone reading %,d commits for reference '%s' @ %s.%n%n",
+              count, ref, hash == null ? "HEAD" : hash);
     }
   }
 }

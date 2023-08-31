@@ -15,6 +15,10 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 ### Changes
+- Content Generator tool: added new `--limit` parameter to `commits`, `references` and `entries` 
+  commands.
+- Content Generator tool: tool now prints the total number of elements returned when running the 
+  `commits`, `references` and `entries` commands.
 
 ### Deprecations
 

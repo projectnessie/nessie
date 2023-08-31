@@ -53,8 +53,13 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
-    assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
+    assertOutputContains(
+        output,
+        "Reading all commits for reference '" + branch.getName() + "' @ HEAD...",
+        COMMIT_MSG,
+        "Done reading 2 commits for reference '" + branch.getName() + "' @ HEAD.");
+
+    assertOutputDoesNotContain(output, CONTENT_KEY.toString());
 
     try (NessieApiV2 api = buildNessieApi()) {
       assertThat(api.getCommitLog().refName(branch.getName()).stream()).hasSize(2);
@@ -69,12 +74,14 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-    assertThat(output)
-        .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
-    assertThat(output)
-        .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
+    assertOutputContains(
+        output,
+        "Reading all commits for reference '" + branch.getName() + "' @ HEAD...",
+        COMMIT_MSG,
+        CONTENT_KEY.toString(),
+        "key[0]: " + CONTENT_KEY.getElements().get(0),
+        "key[1]: " + CONTENT_KEY.getElements().get(1),
+        "Done reading 2 commits for reference '" + branch.getName() + "' @ HEAD.");
 
     try (NessieApiV2 api = buildNessieApi()) {
       List<LogEntry> logEntries =
@@ -90,7 +97,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
   @CsvSource(
       value = {"%1$s|false", "%2$s|true", "%2$s~1|false"},
       delimiter = '|')
-  void readCommitsWithHash(String hash, boolean expect2Commits) throws Exception {
+  void readCommitsWithHash(String hashTemplate, boolean expect3Commits) throws Exception {
 
     String c1 = branch.getHash();
     try (NessieApiV2 api = buildNessieApi()) {
@@ -98,28 +105,67 @@ class ITReadCommits extends AbstractContentGeneratorTest {
           api.commitMultipleOperations()
               .branchName(branch.getName())
               .hash(c1)
-              .commitMeta(CommitMeta.fromMessage("Second commit"))
+              .commitMeta(CommitMeta.fromMessage("Third commit"))
               .operation(Operation.Delete.of(CONTENT_KEY))
               .commit();
     }
     String c2 = branch.getHash();
 
+    String hash = String.format(hashTemplate, c1, c2);
     ProcessResult proc =
         runGeneratorCmd(
-            "commits",
-            "--uri",
-            NESSIE_API_URI,
-            "--ref",
-            branch.getName(),
-            "--hash",
-            String.format(hash, c1, c2));
+            "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--hash", hash);
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
-    if (expect2Commits) {
-      assertThat(output).anySatisfy(s -> assertThat(s).contains("Second commit"));
+
+    assertOutputContains(output, COMMIT_MSG);
+
+    if (expect3Commits) {
+      assertOutputContains(
+          output,
+          "Reading all commits for reference '" + branch.getName() + "' @ " + hash,
+          "Third commit",
+          "Done reading 3 commits for reference '" + branch.getName() + "' @ " + hash);
     } else {
-      assertThat(output).noneSatisfy(s -> assertThat(s).contains("Second commit"));
+      assertOutputDoesNotContain(output, "Third commit");
+      assertOutputContains(
+          output,
+          "Reading all commits for reference '" + branch.getName() + "' @ " + hash,
+          "Done reading 2 commits for reference '" + branch.getName() + "' @ " + hash);
+    }
+  }
+
+  @Test
+  void readCommitsLimit() throws Exception {
+    ProcessResult proc =
+        runGeneratorCmd(
+            "commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--limit", "1");
+
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
+
+    assertOutputContains(
+        output,
+        "Reading up to 1 commits for reference '" + branch.getName() + "' @ HEAD...",
+        COMMIT_MSG,
+        "Done reading 1 commits for reference '" + branch.getName() + "' @ HEAD.");
+
+    assertOutputDoesNotContain(output, CONTENT_KEY.toString(), "Create namespace first");
+
+    try (NessieApiV2 api = buildNessieApi()) {
+      assertThat(api.getCommitLog().refName(branch.getName()).stream()).hasSize(2);
+    }
+  }
+
+  static void assertOutputContains(List<String> output, String... snippets) {
+    for (String snippet : snippets) {
+      assertThat(output).anySatisfy(s -> assertThat(s).contains(snippet));
+    }
+  }
+
+  static void assertOutputDoesNotContain(List<String> output, String... snippets) {
+    for (String snippet : snippets) {
+      assertThat(output).noneSatisfy(s -> assertThat(s).contains(snippet));
     }
   }
 }

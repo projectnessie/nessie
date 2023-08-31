@@ -50,7 +50,11 @@ public class ReadContent extends AbstractCommand {
   public void execute() throws NessieNotFoundException {
     try (NessieApiV2 api = createNessieApiInstance()) {
       ContentKey contentKey = ContentKey.of(key);
-      spec.commandLine().getOut().printf("Reading content for key '%s'\n\n", contentKey);
+      spec.commandLine()
+          .getOut()
+          .printf(
+              "Reading content for key '%s' on reference '%s' @ %s...%n%n",
+              contentKey, ref, hash == null ? "HEAD" : hash);
       GetMultipleContentsResponse contents =
           api.getContent().refName(ref).hashOnRef(hash).key(contentKey).getWithResponse();
       Map<ContentKey, Content> contentMap = contents.toContentsMap();
@@ -65,7 +69,11 @@ public class ReadContent extends AbstractCommand {
         }
         spec.commandLine().getOut().printf("Value: %s\n", entry.getValue());
       }
-      spec.commandLine().getOut().printf("\nDone reading content for key '%s'\n\n", contentKey);
+      spec.commandLine()
+          .getOut()
+          .printf(
+              "%nDone reading content for key '%s' on reference '%s' @ %s.%n%n",
+              contentKey, ref, hash == null ? "HEAD" : hash);
     }
   }
 }

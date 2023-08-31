@@ -16,9 +16,12 @@
 package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.tools.contentgenerator.ITReadCommits.assertOutputContains;
+import static org.projectnessie.tools.contentgenerator.ITReadCommits.assertOutputDoesNotContain;
 import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,7 +53,12 @@ class ITReadEntries extends AbstractContentGeneratorTest {
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
+    assertOutputContains(
+        output,
+        "Listing all entries for reference '" + branch.getName() + "' @ HEAD...",
+        "Key: " + CONTENT_KEY.getElements().get(0),
+        "Key: " + CONTENT_KEY,
+        "Done listing 2 entries for reference '" + branch.getName() + "' @ HEAD.");
   }
 
   @Test
@@ -60,11 +68,14 @@ class ITReadEntries extends AbstractContentGeneratorTest {
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-    assertThat(output)
-        .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
-    assertThat(output)
-        .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
+    assertOutputContains(
+        output,
+        "Listing all entries for reference '" + branch.getName() + "' @ HEAD...",
+        "Key: " + CONTENT_KEY.getElements().get(0),
+        "Key: " + CONTENT_KEY,
+        "key[0]: " + CONTENT_KEY.getElements().get(0),
+        "key[1]: " + CONTENT_KEY.getElements().get(1),
+        "Done listing 2 entries for reference '" + branch.getName() + "' @ HEAD.");
   }
 
   @Test
@@ -75,28 +86,34 @@ class ITReadEntries extends AbstractContentGeneratorTest {
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains("testMeta"));
+    assertOutputContains(
+        output,
+        "Listing all entries for reference '" + branch.getName() + "' @ HEAD...",
+        "Key: " + CONTENT_KEY.getElements().get(0),
+        "Key: " + CONTENT_KEY,
+        "testMeta", // from content
+        "Done listing 2 entries for reference '" + branch.getName() + "' @ HEAD.");
   }
 
   @ParameterizedTest
   @CsvSource(
       value = {"%1$s|true", "%2$s|false", "%2$s~1|true"},
       delimiter = '|')
-  void listEntriesWithHash(String hash, boolean expectContent) throws Exception {
+  void listEntriesWithHash(String hashTemplate, boolean expectContent) throws Exception {
 
     String c1 = branch.getHash();
     try (NessieApiV2 api = buildNessieApi()) {
       branch =
           api.commitMultipleOperations()
               .branchName(branch.getName())
-              .hash(c1)
+              .hash(Objects.requireNonNull(c1))
               .commitMeta(CommitMeta.fromMessage("Second commit"))
               .operation(Operation.Delete.of(CONTENT_KEY))
               .commit();
     }
     String c2 = branch.getHash();
 
+    String hash = String.format(hashTemplate, c1, c2);
     ProcessResult proc =
         runGeneratorCmd(
             "entries",
@@ -105,17 +122,45 @@ class ITReadEntries extends AbstractContentGeneratorTest {
             "--ref",
             branch.getName(),
             "--hash",
-            String.format(hash, c1, c2),
+            hash,
             "--with-content");
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
+    assertOutputContains(
+        output,
+        "Listing all entries for reference '" + branch.getName() + "' @ " + hash,
+        "Key: " + CONTENT_KEY.getElements().get(0) // namespace
+        );
+
     if (expectContent) {
-      assertThat(output).contains("Key: " + CONTENT_KEY).contains("Type: ICEBERG_TABLE");
+      assertOutputContains(
+          output,
+          "Key: " + CONTENT_KEY,
+          "Type: ICEBERG_TABLE",
+          "Done listing 2 entries for reference '" + branch.getName() + "' @ " + hash);
     } else {
-      assertThat(output)
-          .doesNotContain("Key: " + CONTENT_KEY)
-          .doesNotContain("Type: ICEBERG_TABLE");
+      assertOutputDoesNotContain(output, "Key: " + CONTENT_KEY, "Type: ICEBERG_TABLE");
+      assertOutputContains(
+          output, "Done listing 1 entries for reference '" + branch.getName() + "' @ " + hash);
     }
+  }
+
+  @Test
+  void listEntriesLimit() {
+    ProcessResult proc =
+        runGeneratorCmd(
+            "entries", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--limit", "1");
+
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+    List<String> output = proc.getStdOutLines();
+
+    assertOutputContains(
+        output,
+        "Listing up to 1 entries for reference '" + branch.getName() + "' @ HEAD...",
+        "Key: " + CONTENT_KEY.getElements().get(0),
+        "Done listing 1 entries for reference '" + branch.getName() + "' @ HEAD.");
+
+    assertOutputDoesNotContain(output, "Key: " + CONTENT_KEY);
   }
 }
