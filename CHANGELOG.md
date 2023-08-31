@@ -14,9 +14,13 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 - Content Generator tool: added new `--hash` parameter to `commits`, `content` and `entries` 
   commands.
+- Content Generator tool: added new `--limit` parameter to `commits`, `references` and `entries` 
+  commands.
 
 ### Changes
 - Content Generator tool: commit hashes are now printed in full when running the `commits` command.
+- Content Generator tool: tool now prints the total number of elements returned when running the 
+  `commits`, `references` and `entries` commands.
 - For a "get-keys" operation that requests the content objects as well, the content objects are now
   fetched using bulk-requests.
 

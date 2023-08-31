@@ -15,23 +15,35 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
-import java.util.stream.Stream;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 /** Implementation to read all references. */
 @Command(name = "refs", mixinStandardHelpOptions = true, description = "Read references")
 public class ReadReferences extends AbstractCommand {
 
+  @Option(
+      names = {"-L", "--limit"},
+      description =
+          "Limit the number of references to read. A value <= 0 means unlimited. Defaults to 0.")
+  private long limit = 0;
+
   @Override
   public void execute() throws NessieNotFoundException {
     try (NessieApiV2 api = createNessieApiInstance()) {
-      spec.commandLine().getOut().printf("Reading all references\n\n");
-      Stream<Reference> references = api.getAllReferences().stream();
-      references.forEach(reference -> spec.commandLine().getOut().println(reference));
-      spec.commandLine().getOut().printf("\nDone reading all references\n\n");
+      spec.commandLine()
+          .getOut()
+          .printf(
+              "Reading %s references...%n%n",
+              limit > 0 ? "up to " + String.format("%,d", limit) : "all");
+      long count =
+          api.getAllReferences().stream()
+              .limit(limit > 0 ? limit : Long.MAX_VALUE)
+              .peek(reference -> spec.commandLine().getOut().println(reference))
+              .count();
+      spec.commandLine().getOut().printf("%nDone reading %,d references.%n%n", count);
     }
   }
 }
