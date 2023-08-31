@@ -20,6 +20,7 @@ as necessary. Empty sections will not end in the release notes.
 - Content Generator tool: tool now prints the total number of elements returned when running the 
   `commits`, `references` and `entries` commands.
 - Helm charts: OpenTelemetry SDK is now completely disabled when tracing is disabled.
+- Helm charts: when auth is disabled, Quarkus OIDC doesn't print warnings anymore during startup.
 
 ### Deprecations
 
