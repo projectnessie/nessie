@@ -31,6 +31,7 @@ import java.util.function.Function;
  */
 public enum ErrorCode {
   UNKNOWN(500, null),
+  SERVICE_UNAVAILABLE(503, NessieUnavailableException::new),
   REFERENCE_NOT_FOUND(404, NessieReferenceNotFoundException::new),
   REFERENCE_ALREADY_EXISTS(409, NessieReferenceAlreadyExistsException::new),
   CONTENT_NOT_FOUND(404, NessieContentNotFoundException::new),

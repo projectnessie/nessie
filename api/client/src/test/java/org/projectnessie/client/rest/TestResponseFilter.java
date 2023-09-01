@@ -59,6 +59,7 @@ import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.error.NessieUnavailableException;
 import org.projectnessie.error.NessieUnsupportedMediaTypeException;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
@@ -338,6 +339,11 @@ public class TestResponseFilter {
         arguments(Status.UNAUTHORIZED, ErrorCode.UNKNOWN, NessieNotAuthorizedException.class),
         arguments(Status.FORBIDDEN, ErrorCode.FORBIDDEN, NessieForbiddenException.class),
         arguments(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieServiceException.class),
+        arguments(Status.SERVICE_UNAVAILABLE, ErrorCode.UNKNOWN, NessieUnavailableException.class),
+        arguments(
+            Status.SERVICE_UNAVAILABLE,
+            ErrorCode.SERVICE_UNAVAILABLE,
+            NessieUnavailableException.class),
         arguments(Status.TOO_MANY_REQUESTS, ErrorCode.UNKNOWN, NessieServiceException.class),
         arguments(
             Status.TOO_MANY_REQUESTS,
