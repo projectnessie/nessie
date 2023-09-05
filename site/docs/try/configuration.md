@@ -234,7 +234,7 @@ OpenTelemetry](https://quarkus.io/guides/opentelemetry) in the Quarkus documenta
 In order for the server to publish its traces, the
 `quarkus.otel.exporter.otlp.endpoint` property _must_ be set. Its value must be a
 valid collector endpoint URL, with either `http://` or `https://` scheme. The collector must talk
-the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 3417), e.g.
+the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317), e.g.
 "http://otlp-collector:4317".
 
 #### Troubleshooting traces
