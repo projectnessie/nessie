@@ -31,6 +31,7 @@ import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieErrorDetails;
+import org.projectnessie.error.NessieUnavailableException;
 
 public class ResponseCheckFilter {
 
@@ -77,6 +78,9 @@ public class ResponseCheckFilter {
     switch (status) {
       case INTERNAL_SERVER_ERROR:
         exception = new NessieInternalServerException(error);
+        break;
+      case SERVICE_UNAVAILABLE:
+        exception = new NessieUnavailableException(error);
         break;
       case UNAUTHORIZED:
         // Note: UNAUTHORIZED at this point cannot be a Nessie-controlled error.
