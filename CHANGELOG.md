@@ -21,6 +21,9 @@ as necessary. Empty sections will not end in the release notes.
   `commits`, `references` and `entries` commands.
 - Helm charts: OpenTelemetry SDK is now completely disabled when tracing is disabled.
 - Helm charts: when auth is disabled, Quarkus OIDC doesn't print warnings anymore during startup.
+- `MultiEnvTestEngine`: this JUnit5 test engine used in multi-environment tests now reports the 
+  environment name in the test names. This allows legacy XML-based tools like Jenkins or Maven 
+  Surefire, that rely on test names being unique, to accurately report the test results.
 
 ### Deprecations
 

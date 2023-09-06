@@ -25,6 +25,7 @@ import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
+import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.ExecutionRequest;
 import org.junit.platform.engine.TestDescriptor;
@@ -69,17 +70,9 @@ public class MultiEnvTestEngine implements TestEngine {
   @Override
   public TestDescriptor discover(EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
     try {
-      // JupiterEngineDescriptor must be the root, that's what the JUnit Jupiter engine
-      // implementation expects.
-      JupiterConfiguration configuration =
-          new CachingJupiterConfiguration(
-              new DefaultJupiterConfiguration(discoveryRequest.getConfigurationParameters()));
-      JupiterEngineDescriptor engineDescriptor =
-          new JupiterEngineDescriptor(uniqueId, configuration);
-
-      TestDescriptor preliminaryResult = delegate.discover(discoveryRequest, uniqueId);
 
       // Scan for multi-env test extensions
+      TestDescriptor preliminaryResult = delegate.discover(discoveryRequest, uniqueId);
       preliminaryResult.accept(
           descriptor -> {
             if (descriptor instanceof ClassBasedTestDescriptor) {
@@ -87,6 +80,13 @@ public class MultiEnvTestEngine implements TestEngine {
               registry.registerExtensions(testClass);
             }
           });
+
+      // JupiterEngineDescriptor must be the root, that's what the JUnit Jupiter engine
+      // implementation expects.
+      JupiterEngineDescriptor multiEnvDescriptor =
+          new JupiterEngineDescriptor(
+              uniqueId,
+              new DefaultJupiterConfiguration(discoveryRequest.getConfigurationParameters()));
 
       List<String> extensions = new ArrayList<>();
       AtomicBoolean envDiscovered = new AtomicBoolean();
@@ -100,9 +100,17 @@ public class MultiEnvTestEngine implements TestEngine {
                   UniqueId segment = uniqueId.append(ext.segmentType(), envId);
 
                   MultiEnvTestDescriptor envRoot = new MultiEnvTestDescriptor(segment, envId);
-                  engineDescriptor.addChild(envRoot);
+                  multiEnvDescriptor.addChild(envRoot);
 
-                  TestDescriptor discoverResult = delegate.discover(discoveryRequest, segment);
+                  JupiterConfiguration envRootConfiguration =
+                      new CachingJupiterConfiguration(
+                          new MultiEnvJupiterConfiguration(
+                              discoveryRequest.getConfigurationParameters(), envId));
+                  JupiterEngineDescriptor discoverResult =
+                      new JupiterEngineDescriptor(segment, envRootConfiguration);
+                  new DiscoverySelectorResolver()
+                      .resolveSelectors(discoveryRequest, discoverResult);
+
                   List<? extends TestDescriptor> children =
                       new ArrayList<>(discoverResult.getChildren());
                   for (TestDescriptor child : children) {
@@ -119,7 +127,7 @@ public class MultiEnvTestEngine implements TestEngine {
                 "%s was enabled, but test extensions did not discover any environment IDs: %s",
                 getClass().getSimpleName(), extensions));
       }
-      return engineDescriptor;
+      return multiEnvDescriptor;
     } catch (Exception e) {
       LOGGER.error("Failed to discover tests", e);
       throw new RuntimeException(e);
