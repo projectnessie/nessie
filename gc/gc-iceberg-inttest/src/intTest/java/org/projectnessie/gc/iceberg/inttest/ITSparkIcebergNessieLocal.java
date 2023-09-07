@@ -41,7 +41,6 @@ import org.projectnessie.gc.files.NessieFileIOException;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.gc.identify.CutoffPolicy;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
-import org.projectnessie.spark.extensions.NessieSparkSessionExtensions;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -53,7 +52,11 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
 
   @BeforeAll
   protected static void useNessieExtensions() {
-    conf.set("spark.sql.extensions", NessieSparkSessionExtensions.class.getCanonicalName());
+    conf.set(
+        "spark.sql.extensions",
+        "org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
+            + ","
+            + "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions");
   }
 
   @Override
@@ -121,6 +124,52 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       // ... and sweep
       deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
       soft.assertThat(deleteSummary.deleted()).isEqualTo(0L);
+    }
+  }
+
+  @Test
+  public void roundTripLocalWithDeleteFiles() throws Exception {
+    try (IcebergFiles icebergFiles = IcebergFiles.builder().build()) {
+
+      api.createNamespace().namespace("db2").refName(api.getConfig().getDefaultBranch()).create();
+
+      sql(
+          "create table nessie.db2.t1(id int) using iceberg tblproperties ('format-version'='2', 'write.delete.mode'='merge-on-read')");
+      // create two data files
+      sql("insert into nessie.db2.t1 VALUES (42),(43),(44),(45),(46),(47)");
+      // removes a row from one of the data file.
+      sql("delete from nessie.db2.t1 WHERE id = 42");
+      // execute compaction so that delete files become obsolete and can be garbage collected.
+      sql(
+          "CALL nessie.system.rewrite_data_files(table => 'nessie.db2.t1', options => map('min-input-files','2', 'delete-file-threshold','1'))");
+      // Compaction doesn't mark delete files as invalid.
+      // Hence, execute rewrite_position_delete_files to remove dangling deletes entry.
+      sql(
+          "CALL nessie.system.rewrite_position_delete_files(table => 'nessie.db2.t1', options => map('rewrite-all', "
+              + "'true'))");
+      // only one compacted data file will be live after this.
+
+      Set<URI> filesBefore = allFiles(icebergFiles);
+      soft.assertThat(filesBefore).hasSize(18);
+
+      Instant maxFileModificationTime = Instant.now();
+
+      // Only the last commit is considered live:
+
+      // Mark...
+      LiveContentSet liveContentSet =
+          identifyLiveContents(
+              new InMemoryPersistenceSpi(),
+              ref -> CutoffPolicy.numCommits(1),
+              NessieRepositoryConnector.nessie(api));
+      // ... and sweep
+      DeleteSummary deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
+      soft.assertThat(deleteSummary.deleted()).isEqualTo(13L);
+      Set<URI> filesAfter = allFiles(icebergFiles);
+      Set<URI> removedFiles = new HashSet<>(filesBefore);
+      removedFiles.removeAll(filesAfter);
+      // make sure expired delete file (parquet) is also removed from GC.
+      soft.assertThat(removedFiles).anyMatch(u -> u.getPath().endsWith("-deletes.parquet"));
     }
   }
 

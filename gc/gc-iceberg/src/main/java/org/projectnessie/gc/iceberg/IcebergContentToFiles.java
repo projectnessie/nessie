@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import org.apache.iceberg.ManifestFile;
-import org.apache.iceberg.ManifestFiles;
+import org.apache.iceberg.ManifestReaderUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
@@ -125,7 +125,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
 
   /**
    * For the given {@link Snapshot}, provide a {@link Stream} of all manifest files with {@link
-   * #allDataFiles(FileIO, ManifestFile, ContentReference) all included data files}.
+   * #allDataAndDeleteFiles(FileIO, ManifestFile, ContentReference) all included data and delete
+   * files}.
    */
   @MustBeClosed
   static Stream<URI> allManifestsAndDataFiles(
@@ -135,8 +136,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
             mf -> {
               URI manifestFileUri = manifestFileUri(mf, contentReference);
               @SuppressWarnings("MustBeClosedChecker")
-              Stream<URI> allDataFile = allDataFiles(io, mf, contentReference);
-              return Stream.concat(Stream.of(manifestFileUri), allDataFile);
+              Stream<URI> allDataAndDeleteFiles = allDataAndDeleteFiles(io, mf, contentReference);
+              return Stream.concat(Stream.of(manifestFileUri), allDataAndDeleteFiles);
             });
   }
 
@@ -146,14 +147,14 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   }
 
   /**
-   * For the given {@link ManifestFile}, provide a {@link Stream} of <em>all</em> data files, means
-   * including all {@link org.apache.iceberg.ManifestEntry}s of every status ({@code EXISTING},
-   * {@code ADDED}, {@code DELETED}.
+   * For the given {@link ManifestFile}, provide a {@link Stream} of <em>all</em> data and delete
+   * files, means including all {@link org.apache.iceberg.ManifestEntry}s of every status ({@code
+   * EXISTING}, {@code ADDED}, {@code DELETED}.
    */
   @MustBeClosed
-  static Stream<URI> allDataFiles(
+  static Stream<URI> allDataAndDeleteFiles(
       FileIO io, ManifestFile manifestFile, ContentReference contentReference) {
-    CloseableIterable<String> iter = ManifestFiles.readPaths(manifestFile, io);
+    CloseableIterable<String> iter = ManifestReaderUtil.readPathsFromManifest(manifestFile, io);
     return StreamSupport.stream(iter.spliterator(), false)
         .map(dataFilePath -> dataFileUri(dataFilePath, contentReference))
         .onClose(
