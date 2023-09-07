@@ -85,7 +85,8 @@ public class MultiEnvTestEngine implements TestEngine {
       // implementation expects.
       JupiterEngineDescriptor multiEnvDescriptor =
           new JupiterEngineDescriptor(
-              uniqueId, new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
+              uniqueId,
+              new DefaultJupiterConfiguration(discoveryRequest.getConfigurationParameters()));
 
       List<String> extensions = new ArrayList<>();
       AtomicBoolean envDiscovered = new AtomicBoolean();
