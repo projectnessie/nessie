@@ -22,7 +22,7 @@ plugins {
 
 extra["maven.name"] = "Nessie - GC - CLI integration test"
 
-val sparkScala = useSparkScalaVersionsForProject("3.3", "2.12")
+val sparkScala = useSparkScalaVersionsForProject("3.4", "2.12")
 
 dependencies {
   implementation(nessieProject("nessie-gc-tool", "shadow"))

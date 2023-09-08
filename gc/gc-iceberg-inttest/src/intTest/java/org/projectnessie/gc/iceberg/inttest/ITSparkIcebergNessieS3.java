@@ -91,6 +91,16 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
   }
 
   @Override
+  protected Map<String, String> sparkHadoop() {
+    Map<String, String> r = new HashMap<>();
+    r.put("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
+    r.put("fs.s3a.access.key", minio.accessKey());
+    r.put("fs.s3a.secret.key", minio.secretKey());
+    r.put("fs.s3a.endpoint", minio.s3endpoint());
+    return r;
+  }
+
+  @Override
   protected Map<String, String> nessieParams() {
     Map<String, String> r = new HashMap<>(super.nessieParams());
     r.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
