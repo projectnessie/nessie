@@ -145,7 +145,7 @@ quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", 
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkus" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.0.1" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.3.2" }
-rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "8.3.3" }
+rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "8.4.4" }
 scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.18" }}
 scala-library-v213 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.13, 2.14[", prefer = "2.13.11"}}
 slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
