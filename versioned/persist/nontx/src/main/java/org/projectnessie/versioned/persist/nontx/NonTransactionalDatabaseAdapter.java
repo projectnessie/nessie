@@ -55,7 +55,6 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.model.ContentKey;
@@ -72,7 +71,6 @@ import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -93,7 +91,6 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
@@ -116,8 +113,6 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithB
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
@@ -265,7 +260,6 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 refHead,
                 mergeResult.build(),
-                null,
                 () ->
                     MergeEvent.builder()
                         .previousHash(currentHead)
@@ -322,7 +316,6 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 refHead,
                 mergeResult.build(),
-                null,
                 () ->
                     TransplantEvent.builder()
                         .previousHash(currentHead)
@@ -365,7 +358,6 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 refHead,
                 commitResult.build(),
-                null,
                 () ->
                     CommitEvent.builder()
                         .previousHash(currentHead)
@@ -415,13 +407,6 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 null,
                 result.build(),
-                refLog ->
-                    refLog
-                        .setRefName(ByteString.copyFromUtf8(ref.getName()))
-                        .setRefType(protoTypeForRef(ref))
-                        .setCommitHash(newHead.asBytes())
-                        .setOperationTime(config.currentTimeInMicros())
-                        .setOperation(RefLogEntry.Operation.CREATE_REFERENCE),
                 () -> ReferenceCreatedEvent.builder().currentHash(newHead).ref(ref));
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
@@ -452,13 +437,6 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 refHead,
                 result.build(),
-                refLog ->
-                    refLog
-                        .setRefName(ByteString.copyFromUtf8(reference.getName()))
-                        .setRefType(protoTypeForRef(reference))
-                        .setCommitHash(currentHead.asBytes())
-                        .setOperationTime(config.currentTimeInMicros())
-                        .setOperation(RefLogEntry.Operation.DELETE_REFERENCE),
                 () -> ReferenceDeletedEvent.builder().currentHash(currentHead).ref(reference));
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
@@ -492,14 +470,6 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 refHead,
                 result.build(),
-                refLog ->
-                    refLog
-                        .setRefName(ByteString.copyFromUtf8(assignee.getName()))
-                        .setRefType(protoTypeForRef(assignee))
-                        .setCommitHash(assignTo.asBytes())
-                        .setOperationTime(config.currentTimeInMicros())
-                        .setOperation(RefLogEntry.Operation.ASSIGN_REFERENCE)
-                        .addSourceHashes(beforeAssign.asBytes()),
                 () ->
                     ReferenceAssignedEvent.builder()
                         .currentHash(assignTo)
@@ -525,38 +495,6 @@ public abstract class NonTransactionalDatabaseAdapter<
   public void initializeRepo(String defaultBranchName) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
     if (fetchGlobalPointer(ctx) == null) {
-      RefLogEntry newRefLog;
-      try {
-        RefLogParents refLogParents =
-            RefLogParents.newBuilder()
-                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-                .setVersion(randomHash().asBytes())
-                .build();
-
-        newRefLog =
-            writeRefLogEntry(
-                ctx,
-                refLogParents,
-                refLog ->
-                    refLog
-                        .setRefName(ByteString.copyFromUtf8(defaultBranchName))
-                        .setRefType(RefType.Branch)
-                        .setCommitHash(NO_ANCESTOR.asBytes())
-                        .setOperationTime(config.currentTimeInMicros())
-                        .setOperation(RefLogEntry.Operation.CREATE_REFERENCE));
-
-        refLogParents =
-            refLogParents.toBuilder()
-                .clearRefLogParentsInclHead()
-                .addRefLogParentsInclHead(newRefLog.getRefLogId())
-                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-                .build();
-
-        unsafeWriteRefLogStripe(ctx, refLogStripeForName(defaultBranchName), refLogParents);
-      } catch (ReferenceConflictException e) {
-        throw new RuntimeException(e);
-      }
-
       unsafeWriteGlobalPointer(
           ctx,
           GlobalStatePointer.newBuilder()
@@ -768,26 +706,22 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected static final class CasOpResult<R> {
     final RefPointer currentHead;
     final R result;
-    final Consumer<RefLogEntry.Builder> refLogEntry;
     final Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder;
 
     private CasOpResult(
         RefPointer currentHead,
         R result,
-        Consumer<RefLogEntry.Builder> refLogEntry,
         Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
       this.currentHead = currentHead;
       this.result = result;
-      this.refLogEntry = refLogEntry;
       this.adapterEventBuilder = adapterEventBuilder;
     }
 
     public static <R> CasOpResult<R> casOpResult(
         RefPointer currentHead,
         R result,
-        Consumer<RefLogEntry.Builder> refLogEntry,
         Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
-      return new CasOpResult<>(currentHead, result, refLogEntry, adapterEventBuilder);
+      return new CasOpResult<>(currentHead, result, adapterEventBuilder);
     }
   }
 
@@ -908,39 +842,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
         repositoryEvent(result.adapterEventBuilder);
 
-        if (result.refLogEntry == null) {
-          // No ref-log entry to be written
-
-          return tryState.success(result.result);
-        } else {
-          // CAS against branch-heads succeeded, now try to write the ref-log-entry
-
-          // reset the retry-loop's sleep boundaries
-          tryState.resetBounds();
-          int stripe = refLogStripeForName(ref.getName());
-          while (true) {
-            RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
-
-            RefLogEntry newRefLog = writeRefLogEntry(ctx, refLogParents, result.refLogEntry);
-
-            RefLogParents.Builder newRefLogParents =
-                RefLogParents.newBuilder()
-                    .addRefLogParentsInclHead(newRefLog.getRefLogId())
-                    .setVersion(randomHash().asBytes());
-            newRefLog.getParentsList().stream()
-                .limit(config.getParentsPerRefLogEntry() - 1)
-                .forEach(newRefLogParents::addRefLogParentsInclHead);
-
-            if (refLogParentsCas(ctx, stripe, refLogParents, newRefLogParents.build())) {
-              return tryState.success(result.result);
-            }
-
-            cleanUpRefLogWrite(ctx, Hash.of(newRefLog.getRefLogId()));
-
-            // Need to retry "forever" until the ref-log entry could be added.
-            tryState.retryEndless();
-          }
-        }
+        return tryState.success(result.result);
       }
     }
   }
@@ -949,94 +851,6 @@ public abstract class NonTransactionalDatabaseAdapter<
     return ReferenceInfo.of(
         Hash.of(r.getRef().getHash()), toNamedRef(r.getRef().getType(), r.getName()));
   }
-
-  @Override
-  protected Spliterator<RefLog> readRefLog(NonTransactionalOperationContext ctx, Hash initialHash)
-      throws RefLogNotFoundException {
-    if (NO_ANCESTOR.equals(initialHash)) {
-      return Spliterators.emptySpliterator();
-    }
-
-    // Two possible optimizations here:
-    // 1. Paging - implement an "implementation aware token"
-    //    Instead of calling refLogStripeFetcher and then scanning the ref-log for the ref-log hash
-    //    from the page-token, add another parameter to this method that the ref-log-stripe fetchers
-    //    with their own initial ref-log-ids (so 1 hash per stripe in a paging token).
-    //    This requires this method to either return a wrapper around `RefLog` that also holds the
-    //    paging token for every returned `RefLog`, or to return a "PagingAwareSpliterator" that
-    //    allows retrieving the paging token. The latter is probably more efficient, but requires
-    //    a bit more "verbose" code.
-    // 2. Faster initial stripe fetching
-    //    Instead of retrieving all initial pages sequentially, perform a bulk-fetch for all initial
-    //    pages. Since ref-log queries are not performance critical and also rare operations, it is
-    //    not urgent to implement this optimization.
-
-    Stream<List<ByteString>> initialHashes =
-        Stream.concat(
-            // Ref-log as in global-pointer (backwards compatibility)
-            Stream.of(fetchGlobalPointer(ctx).getRefLogParentsInclHeadList()),
-            // Ref-log stripes
-            IntStream.range(0, config.getRefLogStripes())
-                .mapToObj(
-                    stripe -> {
-                      // read "new" ref-log
-                      RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
-                      if (refLogParents == null) {
-                        refLogParents =
-                            RefLogParents.newBuilder()
-                                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-                                .build();
-                      }
-                      return refLogParents.getRefLogParentsInclHeadList();
-                    }));
-
-    Stream<Spliterator<RefLog>> stripeFetchers =
-        initialHashes.map(
-            initial -> {
-              List<Hash> initialPage = initial.stream().map(Hash::of).collect(Collectors.toList());
-              return logFetcherWithPage(
-                  ctx, initialPage, this::fetchPageFromRefLog, RefLog::getParents);
-            });
-
-    return new RefLogSpliterator(initialHash, stripeFetchers);
-  }
-
-  protected abstract void unsafeWriteRefLogStripe(
-      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents);
-
-  protected final boolean refLogParentsCas(
-      NonTransactionalOperationContext ctx,
-      int stripe,
-      RefLogParents previousEntry,
-      RefLogParents newEntry) {
-    try (Traced ignore = trace("refLogParentsCas")) {
-      return doRefLogParentsCas(ctx, stripe, previousEntry, newEntry);
-    }
-  }
-
-  protected abstract boolean doRefLogParentsCas(
-      NonTransactionalOperationContext ctx,
-      int stripe,
-      RefLogParents previousEntry,
-      RefLogParents newEntry);
-
-  protected final RefLogParents fetchRefLogParents(
-      NonTransactionalOperationContext ctx, int stripe) {
-    try (Traced ignore = trace("fetchRefLogParentsForReference")) {
-      return doFetchRefLogParents(ctx, stripe);
-    }
-  }
-
-  protected final int refLogStripeForName(String refName) {
-    int h = refName.hashCode();
-    if (h == Integer.MIN_VALUE) {
-      h++;
-    }
-    return Math.abs(h) % config.getRefLogStripes();
-  }
-
-  protected abstract RefLogParents doFetchRefLogParents(
-      NonTransactionalOperationContext ctx, int stripe);
 
   protected final NamedReference fetchNamedReference(
       NonTransactionalOperationContext ctx, String refName) {
@@ -1289,21 +1103,6 @@ public abstract class NonTransactionalDatabaseAdapter<
       NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead, Hash newHead);
 
   /**
-   * Write a new refLog-entry with a best-effort approach to prevent hash-collisions but without any
-   * other consistency checks/guarantees. Some implementations however can enforce strict
-   * consistency checks/guarantees.
-   */
-  protected final void writeRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
-      throws ReferenceConflictException {
-    try (Traced ignore = trace("writeRefLog")) {
-      doWriteRefLog(ctx, entry);
-    }
-  }
-
-  protected abstract void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
-      throws ReferenceConflictException;
-
-  /**
    * Unsafe operation to initialize a repository: unconditionally writes the global-state-pointer.
    */
   protected abstract void unsafeWriteGlobalPointer(
@@ -1328,8 +1127,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       GlobalStatePointer newPointer);
 
   /**
-   * If a {@link #refLogParentsCas(NonTransactionalOperationContext, int, RefLogParents,
-   * RefLogParents)} failed, {@link
+   * If a commit-CAS failed, {@link
    * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#commit(CommitParams)} calls this
    * function to remove the optimistically written data.
    *
@@ -1348,14 +1146,6 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   protected abstract void doCleanUpCommitCas(
       NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists);
-
-  protected final void cleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
-    try (Traced ignore = trace("cleanUpRefLogWrite")) {
-      doCleanUpRefLogWrite(ctx, refLogId);
-    }
-  }
-
-  protected abstract void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId);
 
   protected final Spliterator<ReferenceNames> fetchReferenceNames(
       NonTransactionalOperationContext ctx) {
@@ -1535,34 +1325,4 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   protected abstract List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes);
-
-  protected RefLogEntry writeRefLogEntry(
-      NonTransactionalOperationContext ctx,
-      RefLogParents refLogParents,
-      Consumer<RefLogEntry.Builder> refLogEntryBuilder)
-      throws ReferenceConflictException {
-
-    Hash currentRefLogId = randomHash();
-
-    Stream<ByteString> newParents =
-        refLogParents != null
-            ? refLogParents.getRefLogParentsInclHeadList().stream()
-                .limit(config.getParentsPerRefLogEntry())
-            : Stream.of(NO_ANCESTOR.asBytes());
-
-    RefLogEntry.Builder entry = RefLogEntry.newBuilder().setRefLogId(currentRefLogId.asBytes());
-    refLogEntryBuilder.accept(entry);
-    newParents.forEach(entry::addParents);
-    RefLogEntry refLogEntry = entry.build();
-
-    writeRefLog(ctx, refLogEntry);
-
-    return refLogEntry;
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
-    return readRefLogStream(NON_TRANSACTIONAL_OPERATION_CONTEXT, offset);
-  }
 }

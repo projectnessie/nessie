@@ -123,11 +123,6 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
-  public BatchAccessChecker canViewRefLog() {
-    return can(Check.canViewRefLog());
-  }
-
-  @Override
   public BatchAccessChecker canReadRepositoryConfig(RepositoryConfig.Type repositoryConfigType) {
     return can(Check.canReadRepositoryConfig(repositoryConfigType));
   }

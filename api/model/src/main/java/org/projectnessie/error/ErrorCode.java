@@ -36,7 +36,6 @@ public enum ErrorCode {
   REFERENCE_ALREADY_EXISTS(409, NessieReferenceAlreadyExistsException::new),
   CONTENT_NOT_FOUND(404, NessieContentNotFoundException::new),
   REFERENCE_CONFLICT(409, NessieReferenceConflictException::new),
-  REFLOG_NOT_FOUND(404, NessieRefLogNotFoundException::new),
   BAD_REQUEST(400, NessieBadRequestException::new),
   FORBIDDEN(403, NessieForbiddenException::new),
   TOO_MANY_REQUESTS(429, NessieBackendThrottledException::new),

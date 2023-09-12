@@ -24,8 +24,6 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_L
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_KEY_LISTS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_HEADS;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG;
-import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG_HEADS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_NAMES;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
@@ -52,7 +50,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
@@ -63,8 +60,6 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContex
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 import software.amazon.awssdk.core.BytesWrapper;
@@ -306,17 +301,6 @@ public class DynamoDatabaseAdapter
     }
   }
 
-  @Override
-  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
-    client.client.deleteItem(
-        b ->
-            b.tableName(TABLE_REF_LOG)
-                .key(
-                    singletonMap(
-                        KEY_NAME,
-                        AttributeValue.builder().s(keyPrefix + refLogId.asString()).build())));
-  }
-
   private final class BatchDelete implements AutoCloseable {
     private final Map<String, List<WriteRequest>> requestItems = new HashMap<>();
     private int requests;
@@ -395,57 +379,6 @@ public class DynamoDatabaseAdapter
     } catch (ConditionalCheckFailedException e) {
       return false;
     }
-  }
-
-  @Override
-  protected void unsafeWriteRefLogStripe(
-      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
-    insert(TABLE_REF_LOG_HEADS, Integer.toString(stripe), refLogParents.toByteArray());
-  }
-
-  @Override
-  protected boolean doRefLogParentsCas(
-      NonTransactionalOperationContext ctx,
-      int stripe,
-      RefLogParents previousEntry,
-      RefLogParents newEntry) {
-    Map<String, ExpectedAttributeValue> expected =
-        previousEntry != null
-            ? singletonMap(
-                VALUE_NAME,
-                ExpectedAttributeValue.builder()
-                    .value(
-                        AttributeValue.builder()
-                            .b(SdkBytes.fromByteArray(previousEntry.toByteArray()))
-                            .build())
-                    .build())
-            : singletonMap(KEY_NAME, ExpectedAttributeValue.builder().exists(false).build());
-    AttributeValue newPointerBytes =
-        AttributeValue.builder().b(SdkBytes.fromByteArray(newEntry.toByteArray())).build();
-    try {
-      client.client.updateItem(
-          b ->
-              b.tableName(TABLE_REF_LOG_HEADS)
-                  .key(
-                      singletonMap(
-                          KEY_NAME, AttributeValue.builder().s(keyPrefix + stripe).build()))
-                  .expected(expected)
-                  .attributeUpdates(
-                      singletonMap(
-                          VALUE_NAME,
-                          AttributeValueUpdate.builder()
-                              .action(AttributeAction.PUT)
-                              .value(newPointerBytes)
-                              .build())));
-      return true;
-    } catch (ConditionalCheckFailedException e) {
-      return false;
-    }
-  }
-
-  @Override
-  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
-    return loadById(TABLE_REF_LOG_HEADS, Integer.toString(stripe), RefLogParents::parseFrom);
   }
 
   @Override
@@ -734,23 +667,6 @@ public class DynamoDatabaseAdapter
       requests.add(write);
     }
     client.client.batchWriteItem(b -> b.requestItems(singletonMap(tableName, requests)));
-  }
-
-  @Override
-  protected void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry) {
-    insert(TABLE_REF_LOG, Hash.of(entry.getRefLogId()).asString(), entry.toByteArray());
-  }
-
-  @Override
-  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    Objects.requireNonNull(refLogId, "refLogId mut not be null");
-    return loadById(TABLE_REF_LOG, refLogId, ProtoSerialization::protoToRefLog);
-  }
-
-  @Override
-  protected List<RefLog> doFetchPageFromRefLog(
-      NonTransactionalOperationContext ctx, List<Hash> hashes) {
-    return fetchPageResult(TABLE_REF_LOG, hashes, ProtoSerialization::protoToRefLog);
   }
 
   @Override

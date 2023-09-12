@@ -74,7 +74,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -102,7 +101,6 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Ref;
-import org.projectnessie.versioned.RefLogDetails;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -1025,12 +1023,6 @@ public class VersionStoreImpl implements VersionStore {
         return pagingToken(copyFromUtf8(storeKey.rawString())).asString();
       }
     };
-  }
-
-  @Override
-  @Deprecated
-  public Stream<RefLogDetails> getRefLog(Hash refLogId) {
-    throw new UnsupportedOperationException();
   }
 
   @Override

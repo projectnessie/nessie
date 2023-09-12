@@ -30,6 +30,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link RefLogParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
+@Deprecated
 public class RefLogParams extends AbstractParams<RefLogParams> {
 
   @Nullable

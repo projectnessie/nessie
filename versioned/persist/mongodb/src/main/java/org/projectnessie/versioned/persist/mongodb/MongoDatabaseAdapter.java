@@ -62,7 +62,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
@@ -71,11 +70,9 @@ import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
@@ -172,14 +169,6 @@ public class MongoDatabaseAdapter
     Document doc = new Document();
     doc.put(ID_PROPERTY_NAME, globalPointerKey);
     doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
-    return doc;
-  }
-
-  private Document toDoc(int stripe, RefLogParents pointer) {
-    Document doc = new Document();
-    doc.put(ID_PROPERTY_NAME, toId(stripe));
-    doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
-    doc.put(LOCK_ID_PROPERTY_NAME, pointer.getVersion().toByteArray());
     return doc;
   }
 
@@ -387,56 +376,6 @@ public class MongoDatabaseAdapter
         throw e;
       }
     }
-  }
-
-  @Override
-  protected void unsafeWriteRefLogStripe(
-      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
-    Document doc = toDoc(stripe, refLogParents);
-
-    verifyAcknowledged(
-        client
-            .getRefLogHeads()
-            .updateOne(
-                Filters.eq(toId(stripe)),
-                new Document("$set", doc),
-                new UpdateOptions().upsert(true)),
-        client.getRefLogHeads());
-  }
-
-  @Override
-  protected boolean doRefLogParentsCas(
-      NonTransactionalOperationContext ctx,
-      int stripe,
-      RefLogParents previousEntry,
-      RefLogParents newEntry) {
-    Document doc = toDoc(stripe, newEntry);
-
-    if (previousEntry != null) {
-      byte[] expectedLockId = previousEntry.getVersion().toByteArray();
-      return verifySuccessfulUpdate(
-          client.getRefLogHeads(),
-          coll ->
-              coll.replaceOne(
-                  Filters.and(
-                      Filters.eq(toId(stripe)), Filters.eq(LOCK_ID_PROPERTY_NAME, expectedLockId)),
-                  doc));
-    } else {
-      try {
-        verifyAcknowledged(client.getRefLogHeads().insertOne(doc), client.getRefLogHeads());
-        return true;
-      } catch (MongoServerException e) {
-        if (isDuplicateKeyError(e)) {
-          return false;
-        }
-        throw e;
-      }
-    }
-  }
-
-  @Override
-  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
-    return loadById(client.getRefLogHeads(), stripe, RefLogParents::parseFrom);
   }
 
   @Override
@@ -667,11 +606,6 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
-    client.getRefLog().deleteOne(Filters.eq(toId(refLogId)));
-  }
-
-  @Override
   protected List<ReferenceNames> doFetchReferenceNames(
       NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
     List<Document> idDocs =
@@ -714,25 +648,6 @@ public class MongoDatabaseAdapter
   protected List<GlobalStateLogEntry> doFetchPageFromGlobalLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getGlobalLog(), hashes, GlobalStateLogEntry::parseFrom);
-  }
-
-  @Override
-  protected void doWriteRefLog(NonTransactionalOperationContext ctx, AdapterTypes.RefLogEntry entry)
-      throws ReferenceConflictException {
-    Document id = toId(Hash.of(entry.getRefLogId()));
-    insert(client.getRefLog(), toDoc(id, entry.toByteArray()));
-  }
-
-  @Override
-  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    Objects.requireNonNull(refLogId, "refLogId mut not be null");
-    return loadById(client.getRefLog(), refLogId, ProtoSerialization::protoToRefLog);
-  }
-
-  @Override
-  protected List<RefLog> doFetchPageFromRefLog(
-      NonTransactionalOperationContext ctx, List<Hash> hashes) {
-    return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
   }
 
   @Override

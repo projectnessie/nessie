@@ -207,10 +207,6 @@ public interface BatchAccessChecker {
   @CanIgnoreReturnValue
   BatchAccessChecker canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
 
-  /** Checks whether the given role/principal is allowed to view the reflog entries. */
-  @CanIgnoreReturnValue
-  BatchAccessChecker canViewRefLog();
-
   @CanIgnoreReturnValue
   BatchAccessChecker canReadRepositoryConfig(RepositoryConfig.Type repositoryConfigType);
 

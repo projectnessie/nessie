@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.errorprone.annotations.MustBeClosed;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
@@ -26,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -226,16 +224,6 @@ public class ObservingVersionStore implements VersionStore {
       KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     return delegate.getDiffs(from, to, pagingToken, keyRestrictions);
-  }
-
-  @Deprecated
-  @WithSpan
-  @MustBeClosed
-  @Override
-  @Counted(PREFIX)
-  @Timed(value = PREFIX, histogram = true)
-  public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
-    return delegate.getRefLog(refLogId);
   }
 
   @WithSpan

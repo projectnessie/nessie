@@ -54,7 +54,6 @@ import org.projectnessie.services.rest.RestConfigResource;
 import org.projectnessie.services.rest.RestContentResource;
 import org.projectnessie.services.rest.RestDiffResource;
 import org.projectnessie.services.rest.RestNamespaceResource;
-import org.projectnessie.services.rest.RestRefLogResource;
 import org.projectnessie.services.rest.RestTreeResource;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
@@ -254,9 +253,6 @@ public class NessieJaxRsExtension extends NessieClientResolver
               config.register(RestContentResource.class);
               config.register(RestDiffResource.class);
               config.register(RestNamespaceResource.class);
-              @SuppressWarnings("deprecation")
-              Class<?> refLogResource = RestRefLogResource.class;
-              config.register(refLogResource);
               config.register(ConfigApiImpl.class);
               config.register(ContentKeyParamConverterProvider.class);
               config.register(NamespaceParamConverterProvider.class);

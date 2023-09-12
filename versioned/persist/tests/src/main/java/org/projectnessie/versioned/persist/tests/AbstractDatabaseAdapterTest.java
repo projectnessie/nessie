@@ -93,13 +93,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  public class RefLog extends AbstractRefLog {
-    RefLog() {
-      super(databaseAdapter);
-    }
-  }
-
-  @Nested
   public class MergeTransplant extends AbstractMergeTransplant {
     MergeTransplant() {
       super(databaseAdapter);
