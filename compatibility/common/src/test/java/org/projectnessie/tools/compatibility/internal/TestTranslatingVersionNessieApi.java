@@ -45,7 +45,6 @@ import org.projectnessie.error.NessieBackendThrottledException;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieForbiddenException;
-import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -345,11 +344,7 @@ class TestTranslatingVersionNessieApi {
         Arguments.of(
             NessieReferenceNotFoundException.class,
             "org.projectnessie.error.NessieReferenceNotFoundException",
-            ErrorCode.REFERENCE_NOT_FOUND),
-        Arguments.of(
-            NessieRefLogNotFoundException.class,
-            "org.projectnessie.error.NessieRefLogNotFoundException",
-            ErrorCode.REFLOG_NOT_FOUND));
+            ErrorCode.REFERENCE_NOT_FOUND));
   }
 
   @ParameterizedTest

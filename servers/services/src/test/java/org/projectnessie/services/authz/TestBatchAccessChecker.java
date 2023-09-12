@@ -43,7 +43,6 @@ public class TestBatchAccessChecker {
     BatchAccessChecker checker = newAccessChecker(checks -> Collections.emptyMap());
     checker
         .canViewReference(BranchName.of("foo"))
-        .canViewRefLog()
         .canListCommitLog(TagName.of("bar"))
         .canReadEntries(DetachedRef.INSTANCE);
     assertThatCode(checker::checkAndThrow).doesNotThrowAnyException();
@@ -64,8 +63,8 @@ public class TestBatchAccessChecker {
 
   @Test
   public void doubleChecks() {
-    Check checkRefLog = Check.check(CheckType.VIEW_REFLOG);
-    String msgRefLog = "no, you must not";
+    Check checkViewRef = Check.check(CheckType.VIEW_REFERENCE, BranchName.of("foo"));
+    String msgViewRef = "no, you must not";
 
     Check checkListTagCommits = Check.check(CheckType.LIST_COMMIT_LOG, TagName.of("bar"));
     String msgListTagCommits = "don't look into bar";
@@ -73,20 +72,19 @@ public class TestBatchAccessChecker {
     BatchAccessChecker checker =
         newAccessChecker(
             checks ->
-                ImmutableMap.of(checkRefLog, msgRefLog, checkListTagCommits, msgListTagCommits));
+                ImmutableMap.of(checkViewRef, msgViewRef, checkListTagCommits, msgListTagCommits));
     checker
         .canViewReference(BranchName.of("foo"))
-        .canViewRefLog()
         .canListCommitLog(TagName.of("bar"))
         .canReadEntries(DetachedRef.INSTANCE);
     assertThat(checker.check())
         .containsExactly(
-            immutableEntry(checkRefLog, msgRefLog),
+            immutableEntry(checkViewRef, msgViewRef),
             immutableEntry(checkListTagCommits, msgListTagCommits));
 
     assertThatThrownBy(checker::checkAndThrow)
         .isInstanceOf(AccessCheckException.class)
-        .hasMessage("%s, %s", msgRefLog, msgListTagCommits);
+        .hasMessage("%s, %s", msgViewRef, msgListTagCommits);
   }
 
   @Test
@@ -163,9 +161,6 @@ public class TestBatchAccessChecker {
         break;
       case DELETE_ENTITY:
         checker.canDeleteEntity(c.ref(), c.identifiedKey());
-        break;
-      case VIEW_REFLOG:
-        checker.canViewRefLog();
         break;
       case READ_REPOSITORY_CONFIG:
         checker.canReadRepositoryConfig(c.repositoryConfigType());

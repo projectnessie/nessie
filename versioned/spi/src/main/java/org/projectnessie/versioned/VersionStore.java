@@ -17,7 +17,6 @@ package org.projectnessie.versioned;
 
 import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADATA_REWRITER;
 
-import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -406,14 +405,4 @@ public interface VersionStore {
   PaginationIterator<Diff> getDiffs(
       Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException;
-
-  /**
-   * Get a stream of all reflog entries from the initial refLogId.
-   *
-   * @param refLogId initial reflog id to be used
-   * @return A stream of reflog entries.
-   */
-  @MustBeClosed
-  @Deprecated
-  Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException;
 }

@@ -26,7 +26,6 @@ import static org.projectnessie.versioned.ContentResult.contentResult;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,7 +63,6 @@ import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableCommitResult;
 import org.projectnessie.versioned.ImmutableCommitValidation;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
@@ -75,8 +73,6 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
-import org.projectnessie.versioned.RefLogDetails;
-import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -721,26 +717,6 @@ public class PersistVersionStore implements VersionStore {
       return (Hash) ref;
     }
     throw new IllegalArgumentException(String.format("Unsupported reference '%s'", ref));
-  }
-
-  @Override
-  @MustBeClosed
-  @Deprecated
-  public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
-    return databaseAdapter
-        .refLog(refLogId)
-        .map(
-            e ->
-                ImmutableRefLogDetails.builder()
-                    .refLogId(e.getRefLogId())
-                    .refName(e.getRefName())
-                    .refType(e.getRefType())
-                    .commitHash(e.getCommitHash())
-                    .parentRefLogId(e.getParents().get(0))
-                    .operationTime(e.getOperationTime())
-                    .operation(e.getOperation())
-                    .sourceHashes(e.getSourceHashes())
-                    .build());
   }
 
   @Override

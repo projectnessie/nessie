@@ -119,8 +119,6 @@ public interface Check {
     UPDATE_ENTITY(true, true, false),
     /** See {@link BatchAccessChecker#canDeleteEntity(NamedRef, IdentifiedContentKey)}. */
     DELETE_ENTITY(true, true, false),
-    /** See {@link BatchAccessChecker#canViewRefLog()}. */
-    VIEW_REFLOG(false, false, false),
 
     READ_REPOSITORY_CONFIG(false, false, true),
 
@@ -195,10 +193,6 @@ public interface Check {
 
   static Check canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(CheckType.DELETE_ENTITY, ref, identifiedKey);
-  }
-
-  static Check canViewRefLog() {
-    return check(CheckType.VIEW_REFLOG);
   }
 
   static Check canReadRepositoryConfig(RepositoryConfig.Type repositoryConfigType) {

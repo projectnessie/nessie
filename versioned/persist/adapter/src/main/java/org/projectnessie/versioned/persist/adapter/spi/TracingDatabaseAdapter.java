@@ -31,7 +31,6 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -50,7 +49,6 @@ import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
@@ -233,14 +231,6 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   public Optional<ContentIdAndBytes> globalContent(ContentId contentId) {
     try (Traced ignore = trace("globalContent").tag(TAG_CONTENT_ID, contentId.getId())) {
       return delegate.globalContent(contentId);
-    }
-  }
-
-  @Override
-  public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
-    try (Traced ignore =
-        trace("refLog.stream").tag(TAG_HASH, offset != null ? offset.asString() : "HEAD")) {
-      return delegate.refLog(offset);
     }
   }
 

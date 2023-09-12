@@ -36,7 +36,6 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -55,7 +54,6 @@ import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
@@ -259,15 +257,6 @@ public class ObservingDatabaseAdapter implements DatabaseAdapter {
   public Map<String, Map<String, String>> repoMaintenance(
       RepoMaintenanceParams repoMaintenanceParams) {
     return delegate.repoMaintenance(repoMaintenanceParams);
-  }
-
-  @WithSpan
-  @Override
-  @Counted(PREFIX)
-  @Timed(value = PREFIX, histogram = true)
-  @MustBeClosed
-  public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
-    return delegate.refLog(offset);
   }
 
   @WithSpan

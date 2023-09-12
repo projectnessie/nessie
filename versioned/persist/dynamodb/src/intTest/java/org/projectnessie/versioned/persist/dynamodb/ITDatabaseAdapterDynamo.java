@@ -35,7 +35,6 @@ import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.nontx.AbstractNonTxDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
@@ -64,12 +63,8 @@ public class ITDatabaseAdapterDynamo extends AbstractNonTxDatabaseAdapterTest
   public void cleanUpCasBatch(int numCommits, int numKeyLists) {
     Set<Hash> branchCommits = new HashSet<>();
     Set<Hash> newKeyLists = new HashSet<>();
-    Hash refLogId = randomHash();
-
-    RefLogEntry refLogEntry = RefLogEntry.newBuilder().setRefLogId(refLogId.asBytes()).build();
 
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
-    implDatabaseAdapter().doWriteRefLog(ctx, refLogEntry);
     for (int i = 0; i < numCommits; i++) {
       Hash commitId = randomHash();
       CommitLogEntry commit =
@@ -97,7 +92,6 @@ public class ITDatabaseAdapterDynamo extends AbstractNonTxDatabaseAdapterTest
       newKeyLists.add(keyListId);
     }
 
-    assertThat(implDatabaseAdapter().doFetchFromRefLog(ctx, refLogId)).isNotNull();
     assertThat(branchCommits)
         .map(id -> implDatabaseAdapter().doFetchFromCommitLog(ctx, id))
         .allMatch(Objects::nonNull);
@@ -111,10 +105,8 @@ public class ITDatabaseAdapterDynamo extends AbstractNonTxDatabaseAdapterTest
         .extracting(l -> l.get(0))
         .allMatch(Objects::nonNull);
 
-    implDatabaseAdapter().doCleanUpRefLogWrite(ctx, refLogId);
     implDatabaseAdapter().doCleanUpCommitCas(ctx, branchCommits, newKeyLists);
 
-    assertThat(implDatabaseAdapter().doFetchFromRefLog(ctx, refLogId)).isNull();
     assertThat(branchCommits)
         .map(id -> implDatabaseAdapter().doFetchFromCommitLog(ctx, id))
         .allMatch(Objects::isNull);

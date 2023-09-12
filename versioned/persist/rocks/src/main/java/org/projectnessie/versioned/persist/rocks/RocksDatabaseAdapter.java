@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.rocks;
 
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRefLog;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRepoDescription;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
@@ -44,18 +43,15 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 import org.rocksdb.ColumnFamilyHandle;
@@ -256,19 +252,6 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      db.delete(dbInstance.getCfRefLog(), dbKey(refLogId));
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id) {
     try {
@@ -389,64 +372,6 @@ public class RocksDatabaseAdapter
       }
       return false;
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
-  protected void unsafeWriteRefLogStripe(
-      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      db.put(dbInstance.getCfRefLogHeads(), dbKey(stripe), refLogParents.toByteArray());
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
-  protected boolean doRefLogParentsCas(
-      NonTransactionalOperationContext ctx,
-      int stripe,
-      RefLogParents previousEntry,
-      RefLogParents newEntry) {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      byte[] bytes = db.get(dbInstance.getCfRefLogHeads(), dbKey(stripe));
-      RefLogParents parents = bytes != null ? RefLogParents.parseFrom(bytes) : null;
-      if (previousEntry != null) {
-        if (!previousEntry.equals(parents)) {
-          return false;
-        }
-      } else if (parents != null) {
-        return false;
-      }
-      db.put(dbInstance.getCfRefLogHeads(), dbKey(stripe), newEntry.toByteArray());
-      return true;
-    } catch (InvalidProtocolBufferException | RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
-  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
-    Lock lock = dbInstance.getLock().readLock();
-    lock.lock();
-    try {
-      byte[] bytes = db.get(dbInstance.getCfRefLogHeads(), dbKey(stripe));
-      if (bytes == null) {
-        return null;
-      }
-      return RefLogParents.parseFrom(bytes);
-    } catch (RocksDBException | InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     } finally {
       lock.unlock();
@@ -666,39 +591,6 @@ public class RocksDatabaseAdapter
   @Override
   protected int entitySize(KeyListEntry entry) {
     return toProto(entry).getSerializedSize();
-  }
-
-  @Override
-  protected void doWriteRefLog(NonTransactionalOperationContext ctx, AdapterTypes.RefLogEntry entry)
-      throws ReferenceConflictException {
-    Lock lock = dbInstance.getLock().writeLock();
-    lock.lock();
-    try {
-      byte[] key = dbKey(entry.getRefLogId());
-      checkForHashCollision(dbInstance.getCfRefLog(), key);
-      db.put(dbInstance.getCfRefLog(), key, entry.toByteArray());
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  @Override
-  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    Objects.requireNonNull(refLogId, "refLogId mut not be null");
-    try {
-      byte[] v = db.get(dbInstance.getCfRefLog(), dbKey(refLogId));
-      return protoToRefLog(v);
-    } catch (RocksDBException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  protected List<RefLog> doFetchPageFromRefLog(
-      NonTransactionalOperationContext ctx, List<Hash> hashes) {
-    return fetchPage(dbInstance.getCfRefLog(), hashes, ProtoSerialization::protoToRefLog);
   }
 
   private void checkForHashCollision(ColumnFamilyHandle cf, byte[] key)

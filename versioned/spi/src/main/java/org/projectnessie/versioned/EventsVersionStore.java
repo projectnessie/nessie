@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -180,13 +179,6 @@ public class EventsVersionStore implements VersionStore {
       Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     return delegate.getDiffs(from, to, pagingToken, keyRestrictions);
-  }
-
-  @Override
-  @Deprecated
-  @SuppressWarnings("MustBeClosedChecker")
-  public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
-    return delegate.getRefLog(refLogId);
   }
 
   @Override

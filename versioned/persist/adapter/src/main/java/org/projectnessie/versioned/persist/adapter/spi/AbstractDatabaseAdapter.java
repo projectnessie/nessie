@@ -98,7 +98,6 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
@@ -121,7 +120,6 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.MetadataRewriteParams;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
@@ -2299,46 +2297,6 @@ public abstract class AbstractDatabaseAdapter<
       }
     }
   }
-
-  /** Load the refLog entry for the given hash, return {@code null}, if not found. */
-  protected final RefLog fetchFromRefLog(OP_CONTEXT ctx, Hash refLogId) {
-    try (Traced ignore =
-        trace("fetchFromRefLog").tag(TAG_HASH, refLogId != null ? refLogId.asString() : "HEAD")) {
-      return doFetchFromRefLog(ctx, refLogId);
-    }
-  }
-
-  protected abstract RefLog doFetchFromRefLog(OP_CONTEXT ctx, Hash refLogId);
-
-  /**
-   * Fetch multiple {@link RefLog refLog-entries} from the refLog. The returned list must have
-   * exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are returned
-   * as {@code null}.
-   */
-  protected final List<RefLog> fetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes) {
-    if (hashes.isEmpty()) {
-      return emptyList();
-    }
-    try (Traced ignore =
-        trace("fetchPageFromRefLog")
-            .tag(TAG_HASH, hashes.get(0).asString())
-            .tag(TAG_COUNT, hashes.size())) {
-      return doFetchPageFromRefLog(ctx, hashes);
-    }
-  }
-
-  protected abstract List<RefLog> doFetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes);
-
-  /** Reads from the refLog starting at the given refLog-hash. */
-  @MustBeClosed
-  protected Stream<RefLog> readRefLogStream(OP_CONTEXT ctx, Hash initialHash)
-      throws RefLogNotFoundException {
-    Spliterator<RefLog> split = readRefLog(ctx, initialHash);
-    return StreamSupport.stream(split, false);
-  }
-
-  protected abstract Spliterator<RefLog> readRefLog(OP_CONTEXT ctx, Hash initialHash)
-      throws RefLogNotFoundException;
 
   protected void tryLoopStateCompletion(
       @Nonnull @jakarta.annotation.Nonnull Boolean success, TryLoopState state) {

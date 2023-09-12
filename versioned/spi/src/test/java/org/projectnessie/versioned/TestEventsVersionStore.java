@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,7 +60,6 @@ class TestEventsVersionStore {
   @Mock PaginationIterator<Commit> iteratorCommits;
   @Mock PaginationIterator<KeyEntry> iteratorKeyEntries;
   @Mock PaginationIterator<Diff> iteratorDiffs;
-  @Mock Stream<RefLogDetails> refLogDetails;
 
   BranchName branch1 = BranchName.of("branch1");
   BranchName branch2 = BranchName.of("branch2");
@@ -590,17 +588,6 @@ class TestEventsVersionStore {
     PaginationIterator<Diff> result =
         versionStore.getDiffs(hash1, hash2, "token1", NO_KEY_RESTRICTIONS);
     assertThat(result).isSameAs(iteratorDiffs);
-    verifyNoMoreInteractions(delegate);
-    verifyNoInteractions(sink);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  void testGetRefLog() throws Exception {
-    when(delegate.getRefLog(hash1)).thenReturn(refLogDetails);
-    EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    Stream<RefLogDetails> result = versionStore.getRefLog(hash1);
-    assertThat(result).isSameAs(refLogDetails);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
   }

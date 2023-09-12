@@ -32,7 +32,6 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -300,15 +299,6 @@ public interface DatabaseAdapter {
   Optional<ContentIdAndBytes> globalContent(ContentId contentId);
 
   Map<String, Map<String, String>> repoMaintenance(RepoMaintenanceParams repoMaintenanceParams);
-
-  /**
-   * Retrieve the refLog starting at the refLog referenced by {@code offset}.
-   *
-   * @return stream of {@link RefLog}s
-   * @param offset initial reflog id to read from
-   */
-  @MustBeClosed
-  Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
 
   /**
    * Scan all commit log entries, no guarantees about order nor about the behavior when commits

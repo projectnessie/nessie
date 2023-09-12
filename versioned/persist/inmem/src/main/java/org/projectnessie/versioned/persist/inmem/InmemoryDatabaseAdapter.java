@@ -38,7 +38,6 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
@@ -48,8 +47,6 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContex
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 
@@ -97,37 +94,6 @@ public class InmemoryDatabaseAdapter
   @Override
   protected GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx) {
     return globalState().get();
-  }
-
-  @Override
-  protected void unsafeWriteRefLogStripe(
-      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents) {
-    store.refLogHeads.put(dbKey(stripe), refLogParents.toByteString());
-  }
-
-  @Override
-  protected RefLogParents doFetchRefLogParents(NonTransactionalOperationContext ctx, int stripe) {
-    try {
-      ByteString bytes = store.refLogHeads.get(dbKey(stripe));
-      return bytes != null ? RefLogParents.parseFrom(bytes) : null;
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  protected boolean doRefLogParentsCas(
-      NonTransactionalOperationContext ctx,
-      int stripe,
-      RefLogParents previousEntry,
-      RefLogParents newEntry) {
-    ByteString update = newEntry.toByteString();
-    if (previousEntry != null) {
-      ByteString expected = previousEntry.toByteString();
-      return store.refLogHeads.replace(dbKey(stripe), expected, update);
-    } else {
-      return store.refLogHeads.putIfAbsent(dbKey(stripe), update) == null;
-    }
   }
 
   @Override
@@ -344,11 +310,6 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
-    store.refLog.remove(dbKey(refLogId));
-  }
-
-  @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
       NonTransactionalOperationContext ctx, Hash id) {
     ByteString serialized = store.globalStateLog.get(dbKey(id));
@@ -434,30 +395,6 @@ public class InmemoryDatabaseAdapter
   @Override
   protected int entitySize(KeyListEntry entry) {
     return toProto(entry).getSerializedSize();
-  }
-
-  @Override
-  protected void doWriteRefLog(NonTransactionalOperationContext ctx, RefLogEntry entry)
-      throws ReferenceConflictException {
-    if (store.refLog.putIfAbsent(dbKey(entry.getRefLogId()), entry.toByteString()) != null) {
-      throw new ReferenceConflictException(" RefLog Hash collision detected");
-    }
-  }
-
-  @Override
-  protected RefLog doFetchFromRefLog(NonTransactionalOperationContext ctx, Hash refLogId) {
-    Objects.requireNonNull(refLogId, "refLogId mut not be null");
-    return ProtoSerialization.protoToRefLog(store.refLog.get(dbKey(refLogId)));
-  }
-
-  @Override
-  protected List<RefLog> doFetchPageFromRefLog(
-      NonTransactionalOperationContext ctx, List<Hash> hashes) {
-    return hashes.stream()
-        .map(this::dbKey)
-        .map(store.refLog::get)
-        .map(ProtoSerialization::protoToRefLog)
-        .collect(Collectors.toList());
   }
 
   @Override
