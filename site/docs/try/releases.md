@@ -2,6 +2,17 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.70.2 Release (September 12, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.2).
+
+### Fixes
+
+- Fix wrong `New value for key 'some-key' must not have a content ID` when swapping tables.
+
+### Commits
+* Fix behavior when swapping tables (#7498)
+
 ## 0.70.1 Release (September 12, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.1).
