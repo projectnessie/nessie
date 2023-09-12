@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import java.time.Duration;
@@ -1942,5 +1943,80 @@ public abstract class BaseTestNessieApi {
                     .getPrevious())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Failed to parse default-cutoff-value");
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void renameTwice() throws Exception {
+    Branch main = api().getDefaultBranch();
+    soft.assertThat(api().getAllReferences().get().getReferences()).containsExactly(main);
+
+    ContentKey key = ContentKey.of("table");
+    ContentKey keyBackup = ContentKey.of("table_backup");
+    ContentKey keyTemp = ContentKey.of("table_tmp");
+    List<ContentKey> keys = ImmutableList.of(key, keyTemp, keyBackup);
+
+    IcebergTable tableOld = IcebergTable.of("old", 1, 2, 3, 4);
+    IcebergTable tableNew = IcebergTable.of("new", 1, 2, 3, 4);
+
+    CommitResponse createTable =
+        prepCommit(main, "commit", Put.of(key, tableOld)).commitWithResponse();
+    tableOld = createTable.contentWithAssignedId(key, tableOld);
+
+    soft.assertThat(api().getContent().reference(createTable.getTargetBranch()).key(key).get())
+        .hasSize(1)
+        .containsEntry(key, tableOld);
+
+    // create new "table_tmp"
+
+    CommitResponse createNewTemp =
+        prepCommit(createTable.getTargetBranch(), "new", Put.of(keyTemp, tableNew))
+            .commitWithResponse();
+    tableNew = createNewTemp.contentWithAssignedId(keyTemp, tableNew);
+
+    soft.assertThat(api().getContent().reference(createNewTemp.getTargetBranch()).keys(keys).get())
+        .hasSize(2)
+        .containsEntry(key, tableOld)
+        .containsEntry(keyTemp, tableNew);
+
+    // rename "original" to "original_backup"
+
+    CommitResponse renameToBackup =
+        prepCommit(
+                createNewTemp.getTargetBranch(),
+                "backup",
+                Delete.of(key),
+                Put.of(keyBackup, tableOld))
+            .commitWithResponse();
+
+    soft.assertThat(api().getContent().reference(renameToBackup.getTargetBranch()).keys(keys).get())
+        .hasSize(2)
+        .containsEntry(keyBackup, tableOld)
+        .containsEntry(keyTemp, tableNew);
+
+    // rename new "table_tmp" to "table"
+
+    CommitResponse renameNew =
+        prepCommit(
+                renameToBackup.getTargetBranch(),
+                "rename new",
+                Delete.of(keyTemp),
+                Put.of(key, tableNew))
+            .commitWithResponse();
+
+    soft.assertThat(api().getContent().reference(renameNew.getTargetBranch()).keys(keys).get())
+        .hasSize(2)
+        .containsEntry(keyBackup, tableOld)
+        .containsEntry(key, tableNew);
+
+    // delete backup "table_backup"
+
+    CommitResponse deleteOld =
+        prepCommit(renameNew.getTargetBranch(), "delete", Delete.of(keyBackup))
+            .commitWithResponse();
+
+    soft.assertThat(api().getContent().reference(deleteOld.getTargetBranch()).keys(keys).get())
+        .hasSize(1)
+        .containsEntry(key, tableNew);
   }
 }
