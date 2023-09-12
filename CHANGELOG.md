@@ -25,6 +25,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+- GC: Handle delete manifests and row level delete files
 
 ### Commits
 
