@@ -15,6 +15,17 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 ### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.70.1] Release (2023-09-12)
+
+### Changes
+
 - Content Generator tool: added new `--limit` parameter to `commits`, `references` and `entries` 
   commands.
 - Content Generator tool: tool now prints the total number of elements returned when running the 
@@ -22,12 +33,9 @@ as necessary. Empty sections will not end in the release notes.
 - Helm charts: OpenTelemetry SDK is now completely disabled when tracing is disabled.
 - Helm charts: when auth is disabled, Quarkus OIDC doesn't print warnings anymore during startup.
 
-### Deprecations
-
 ### Fixes
-- GC: Handle delete manifests and row level delete files
 
-### Commits
+- GC: Handle delete manifests and row level delete files
 
 ## [0.70.0] Release (2023-08-31)
 
@@ -144,7 +152,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.70.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.70.1...HEAD
+[0.70.1]: https://github.com/projectnessie/nessie/compare/nessie-0.70.0...nessie-0.70.1
 [0.70.0]: https://github.com/projectnessie/nessie/compare/nessie-0.69.0...nessie-0.70.0
 [0.69.0]: https://github.com/projectnessie/nessie/compare/nessie-0.68.0...nessie-0.69.0
 [0.68.0]: https://github.com/projectnessie/nessie/compare/nessie-0.67.0...nessie-0.68.0

@@ -2,6 +2,34 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.70.1 Release (September 12, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.1).
+
+### Changes
+
+- Content Generator tool: added new `--limit` parameter to `commits`, `references` and `entries` 
+  commands.
+- Content Generator tool: tool now prints the total number of elements returned when running the 
+  `commits`, `references` and `entries` commands.
+- Helm charts: OpenTelemetry SDK is now completely disabled when tracing is disabled.
+- Helm charts: when auth is disabled, Quarkus OIDC doesn't print warnings anymore during startup.
+
+### Fixes
+
+- GC: Handle delete manifests and row level delete files
+
+### Commits
+* Ninja: update CHANGELOG
+* GC: Handle delete manifests and row level delete files (#7481)
+* GC: Bump spark version for integration tests (#7482)
+* MultiEnvTestEngine: append the environment name to test names (#7478)
+* Fix default-OLTP-port typo in docs (#7474)
+* Add NessieUnavailableException (HTTP 503) (#7465)
+* Helm chart: disable OIDC warnings when authentication is disabled (#7460)
+* Helm chart: disable OpenTelemetry SDK when tracing is disabled (#7459)
+* Content generator: add `--limit` parameter and print totals (#7457)
+
 ## 0.70.0 Release (August 31, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.0).
