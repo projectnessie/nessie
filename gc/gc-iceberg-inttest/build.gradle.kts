@@ -71,6 +71,10 @@ dependencies {
   intTestRuntimeOnly(
     "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
+  intTestRuntimeOnly(
+    "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
+  )
+
   intTestRuntimeOnly(libs.iceberg.hive.metastore)
   intTestRuntimeOnly(libs.iceberg.aws)
 
