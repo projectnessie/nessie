@@ -412,12 +412,13 @@ class CommitImpl extends BaseCommitHelper {
     StoreIndexElement<CommitOp> existing = expectedIndex.get(storeKey);
 
     StoreKey deletedKey = null;
-    if (existing == null && putValueId != null) {
+    boolean storeKeyExists = existing != null && existing.content().action().exists();
+    if (!storeKeyExists && putValueId != null) {
       // Check for a Delete-op in the same commit, representing a rename operation.
       UUID expectedContentID = UUID.fromString(putValueId);
       deletedKey = deleted.remove(expectedContentID);
     }
-    if (existing != null && putValueId == null && deleted.containsValue(storeKey)) {
+    if (storeKeyExists && putValueId == null && deleted.containsValue(storeKey)) {
       // Check for a Delete-op with same key in the same commit, representing a re-add operation.
       deletedKey = storeKey;
     }

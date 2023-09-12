@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Streams.stream;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
@@ -34,7 +35,9 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -905,6 +908,98 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
           .containsKey(renamed)
           .doesNotContainKey(original);
     }
+  }
+
+  @Test
+  void renameTwice() throws Exception {
+    BranchName branch = BranchName.of("main");
+
+    ContentKey key = ContentKey.of("table");
+    ContentKey keyBackup = ContentKey.of("table_backup");
+    ContentKey keyTemp = ContentKey.of("table_tmp");
+    List<ContentKey> keys = ImmutableList.of(key, keyTemp, keyBackup);
+
+    IcebergTable tableOld = IcebergTable.of("old", 1, 2, 3, 4);
+    IcebergTable tableNew = IcebergTable.of("new", 1, 2, 3, 4);
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            CommitMeta.fromMessage("commit"),
+            singletonList(Put.of(key, tableOld)))
+        .getCommitHash();
+    tableOld = (IcebergTable) store().getValue(branch, key).content();
+
+    soft.assertThat(
+            store().getValues(branch, keys).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().content())))
+        .hasSize(1)
+        .containsEntry(key, tableOld);
+
+    // create new "table_tmp"
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            CommitMeta.fromMessage("new"),
+            singletonList(Put.of(keyTemp, tableNew)));
+    tableNew = (IcebergTable) store().getValue(branch, keyTemp).content();
+
+    soft.assertThat(
+            store().getValues(branch, keys).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().content())))
+        .hasSize(2)
+        .containsEntry(key, tableOld)
+        .containsEntry(keyTemp, tableNew);
+
+    // rename "original" to "original_backup"
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            CommitMeta.fromMessage("backup"),
+            ImmutableList.of(Delete.of(key), Put.of(keyBackup, tableOld)));
+
+    soft.assertThat(
+            store().getValues(branch, keys).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().content())))
+        .hasSize(2)
+        .containsEntry(keyBackup, tableOld)
+        .containsEntry(keyTemp, tableNew);
+
+    // rename new "table_tmp" to "table"
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            CommitMeta.fromMessage("rename new"),
+            ImmutableList.of(Delete.of(keyTemp), Put.of(key, tableNew)));
+
+    soft.assertThat(
+            store().getValues(branch, keys).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().content())))
+        .hasSize(2)
+        .containsEntry(keyBackup, tableOld)
+        .containsEntry(key, tableNew);
+
+    // delete backup "table_backup"
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            CommitMeta.fromMessage("delete"),
+            singletonList(Delete.of(keyBackup)));
+
+    soft.assertThat(
+            store().getValues(branch, keys).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().content())))
+        .hasSize(1)
+        .containsEntry(key, tableNew);
   }
 
   @Test

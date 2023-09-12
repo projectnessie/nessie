@@ -19,6 +19,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+- Fix wrong `New value for key 'some-key' must not have a content ID` when swapping tables.
 
 ### Commits
 
