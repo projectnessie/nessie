@@ -30,16 +30,12 @@ val sourceSets: SourceSetContainer? by project
 
 sourceSets?.withType(SourceSet::class.java)?.configureEach {
   val sourceSet = this
-
-  val jandexTaskName = sourceSet.getTaskName("process", "jandexIndex")
-  tasks.named(jandexTaskName, JandexProcessResources::class.java).configure {
-    if ("main" != sourceSet.name) {
+  if ("main" != sourceSet.name) {
+    val jandexTaskName = sourceSet.getTaskName("process", "jandexIndex")
+    tasks.named(jandexTaskName, JandexProcessResources::class.java).configure {
       // No Jandex for non-main
       jandexBuildAction.set(JandexBuildAction.NONE)
       enabled = false
-    }
-    if (!project.plugins.hasPlugin("io.quarkus")) {
-      dependsOn(tasks.named(sourceSet.classesTaskName))
     }
   }
 }
