@@ -47,6 +47,12 @@ dependencyResolutionManagement {
       name = "Apache Snapshots"
       url = URI("https://repository.apache.org/content/repositories/snapshots/")
       mavenContent { snapshotsOnly() }
+      metadataSources {
+        // Workaround for
+        // https://youtrack.jetbrains.com/issue/IDEA-327421/IJ-fails-to-import-Gradle-project-with-dependency-with-classifier
+        ignoreGradleMetadataRedirection()
+        mavenPom()
+      }
     }
   }
 }
