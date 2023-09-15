@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.junit.jupiter.api.AssertionFailureBuilder.assertionFailure;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.longThat;
 import static org.mockito.Mockito.clearInvocations;
@@ -29,14 +30,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
+import io.opentelemetry.sdk.trace.data.EventData;
+import io.opentelemetry.sdk.trace.data.SpanData;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentMatcher;
@@ -345,6 +356,45 @@ public class TestCommitRetry {
 
     // Trigger the `if (unsuccessful)` case in CommitRetry.TryLoopState.retry
     soft.assertThat(tryLoopState.retry(0L)).isFalse();
+  }
+
+  @Nested
+  class Telemetry {
+    @RegisterExtension public final OpenTelemetryExtension otel = OpenTelemetryExtension.create();
+
+    private List<EventData> eventsFrom(Runnable action) {
+      Span span = otel.getOpenTelemetry().getTracer("test").spanBuilder("test").startSpan();
+      try (Scope ignored = span.makeCurrent()) {
+        action.run();
+      }
+      span.end();
+
+      String spanId = span.getSpanContext().getSpanId();
+      Optional<SpanData> spanData =
+          otel.getSpans().stream().filter(s -> s.getSpanId().equals(spanId)).findFirst();
+
+      return spanData
+          .orElseThrow(
+              () ->
+                  assertionFailure()
+                      .actual(otel.getSpans())
+                      .message("Expected Span not found: " + spanId)
+                      .build())
+          .getEvents();
+    }
+
+    @Test
+    void commitRetryEvents() {
+      List<EventData> events = eventsFrom(TestCommitRetry.this::commitRetrySuccessAfterRetry);
+      // 1 sleep due to failure induced by commitRetrySuccessAfterRetry()
+      soft.assertThat(events).hasSize(1);
+      soft.assertThat(events.get(0).getName()).isEqualTo("nessie.commit-retry.sleep");
+      soft.assertThat(events)
+          .extracting(
+              e ->
+                  e.getAttributes().asMap().keySet().stream().map(AttributeKey::getKey).findFirst())
+          .containsExactly(Optional.of("nessie.commit-retry.sleep.duration-millis"));
+    }
   }
 
   MonotonicClock mockedClock(int retries) {

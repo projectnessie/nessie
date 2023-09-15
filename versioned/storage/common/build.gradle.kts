@@ -52,6 +52,10 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 
+  implementation(platform(libs.opentelemetry.bom))
+  implementation("io.opentelemetry:opentelemetry-api")
+  testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
+
   testCompileOnly(libs.immutables.builder)
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)
