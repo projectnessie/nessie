@@ -23,6 +23,8 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -256,7 +258,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     "dotted.prefix,name",
     "dotted.prefix,dotted.txt",
   })
-  public void testGetContent(String ns, String name) {
+  public void testGetContent(String ns, String name) throws JsonProcessingException {
     Branch branch = createBranchV1("content-test-" + UUID.randomUUID());
     IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
 
@@ -274,7 +276,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .as(Content.class);
     soft.assertThat(withoutId(content)).isEqualTo(table);
 
-    GetMultipleContentsResponse multi =
+    String response =
         rest()
             .queryParam("ref", branch.getName())
             .queryParam("hashOnRef", branch.getHash())
@@ -283,7 +285,12 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .then()
             .statusCode(200)
             .extract()
-            .as(GetMultipleContentsResponse.class);
+            .asString();
+    // The "effectiveReference" attribute applies only to Nessie REST API v2
+    // and should not be present in v1 responses.
+    soft.assertThat(response).doesNotContain("effectiveReference");
+    GetMultipleContentsResponse multi =
+        new ObjectMapper().readValue(response, GetMultipleContentsResponse.class);
     soft.assertThat(withoutId(multi.toContentsMap().get(key))).isEqualTo(table);
     soft.assertThat(multi.getEffectiveReference()).isNull();
   }
