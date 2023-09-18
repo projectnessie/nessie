@@ -20,6 +20,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.TryLoopState.newTryLoopState;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Span;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
@@ -30,6 +33,10 @@ import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutExcepti
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 public class CommitRetry {
+
+  private static final String OTEL_SLEEP_EVENT_NAME = "nessie.commit-retry.sleep";
+  private static final AttributeKey<Long> OTEL_SLEEP_EVENT_TIME_KEY =
+      AttributeKey.longKey("nessie.commit-retry.sleep.duration-millis");
 
   private CommitRetry() {}
 
@@ -167,6 +174,9 @@ public class CommitRetry {
 
       // consider the already elapsed time of the last attempt
       sleepMillis = Math.max(1L, sleepMillis - NANOSECONDS.toMillis(attemptElapsed));
+
+      Span.current()
+          .addEvent(OTEL_SLEEP_EVENT_NAME, Attributes.of(OTEL_SLEEP_EVENT_TIME_KEY, sleepMillis));
 
       monotonicClock.sleepMillis(sleepMillis);
 
