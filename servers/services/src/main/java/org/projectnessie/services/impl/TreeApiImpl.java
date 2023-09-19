@@ -101,6 +101,7 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
+import org.projectnessie.services.authz.RetriableAccessChecker;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.hash.HashValidator;
@@ -1065,8 +1066,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   private CommitValidator createCommitValidator(BranchName branchName) {
+    // Commits routinely run retries due to collisions on updating the HEAD of the branch.
+    // Authorization is not dependent on the commit history, only on the collection of access
+    // checks, which reflect the current commit. On retries, the commit data relevant to access
+    // checks almost never changes. Therefore, we use RetriableAccessChecker to avoid re-validating
+    // access checks (which could be a time-consuming operation) on subsequent retries, unless
+    // authorization input data changes.
+    RetriableAccessChecker accessChecker = new RetriableAccessChecker(this::startAccessCheck);
     return validation -> {
-      BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
+      BatchAccessChecker check = accessChecker.newAttempt();
+      check.canCommitChangeAgainstReference(branchName);
       validation
           .operations()
           .forEach(
