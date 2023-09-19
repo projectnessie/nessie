@@ -77,6 +77,7 @@ import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ContentKeyErrorDetails;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
@@ -2018,5 +2019,44 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getContent().reference(deleteOld.getTargetBranch()).keys(keys).get())
         .hasSize(1)
         .containsEntry(key, tableNew);
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  public void testErrorsV2() throws Exception {
+    ContentKey key = ContentKey.of("namespace", "foo");
+    IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
+
+    Branch main = api().getDefaultBranch();
+
+    Branch branch =
+        (Branch)
+            api()
+                .createReference()
+                .reference(Branch.of("ref-conflicts", main.getHash()))
+                .sourceRefName(main.getName())
+                .create();
+
+    soft.assertThatThrownBy(
+            () ->
+                api()
+                    .commitMultipleOperations()
+                    .commitMeta(fromMessage("commit"))
+                    .operation(Put.of(key, table))
+                    .branch(branch)
+                    .commit())
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .asInstanceOf(type(NessieReferenceConflictException.class))
+        .matches(e -> e.getErrorCode().equals(ErrorCode.REFERENCE_CONFLICT))
+        .extracting(NessieReferenceConflictException::getErrorDetails)
+        .asInstanceOf(type(ReferenceConflicts.class))
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .hasSize(1)
+        .extracting(Conflict::conflictType)
+        .containsExactly(ConflictType.NAMESPACE_ABSENT);
+
+    soft.assertThatThrownBy(() -> api().getReference().refName("main@12345678").get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageEndingWith("Hashes are not allowed when fetching a reference by name");
   }
 }
