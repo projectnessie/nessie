@@ -117,7 +117,7 @@ public class TestNessieClientConfigSources {
     Path f3 = dir.resolve("c_3");
     Files.createFile(f1);
     Files.write(f2, singletonList("A_B=foo"));
-    Files.write(f3, asList("A_B=foo", "B_C=bar", "C_D_MINUS=baz"));
+    Files.write(f3, asList("A_B=foo", "B_C=bar", "C_D_MINUS=baz", "D_E=0"));
 
     soft.assertThat(asMap(environmentFileConfigSource(f1), "a.b", "b.c"))
         .containsEntry("a.b", null)
@@ -125,10 +125,11 @@ public class TestNessieClientConfigSources {
     soft.assertThat(asMap(environmentFileConfigSource(f2), "a.b", "b.c"))
         .containsEntry("a.b", "foo")
         .containsEntry("b.c", null);
-    soft.assertThat(asMap(environmentFileConfigSource(f3), "a.b", "b.c", "c.d-minus"))
+    soft.assertThat(asMap(environmentFileConfigSource(f3), "a.b", "b.c", "c.d-minus", "d.e"))
         .containsEntry("a.b", "foo")
         .containsEntry("b.c", "bar")
-        .containsEntry("c.d-minus", "baz");
+        .containsEntry("c.d-minus", "baz")
+        .containsEntry("d.e", "0");
   }
 
   @Test
@@ -138,7 +139,7 @@ public class TestNessieClientConfigSources {
     Path f3 = dir.resolve("c_3");
     Files.createFile(f1);
     Files.write(f2, singletonList("a.b=foo"));
-    Files.write(f3, asList("a.b=foo", "b.c=bar", "c.d-minus=baz"));
+    Files.write(f3, asList("a.b=foo", "b.c=bar", "c.d-minus=baz", "d.e=0"));
 
     soft.assertThat(asMap(propertiesFileConfigSource(f1), "a.b", "b.c"))
         .containsEntry("a.b", null)
@@ -146,10 +147,11 @@ public class TestNessieClientConfigSources {
     soft.assertThat(asMap(propertiesFileConfigSource(f2), "a.b", "b.c"))
         .containsEntry("a.b", "foo")
         .containsEntry("b.c", null);
-    soft.assertThat(asMap(propertiesFileConfigSource(f3), "a.b", "b.c", "c.d-minus"))
+    soft.assertThat(asMap(propertiesFileConfigSource(f3), "a.b", "b.c", "c.d-minus", "d.e"))
         .containsEntry("a.b", "foo")
         .containsEntry("b.c", "bar")
-        .containsEntry("c.d-minus", "baz");
+        .containsEntry("c.d-minus", "baz")
+        .containsEntry("d.e", "0");
   }
 
   @Test
