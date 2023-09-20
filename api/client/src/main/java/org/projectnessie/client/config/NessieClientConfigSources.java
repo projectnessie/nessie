@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +37,19 @@ import org.slf4j.LoggerFactory;
  * using SmallRye-Config.
  */
 public final class NessieClientConfigSources {
+  // Keep the anonymous classes, do not use lambdas, because Quarkus tests use xstream for deep
+  // cloning, which does not work with lambdas.
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieClientConfigSources.class);
+  private static final NessieClientConfigSource EMPTY_CONFIG_SOURCE =
+      new NessieClientConfigSource() {
+        @Nullable
+        @jakarta.annotation.Nullable
+        @Override
+        public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+          return null;
+        }
+      };
 
   private NessieClientConfigSources() {}
 
@@ -98,20 +111,20 @@ public final class NessieClientConfigSources {
    */
   public static NessieClientConfigSource environmentFileConfigSource(Path envFile) {
     if (!Files.isRegularFile(envFile)) {
-      return k -> null;
+      return EMPTY_CONFIG_SOURCE;
     }
-    Properties props = new Properties();
-    try (BufferedReader input = Files.newBufferedReader(envFile)) {
-      props.load(input);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    Properties props = loadProperties(envFile);
 
-    return k -> {
-      String envName = propertyNameToEnvironmentName(k);
-      String v = props.getProperty(envName);
-      LOGGER.debug("Config value for key {} as {} retrieved from {}", k, envName, envFile);
-      return v;
+    return new NessieClientConfigSource() {
+      @Nullable
+      @jakarta.annotation.Nullable
+      @Override
+      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+        String envName = propertyNameToEnvironmentName(key);
+        String v = props.getProperty(envName);
+        LOGGER.debug("Config value for key {} as {} retrieved from {}", key, envName, envFile);
+        return v;
+      }
     };
   }
 
@@ -124,11 +137,16 @@ public final class NessieClientConfigSources {
    * @see #dotEnvFileConfigSource()
    */
   public static NessieClientConfigSource environmentConfigSource(Map<String, String> environment) {
-    return k -> {
-      String envName = propertyNameToEnvironmentName(k);
-      String v = environment.get(envName);
-      LOGGER.debug("Config value for key {} as {} retrieved from environment", k, envName);
-      return v;
+    return new NessieClientConfigSource() {
+      @Nullable
+      @jakarta.annotation.Nullable
+      @Override
+      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+        String envName = propertyNameToEnvironmentName(key);
+        String v = environment.get(envName);
+        LOGGER.debug("Config value for key {} as {} retrieved from environment", key, envName);
+        return v;
+      }
     };
   }
 
@@ -140,19 +158,19 @@ public final class NessieClientConfigSources {
    */
   public static NessieClientConfigSource propertiesFileConfigSource(Path propertiesFile) {
     if (!Files.isRegularFile(propertiesFile)) {
-      return k -> null;
+      return EMPTY_CONFIG_SOURCE;
     }
-    Properties props = new Properties();
-    try (BufferedReader input = Files.newBufferedReader(propertiesFile)) {
-      props.load(input);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    Properties props = loadProperties(propertiesFile);
 
-    return k -> {
-      String v = props.getProperty(k);
-      LOGGER.debug("Config value for key {} retrieved from {}", k, propertiesFile);
-      return v;
+    return new NessieClientConfigSource() {
+      @Nullable
+      @jakarta.annotation.Nullable
+      @Override
+      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+        String v = props.getProperty(key);
+        LOGGER.debug("Config value for key {} retrieved from {}", key, propertiesFile);
+        return v;
+      }
     };
   }
 
@@ -163,10 +181,15 @@ public final class NessieClientConfigSources {
    * @see #mapConfigSource(Map)
    */
   public static NessieClientConfigSource propertiesConfigSource(Properties properties) {
-    return k -> {
-      String v = properties.getProperty(k);
-      LOGGER.debug("Config value for key {} retrieved from properties", k);
-      return v;
+    return new NessieClientConfigSource() {
+      @Nullable
+      @jakarta.annotation.Nullable
+      @Override
+      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+        String v = properties.getProperty(key);
+        LOGGER.debug("Config value for key {} retrieved from properties", key);
+        return v;
+      }
     };
   }
 
@@ -176,10 +199,15 @@ public final class NessieClientConfigSources {
    * @see #propertiesConfigSource(Properties)
    */
   public static NessieClientConfigSource mapConfigSource(Map<String, String> properties) {
-    return k -> {
-      String v = properties.get(k);
-      LOGGER.debug("Config value for key {} retrieved from map", k);
-      return v;
+    return new NessieClientConfigSource() {
+      @Nullable
+      @jakarta.annotation.Nullable
+      @Override
+      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+        String v = properties.get(key);
+        LOGGER.debug("Config value for key {} retrieved from map", key);
+        return v;
+      }
     };
   }
 
@@ -213,7 +241,7 @@ public final class NessieClientConfigSources {
   }
 
   public static NessieClientConfigSource emptyConfigSource() {
-    return k -> null;
+    return EMPTY_CONFIG_SOURCE;
   }
 
   static Path dotEnvFile() {
@@ -223,5 +251,15 @@ public final class NessieClientConfigSources {
   static Path nessieClientConfigFile() {
     return Paths.get(
         System.getProperty("user.dir"), ".config", "nessie", "nessie-client.properties");
+  }
+
+  private static Properties loadProperties(Path propertiesFile) {
+    Properties props = new Properties();
+    try (BufferedReader input = Files.newBufferedReader(propertiesFile)) {
+      props.load(input);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return props;
   }
 }
