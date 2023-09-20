@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client;
+package org.projectnessie.client.config;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.projectnessie.client.NessieClientConfigSources.dotEnvFile;
-import static org.projectnessie.client.NessieClientConfigSources.environmentConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.environmentFileConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.mapConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.nessieClientConfigFile;
-import static org.projectnessie.client.NessieClientConfigSources.propertiesConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.propertiesFileConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.systemEnvironmentConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.systemPropertiesConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.dotEnvFile;
+import static org.projectnessie.client.config.NessieClientConfigSources.environmentConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.environmentFileConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.nessieClientConfigFile;
+import static org.projectnessie.client.config.NessieClientConfigSources.propertiesConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.propertiesFileConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.systemEnvironmentConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.systemPropertiesConfigSource;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -155,7 +154,7 @@ public class TestNessieClientConfigSources {
 
   @Test
   void systemEnvironmentSource() {
-    NessieClientConfigSources.ConfigSource configSource = systemEnvironmentConfigSource();
+    NessieClientConfigSource configSource = systemEnvironmentConfigSource();
 
     Map<String, String> env = System.getenv();
     for (Map.Entry<String, String> e : env.entrySet()) {
@@ -165,7 +164,7 @@ public class TestNessieClientConfigSources {
       }
 
       String k = e.getKey().replace('_', '.').toLowerCase(Locale.ROOT);
-      soft.assertThat(configSource.apply(k))
+      soft.assertThat(configSource.getValue(k))
           .describedAs("Env var %s, using %s", e.getKey(), k)
           .isEqualTo(e.getValue());
     }
@@ -173,10 +172,10 @@ public class TestNessieClientConfigSources {
 
   @Test
   void systemPropertiesSource() {
-    NessieClientConfigSources.ConfigSource configSource = systemPropertiesConfigSource();
+    NessieClientConfigSource configSource = systemPropertiesConfigSource();
 
     for (Map.Entry<Object, Object> e : System.getProperties().entrySet()) {
-      soft.assertThat(configSource.apply(e.getKey().toString()))
+      soft.assertThat(configSource.getValue(e.getKey().toString()))
           .describedAs("System property %s", e.getKey())
           .isEqualTo(e.getValue());
     }
@@ -196,10 +195,10 @@ public class TestNessieClientConfigSources {
                 .toAbsolutePath());
   }
 
-  static Map<String, String> asMap(Function<String, String> configSource, String... keys) {
+  static Map<String, String> asMap(NessieClientConfigSource configSource, String... keys) {
     Map<String, String> r = new HashMap<>();
     for (String key : keys) {
-      r.put(key, configSource.apply(key));
+      r.put(key, configSource.getValue(key));
     }
     return r;
   }

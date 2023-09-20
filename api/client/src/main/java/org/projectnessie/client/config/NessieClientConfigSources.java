@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client;
+package org.projectnessie.client.config;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +49,7 @@ public final class NessieClientConfigSources {
    * @see #environmentFileConfigSource(Path)
    * @see #propertyNameToEnvironmentName(String)
    */
-  public static ConfigSource dotEnvFileConfigSource() {
+  public static NessieClientConfigSource dotEnvFileConfigSource() {
     Path dotEnvFile = dotEnvFile();
     return environmentFileConfigSource(dotEnvFile);
   }
@@ -62,7 +61,7 @@ public final class NessieClientConfigSources {
    * @see #propertiesFileConfigSource(Path)
    * @see #propertiesConfigSource(Properties)
    */
-  public static ConfigSource nessieClientConfigFileConfigSource() {
+  public static NessieClientConfigSource nessieClientConfigFileConfigSource() {
     Path propertiesFile = nessieClientConfigFile();
     return propertiesFileConfigSource(propertiesFile);
   }
@@ -74,7 +73,7 @@ public final class NessieClientConfigSources {
    * @see #environmentConfigSource(Map)
    * @see #dotEnvFileConfigSource()
    */
-  public static ConfigSource systemEnvironmentConfigSource() {
+  public static NessieClientConfigSource systemEnvironmentConfigSource() {
     return environmentConfigSource(System.getenv());
   }
 
@@ -83,7 +82,7 @@ public final class NessieClientConfigSources {
    *
    * @see #propertiesConfigSource(Properties)
    */
-  public static ConfigSource systemPropertiesConfigSource() {
+  public static NessieClientConfigSource systemPropertiesConfigSource() {
     return propertiesConfigSource(System.getProperties());
   }
 
@@ -97,7 +96,7 @@ public final class NessieClientConfigSources {
    * @see #dotEnvFileConfigSource()
    * @see #propertyNameToEnvironmentName(String)
    */
-  public static ConfigSource environmentFileConfigSource(Path envFile) {
+  public static NessieClientConfigSource environmentFileConfigSource(Path envFile) {
     if (!Files.isRegularFile(envFile)) {
       return k -> null;
     }
@@ -124,7 +123,7 @@ public final class NessieClientConfigSources {
    * @see #environmentFileConfigSource(Path)
    * @see #dotEnvFileConfigSource()
    */
-  public static ConfigSource environmentConfigSource(Map<String, String> environment) {
+  public static NessieClientConfigSource environmentConfigSource(Map<String, String> environment) {
     return k -> {
       String envName = propertyNameToEnvironmentName(k);
       String v = environment.get(envName);
@@ -139,7 +138,7 @@ public final class NessieClientConfigSources {
    * @see #propertiesConfigSource(Properties)
    * @see #nessieClientConfigFileConfigSource()
    */
-  public static ConfigSource propertiesFileConfigSource(Path propertiesFile) {
+  public static NessieClientConfigSource propertiesFileConfigSource(Path propertiesFile) {
     if (!Files.isRegularFile(propertiesFile)) {
       return k -> null;
     }
@@ -163,7 +162,7 @@ public final class NessieClientConfigSources {
    * @see #systemPropertiesConfigSource()
    * @see #mapConfigSource(Map)
    */
-  public static ConfigSource propertiesConfigSource(Properties properties) {
+  public static NessieClientConfigSource propertiesConfigSource(Properties properties) {
     return k -> {
       String v = properties.getProperty(k);
       LOGGER.debug("Config value for key {} retrieved from properties", k);
@@ -176,7 +175,7 @@ public final class NessieClientConfigSources {
    *
    * @see #propertiesConfigSource(Properties)
    */
-  public static ConfigSource mapConfigSource(Map<String, String> properties) {
+  public static NessieClientConfigSource mapConfigSource(Map<String, String> properties) {
     return k -> {
       String v = properties.get(k);
       LOGGER.debug("Config value for key {} retrieved from map", k);
@@ -206,26 +205,15 @@ public final class NessieClientConfigSources {
    *   <li>{@code ~/.env} file, see {@link #dotEnvFileConfigSource()}
    * </ol>
    */
-  public static ConfigSource defaultConfigSources() {
+  public static NessieClientConfigSource defaultConfigSources() {
     return systemPropertiesConfigSource()
         .fallbackTo(systemEnvironmentConfigSource())
         .fallbackTo(nessieClientConfigFileConfigSource())
         .fallbackTo(dotEnvFileConfigSource());
   }
 
-  public static ConfigSource emptyConfigSource() {
+  public static NessieClientConfigSource emptyConfigSource() {
     return k -> null;
-  }
-
-  /** Helper functional interface adding a fallback-mechanism to chain multiple config-sources. */
-  @FunctionalInterface
-  public interface ConfigSource extends Function<String, String> {
-    default ConfigSource fallbackTo(Function<String, String> fallback) {
-      return k -> {
-        String v = apply(k);
-        return v != null ? v : fallback.apply(k);
-      };
-    }
   }
 
   static Path dotEnvFile() {

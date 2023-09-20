@@ -22,8 +22,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_RE
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.function.Function;
 import org.projectnessie.client.NessieClientBuilder;
-import org.projectnessie.client.NessieClientConfigSources;
 import org.projectnessie.client.NessieConfigConstants;
+import org.projectnessie.client.config.NessieClientConfigSources;
 
 /** HTTP specific Nessie client builder interface. */
 public interface NessieHttpClientBuilder extends NessieClientBuilder {

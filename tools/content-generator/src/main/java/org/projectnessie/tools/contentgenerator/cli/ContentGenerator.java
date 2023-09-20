@@ -16,8 +16,8 @@
 package org.projectnessie.tools.contentgenerator.cli;
 
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
-import static org.projectnessie.client.NessieClientConfigSources.mapConfigSource;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
+import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
 
 import java.net.URI;
 import java.util.HashMap;

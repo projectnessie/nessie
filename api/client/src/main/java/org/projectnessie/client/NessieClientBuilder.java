@@ -15,9 +15,6 @@
  */
 package org.projectnessie.client;
 
-import static org.projectnessie.client.NessieClientConfigSources.defaultConfigSources;
-import static org.projectnessie.client.NessieClientConfigSources.emptyConfigSource;
-import static org.projectnessie.client.NessieClientConfigSources.systemPropertiesConfigSource;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL;
@@ -30,6 +27,9 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_PRO
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_READ_TIMEOUT;
+import static org.projectnessie.client.config.NessieClientConfigSources.defaultConfigSources;
+import static org.projectnessie.client.config.NessieClientConfigSources.emptyConfigSource;
+import static org.projectnessie.client.config.NessieClientConfigSources.systemPropertiesConfigSource;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
@@ -48,6 +48,8 @@ import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
+import org.projectnessie.client.config.NessieClientConfigSource;
+import org.projectnessie.client.config.NessieClientConfigSources;
 
 /** {@link NessieApi} builder interface. */
 public interface NessieClientBuilder {
@@ -179,37 +181,12 @@ public interface NessieClientBuilder {
   }
 
   static NessieClientBuilder createClientBuilderFromSystemSettings(
-      NessieClientConfigSources.ConfigSource mainConfigSource) {
-    Function<String, String> configSource = mainConfigSource.fallbackTo(defaultConfigSources());
-    String clientName = configSource.apply(CONF_NESSIE_CLIENT_NAME);
+      NessieClientConfigSource mainConfigSource) {
+    NessieClientConfigSource configSource = mainConfigSource.fallbackTo(defaultConfigSources());
+    String clientName = configSource.getValue(CONF_NESSIE_CLIENT_NAME);
     @SuppressWarnings("deprecation")
-    String clientBuilderImpl = configSource.apply(CONF_NESSIE_CLIENT_BUILDER_IMPL);
-    return createClientBuilder(clientName, clientBuilderImpl).fromConfig(configSource);
-  }
-
-  /**
-   * Returns the Nessie client builder that matches the requested client name.
-   *
-   * <p>Nessie clients are discovered using Java's {@link ServiceLoader service loader} mechanism.
-   *
-   * <p>The selection mechanism uses the given {@link NessieClientBuilder#name() Nessie client name}
-   * to select the client builder from the list of available implementations.
-   *
-   * <p>If no name is specified, aka the parameters is {@code null}, the Nessie client builder with
-   * the highest {@link NessieClientBuilder#priority()} will be returned.
-   *
-   * <p>This is the recommended convenience for {@link #createClientBuilder(String, String)}.
-   *
-   * @param clientName the name of the Nessie client, as returned by {@link
-   *     NessieClientBuilder#name()}, or {@code null}
-   * @return Nessie client builder for the requested name or implementation class.
-   * @throws IllegalArgumentException if no Nessie client matching the requested name and/or
-   *     implementation class could be found
-   */
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  static NessieClientBuilder createClientBuilder(String clientName) {
-    return createClientBuilder(clientName, null);
+    String clientBuilderImpl = configSource.getValue(CONF_NESSIE_CLIENT_BUILDER_IMPL);
+    return createClientBuilder(clientName, clientBuilderImpl).fromConfig(configSource.asFunction());
   }
 
   /**
@@ -227,8 +204,7 @@ public interface NessieClientBuilder {
    * be returned.
    *
    * <p>Either the name or the implementation class should be specified. Specifying both is
-   * discouraged. Prefer using {@link #createClientBuilder(String)} without specifying the client
-   * builder implementation class name.
+   * discouraged.
    *
    * @param clientName the name of the Nessie client, as returned by {@link
    *     NessieClientBuilder#name()}, or {@code null}
@@ -305,7 +281,7 @@ public interface NessieClientBuilder {
     @Override
     @Deprecated
     public NessieClientBuilder fromSystemProperties() {
-      return fromConfig(systemPropertiesConfigSource());
+      return fromConfig(systemPropertiesConfigSource().asFunction());
     }
 
     @Override
