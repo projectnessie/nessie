@@ -882,7 +882,7 @@ jobs:
         run: mkdocs build
         working-directory: ./site
       - name: Deploy Static Site to GitHub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository_owner == 'projectnessie'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'projectnessie/nessie'
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: projectnessie/projectnessie.github.io
