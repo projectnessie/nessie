@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.70.3 Release (September 20, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.3).
+
+### Fixes
+
+- Fix wrong `New value for key 'some-key' must not have a content ID` when swapping tables.
+
+### Commits
+* Avoid re-running previously validated access checks on commit retries. (#7524)
+* Make sure `effectiveReference` is not present in v1 REST API responses (#7512)
+* Add OTel span events for commit retry sleeps (#7509)
+* IntellJ workaround when using Iceberg snapshot builds (#7504)
+* Remove superfluous `dependsOn` (#7505)
+* Remove ref-log code (#7500)
+
 ## 0.70.2 Release (September 12, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.2).
