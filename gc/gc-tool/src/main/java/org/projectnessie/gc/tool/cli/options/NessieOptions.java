@@ -51,7 +51,7 @@ public class NessieOptions {
   URI nessieUri = URI.create("http://localhost:19120/api/v2");
 
   @CommandLine.Option(
-      names = "--nessie-option",
+      names = {"-o", "--nessie-option"},
       description = "Parameters to configure the NessieClientBuilder.",
       split = ",",
       arity = "0..*")

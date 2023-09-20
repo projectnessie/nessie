@@ -55,7 +55,7 @@ public abstract class ContentGenerator<API extends NessieApiV2> {
   private String nessieClientName;
 
   @CommandLine.Option(
-      names = "--nessie-option",
+      names = {"-o", "--nessie-option"},
       description = "Parameters to configure the NessieClientBuilder.",
       split = ",",
       arity = "0..*")
