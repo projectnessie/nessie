@@ -62,5 +62,12 @@ public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeRefer
     return fromRefName(fromRef.getName()).fromHash(fromRef.getHash());
   }
 
+  /** Perform the merge operation. */
   MergeResponse merge() throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Perform the merge operation and allows to optionally inspect merge conflicts using the content
+   * state of the conflicting contents on the merge-base, merge-source and merge-target.
+   */
+  MergeResponseInspector mergeInspect() throws NessieNotFoundException, NessieConflictException;
 }

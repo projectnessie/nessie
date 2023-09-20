@@ -17,6 +17,7 @@ package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.v1.params.ImmutableMerge;
 import org.projectnessie.client.api.MergeReferenceBuilder;
+import org.projectnessie.client.api.MergeResponseInspector;
 import org.projectnessie.client.builder.BaseMergeReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
@@ -63,5 +64,10 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
     }
 
     return client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
+  }
+
+  @Override
+  public MergeResponseInspector mergeInspect() {
+    throw new UnsupportedOperationException("Merge response inspection is not available in API v1");
   }
 }

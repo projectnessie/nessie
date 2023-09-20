@@ -147,7 +147,7 @@ public class HttpApiV2 implements NessieApiV2 {
 
   @Override
   public MergeReferenceBuilder mergeRefIntoBranch() {
-    return new HttpMergeReference(client);
+    return new HttpMergeReference(this, client);
   }
 
   @Override
