@@ -21,8 +21,8 @@ import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.protocol.{Protocol, ProtocolComponents, ProtocolKey}
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.session.Session
+import org.projectnessie.client.NessieClientBuilder
 import org.projectnessie.client.api.NessieApiV2
-import org.projectnessie.client.http.HttpClientBuilder
 
 case class NessieProtocolBuilder() extends StrictLogging {
 
@@ -35,9 +35,8 @@ case class NessieProtocolBuilder() extends StrictLogging {
 
   def clientFromSystemProperties(): NessieProtocol =
     client(
-      HttpClientBuilder
-        .builder()
-        .fromSystemProperties()
+      NessieClientBuilder
+        .createClientBuilderFromSystemSettings()
         .build(classOf[NessieApiV2])
     )
 }

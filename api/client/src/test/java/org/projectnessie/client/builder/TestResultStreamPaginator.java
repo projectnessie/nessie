@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.builder.StreamingUtil.ResultStreamPaginator;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.PaginatedResponse;
 

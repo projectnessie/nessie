@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.projectnessie.client.http.v1api.HttpApiV1;
+import org.projectnessie.client.rest.v1.HttpApiV1;
 import org.projectnessie.tools.compatibility.api.NessieBaseUri;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;

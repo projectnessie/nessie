@@ -100,8 +100,8 @@ public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseab
     this.reference = loadReference(requestedRef, hashOnRef);
   }
 
-  private static NessieClientBuilder<?> createNessieClientBuilder(String customBuilder) {
-    NessieClientBuilder<?> clientBuilder;
+  private static NessieClientBuilder createNessieClientBuilder(String customBuilder) {
+    NessieClientBuilder clientBuilder;
     if (customBuilder != null) {
       try {
         clientBuilder =

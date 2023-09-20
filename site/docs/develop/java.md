@@ -33,12 +33,12 @@ is `NessieApiV1`, which can be instantiated as shown below:
 import java.net.URI;
 import java.util.List;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.model.Reference;
 
-NessieApiV1 api = HttpClientBuilder.builder()
-  .withUri(URI.create("http://localhost:19121/api/v1"))
-  .build(NessieApiV1.class);
+NessieApiV2 api = NessieClientBuilder.builder()
+  .withUri(URI.create("http://localhost:19121/api/v2"))
+  .build(NessieApiV2.class);
 
 List<Reference> references = api.getAllReferences().get();
 references.stream()

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.ext;
 
+import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.ext.MultiVersionApiTest.apiVersion;
 
 import java.io.Serializable;
@@ -30,8 +31,10 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.config.NessieClientConfigSource;
+import org.projectnessie.client.config.NessieClientConfigSources;
 import org.projectnessie.client.http.HttpResponseFactory;
+import org.projectnessie.client.http.NessieHttpClientBuilder;
 
 /**
  * A base class for extensions that manage a Nessie test execution environment. This class injects
@@ -89,6 +92,15 @@ public abstract class NessieClientResolver implements ParameterResolver {
   }
 
   private NessieClientFactory clientFactoryForContext(ExtensionContext extensionContext) {
+    NessieClientConfigSource mainConfigSource =
+        extensionContext
+            .getTestInstance()
+            .filter(t -> t instanceof NessieClientNameResolver)
+            .map(NessieClientNameResolver.class::cast)
+            .map(NessieClientNameResolver::mainNessieClientConfigMap)
+            .map(NessieClientConfigSources::mapConfigSource)
+            .orElseGet(NessieClientConfigSources::emptyConfigSource);
+
     NessieApiVersion apiVersion = apiVersion(extensionContext);
     URI uri = resolvedNessieUri(extensionContext);
     List<NessieClientCustomizer> customizers =
@@ -118,7 +130,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
             return builder;
           };
 
-      return new ClientFactory(uri, apiVersion, responseFactoryClass) {
+      return new ClientFactory(uri, mainConfigSource, apiVersion, responseFactoryClass) {
         @Nonnull
         @jakarta.annotation.Nonnull
         @Override // Note: this object is not serializable
@@ -132,19 +144,23 @@ public abstract class NessieClientResolver implements ParameterResolver {
 
     // We use a serializable impl. here as a workaround for @QuarkusTest instances, whose parameters
     // are deep-cloned by the Quarkus test extension.
-    return new ClientFactory(uri, apiVersion, responseFactoryClass);
+    return new ClientFactory(uri, mainConfigSource, apiVersion, responseFactoryClass);
   }
 
   private static class ClientFactory implements NessieClientFactory, Serializable {
+
     private final URI resolvedUri;
+    private final NessieClientConfigSource mainConfigSource;
     private final NessieApiVersion apiVersion;
     private final Class<? extends HttpResponseFactory> responseFactoryClass;
 
     private ClientFactory(
         URI nessieUri,
+        NessieClientConfigSource mainConfigSource,
         NessieApiVersion apiVersion,
         Class<? extends HttpResponseFactory> responseFactoryClass) {
       this.resolvedUri = nessieUri;
+      this.mainConfigSource = mainConfigSource;
       this.apiVersion = apiVersion;
       this.responseFactoryClass = responseFactoryClass;
     }
@@ -158,17 +174,19 @@ public abstract class NessieClientResolver implements ParameterResolver {
     @jakarta.annotation.Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
-      HttpClientBuilder clientBuilder = HttpClientBuilder.builder().withUri(resolvedUri);
+      NessieClientBuilder clientBuilder =
+          createClientBuilderFromSystemSettings(mainConfigSource).withUri(resolvedUri);
       if (responseFactoryClass != null) {
         try {
           clientBuilder =
-              clientBuilder.withResponseFactory(
-                  responseFactoryClass.getDeclaredConstructor().newInstance());
+              clientBuilder
+                  .asInstanceOf(NessieHttpClientBuilder.class)
+                  .withResponseFactory(responseFactoryClass.getDeclaredConstructor().newInstance());
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
       }
-      NessieClientBuilder<?> builder = customizer.configure(clientBuilder, apiVersion);
+      NessieClientBuilder builder = customizer.configure(clientBuilder, apiVersion);
       return apiVersion.build(builder);
     }
   }

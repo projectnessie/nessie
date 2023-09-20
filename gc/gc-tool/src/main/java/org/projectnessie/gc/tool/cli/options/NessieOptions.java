@@ -15,14 +15,16 @@
  */
 package org.projectnessie.gc.tool.cli.options;
 
-import java.lang.reflect.InvocationTargetException;
+import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
+import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
 import org.projectnessie.gc.tool.cli.Closeables;
@@ -31,9 +33,15 @@ import picocli.CommandLine;
 public class NessieOptions {
 
   @CommandLine.Option(
+      names = "--nessie-client",
+      description = "Name of the Nessie client to use, defaults to HTTP suitable for REST.")
+  String nessieClientName;
+
+  @CommandLine.Option(
       names = "--nessie-api",
       description =
-          "Class name of the NessieClientBuilder to use, defaults to HttpClientBuilder suitable for REST.")
+          "Class name of the NessieClientBuilder implementation to use, defaults to HttpClientBuilder suitable for REST. "
+              + "Using this parameter is not recommended. Prefer the --nessie-client parameter instead.")
   String nessieApi;
 
   @CommandLine.Option(
@@ -43,7 +51,7 @@ public class NessieOptions {
   URI nessieUri = URI.create("http://localhost:19120/api/v2");
 
   @CommandLine.Option(
-      names = "--nessie-option",
+      names = {"-o", "--nessie-option"},
       description = "Parameters to configure the NessieClientBuilder.",
       split = ",",
       arity = "0..*")
@@ -54,29 +62,11 @@ public class NessieOptions {
   }
 
   NessieApiV1 createNessieApi() {
-    try {
-      NessieClientBuilder<?> clientBuilder;
-      if (nessieApi != null) {
-        clientBuilder =
-            (NessieClientBuilder<?>)
-                Class.forName(nessieApi)
-                    .asSubclass(NessieClientBuilder.class)
-                    .getDeclaredMethod("builder")
-                    .invoke(null);
-      } else {
-        clientBuilder = HttpClientBuilder.builder();
-      }
-
-      return clientBuilder
-          .withUri(nessieUri)
-          .fromSystemProperties()
-          .fromConfig(nessieOptions::get)
-          .build(NessieApiV2.class);
-    } catch (ClassNotFoundException
-        | IllegalAccessException
-        | InvocationTargetException
-        | NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
+    Map<String, String> baseConfig = new HashMap<>(nessieOptions);
+    baseConfig.put(CONF_NESSIE_CLIENT_NAME, nessieClientName);
+    baseConfig.put(CONF_NESSIE_CLIENT_BUILDER_IMPL, nessieApi);
+    return createClientBuilderFromSystemSettings(mapConfigSource(baseConfig))
+        .withUri(nessieUri)
+        .build(NessieApiV2.class);
   }
 }

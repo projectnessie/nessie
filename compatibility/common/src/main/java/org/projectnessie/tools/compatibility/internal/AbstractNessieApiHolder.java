@@ -119,8 +119,21 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
    */
   protected static AutoCloseable createNessieClient(ClassLoader classLoader, ClientKey clientKey) {
     try {
-      Class<?> builderClazz = classLoader.loadClass(clientKey.getBuilderClass());
-      Object builderInstance = builderClazz.getMethod("builder").invoke(null);
+      Object builderInstance;
+
+      Class<?> nessieClientBuilderClass =
+          classLoader.loadClass("org.projectnessie.client.NessieClientBuilder");
+      String builderClass = clientKey.getBuilderClass();
+      try {
+        // New functionality using NessieClientBuilder and the service loader mechanism.
+        Method createClientBuilderMethod =
+            nessieClientBuilderClass.getDeclaredMethod(
+                "createClientBuilder", String.class, String.class);
+        builderInstance = createClientBuilderMethod.invoke(null, null, builderClass);
+      } catch (NoSuchMethodException ignore) {
+        Class<?> builderClazz = classLoader.loadClass(builderClass);
+        builderInstance = builderClazz.getMethod("builder").invoke(null);
+      }
 
       Method fromConfigMethod = builderInstance.getClass().getMethod("fromConfig", Function.class);
       Function<String, String> getCfg =

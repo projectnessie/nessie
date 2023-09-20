@@ -15,6 +15,11 @@
  */
 package org.projectnessie.client.api;
 
+import org.projectnessie.client.api.ns.ClientSideCreateNamespace;
+import org.projectnessie.client.api.ns.ClientSideDeleteNamespace;
+import org.projectnessie.client.api.ns.ClientSideGetMultipleNamespaces;
+import org.projectnessie.client.api.ns.ClientSideGetNamespace;
+import org.projectnessie.client.api.ns.ClientSideUpdateNamespace;
 import org.projectnessie.model.Reference;
 
 /**
@@ -72,4 +77,35 @@ public interface NessieApiV2 extends NessieApiV1 {
   @Override
   @Deprecated
   DeleteBranchBuilder deleteBranch();
+
+  @Override
+  @Deprecated
+  default GetRefLogBuilder getRefLog() {
+    throw new UnsupportedOperationException("Reflog is not supported in API v2");
+  }
+
+  @Override
+  default GetNamespaceBuilder getNamespace() {
+    return new ClientSideGetNamespace(this);
+  }
+
+  @Override
+  default GetMultipleNamespacesBuilder getMultipleNamespaces() {
+    return new ClientSideGetMultipleNamespaces(this);
+  }
+
+  @Override
+  default CreateNamespaceBuilder createNamespace() {
+    return new ClientSideCreateNamespace(this);
+  }
+
+  @Override
+  default DeleteNamespaceBuilder deleteNamespace() {
+    return new ClientSideDeleteNamespace(this);
+  }
+
+  @Override
+  default UpdateNamespaceBuilder updateProperties() {
+    return new ClientSideUpdateNamespace(this);
+  }
 }

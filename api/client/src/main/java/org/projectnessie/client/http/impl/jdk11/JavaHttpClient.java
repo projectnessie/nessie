@@ -29,7 +29,7 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
  *
  * <p>Java's new {@link HttpClient} provides a lot of benefits, such as HTTP/2 support, proper
  * redirection support (if enabled), and advanced security capabilities. See the {@link
- * org.projectnessie.client.http.HttpClientBuilder} for parameters supported only by this client
+ * org.projectnessie.client.NessieClientBuilder} for parameters supported only by this client
  * implementation.
  */
 @SuppressWarnings("Since15") // IntelliJ warns about new APIs. 15 is misleading, it means 11

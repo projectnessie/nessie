@@ -63,8 +63,7 @@ class TestRestInMemoryNaiveClient extends BaseTestNessieApi implements NessieCli
   private boolean headersProcessed;
 
   @Override
-  public NessieClientBuilder<?> configure(
-      NessieClientBuilder<?> builder, NessieApiVersion apiVersion) {
+  public NessieClientBuilder configure(NessieClientBuilder builder, NessieApiVersion apiVersion) {
     // Intentionally remove the `Accept` header from requests.
     // Service endpoints should declare the content type for their return values,
     // which should allow the Web Container to properly format output even in the absence

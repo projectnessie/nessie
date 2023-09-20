@@ -55,8 +55,8 @@ public class TestQuarkusEventsEnabledAuthEnabled extends AbstractQuarkusEvents {
   @Inject Instance<MeterRegistry> registries;
 
   @Override
-  protected NessieClientBuilder<?> customizeClient(
-      NessieClientBuilder<?> builder, NessieApiVersion apiVersion) {
+  protected NessieClientBuilder customizeClient(
+      NessieClientBuilder builder, NessieApiVersion apiVersion) {
     return builder.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user"));
   }
 

@@ -17,34 +17,15 @@ package org.projectnessie.tools.contentgenerator.cli;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.PrintWriter;
-import java.net.URI;
-import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import picocli.CommandLine;
 
 public class NessieContentGenerator extends ContentGenerator<NessieApiV2> {
 
-  @CommandLine.Option(
-      names = {"-u", "--uri"},
-      scope = CommandLine.ScopeType.INHERIT,
-      description = "Nessie API endpoint URI, defaults to http://localhost:19120/api/v2.")
-  private URI uri = URI.create("http://localhost:19120/api/v2");
-
   public static void main(String[] arguments) {
     System.exit(runMain(arguments));
-  }
-
-  @Override
-  public NessieApiV2 createNessieApiInstance() {
-    NessieClientBuilder<?> clientBuilder = HttpClientBuilder.builder();
-    clientBuilder.fromSystemProperties();
-    if (uri != null) {
-      clientBuilder.withUri(uri);
-    }
-    return clientBuilder.build(NessieApiV2.class);
   }
 
   @VisibleForTesting
@@ -59,8 +40,16 @@ public class NessieContentGenerator extends ContentGenerator<NessieApiV2> {
 
   @VisibleForTesting
   public static int runMain(PrintWriter out, PrintWriter err, String[] arguments) {
+    NessieContentGenerator command = new NessieContentGenerator();
+    return runMain(command, out, err, arguments);
+  }
+
+  @VisibleForTesting
+  public static int runMain(
+      NessieContentGenerator command, PrintWriter out, PrintWriter err, String[] arguments) {
     CommandLine commandLine =
-        new CommandLine(new NessieContentGenerator())
+        new CommandLine(command)
+            .setExecutionStrategy(command::execute)
             .setExecutionExceptionHandler(
                 (ex, cmd, parseResult) -> {
                   if (ex instanceof BaseNessieClientServerException
@@ -87,5 +76,9 @@ public class NessieContentGenerator extends ContentGenerator<NessieApiV2> {
       commandLine.getOut().flush();
       commandLine.getErr().flush();
     }
+  }
+
+  protected int execute(CommandLine.ParseResult parseResult) {
+    return new CommandLine.RunLast().execute(parseResult);
   }
 }

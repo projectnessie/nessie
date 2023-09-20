@@ -17,11 +17,11 @@ package org.projectnessie.tools.contentgenerator;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -93,9 +93,6 @@ public class AbstractContentGeneratorTest {
   }
 
   protected NessieApiV2 buildNessieApi() {
-    return HttpClientBuilder.builder()
-        .fromSystemProperties()
-        .withUri(NESSIE_API_URI)
-        .build(NessieApiV2.class);
+    return createClientBuilderFromSystemSettings().withUri(NESSIE_API_URI).build(NessieApiV2.class);
   }
 }
