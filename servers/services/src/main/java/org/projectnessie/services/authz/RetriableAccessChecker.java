@@ -44,8 +44,10 @@ public final class RetriableAccessChecker {
   private class Attempt extends AbstractBatchAccessChecker {
     @Override
     public Map<Check, String> check() {
-      Collection<Check> currentChecks =
-          new ArrayList<>(getChecks()); // shallow copy, elements are immutable
+      // Shallow collection copy to ensure that we use what was current at the time of check
+      // in the equals call below (in case checks are added to this instance later, for whatever
+      // reason). Note that elements are immutable.
+      Collection<Check> currentChecks = new ArrayList<>(getChecks());
 
       if (validatedChecks != null && result != null && validatedChecks.equals(currentChecks)) {
         return result;
