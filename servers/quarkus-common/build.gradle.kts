@@ -27,7 +27,7 @@ configurations.configureEach {
   //   provided by
   //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
   resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
-    select("com.google.guava:guava:0")
+    select("com.google.guava:guava:32.1.2-jre")
   }
 }
 
