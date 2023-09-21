@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.71.0 Release (September 21, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.71.0).
+
+### Changes
+
+- Configuration of the `NessieClientBuilder` now uses system properties, environment, `~/.config/nessie/nessie-client.properties` and `~/.env`
+
+### Deprecations
+
+- `HttpClientBuilder` class has been deprecated for removal, use `NessieClientBuilder` instead.
+
+### Commits
+* Ninja: changelog
+* Cleanup nessie-client (#7516)
+
 ## 0.70.3 Release (September 20, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.70.3).

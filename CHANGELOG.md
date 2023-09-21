@@ -16,15 +16,21 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.71.0] Release (2023-09-21)
+
+### Changes
+
 - Configuration of the `NessieClientBuilder` now uses system properties, environment, `~/.config/nessie/nessie-client.properties` and `~/.env`
 
 ### Deprecations
 
 - `HttpClientBuilder` class has been deprecated for removal, use `NessieClientBuilder` instead.
-
-### Fixes
-
-### Commits
 
 ## [0.70.2] Release (2023-09-12)
 
@@ -162,7 +168,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.70.2...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.71.0...HEAD
+[0.71.0]: https://github.com/projectnessie/nessie/compare/nessie-0.70.2...nessie-0.71.0
 [0.70.2]: https://github.com/projectnessie/nessie/compare/nessie-0.70.1...nessie-0.70.2
 [0.70.1]: https://github.com/projectnessie/nessie/compare/nessie-0.70.0...nessie-0.70.1
 [0.70.0]: https://github.com/projectnessie/nessie/compare/nessie-0.69.0...nessie-0.70.0
