@@ -63,10 +63,12 @@ public class BigTableBackendBuilder implements BackendBuilder {
     GcpBootstrapConfiguration gcpConfiguration = gcpConfigHolder.getBootstrapConfig();
 
     String projectId =
-        gcpConfiguration.projectId.orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Required Google gRPC configuration quarkus.google.cloud.project-id is missing"));
+        gcpConfiguration
+            .projectId()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Required Google gRPC configuration quarkus.google.cloud.project-id is missing"));
 
     if (bigTableConfig.emulatorHost().isEmpty()) {
       if (credentialsProvider == null) {

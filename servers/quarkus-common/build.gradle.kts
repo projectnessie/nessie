@@ -21,6 +21,16 @@ plugins {
 
 extra["maven.name"] = "Nessie - Quarkus Common"
 
+configurations.configureEach {
+  // Avoids dependency resolution error since Quarkus 3.3:
+  // Cannot select module with conflict on capability 'com.google.guava:listenablefuture:1.0' also
+  //   provided by
+  //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
+  resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
+    select("com.google.guava:guava:0")
+  }
+}
+
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-server-store"))
@@ -66,6 +76,8 @@ dependencies {
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable
   implementation("io.micrometer:micrometer-core")
+
+  implementation(libs.guava)
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

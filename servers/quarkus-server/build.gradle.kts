@@ -33,6 +33,16 @@ val quarkusRunner by
 val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
+configurations.configureEach {
+  // Avoids dependency resolution error since Quarkus 3.3:
+  // Cannot select module with conflict on capability 'com.google.guava:listenablefuture:1.0' also
+  //   provided by
+  //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
+  resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
+    select("com.google.guava:guava:0")
+  }
+}
+
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
@@ -75,8 +85,6 @@ dependencies {
     implementation("io.quarkus:quarkus-minikube")
   }
 
-  implementation(libs.guava)
-
   openapiSource(project(":nessie-model", "openapiSource"))
 
   testFixturesApi(project(":nessie-client"))
@@ -94,7 +102,13 @@ dependencies {
   testFixturesImplementation(project(":nessie-versioned-persist-tests"))
   testFixturesApi(project(":nessie-versioned-storage-common"))
   testFixturesApi(project(":nessie-versioned-storage-store"))
-  testFixturesImplementation(project(":nessie-versioned-storage-testextension"))
+  testFixturesImplementation(project(":nessie-versioned-storage-testextension")) {
+    // Needed to avoid dependency resolution error:
+    // Module 'com.google.guava:guava' ... rejected: 'com.google.guava:listenablefuture:1.0' also
+    // provided by
+    // [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(compile)]
+    exclude("com.google.guava")
+  }
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
   testFixturesApi("io.quarkus:quarkus-rest-client")
