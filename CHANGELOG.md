@@ -16,7 +16,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Configuration of the `NessieClientBuilder` now uses system properties, environment, `~/.config/nessie/nessie-client.properties` and `~/.env`
+
 ### Deprecations
+
+- `HttpClientBuilder` class has been deprecated for removal, use `NessieClientBuilder` instead.
 
 ### Fixes
 
