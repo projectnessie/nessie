@@ -34,6 +34,7 @@ import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.resources.TextResource
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -50,6 +51,7 @@ import org.gradle.kotlin.dsl.module
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
+import org.gradle.process.JavaForkOptions
 
 /**
  * Apply the given `sparkVersion` as a `strictly` version constraint and [withSparkExcludes] on the
@@ -92,14 +94,26 @@ fun Project.forceJavaVersionForTests(requestedJavaVersion: Int) {
 }
 
 fun Project.forceJavaVersionForTestTask(name: String, requestedJavaVersion: Int) {
-  tasks.named(name, Test::class.java).configure {
-    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
-    if (requestedJavaVersion != currentJavaVersion) {
-      useJavaVersion(requestedJavaVersion)
-    }
-    if (requestedJavaVersion >= 11) {
-      addSparkJvmOptions()
-    }
+  tasks.named(name, Test::class.java).configure { forceJavaVersion(requestedJavaVersion) }
+}
+
+fun Test.forceJavaVersion(requestedJavaVersion: Int) {
+  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+  if (requestedJavaVersion != currentJavaVersion) {
+    useJavaVersion(requestedJavaVersion)
+  }
+  if (requestedJavaVersion >= 11) {
+    addSparkJvmOptions()
+  }
+}
+
+fun JavaExec.forceJavaVersion(requestedJavaVersion: Int) {
+  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+  if (requestedJavaVersion != currentJavaVersion) {
+    useJavaVersion(requestedJavaVersion)
+  }
+  if (requestedJavaVersion >= 11) {
+    addSparkJvmOptions()
   }
 }
 
@@ -107,9 +121,10 @@ fun Project.forceJavaVersionForTestTask(name: String, requestedJavaVersion: Int)
  * Adds the JPMS options required for Spark to run on Java 17, taken from the
  * `DEFAULT_MODULE_OPTIONS` constant in `org.apache.spark.launcher.JavaModuleOptions`.
  */
-fun Test.addSparkJvmOptions() {
+fun JavaForkOptions.addSparkJvmOptions() {
   jvmArgs =
-    jvmArgs +
+    (jvmArgs
+      ?: emptyList()) +
       listOf(
         // Spark 3.3+
         "-XX:+IgnoreUnrecognizedVMOptions",
@@ -133,6 +148,16 @@ fun Test.addSparkJvmOptions() {
 }
 
 fun Test.useJavaVersion(requestedJavaVersion: Int) {
+  val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
+  logger.info("Configuring Java $requestedJavaVersion for $path test execution")
+  javaLauncher.set(
+    javaToolchains!!.launcherFor {
+      languageVersion.set(JavaLanguageVersion.of(requestedJavaVersion))
+    }
+  )
+}
+
+fun JavaExec.useJavaVersion(requestedJavaVersion: Int) {
   val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
   logger.info("Configuring Java $requestedJavaVersion for $path test execution")
   javaLauncher.set(
