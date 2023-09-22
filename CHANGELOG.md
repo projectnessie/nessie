@@ -16,6 +16,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Introduces sizing of the Nessie object cache using a relative value of the max Java heap size.
+  The defaults have been changed to 70% of the Java max heap size (from the previous default of 64MB).
+  If a fixed cache size setting has been explicitly configured, consider to change it to the fraction based one.
+
 ### Deprecations
 
 ### Fixes

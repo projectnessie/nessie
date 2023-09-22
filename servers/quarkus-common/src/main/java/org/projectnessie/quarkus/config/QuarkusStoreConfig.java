@@ -21,6 +21,8 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
 @StaticInitSafe
@@ -92,9 +94,22 @@ public interface QuarkusStoreConfig extends StoreConfig {
   boolean validateNamespaces();
 
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
-  int DEFAULT_CACHE_CAPACITY_MB = 0;
 
   @WithName(CONFIG_CACHE_CAPACITY_MB)
-  @WithDefault("" + DEFAULT_CACHE_CAPACITY_MB)
-  int cacheCapacityMB();
+  OptionalInt cacheCapacityMB();
+
+  String CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB = "cache-capacity-fraction-min-size-mb";
+
+  @WithName(CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB)
+  OptionalInt cacheCapacityFractionMinSizeMb();
+
+  String CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP = "cache-capacity-fraction-of-heap";
+
+  @WithName(CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP)
+  OptionalDouble cacheCapacityFractionOfHeap();
+
+  String CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB = "cache-capacity-fraction-adjust-mb";
+
+  @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
+  OptionalInt cacheCapacityFractionAdjustMB();
 }

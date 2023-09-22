@@ -112,9 +112,17 @@ bigtable:
 # Properties can be passed "flattened" or as nested YAML objects (see examples below).
 advancedConfig:
   {}
+#  See description of the various cache size parameters and their defaults.
+#
+#  nessie.version.store.persist.cache-capacity-mb: (defaults to fractional size, based on max-heap size)
+#  nessie.version.store.persist.cache-capacity-fraction-of-heap: 0.7
+#  nessie.version.store.persist.cache-capacity-fraction-adjust-mb: 256
+#  nessie.version.store.persist.cache-capacity-fraction-min-size-mb: 64
+#
 #  nessie.server.default-branch: my-branch
-#  nessie.version.store.persist.cache-capacity-mb: 64
+#
 #  nessie.version.store.persist.repository-id: my-repository
+#
 #  quarkus:
 #    log:
 #      console.format: "%d{HH:mm:ss} %s%e%n"
