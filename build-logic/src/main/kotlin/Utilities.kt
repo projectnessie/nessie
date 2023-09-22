@@ -354,7 +354,8 @@ fun javaVersionForSpark(sparkMajorVersion: String): Int {
     "3.1",
     "3.2" -> 11
     "3.3",
-    "3.4" ->
+    "3.4",
+    "3.5" ->
       when {
         currentJavaVersion >= 17 -> 17
         else -> 11
