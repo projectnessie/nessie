@@ -27,7 +27,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.aws.AwsProperties;
+import org.apache.iceberg.aws.HttpClientProperties;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -175,10 +176,10 @@ public class TestIcebergS3Files {
 
   protected Map<String, String> icebergProperties(S3MockServer server) {
     Map<String, String> props = new HashMap<>();
-    props.put(AwsProperties.S3FILEIO_ACCESS_KEY_ID, "accessKey");
-    props.put(AwsProperties.S3FILEIO_SECRET_ACCESS_KEY, "secretKey");
-    props.put(AwsProperties.S3FILEIO_ENDPOINT, server.getBaseUri().toString());
-    props.put(AwsProperties.HTTP_CLIENT_TYPE, AwsProperties.HTTP_CLIENT_TYPE_URLCONNECTION);
+    props.put(S3FileIOProperties.ACCESS_KEY_ID, "accessKey");
+    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, "secretKey");
+    props.put(S3FileIOProperties.ENDPOINT, server.getBaseUri().toString());
+    props.put(HttpClientProperties.CLIENT_TYPE, HttpClientProperties.CLIENT_TYPE_URLCONNECTION);
     return props;
   }
 
