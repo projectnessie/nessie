@@ -72,6 +72,13 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
                 .setElementCountThreshold((long) BigTableConstants.MAX_BULK_MUTATIONS)
                 .build());
 
+    stubSettings
+        .bulkReadRowsSettings()
+        .setBatchingSettings(
+            stubSettings.bulkReadRowsSettings().getBatchingSettings().toBuilder()
+                .setElementCountThreshold((long) BigTableConstants.MAX_BULK_READS)
+                .build());
+
     // Enable tracing & metrics
     BigtableDataSettings.enableOpenCensusStats();
     BigtableDataSettings.enableGfeOpenCensusStats();
