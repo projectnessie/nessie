@@ -687,7 +687,7 @@ public class BigTablePersist implements Persist {
     int num = ids.length;
     @SuppressWarnings("unchecked")
     ApiFuture<Row>[] handles = new ApiFuture[num];
-    for (int idx = 0; idx < ids.length; idx++) {
+    for (int idx = 0; idx < num; idx++) {
       ID id = ids[idx];
       if (id != null) {
         ByteString key = keyGen.apply(id);
