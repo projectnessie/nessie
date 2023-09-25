@@ -25,7 +25,6 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableBackend.REPO_
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CELL_TIMESTAMP;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_BULK_READS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_PARALLEL_READS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
@@ -669,21 +668,30 @@ public class BigTablePersist implements Persist {
       return;
     }
 
+    ApiFuture<Row>[] handles;
     if (num <= MAX_PARALLEL_READS) {
-      bulkFetchSome(tableId, ids, r, keyGen, resultGen, notFound);
+      handles = doBulkFetch(ids, keyGen, key -> backend.client().readRowAsync(tableId, key));
     } else {
-      bulkFetchMany(tableId, ids, r, keyGen, resultGen, notFound);
+      try (Batcher<ByteString, Row> batcher = backend.client().newBulkReadRowsBatcher(tableId)) {
+        handles = doBulkFetch(ids, keyGen, batcher::add);
+      }
+    }
+
+    for (int idx = 0; idx < num; idx++) {
+      ApiFuture<Row> handle = handles[idx];
+      if (handle != null) {
+        Row row = handle.get(READ_TIMEOUT_MILLIS, MILLISECONDS);
+        if (row != null) {
+          r[idx] = resultGen.apply(row);
+        } else {
+          notFound.accept(ids[idx]);
+        }
+      }
     }
   }
 
-  private <ID, R> void bulkFetchSome(
-      String tableId,
-      ID[] ids,
-      R[] r,
-      Function<ID, ByteString> keyGen,
-      Function<Row, R> resultGen,
-      Consumer<ID> notFound)
-      throws InterruptedException, ExecutionException, TimeoutException {
+  private <ID, R> ApiFuture<Row>[] doBulkFetch(
+      ID[] ids, Function<ID, ByteString> keyGen, Function<ByteString, ApiFuture<Row>> handleGen) {
     int num = ids.length;
     @SuppressWarnings("unchecked")
     ApiFuture<Row>[] handles = new ApiFuture[num];
@@ -691,59 +699,9 @@ public class BigTablePersist implements Persist {
       ID id = ids[idx];
       if (id != null) {
         ByteString key = keyGen.apply(id);
-        handles[idx] = backend.client().readRowAsync(tableId, key);
+        handles[idx] = handleGen.apply(key);
       }
     }
-
-    bulkFetchCollectResults(ids, r, resultGen, notFound, num, handles);
-  }
-
-  private <ID, R> void bulkFetchMany(
-      String tableId,
-      ID[] ids,
-      R[] r,
-      Function<ID, ByteString> keyGen,
-      Function<Row, R> resultGen,
-      Consumer<ID> notFound)
-      throws InterruptedException, ExecutionException, TimeoutException {
-    int num = ids.length;
-    @SuppressWarnings("unchecked")
-    ApiFuture<Row>[] handles = new ApiFuture[num];
-    int idx = 0;
-    try (Batcher<ByteString, Row> batcher = backend.client().newBulkReadRowsBatcher(tableId)) {
-      for (int outer = 0; outer < num; outer += MAX_BULK_READS) {
-        for (int inner = outer; inner < outer + MAX_BULK_READS && inner < num; inner++) {
-          ID id = ids[inner];
-          if (id != null) {
-            ByteString key = keyGen.apply(id);
-            handles[idx] = batcher.add(key);
-          }
-          idx++;
-        }
-      }
-    }
-
-    bulkFetchCollectResults(ids, r, resultGen, notFound, num, handles);
-  }
-
-  private static <ID, R> void bulkFetchCollectResults(
-      ID[] ids,
-      R[] r,
-      Function<Row, R> resultGen,
-      Consumer<ID> notFound,
-      int num,
-      ApiFuture<Row>[] handles)
-      throws InterruptedException, ExecutionException, TimeoutException {
-    for (int i = 0; i < num; i++) {
-      ApiFuture<Row> handle = handles[i];
-      if (handle != null) {
-        Row row = handle.get(READ_TIMEOUT_MILLIS, MILLISECONDS);
-        if (row != null) {
-          r[i] = resultGen.apply(row);
-        } else {
-          notFound.accept(ids[i]);
-        }
-      }
-    }
+    return handles;
   }
 }
