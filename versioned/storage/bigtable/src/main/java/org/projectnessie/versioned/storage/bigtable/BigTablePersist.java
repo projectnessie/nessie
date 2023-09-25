@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CEL
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_BULK_READS;
+import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_PARALLEL_READS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_REFS;
@@ -668,6 +669,44 @@ public class BigTablePersist implements Persist {
       return;
     }
 
+    if (num <= MAX_PARALLEL_READS) {
+      bulkFetchSome(tableId, ids, r, keyGen, resultGen, notFound);
+    } else {
+      bulkFetchMany(tableId, ids, r, keyGen, resultGen, notFound);
+    }
+  }
+
+  private <ID, R> void bulkFetchSome(
+      String tableId,
+      ID[] ids,
+      R[] r,
+      Function<ID, ByteString> keyGen,
+      Function<Row, R> resultGen,
+      Consumer<ID> notFound)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    int num = ids.length;
+    @SuppressWarnings("unchecked")
+    ApiFuture<Row>[] handles = new ApiFuture[num];
+    for (int idx = 0; idx < num; idx++) {
+      ID id = ids[idx];
+      if (id != null) {
+        ByteString key = keyGen.apply(id);
+        handles[idx] = backend.client().readRowAsync(tableId, key);
+      }
+    }
+
+    bulkFetchCollectResults(ids, r, resultGen, notFound, num, handles);
+  }
+
+  private <ID, R> void bulkFetchMany(
+      String tableId,
+      ID[] ids,
+      R[] r,
+      Function<ID, ByteString> keyGen,
+      Function<Row, R> resultGen,
+      Consumer<ID> notFound)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    int num = ids.length;
     @SuppressWarnings("unchecked")
     ApiFuture<Row>[] handles = new ApiFuture[num];
     int idx = 0;
@@ -684,6 +723,17 @@ public class BigTablePersist implements Persist {
       }
     }
 
+    bulkFetchCollectResults(ids, r, resultGen, notFound, num, handles);
+  }
+
+  private static <ID, R> void bulkFetchCollectResults(
+      ID[] ids,
+      R[] r,
+      Function<Row, R> resultGen,
+      Consumer<ID> notFound,
+      int num,
+      ApiFuture<Row>[] handles)
+      throws InterruptedException, ExecutionException, TimeoutException {
     for (int i = 0; i < num; i++) {
       ApiFuture<Row> handle = handles[i];
       if (handle != null) {

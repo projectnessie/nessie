@@ -32,6 +32,7 @@ final class BigTableConstants {
   // Tue Apr 7 08:14:21 2020 +0200
   static final long CELL_TIMESTAMP = 1586232861000L;
 
+  static final int MAX_PARALLEL_READS = 5;
   static final int MAX_BULK_READS = 100;
   static final int MAX_BULK_MUTATIONS = 1000;
 
