@@ -690,7 +690,7 @@ public class BigTablePersist implements Persist {
     }
   }
 
-  private <ID, R> ApiFuture<Row>[] doBulkFetch(
+  private <ID> ApiFuture<Row>[] doBulkFetch(
       ID[] ids, Function<ID, ByteString> keyGen, Function<ByteString, ApiFuture<Row>> handleGen) {
     int num = ids.length;
     @SuppressWarnings("unchecked")
