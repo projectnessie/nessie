@@ -55,19 +55,28 @@ Starting with Nessie 0.66.0, tracing and metrics are always used, if OpenTelemet
 
 When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-| Property                                                     | Default values | Type                  | Description                                                                                                              |
-|--------------------------------------------------------------|----------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `quarkus.google.cloud.project-id`                            |                | `String`              | The Google project ID, mandatory.                                                                                        |
-| (Google authentication)                                      |                |                       | See [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/) for documentation. | 
-| `nessie.version.store.persist.bigtable.app-profile-id`       | `nessie`       | `String`              | Sets the profile-id to be used with Google BigTable.                                                                     |
-| `nessie.version.store.persist.bigtable.instance-id`          | `nessie`       | `String`              | Sets the instance-id to be used with Google BigTable.                                                                    |
-| `nessie.version.store.persist.bigtable.quota-project-id`     | n/a            | `String`              | Google BigTable quote project ID (optional).                                                                             |
-| `nessie.version.store.persist.bigtable.emulator-host`        | n/a            | `String`              | When using the BigTable emulator, used to configure the host.                                                            |
-| `nessie.version.store.persist.bigtable.emulator-port`        | `8086`         | `int`                 | When using the BigTable emulator, used to configure the port.                                                            |
-| `nessie.version.store.persist.bigtable.endpoint`             | n/a            | `String`              | Google BigTable endpoint (if not default).                                                                               |
-| `nessie.version.store.persist.bigtable.mtls-endpoint`        | n/a            | `String`              | Google BigTable MTLS endpoint (if not default).                                                                          |
-| `nessie.version.store.persist.bigtable.jwt-audience-mapping` | n/a            | `Map<String, String>` | Google BigTable JWT audience mappings (if necessary).                                                                    |
-| `nessie.version.store.persist.bigtable.table-prefix`         | n/a            | `String`              | Prefix for tables, default is no prefix.                                                                                 |
+| Property                                                      | Default values | Type                  | Description                                                                                                              |
+|---------------------------------------------------------------|----------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `quarkus.google.cloud.project-id`                             |                | `String`              | The Google project ID, mandatory.                                                                                        |
+| (Google authentication)                                       |                |                       | See [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/) for documentation. | 
+| `nessie.version.store.persist.bigtable.app-profile-id`        | `nessie`       | `String`              | Sets the profile-id to be used with Google BigTable.                                                                     |
+| `nessie.version.store.persist.bigtable.instance-id`           | `nessie`       | `String`              | Sets the instance-id to be used with Google BigTable.                                                                    |
+| `nessie.version.store.persist.bigtable.quota-project-id`      | n/a            | `String`              | Google BigTable quote project ID (optional).                                                                             |
+| `nessie.version.store.persist.bigtable.emulator-host`         | n/a            | `String`              | When using the BigTable emulator, used to configure the host.                                                            |
+| `nessie.version.store.persist.bigtable.emulator-port`         | `8086`         | `int`                 | When using the BigTable emulator, used to configure the port.                                                            |
+| `nessie.version.store.persist.bigtable.endpoint`              | n/a            | `String`              | Google BigTable endpoint (if not default).                                                                               |
+| `nessie.version.store.persist.bigtable.mtls-endpoint`         | n/a            | `String`              | Google BigTable MTLS endpoint (if not default).                                                                          |
+| `nessie.version.store.persist.bigtable.jwt-audience-mapping`  | n/a            | `Map<String, String>` | Google BigTable JWT audience mappings (if necessary).                                                                    |
+| `nessie.version.store.persist.bigtable.table-prefix`          | n/a            | `String`              | Prefix for tables, default is no prefix.                                                                                 |
+| `nessie.version.store.persist.bigtable.min-channel-count`     | `1`            | `int`                 | Minimum number of gRPC channels. Refer to Google docs for details.                                                       |
+| `nessie.version.store.persist.bigtable.max-channel-count`     | `200`          | `int`                 | Maximum number of gRPC channels. Refer to Google docs for details.                                                       |
+| `nessie.version.store.persist.bigtable.initial-channel-count` | `1`            | `int`                 | Initial number of gRPC channels. Refer to Google docs for details.                                                       |
+| `nessie.version.store.persist.bigtable.min-rpcs-per-channel`  | `0`            | `int`                 | Minimum number of RPCs per channel. Refer to Google docs for details.                                                    |
+| `nessie.version.store.persist.bigtable.max-rpcs-per-channel`  | (unlimited)    | `int`                 | Maximum number of RPCs per channel. Refer to Google docs for details.                                                    |
+| `nessie.version.store.persist.bigtable.initial-rpc-timeout`   | (unspecified)  | `Duration`            | Initial RPC timeout.                                                                                                     |
+| `nessie.version.store.persist.bigtable.initial-retry-delay`   | (unspecified)  | `Duration`            | Initial retry delay.                                                                                                     |
+| `nessie.version.store.persist.bigtable.max-retry-delay`       | (unspecified)  | `Duration`            | Max retry-delay.                                                                                                         |
+
 
 !!! info
 A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/)

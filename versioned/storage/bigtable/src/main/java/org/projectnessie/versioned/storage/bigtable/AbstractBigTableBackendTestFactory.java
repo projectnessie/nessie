@@ -24,6 +24,7 @@ import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.util.Optional;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 
@@ -59,7 +60,8 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
               .setInstanceId(instanceId)
               .setCredentialsProvider(NoCredentialsProvider.create());
 
-      configureDataClient(settings);
+      configureDataClient(
+          settings, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
 
       return BigtableDataClient.create(settings.build());
     } catch (IOException e) {
