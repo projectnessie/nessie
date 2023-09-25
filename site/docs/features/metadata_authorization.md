@@ -88,10 +88,10 @@ Available variables within the `<rule_expression>` are: **'op'** / **'role'** / 
   * `LIST_COMMIT_LOG`
   * `COMMIT_CHANGE_AGAINST_REFERENCE`
   * `ASSIGN_REFERENCE_TO_HASH`
+  * `CREATE_ENTITY`
   * `UPDATE_ENTITY`
   * `READ_ENTITY_VALUE`
   * `DELETE_ENTITY`
-  * `VIEW_REFLOG` (deprecated)
 * The following values for the **'op'**
   * `READ_REPOSITORY_CONFIG`
   * `UPDATE_REPOSITORY_CONFIG`
