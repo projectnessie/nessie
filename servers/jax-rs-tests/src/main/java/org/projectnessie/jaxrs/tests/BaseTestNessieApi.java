@@ -120,6 +120,7 @@ import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.Validation;
 import org.projectnessie.model.types.GenericRepositoryConfig;
 import org.projectnessie.model.types.ImmutableGenericRepositoryConfig;
 
@@ -1944,6 +1945,13 @@ public abstract class BaseTestNessieApi {
                     .getPrevious())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Failed to parse default-cutoff-value");
+  }
+
+  @Test
+  void invalidParameters() throws Exception {
+    assertThatThrownBy(() -> api().getEntries().refName("..invalid..").get())
+      .isInstanceOf(NessieBadRequestException.class)
+      .hasMessageContaining(Validation.REF_NAME_MESSAGE);
   }
 
   @Test
