@@ -307,7 +307,7 @@ spark.sql("SELECT * FROM nessie.testing.`region@dev`")
 spark.sql("SELECT * FROM nessie.testing.`region@<hash>`")
 ```
 
-Notice in the SQL statements the `table@branch` must be escaped separately from namespace or catalog arguments.
+Notice in the SQL statements the `<table>@<branch>` must be escaped separately from namespace or catalog arguments.
 
 Future versions may add the ability to specify a timestamp to query the data at a specific point in time
 (time-travel). In the meantime the history can be viewed on the command line or via the python client and a specific
