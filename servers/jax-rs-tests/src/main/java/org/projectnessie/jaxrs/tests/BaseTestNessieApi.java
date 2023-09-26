@@ -1950,8 +1950,8 @@ public abstract class BaseTestNessieApi {
   @Test
   void invalidParameters() throws Exception {
     assertThatThrownBy(() -> api().getEntries().refName("..invalid..").get())
-      .isInstanceOf(NessieBadRequestException.class)
-      .hasMessageContaining(Validation.REF_NAME_MESSAGE);
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining(Validation.REF_NAME_MESSAGE);
   }
 
   @Test
