@@ -18,8 +18,10 @@ package org.projectnessie.quarkus.config;
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.bigtable")
@@ -41,6 +43,22 @@ public interface QuarkusBigTableConfig {
   Optional<String> tablePrefix();
 
   Map<String, String> jwtAudienceMapping();
+
+  Optional<Duration> maxRetryDelay();
+
+  Optional<Duration> initialRpcTimeout();
+
+  Optional<Duration> initialRetryDelay();
+
+  OptionalInt minChannelCount();
+
+  OptionalInt maxChannelCount();
+
+  OptionalInt initialChannelCount();
+
+  OptionalInt minRpcsPerChannel();
+
+  OptionalInt maxRpcsPerChannel();
 
   @WithDefault("false")
   boolean noTableAdminClient();

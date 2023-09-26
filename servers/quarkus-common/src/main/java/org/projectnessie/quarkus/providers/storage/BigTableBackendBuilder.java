@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableBackendFactor
 
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.NoCredentialsProvider;
+import com.google.api.gax.grpc.ChannelPoolSettings;
 import com.google.api.gax.rpc.PermissionDeniedException;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
@@ -30,6 +31,7 @@ import io.quarkiverse.googlecloudservices.common.GcpConfigHolder;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import java.util.Optional;
 import org.projectnessie.quarkus.config.QuarkusBigTableConfig;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendConfig;
@@ -111,7 +113,35 @@ public class BigTableBackendBuilder implements BackendBuilder {
         dataSettings.stubSettings().setJwtAudienceMapping(bigTableConfig.jwtAudienceMapping());
       }
 
-      configureDataClient(dataSettings);
+      ChannelPoolSettings defaultPoolSettings = ChannelPoolSettings.builder().build();
+
+      ChannelPoolSettings poolSettings =
+          ChannelPoolSettings.builder()
+              .setMinChannelCount(
+                  bigTableConfig.minChannelCount().orElse(defaultPoolSettings.getMinChannelCount()))
+              .setMaxChannelCount(
+                  bigTableConfig.maxChannelCount().orElse(defaultPoolSettings.getMaxChannelCount()))
+              .setInitialChannelCount(
+                  bigTableConfig
+                      .initialChannelCount()
+                      .orElse(defaultPoolSettings.getInitialChannelCount()))
+              .setMinRpcsPerChannel(
+                  bigTableConfig
+                      .minRpcsPerChannel()
+                      .orElse(defaultPoolSettings.getMinRpcsPerChannel()))
+              .setMaxRpcsPerChannel(
+                  bigTableConfig
+                      .maxRpcsPerChannel()
+                      .orElse(defaultPoolSettings.getMaxRpcsPerChannel()))
+              .setPreemptiveRefreshEnabled(true)
+              .build();
+
+      configureDataClient(
+          dataSettings,
+          Optional.of(poolSettings),
+          bigTableConfig.maxRetryDelay(),
+          bigTableConfig.initialRpcTimeout(),
+          bigTableConfig.initialRetryDelay());
 
       LOGGER.info("Creating Google BigTable data client...");
       BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());

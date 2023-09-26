@@ -15,14 +15,18 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
+import com.google.api.gax.grpc.ChannelPoolSettings;
+import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
-import org.threeten.bp.Duration;
 
 public class BigTableBackendFactory implements BackendFactory<BigTableBackendConfig> {
 
@@ -49,9 +53,12 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
     return new BigTableBackend(config, false);
   }
 
-  public static void configureDataClient(BigtableDataSettings.Builder settings) {
-    Duration maxRetryDelay = Duration.ofSeconds(1);
-
+  public static void configureDataClient(
+      BigtableDataSettings.Builder settings,
+      Optional<ChannelPoolSettings> channelPoolSettings,
+      Optional<Duration> maxRetryDelay,
+      Optional<Duration> initialRpcTimeout,
+      Optional<Duration> initialRetryDelay) {
     EnhancedBigtableStubSettings.Builder stubSettings = settings.stubSettings();
     for (RetrySettings.Builder retrySettings :
         List.of(
@@ -61,9 +68,20 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
             stubSettings.mutateRowSettings().retrySettings(),
             stubSettings.bulkMutateRowsSettings().retrySettings(),
             stubSettings.readChangeStreamSettings().retrySettings())) {
-      // The max-retry-delay is 1 minute, which is pretty high for us.
-      retrySettings.setMaxRetryDelay(maxRetryDelay);
+      configureDuration(initialRpcTimeout, retrySettings::setInitialRpcTimeout);
+      configureDuration(initialRetryDelay, retrySettings::setInitialRetryDelay);
+      configureDuration(maxRetryDelay, retrySettings::setMaxRetryDelay);
     }
+
+    channelPoolSettings.ifPresent(
+        poolSettings -> {
+          InstantiatingGrpcChannelProvider transportChannelProvider =
+              (InstantiatingGrpcChannelProvider) stubSettings.getTransportChannelProvider();
+          InstantiatingGrpcChannelProvider.Builder transportChannelProviderBuilder =
+              transportChannelProvider.toBuilder();
+          stubSettings.setTransportChannelProvider(
+              transportChannelProviderBuilder.setChannelPoolSettings(poolSettings).build());
+        });
 
     stubSettings
         .bulkMutateRowsSettings()
@@ -82,5 +100,10 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
     // Enable tracing & metrics
     BigtableDataSettings.enableOpenCensusStats();
     BigtableDataSettings.enableGfeOpenCensusStats();
+  }
+
+  private static void configureDuration(
+      Optional<Duration> config, Consumer<org.threeten.bp.Duration> configurable) {
+    config.map(Duration::toMillis).map(org.threeten.bp.Duration::ofMillis).ifPresent(configurable);
   }
 }

@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +57,7 @@ public class BigTableBackendProcessTestFactory extends AbstractBigTableBackendTe
 
   @Override
   public String getName() {
-    return BigTableBackendFactory.NAME + "Container";
+    return BigTableBackendFactory.NAME + "Process";
   }
 
   public String getEmulatorHost() {
@@ -111,13 +112,17 @@ public class BigTableBackendProcessTestFactory extends AbstractBigTableBackendTe
         watch.setDaemon(true);
         watch.start();
 
+        List<String> lines = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
           while (true) {
             String line = br.readLine();
             if (line == null) {
               destroyProcess(p).forEach(ProcessHandle::destroyForcibly);
-              throw new RuntimeException("Failed to start BigTable emulator");
+              throw new RuntimeException(
+                  "Failed to start BigTable emulator, output so far: \n"
+                      + String.join("\n", lines));
             }
+            lines.add(line);
             Matcher m = hostPortPattern.matcher(line);
             if (m.matches()) {
               emulatorHost = m.group(1);
