@@ -16,6 +16,7 @@
 package org.projectnessie.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -36,6 +37,7 @@ import org.immutables.value.Value;
     discriminatorProperty = "type")
 @JsonTypeIdResolver(NessieErrorDetailsTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface NessieErrorDetails {
   @Value.Redacted
   @JsonIgnore

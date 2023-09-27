@@ -16,6 +16,7 @@
 package org.projectnessie.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -36,6 +37,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieError.class)
 @JsonDeserialize(as = ImmutableNessieError.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface NessieError {
 
   /** HTTP status code of this error. */

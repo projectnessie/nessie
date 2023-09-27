@@ -15,7 +15,6 @@
  */
 package org.projectnessie.error;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.model.Conflict.ConflictType.UNEXPECTED_HASH;
@@ -81,8 +80,7 @@ class TestNessieError {
   @ParameterizedTest
   @MethodSource("conflictDeserialization")
   void conflictDeserialization(JsonNode input, Conflict expected) throws Exception {
-    Conflict parsedConflict =
-        new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).treeToValue(input, Conflict.class);
+    Conflict parsedConflict = new ObjectMapper().treeToValue(input, Conflict.class);
     Assertions.assertThat(parsedConflict).isEqualTo(expected);
   }
 

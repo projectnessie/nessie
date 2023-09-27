@@ -15,8 +15,6 @@
  */
 package org.projectnessie.client.rest;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_INVALID_SUBTYPE;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -70,8 +68,7 @@ import software.amazon.awssdk.utils.StringInputStream;
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestResponseFilter {
 
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).disable(FAIL_ON_INVALID_SUBTYPE);
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
