@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -28,6 +29,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableConflict.class)
 @JsonDeserialize(as = ImmutableConflict.class)
+@JsonIgnoreProperties(
+    // need to ignore unknown properties as this type can be used in `ReferenceConflicts`
+    ignoreUnknown = true)
 public interface Conflict {
   @Value.Parameter(order = 1)
   @Nullable

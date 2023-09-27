@@ -15,9 +15,6 @@
  */
 package org.projectnessie.client.rest;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_INVALID_SUBTYPE;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,18 +27,11 @@ import org.projectnessie.client.http.Status;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
-import org.projectnessie.error.NessieErrorDetails;
 import org.projectnessie.error.NessieUnavailableException;
 
 public class ResponseCheckFilter {
 
-  /**
-   * Object mapper that ignores unknown properties and unknown subtypes, so it is able to process
-   * instances of {@link NessieError} and especially {@link NessieErrorDetails} with added/unknown
-   * properties or unknown subtypes of the latter.
-   */
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).disable(FAIL_ON_INVALID_SUBTYPE);
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   /**
    * check that response had a valid return code. Throw exception if not.
