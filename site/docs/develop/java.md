@@ -40,8 +40,8 @@ NessieApiV2 api = NessieClientBuilder.createClientBuilder(null, null)
   .withUri(URI.create("http://localhost:19120/api/v2"))
   .build(NessieApiV2.class);
 
-List<Reference> references = api.getAllReferences().get().getReferences();
-references.stream()
+api.getAllReferences()
+  .stream()
   .map(Reference::getName)
   .forEach(System.out::println);
 ```
@@ -156,8 +156,8 @@ Fetches the content for multiple `ContentKey` instances
 List<ContentKey> keys =
   Arrays.asList(
   ContentKey.of("your-namespace1", "your-table-name1"),
-  ContentKey.of("your-namespace2", "your-table-name2"),
-  ContentKey.of("your-namespace3", "your-table-name3"));
+  ContentKey.of("your-namespace1", "your-table-name2"),
+  ContentKey.of("your-namespace2", "your-table-name3"));
 Map<ContentKey, Content> allContent = api.getContent().keys(keys).refName("dev").get();
 ```
 
