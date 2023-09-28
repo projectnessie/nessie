@@ -747,11 +747,6 @@ jobs:
           cache-read-only: true
           arguments: :iceberg:iceberg-nessie:test --scan
 
-      - name: Nessie Spark 3.1 Extensions test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest --scan
-
       - name: Nessie Spark 3.2 / 2.12 Extensions test
         uses: gradle/gradle-build-action@v2
         with:
