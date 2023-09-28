@@ -45,6 +45,37 @@ public class TestTableReference {
           "12345678abcdef12345678abcdef",
           null
         },
+        // relative hashes - unambiguous
+        new Object[] {
+          "`simple_name@ref#12345678abcdef12345678abcdef~1^2*2023-09-28T12:34:56.789Z`",
+          "simple_name",
+          "ref",
+          "12345678abcdef12345678abcdef~1^2*2023-09-28T12:34:56.789Z",
+          null
+        },
+        new Object[] {
+          "`simple_name#12345678abcdef12345678abcdef~1^2*2023-09-28T12:34:56.789Z`",
+          "simple_name",
+          null,
+          "12345678abcdef12345678abcdef~1^2*2023-09-28T12:34:56.789Z",
+          null
+        },
+        // relative hashes - ambiguous
+        new Object[] {
+          "`simple_name@ref#~1^2*2023-09-28T12:34:56.789Z`",
+          "simple_name",
+          "ref",
+          "~1^2*2023-09-28T12:34:56.789Z",
+          null
+        },
+        new Object[] {
+          "`simple_name#~1^2*2023-09-28T12:34:56.789Z`",
+          "simple_name",
+          null,
+          "~1^2*2023-09-28T12:34:56.789Z",
+          null
+        },
+        // timestamps
         new Object[] {"`simple_name#2020-12-24`", "simple_name", null, null, "2020-12-24"},
         new Object[] {"`simple_name@ref#2020-12-24`", "simple_name", "ref", null, "2020-12-24"});
   }

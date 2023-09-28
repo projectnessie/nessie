@@ -127,7 +127,7 @@ public abstract class TableReference {
       b.reference(refName);
     }
     if (hashOrTimestamp != null) {
-      if (Validation.isValidHash(hashOrTimestamp)) {
+      if (Validation.isValidHashOrRelativeSpec(hashOrTimestamp)) {
         b.hash(hashOrTimestamp);
       } else {
         b.timestamp(hashOrTimestamp);
