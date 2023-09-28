@@ -83,11 +83,12 @@ SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>`;
 ```
 
 As well, similar to [Spark](spark.md#reading), you can read tables from specific
-branches or hashes from within a `SELECT` statement. The general pattern is `<table_name>@<branch>` or `<table>#<hash>` (e.g: `salaries@main`):
+branches or hashes from within a `SELECT` statement. The general pattern is `<table_name>@<branch>` or `<table>#<hash>` or `<table>@<branch>#<hash>` (e.g: `salaries@main`):
 
 ```sql
 SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>@<branch>`;
 SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>#<hash>`;
+SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>@<branch>#<hash>`;
 ```
 
 ## Other DDL statements
