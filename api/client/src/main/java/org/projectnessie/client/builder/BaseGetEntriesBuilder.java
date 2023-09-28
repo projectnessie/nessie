@@ -38,7 +38,6 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   protected ContentKey maxKey;
   protected ContentKey prefixKey;
   protected String filter;
-  protected Integer namespaceDepth;
   protected boolean withContent;
 
   protected BaseGetEntriesBuilder(BiFunction<PARAMS, String, PARAMS> paramsForPage) {
@@ -95,8 +94,7 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
 
   @Override
   public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
-    this.namespaceDepth = namespaceDepth;
-    return this;
+    throw new UnsupportedOperationException("namespaceDepth is not supported for Nessie API v2");
   }
 
   @Override
