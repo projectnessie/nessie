@@ -50,7 +50,8 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
     val isBranch = ctx.TAG == null
     val refName = ctx.reference.getText
     val catalogName = asText(ctx.catalog)
-    DropReferenceCommand(refName, isBranch, catalogName)
+    val failOnDrop = ctx.IF() == null && ctx.EXISTS() == null
+    DropReferenceCommand(refName, isBranch, catalogName, failOnDrop)
   }
 
   override def visitNessieUseRef(

@@ -20,7 +20,8 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 case class DropReferenceCommand(
     reference: String,
     isBranch: Boolean,
-    catalog: Option[String]
+    catalog: Option[String],
+    failOnDrop: Boolean
 ) extends Command {
   override lazy val output: Seq[Attribute] =
     NessieCommandOutputs.dropReferenceOutput()

@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Spark SQL extensions now support the `DROP ... IF EXISTS` syntax for branches and tags.
+
 ### Changes
 
 - Introduces sizing of the Nessie object cache using a relative value of the max Java heap size.

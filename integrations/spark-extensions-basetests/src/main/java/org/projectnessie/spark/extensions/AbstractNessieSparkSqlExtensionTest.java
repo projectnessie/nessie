@@ -133,7 +133,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   }
 
   @Test
-  void testCreateBranchInExists() throws NessieNotFoundException {
+  void testCreateBranchIfNotExists() throws NessieNotFoundException {
     createBranchForTest(refName);
 
     assertThat(sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName))
@@ -141,6 +141,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(api.getReference().refName(refName).get())
         .isEqualTo(Branch.of(refName, defaultHash()));
 
+    assertThat(sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName))
+        .containsExactly(row("Branch", refName, defaultHash()));
     assertThatThrownBy(() -> sql("CREATE BRANCH %s IN nessie", refName))
         .isInstanceOf(NessieConflictException.class)
         .hasMessage("Named reference '%s' already exists.", refName);
@@ -210,6 +212,34 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> api.getReference().refName(refName).get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference '%s' not found", refName);
+  }
+
+  @Test
+  void testDropBranchIfExists() throws NessieNotFoundException {
+    createBranchForTest(refName);
+
+    assertThat(sql("DROP BRANCH IF EXISTS %s IN nessie", refName)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> api.getReference().refName(refName).get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference '%s' not found", refName);
+    assertThat(sql("DROP BRANCH IF EXISTS %s IN nessie", refName)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> sql("DROP BRANCH %s IN nessie", refName))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference '%s' not found", refName);
+  }
+
+  @Test
+  void testDropTagIfExists() throws NessieNotFoundException {
+    createTagForTest(refName);
+
+    assertThat(sql("DROP TAG IF EXISTS %s IN nessie", refName)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> api.getReference().refName(refName).get())
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Named reference '%s' not found", refName);
+    assertThat(sql("DROP TAG IF EXISTS %s IN nessie", refName)).containsExactly(row("OK"));
+    assertThatThrownBy(() -> sql("DROP TAG %s IN nessie", refName))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage("Named reference '%s' not found", refName);
   }

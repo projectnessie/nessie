@@ -65,7 +65,7 @@ singleStatement
 
 statement
     : CREATE (BRANCH|TAG) (IF NOT EXISTS)? reference=identifier (IN catalog=identifier)? (FROM fromRef=identifier)?    #nessieCreateRef
-    | DROP (BRANCH|TAG) reference=identifier (IN catalog=identifier)?                                 #nessieDropRef
+    | DROP (BRANCH|TAG) (IF EXISTS)? reference=identifier (IN catalog=identifier)?                                     #nessieDropRef
     | USE REFERENCE reference=identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?          #nessieUseRef
     | LIST REFERENCES (IN catalog=identifier)?                                                        #nessieListRef
     | SHOW REFERENCE (IN catalog=identifier)?                                                         #nessieShowRef
