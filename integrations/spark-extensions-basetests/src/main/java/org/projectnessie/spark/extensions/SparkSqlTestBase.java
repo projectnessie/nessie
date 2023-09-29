@@ -40,7 +40,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -72,7 +72,7 @@ public abstract class SparkSqlTestBase {
 
   protected String refName;
   protected String additionalRefName;
-  protected NessieApiV1 api;
+  protected NessieApiV2 api;
 
   protected String nessieApiUri() {
     return format(
@@ -108,7 +108,7 @@ public abstract class SparkSqlTestBase {
   protected void setupSparkAndApi(TestInfo testInfo)
       throws NessieNotFoundException, NessieConflictException {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.builder().withUri(nessieApiUri());
-    api = configureNessieHttpClient(httpClientBuilder).build(NessieApiV1.class);
+    api = configureNessieHttpClient(httpClientBuilder).build(NessieApiV2.class);
 
     refName = testInfo.getTestMethod().map(Method::getName).get();
     additionalRefName = refName + "_other";

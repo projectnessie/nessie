@@ -18,7 +18,7 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.client.api.NessieApiV2
 import org.projectnessie.model.Reference
 
 abstract class NessieExec(
@@ -26,7 +26,7 @@ abstract class NessieExec(
     catalog: Option[String]
 ) extends V2CommandExec {
 
-  protected def runInternal(api: NessieApiV1): Seq[InternalRow]
+  protected def runInternal(api: NessieApiV2): Seq[InternalRow]
 
   protected def run(): Seq[InternalRow] = {
     val api = NessieUtils.nessieAPI(currentCatalog, catalog)

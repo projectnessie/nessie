@@ -18,7 +18,7 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.client.api.NessieApiV2
 
 import scala.collection.JavaConverters._
 
@@ -28,9 +28,7 @@ abstract class BaseListReferenceExec(
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  override protected def runInternal(
-      api: NessieApiV1
-  ): Seq[InternalRow] = {
+  override protected def runInternal(api: NessieApiV2): Seq[InternalRow] = {
     api.getAllReferences
       .stream()
       .iterator()

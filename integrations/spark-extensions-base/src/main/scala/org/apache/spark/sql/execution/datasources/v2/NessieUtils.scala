@@ -19,7 +19,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.client.NessieConfigConstants
-import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.client.api.NessieApiV2
 import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.error.{
   NessieNotFoundException,
@@ -48,7 +48,7 @@ object NessieUtils {
   def calculateRef(
       branch: String,
       tsOrHash: Option[String],
-      api: NessieApiV1
+      api: NessieApiV2
   ): Reference = {
     val refName = unquoteRefName(branch)
 
@@ -88,7 +88,7 @@ object NessieUtils {
   private def findReferenceFromHash(
       branch: String,
       requestedHash: String,
-      api: NessieApiV1
+      api: NessieApiV2
   ) = {
     val commit = Option(
       api.getCommitLog
@@ -117,7 +117,7 @@ object NessieUtils {
 
   private def findReferenceFromTimestamp(
       branch: String,
-      api: NessieApiV1,
+      api: NessieApiV2,
       timestamp: Instant
   ) = {
     val commit = Option(
@@ -161,7 +161,7 @@ object NessieUtils {
   def nessieAPI(
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
-  ): NessieApiV1 = {
+  ): NessieApiV2 = {
     val maybeIcebergCatalog = getBaseIcebergCatalog(currentCatalog, catalog)
     val errorPre =
       "The command works only when the catalog is a NessieCatalog or a RESTCatalog using the Nessie Catalog Server"
@@ -223,7 +223,7 @@ object NessieUtils {
     HttpClientBuilder
       .builder()
       .fromConfig(nessieClientConfigMapper)
-      .build(classOf[NessieApiV1])
+      .build(classOf[NessieApiV2])
   }
 
   /** Allow resolving a property via the environment.
@@ -461,7 +461,7 @@ object NessieUtils {
   }
 
   def getCurrentRef(
-      api: NessieApiV1,
+      api: NessieApiV2,
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
   ): Reference = {
