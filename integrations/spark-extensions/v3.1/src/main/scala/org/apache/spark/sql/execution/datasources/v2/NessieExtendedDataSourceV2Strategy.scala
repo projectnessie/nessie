@@ -41,13 +41,14 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
         failOnCreate
       ) :: Nil
 
-    case c @ DropReferenceCommand(branch, isBranch, catalog) =>
+    case c @ DropReferenceCommand(branch, isBranch, catalog, failOnDrop) =>
       DropReferenceExec(
         c.output,
         branch,
         spark.sessionState.catalogManager.currentCatalog,
         isBranch,
-        catalog
+        catalog,
+        failOnDrop
       ) :: Nil
 
     case c @ UseReferenceCommand(branch, ts, catalog) =>

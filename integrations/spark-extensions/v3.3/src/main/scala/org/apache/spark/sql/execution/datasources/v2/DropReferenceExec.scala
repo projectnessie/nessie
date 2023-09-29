@@ -23,12 +23,14 @@ case class DropReferenceExec(
     branch: String,
     currentCatalog: CatalogPlugin,
     isBranch: Boolean,
-    catalog: Option[String]
+    catalog: Option[String],
+    failOnDrop: Boolean
 ) extends BaseDropReferenceExec(
       output,
       branch,
       currentCatalog,
       isBranch,
-      catalog
+      catalog,
+      failOnDrop
     )
     with LeafV2CommandExec {}
