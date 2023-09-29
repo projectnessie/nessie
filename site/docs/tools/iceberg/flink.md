@@ -68,6 +68,8 @@ The following properties are **required** in Flink when creating the Nessie Cata
 To create tables in Flink that are managed by Nessie/Iceberg, you will need to specify the catalog name in addition to the database whenever you issue `CREATE TABLE` statement, e.g:
 
 ```sql
+CREATE DATABASE `<catalog_name>`.`<database_name>`;
+
 CREATE TABLE `<catalog_name>`.`<database_name>`.`<table_name>` (
     id BIGINT COMMENT 'unique id',
     data STRING

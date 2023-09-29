@@ -258,6 +258,8 @@ Spark3 table creation/insertion is as follows:
     ```
 === "SQL"
     ``` sql
+    CREATE NAMESPACE nessie.testing;
+
     CREATE TABLE nessie.testing.city (
         C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
     ) USING iceberg PARTITIONED BY (N_NATIONKEY)
