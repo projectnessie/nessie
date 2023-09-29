@@ -30,7 +30,7 @@ Additional configuration details can be found in the [Spark via Iceberg](iceberg
 The current grammar is shown below:
 ```
 : CREATE (BRANCH|TAG) (IF NOT EXISTS)? reference=identifier (IN catalog=identifier)? (FROM fromRef=identifier)?
-| DROP (BRANCH|TAG) identifier (IN catalog=identifier)?
+| DROP (BRANCH|TAG) (IF EXISTS)? identifier (IN catalog=identifier)?
 | USE REFERENCE reference=identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?
 | LIST REFERENCES (IN catalog=identifier)?
 | SHOW REFERENCE (IN catalog=identifier)?
@@ -64,6 +64,8 @@ Dropping a branch `dev` in the `nessie` catalog (in case it exists):
 Dropping a tag `devTag` in the `nessie` catalog (in case it exists):
 
 * `DROP TAG IF EXISTS devTag IN nessie`
+
+Note: the `IF EXISTS` clause is optional and is only supported for Nessie 0.72 or higher.
 
 ## Switching to a Branch/Tag
 
