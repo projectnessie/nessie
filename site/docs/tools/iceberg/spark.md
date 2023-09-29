@@ -258,6 +258,8 @@ Spark3 table creation/insertion is as follows:
     ```
 === "SQL"
     ``` sql
+    CREATE NAMESPACE nessie.testing;
+
     CREATE TABLE nessie.testing.city (
         C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
     ) USING iceberg PARTITIONED BY (N_NATIONKEY)
@@ -292,7 +294,7 @@ To read a Nessie table in iceberg simply:
 
 The examples above all use the default branch defined on initialisation. There are several ways to reference specific
 branches or hashes from within a read statement. We will take a look at a few now from pyspark3, the rules are the same
-across all environments though. The general pattern is `<table>@<branch>`. Table must be present and either
+across all environments though. The general pattern is `<table>@<branch>` or `<table>#<hash>` or `<table>@<branch>#<hash>`. Table must be present and either
 branch and/or hash are optional. We will throw an error if branch or hash don't exist.
 Branch or hash references in the table name will override passed `option`s and the settings in the
 Spark/Hadoop configs.
@@ -301,13 +303,16 @@ Spark/Hadoop configs.
 # read from branch dev
 spark.read().format("iceberg").load("testing.region@dev")
 # read specifically from hash
-spark.read().format("iceberg").load("testing.region@<hash>")
+spark.read().format("iceberg").load("testing.region#<hash>")
+# read specifically from hash in dev branch
+spark.read().format("iceberg").load("testing.region@dev#<hash>")
 
 spark.sql("SELECT * FROM nessie.testing.`region@dev`")
-spark.sql("SELECT * FROM nessie.testing.`region@<hash>`")
+spark.sql("SELECT * FROM nessie.testing.`region#<hash>`")
+spark.sql("SELECT * FROM nessie.testing.`region@dev#<hash>`")
 ```
 
-Notice in the SQL statements the `table@branch` must be escaped separately from namespace or catalog arguments.
+Notice in the SQL statements the `<table>@<branch>` or `<table>#<hash>` or `<table>@<branch>#<hash>` must be escaped separately from namespace or catalog arguments.
 
 Future versions may add the ability to specify a timestamp to query the data at a specific point in time
 (time-travel). In the meantime the history can be viewed on the command line or via the python client and a specific

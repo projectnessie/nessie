@@ -68,6 +68,8 @@ The following properties are **required** in Flink when creating the Nessie Cata
 To create tables in Flink that are managed by Nessie/Iceberg, you will need to specify the catalog name in addition to the database whenever you issue `CREATE TABLE` statement, e.g:
 
 ```sql
+CREATE DATABASE `<catalog_name>`.`<database_name>`;
+
 CREATE TABLE `<catalog_name>`.`<database_name>`.`<table_name>` (
     id BIGINT COMMENT 'unique id',
     data STRING
@@ -83,10 +85,12 @@ SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>`;
 ```
 
 As well, similar to [Spark](spark.md#reading), you can read tables from specific
-branches or hashes from within a `SELECT` statement. The general pattern is `<table_name>@<branch/ref>` (e.g: `salaries@main`):
+branches or hashes from within a `SELECT` statement. The general pattern is `<table_name>@<branch>` or `<table>#<hash>` or `<table>@<branch>#<hash>` (e.g: `salaries@main`):
 
 ```sql
-SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>@<branch/ref>`;
+SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>@<branch>`;
+SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>#<hash>`;
+SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>@<branch>#<hash>`;
 ```
 
 ## Other DDL statements

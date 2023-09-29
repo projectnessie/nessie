@@ -63,7 +63,7 @@ Whereby the above properties are explained as below:
 
 To read and write into tables that are managed by Iceberg and Nessie, typical Hive SQL queries can be used. Refer to this documentation [here](https://iceberg.apache.org/hive/#querying-with-sql) for more information.
 
-**Note**: Hive doesn't support the notation of `table@branch`, therefore everytime you want to execute against a specific branch, you will need to set this property to point to the working branch, e.g: `SET iceberg.catalog.<catalog_name>.ref=main`. E.g:
+**Note**: Hive doesn't support the notation of `<table>@<branch>`, therefore everytime you want to execute against a specific branch, you will need to set this property to point to the working branch, e.g: `SET iceberg.catalog.<catalog_name>.ref=main`. E.g:
 ```
 SET iceberg.catalog.<catalog_name>.ref=dev
 

@@ -25,23 +25,23 @@ tests) + Jackson's DataBinding and JAX-RS modules (any version from the last ~3+
 ## API
 
 The `NessieClientBuilder` and concrete builder implementations (such as `HttpClientBuilder`) provide an easy way of configuring and building a `NessieApi`. The currently stable API that should be used
-is `NessieApiV1`, which can be instantiated as shown below:
+is `NessieApiV2`, which can be instantiated as shown below:
 
 
 ```java
 
 import java.net.URI;
 import java.util.List;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.model.Reference;
 
-NessieApiV2 api = NessieClientBuilder.builder()
-  .withUri(URI.create("http://localhost:19121/api/v2"))
+NessieApiV2 api = NessieClientBuilder.createClientBuilder(null, null)
+  .withUri(URI.create("http://localhost:19120/api/v2"))
   .build(NessieApiV2.class);
 
-List<Reference> references = api.getAllReferences().get();
-references.stream()
+api.getAllReferences()
+  .stream()
   .map(Reference::getName)
   .forEach(System.out::println);
 ```
@@ -131,8 +131,8 @@ config.getVersion();
 Creates a new commit by adding metadata for an `IcebergTable` under the specified `ContentKey` instance represented by `key` and deletes content represented by `key2`
 
 ```java
-ContentKey key = ContentKey.of("table.name.space", "name");
-ContentKey key2 = ContentKey.of("other.name.space", "name2");
+ContentKey key = ContentKey.of("your-namespace", "your-table-name");
+ContentKey key2 = ContentKey.of("your-namespace2", "your-table-name2");
 IcebergTable icebergTable = IcebergTable.of("path1", 42L);
 api.commitMultipleOperations()
     .branchName(branch)
@@ -147,7 +147,7 @@ api.commitMultipleOperations()
 
 Fetches the content for a single `ContentKey`
 ```java
-ContentKey key = ContentKey.of("table.name.space", "name");
+ContentKey key = ContentKey.of("your-namespace", "your-table-name");
 Map<ContentKey, Content> map = api.getContent().key(key).refName("dev").get();
 ```
 
@@ -155,9 +155,9 @@ Fetches the content for multiple `ContentKey` instances
 ```java
 List<ContentKey> keys =
   Arrays.asList(
-  ContentKey.of("table.name.space", "name1"),
-  ContentKey.of("table.name.space", "name2"),
-  ContentKey.of("table.name.space", "name3"));
+  ContentKey.of("your-namespace1", "your-table-name1"),
+  ContentKey.of("your-namespace1", "your-table-name2"),
+  ContentKey.of("your-namespace2", "your-table-name3"));
 Map<ContentKey, Content> allContent = api.getContent().keys(keys).refName("dev").get();
 ```
 
@@ -212,7 +212,7 @@ Note that `BASIC` is not supported in production and should only be used for dev
 ```java
 NessieApiV1 api =
   HttpClientBuilder.builder()
-  .withUri(URI.create("http://localhost:19121/api/v1"))
+  .withUri(URI.create("http://localhost:19120/api/v1"))
   .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
   .build(NessieApiV1.class);
 ```
@@ -221,7 +221,7 @@ The `BearerAuthenticationProvider` allows connecting to a Nessie server that has
 ```java
 NessieApiV1 api =
   HttpClientBuilder.builder()
-  .withUri(URI.create("http://localhost:19121/api/v1"))
+  .withUri(URI.create("http://localhost:19120/api/v1"))
   .withAuthentication(BearerAuthenticationProvider.create("bearerToken"))
   .build(NessieApiV1.class);
 ```

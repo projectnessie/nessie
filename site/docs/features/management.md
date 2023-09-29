@@ -177,7 +177,7 @@ Cut-off policies are parsed using the following logic and precedence:
 
 ### Running the _sweep_ (or _expire_) phase: Identifying live content references
 
-Nessie GC's sweep phase uses the the actual table format, for example Iceberg, to map the collected
+Nessie GC's sweep phase uses the actual table format, for example Iceberg, to map the collected
 live content references to live file references. The _sweep_ phase operates on each content-ID. So
 it collects the live file references for each content ID. Those file references refer to Iceberg
 assets:
