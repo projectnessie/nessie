@@ -65,7 +65,8 @@ Dropping a tag `devTag` in the `nessie` catalog (in case it exists):
 
 * `DROP TAG IF EXISTS devTag IN nessie`
 
-Note: the `IF EXISTS` clause is optional and is only supported for Nessie 0.72 or higher.
+Note: the `IF EXISTS` clause is optional and is only supported for Nessie SQL Extensions 0.72 or 
+higher.
 
 ## Switching to a Branch/Tag
 
