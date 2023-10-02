@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +62,7 @@ import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
 @ExtendWith(NessieUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag("nessie-multi-env")
 public class ITUpgradePath {
 
   @NessieVersion Version version;

@@ -125,6 +125,7 @@ import org.projectnessie.model.types.GenericRepositoryConfig;
 import org.projectnessie.model.types.ImmutableGenericRepositoryConfig;
 
 /** Nessie-API tests. */
+@org.junit.jupiter.api.Tag("nessie-multi-env")
 @NessieApiVersions // all versions
 public abstract class BaseTestNessieApi {
 

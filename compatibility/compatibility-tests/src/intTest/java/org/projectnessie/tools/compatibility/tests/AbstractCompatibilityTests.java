@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
@@ -56,6 +57,7 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
+@Tag("nessie-multi-env")
 public abstract class AbstractCompatibilityTests {
 
   @NessieAPI protected NessieApiV1 api;
