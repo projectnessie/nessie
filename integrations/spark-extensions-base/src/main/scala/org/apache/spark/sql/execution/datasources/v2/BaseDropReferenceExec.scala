@@ -20,7 +20,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV2
+import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.error.NessieReferenceNotFoundException
 
 abstract class BaseDropReferenceExec(
@@ -32,7 +32,9 @@ abstract class BaseDropReferenceExec(
     failOnDrop: Boolean
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  override protected def runInternal(api: NessieApiV2): Seq[InternalRow] = {
+  override protected def runInternal(
+      api: NessieApiV1
+  ): Seq[InternalRow] = {
     val refName = unquoteRefName(branch)
     try {
       val hash = api.getReference.refName(refName).get().getHash

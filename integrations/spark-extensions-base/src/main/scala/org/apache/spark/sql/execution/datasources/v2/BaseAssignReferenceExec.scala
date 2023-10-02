@@ -19,7 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
-import org.projectnessie.client.api.NessieApiV2
+import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.model.{Branch, Tag}
 
 abstract class BaseAssignReferenceExec(
@@ -32,7 +32,9 @@ abstract class BaseAssignReferenceExec(
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
 
-  override protected def runInternal(api: NessieApiV2): Seq[InternalRow] = {
+  override protected def runInternal(
+      api: NessieApiV1
+  ): Seq[InternalRow] = {
     val refNameAssign = unquoteRefName(refNameToAssign)
     val currentHash = api.getReference().refName(refNameAssign).get().getHash
 

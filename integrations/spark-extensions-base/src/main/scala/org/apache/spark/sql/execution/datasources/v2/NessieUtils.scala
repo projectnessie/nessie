@@ -18,13 +18,10 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.projectnessie.client.NessieConfigConstants
-import org.projectnessie.client.api.NessieApiV2
-import org.projectnessie.client.http.HttpClientBuilder
-import org.projectnessie.error.{
-  NessieNotFoundException,
-  NessieReferenceNotFoundException
-}
+import org.projectnessie.client.{NessieClientBuilder, NessieConfigConstants}
+import org.projectnessie.client.api.{NessieApiV1, NessieApiV2}
+import org.projectnessie.client.config.NessieClientConfigSource
+import org.projectnessie.error.{NessieNotFoundException, NessieReferenceNotFoundException}
 import org.projectnessie.model.Reference.ReferenceType
 import org.projectnessie.model._
 
@@ -48,7 +45,7 @@ object NessieUtils {
   def calculateRef(
       branch: String,
       tsOrHash: Option[String],
-      api: NessieApiV2
+      api: NessieApiV1
   ): Reference = {
     val refName = unquoteRefName(branch)
 
@@ -88,7 +85,7 @@ object NessieUtils {
   private def findReferenceFromHash(
       branch: String,
       requestedHash: String,
-      api: NessieApiV2
+      api: NessieApiV1
   ) = {
     val commit = Option(
       api.getCommitLog
@@ -117,7 +114,7 @@ object NessieUtils {
 
   private def findReferenceFromTimestamp(
       branch: String,
-      api: NessieApiV2,
+      api: NessieApiV1,
       timestamp: Instant
   ) = {
     val commit = Option(
@@ -161,7 +158,7 @@ object NessieUtils {
   def nessieAPI(
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
-  ): NessieApiV2 = {
+  ): NessieApiV1 = {
     val maybeIcebergCatalog = getBaseIcebergCatalog(currentCatalog, catalog)
     val errorPre =
       "The command works only when the catalog is a NessieCatalog or a RESTCatalog using the Nessie Catalog Server"
@@ -173,7 +170,7 @@ object NessieUtils {
 
     val catalogName = catalog.getOrElse(currentCatalog.name)
 
-    val nessieClientConfigMapper: java.util.function.Function[String, String] =
+    val nessieClientConfigMapper: NessieClientConfigSource =
       icebergCatalog.getClass.getSimpleName match {
         case "NessieCatalog" =>
           val sparkConf = SparkSession.active.sparkContext.conf
@@ -198,7 +195,7 @@ object NessieUtils {
                 // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie Catalog
                 // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely assume
                 // that `nessie.core-base-uri` contains a `/` terminated URI.
-                catalogProperties.get("nessie.core-base-uri") + "v1"
+                catalogProperties.get("nessie.core-base-uri") + "v2"
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID =>
                 credential.clientId
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET =>
@@ -220,10 +217,15 @@ object NessieUtils {
           )
       }
 
-    HttpClientBuilder
-      .builder()
-      .fromConfig(nessieClientConfigMapper)
-      .build(classOf[NessieApiV2])
+    val nessieClientBuilder = NessieClientBuilder.createClientBuilderFromSystemSettings(nessieClientConfigMapper)
+    nessieClientConfigMapper.getValue("nessie.client-api-version") match {
+      case null | "1" =>
+        nessieClientBuilder.build(classOf[NessieApiV1])
+      case "2" =>
+        nessieClientBuilder.build(classOf[NessieApiV2])
+      case unsupported =>
+        throw new IllegalArgumentException(String.format("Unsupported client-api-version value: %s. Can only be 1 or 2", unsupported))
+    }
   }
 
   /** Allow resolving a property via the environment.
@@ -461,7 +463,7 @@ object NessieUtils {
   }
 
   def getCurrentRef(
-      api: NessieApiV2,
+      api: NessieApiV1,
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
   ): Reference = {
