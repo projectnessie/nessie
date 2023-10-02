@@ -57,7 +57,7 @@ errorprone-core = { module = "com.google.errorprone:error_prone_core", version.r
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
-google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.27.3" }
+google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.27.4" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
 guava = { module = "com.google.guava:guava", version = "32.1.2-jre" }
 h2 = { module = "com.h2database:h2", version = "2.2.224" }
