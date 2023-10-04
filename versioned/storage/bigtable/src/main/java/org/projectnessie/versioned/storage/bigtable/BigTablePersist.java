@@ -122,7 +122,7 @@ public class BigTablePersist implements Persist {
   public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     try {
       ByteString key = dbKey(name);
-      Row row = backend.client().readRow(backend.tableRefs, key);
+      Row row = backend.readClient().readRow(backend.tableRefs, key);
       return row != null ? referenceFromRow(row) : null;
     } catch (ApiException e) {
       throw apiException(e);
@@ -167,7 +167,7 @@ public class BigTablePersist implements Persist {
 
       boolean success =
           backend
-              .client()
+              .writeClient()
               .checkAndMutateRow(
                   ConditionalRowMutation.create(backend.tableRefs, key)
                       .condition(condition)
@@ -274,7 +274,7 @@ public class BigTablePersist implements Persist {
 
   private Boolean casReference(ByteString key, Filter condition, Mutation mutation) {
     return backend
-        .client()
+        .writeClient()
         .checkAndMutateRow(
             ConditionalRowMutation.create(backend.tableRefs, key)
                 .condition(condition)
@@ -298,7 +298,7 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(id);
 
-      Row row = backend.client().readRow(backend.tableObjs, key);
+      Row row = backend.readClient().readRow(backend.tableObjs, key);
       if (row != null) {
         ByteBuffer obj =
             row.getCells(FAMILY_OBJS, QUALIFIER_OBJS).get(0).getValue().asReadOnlyByteBuffer();
@@ -379,7 +379,7 @@ public class BigTablePersist implements Persist {
       ConditionalRowMutation conditionalRowMutation =
           mutationForStoreObj(obj, ignoreSoftSizeRestrictions);
 
-      boolean success = backend.client().checkAndMutateRow(conditionalRowMutation);
+      boolean success = backend.writeClient().checkAndMutateRow(conditionalRowMutation);
       return !success;
     } catch (ApiException e) {
       throw apiException(e);
@@ -447,7 +447,7 @@ public class BigTablePersist implements Persist {
       Obj obj = objs[i];
       if (obj != null) {
         ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
-        futures[idx] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
+        futures[idx] = backend.writeClient().checkAndMutateRowAsync(conditionalRowMutation);
       }
       idx++;
     }
@@ -471,7 +471,7 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(id);
       backend
-          .client()
+          .writeClient()
           .mutateRow(RowMutation.create(backend.tableObjs, key, Mutation.create().deleteRow()));
     } catch (ApiException e) {
       throw apiException(e);
@@ -484,7 +484,7 @@ public class BigTablePersist implements Persist {
       return;
     }
     try (Batcher<RowMutationEntry, Void> batcher =
-        backend.client().newBulkMutationBatcher(backend.tableObjs)) {
+        backend.writeClient().newBulkMutationBatcher(backend.tableObjs)) {
       for (ObjId id : ids) {
         ByteString key = dbKey(id);
         batcher.add(RowMutationEntry.create(key).deleteRow());
@@ -511,7 +511,7 @@ public class BigTablePersist implements Persist {
                   obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit()));
 
       backend
-          .client()
+          .writeClient()
           .mutateRow(
               RowMutation.create(backend.tableObjs, key)
                   .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
@@ -528,7 +528,7 @@ public class BigTablePersist implements Persist {
     }
 
     try (Batcher<RowMutationEntry, Void> batcher =
-        backend.client().newBulkMutationBatcher(backend.tableObjs)) {
+        backend.writeClient().newBulkMutationBatcher(backend.tableObjs)) {
       for (Obj obj : objs) {
         ObjId id = obj.id();
         checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -604,7 +604,7 @@ public class BigTablePersist implements Persist {
       // }
 
       this.paginator = q.filter(filterChain).createPaginator(100);
-      this.iter = backend.client().readRows(paginator.getNextQuery()).iterator();
+      this.iter = backend.readClient().readRows(paginator.getNextQuery()).iterator();
     }
 
     @Override
@@ -618,7 +618,7 @@ public class BigTablePersist implements Persist {
             return endOfData();
           }
           paginator.advance(lastKey);
-          iter = backend.client().readRows(paginator.getNextQuery()).iterator();
+          iter = backend.readClient().readRows(paginator.getNextQuery()).iterator();
           lastKey = null;
           continue;
         }
@@ -670,9 +670,10 @@ public class BigTablePersist implements Persist {
 
     ApiFuture<Row>[] handles;
     if (num <= MAX_PARALLEL_READS) {
-      handles = doBulkFetch(ids, keyGen, key -> backend.client().readRowAsync(tableId, key));
+      handles = doBulkFetch(ids, keyGen, key -> backend.readClient().readRowAsync(tableId, key));
     } else {
-      try (Batcher<ByteString, Row> batcher = backend.client().newBulkReadRowsBatcher(tableId)) {
+      try (Batcher<ByteString, Row> batcher =
+          backend.readClient().newBulkReadRowsBatcher(tableId)) {
         handles = doBulkFetch(ids, keyGen, batcher::add);
       }
     }

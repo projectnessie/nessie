@@ -30,7 +30,22 @@ public interface QuarkusBigTableConfig {
   @WithDefault("nessie")
   String instanceId();
 
+  /**
+   * The main app profile id to use for the BigTable client.
+   *
+   * <p>This profile will be used for all BigTable operations, except for single-row transactions,
+   * which will use the profile specified by {@link #singleClusterAppProfileId()}.
+   */
   Optional<String> appProfileId();
+
+  /**
+   * The app profile id to use for single-row transactions. This profile is required to be a
+   * single-cluster profile.
+   *
+   * <p>If not provided, single-row transactions will use the profile specified by {@link
+   * #appProfileId()}.
+   */
+  Optional<String> singleClusterAppProfileId();
 
   Optional<String> quotaProjectId();
 

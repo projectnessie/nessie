@@ -55,7 +55,8 @@ final class BigTableBackend implements Backend {
   private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackend.class);
   static final ByteString REPO_REGEX_SUFFIX = copyFromUtf8("\\C*");
 
-  private final BigtableDataClient dataClient;
+  private final BigtableDataClient readClient;
+  private final BigtableDataClient writeClient;
   private final BigtableTableAdminClient tableAdminClient;
   private final boolean closeClient;
 
@@ -64,7 +65,8 @@ final class BigTableBackend implements Backend {
 
   BigTableBackend(
       @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config, boolean closeClient) {
-    this.dataClient = config.dataClient();
+    this.readClient = config.dataClient();
+    this.writeClient = config.singleClusterDataClient();
     this.tableAdminClient = config.tableAdminClient();
     this.tableRefs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
@@ -75,8 +77,14 @@ final class BigTableBackend implements Backend {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  BigtableDataClient client() {
-    return dataClient;
+  BigtableDataClient readClient() {
+    return readClient;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  BigtableDataClient writeClient() {
+    return writeClient;
   }
 
   @Nullable
@@ -97,7 +105,7 @@ final class BigTableBackend implements Backend {
     if (closeClient) {
       RuntimeException ex = null;
       try {
-        dataClient.close();
+        readClient.close();
       } catch (Exception e) {
         ex = new RuntimeException(e);
       }
@@ -139,7 +147,7 @@ final class BigTableBackend implements Backend {
 
   private boolean checkTableNoAdmin(String table) {
     try {
-      dataClient.readRow(table, "dummy");
+      readClient.readRow(table, "dummy");
       return true;
     } catch (NotFoundException nf) {
       LOGGER.error("Nessie table '{}' does not exist in Google Bigtable", table);
@@ -198,8 +206,8 @@ final class BigTableBackend implements Backend {
         Query.create(tableId)
             .filter(FILTERS.chain().filter(repoFilter(prefixes)).filter(FILTERS.value().strip()));
 
-    try (Batcher<RowMutationEntry, Void> batcher = dataClient.newBulkMutationBatcher(tableId)) {
-      ServerStream<Row> rows = dataClient.readRows(query);
+    try (Batcher<RowMutationEntry, Void> batcher = readClient.newBulkMutationBatcher(tableId)) {
+      ServerStream<Row> rows = readClient.readRows(query);
       for (Row row : rows) {
         batcher.add(RowMutationEntry.create(row.getKey()).deleteRow());
       }

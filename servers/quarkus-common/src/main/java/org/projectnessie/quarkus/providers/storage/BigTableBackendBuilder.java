@@ -82,19 +82,21 @@ public class BigTableBackendBuilder implements BackendBuilder {
         }
       }
       LOGGER.info(
-          "Connecting to Google BigTable using project ID {}, instance ID {}, profile {}, via endpoint {}",
+          "Connecting to Google BigTable using project ID {}, instance ID {}, profile {}, single-cluster profile {}, via endpoint {}",
           projectId,
           bigTableConfig.instanceId(),
           bigTableConfig.appProfileId().orElse("(default)"),
+          bigTableConfig.singleClusterAppProfileId().orElse("(default)"),
           bigTableConfig.endpoint().orElse("(default)"));
     } else {
       LOGGER.warn(
-          "Connecting to Google BigTable emulator {}:{} using project ID {}, instance ID {}, profile {}",
+          "Connecting to Google BigTable emulator {}:{} using project ID {}, instance ID {}, profile {}, single-cluster profile {}",
           bigTableConfig.emulatorHost().get(),
           bigTableConfig.emulatorPort(),
           projectId,
           bigTableConfig.instanceId(),
-          bigTableConfig.appProfileId().orElse("(default)"));
+          bigTableConfig.appProfileId().orElse("(default)"),
+          bigTableConfig.singleClusterAppProfileId().orElse("(default)"));
     }
 
     try {
@@ -105,7 +107,6 @@ public class BigTableBackendBuilder implements BackendBuilder {
                   .setCredentialsProvider(NoCredentialsProvider.create())
               : BigtableDataSettings.newBuilder().setCredentialsProvider(credentialsProvider));
       dataSettings.setProjectId(projectId).setInstanceId(bigTableConfig.instanceId());
-      bigTableConfig.appProfileId().ifPresent(dataSettings::setAppProfileId);
       bigTableConfig.mtlsEndpoint().ifPresent(dataSettings.stubSettings()::setMtlsEndpoint);
       bigTableConfig.quotaProjectId().ifPresent(dataSettings.stubSettings()::setQuotaProjectId);
       bigTableConfig.endpoint().ifPresent(dataSettings.stubSettings()::setEndpoint);
@@ -143,8 +144,18 @@ public class BigTableBackendBuilder implements BackendBuilder {
           bigTableConfig.initialRpcTimeout(),
           bigTableConfig.initialRetryDelay());
 
-      LOGGER.info("Creating Google BigTable data client...");
+      LOGGER.info("Creating Google BigTable data clients...");
+
+      bigTableConfig.appProfileId().ifPresent(dataSettings::setAppProfileId);
       BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());
+
+      BigtableDataClient singleClusterDataClient;
+      if (bigTableConfig.singleClusterAppProfileId().isPresent()) {
+        dataSettings.setAppProfileId(bigTableConfig.singleClusterAppProfileId().get());
+        singleClusterDataClient = BigtableDataClient.create(dataSettings.build());
+      } else {
+        singleClusterDataClient = dataClient;
+      }
 
       BigtableTableAdminClient tableAdminClient = null;
       if (bigTableConfig.noTableAdminClient()) {
@@ -185,6 +196,7 @@ public class BigTableBackendBuilder implements BackendBuilder {
       BigTableBackendConfig c =
           BigTableBackendConfig.builder()
               .dataClient(dataClient)
+              .singleClusterDataClient(singleClusterDataClient)
               .tableAdminClient(tableAdminClient)
               .tablePrefix(bigTableConfig.tablePrefix())
               .build();

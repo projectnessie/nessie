@@ -20,10 +20,27 @@ import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 @Value.Immutable
 public interface BigTableBackendConfig {
+
+  /**
+   * The main data client. This client is used for reads, and also writes if {@link
+   * #singleClusterDataClient()} is not present.
+   */
   BigtableDataClient dataClient();
+
+  /**
+   * The client to use for conditional writes, if present. If not present, {@link #dataClient()} is
+   * used for writes as well.
+   *
+   * <p>Conditional writes must use a single-cluster application profile.
+   */
+  @Default
+  default BigtableDataClient singleClusterDataClient() {
+    return dataClient();
+  }
 
   @Nullable
   @jakarta.annotation.Nullable

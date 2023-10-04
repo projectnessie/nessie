@@ -49,7 +49,7 @@ public class ITBigTablePersist extends AbstractPersistTests {
       BigTableBackend b = (BigTableBackend) backend;
       backend =
           new BigTableBackend(
-              BigTableBackendConfig.builder().dataClient(b.client()).build(), false);
+              BigTableBackendConfig.builder().dataClient(b.readClient()).build(), false);
     }
   }
 
