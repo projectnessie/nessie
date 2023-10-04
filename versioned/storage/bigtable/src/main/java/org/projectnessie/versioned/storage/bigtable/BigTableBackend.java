@@ -58,13 +58,13 @@ final class BigTableBackend implements Backend {
   private final BigtableDataClient readClient;
   private final BigtableDataClient writeClient;
   private final BigtableTableAdminClient tableAdminClient;
-  private final boolean closeClient;
+  private final boolean closeClients;
 
   final String tableRefs;
   final String tableObjs;
 
   BigTableBackend(
-      @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config, boolean closeClient) {
+      @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config, boolean closeClients) {
     this.readClient = config.dataClient();
     this.writeClient = config.singleClusterDataClient();
     this.tableAdminClient = config.tableAdminClient();
@@ -72,7 +72,7 @@ final class BigTableBackend implements Backend {
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
     this.tableObjs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
-    this.closeClient = closeClient;
+    this.closeClients = closeClients;
   }
 
   @Nonnull
@@ -102,12 +102,23 @@ final class BigTableBackend implements Backend {
 
   @Override
   public void close() {
-    if (closeClient) {
+    if (closeClients) {
       RuntimeException ex = null;
       try {
         readClient.close();
       } catch (Exception e) {
         ex = new RuntimeException(e);
+      }
+      try {
+        if (writeClient != null) {
+          writeClient.close();
+        }
+      } catch (Exception e) {
+        if (ex == null) {
+          ex = new RuntimeException(e);
+        } else {
+          ex.addSuppressed(e);
+        }
       }
       try {
         if (tableAdminClient != null) {
@@ -206,8 +217,8 @@ final class BigTableBackend implements Backend {
         Query.create(tableId)
             .filter(FILTERS.chain().filter(repoFilter(prefixes)).filter(FILTERS.value().strip()));
 
-    try (Batcher<RowMutationEntry, Void> batcher = readClient.newBulkMutationBatcher(tableId)) {
-      ServerStream<Row> rows = readClient.readRows(query);
+    try (Batcher<RowMutationEntry, Void> batcher = writeClient.newBulkMutationBatcher(tableId)) {
+      ServerStream<Row> rows = writeClient.readRows(query);
       for (Row row : rows) {
         batcher.add(RowMutationEntry.create(row.getKey()).deleteRow());
       }
