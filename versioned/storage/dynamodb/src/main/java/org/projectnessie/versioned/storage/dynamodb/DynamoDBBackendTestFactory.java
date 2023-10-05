@@ -16,7 +16,10 @@
 package org.projectnessie.versioned.storage.dynamodb;
 
 import com.google.common.annotations.VisibleForTesting;
+
 import java.util.Optional;
+
+import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +43,23 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
     return DynamoDBBackendFactory.NAME;
   }
 
+  @SuppressWarnings("ClassEscapesDefinedScope")
   @Override
   public DynamoDBBackend createNewBackend() {
-    return new DynamoDBBackend(buildNewClient(), true);
+    return createNewBackend(dynamoDBConfigBuilder().build(), true);
   }
+
+  @SuppressWarnings("ClassEscapesDefinedScope")
+  public DynamoDBBackend createNewBackend(DynamoDBBackendConfig dynamoDBBackendConfig, boolean closeClient) {
+    return new DynamoDBBackend(dynamoDBBackendConfig, closeClient);
+  }
+
+  @VisibleForTesting
+  public ImmutableDynamoDBBackendConfig.Builder dynamoDBConfigBuilder() {
+    return DynamoDBBackendConfig.builder()
+      .client(buildNewClient());
+  }
+
 
   @VisibleForTesting
   DynamoDbClient buildNewClient() {

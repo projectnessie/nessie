@@ -41,6 +41,6 @@ public class DynamoDBBackendFactory implements BackendFactory<DynamoDBBackendCon
   @jakarta.annotation.Nonnull
   public DynamoDBBackend buildBackend(
       @Nonnull @jakarta.annotation.Nonnull DynamoDBBackendConfig config) {
-    return new DynamoDBBackend(config.client(), false);
+    return new DynamoDBBackend(config, false);
   }
 }
