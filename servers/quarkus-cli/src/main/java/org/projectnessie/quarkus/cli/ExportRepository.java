@@ -131,9 +131,7 @@ public class ExportRepository extends BaseCommand {
   @CommandLine.Option(
       names = EXPORT_VERSION,
       description =
-          "The export version, defaults to "
-              + ExportImportConstants.DEFAULT_EXPORT_VERSION
-              + ".")
+          "The export version, defaults to " + ExportImportConstants.DEFAULT_EXPORT_VERSION + ".")
   private int exportVersion;
 
   @Override
