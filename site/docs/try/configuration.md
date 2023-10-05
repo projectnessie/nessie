@@ -118,12 +118,13 @@ A complete set of the Quarkus Cassandra extension configuration options can be f
 
 When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-| Property                                | Default values | Type          | Description                                                                                                                                         |
-|-----------------------------------------|----------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `quarkus.dynamodb.aws.region`           |                | `String`      | Sets DynamoDB AWS region.                                                                                                                           |
-| `quarkus.dynamodb.aws.credentials.type` |                |               | Sets the credentials provider that should be used to authenticate with AWS.                                                                         |
-| `quarkus.dynamodb.endpoint-override`    |                | `URI`         | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region. |
-| `quarkus.dynamodb.sync-client.type`     | `url`          | `url, apache` | Sets the type of the sync HTTP client implementation                                                                                                |
+| Property                                             | Default values | Type          | Description                                                                                                                                        |
+|------------------------------------------------------|----------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `quarkus.dynamodb.aws.region`                        |                | `String`      | Sets DynamoDB AWS region.                                                                                                                          |
+| `quarkus.dynamodb.aws.credentials.type`              |                |               | Sets the credentials provider that should be used to authenticate with AWS.                                                                        |
+| `quarkus.dynamodb.endpoint-override`                 |                | `URI`         | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region. |
+| `quarkus.dynamodb.sync-client.type`                  | `url`          | `url, apache` | Sets the type of the sync HTTP client implementation                                                                                               |
+| `nessie.version.store.persist.dynamodb.table-prefix` | n/a            | `String`      | Prefix for tables, default is no prefix.                                                                                                           |
 
 !!! info
 A complete set of DynamoDB configuration options for Quarkus can be found on [quarkiverse.github.io](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference)
