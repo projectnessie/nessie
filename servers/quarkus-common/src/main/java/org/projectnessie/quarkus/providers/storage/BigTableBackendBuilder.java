@@ -143,6 +143,11 @@ public class BigTableBackendBuilder implements BackendBuilder {
           bigTableConfig.initialRpcTimeout(),
           bigTableConfig.initialRetryDelay());
 
+      if (bigTableConfig.enableTelemetry()) {
+        BigtableDataSettings.enableOpenCensusStats();
+        BigtableDataSettings.enableGfeOpenCensusStats();
+      }
+
       LOGGER.info("Creating Google BigTable data client...");
       BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());
 
