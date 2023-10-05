@@ -30,6 +30,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 
 @Value.Immutable
 public abstract class NessieExporter {
@@ -90,6 +91,8 @@ public abstract class NessieExporter {
      * ExportImportConstants#DEFAULT_COMMIT_BATCH_SIZE}.
      */
     Builder commitBatchSize(int commitBatchSize);
+
+    Builder exportVersion(int exportVersion);
 
     NessieExporter build();
   }
@@ -178,6 +181,11 @@ public abstract class NessieExporter {
     return ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE;
   }
 
+  @Value.Default
+  int exportVersion() {
+    return 2;
+  }
+
   abstract ExportFileSupplier exportFileSupplier();
 
   @Value.Default
@@ -198,6 +206,7 @@ public abstract class NessieExporter {
       return new ExportDatabaseAdapter(exportFiles, this).exportRepo();
     }
 
-    return new ExportPersist(exportFiles, this).exportRepo();
+    return new ExportPersist(exportFiles, this, ExportVersion.forNumber(exportVersion()))
+        .exportRepo();
   }
 }

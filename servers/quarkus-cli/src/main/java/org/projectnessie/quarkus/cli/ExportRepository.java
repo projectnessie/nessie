@@ -50,6 +50,7 @@ public class ExportRepository extends BaseCommand {
   static final String SINGLE_BRANCH = "--single-branch-current-content";
   static final String CONTENT_BATCH_SIZE = "--content-batch-size";
   static final String COMMIT_BATCH_SIZE = "--commit-batch-size";
+  static final String EXPORT_VERSION = "--export-version";
 
   enum Format {
     ZIP,
@@ -127,6 +128,14 @@ public class ExportRepository extends BaseCommand {
               + ".")
   private Integer commitBatchSize;
 
+  @CommandLine.Option(
+      names = EXPORT_VERSION,
+      description =
+          "The export version, defaults to "
+              + ExportImportConstants.DEFAULT_EXPORT_VERSION
+              + ".")
+  private int exportVersion;
+
   @Override
   protected Integer callWithDatabaseAdapter() throws Exception {
     return export(
@@ -162,7 +171,8 @@ public class ExportRepository extends BaseCommand {
           NessieExporter.builder()
               .exportFileSupplier(exportFileSupplier)
               .fullScan(fullScan)
-              .contentsFromBranch(contentsFromBranch);
+              .contentsFromBranch(contentsFromBranch)
+              .exportVersion(exportVersion);
       builderConsumer.accept(builder);
       if (maxFileSize != null) {
         builder.maxFileSize(maxFileSize);
