@@ -269,7 +269,9 @@ public class DynamoDBPersist implements Persist {
   @jakarta.annotation.Nullable
   public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     GetItemResponse item =
-        backend.client().getItem(b -> b.tableName(this.backend.tableRefs).key(referenceKeyMap(name)));
+        backend
+            .client()
+            .getItem(b -> b.tableName(this.backend.tableRefs).key(referenceKeyMap(name)));
     if (!item.hasItem()) {
       return null;
     }
@@ -391,7 +393,11 @@ public class DynamoDBPersist implements Persist {
     GetItemResponse item =
         backend
             .client()
-            .getItem(b -> b.tableName(this.backend.tableObjs).key(objKeyMap(id)).attributesToGet(COL_OBJ_TYPE));
+            .getItem(
+                b ->
+                    b.tableName(this.backend.tableObjs)
+                        .key(objKeyMap(id))
+                        .attributesToGet(COL_OBJ_TYPE));
     if (!item.hasItem()) {
       throw new ObjNotFoundException(id);
     }
@@ -494,7 +500,10 @@ public class DynamoDBPersist implements Persist {
       backend
           .client()
           .putItem(
-              b -> b.tableName(this.backend.tableObjs).conditionExpression(CONDITION_STORE_OBJ).item(item));
+              b ->
+                  b.tableName(this.backend.tableObjs)
+                      .conditionExpression(CONDITION_STORE_OBJ)
+                      .item(item));
     } catch (ConditionalCheckFailedException e) {
       return false;
     } catch (DynamoDbException e) {

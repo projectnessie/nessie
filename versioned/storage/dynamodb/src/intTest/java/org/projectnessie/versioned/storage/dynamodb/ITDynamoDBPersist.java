@@ -19,6 +19,8 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 
+import java.util.List;
+import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -38,9 +40,6 @@ import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-
-import java.util.List;
-import java.util.Optional;
 
 @NessieBackend(DynamoDBBackendTestFactory.class)
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
@@ -85,25 +84,25 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
     protected BackendTestFactory factory;
 
     @Test
-  void tablePrefix() {
+    void tablePrefix() {
       DynamoDBBackendTestFactory btFactory = (DynamoDBBackendTestFactory) factory;
       try (DynamoDBBackend backendA =
-             btFactory.createNewBackend(
-               btFactory.dynamoDBConfigBuilder().tablePrefix(Optional.of("instanceA")).build(),
-               true);
-           DynamoDBBackend backendB =
-             btFactory.createNewBackend(
-               btFactory.dynamoDBConfigBuilder().tablePrefix(Optional.of("instanceB")).build(),
-               true)) {
+              btFactory.createNewBackend(
+                  btFactory.dynamoDBConfigBuilder().tablePrefix(Optional.of("instanceA")).build(),
+                  true);
+          DynamoDBBackend backendB =
+              btFactory.createNewBackend(
+                  btFactory.dynamoDBConfigBuilder().tablePrefix(Optional.of("instanceB")).build(),
+                  true)) {
 
         DynamoDbClient clientA = requireNonNull(backendA.client());
         DynamoDbClient clientB = requireNonNull(backendB.client());
 
         List<String> expectedTables = List.of();
         soft.assertThat(clientA.listTables().tableNames())
-          .containsExactlyInAnyOrderElementsOf(expectedTables);
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
         soft.assertThat(clientB.listTables().tableNames())
-          .containsExactlyInAnyOrderElementsOf(expectedTables);
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         // Setup "A"
 
@@ -115,9 +114,9 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
         expectedTables = List.of("instanceA_refs", "instanceA_objs");
 
         soft.assertThat(clientA.listTables().tableNames())
-          .containsExactlyInAnyOrderElementsOf(expectedTables);
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
         soft.assertThat(clientB.listTables().tableNames())
-          .containsExactlyInAnyOrderElementsOf(expectedTables);
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         soft.assertThat(repoA.repositoryExists()).isFalse();
         repoA.initialize("main");
@@ -131,12 +130,12 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
         RepositoryLogic repoB = repositoryLogic(persistB);
 
         expectedTables =
-          List.of("instanceA_refs", "instanceA_objs", "instanceB_refs", "instanceB_objs");
+            List.of("instanceA_refs", "instanceA_objs", "instanceB_refs", "instanceB_objs");
 
         soft.assertThat(clientA.listTables().tableNames())
-          .containsExactlyInAnyOrderElementsOf(expectedTables);
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
         soft.assertThat(clientB.listTables().tableNames())
-          .containsExactlyInAnyOrderElementsOf(expectedTables);
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         soft.assertThat(repoB.repositoryExists()).isFalse();
         repoB.initialize("main");

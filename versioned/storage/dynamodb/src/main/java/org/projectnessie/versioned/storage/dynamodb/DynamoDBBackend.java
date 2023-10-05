@@ -51,12 +51,13 @@ final class DynamoDBBackend implements Backend {
   final String tableRefs;
   final String tableObjs;
 
-  DynamoDBBackend(@Nonnull @jakarta.annotation.Nonnull DynamoDBBackendConfig config, boolean closeClient) {
+  DynamoDBBackend(
+      @Nonnull @jakarta.annotation.Nonnull DynamoDBBackendConfig config, boolean closeClient) {
     this.client = config.client();
     this.tableRefs =
-      config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
+        config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
     this.tableObjs =
-      config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
+        config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
     this.closeClient = closeClient;
   }
 
