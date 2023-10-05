@@ -183,7 +183,7 @@ public abstract class NessieExporter {
 
   @Value.Default
   int exportVersion() {
-    return 2;
+    return ExportImportConstants.DEFAULT_EXPORT_VERSION;
   }
 
   abstract ExportFileSupplier exportFileSupplier();
