@@ -42,7 +42,18 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
 
   @Override
   public DynamoDBBackend createNewBackend() {
-    return new DynamoDBBackend(buildNewClient(), true);
+    return createNewBackend(dynamoDBConfigBuilder().build(), true);
+  }
+
+  @SuppressWarnings("ClassEscapesDefinedScope")
+  public DynamoDBBackend createNewBackend(
+      DynamoDBBackendConfig dynamoDBBackendConfig, boolean closeClient) {
+    return new DynamoDBBackend(dynamoDBBackendConfig, closeClient);
+  }
+
+  @VisibleForTesting
+  public ImmutableDynamoDBBackendConfig.Builder dynamoDBConfigBuilder() {
+    return DynamoDBBackendConfig.builder().client(buildNewClient());
   }
 
   @VisibleForTesting

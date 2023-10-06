@@ -19,6 +19,7 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import org.projectnessie.quarkus.config.QuarkusDynamoDBConfig;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
@@ -31,10 +32,16 @@ public class DynamoDBBackendBuilder implements BackendBuilder {
 
   @Inject DynamoDbClient client;
 
+  @Inject QuarkusDynamoDBConfig dynamoDBConfig;
+
   @Override
   public Backend buildBackend() {
     DynamoDBBackendFactory factory = new DynamoDBBackendFactory();
-    DynamoDBBackendConfig c = DynamoDBBackendConfig.builder().client(client).build();
+    DynamoDBBackendConfig c =
+        DynamoDBBackendConfig.builder()
+            .client(client)
+            .tablePrefix(dynamoDBConfig.tablePrefix())
+            .build();
     return factory.buildBackend(c);
   }
 }

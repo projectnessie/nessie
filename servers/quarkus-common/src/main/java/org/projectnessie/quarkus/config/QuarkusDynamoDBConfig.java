@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.dynamodb;
+package org.projectnessie.quarkus.config;
 
+import io.quarkus.runtime.annotations.StaticInitSafe;
+import io.smallrye.config.ConfigMapping;
 import java.util.Optional;
-import org.immutables.value.Value;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-@Value.Immutable
-public interface DynamoDBBackendConfig {
-  DynamoDbClient client();
-
+@StaticInitSafe
+@ConfigMapping(prefix = "nessie.version.store.persist.dynamodb")
+public interface QuarkusDynamoDBConfig {
   Optional<String> tablePrefix();
-
-  static ImmutableDynamoDBBackendConfig.Builder builder() {
-    return ImmutableDynamoDBBackendConfig.builder();
-  }
 }

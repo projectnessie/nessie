@@ -15,54 +15,148 @@
  */
 package org.projectnessie.versioned.storage.dynamodb;
 
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 
+import java.util.List;
+import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
+import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @NessieBackend(DynamoDBBackendTestFactory.class)
-@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
 public class ITDynamoDBPersist extends AbstractPersistTests {
-  @InjectSoftAssertions protected SoftAssertions soft;
 
-  @NessiePersist protected Persist persist;
+  @Nested
+  @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+  public class DynamoDbHardItemSizeLimits {
+    @InjectSoftAssertions protected SoftAssertions soft;
 
-  @Test
-  public void dynamoDbHardItemSizeLimit() throws Exception {
-    persist.storeObj(
-        contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024])));
+    @NessiePersist protected Persist persist;
 
-    persist.storeObjs(
-        new Obj[] {
-          contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024]))
-        });
+    @Test
+    public void dynamoDbHardItemSizeLimit() throws Exception {
+      persist.storeObj(
+          contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024])));
 
-    // DynamoDB's hard 400k limit
-    soft.assertThatThrownBy(
-            () ->
-                persist.storeObj(
-                    contentValue(
-                        ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[400 * 1024]))))
-        .isInstanceOf(ObjTooLargeException.class);
-    soft.assertThatThrownBy(
-            () ->
-                persist.storeObjs(
-                    new Obj[] {
+      persist.storeObjs(
+          new Obj[] {
+            contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024]))
+          });
+
+      // DynamoDB's hard 400k limit
+      soft.assertThatThrownBy(
+              () ->
+                  persist.storeObj(
                       contentValue(
-                          ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[400 * 1024]))
-                    }))
-        .isInstanceOf(ObjTooLargeException.class);
+                          ObjId.randomObjId(),
+                          "foo",
+                          42,
+                          ByteString.copyFrom(new byte[400 * 1024]))))
+          .isInstanceOf(ObjTooLargeException.class);
+      soft.assertThatThrownBy(
+              () ->
+                  persist.storeObjs(
+                      new Obj[] {
+                        contentValue(
+                            ObjId.randomObjId(),
+                            "foo",
+                            42,
+                            ByteString.copyFrom(new byte[400 * 1024]))
+                      }))
+          .isInstanceOf(ObjTooLargeException.class);
+    }
+  }
+
+  @Nested
+  @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+  public class TablePrefixes {
+    @InjectSoftAssertions protected SoftAssertions soft;
+
+    @NessiePersist(initializeRepo = false)
+    protected BackendTestFactory factory;
+
+    @Test
+    void tablePrefix() {
+      DynamoDBBackendTestFactory dynamoDBBackendTestFactory = (DynamoDBBackendTestFactory) factory;
+      try (DynamoDBBackend backendA =
+              dynamoDBBackendTestFactory.createNewBackend(
+                  dynamoDBBackendTestFactory
+                      .dynamoDBConfigBuilder()
+                      .tablePrefix(Optional.of("instanceA"))
+                      .build(),
+                  true);
+          DynamoDBBackend backendB =
+              dynamoDBBackendTestFactory.createNewBackend(
+                  dynamoDBBackendTestFactory
+                      .dynamoDBConfigBuilder()
+                      .tablePrefix(Optional.of("instanceB"))
+                      .build(),
+                  true)) {
+
+        DynamoDbClient clientA = requireNonNull(backendA.client());
+        DynamoDbClient clientB = requireNonNull(backendB.client());
+
+        List<String> expectedTables = List.of();
+        soft.assertThat(clientA.listTables().tableNames())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(clientB.listTables().tableNames())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+
+        // Setup "A"
+
+        backendA.setupSchema();
+
+        Persist persistA = backendA.createFactory().newPersist(StoreConfig.Adjustable.empty());
+        RepositoryLogic repoA = repositoryLogic(persistA);
+
+        expectedTables = List.of("instanceA_refs", "instanceA_objs");
+
+        soft.assertThat(clientA.listTables().tableNames())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(clientB.listTables().tableNames())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+
+        soft.assertThat(repoA.repositoryExists()).isFalse();
+        repoA.initialize("main");
+        soft.assertThat(repoA.repositoryExists()).isTrue();
+
+        // Setup "B"
+
+        backendB.setupSchema();
+
+        Persist persistB = backendB.createFactory().newPersist(StoreConfig.Adjustable.empty());
+        RepositoryLogic repoB = repositoryLogic(persistB);
+
+        expectedTables =
+            List.of("instanceA_refs", "instanceA_objs", "instanceB_refs", "instanceB_objs");
+
+        soft.assertThat(clientA.listTables().tableNames())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(clientB.listTables().tableNames())
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+
+        soft.assertThat(repoB.repositoryExists()).isFalse();
+        repoB.initialize("main");
+        soft.assertThat(repoB.repositoryExists()).isTrue();
+      }
+    }
   }
 }

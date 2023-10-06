@@ -15,6 +15,7 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - Spark SQL extensions now support the `DROP ... IF EXISTS` syntax for branches and tags.
+- `table-prefix` configuration option added to DynamoDB version store.
 
 ### Changes
 

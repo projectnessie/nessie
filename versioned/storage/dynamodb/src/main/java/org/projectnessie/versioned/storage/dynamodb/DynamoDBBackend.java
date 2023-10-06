@@ -48,8 +48,16 @@ final class DynamoDBBackend implements Backend {
   private final DynamoDbClient client;
   private final boolean closeClient;
 
-  DynamoDBBackend(@Nonnull @jakarta.annotation.Nonnull DynamoDbClient client, boolean closeClient) {
-    this.client = client;
+  final String tableRefs;
+  final String tableObjs;
+
+  DynamoDBBackend(
+      @Nonnull @jakarta.annotation.Nonnull DynamoDBBackendConfig config, boolean closeClient) {
+    this.client = config.client();
+    this.tableRefs =
+        config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
+    this.tableObjs =
+        config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
     this.closeClient = closeClient;
   }
 
@@ -75,8 +83,8 @@ final class DynamoDBBackend implements Backend {
 
   @Override
   public void setupSchema() {
-    createIfMissing(TABLE_REFS);
-    createIfMissing(TABLE_OBJS);
+    createIfMissing(tableRefs);
+    createIfMissing(tableObjs);
   }
 
   private void createIfMissing(String name) {
@@ -149,7 +157,7 @@ final class DynamoDBBackend implements Backend {
     @SuppressWarnings("resource")
     DynamoDbClient c = client();
 
-    Stream.of(TABLE_REFS, TABLE_OBJS)
+    Stream.of(tableRefs, tableObjs)
         .forEach(
             table -> {
               try (BatchWrite batchWrite = new BatchWrite(this, table)) {
