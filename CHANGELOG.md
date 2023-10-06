@@ -16,6 +16,8 @@ as necessary. Empty sections will not end in the release notes.
 
 - Spark SQL extensions now support the `DROP ... IF EXISTS` syntax for branches and tags.
 - `table-prefix` configuration option added to DynamoDB version store.
+- Ability to export repositories in V1 format. This is useful for migrating repositories to older 
+  Nessie servers that do not support the new storage model.
 
 ### Changes
 
