@@ -189,7 +189,7 @@ public class DynamoDBPersist implements Persist {
           .client()
           .putItem(
               b ->
-                  b.tableName(this.backend.tableRefs)
+                  b.tableName(backend.tableRefs)
                       .conditionExpression(CONDITION_STORE_REF)
                       .item(referenceAttributeValues(reference)));
       return reference;
@@ -251,7 +251,7 @@ public class DynamoDBPersist implements Persist {
           .client()
           .deleteItem(
               b ->
-                  b.tableName(this.backend.tableRefs)
+                  b.tableName(backend.tableRefs)
                       .key(referenceKeyMap(refName))
                       .expressionAttributeValues(values)
                       .conditionExpression(condition));
@@ -269,9 +269,7 @@ public class DynamoDBPersist implements Persist {
   @jakarta.annotation.Nullable
   public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     GetItemResponse item =
-        backend
-            .client()
-            .getItem(b -> b.tableName(this.backend.tableRefs).key(referenceKeyMap(name)));
+        backend.client().getItem(b -> b.tableName(backend.tableRefs).key(referenceKeyMap(name)));
     if (!item.hasItem()) {
       return null;
     }
@@ -323,14 +321,14 @@ public class DynamoDBPersist implements Persist {
       List<Map<String, AttributeValue>> keys,
       Object2IntHashMap<String> nameToIndex) {
     Map<String, KeysAndAttributes> requestItems =
-        singletonMap(this.backend.tableRefs, KeysAndAttributes.builder().keys(keys).build());
+        singletonMap(backend.tableRefs, KeysAndAttributes.builder().keys(keys).build());
 
     BatchGetItemResponse response =
         backend.client().batchGetItem(b -> b.requestItems(requestItems));
 
     response
         .responses()
-        .get(this.backend.tableRefs)
+        .get(backend.tableRefs)
         .forEach(
             item -> {
               String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
@@ -355,7 +353,7 @@ public class DynamoDBPersist implements Persist {
   @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
     GetItemResponse item =
-        backend.client().getItem(b -> b.tableName(this.backend.tableObjs).key(objKeyMap(id)));
+        backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
     if (!item.hasItem()) {
       throw new ObjNotFoundException(id);
     }
@@ -370,7 +368,7 @@ public class DynamoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     GetItemResponse item =
-        backend.client().getItem(b -> b.tableName(this.backend.tableObjs).key(objKeyMap(id)));
+        backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
     if (!item.hasItem()) {
       throw new ObjNotFoundException(id);
     }
@@ -395,7 +393,7 @@ public class DynamoDBPersist implements Persist {
             .client()
             .getItem(
                 b ->
-                    b.tableName(this.backend.tableObjs)
+                    b.tableName(backend.tableObjs)
                         .key(objKeyMap(id))
                         .attributesToGet(COL_OBJ_TYPE));
     if (!item.hasItem()) {
@@ -453,14 +451,14 @@ public class DynamoDBPersist implements Persist {
       Obj[] r, List<Map<String, AttributeValue>> keys, Object2IntHashMap<ObjId> idToIndex) {
 
     Map<String, KeysAndAttributes> requestItems =
-        singletonMap(this.backend.tableObjs, KeysAndAttributes.builder().keys(keys).build());
+        singletonMap(backend.tableObjs, KeysAndAttributes.builder().keys(keys).build());
 
     BatchGetItemResponse response =
         backend.client().batchGetItem(b -> b.requestItems(requestItems));
 
     response
         .responses()
-        .get(this.backend.tableObjs)
+        .get(backend.tableObjs)
         .forEach(
             item -> {
               Obj obj = decomposeObj(item);
@@ -501,7 +499,7 @@ public class DynamoDBPersist implements Persist {
           .client()
           .putItem(
               b ->
-                  b.tableName(this.backend.tableObjs)
+                  b.tableName(backend.tableObjs)
                       .conditionExpression(CONDITION_STORE_OBJ)
                       .item(item));
     } catch (ConditionalCheckFailedException e) {
@@ -520,12 +518,12 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
-    backend.client().deleteItem(b -> b.tableName(this.backend.tableObjs).key(objKeyMap(id)));
+    backend.client().deleteItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
   }
 
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
-    try (BatchWrite batchWrite = new BatchWrite(backend, this.backend.tableObjs)) {
+    try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (ObjId id : ids) {
         batchWrite.addDelete(objKey(id));
       }
@@ -540,7 +538,7 @@ public class DynamoDBPersist implements Persist {
     Map<String, AttributeValue> item = objToItem(obj, id, false);
 
     try {
-      backend.client().putItem(b -> b.tableName(this.backend.tableObjs).item(item));
+      backend.client().putItem(b -> b.tableName(backend.tableObjs).item(item));
     } catch (DynamoDbException e) {
       // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
       AwsErrorDetails errorDetails = e.awsErrorDetails();
@@ -555,7 +553,7 @@ public class DynamoDBPersist implements Persist {
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
-    try (BatchWrite batchWrite = new BatchWrite(backend, this.backend.tableObjs)) {
+    try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (Obj obj : objs) {
         ObjId id = obj.id();
         checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -963,7 +961,7 @@ public class DynamoDBPersist implements Persist {
         .client()
         .putItem(
             b ->
-                b.tableName(this.backend.tableRefs)
+                b.tableName(backend.tableRefs)
                     .conditionExpression(condition)
                     .expressionAttributeValues(values)
                     .item(referenceAttributeValues(reference)));

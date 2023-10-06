@@ -83,8 +83,8 @@ final class DynamoDBBackend implements Backend {
 
   @Override
   public void setupSchema() {
-    createIfMissing(this.tableRefs);
-    createIfMissing(this.tableObjs);
+    createIfMissing(tableRefs);
+    createIfMissing(tableObjs);
   }
 
   private void createIfMissing(String name) {
@@ -157,7 +157,7 @@ final class DynamoDBBackend implements Backend {
     @SuppressWarnings("resource")
     DynamoDbClient c = client();
 
-    Stream.of(this.tableRefs, this.tableObjs)
+    Stream.of(tableRefs, tableObjs)
         .forEach(
             table -> {
               try (BatchWrite batchWrite = new BatchWrite(this, table)) {

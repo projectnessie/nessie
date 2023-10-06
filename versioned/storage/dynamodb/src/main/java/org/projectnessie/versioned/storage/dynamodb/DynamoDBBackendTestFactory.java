@@ -40,7 +40,6 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
     return DynamoDBBackendFactory.NAME;
   }
 
-  @SuppressWarnings("ClassEscapesDefinedScope")
   @Override
   public DynamoDBBackend createNewBackend() {
     return createNewBackend(dynamoDBConfigBuilder().build(), true);
