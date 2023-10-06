@@ -50,10 +50,10 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersio
 @NessieBackendName(InmemoryBackendFactory.NAME)
 public class TestMigrationFromPersistToDatabaseAdapter extends BaseExportImport {
 
-  @NessieDbAdapter private static DatabaseAdapter databaseAdapter;
-  @NessieDbAdapter private static VersionStore daVersionStore;
+  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessieDbAdapter static VersionStore daVersionStore;
 
-  @NessiePersist private static Persist persist;
+  @NessiePersist static Persist persist;
 
   @Override
   ExportVersion exportVersion() {
