@@ -154,7 +154,7 @@ public abstract class NessieImporter {
       default:
         throw new IllegalStateException(
             String.format(
-                "This Nessie-version version does not support importing a %s (%d) export",
+                "This Nessie version does not support importing a %s (%d) export",
                 exportMeta.getVersion().name(), exportMeta.getVersionValue()));
     }
   }
