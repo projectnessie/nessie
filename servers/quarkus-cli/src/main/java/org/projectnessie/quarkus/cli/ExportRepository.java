@@ -130,7 +130,7 @@ public class ExportRepository extends BaseCommand {
 
   @CommandLine.Option(
       names = EXPORT_VERSION,
-      defaultValue = "2",
+      defaultValue = "" + ExportImportConstants.DEFAULT_EXPORT_VERSION,
       description =
           "The export version, defaults to " + ExportImportConstants.DEFAULT_EXPORT_VERSION + ".")
   private int exportVersion;
