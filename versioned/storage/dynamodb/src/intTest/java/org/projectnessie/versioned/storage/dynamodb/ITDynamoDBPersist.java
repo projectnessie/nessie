@@ -42,37 +42,47 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @NessieBackend(DynamoDBBackendTestFactory.class)
-@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
 public class ITDynamoDBPersist extends AbstractPersistTests {
-  @InjectSoftAssertions protected SoftAssertions soft;
 
-  @NessiePersist protected Persist persist;
+  @Nested
+  @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+  public class DynamoDbHardItemSizeLimits {
+    @InjectSoftAssertions protected SoftAssertions soft;
 
-  @Test
-  public void dynamoDbHardItemSizeLimit() throws Exception {
-    persist.storeObj(
-        contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024])));
+    @NessiePersist protected Persist persist;
 
-    persist.storeObjs(
-        new Obj[] {
-          contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024]))
-        });
+    @Test
+    public void dynamoDbHardItemSizeLimit() throws Exception {
+      persist.storeObj(
+          contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024])));
 
-    // DynamoDB's hard 400k limit
-    soft.assertThatThrownBy(
-            () ->
-                persist.storeObj(
-                    contentValue(
-                        ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[400 * 1024]))))
-        .isInstanceOf(ObjTooLargeException.class);
-    soft.assertThatThrownBy(
-            () ->
-                persist.storeObjs(
-                    new Obj[] {
+      persist.storeObjs(
+          new Obj[] {
+            contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024]))
+          });
+
+      // DynamoDB's hard 400k limit
+      soft.assertThatThrownBy(
+              () ->
+                  persist.storeObj(
                       contentValue(
-                          ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[400 * 1024]))
-                    }))
-        .isInstanceOf(ObjTooLargeException.class);
+                          ObjId.randomObjId(),
+                          "foo",
+                          42,
+                          ByteString.copyFrom(new byte[400 * 1024]))))
+          .isInstanceOf(ObjTooLargeException.class);
+      soft.assertThatThrownBy(
+              () ->
+                  persist.storeObjs(
+                      new Obj[] {
+                        contentValue(
+                            ObjId.randomObjId(),
+                            "foo",
+                            42,
+                            ByteString.copyFrom(new byte[400 * 1024]))
+                      }))
+          .isInstanceOf(ObjTooLargeException.class);
+    }
   }
 
   @Nested
