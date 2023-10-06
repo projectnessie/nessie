@@ -85,14 +85,20 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
 
     @Test
     void tablePrefix() {
-      DynamoDBBackendTestFactory btFactory = (DynamoDBBackendTestFactory) factory;
+      DynamoDBBackendTestFactory dynamoDBBackendTestFactory = (DynamoDBBackendTestFactory) factory;
       try (DynamoDBBackend backendA =
-              btFactory.createNewBackend(
-                  btFactory.dynamoDBConfigBuilder().tablePrefix(Optional.of("instanceA")).build(),
+              dynamoDBBackendTestFactory.createNewBackend(
+                  dynamoDBBackendTestFactory
+                      .dynamoDBConfigBuilder()
+                      .tablePrefix(Optional.of("instanceA"))
+                      .build(),
                   true);
           DynamoDBBackend backendB =
-              btFactory.createNewBackend(
-                  btFactory.dynamoDBConfigBuilder().tablePrefix(Optional.of("instanceB")).build(),
+              dynamoDBBackendTestFactory.createNewBackend(
+                  dynamoDBBackendTestFactory
+                      .dynamoDBConfigBuilder()
+                      .tablePrefix(Optional.of("instanceB"))
+                      .build(),
                   true)) {
 
         DynamoDbClient clientA = requireNonNull(backendA.client());
