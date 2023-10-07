@@ -52,7 +52,6 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.C
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS_TYPED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_REFERENCES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_COMMIT;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_INDEX;
@@ -77,7 +76,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stri
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.datastax.oss.driver.api.core.DriverException;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
@@ -324,12 +322,7 @@ public class CassandraPersist implements Persist {
         queryIds -> queryIds.stream().map(ObjId::toString).collect(Collectors.toList());
 
     Function<List<ObjId>, CompletionStage<AsyncResultSet>> queryFunc =
-        type == null
-            ? keys ->
-                backend.executeAsync(FIND_OBJS, config.repositoryId(), idsToStrings.apply(keys))
-            : keys ->
-                backend.executeAsync(
-                    FIND_OBJS_TYPED, config.repositoryId(), idsToStrings.apply(keys), type.name());
+        keys -> backend.executeAsync(FIND_OBJS, config.repositoryId(), idsToStrings.apply(keys));
 
     Function<Row, Obj> rowMapper =
         row -> {
@@ -354,7 +347,7 @@ public class CassandraPersist implements Persist {
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (r[i] == null && id != null) {
+      if (id != null && (r[i] == null || (type != null && r[i].type() != type))) {
         if (notFound == null) {
           notFound = new ArrayList<>();
         }
