@@ -65,4 +65,7 @@ public interface QuarkusBigTableConfig {
 
   @WithDefault("8086")
   int emulatorPort();
+
+  @WithDefault("true")
+  boolean enableTelemetry();
 }

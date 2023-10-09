@@ -76,6 +76,7 @@ When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable 
 | `nessie.version.store.persist.bigtable.initial-rpc-timeout`   | (unspecified)  | `Duration`            | Initial RPC timeout.                                                                                                     |
 | `nessie.version.store.persist.bigtable.initial-retry-delay`   | (unspecified)  | `Duration`            | Initial retry delay.                                                                                                     |
 | `nessie.version.store.persist.bigtable.max-retry-delay`       | (unspecified)  | `Duration`            | Max retry-delay.                                                                                                         |
+| `nessie.version.store.persist.bigtable.enable-telemetry`      | `true`         | `boolean`             | Enables telemetry with OpenCensus.                                                                                       |
 
 
 !!! info
