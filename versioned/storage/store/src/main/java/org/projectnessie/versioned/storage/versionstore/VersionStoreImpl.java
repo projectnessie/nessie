@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.ContentResult.contentResult;
+import static org.projectnessie.versioned.ReferenceHistory.ReferenceHistoryElement.referenceHistoryElement;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -61,6 +62,7 @@ import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeFo
 import com.google.common.collect.AbstractIterator;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -76,6 +79,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -93,6 +97,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
 import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
+import org.projectnessie.versioned.ImmutableReferenceHistory;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
@@ -106,6 +111,7 @@ import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
+import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -133,6 +139,7 @@ import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -251,8 +258,20 @@ public class VersionStoreImpl implements VersionStore {
     }
 
     try {
-      CommitObj head = commitLogic(persist).headCommit(expected);
-      Hash currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
+      Hash currentCommitId;
+      try {
+        CommitObj head = commitLogic(persist).headCommit(expected);
+        currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
+      } catch (ObjNotFoundException e) {
+        // Special case, when the commit object does not exist. This situation can happen in a
+        // multi-zone/multi-region database setup, when the "primary write target cluster" fails and
+        // the replica cluster(s) had no chance to receive the commit object but the change to the
+        // reference. In case the zone/region is permanently switched (think: data center flooded /
+        // burned down), this code path allows to assign the branch to another commit object, even
+        // if the current HEAD's commit object does not exist.
+        currentCommitId = expectedHash;
+      }
+
       verifyExpectedHash(currentCommitId, namedRef, expectedHash);
       expected =
           reference(
@@ -260,7 +279,8 @@ public class VersionStoreImpl implements VersionStore {
               hashToObjId(expectedHash),
               false,
               expected.createdAtMicros(),
-              expected.extendedInfoObj());
+              expected.extendedInfoObj(),
+              expected.previousPointers());
 
       ObjId newPointer = hashToObjId(targetHash);
       if (!EMPTY_OBJ_ID.equals(newPointer) && persist.fetchObjType(newPointer) != COMMIT) {
@@ -308,6 +328,179 @@ public class VersionStoreImpl implements VersionStore {
           namedRef, objIdToHash(expected), headCommit != null ? headCommit.id() : EMPTY_OBJ_ID);
     } catch (RetryTimeoutException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public ReferenceHistory getReferenceHistory(String refName, Integer headCommitsToScan)
+      throws ReferenceNotFoundException {
+    RefMapping refMapping = new RefMapping(persist);
+    Reference reference = refMapping.resolveNamedRef(refName);
+
+    ImmutableReferenceHistory.Builder history = ImmutableReferenceHistory.builder();
+
+    CommitLogic commitLogic = commitLogic(persist);
+    IndexesLogic indexesLogic = indexesLogic(persist);
+
+    Set<ObjId> checked = new HashSet<>();
+
+    ReferenceHistory.ReferenceHistoryElement current =
+        checkCommit(commitLogic, indexesLogic, reference.pointer(), checked);
+    history.current(current);
+
+    for (Reference.PreviousPointer previousPointer : reference.previousPointers()) {
+      history.addPrevious(
+          checkCommit(commitLogic, indexesLogic, previousPointer.pointer(), checked));
+    }
+
+    history.commitLogConsistency(
+        checkCommitLog(commitLogic, indexesLogic, headCommitsToScan, current, checked));
+
+    return history.build();
+  }
+
+  /**
+   * Evaluates the state of the commit log for {@link #getReferenceHistory(String, Integer)}, if
+   * requested. This function returns a result that represents the consistency of the commit log
+   * including <em>direct</em> secondary parent commits, the consistency of the "worst" commit.
+   */
+  private CommitConsistency checkCommitLog(
+      CommitLogic commitLogic,
+      IndexesLogic indexesLogic,
+      Integer headCommitsToScan,
+      ReferenceHistory.ReferenceHistoryElement current,
+      Set<ObjId> checked) {
+    if (headCommitsToScan == null || headCommitsToScan <= 0) {
+      return CommitConsistency.NOT_CHECKED;
+    }
+    if (current.commitConsistency() == CommitConsistency.COMMIT_INCONSISTENT) {
+      // The HEAD commit is inconsistent - do not check the log (it can't be more consistent)
+      return CommitConsistency.COMMIT_INCONSISTENT;
+    }
+
+    // Hard coded limit of 100 commits to check. This function will check at max 1000 commits in the
+    // commit log, or until the configured recorded reference-history interval.
+    int toScan = Math.min(headCommitsToScan, 1000);
+    long nowMicros = persist.config().currentTimeMicros();
+    long inconsistencyWindow =
+        TimeUnit.SECONDS.toMicros(persist.config().referencePreviousHeadTimeSpanSeconds());
+
+    CommitObj headCommit;
+    try {
+      headCommit = commitLogic.fetchCommit(hashToObjId(current.pointer()));
+    } catch (ObjNotFoundException e) {
+      return CommitConsistency.COMMIT_INCONSISTENT;
+    }
+    if (headCommit == null) {
+      return CommitConsistency.COMMIT_CONSISTENT;
+    }
+
+    // Start with the HEAD's direct parent, the HEAD itself is checked elsewhere.
+    ObjId commitId = headCommit.directParent();
+
+    // The "initial" result of the commit log cannot be better than the state of the HEAD, so start
+    // with the HEAD's state.
+    CommitConsistency result = current.commitConsistency();
+
+    while (toScan-- > 0) {
+      if (commitId.equals(EMPTY_OBJ_ID)) {
+        break;
+      }
+
+      CommitObj currentCommit;
+
+      try {
+        currentCommit = commitLogic.fetchCommit(commitId);
+        if (currentCommit == null) {
+          break;
+        }
+      } catch (ObjNotFoundException e) {
+        return CommitConsistency.COMMIT_INCONSISTENT;
+      }
+
+      if (nowMicros - currentCommit.created() > inconsistencyWindow) {
+        break;
+      }
+
+      ReferenceHistory.ReferenceHistoryElement elem =
+          checkCommit(commitLogic, indexesLogic, commitId, checked);
+      if (elem.commitConsistency().ordinal() > result.ordinal()) {
+        // State of the checked commit is worse than the current state.
+        result = elem.commitConsistency();
+      }
+      for (ObjId secondaryParent : currentCommit.secondaryParents()) {
+        elem = checkCommit(commitLogic, indexesLogic, secondaryParent, checked);
+        if (elem.commitConsistency().ordinal() > result.ordinal()) {
+          // State of the checked commit is worse than the current state.
+          result = elem.commitConsistency();
+        }
+      }
+
+      if (result == CommitConsistency.COMMIT_INCONSISTENT) {
+        // This is the worst state, can return immediately.
+        return result;
+      }
+
+      commitId = currentCommit.directParent();
+    }
+
+    return result;
+  }
+
+  private ReferenceHistory.ReferenceHistoryElement checkCommit(
+      CommitLogic commitLogic, IndexesLogic indexesLogic, ObjId commit, Set<ObjId> checked) {
+    Hash commitId = objIdToHash(commit);
+    CommitMeta meta = null;
+
+    Set<ObjId> test = new HashSet<>();
+    CommitObj commitObj;
+    try {
+      commitObj = commitLogic.fetchCommit(commit);
+      if (commitObj == null) {
+        return referenceHistoryElement(commitId, CommitConsistency.COMMIT_CONSISTENT, null);
+      }
+
+      meta = toCommitMeta(commitObj);
+
+      if (commitObj.referenceIndex() != null && checked.add(commitObj.referenceIndex())) {
+        test.add(commitObj.referenceIndex());
+      }
+      for (IndexStripe stripe : commitObj.referenceIndexStripes()) {
+        if (checked.add(stripe.segment())) {
+          test.add(stripe.segment());
+        }
+      }
+
+      persist.fetchObjs(test.toArray(new ObjId[0]));
+      test.clear();
+    } catch (ObjNotFoundException notFound) {
+      notFound.objIds().forEach(checked::remove);
+      return referenceHistoryElement(commitId, CommitConsistency.COMMIT_INCONSISTENT, meta);
+    }
+
+    try {
+      StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(commitObj, Optional.empty());
+      for (StoreIndexElement<CommitOp> el : index) {
+        CommitOp op = el.content();
+        if (op.action().exists()) {
+          if (checked.add(op.value())) {
+            test.add(op.value());
+            if (test.size() == 50) {
+              persist.fetchObjs(test.toArray(new ObjId[0]));
+              test.clear();
+            }
+          }
+        }
+      }
+
+      if (!test.isEmpty()) {
+        persist.fetchObjs(test.toArray(new ObjId[0]));
+      }
+
+      return referenceHistoryElement(commitId, CommitConsistency.COMMIT_CONSISTENT, meta);
+    } catch (ObjNotFoundException notFound) {
+      notFound.objIds().forEach(checked::remove);
+      return referenceHistoryElement(commitId, CommitConsistency.COMMIT_CONTENT_INCONSISTENT, meta);
     }
   }
 

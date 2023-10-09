@@ -63,6 +63,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
+  testImplementation(libs.threeten.extra)
   testRuntimeOnly(libs.logback.classic)
 
   jmhImplementation(libs.jmh.core)

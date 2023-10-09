@@ -162,7 +162,7 @@ class InmemoryPersist implements ValidatingPersist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    Reference asUpdated = reference.forNewPointer(newPointer);
+    Reference asUpdated = reference.forNewPointer(newPointer, config);
 
     Reference[] result = new Reference[2];
     Reference c =

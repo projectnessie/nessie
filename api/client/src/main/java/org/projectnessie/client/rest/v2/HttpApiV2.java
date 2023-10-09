@@ -32,6 +32,7 @@ import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.GetRepositoryConfigBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.api.ReferenceHistoryBuilder;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.api.UpdateRepositoryConfigBuilder;
 import org.projectnessie.client.http.HttpClient;
@@ -87,6 +88,11 @@ public class HttpApiV2 implements NessieApiV2 {
   @Override
   public GetReferenceBuilder getReference() {
     return new HttpGetReference(client);
+  }
+
+  @Override
+  public ReferenceHistoryBuilder referenceHistory() {
+    return new HttpReferenceHistory(client);
   }
 
   @Override

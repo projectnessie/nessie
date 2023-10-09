@@ -15,8 +15,14 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import static java.util.Collections.emptyList;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
 
 /**
@@ -52,15 +58,53 @@ public interface Reference {
   @jakarta.annotation.Nullable
   ObjId extendedInfoObj();
 
-  default Reference forNewPointer(ObjId newPointer) {
-    return ImmutableReference.builder().from(this).deleted(false).pointer(newPointer).build();
+  // Not included in .equals/.hashCode to avoid having separate equals() implementation that does
+  // not consider this attribute (esp. for in-memory and rocks-db backends).
+  @Value.Auxiliary
+  @Value.Parameter(order = 7)
+  List<PreviousPointer> previousPointers();
+
+  default Reference forNewPointer(ObjId newPointer, StoreConfig config) {
+    List<PreviousPointer> previous = new ArrayList<>();
+
+    long now = config.currentTimeMicros();
+    int sizeLimit = config.referencePreviousHeadCount();
+    long timeLimit = now - TimeUnit.SECONDS.toMicros(config.referencePreviousHeadTimeSpanSeconds());
+
+    if (!newPointer.equals(pointer())) {
+      previous.add(PreviousPointer.previousPointer(pointer(), now));
+    }
+    for (PreviousPointer previousPointer : previousPointers()) {
+      if (previous.size() == sizeLimit || (previousPointer.timestamp() - timeLimit < 0L)) {
+        break;
+      }
+      previous.add(previousPointer);
+    }
+
+    return ImmutableReference.builder()
+        .from(this)
+        .deleted(false)
+        .pointer(newPointer)
+        .previousPointers(previous)
+        .build();
   }
 
   Reference withDeleted(boolean deleted);
 
   static Reference reference(
       String name, ObjId pointer, boolean deleted, long createdAtMicros, ObjId extendedInfoObj) {
-    return ImmutableReference.of(name, pointer, deleted, createdAtMicros, extendedInfoObj);
+    return reference(name, pointer, deleted, createdAtMicros, extendedInfoObj, emptyList());
+  }
+
+  static Reference reference(
+      String name,
+      ObjId pointer,
+      boolean deleted,
+      long createdAtMicros,
+      ObjId extendedInfoObj,
+      List<PreviousPointer> previousPointers) {
+    return ImmutableReference.of(
+        name, pointer, deleted, createdAtMicros, extendedInfoObj, previousPointers);
   }
 
   @Value.NonAttribute
@@ -70,5 +114,18 @@ public interface Reference {
 
   static boolean isInternalReferenceName(String name) {
     return name.startsWith(INTERNAL_PREFIX);
+  }
+
+  @Value.Immutable
+  interface PreviousPointer {
+    @Value.Parameter(order = 1)
+    ObjId pointer();
+
+    @Value.Parameter(order = 2)
+    long timestamp();
+
+    static PreviousPointer previousPointer(ObjId pointer, long timestamp) {
+      return ImmutablePreviousPointer.of(pointer, timestamp);
+    }
   }
 }

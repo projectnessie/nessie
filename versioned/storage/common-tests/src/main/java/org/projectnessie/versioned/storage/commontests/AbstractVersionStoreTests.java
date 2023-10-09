@@ -50,4 +50,11 @@ public class AbstractVersionStoreTests extends AbstractVersionStoreTestBase {
       super(AbstractVersionStoreTests.this.store());
     }
   }
+
+  @Nested
+  public class CommitConsistency extends AbstractCommitConsistency {
+    public CommitConsistency() {
+      super(AbstractVersionStoreTests.this.store());
+    }
+  }
 }

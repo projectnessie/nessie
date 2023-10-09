@@ -111,7 +111,11 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected CommitBuilder commit(String message) {
-    return new CommitBuilder(store()).withMetadata(CommitMeta.fromMessage(message)).fromLatest();
+    return commit(store(), message);
+  }
+
+  protected CommitBuilder commit(VersionStore store, String message) {
+    return new CommitBuilder(store).withMetadata(CommitMeta.fromMessage(message)).fromLatest();
   }
 
   protected Put put(String key, Content value) {

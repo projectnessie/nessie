@@ -28,6 +28,7 @@ description = "Storage implementation for JDBC, supports H2, PostgreSQL and Cock
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-common-proto"))
+  implementation(project(":nessie-versioned-storage-common-serialize"))
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

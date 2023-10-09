@@ -156,3 +156,4 @@ openapi.yaml:
     - '#/paths/~1v2~1trees~1{ref}~1contents~1{key}/get'
     - '#/paths/~1v2~1trees~1{ref}~1entries/get'
     - '#/paths/~1v2~1trees~1{ref}~1history/get'
+    - '#/paths/~1v2~1trees~1{ref}~1recent-changes/get'

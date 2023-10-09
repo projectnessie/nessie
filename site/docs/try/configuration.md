@@ -172,6 +172,8 @@ default is conservative, bumping the cache size is recommended.
 | `nessie.version.store.persist.cache-capacity-fraction-of-heap`     | see description     | `double`  | Fraction of Java's max heap size to use for cache objects, set to `0` to disable. Must not be used with fixed cache sizing. If neither this value nor a fixed size is configured, a default of `.7` (70%) is assumed. |
 | `nessie.version.store.persist.cache-capacity-fraction-adjust-mb`   | `256`               | `int`     | When using fractional cache sizing, this amount in MB of the heap will always be "kept free" when calculating the cache size.                                                                                         |
 | `nessie.version.store.persist.cache-capacity-fraction-min-size-mb` | `64`                | `int`     | When using fractional cache sizing, this amount in MB is the minimum cache size.                                                                                                                                      |
+| `nessie.version.store.persist.ref-previous-head-count`             | `20`                | `int`     | Named references keep a history of up to this amount of previous HEAD pointers, and up to the configured age.                                                                                                         |
+| `nessie.version.store.persist.ref-previous-head-time-span-seconds` | `300`               | `int`     | Named references keep a history of previous HEAD pointers with this age in _seconds_, and up to the configured amount.                                                                                                |
 
 #### Legacy version store configuration
 

@@ -124,4 +124,10 @@ message ReferenceProto {
   bool deleted = 3;
   optional int64 created_at_micros = 4;
   optional bytes extended_info_obj = 5;
+  repeated ReferencePreviousProto previous_pointers = 6;
+}
+
+message ReferencePreviousProto {
+  bytes pointer = 1;
+  int64 timestamp = 2;;
 }

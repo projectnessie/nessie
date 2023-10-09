@@ -305,6 +305,16 @@ public interface VersionStore {
       throws ReferenceNotFoundException;
 
   /**
+   * Retrieve the recorded recent history of a reference. A reference's history is a size and time
+   * limited record of changes of the reference's current pointer, aka HEAD. The size and time
+   * limits are configured in the Nessie server configuration.
+   *
+   * @return recorded reference history
+   */
+  ReferenceHistory getReferenceHistory(String refName, Integer headCommitsToScan)
+      throws ReferenceNotFoundException;
+
+  /**
    * List named refs.
    *
    * <p><em>IMPORTANT NOTE:</em> The returned {@link Stream} <em>must be closed</em>!

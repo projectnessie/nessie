@@ -90,11 +90,14 @@ final class CassandraConstants {
   static final String COL_REFS_DELETED = "deleted";
   static final String COL_REFS_CREATED_AT = "created_at";
   static final String COL_REFS_EXTENDED_INFO = "ext_info";
+  static final String COL_REFS_PREVIOUS = "prev_ptr";
   static final String UPDATE_REFERENCE_POINTER =
       "UPDATE %s."
           + TABLE_REFS
           + " SET "
           + COL_REFS_POINTER
+          + "=?, "
+          + COL_REFS_PREVIOUS
           + "=? WHERE "
           + COL_REPO_ID
           + "=? AND "
@@ -157,7 +160,9 @@ final class CassandraConstants {
           + COL_REFS_CREATED_AT
           + ", "
           + COL_REFS_EXTENDED_INFO
-          + ") VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS";
+          + ", "
+          + COL_REFS_PREVIOUS
+          + ") VALUES (?, ?, ?, ?, ?, ?, ?) IF NOT EXISTS";
   static final String FIND_REFERENCES =
       "SELECT "
           + COL_REFS_NAME
@@ -169,6 +174,8 @@ final class CassandraConstants {
           + COL_REFS_CREATED_AT
           + ", "
           + COL_REFS_EXTENDED_INFO
+          + ", "
+          + COL_REFS_PREVIOUS
           + " FROM %s."
           + TABLE_REFS
           + " WHERE "
@@ -192,6 +199,8 @@ final class CassandraConstants {
           + " {5}, "
           + COL_REFS_EXTENDED_INFO
           + " {1}, "
+          + COL_REFS_PREVIOUS
+          + " {4}, "
           + "\n    PRIMARY KEY (("
           + COL_REPO_ID
           + ", "

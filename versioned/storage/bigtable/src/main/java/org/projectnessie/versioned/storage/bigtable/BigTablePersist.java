@@ -211,7 +211,7 @@ public class BigTablePersist implements Persist {
       ByteString key = dbKey(reference.name());
 
       Reference expected = reference.withDeleted(false);
-      Reference updated = reference.forNewPointer(newPointer);
+      Reference updated = reference.forNewPointer(newPointer, config);
 
       casReferenceAndThrow(reference, key, expected, refsMutation(updated));
       return updated;

@@ -78,6 +78,7 @@ import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
+import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.RelativeCommitSpec;
@@ -462,6 +463,11 @@ public class PersistVersionStore implements VersionStore {
     return commitMeta != null
         ? CommitMetaSerializer.METADATA_SERIALIZER.fromBytes(commitMeta)
         : null;
+  }
+
+  @Override
+  public ReferenceHistory getReferenceHistory(String refName, Integer headCommitsToScan) {
+    throw new UnsupportedOperationException("Reference history not supported.");
   }
 
   @Override

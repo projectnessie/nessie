@@ -253,7 +253,7 @@ class RocksDBPersist implements Persist {
 
       checkReference(reference, db, cf, key, false);
 
-      Reference updated = reference.forNewPointer(newPointer);
+      Reference updated = reference.forNewPointer(newPointer, config);
 
       db.put(cf, key, serializeReference(updated));
       return updated;

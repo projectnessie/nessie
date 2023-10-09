@@ -156,6 +156,15 @@ public class ObservingVersionStore implements VersionStore {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
+  public ReferenceHistory getReferenceHistory(String refName, Integer headCommitsToScan)
+      throws ReferenceNotFoundException {
+    return delegate.getReferenceHistory(refName, headCommitsToScan);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
   public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
       GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
     return delegate.getNamedRefs(params, pagingToken);

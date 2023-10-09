@@ -24,6 +24,7 @@ import org.projectnessie.api.v2.params.DiffParams;
 import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
+import org.projectnessie.api.v2.params.ReferenceHistoryParams;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
@@ -41,6 +42,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
 import org.projectnessie.model.Validation;
@@ -107,6 +109,18 @@ public interface TreeApi {
   SingleReferenceResponse getReferenceByName(
       @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
           GetReferenceParams params)
+      throws NessieNotFoundException;
+
+  /**
+   * Retrieve the recorded recent history of a reference.
+   *
+   * <p>A reference's history is a size and time limited record of changes of the reference's
+   * current pointer, aka HEAD. The size and time limits are configured in the Nessie server
+   * configuration.
+   */
+  ReferenceHistoryResponse getReferenceHistory(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          ReferenceHistoryParams params)
       throws NessieNotFoundException;
 
   /**

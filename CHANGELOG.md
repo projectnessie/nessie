@@ -19,6 +19,9 @@ as necessary. Empty sections will not end in the release notes.
 - Ability to export repositories in V1 format. This is useful for migrating repositories to older 
   Nessie servers that do not support the new storage model.
 - Added support for Spark 3.5, removed support for Spark 3.1 - along with the version bump of Apache Iceberg to 1.4.0.
+- Functionality that records current-HEAD changes of named references and APIs to expose the information.
+  This is useful to recover from a scenario when a "primary data center/region/zone" has been lost and
+  replication of a distributed database has been interrupted.
 
 ### Changes
 

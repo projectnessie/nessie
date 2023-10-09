@@ -102,6 +102,7 @@ final class SqlConstants {
   static final String COL_REFS_DELETED = "deleted";
   static final String COL_REFS_CREATED_AT = "created_at";
   static final String COL_REFS_EXTENDED_INFO = "ext_info";
+  static final String COL_REFS_PREVIOUS = "prev_ptr";
   static final String REFS_CREATED_AT_COND = "_REFS_CREATED_AT_";
   static final String REFS_EXTENDED_INFO_COND = "_REFS_EXTENDED_INFO_";
   static final String UPDATE_REFERENCE_POINTER =
@@ -109,6 +110,8 @@ final class SqlConstants {
           + TABLE_REFS
           + " SET "
           + COL_REFS_POINTER
+          + "=?, "
+          + COL_REFS_PREVIOUS
           + "=? WHERE "
           + COL_REPO_ID
           + "=? AND "
@@ -174,7 +177,9 @@ final class SqlConstants {
           + COL_REFS_CREATED_AT
           + ", "
           + COL_REFS_EXTENDED_INFO
-          + ") VALUES (?, ?, ?, ?, ?, ?)";
+          + ", "
+          + COL_REFS_PREVIOUS
+          + ") VALUES (?, ?, ?, ?, ?, ?, ?)";
   static final String FIND_REFERENCES =
       "SELECT "
           + COL_REFS_NAME
@@ -186,6 +191,8 @@ final class SqlConstants {
           + COL_REFS_CREATED_AT
           + ", "
           + COL_REFS_EXTENDED_INFO
+          + ", "
+          + COL_REFS_PREVIOUS
           + " FROM "
           + TABLE_REFS
           + " WHERE "
@@ -209,6 +216,8 @@ final class SqlConstants {
           + " {5} DEFAULT 0, "
           + COL_REFS_EXTENDED_INFO
           + " {1}, "
+          + COL_REFS_PREVIOUS
+          + " {4}, "
           + "\n    PRIMARY KEY ("
           + COL_REPO_ID
           + ", "

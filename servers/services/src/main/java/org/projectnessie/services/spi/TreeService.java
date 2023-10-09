@@ -43,6 +43,7 @@ import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
+import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.WithHash;
 
@@ -75,6 +76,19 @@ public interface TreeService {
               message = REF_NAME_MESSAGE)
           String refName,
       FetchOption fetchOption)
+      throws NessieNotFoundException;
+
+  ReferenceHistoryResponse getReferenceHistory(
+      @Valid
+          @jakarta.validation.Valid
+          @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
+          String refName,
+      Integer headCommitsToScan)
       throws NessieNotFoundException;
 
   Reference createReference(

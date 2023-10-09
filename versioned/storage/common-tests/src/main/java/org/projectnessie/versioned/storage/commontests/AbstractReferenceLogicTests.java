@@ -24,6 +24,7 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -265,9 +266,21 @@ public abstract class AbstractReferenceLogicTests {
     persist.addReference(ref);
 
     ObjId to = objIdFromString("1234");
-    Reference refTo = reference("foo", to, false, ref.createdAtMicros(), ref.extendedInfoObj());
+    Reference assigned = refLogic.assignReference(ref, to);
+    Reference refTo =
+        reference(
+            "foo",
+            to,
+            false,
+            ref.createdAtMicros(),
+            ref.extendedInfoObj(),
+            assigned.previousPointers());
 
-    soft.assertThat(refLogic.assignReference(ref, to)).isEqualTo(refTo);
+    soft.assertThat(assigned)
+        .isEqualTo(refTo)
+        .extracting(Reference::previousPointers, list(Reference.PreviousPointer.class))
+        .extracting(Reference.PreviousPointer::pointer)
+        .containsExactly(ref.pointer());
 
     Reference notExists = reference("not-exists", randomObjId(), false, 0L, null);
     soft.assertThatThrownBy(() -> refLogic.assignReference(notExists, randomObjId()))

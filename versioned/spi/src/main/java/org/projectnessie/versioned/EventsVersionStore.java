@@ -139,6 +139,12 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
+  public ReferenceHistory getReferenceHistory(String refName, Integer headCommitsToScan)
+      throws ReferenceNotFoundException {
+    return delegate.getReferenceHistory(refName, headCommitsToScan);
+  }
+
+  @Override
   public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
       GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
     return delegate.getNamedRefs(params, pagingToken);
