@@ -266,8 +266,6 @@ final class CassandraConstants {
           + COL_OBJ_ID
           + " IN ?";
 
-  static final String FIND_OBJS_TYPED = FIND_OBJS + " AND " + COL_OBJ_TYPE + "=? ALLOW FILTERING";
-
   static final String SCAN_OBJS =
       "SELECT "
           + COLS_OBJS_ALL
