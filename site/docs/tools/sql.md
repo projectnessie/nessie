@@ -4,9 +4,10 @@ Spark SQL extensions provide an easy way to execute common Nessie commands via S
 ## How to use them
 
 {%- for sparkver in [
+  '3.5',
+  '3.4',
   '3.3',
   '3.2',
-  '3.1',
 ] %}
 
 ### Spark {{sparkver}}
@@ -124,13 +125,3 @@ Merging branch `dev` into `base` for the `nessie` catalog can be done via:
 * `MERGE BRANCH dev INTO base IN nessie`
 
 Note that in case `base` doesn't exist, Nessie will fall back to the default branch (`main`).
-
-## Usage with Iceberg CALL procedures
-
-!!! note
-    For Iceberg version >= 0.14.0 with spark versions <= 3.1
-    or Iceberg version < 0.14.0 with any of the spark versions,
-    1. Compaction always works on initial catalog configurations (like `spark.sql.catalog._catalogName_.ref`)
-    and ignores the reference set using `USE REFERENCE` command.
-    So, need to have a new spark session with required reference name configuration to apply the compaction for tables in non-default references.
-    2. For compaction, `TableReference` syntax is not supported as table identifier.
