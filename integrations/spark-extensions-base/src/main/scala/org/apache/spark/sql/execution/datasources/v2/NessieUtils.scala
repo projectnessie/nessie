@@ -18,9 +18,9 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.projectnessie.client.NessieConfigConstants
-import org.projectnessie.client.api.NessieApiV1
-import org.projectnessie.client.http.HttpClientBuilder
+import org.projectnessie.client.{NessieClientBuilder, NessieConfigConstants}
+import org.projectnessie.client.api.{NessieApiV1, NessieApiV2}
+import org.projectnessie.client.config.NessieClientConfigSource
 import org.projectnessie.error.{
   NessieNotFoundException,
   NessieReferenceNotFoundException
@@ -173,7 +173,7 @@ object NessieUtils {
 
     val catalogName = catalog.getOrElse(currentCatalog.name)
 
-    val nessieClientConfigMapper: java.util.function.Function[String, String] =
+    val nessieClientConfigMapper: NessieClientConfigSource =
       icebergCatalog.getClass.getSimpleName match {
         case "NessieCatalog" =>
           val sparkConf = SparkSession.active.sparkContext.conf
@@ -198,7 +198,7 @@ object NessieUtils {
                 // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie Catalog
                 // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely assume
                 // that `nessie.core-base-uri` contains a `/` terminated URI.
-                catalogProperties.get("nessie.core-base-uri") + "v1"
+                catalogProperties.get("nessie.core-base-uri") + "v2"
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID =>
                 credential.clientId
               case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET =>
@@ -220,10 +220,23 @@ object NessieUtils {
           )
       }
 
-    HttpClientBuilder
-      .builder()
-      .fromConfig(nessieClientConfigMapper)
-      .build(classOf[NessieApiV1])
+    val nessieClientBuilder =
+      NessieClientBuilder.createClientBuilderFromSystemSettings(
+        nessieClientConfigMapper
+      )
+    nessieClientConfigMapper.getValue("nessie.client-api-version") match {
+      case null | "1" =>
+        nessieClientBuilder.build(classOf[NessieApiV1])
+      case "2" =>
+        nessieClientBuilder.build(classOf[NessieApiV2])
+      case unsupported =>
+        throw new IllegalArgumentException(
+          String.format(
+            "Unsupported client-api-version value: %s. Can only be 1 or 2",
+            unsupported
+          )
+        )
+    }
   }
 
   /** Allow resolving a property via the environment.

@@ -40,8 +40,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.NessieClientBuilder;
+import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.config.NessieClientConfigSource;
+import org.projectnessie.client.config.NessieClientConfigSources;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -72,11 +74,11 @@ public abstract class SparkSqlTestBase {
 
   protected String refName;
   protected String additionalRefName;
-  protected NessieApiV1 api;
+  protected NessieApiV2 api;
 
   protected String nessieApiUri() {
     return format(
-        "%s/api/v1",
+        "%s/api/v2",
         requireNonNull(
             System.getProperty("quarkus.http.test-url"),
             "Required system property quarkus.http.test-url is not set"));
@@ -94,6 +96,8 @@ public abstract class SparkSqlTestBase {
         defaultBranch(),
         "uri",
         nessieApiUri(),
+        "client-api-version",
+        "2",
         "warehouse",
         warehouseURI(),
         "catalog-impl",
@@ -107,8 +111,10 @@ public abstract class SparkSqlTestBase {
   @BeforeEach
   protected void setupSparkAndApi(TestInfo testInfo)
       throws NessieNotFoundException, NessieConflictException {
-    HttpClientBuilder httpClientBuilder = HttpClientBuilder.builder().withUri(nessieApiUri());
-    api = configureNessieHttpClient(httpClientBuilder).build(NessieApiV1.class);
+    api =
+        NessieClientBuilder.createClientBuilderFromSystemSettings(nessieClientConfigSource())
+            .withUri(nessieApiUri())
+            .build(NessieApiV2.class);
 
     refName = testInfo.getTestMethod().map(Method::getName).get();
     additionalRefName = refName + "_other";
@@ -159,8 +165,8 @@ public abstract class SparkSqlTestBase {
     spark.sparkContext().setLogLevel("WARN");
   }
 
-  protected HttpClientBuilder configureNessieHttpClient(HttpClientBuilder httpClientBuilder) {
-    return httpClientBuilder;
+  protected NessieClientConfigSource nessieClientConfigSource() {
+    return NessieClientConfigSources.defaultConfigSources();
   }
 
   @AfterEach
