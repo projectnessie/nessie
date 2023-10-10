@@ -21,7 +21,10 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.client.{NessieClientBuilder, NessieConfigConstants}
 import org.projectnessie.client.api.{NessieApiV1, NessieApiV2}
 import org.projectnessie.client.config.NessieClientConfigSource
-import org.projectnessie.error.{NessieNotFoundException, NessieReferenceNotFoundException}
+import org.projectnessie.error.{
+  NessieNotFoundException,
+  NessieReferenceNotFoundException
+}
 import org.projectnessie.model.Reference.ReferenceType
 import org.projectnessie.model._
 
@@ -217,14 +220,22 @@ object NessieUtils {
           )
       }
 
-    val nessieClientBuilder = NessieClientBuilder.createClientBuilderFromSystemSettings(nessieClientConfigMapper)
+    val nessieClientBuilder =
+      NessieClientBuilder.createClientBuilderFromSystemSettings(
+        nessieClientConfigMapper
+      )
     nessieClientConfigMapper.getValue("nessie.client-api-version") match {
       case null | "1" =>
         nessieClientBuilder.build(classOf[NessieApiV1])
       case "2" =>
         nessieClientBuilder.build(classOf[NessieApiV2])
       case unsupported =>
-        throw new IllegalArgumentException(String.format("Unsupported client-api-version value: %s. Can only be 1 or 2", unsupported))
+        throw new IllegalArgumentException(
+          String.format(
+            "Unsupported client-api-version value: %s. Can only be 1 or 2",
+            unsupported
+          )
+        )
     }
   }
 
