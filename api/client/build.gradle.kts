@@ -91,7 +91,6 @@ jandex { skipDefaultProcessing() }
 
 val jacksonTestVersions =
   setOf(
-    "2.10.0", // Spark 3.1.2+3.1.3
     "2.11.4", // Spark 3.?.? (reason unknown)
     "2.12.3", // Spark 3.2.1+3.2.2
     "2.13.3" // Spark 3.3.0
