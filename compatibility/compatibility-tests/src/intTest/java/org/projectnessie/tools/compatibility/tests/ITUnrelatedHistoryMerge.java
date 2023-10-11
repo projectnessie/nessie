@@ -17,6 +17,7 @@ package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV2;
@@ -35,6 +36,7 @@ import org.projectnessie.tools.compatibility.internal.OlderNessieServersExtensio
 // Common merge parent is enforced only with the new data model, hence the `PERSIST` storage kind.
 @NessieServerProperty(name = "nessie.test.storage.kind", value = "PERSIST")
 @VersionCondition(minVersion = Version.CURRENT_STRING, maxVersion = Version.CURRENT_STRING)
+@Tag("nessie-multi-env")
 public class ITUnrelatedHistoryMerge {
 
   public static final String NO_ANCESTOR =

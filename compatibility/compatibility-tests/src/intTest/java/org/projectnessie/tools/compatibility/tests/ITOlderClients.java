@@ -15,11 +15,13 @@
  */
 package org.projectnessie.tools.compatibility.tests;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.internal.OlderNessieClientsExtension;
 
 @ExtendWith(OlderNessieClientsExtension.class)
+@Tag("nessie-multi-env")
 public class ITOlderClients extends AbstractCompatibilityTests {
   @Override
   protected Version serverVersion() {

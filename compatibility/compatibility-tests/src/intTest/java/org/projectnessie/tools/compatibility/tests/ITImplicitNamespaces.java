@@ -17,6 +17,7 @@ package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV1;
@@ -33,6 +34,7 @@ import org.projectnessie.tools.compatibility.internal.NessieUpgradesExtension;
 
 @ExtendWith(NessieUpgradesExtension.class)
 @NessieServerProperty(name = "nessie.store.namespace-validation", value = "false")
+@Tag("nessie-multi-env")
 public class ITImplicitNamespaces {
 
   @NessieVersion Version version;

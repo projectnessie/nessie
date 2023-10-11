@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +50,7 @@ import org.projectnessie.tools.compatibility.internal.RollingUpgradesExtension;
 
 @ExtendWith(RollingUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag("nessie-multi-env")
 public class ITRollingUpgrades {
 
   public static final String NO_ANCESTOR =
