@@ -52,7 +52,6 @@ import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -597,13 +596,10 @@ public class BigTablePersist implements Persist {
           all = false;
         }
       }
+      if (typeFilter == null) {
+        throw new IllegalArgumentException("No object types matched the provided predicate");
+      }
       if (!all) {
-        // Edge case: the predicate did not match any object type
-        if (typeFilter == null) {
-          this.paginator = null;
-          this.iter = Collections.emptyIterator();
-          return;
-        }
         // Condition filters are generally not recommended because they are slower, but
         // scanAllObjects is not meant to be particularly efficient. The fact that we are also
         // limiting the query to a row prefix should alleviate the performance impact.
