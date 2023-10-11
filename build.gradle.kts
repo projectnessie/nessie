@@ -15,6 +15,8 @@
  */
 
 import org.jetbrains.changelog.date
+import org.jetbrains.gradle.ext.settings
+import org.jetbrains.gradle.ext.taskTriggers
 
 plugins {
   eclipse
@@ -131,4 +133,14 @@ changelog {
     )
   )
   version.set(provider { project.version.toString() })
+}
+
+idea.project.settings {
+  taskTriggers {
+    afterSync(
+      ":nessie-protobuf-relocated:jar",
+      ":nessie-spark-antlr-runtime:jar",
+      ":nessie-spark-extensions-grammar:jar"
+    )
+  }
 }
