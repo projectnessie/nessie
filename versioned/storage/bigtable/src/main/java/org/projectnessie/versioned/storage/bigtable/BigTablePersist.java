@@ -21,7 +21,6 @@ import static com.google.protobuf.ByteString.copyFromUtf8;
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableBackend.REPO_REGEX_SUFFIX;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CELL_TIMESTAMP;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
@@ -568,40 +567,47 @@ public class BigTablePersist implements Persist {
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>
       implements CloseableIterator<Obj> {
 
-    private final Predicate<ObjType> filter;
     private final Query.QueryPaginator paginator;
     private Iterator<Row> iter;
 
     private ByteString lastKey;
 
     ScanAllObjectsIterator(Predicate<ObjType> filter) {
-      this.filter = filter;
 
       Query q = Query.create(backend.tableObjs).prefix(keyPrefix);
 
       Filters.ChainFilter filterChain =
-          FILTERS.chain().filter(FILTERS.key().regex(keyPrefix.concat(REPO_REGEX_SUFFIX)));
+          FILTERS.chain().filter(FILTERS.family().exactMatch(FAMILY_OBJS));
 
-      // TODO the following filter does not really work as expected, can implement it later though.
-      //
-      // Filters.InterleaveFilter typeFilter = FILTERS.interleave();
-      // boolean all = true;
-      // for (ObjType type : ObjType.values()) {
-      //  boolean match = filter.test(type);
-      //  if (match) {
-      //    typeFilter.filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES[type.ordinal()]));
-      //  } else {
-      //    all = false;
-      //  }
-      // }
-      // if (!all) {
-      //  q.filter(
-      //      FILTERS
-      //          .chain()
-      //          .filter(FILTERS.family().exactMatch(FAMILY_OBJS))
-      //          .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
-      //          .filter(typeFilter));
-      // }
+      Filters.InterleaveFilter typeFilter = null;
+      boolean all = true;
+      for (ObjType type : ObjType.values()) {
+        boolean match = filter.test(type);
+        if (match) {
+          if (typeFilter == null) {
+            typeFilter = FILTERS.interleave();
+          }
+          typeFilter.filter(
+              FILTERS
+                  .chain()
+                  .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
+                  .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES[type.ordinal()])));
+        } else {
+          all = false;
+        }
+      }
+      if (typeFilter == null) {
+        throw new IllegalArgumentException("No object types matched the provided predicate");
+      }
+      if (!all) {
+        // Condition filters are generally not recommended because they are slower, but
+        // scanAllObjects is not meant to be particularly efficient. The fact that we are also
+        // limiting the query to a row prefix should alleviate the performance impact.
+        filterChain.filter(
+            FILTERS.condition(typeFilter).then(FILTERS.pass()).otherwise(FILTERS.block()));
+      }
+
+      filterChain.filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJS));
 
       this.paginator = q.filter(filterChain).createPaginator(100);
       this.iter = backend.client().readRows(paginator.getNextQuery()).iterator();
@@ -628,22 +634,11 @@ public class BigTablePersist implements Persist {
         ByteString key = row.getKey();
         lastKey = key;
 
-        if (!key.startsWith(keyPrefix)) {
-          continue;
-        }
-
         ObjId id = deserializeObjId(key.substring(keyPrefix.size()));
 
         List<RowCell> objCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJS);
-        if (objCells.size() != 1) {
-          continue;
-        }
         ByteBuffer obj = objCells.get(0).getValue().asReadOnlyByteBuffer();
-        Obj o = deserializeObj(id, obj);
-
-        if (filter.test(o.type())) {
-          return o;
-        }
+        return deserializeObj(id, obj);
       }
     }
   }
