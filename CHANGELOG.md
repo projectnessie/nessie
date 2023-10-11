@@ -18,6 +18,7 @@ as necessary. Empty sections will not end in the release notes.
 - `table-prefix` configuration option added to DynamoDB version store.
 - Ability to export repositories in V1 format. This is useful for migrating repositories to older 
   Nessie servers that do not support the new storage model.
+- Added support for Spark 3.5, removed support for Spark 3.1 - along with the version bump of Apache Iceberg to 1.4.0.
 
 ### Changes
 
@@ -27,6 +28,9 @@ as necessary. Empty sections will not end in the release notes.
 - Relative hashes are now supported in table references, thus allowing SQL queries to specify a relative hash
   in the `FROM` clause, e.g. `FROM table1@main#1234^1`.
 - BigTable backend: ability to disable telemetry (which is enabled by default).
+- Spark SQL extensions use Nessie API V2 now.
+- DynamoDB backend now supports table prefixes.
+- Advanced configuration options for BigTable backend.
 
 ### Deprecations
 
