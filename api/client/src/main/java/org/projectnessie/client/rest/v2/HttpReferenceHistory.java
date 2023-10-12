@@ -48,7 +48,7 @@ final class HttpReferenceHistory implements ReferenceHistoryBuilder {
     return client
         .newRequest()
         .path("trees/{ref}/recent-changes")
-        .queryParam("commit-log", headCommitsToScan)
+        .queryParam("scan-commits", headCommitsToScan)
         .resolveTemplate("ref", refName)
         .unwrap(NessieNotFoundException.class)
         .get()

@@ -47,8 +47,8 @@ public class ReferenceHistoryParams {
           "Optional parameter, specifies the number of commits to scan from the reference's current HEAD, "
               + "limited to the given amount of commits. Default is to not scan the commit log. The server "
               + "may impose a hard limit on the amount of commits from the commit log.")
-  @QueryParam("commit-log")
-  @jakarta.ws.rs.QueryParam("commit-log")
+  @QueryParam("scan-commits")
+  @jakarta.ws.rs.QueryParam("scan-commits")
   @Nullable
   @jakarta.annotation.Nullable
   private Integer headCommitsToScan;

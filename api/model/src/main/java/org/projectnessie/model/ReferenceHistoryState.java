@@ -41,7 +41,7 @@ import org.immutables.value.Value;
 public interface ReferenceHistoryState {
   @Schema(description = "Nessie commit ID.")
   @Value.Parameter(order = 1)
-  String pointer();
+  String commitHash();
 
   @Schema(description = "Consistency status of the commit.")
   @Value.Parameter(order = 2)
@@ -54,7 +54,7 @@ public interface ReferenceHistoryState {
   CommitMeta meta();
 
   static ReferenceHistoryState referenceHistoryElement(
-      String pointer, CommitConsistency commitConsistency, CommitMeta meta) {
-    return ImmutableReferenceHistoryState.of(pointer, commitConsistency, meta);
+      String commitHash, CommitConsistency commitConsistency, CommitMeta meta) {
+    return ImmutableReferenceHistoryState.of(commitHash, commitConsistency, meta);
   }
 }

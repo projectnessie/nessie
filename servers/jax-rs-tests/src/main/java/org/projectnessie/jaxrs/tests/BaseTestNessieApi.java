@@ -2107,7 +2107,7 @@ public abstract class BaseTestNessieApi {
             ReferenceHistoryResponse::getReference, ReferenceHistoryResponse::commitLogConsistency)
         .containsExactly(branch, CommitConsistency.COMMIT_CONSISTENT);
     soft.assertThat(response.current())
-        .extracting(ReferenceHistoryState::pointer, ReferenceHistoryState::commitConsistency)
+        .extracting(ReferenceHistoryState::commitHash, ReferenceHistoryState::commitConsistency)
         .containsExactly(branch.getHash(), CommitConsistency.COMMIT_CONSISTENT);
     soft.assertThat(response.previous())
         .hasSize(10)
@@ -2115,7 +2115,7 @@ public abstract class BaseTestNessieApi {
         .containsOnly(CommitConsistency.COMMIT_CONSISTENT);
     soft.assertThat(response.previous())
         .hasSize(10)
-        .extracting(ReferenceHistoryState::pointer)
+        .extracting(ReferenceHistoryState::commitHash)
         .containsExactlyElementsOf(expectedHashes);
   }
 }
