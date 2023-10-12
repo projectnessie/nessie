@@ -47,3 +47,9 @@ dependencies {
 
   testCompileOnly(libs.microprofile.openapi)
 }
+
+tasks.withType(Test::class).configureEach {
+  // Workaround when running tests with Java 21, can be removed once the mockito/bytebuddy issue is
+  // fixed, see https://github.com/mockito/mockito/issues/3121
+  systemProperty("net.bytebuddy.experimental", "true")
+}
