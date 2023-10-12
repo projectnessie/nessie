@@ -225,7 +225,7 @@ public interface HttpTreeApi extends TreeApi {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
               examples = {@ExampleObject(ref = "referenceHistoryResponse")},
-              schema = @Schema(implementation = SingleReferenceResponse.class))
+              schema = @Schema(implementation = ReferenceHistoryResponse.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),

@@ -72,7 +72,6 @@ import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
@@ -277,7 +276,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     ImmutableReferenceHistoryResponse.Builder response =
         ReferenceHistoryResponse.builder()
             .reference(ref)
-            .commitLogConsistency(CommitConsistency.valueOf(history.commitLogConsistency().name()));
+            .commitLogConsistency(history.commitLogConsistency());
     response.current(convertStoreHistoryEntry(history.current()));
     history.previous().stream().map(this::convertStoreHistoryEntry).forEach(response::addPrevious);
     return response.build();
@@ -286,9 +285,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   private ReferenceHistoryState convertStoreHistoryEntry(
       ReferenceHistory.ReferenceHistoryElement element) {
     return ReferenceHistoryState.referenceHistoryElement(
-        element.pointer().asString(),
-        CommitConsistency.valueOf(element.commitConsistency().name()),
-        element.meta());
+        element.pointer().asString(), element.commitConsistency(), element.meta());
   }
 
   @Override

@@ -409,8 +409,8 @@ public class VersionStoreImpl implements VersionStore {
       return CommitConsistency.COMMIT_CONSISTENT;
     }
 
-    // Hard coded limit of 100 commits to check. This function will check at max 1000 commits in the
-    // commit log, or until the configured recorded reference-history interval.
+    // This function will check at max 1000 commits in the commit log, or until the configured
+    // recorded reference-history interval.
     int toScan = Math.min(headCommitsToScan, 1000);
     long nowMicros = persist.config().currentTimeMicros();
     long inconsistencyWindow =

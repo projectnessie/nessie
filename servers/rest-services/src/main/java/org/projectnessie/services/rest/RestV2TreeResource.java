@@ -184,6 +184,9 @@ public class RestV2TreeResource implements HttpTreeApi {
   public ReferenceHistoryResponse getReferenceHistory(ReferenceHistoryParams params)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(params.getRef());
+    checkArgument(
+        reference.hashWithRelativeSpec() == null,
+        "Hashes are not allowed when fetching a reference history");
     return tree().getReferenceHistory(reference.name(), params.headCommitsToScan());
   }
 
