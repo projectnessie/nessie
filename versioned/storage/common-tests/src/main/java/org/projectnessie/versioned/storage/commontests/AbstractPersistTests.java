@@ -35,6 +35,9 @@ public abstract class AbstractPersistTests {
   public class CommitLogicTests extends AbstractCommitLogicTests {}
 
   @Nested
+  public class ConsistencyLogicTests extends AbstractConsistencyLogicTests {}
+
+  @Nested
   public class IndexesLogicTests extends AbstractIndexesLogicTests {}
 
   @Nested
