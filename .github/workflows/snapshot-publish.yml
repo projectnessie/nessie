@@ -25,19 +25,28 @@ jobs:
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
+      - name: Gradle / setup
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-disabled: true
+          arguments: projects
+
       - name: Gradle / publish snapshot
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
-        uses: gradle/gradle-build-action@v2
-        with:
-          cache-disabled: true
-          arguments: |
-            --no-watch-fs --no-daemon 
-            publishToSonatype closeAndReleaseSonatypeStagingRepository
-            -Prelease -Puber-jar
+        run: |
+          # 2 Retries - due to Gradle's old and unfixed CME bug
+          ./gradlew compileAll jar testClasses || \
+            ./gradlew compileAll jar testClasses || \
+            ./gradlew compileAll jar testClasses 
+
+          # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
+          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
+            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
+            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
 
       - name: Docker images publishing
         env:
