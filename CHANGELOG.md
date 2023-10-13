@@ -36,6 +36,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Quarkus 3.4.3 includes a Netty version bump to address [CVE-2023-44487](https://github.com/advisories/GHSA-qppj-fm5r-hxr3) (HTTP/2 rapid reset). Note: Nessie uses undertow only for testing purposes, so the undertow release used in Nessie does _not_ expose this CVE to users.
+
 ### Commits
 
 ## [0.71.0] Release (2023-09-21)
