@@ -112,9 +112,19 @@ jobs:
       run: |
         rm -rf "${ARTIFACTS}"
         mkdir -p "${ARTIFACTS}"
-        
+
+        echo "::group::Gradle build"
+        # 2 Retries - due to Gradle's old and unfixed CME bug
+        ./gradlew compileAll jar testClasses || \
+          ./gradlew compileAll jar testClasses || \
+          ./gradlew compileAll jar testClasses 
+        echo "::endgroup::"
+
         echo "::group::Publish to Sonatype"
-        ./gradlew --no-watch-fs --no-daemon publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
+        # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
+        ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
+          ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
+          ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
         mv servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
         mv servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
         echo "::endgroup::"
