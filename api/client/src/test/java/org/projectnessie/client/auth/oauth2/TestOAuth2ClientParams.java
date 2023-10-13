@@ -84,7 +84,15 @@ class TestOAuth2ClientParams {
                 .refreshSafetyWindow(Duration.ofMinutes(10))
                 .defaultAccessTokenLifespan(Duration.ofMinutes(5)),
             new IllegalArgumentException(
-                "refresh safety window must be less than the default token lifespan")));
+                "refresh safety window must be less than the default token lifespan")),
+        Arguments.of(
+            newBuilder().idleInterval(OAuth2ClientParams.MIN_IDLE_INTERVAL.minusSeconds(1)),
+            new IllegalArgumentException("idle interval must be greater than or equal to PT5S")),
+        Arguments.of(
+            newBuilder()
+                .keepAliveInterval(OAuth2ClientParams.MIN_KEEP_ALIVE_INTERVAL.minusSeconds(1)),
+            new IllegalArgumentException(
+                "keep alive interval must be greater than or equal to PT5S")));
   }
 
   @ParameterizedTest

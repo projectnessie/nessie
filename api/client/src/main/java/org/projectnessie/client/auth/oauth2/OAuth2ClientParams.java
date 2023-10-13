@@ -30,6 +30,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_IDLE_INTERVAL;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_KEEP_ALIVE_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAFETY_WINDOW;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +52,8 @@ interface OAuth2ClientParams {
   ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   Duration MIN_REFRESH_DELAY = Duration.ofSeconds(1);
+  Duration MIN_IDLE_INTERVAL = Duration.ofSeconds(5);
+  Duration MIN_KEEP_ALIVE_INTERVAL = Duration.ofSeconds(5);
 
   URI getTokenEndpoint();
 
@@ -89,11 +93,28 @@ interface OAuth2ClientParams {
   }
 
   @Value.Default
+  default Duration getIdleInterval() {
+    return Duration.parse(DEFAULT_IDLE_INTERVAL);
+  }
+
+  @Value.Default
   default boolean getTokenExchangeEnabled() {
     return true;
   }
 
-  Optional<ScheduledExecutorService> getExecutor();
+  @Value.Default
+  default ScheduledExecutorService getExecutor() {
+    return new OAuth2TokenRefreshExecutor(getKeepAliveInterval());
+  }
+
+  /**
+   * The keep alive interval, that is, the maximum time a background thread can be idle before it is
+   * closed. Only relevant when using the default {@link #getExecutor() executor}.
+   */
+  @Value.Default
+  default Duration getKeepAliveInterval() {
+    return Duration.parse(DEFAULT_KEEP_ALIVE_INTERVAL);
+  }
 
   @Value.Default
   default HttpClient.Builder getHttpClient() {
@@ -152,6 +173,15 @@ interface OAuth2ClientParams {
     if (getRefreshSafetyWindow().compareTo(getDefaultAccessTokenLifespan()) >= 0) {
       throw new IllegalArgumentException(
           "refresh safety window must be less than the default token lifespan");
+    }
+    if (getIdleInterval().compareTo(MIN_IDLE_INTERVAL) < 0) {
+      throw new IllegalArgumentException(
+          String.format("idle interval must be greater than or equal to %s", MIN_IDLE_INTERVAL));
+    }
+    if (getKeepAliveInterval().compareTo(MIN_KEEP_ALIVE_INTERVAL) < 0) {
+      throw new IllegalArgumentException(
+          String.format(
+              "keep alive interval must be greater than or equal to %s", MIN_KEEP_ALIVE_INTERVAL));
     }
   }
 

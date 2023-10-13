@@ -31,10 +31,10 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpResponse;
@@ -65,6 +65,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final Duration defaultAccessTokenLifespan;
   private final Duration defaultRefreshTokenLifespan;
   private final Duration refreshSafetyWindow;
+  private final Duration idleInterval;
   private final boolean tokenExchangeEnabled;
   private final HttpClient httpClient;
   private final ScheduledExecutorService executor;
@@ -72,8 +73,12 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final ObjectMapper objectMapper;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
 
+  /** Visible for testing. */
+  final AtomicBoolean sleeping = new AtomicBoolean();
+
   private volatile CompletionStage<Tokens> currentTokensStage;
   private volatile ScheduledFuture<?> tokenRefreshFuture;
+  private volatile Instant lastAccess;
 
   OAuth2Client(OAuth2ClientParams params) {
     grantType = params.getGrantType();
@@ -83,28 +88,26 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     defaultAccessTokenLifespan = params.getDefaultAccessTokenLifespan();
     defaultRefreshTokenLifespan = params.getDefaultRefreshTokenLifespan();
     refreshSafetyWindow = params.getRefreshSafetyWindow();
+    idleInterval = params.getIdleInterval();
     tokenExchangeEnabled = params.getTokenExchangeEnabled();
     httpClient = params.getHttpClient().addResponseFilter(this::checkErrorResponse).build();
-    executor = params.getExecutor().orElseGet(OAuth2Client::createDefaultExecutor);
-    shouldCloseExecutor = !params.getExecutor().isPresent();
+    executor = params.getExecutor();
+    shouldCloseExecutor = executor instanceof OAuth2TokenRefreshExecutor;
     objectMapper = params.getObjectMapper();
+    lastAccess = Instant.now();
     currentTokensStage =
         started.thenApplyAsync((v) -> fetchNewTokens(), executor).whenComplete(this::log);
-    currentTokensStage.thenAccept(this::scheduleTokensRenewal);
-  }
-
-  private static ScheduledExecutorService createDefaultExecutor() {
-    return Executors.newSingleThreadScheduledExecutor(
-        runnable -> {
-          Thread thread = Executors.defaultThreadFactory().newThread(runnable);
-          thread.setDaemon(true);
-          thread.setName("oauth2-client");
-          return thread;
-        });
+    currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
   @Override
   public AccessToken authenticate() {
+    Instant now = Instant.now();
+    lastAccess = now;
+    if (sleeping.compareAndSet(true, false)) {
+      LOGGER.debug("Waking up...");
+      wakeUp(now);
+    }
     return getCurrentTokens().getAccessToken();
   }
 
@@ -165,35 +168,57 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
-  private void scheduleTokensRenewal(Tokens currentTokens) {
+  private void maybeScheduleTokensRenewal(Tokens currentTokens) {
     Instant now = Instant.now();
+    if (idle(now)) {
+      sleeping.set(true);
+      LOGGER.debug("Sleeping...");
+    } else {
+      scheduleOrExecuteTokensRenewal(currentTokens, now, MIN_REFRESH_DELAY);
+    }
+  }
+
+  private void scheduleOrExecuteTokensRenewal(
+      Tokens currentTokens, Instant now, Duration minRefreshDelay) {
     Instant accessExpirationTime =
         tokenExpirationTime(now, currentTokens.getAccessToken(), defaultAccessTokenLifespan);
     Instant refreshExpirationTime =
         tokenExpirationTime(now, currentTokens.getRefreshToken(), defaultRefreshTokenLifespan);
     Duration delay =
-        nextDelay(now, accessExpirationTime, refreshExpirationTime, refreshSafetyWindow);
-    LOGGER.debug("Scheduling token refresh in {}", delay);
-    tokenRefreshFuture =
-        executor.schedule(
-            () -> {
-              currentTokensStage = renewTokens();
-              currentTokensStage.thenAccept(this::scheduleTokensRenewal);
-            },
-            delay.toMillis(),
-            TimeUnit.MILLISECONDS);
+        nextDelay(
+            now, accessExpirationTime, refreshExpirationTime, refreshSafetyWindow, minRefreshDelay);
+    if (delay.isZero()) {
+      LOGGER.debug("Refreshing expired tokens immediately");
+      renewTokens();
+    } else {
+      LOGGER.debug("Scheduling token refresh in {}", delay);
+      tokenRefreshFuture =
+          executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
+    }
   }
 
-  private CompletionStage<Tokens> renewTokens() {
-    return currentTokensStage
-        // try refreshing the current tokens
-        .thenApply(this::refreshTokens)
-        // if that fails, try fetching brand-new tokens
-        .exceptionally(error -> fetchNewTokens())
-        .whenComplete(this::log);
+  private void renewTokens() {
+    CompletionStage<Tokens> oldTokensStage = currentTokensStage;
+    currentTokensStage =
+        oldTokensStage
+            // try refreshing the current tokens
+            .thenApply(this::refreshTokens)
+            // if that fails, try fetching brand-new tokens
+            .exceptionally(error -> fetchNewTokens())
+            .whenComplete(this::log);
+    currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
-  private void log(Tokens tokens, Throwable error) {
+  /** Visible for testing. */
+  boolean idle(Instant now) {
+    return Duration.between(lastAccess, now).compareTo(idleInterval) > 0;
+  }
+
+  private void wakeUp(Instant now) {
+    scheduleOrExecuteTokensRenewal(getCurrentTokens(), now, Duration.ZERO);
+  }
+
+  private void log(Tokens redacted, Throwable error) {
     if (error != null) {
       LOGGER.error("Failed to renew tokens", error);
     } else {
@@ -268,14 +293,15 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       Instant now,
       Instant accessExpirationTime,
       Instant refreshExpirationTime,
-      Duration refreshSafetyWindow) {
+      Duration refreshSafetyWindow,
+      Duration minRefreshDelay) {
     Instant expirationTime =
         accessExpirationTime.isBefore(refreshExpirationTime)
             ? accessExpirationTime
             : refreshExpirationTime;
     Duration delay = Duration.between(now, expirationTime).minus(refreshSafetyWindow);
-    if (delay.compareTo(MIN_REFRESH_DELAY) < 0) {
-      delay = MIN_REFRESH_DELAY;
+    if (delay.compareTo(minRefreshDelay) < 0) {
+      delay = minRefreshDelay;
     }
     return delay;
   }

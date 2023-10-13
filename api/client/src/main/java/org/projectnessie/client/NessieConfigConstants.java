@@ -156,6 +156,30 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW =
       "nessie.authentication.oauth2.refresh-safety-window";
 
+  public static final String DEFAULT_IDLE_INTERVAL = "PT30S";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_IDLE_INTERVAL}) for the OAuth2 authentication
+   * provider. The maximum idle interval to use; if the OAuth2 provider is not used after this
+   * interval, no more token refreshes will occur, until the provider is used again. Optional,
+   * defaults to {@value #DEFAULT_IDLE_INTERVAL}. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_IDLE_INTERVAL =
+      "nessie.authentication.oauth2.idle-interval";
+
+  public static final String DEFAULT_KEEP_ALIVE_INTERVAL = "PT30S";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL}) for the OAuth2
+   * authentication provider. The keep alive interval to use; if the OAuth2 provider background
+   * thread is not used after this interval, it will be stopped; a new thread will be spawned if the
+   * provider is used again. Optional, defaults to {@value #DEFAULT_KEEP_ALIVE_INTERVAL}. Must be a
+   * valid <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL =
+      "nessie.authentication.oauth2.keep-alive-interval";
+
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES}) for the OAuth2 authentication
    * provider. Space-separated list of scopes to include in each request to the OAuth2 server.
