@@ -14,6 +14,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.72.0] Release (2023-10-13)
+
+### New Features
+
 - Spark SQL extensions now support the `DROP ... IF EXISTS` syntax for branches and tags.
 - `table-prefix` configuration option added to DynamoDB version store.
 - Ability to export repositories in V1 format. This is useful for migrating repositories to older 
@@ -35,13 +47,9 @@ as necessary. Empty sections will not end in the release notes.
 - DynamoDB backend now supports table prefixes.
 - Advanced configuration options for BigTable backend.
 
-### Deprecations
-
 ### Fixes
 
 - Quarkus 3.4.3 includes a Netty version bump to address [CVE-2023-44487](https://github.com/advisories/GHSA-qppj-fm5r-hxr3) (HTTP/2 rapid reset). Note: Nessie uses undertow only for testing purposes, so the undertow release used in Nessie does _not_ expose this CVE to users.
-
-### Commits
 
 ## [0.71.0] Release (2023-09-21)
 
@@ -189,7 +197,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.71.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.72.0...HEAD
+[0.72.0]: https://github.com/projectnessie/nessie/compare/nessie-0.71.0...nessie-0.72.0
 [0.71.0]: https://github.com/projectnessie/nessie/compare/nessie-0.70.2...nessie-0.71.0
 [0.70.2]: https://github.com/projectnessie/nessie/compare/nessie-0.70.1...nessie-0.70.2
 [0.70.1]: https://github.com/projectnessie/nessie/compare/nessie-0.70.0...nessie-0.70.1
