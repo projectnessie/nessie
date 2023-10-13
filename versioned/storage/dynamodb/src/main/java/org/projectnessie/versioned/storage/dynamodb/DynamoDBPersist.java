@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.dynamodb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyListIterator;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -58,6 +59,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_DELETED;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_POINTER;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_PREVIOUS;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_CREATED_AT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REF_INITIAL_POINTER;
@@ -85,6 +87,9 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CON
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CONDITION_STORE_REF;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.ITEM_SIZE_LIMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.KEY_NAME;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
+import static software.amazon.awssdk.core.SdkBytes.fromByteArray;
 import static software.amazon.awssdk.core.SdkBytes.fromByteBuffer;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromB;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromBool;
@@ -226,7 +231,7 @@ public class DynamoDBPersist implements Persist {
       throws RefNotFoundException, RefConditionFailedException {
     try {
       reference = reference.withDeleted(false);
-      Reference bumpedReference = reference.forNewPointer(newPointer);
+      Reference bumpedReference = reference.forNewPointer(newPointer, config);
       conditionalReferencePut(bumpedReference, reference);
       return bumpedReference;
     } catch (ConditionalCheckFailedException e) {
@@ -283,7 +288,8 @@ public class DynamoDBPersist implements Persist {
         attributeToObjId(i, COL_REFERENCES_POINTER),
         attributeToBool(i, COL_REFERENCES_DELETED),
         createdAt,
-        attributeToObjId(i, COL_REFERENCES_EXTENDED_INFO));
+        attributeToObjId(i, COL_REFERENCES_EXTENDED_INFO),
+        attributeToPreviousPointers(i));
   }
 
   @Nonnull
@@ -340,12 +346,22 @@ public class DynamoDBPersist implements Persist {
                       attributeToObjId(item, COL_REFERENCES_POINTER),
                       attributeToBool(item, COL_REFERENCES_DELETED),
                       createdAt,
-                      attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO));
+                      attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO),
+                      attributeToPreviousPointers(item));
               int idx = nameToIndex.getValue(name);
               if (idx >= 0) {
                 r[idx] = reference;
               }
             });
+  }
+
+  private List<Reference.PreviousPointer> attributeToPreviousPointers(
+      Map<String, AttributeValue> item) {
+    AttributeValue attr = item.get(COL_REFERENCES_PREVIOUS);
+    if (attr == null) {
+      return emptyList();
+    }
+    return deserializePreviousPointers(attr.b().asByteArray());
   }
 
   @Override
@@ -948,6 +964,11 @@ public class DynamoDBPersist implements Persist {
     item.put(COL_REFERENCES_DELETED, fromBool(reference.deleted()));
     item.put(COL_REFERENCES_CREATED_AT, referencesCreatedAt(reference));
     objIdToAttribute(item, COL_REFERENCES_EXTENDED_INFO, reference.extendedInfoObj());
+
+    byte[] previousPointers = serializePreviousPointers(reference.previousPointers());
+    if (previousPointers != null) {
+      item.put(COL_REFERENCES_PREVIOUS, fromB(fromByteArray(previousPointers)));
+    }
 
     return item;
   }

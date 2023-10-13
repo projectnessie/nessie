@@ -76,6 +76,8 @@ import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stri
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.datastax.oss.driver.api.core.DriverException;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
@@ -185,6 +187,9 @@ public class CassandraPersist implements Persist {
       throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
+    byte[] serializedPreviousPointers = serializePreviousPointers(reference.previousPointers());
+    ByteBuffer previous =
+        serializedPreviousPointers != null ? ByteBuffer.wrap(serializedPreviousPointers) : null;
     if (backend.executeCas(
         ADD_REFERENCE,
         config.repositoryId(),
@@ -192,7 +197,8 @@ public class CassandraPersist implements Persist {
         serializeObjId(reference.pointer()),
         reference.deleted(),
         reference.createdAtMicros(),
-        serializeObjId(reference.extendedInfoObj()))) {
+        serializeObjId(reference.extendedInfoObj()),
+        previous)) {
       return reference;
     }
     throw new RefAlreadyExistsException(fetchReference(reference.name()));
@@ -248,9 +254,14 @@ public class CassandraPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
+    Reference updated = reference.forNewPointer(newPointer, config);
+    byte[] serializedPreviousPointers = serializePreviousPointers(updated.previousPointers());
+    ByteBuffer previous =
+        serializedPreviousPointers != null ? ByteBuffer.wrap(serializedPreviousPointers) : null;
     if (!backend.executeCas(
         UPDATE_REFERENCE_POINTER,
         serializeObjId(newPointer),
+        previous,
         config().repositoryId(),
         reference.name(),
         serializeObjId(reference.pointer()),
@@ -264,7 +275,7 @@ public class CassandraPersist implements Persist {
       throw new RefConditionFailedException(ref);
     }
 
-    return reference.forNewPointer(newPointer);
+    return updated;
   }
 
   @SuppressWarnings("unused")
@@ -832,12 +843,21 @@ public class CassandraPersist implements Persist {
   }
 
   private static Reference deserializeReference(Row row) {
+    ByteBuffer previous = row.getByteBuffer(5);
+    byte[] bytes;
+    if (previous != null) {
+      bytes = new byte[previous.remaining()];
+      previous.get(bytes);
+    } else {
+      bytes = null;
+    }
     return Reference.reference(
         row.getString(0),
         deserializeObjId(row.getString(1)),
         row.getBoolean(2),
         row.getLong(3),
-        deserializeObjId(row.getString(4)));
+        deserializeObjId(row.getString(4)),
+        deserializePreviousPointers(bytes));
   }
 
   private static ObjId deserializeObjId(String id) {

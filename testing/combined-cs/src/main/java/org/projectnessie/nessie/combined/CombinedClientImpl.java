@@ -35,6 +35,7 @@ import org.projectnessie.client.api.GetReferenceBuilder;
 import org.projectnessie.client.api.GetRepositoryConfigBuilder;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.api.ReferenceHistoryBuilder;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.api.UpdateRepositoryConfigBuilder;
 import org.projectnessie.error.ErrorCode;
@@ -103,6 +104,11 @@ final class CombinedClientImpl implements NessieApiV2 {
   @Override
   public GetReferenceBuilder getReference() {
     return new CombinedGetReference(treeApi);
+  }
+
+  @Override
+  public ReferenceHistoryBuilder referenceHistory() {
+    return new CombinedReferenceHistory(treeApi);
   }
 
   @Override

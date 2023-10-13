@@ -65,6 +65,12 @@ public interface StoreConfig {
   String CONFIG_NAMESPACE_VALIDATION = "namespace-validation";
   boolean DEFAULT_NAMESPACE_VALIDATION = true;
 
+  String CONFIG_PREVIOUS_HEAD_COUNT = "ref-previous-head-count";
+  int DEFAULT_PREVIOUS_HEAD_COUNT = 20;
+
+  String CONFIG_PREVIOUS_HEAD_TIME_SPAN_SECONDS = "ref-previous-head-time-span-seconds";
+  long DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS = 5 * 60;
+
   /**
    * Committing operations by default enforce that all (parent) namespaces exist.
    *
@@ -237,6 +243,16 @@ public interface StoreConfig {
     return Clock.systemUTC();
   }
 
+  @Value.Default
+  default int referencePreviousHeadCount() {
+    return DEFAULT_PREVIOUS_HEAD_COUNT;
+  }
+
+  @Value.Default
+  default long referencePreviousHeadTimeSpanSeconds() {
+    return DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS;
+  }
+
   /**
    * Retrieves the current timestamp in microseconds since epoch, using the configured {@link
    * #clock()}.
@@ -313,6 +329,14 @@ public interface StoreConfig {
       if (v != null) {
         a = a.withValidateNamespaces(Boolean.parseBoolean(v.trim()));
       }
+      v = configFunction.apply(CONFIG_PREVIOUS_HEAD_COUNT);
+      if (v != null) {
+        a = a.withReferencePreviousHeadCount(Integer.parseInt(v.trim()));
+      }
+      v = configFunction.apply(CONFIG_PREVIOUS_HEAD_TIME_SPAN_SECONDS);
+      if (v != null) {
+        a = a.withReferencePreviousHeadTimeSpanSeconds(Long.parseLong(v.trim()));
+      }
       return a;
     }
 
@@ -354,5 +378,9 @@ public interface StoreConfig {
 
     /** See {@link StoreConfig#clock()}. */
     Adjustable withClock(Clock clock);
+
+    Adjustable withReferencePreviousHeadCount(int referencePreviousHeadCount);
+
+    Adjustable withReferencePreviousHeadTimeSpanSeconds(long referencePreviousHeadTimeSpanSeconds);
   }
 }

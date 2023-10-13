@@ -27,6 +27,7 @@ final class MongoDBConstants {
   static final String COL_REFERENCES_DELETED = "d";
   static final String COL_REFERENCES_CREATED_AT = "c";
   static final String COL_REFERENCES_EXTENDED_INFO = "e";
+  static final String COL_REFERENCES_PREVIOUS = "h";
 
   static final String COL_OBJ_ID = "i";
   static final String COL_REPO = "r";

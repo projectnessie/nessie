@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.jdbc;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
@@ -30,7 +31,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stri
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
 import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENCE;
@@ -75,6 +75,8 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_EXTENDE
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.STORE_OBJ;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_REFERENCE_POINTER;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
@@ -220,6 +222,12 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setNull(5, Types.BIGINT);
       }
       serializeObjId(ps, 6, reference.extendedInfoObj());
+      byte[] previous = serializePreviousPointers(reference.previousPointers());
+      if (previous != null) {
+        ps.setBytes(7, previous);
+      } else {
+        ps.setNull(7, Types.BINARY);
+      }
 
       if (ps.executeUpdate() != 1) {
         throw new RefAlreadyExistsException(fetchReference(reference.name()));
@@ -313,6 +321,14 @@ abstract class AbstractJdbcPersist implements Persist {
         conn.prepareStatement(referencesDml(UPDATE_REFERENCE_POINTER, reference))) {
       int idx = 1;
       serializeObjId(ps, idx++, newPointer);
+      Reference updated = reference.forNewPointer(newPointer, config);
+      byte[] previous = serializePreviousPointers(updated.previousPointers());
+      if (previous != null) {
+        ps.setBytes(idx++, previous);
+      } else {
+        ps.setNull(idx++, Types.BINARY);
+      }
+
       ps.setString(idx++, config().repositoryId());
       ps.setString(idx++, reference.name());
       serializeObjId(ps, idx++, reference.pointer());
@@ -334,7 +350,7 @@ abstract class AbstractJdbcPersist implements Persist {
         throw new RefConditionFailedException(ref);
       }
 
-      return reference.forNewPointer(newPointer);
+      return updated;
     } catch (SQLException e) {
       throw unhandledSQLException(e);
     }
@@ -1041,12 +1057,16 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   private static Reference deserializeReference(ResultSet rs) throws SQLException {
+    byte[] prevBytes = rs.getBytes(6);
+    List<Reference.PreviousPointer> previousPointers =
+        prevBytes != null ? deserializePreviousPointers(prevBytes) : emptyList();
     return Reference.reference(
         rs.getString(1),
         deserializeObjId(rs, 2),
         rs.getBoolean(3),
         rs.getLong(4),
-        deserializeObjId(rs, 5));
+        deserializeObjId(rs, 5),
+        previousPointers);
   }
 
   private static ObjId deserializeObjId(ResultSet rs, int col) throws SQLException {

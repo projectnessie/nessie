@@ -32,6 +32,7 @@ import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.api.v2.params.ReferenceHistoryParams;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
@@ -56,6 +57,7 @@ import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
 import org.projectnessie.model.ser.Views;
@@ -175,6 +177,17 @@ public class RestV2TreeResource implements HttpTreeApi {
     return SingleReferenceResponse.builder()
         .reference(tree().getReferenceByName(reference.name(), params.fetchOption()))
         .build();
+  }
+
+  @JsonView(Views.V2.class)
+  @Override
+  public ReferenceHistoryResponse getReferenceHistory(ReferenceHistoryParams params)
+      throws NessieNotFoundException {
+    ParsedReference reference = parseRefPathString(params.getRef());
+    checkArgument(
+        reference.hashWithRelativeSpec() == null,
+        "Hashes are not allowed when fetching a reference history");
+    return tree().getReferenceHistory(reference.name(), params.headCommitsToScan());
   }
 
   @JsonView(Views.V2.class)

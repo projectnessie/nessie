@@ -23,9 +23,11 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.ContentResult.contentResult;
+import static org.projectnessie.versioned.ReferenceHistory.ReferenceHistoryElement.referenceHistoryElement;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.consistencyLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
@@ -69,6 +71,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -76,6 +81,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -93,6 +99,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
 import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
+import org.projectnessie.versioned.ImmutableReferenceHistory;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
@@ -106,6 +113,7 @@ import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
+import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -124,6 +132,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
+import org.projectnessie.versioned.storage.common.logic.ConsistencyLogic;
 import org.projectnessie.versioned.storage.common.logic.DiffEntry;
 import org.projectnessie.versioned.storage.common.logic.DiffPagedResult;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
@@ -251,8 +260,20 @@ public class VersionStoreImpl implements VersionStore {
     }
 
     try {
-      CommitObj head = commitLogic(persist).headCommit(expected);
-      Hash currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
+      Hash currentCommitId;
+      try {
+        CommitObj head = commitLogic(persist).headCommit(expected);
+        currentCommitId = head != null ? objIdToHash(head.id()) : NO_ANCESTOR;
+      } catch (ObjNotFoundException e) {
+        // Special case, when the commit object does not exist. This situation can happen in a
+        // multi-zone/multi-region database setup, when the "primary write target cluster" fails and
+        // the replica cluster(s) had no chance to receive the commit object but the change to the
+        // reference. In case the zone/region is permanently switched (think: data center flooded /
+        // burned down), this code path allows to assign the branch to another commit object, even
+        // if the current HEAD's commit object does not exist.
+        currentCommitId = expectedHash;
+      }
+
       verifyExpectedHash(currentCommitId, namedRef, expectedHash);
       expected =
           reference(
@@ -260,7 +281,8 @@ public class VersionStoreImpl implements VersionStore {
               hashToObjId(expectedHash),
               false,
               expected.createdAtMicros(),
-              expected.extendedInfoObj());
+              expected.extendedInfoObj(),
+              expected.previousPointers());
 
       ObjId newPointer = hashToObjId(targetHash);
       if (!EMPTY_OBJ_ID.equals(newPointer) && persist.fetchObjType(newPointer) != COMMIT) {
@@ -309,6 +331,147 @@ public class VersionStoreImpl implements VersionStore {
     } catch (RetryTimeoutException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public ReferenceHistory getReferenceHistory(String refName, Integer headCommitsToScan)
+      throws ReferenceNotFoundException {
+    RefMapping refMapping = new RefMapping(persist);
+    Reference reference = refMapping.resolveNamedRef(refName);
+
+    ImmutableReferenceHistory.Builder history = ImmutableReferenceHistory.builder();
+
+    ConsistencyLogic consistencyLogic = consistencyLogic(persist);
+
+    AtomicBoolean referenceHead = new AtomicBoolean();
+    AtomicReference<CommitObj> headCommit = new AtomicReference<>();
+    ReferenceHistory.ReferenceHistoryElement headCommitStatus =
+        consistencyLogic.checkReference(
+            reference,
+            commitStatus -> {
+              CommitObj commit = commitStatus.commit();
+              ReferenceHistory.ReferenceHistoryElement elem =
+                  referenceHistoryElement(
+                      objIdToHash(commitStatus.id()),
+                      statusToCommitConsistency(commitStatus),
+                      commit != null ? toCommitMeta(commit) : null);
+              if (referenceHead.compareAndSet(false, true)) {
+                history.current(elem);
+                headCommit.set(commit);
+              } else {
+                history.addPrevious(elem);
+              }
+              return elem;
+            });
+
+    history.commitLogConsistency(
+        checkCommitLog(consistencyLogic, headCommit.get(), headCommitsToScan, headCommitStatus));
+
+    return history.build();
+  }
+
+  private static CommitConsistency statusToCommitConsistency(
+      ConsistencyLogic.CommitStatus commitStatus) {
+    if (commitStatus.commit() == null) {
+      if (EMPTY_OBJ_ID.equals(commitStatus.id())) {
+        return CommitConsistency.COMMIT_CONSISTENT;
+      }
+      return CommitConsistency.COMMIT_INCONSISTENT;
+    }
+    if (!commitStatus.indexObjectsAvailable()) {
+      return CommitConsistency.COMMIT_INCONSISTENT;
+    }
+    if (!commitStatus.contentObjectsAvailable()) {
+      return CommitConsistency.COMMIT_CONTENT_INCONSISTENT;
+    }
+    return CommitConsistency.COMMIT_CONSISTENT;
+  }
+
+  /**
+   * Evaluates the state of the commit log for {@link #getReferenceHistory(String, Integer)}, if
+   * requested. This function returns a result that represents the consistency of the commit log
+   * including <em>direct</em> secondary parent commits, the consistency of the "worst" commit.
+   */
+  private CommitConsistency checkCommitLog(
+      ConsistencyLogic consistencyLogic,
+      CommitObj headCommit,
+      Integer headCommitsToScan,
+      ReferenceHistory.ReferenceHistoryElement current) {
+    if (headCommitsToScan == null || headCommitsToScan <= 0) {
+      return CommitConsistency.NOT_CHECKED;
+    }
+    if (current.commitConsistency() == CommitConsistency.COMMIT_INCONSISTENT) {
+      // The HEAD commit is inconsistent - do not check the log (it can't be more consistent)
+      return CommitConsistency.COMMIT_INCONSISTENT;
+    }
+    if (headCommit == null) {
+      // "no commit" - empty reference (EMPTY_OBJ_ID)
+      return CommitConsistency.COMMIT_CONSISTENT;
+    }
+
+    // This function will check at max 1000 commits in the commit log, or until the configured
+    // recorded reference-history interval.
+    int toScan = Math.min(headCommitsToScan, 1000);
+    long nowMicros = persist.config().currentTimeMicros();
+    long inconsistencyWindow =
+        TimeUnit.SECONDS.toMicros(persist.config().referencePreviousHeadTimeSpanSeconds());
+
+    // Start with the HEAD's direct parent, the HEAD itself is checked elsewhere.
+    ObjId commitId = headCommit.directParent();
+
+    // The "initial" result of the commit log cannot be better than the state of the HEAD, so start
+    // with the HEAD's state.
+    CommitConsistency result = current.commitConsistency();
+
+    ConsistencyLogic.CommitStatusCallback<ReferenceHistory.ReferenceHistoryElement> checkCallback =
+        commitStatus -> {
+          CommitObj commit = commitStatus.commit();
+          return referenceHistoryElement(
+              objIdToHash(commitStatus.id()),
+              statusToCommitConsistency(commitStatus),
+              commit != null ? toCommitMeta(commit) : null);
+        };
+
+    while (toScan-- > 0) {
+      if (commitId.equals(EMPTY_OBJ_ID)) {
+        break;
+      }
+
+      CommitObj currentCommit;
+
+      try {
+        currentCommit = persist.fetchTypedObj(commitId, COMMIT, CommitObj.class);
+      } catch (ObjNotFoundException e) {
+        return CommitConsistency.COMMIT_INCONSISTENT;
+      }
+
+      if (nowMicros - currentCommit.created() > inconsistencyWindow) {
+        break;
+      }
+
+      ReferenceHistory.ReferenceHistoryElement elem =
+          consistencyLogic.checkCommit(commitId, checkCallback);
+      if (elem.commitConsistency().ordinal() > result.ordinal()) {
+        // State of the checked commit is worse than the current state.
+        result = elem.commitConsistency();
+      }
+      for (ObjId secondaryParent : currentCommit.secondaryParents()) {
+        elem = consistencyLogic.checkCommit(secondaryParent, checkCallback);
+        if (elem.commitConsistency().ordinal() > result.ordinal()) {
+          // State of the checked commit is worse than the current state.
+          result = elem.commitConsistency();
+        }
+      }
+
+      if (result == CommitConsistency.COMMIT_INCONSISTENT) {
+        // This is the worst state, can return immediately.
+        return result;
+      }
+
+      commitId = currentCommit.directParent();
+    }
+
+    return result;
   }
 
   @Override

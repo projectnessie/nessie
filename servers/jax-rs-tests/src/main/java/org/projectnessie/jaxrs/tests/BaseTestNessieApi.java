@@ -87,6 +87,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.CommitResponse.AddedContent;
@@ -117,6 +118,8 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
+import org.projectnessie.model.ReferenceHistoryResponse;
+import org.projectnessie.model.ReferenceHistoryState;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.Tag;
@@ -2067,5 +2070,52 @@ public abstract class BaseTestNessieApi {
     soft.assertThatThrownBy(() -> api().getReference().refName("main@12345678").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageEndingWith("Hashes are not allowed when fetching a reference by name");
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  public void referenceHistory() throws Exception {
+    Branch main = api().getDefaultBranch();
+
+    assumeTrue(fullPagingSupport());
+
+    Branch branch =
+        (Branch)
+            api()
+                .createReference()
+                .reference(Branch.of("ref-history", main.getHash()))
+                .sourceRefName(main.getName())
+                .create();
+
+    List<String> expectedHashes = new ArrayList<>();
+    for (int c = 0; c < 10; c++) {
+      expectedHashes.add(branch.getHash());
+      branch =
+          prepCommit(branch, "commit-" + c)
+              .operation(Put.of(ContentKey.of("t-" + c), IcebergTable.of("m-" + c, 1, 2, 3, 4)))
+              .commit();
+    }
+    Collections.reverse(expectedHashes);
+
+    // Functionality is tested in the version-store tests, this test only validates that there is a
+    // result.
+
+    ReferenceHistoryResponse response =
+        apiV2().referenceHistory().refName(branch.getName()).headCommitsToScan(1000).get();
+    soft.assertThat(response)
+        .extracting(
+            ReferenceHistoryResponse::getReference, ReferenceHistoryResponse::commitLogConsistency)
+        .containsExactly(branch, CommitConsistency.COMMIT_CONSISTENT);
+    soft.assertThat(response.current())
+        .extracting(ReferenceHistoryState::commitHash, ReferenceHistoryState::commitConsistency)
+        .containsExactly(branch.getHash(), CommitConsistency.COMMIT_CONSISTENT);
+    soft.assertThat(response.previous())
+        .hasSize(10)
+        .extracting(ReferenceHistoryState::commitConsistency)
+        .containsOnly(CommitConsistency.COMMIT_CONSISTENT);
+    soft.assertThat(response.previous())
+        .hasSize(10)
+        .extracting(ReferenceHistoryState::commitHash)
+        .containsExactlyElementsOf(expectedHashes);
   }
 }

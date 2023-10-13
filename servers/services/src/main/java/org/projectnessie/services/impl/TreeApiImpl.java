@@ -84,6 +84,7 @@ import org.projectnessie.model.ImmutableCommitResponse;
 import org.projectnessie.model.ImmutableContentKeyDetails;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableMergeResponse;
+import org.projectnessie.model.ImmutableReferenceHistoryResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
@@ -94,6 +95,8 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
+import org.projectnessie.model.ReferenceHistoryResponse;
+import org.projectnessie.model.ReferenceHistoryState;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
@@ -121,6 +124,7 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
@@ -252,6 +256,36 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
+  }
+
+  @Override
+  public ReferenceHistoryResponse getReferenceHistory(String refName, Integer headCommitsToScan)
+      throws NessieNotFoundException {
+    Reference ref;
+    ReferenceHistory history;
+    try {
+      ref = makeReference(getStore().getNamedRef(refName, getGetNamedRefsParams(false)), false);
+
+      startAccessCheck().canViewReference(RefUtil.toNamedRef(ref)).checkAndThrow();
+
+      history = getStore().getReferenceHistory(ref.getName(), headCommitsToScan);
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    }
+
+    ImmutableReferenceHistoryResponse.Builder response =
+        ReferenceHistoryResponse.builder()
+            .reference(ref)
+            .commitLogConsistency(history.commitLogConsistency());
+    response.current(convertStoreHistoryEntry(history.current()));
+    history.previous().stream().map(this::convertStoreHistoryEntry).forEach(response::addPrevious);
+    return response.build();
+  }
+
+  private ReferenceHistoryState convertStoreHistoryEntry(
+      ReferenceHistory.ReferenceHistoryElement element) {
+    return ReferenceHistoryState.referenceHistoryElement(
+        element.pointer().asString(), element.commitConsistency(), element.meta());
   }
 
   @Override

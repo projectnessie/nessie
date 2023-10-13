@@ -39,4 +39,8 @@ public final class Logics {
   public static StringLogic stringLogic(Persist persist) {
     return new StringLogicImpl(persist);
   }
+
+  public static ConsistencyLogic consistencyLogic(Persist persist) {
+    return new ConsistencyLogicImpl(persist);
+  }
 }

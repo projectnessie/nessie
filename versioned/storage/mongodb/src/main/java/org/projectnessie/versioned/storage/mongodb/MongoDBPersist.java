@@ -61,6 +61,7 @@ import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_R
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_POINTER;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_PREVIOUS;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_CREATED_AT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_INITIAL_POINTER;
@@ -87,6 +88,8 @@ import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_V
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_VALUE_PAYLOAD;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_PROPERTY_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_REPO_PATH;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.google.common.collect.AbstractIterator;
 import com.mongodb.MongoBulkWriteException;
@@ -248,6 +251,10 @@ public class MongoDBPersist implements Persist {
     if (extendedInfoObj != null) {
       doc.put(COL_REFERENCES_EXTENDED_INFO, objIdToBinary(extendedInfoObj));
     }
+    byte[] previous = serializePreviousPointers(reference.previousPointers());
+    if (previous != null) {
+      doc.put(COL_REFERENCES_PREVIOUS, new Binary(previous));
+    }
     try {
       backend.refs().insertOne(doc);
     } catch (MongoWriteException e) {
@@ -306,14 +313,17 @@ public class MongoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    Reference updated = reference.forNewPointer(newPointer);
     reference = reference.withDeleted(false);
-    UpdateResult result =
-        backend
-            .refs()
-            .updateOne(
-                referenceCondition(reference),
-                set(COL_REFERENCES_POINTER, objIdToBinary(newPointer)));
+
+    Reference updated = reference.forNewPointer(newPointer, config);
+    List<Bson> updates = new ArrayList<>();
+    updates.add(set(COL_REFERENCES_POINTER, objIdToBinary(newPointer)));
+    byte[] previous = serializePreviousPointers(updated.previousPointers());
+    if (previous != null) {
+      updates.add(set(COL_REFERENCES_PREVIOUS, new Binary(previous)));
+    }
+
+    UpdateResult result = backend.refs().updateOne(referenceCondition(reference), updates);
     if (result.getModifiedCount() != 1) {
       if (result.getMatchedCount() == 1) {
         // not updated
@@ -353,12 +363,16 @@ public class MongoDBPersist implements Persist {
       return null;
     }
 
+    Binary prev = doc.get(COL_REFERENCES_PREVIOUS, Binary.class);
+    List<Reference.PreviousPointer> previous =
+        prev != null ? deserializePreviousPointers(prev.getData()) : emptyList();
     return reference(
         name,
         binaryToObjId(doc.get(COL_REFERENCES_POINTER, Binary.class)),
         doc.getBoolean(COL_REFERENCES_DELETED),
         refCreatedAt(doc),
-        binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)));
+        binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)),
+        previous);
   }
 
   private static Long refCreatedAt(Document doc) {
@@ -376,13 +390,17 @@ public class MongoDBPersist implements Persist {
 
     for (Document doc : result) {
       String name = doc.get(ID_PROPERTY_NAME, Document.class).getString(COL_REFERENCES_NAME);
+      Binary prev = doc.get(COL_REFERENCES_PREVIOUS, Binary.class);
+      List<Reference.PreviousPointer> previous =
+          prev != null ? deserializePreviousPointers(prev.getData()) : emptyList();
       Reference reference =
           reference(
               name,
               binaryToObjId(doc.get(COL_REFERENCES_POINTER, Binary.class)),
               doc.getBoolean(COL_REFERENCES_DELETED),
               refCreatedAt(doc),
-              binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)));
+              binaryToObjId(doc.get(COL_REFERENCES_EXTENDED_INFO, Binary.class)),
+              previous);
       for (int i = 0; i < names.length; i++) {
         if (name.equals(names[i])) {
           r[i] = reference;

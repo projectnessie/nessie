@@ -108,4 +108,13 @@ public interface NessieApiV2 extends NessieApiV1 {
   default UpdateNamespaceBuilder updateProperties() {
     return new ClientSideUpdateNamespace(this);
   }
+
+  /**
+   * Retrieve the recorded recent history of a reference.
+   *
+   * <p>A reference's history is a size and time limited record of changes of the reference's
+   * current pointer, aka HEAD. The size and time limits are configured in the Nessie server
+   * configuration.
+   */
+  ReferenceHistoryBuilder referenceHistory();
 }

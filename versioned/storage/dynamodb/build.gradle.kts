@@ -28,6 +28,7 @@ description = "Storage implementation for DynamoDB."
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-common-proto"))
+  implementation(project(":nessie-versioned-storage-common-serialize"))
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

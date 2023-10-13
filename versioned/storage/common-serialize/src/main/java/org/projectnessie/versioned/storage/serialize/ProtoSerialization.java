@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.serialize;
 
+import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
@@ -24,14 +25,17 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
+import org.projectnessie.nessie.relocated.protobuf.Parser;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
@@ -44,9 +48,11 @@ import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
+import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.proto.StorageTypes;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitProto;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitTypeProto;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CompressionProto;
@@ -81,6 +87,12 @@ public final class ProtoSerialization {
     if (extendedInfoObj != null) {
       refBuilder.setExtendedInfoObj(serializeObjId(extendedInfoObj));
     }
+    for (Reference.PreviousPointer previousPointer : reference.previousPointers()) {
+      refBuilder.addPreviousPointers(
+          StorageTypes.ReferencePreviousProto.newBuilder()
+              .setPointer(serializeObjId(previousPointer.pointer()))
+              .setTimestamp(previousPointer.timestamp()));
+    }
     return refBuilder.build().toByteArray();
   }
 
@@ -90,12 +102,62 @@ public final class ProtoSerialization {
     }
     try {
       ReferenceProto proto = ReferenceProto.parseFrom(reference);
-      return reference(
-          proto.getName(),
-          deserializeObjId(proto.getPointer()),
-          proto.getDeleted(),
-          proto.getCreatedAtMicros(),
-          deserializeObjId(proto.getExtendedInfoObj()));
+      ImmutableReference.Builder ref =
+          ImmutableReference.builder()
+              .name(proto.getName())
+              .pointer(deserializeObjId(proto.getPointer()))
+              .deleted(proto.getDeleted())
+              .createdAtMicros(proto.getCreatedAtMicros())
+              .extendedInfoObj(deserializeObjId(proto.getExtendedInfoObj()));
+      for (StorageTypes.ReferencePreviousProto previousProto : proto.getPreviousPointersList()) {
+        ref.addPreviousPointers(
+            Reference.PreviousPointer.previousPointer(
+                deserializeObjId(previousProto.getPointer()), previousProto.getTimestamp()));
+      }
+      return ref.build();
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static byte[] serializePreviousPointers(List<Reference.PreviousPointer> previousPointers) {
+    if (previousPointers == null || previousPointers.isEmpty()) {
+      return null;
+    }
+    try {
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      for (Reference.PreviousPointer prev : previousPointers) {
+        StorageTypes.ReferencePreviousProto.newBuilder()
+            .setPointer(serializeObjId(prev.pointer()))
+            .setTimestamp(prev.timestamp())
+            .build()
+            .writeDelimitedTo(output);
+      }
+      return output.toByteArray();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static List<Reference.PreviousPointer> deserializePreviousPointers(
+      byte[] previousPointers) {
+    if (previousPointers == null || previousPointers.length == 0) {
+      return emptyList();
+    }
+
+    try {
+      ByteArrayInputStream input = new ByteArrayInputStream(previousPointers);
+      Parser<StorageTypes.ReferencePreviousProto> parser =
+          StorageTypes.ReferencePreviousProto.parser();
+      List<Reference.PreviousPointer> r = new ArrayList<>();
+      while (input.available() > 0) {
+        StorageTypes.ReferencePreviousProto proto = parser.parseDelimitedFrom(input);
+        Reference.PreviousPointer previousPointer =
+            Reference.PreviousPointer.previousPointer(
+                deserializeObjId(proto.getPointer()), proto.getTimestamp());
+        r.add(previousPointer);
+      }
+      return r;
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }

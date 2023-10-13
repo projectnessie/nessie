@@ -15,7 +15,9 @@
  */
 package org.projectnessie.versioned.storage.serialize;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.emptyImmutableIndex;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
@@ -28,13 +30,17 @@ import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stri
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
+import static org.projectnessie.versioned.storage.common.persist.Reference.PreviousPointer.previousPointer;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -63,6 +69,19 @@ public class TestProtoSerialization {
   }
 
   @ParameterizedTest
+  @MethodSource("previousPointers")
+  void previousPointers(List<Reference.PreviousPointer> previousPointers) {
+    byte[] serialized = serializePreviousPointers(previousPointers);
+    List<Reference.PreviousPointer> deserialized = deserializePreviousPointers(serialized);
+    soft.assertThat(deserialized).containsExactlyElementsOf(previousPointers);
+
+    Reference ref = reference("foo", randomObjId(), false, 42L, null, previousPointers);
+    byte[] serializedRef = serializeReference(ref);
+    Reference deserializedRef = deserializeReference(serializedRef);
+    soft.assertThat(deserializedRef.previousPointers()).containsExactlyElementsOf(previousPointers);
+  }
+
+  @ParameterizedTest
   @MethodSource("objs")
   void objs(Obj obj) throws Exception {
     byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -71,6 +90,17 @@ public class TestProtoSerialization {
     byte[] reserialized = serializeObj(deserialized, Integer.MAX_VALUE, Integer.MAX_VALUE);
     soft.assertThat(deserialized).isEqualTo(obj).isEqualTo(deserializedByteBuffer);
     soft.assertThat(serialized).isEqualTo(reserialized);
+  }
+
+  static Stream<List<Reference.PreviousPointer>> previousPointers() {
+    return Stream.of(
+        emptyList(),
+        singletonList(previousPointer(randomObjId(), 42L)),
+        asList(previousPointer(randomObjId(), 42L), previousPointer(randomObjId(), 101L)),
+        asList(
+            previousPointer(randomObjId(), 42L),
+            previousPointer(randomObjId(), 101L),
+            previousPointer(EMPTY_OBJ_ID, 99L)));
   }
 
   static Stream<Reference> references() {

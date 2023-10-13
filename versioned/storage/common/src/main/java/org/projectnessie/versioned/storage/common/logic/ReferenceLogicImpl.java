@@ -437,7 +437,8 @@ final class ReferenceLogicImpl implements ReferenceLogic {
               expectedPointer,
               false,
               reference.createdAtMicros(),
-              reference.extendedInfoObj()));
+              reference.extendedInfoObj(),
+              reference.previousPointers()));
     }
   }
 

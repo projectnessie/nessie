@@ -93,6 +93,16 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @Override
   boolean validateNamespaces();
 
+  @WithName(CONFIG_PREVIOUS_HEAD_COUNT)
+  @WithDefault("" + DEFAULT_PREVIOUS_HEAD_COUNT)
+  @Override
+  int referencePreviousHeadCount();
+
+  @WithName(CONFIG_PREVIOUS_HEAD_TIME_SPAN_SECONDS)
+  @WithDefault("" + DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS)
+  @Override
+  long referencePreviousHeadTimeSpanSeconds();
+
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
 
   @WithName(CONFIG_CACHE_CAPACITY_MB)

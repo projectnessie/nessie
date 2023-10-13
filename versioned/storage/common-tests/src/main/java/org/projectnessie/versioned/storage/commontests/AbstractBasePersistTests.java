@@ -99,6 +99,7 @@ import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
+import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -139,10 +140,13 @@ public class AbstractBasePersistTests {
         .containsExactly(deleted);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(create))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(create.forNewPointer(otherId)))
+    soft.assertThatThrownBy(
+            () -> persist.markReferenceAsDeleted(create.forNewPointer(otherId, persist.config())))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThatThrownBy(
-            () -> persist.markReferenceAsDeleted(create.forNewPointer(otherId).withDeleted(true)))
+            () ->
+                persist.markReferenceAsDeleted(
+                    create.forNewPointer(otherId, persist.config()).withDeleted(true)))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(deleted))
         .isInstanceOf(RefConditionFailedException.class);
@@ -171,8 +175,8 @@ public class AbstractBasePersistTests {
     ObjId extended = randomObjId();
 
     Reference create = reference("some-reference-name", initialPointer, false, created, extended);
-    Reference assigned1 = create.forNewPointer(pointer1);
-    Reference assigned2 = create.forNewPointer(pointer2);
+    Reference assigned1 = create.forNewPointer(pointer1, persist.config());
+    Reference assigned2 = create.forNewPointer(pointer2, persist.config());
     Reference deleted = assigned2.withDeleted(true);
 
     soft.assertThat(persist.addReference(create)).isEqualTo(create);
@@ -212,56 +216,85 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
     // Correct current pointer
-    soft.assertThat(persist.updateReferencePointer(create, pointer1)).isEqualTo(assigned1);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
+    Reference updated1 = persist.updateReferencePointer(create, pointer1);
+    soft.assertThat(updated1)
+        .isEqualTo(
+            ImmutableReference.builder()
+                .from(assigned1)
+                .previousPointers(updated1.previousPointers())
+                .build())
+        .extracting(Reference::previousPointers, list(Reference.PreviousPointer.class))
+        .extracting(Reference.PreviousPointer::pointer)
+        .containsExactly(create.pointer());
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
     // Wrong current pointer
     soft.assertThatThrownBy(() -> persist.updateReferencePointer(assigned2, initialPointer))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
     // Wrong created timestamp
     soft.assertThatThrownBy(
             () ->
                 persist.updateReferencePointer(
                     reference(
-                        assigned1.name(),
-                        assigned1.pointer(),
-                        assigned1.deleted(),
-                        assigned1.createdAtMicros() + 1,
-                        assigned1.extendedInfoObj()),
+                        updated1.name(),
+                        updated1.pointer(),
+                        updated1.deleted(),
+                        updated1.createdAtMicros() + 1,
+                        updated1.extendedInfoObj(),
+                        updated1.previousPointers()),
                     pointer2))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
     // Wrong created extended info obj
     soft.assertThatThrownBy(
             () ->
                 persist.updateReferencePointer(
                     reference(
-                        assigned1.name(),
-                        assigned1.pointer(),
-                        assigned1.deleted(),
-                        assigned1.createdAtMicros(),
-                        randomObjId()),
+                        updated1.name(),
+                        updated1.pointer(),
+                        updated1.deleted(),
+                        updated1.createdAtMicros(),
+                        randomObjId(),
+                        updated1.previousPointers()),
                     pointer2))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
     // Correct current pointer
-    soft.assertThat(persist.updateReferencePointer(assigned1, pointer2)).isEqualTo(assigned2);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned2);
+    Reference updated2 = persist.updateReferencePointer(updated1, pointer2);
+    soft.assertThat(updated2)
+        .isEqualTo(
+            ImmutableReference.builder()
+                .from(assigned2)
+                .previousPointers(updated2.previousPointers())
+                .build())
+        .extracting(Reference::previousPointers, list(Reference.PreviousPointer.class))
+        .extracting(Reference.PreviousPointer::pointer)
+        .containsExactly(updated1.pointer(), create.pointer());
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated2);
 
     // "Bump" from current pointer to current pointer (no update)
-    soft.assertThat(persist.updateReferencePointer(assigned2, assigned2.pointer()))
-        .isEqualTo(assigned2);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned2);
+    Reference updated2b = persist.updateReferencePointer(updated2, updated2.pointer());
+    soft.assertThat(updated2b).isEqualTo(updated2);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated2b);
 
     // Delete it (must not update)
-    soft.assertThat(persist.markReferenceAsDeleted(assigned2)).isEqualTo(deleted);
+    Reference deletedRef = persist.markReferenceAsDeleted(updated2b);
+    soft.assertThat(deletedRef)
+        .isEqualTo(
+            ImmutableReference.builder()
+                .from(deleted)
+                .previousPointers(deletedRef.previousPointers())
+                .build())
+        .extracting(Reference::previousPointers, list(Reference.PreviousPointer.class))
+        .extracting(Reference.PreviousPointer::pointer)
+        .containsExactly(updated1.pointer(), create.pointer());
     soft.assertThatThrownBy(() -> persist.updateReferencePointer(deleted, pointer3))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(deleted);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(deletedRef);
 
     // Some other name - must not create a reference for it
     soft.assertThatThrownBy(

@@ -503,6 +503,49 @@ components:
             hash: "1122334455667788112233445566778811223344556677881122334455667788"
             name: "main"
 
+    referenceHistoryResponse:
+      value:
+        reference:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
+        current:
+          pointer: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          commitConsistency: "COMMIT_CONSISTENT"
+          meta:
+            hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+            committer: ""
+            author: "nessie-author"
+            signedOffBy: null
+            message: "update table"
+            commitTime: "2021-11-26T08:01:13.855974Z"
+            authorTime: "2021-11-26T08:01:13.852826Z"
+            properties: {}
+        previous:
+          - pointer: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
+            commitConsistency: "COMMIT_CONSISTENT"
+            meta:
+              hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
+              committer: ""
+              author: "nessie-author"
+              signedOffBy: null
+              message: "add table"
+              commitTime: "2021-11-26T07:01:13.855974Z"
+              authorTime: "2021-11-26T07:01:13.852826Z"
+              properties: { }
+          - pointer: "1122334455667788112233445566778811223344556677881122334455667788"
+            commitConsistency: "COMMIT_CONSISTENT"
+            meta:
+              hash: "1122334455667788112233445566778811223344556677881122334455667788"
+              committer: ""
+              author: "nessie-author"
+              signedOffBy: null
+              message: "add table"
+              commitTime: "2021-11-26T06:01:13.855974Z"
+              authorTime: "2021-11-26T06:01:13.852826Z"
+              properties: { }
+        commitLogConsistency: "NOT_CHECKED"
+
     referencesResponseWithMetadata:
       value:
         token: null

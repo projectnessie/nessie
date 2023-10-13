@@ -55,6 +55,7 @@ import org.projectnessie.api.v2.params.DiffParams;
 import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
+import org.projectnessie.api.v2.params.ReferenceHistoryParams;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
@@ -70,6 +71,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
 import org.projectnessie.model.Validation;
@@ -193,6 +195,48 @@ public interface HttpTreeApi extends TreeApi {
   @JsonView(Views.V2.class)
   SingleReferenceResponse getReferenceByName(
       @BeanParam @jakarta.ws.rs.BeanParam GetReferenceParams params) throws NessieNotFoundException;
+
+  @GET
+  @jakarta.ws.rs.GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/recent-changes")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/recent-changes")
+  @Operation(
+      summary = "Fetch recent pointer changes of a reference",
+      operationId = "getReferenceHistory",
+      description =
+          "Retrieve the recorded recent history of a reference.\n"
+              + "\n"
+              + "A reference's history is a size and time limited record of changes of the reference's "
+              + "current pointer, aka HEAD. The size and time limits are configured in the Nessie server "
+              + "configuration.\n"
+              + "\n"
+              + "This function is only useful for deployments using replicating multi-zone/region database "
+              + "setups. If the \"primary write target\" fails and cannot be recovered, replicas might not "
+              + "have all written records (data loss scenario). This function helps identifying whether "
+              + "the commits of a reference that were written within the configured \"replication lag\" are "
+              + "present and consistent. A reference might then be deleted or re-assigned to a consistent commit.")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Found and returned reference.",
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "referenceHistoryResponse")},
+              schema = @Schema(implementation = ReferenceHistoryResponse.class))
+        }),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view the given reference"),
+    @APIResponse(responseCode = "404", description = "Reference not found")
+  })
+  @JsonView(Views.V2.class)
+  @Override
+  ReferenceHistoryResponse getReferenceHistory(
+      @BeanParam @jakarta.ws.rs.BeanParam ReferenceHistoryParams params)
+      throws NessieNotFoundException;
 
   @Override
   @GET
