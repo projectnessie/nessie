@@ -9,7 +9,8 @@ in the _To_ column.
 A red cross in the _Rolling Upgrade_ column means that rolling upgrades for the mentioned versions
 are not supported and must be avoided.
 
-**Also read the [release notes](releases.md).**  
+**Also read the [release notes on GitHub](https://github.com/projectnessie/nessie/releases) and the
+[release notes page](releases.md).**
 
 | Rolling Upgrade Supported | _From_ Nessie version | _To_ Nessie version |
 |---------------------------|-----------------------|---------------------|
@@ -26,6 +27,9 @@ Older releases than 0.18.0 are not supported.
 See [Releases](releases.md) for release notes.
 
 ## Rolling upgrades target version notes
+
+**Also read the [release notes on GitHub](https://github.com/projectnessie/nessie/releases) and the
+[release notes page](releases.md).**
 
 ### Nessie 0.61.0
 
