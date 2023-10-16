@@ -75,7 +75,7 @@ public class ITOAuth2Client {
         URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
     Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
     master = keycloakAdmin.realms().realm("master");
-    updateMasterRealm(10, 15);
+    updateMasterRealm(5, 10);
     // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
     createClient("Client1", false);
     createClient("Client2", true);
@@ -89,7 +89,7 @@ public class ITOAuth2Client {
    * This test exercises the OAuth2 client "in real life", that is, with background token refresh
    * running.
    *
-   * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
+   * <p>For 15 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
    * meantime, another HTTP client will attempt to validate the obtained tokens.
    *
    * <p>This should be enough to exercise the OAuth2 client's background refresh logic with the 4
@@ -119,10 +119,10 @@ public class ITOAuth2Client {
                 tryUseAccessToken(validatingClient, client2.getCurrentTokens().getAccessToken());
               },
               0,
-              1,
-              TimeUnit.SECONDS);
+              500,
+              TimeUnit.MILLISECONDS);
       try {
-        future.get(20, TimeUnit.SECONDS);
+        future.get(15, TimeUnit.SECONDS);
       } catch (TimeoutException e) {
         // ok, expected for a ScheduledFuture
       } catch (ExecutionException e) {
@@ -165,25 +165,25 @@ public class ITOAuth2Client {
   }
 
   @Test
-  void testOAuth2ClientIdle() throws InterruptedException {
+  void testOAuth2ClientIdle() {
     OAuth2ClientParams params =
         clientParams("Client2")
-            .idleInterval(Duration.ofSeconds(5))
-            .keepAliveInterval(Duration.ofSeconds(5))
+            .idleInterval(Duration.ofSeconds(1))
+            .keepAliveInterval(Duration.ofSeconds(1))
+            .refreshSafetyWindow(Duration.ofSeconds(1))
             .build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
-      // will fetch initial tokens and schedule refresh in 5 seconds
-      // (10 secs lifespan - 5 secs safety window)
+      // will fetch initial tokens and schedule refresh in 4 seconds
+      // (5 secs lifespan - 1 secs safety window)
       client.start();
       assertThat(client.sleeping).isFalse();
-      Thread.sleep(5000); // will refresh tokens then enter sleep mode (idle interval 5 secs)
+      // after refresh tokens, will enter sleep mode (idle interval was 1 sec)
       await().until(client.sleeping::get);
-      Thread.sleep(5000); // thread will exit (keep alive interval)
+      // thread will exit after 1 sec (keep alive interval 1 sec)
       await().until(() -> ((OAuth2TokenRefreshExecutor) client.executor).getPoolSize() == 0);
-      Thread.sleep(5000); // access token will expire (10 secs lifespan)
-      // will wake up client, fetch new tokens immediately (on main thread),
-      // then schedule refresh, which will in turn spawn a new thread
+      // access token is now expired; calling authenticate() will wake up client, fetch new tokens
+      // immediately (on main thread), then schedule refresh, which will in turn spawn a new thread
       AccessToken accessToken = client.authenticate();
       assertThat(client.sleeping).isFalse();
       assertThat(((OAuth2TokenRefreshExecutor) client.executor).getPoolSize()).isOne();
@@ -385,9 +385,9 @@ public class ITOAuth2Client {
         .clientSecret("s3cr3t")
         .username("Alice")
         .password("s3cr3t")
-        .defaultAccessTokenLifespan(Duration.ofSeconds(10))
-        .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
-        .refreshSafetyWindow(Duration.ofSeconds(5));
+        .defaultAccessTokenLifespan(Duration.ofSeconds(5))
+        .defaultRefreshTokenLifespan(Duration.ofSeconds(10))
+        .refreshSafetyWindow(Duration.ofSeconds(2));
   }
 
   @SuppressWarnings("SameParameterValue")

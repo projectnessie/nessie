@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpResponse;
@@ -73,6 +74,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final ObjectMapper objectMapper;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
   /* Visible for testing. */ final AtomicBoolean sleeping = new AtomicBoolean();
+  private final Supplier<Instant> clock;
 
   private volatile CompletionStage<Tokens> currentTokensStage;
   private volatile ScheduledFuture<?> tokenRefreshFuture;
@@ -92,7 +94,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     executor = params.getExecutor();
     shouldCloseExecutor = executor instanceof OAuth2TokenRefreshExecutor;
     objectMapper = params.getObjectMapper();
-    lastAccess = Instant.now();
+    clock = params.getClock();
+    lastAccess = clock.get();
     currentTokensStage =
         started.thenApplyAsync((v) -> fetchNewTokens(), executor).whenComplete(this::log);
     currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
@@ -100,7 +103,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   @Override
   public AccessToken authenticate() {
-    Instant now = Instant.now();
+    Instant now = clock.get();
     lastAccess = now;
     if (sleeping.compareAndSet(true, false)) {
       LOGGER.debug("Waking up...");
@@ -167,7 +170,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   private void maybeScheduleTokensRenewal(Tokens currentTokens) {
-    Instant now = Instant.now();
+    Instant now = clock.get();
     if (idle(now)) {
       sleeping.set(true);
       LOGGER.debug("Sleeping...");
@@ -282,7 +285,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   private boolean isAboutToExpire(Token token) {
-    Instant now = Instant.now();
+    Instant now = clock.get();
     return tokenExpirationTime(now, token, defaultRefreshTokenLifespan)
         .isBefore(now.plus(refreshSafetyWindow));
   }

@@ -33,7 +33,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -82,20 +81,12 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
+      AtomicReference<Instant> i = new AtomicReference<>(NOW);
+      ImmutableOAuth2ClientParams params =
+          paramsBuilder(server).executor(executor).clock(i::get).build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
-      AtomicBoolean forceIdle = new AtomicBoolean();
-      try (OAuth2Client client =
-          new OAuth2Client(params) {
-            @Override
-            boolean idle(Instant now) {
-              if (forceIdle.get()) {
-                return true;
-              }
-              return super.idle(now);
-            }
-          }) {
+      try (OAuth2Client client = new OAuth2Client(params)) {
 
         client.start();
 
@@ -129,7 +120,8 @@ class TestOAuth2Client {
         assertThat(client.getCurrentTokens()).isInstanceOf(RefreshTokensResponse.class);
 
         // emulate executor running the scheduled renewal task and detecting that the client is idle
-        forceIdle.set(true);
+        // after 30+ seconds of inactivity
+        i.set(i.get().plusSeconds(31));
         currentRenewalTask.get().run();
         assertThat(client.sleeping).isTrue();
 

@@ -23,6 +23,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IDLE_INTERVAL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
@@ -36,11 +38,14 @@ import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAF
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.immutables.value.Value;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
@@ -52,8 +57,7 @@ interface OAuth2ClientParams {
   ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   Duration MIN_REFRESH_DELAY = Duration.ofSeconds(1);
-  Duration MIN_IDLE_INTERVAL = Duration.ofSeconds(5);
-  Duration MIN_KEEP_ALIVE_INTERVAL = Duration.ofSeconds(5);
+  Duration MIN_IDLE_INTERVAL = Duration.ofSeconds(1);
 
   URI getTokenEndpoint();
 
@@ -130,6 +134,11 @@ interface OAuth2ClientParams {
         .setDisableCompression(true);
   }
 
+  @Value.Default
+  default Supplier<Instant> getClock() {
+    return Clock.systemUTC()::instant;
+  }
+
   @Value.Check
   default void check() {
     if (getClientId().isEmpty()) {
@@ -178,11 +187,6 @@ interface OAuth2ClientParams {
       throw new IllegalArgumentException(
           String.format("idle interval must be greater than or equal to %s", MIN_IDLE_INTERVAL));
     }
-    if (getKeepAliveInterval().compareTo(MIN_KEEP_ALIVE_INTERVAL) < 0) {
-      throw new IllegalArgumentException(
-          String.format(
-              "keep alive interval must be greater than or equal to %s", MIN_KEEP_ALIVE_INTERVAL));
-    }
   }
 
   static ImmutableOAuth2ClientParams.Builder builder() {
@@ -225,6 +229,14 @@ interface OAuth2ClientParams {
             Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED))
                 .map(Boolean::parseBoolean)
                 .orElse(true))
+        .idleInterval(
+            Duration.parse(
+                Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_IDLE_INTERVAL))
+                    .orElse(DEFAULT_IDLE_INTERVAL)))
+        .keepAliveInterval(
+            Duration.parse(
+                Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL))
+                    .orElse(DEFAULT_KEEP_ALIVE_INTERVAL)))
         .build();
   }
 }
