@@ -20,8 +20,12 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2TokenRefreshExecutor.class);
 
   OAuth2TokenRefreshExecutor(Duration keepAlive) {
     super(1, new OAuth2TokenRefreshThreadFactory());
@@ -33,9 +37,31 @@ class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
 
     @Override
     public Thread newThread(@Nonnull Runnable r) {
-      Thread thread = new Thread(r, "oauth2-token-refresh");
+      Thread thread = new TokenRefreshThread(r);
       thread.setDaemon(true);
       return thread;
+    }
+
+    private static class TokenRefreshThread extends Thread {
+
+      public TokenRefreshThread(Runnable r) {
+        super(r, "oauth2-token-refresh");
+      }
+
+      @Override
+      public synchronized void start() {
+        LOGGER.debug("Starting new thread for OAuth2 token refresh");
+        super.start();
+      }
+
+      @Override
+      public void run() {
+        try {
+          super.run();
+        } finally {
+          LOGGER.debug("OAuth2 token refresh thread exiting");
+        }
+      }
     }
   }
 }

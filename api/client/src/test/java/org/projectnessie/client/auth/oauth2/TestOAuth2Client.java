@@ -85,12 +85,12 @@ class TestOAuth2Client {
       ImmutableOAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
-      AtomicBoolean overrideIdle = new AtomicBoolean();
+      AtomicBoolean forceIdle = new AtomicBoolean();
       try (OAuth2Client client =
           new OAuth2Client(params) {
             @Override
             boolean idle(Instant now) {
-              if (overrideIdle.get()) {
+              if (forceIdle.get()) {
                 return true;
               }
               return super.idle(now);
@@ -129,7 +129,7 @@ class TestOAuth2Client {
         assertThat(client.getCurrentTokens()).isInstanceOf(RefreshTokensResponse.class);
 
         // emulate executor running the scheduled renewal task and detecting that the client is idle
-        overrideIdle.set(true);
+        forceIdle.set(true);
         currentRenewalTask.get().run();
         assertThat(client.sleeping).isTrue();
 

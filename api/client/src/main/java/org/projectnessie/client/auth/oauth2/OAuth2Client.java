@@ -68,13 +68,11 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final Duration idleInterval;
   private final boolean tokenExchangeEnabled;
   private final HttpClient httpClient;
-  private final ScheduledExecutorService executor;
+  /* Visible for testing. */ final ScheduledExecutorService executor;
   private final boolean shouldCloseExecutor;
   private final ObjectMapper objectMapper;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
-
-  /** Visible for testing. */
-  final AtomicBoolean sleeping = new AtomicBoolean();
+  /* Visible for testing. */ final AtomicBoolean sleeping = new AtomicBoolean();
 
   private volatile CompletionStage<Tokens> currentTokensStage;
   private volatile ScheduledFuture<?> tokenRefreshFuture;
@@ -187,8 +185,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     Duration delay =
         nextDelay(
             now, accessExpirationTime, refreshExpirationTime, refreshSafetyWindow, minRefreshDelay);
-    if (delay.isZero()) {
-      LOGGER.debug("Refreshing expired tokens immediately");
+    if (delay.compareTo(MIN_REFRESH_DELAY) < 0) {
+      LOGGER.debug("Refreshing tokens immediately");
       renewTokens();
     } else {
       LOGGER.debug("Scheduling token refresh in {}", delay);
