@@ -21,9 +21,12 @@ import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.NAME;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.OBJ_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_CREATED_AT;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_DELETED;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_NAME;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_POINTER;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_PREVIOUS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.CREATE_TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.CREATE_TABLE_REFS;
@@ -111,7 +114,14 @@ final class JdbcBackend implements Backend {
           conn,
           TABLE_REFS,
           CREATE_TABLE_REFS,
-          Stream.of(COL_REPO_ID, COL_REFS_NAME, COL_REFS_POINTER, COL_REFS_DELETED)
+          Stream.of(
+                  COL_REPO_ID,
+                  COL_REFS_NAME,
+                  COL_REFS_POINTER,
+                  COL_REFS_DELETED,
+                  COL_REFS_CREATED_AT,
+                  COL_REFS_EXTENDED_INFO,
+                  COL_REFS_PREVIOUS)
               .collect(Collectors.toSet()),
           ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_REFS_NAME, nameTypeId));
       createTableIfNotExists(

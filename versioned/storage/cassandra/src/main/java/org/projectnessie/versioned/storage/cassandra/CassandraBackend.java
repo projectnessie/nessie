@@ -23,9 +23,12 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_CREATED_AT;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_DELETED;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_NAME;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_POINTER;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_PREVIOUS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.CREATE_TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.CREATE_TABLE_REFS;
@@ -372,7 +375,14 @@ final class CassandraBackend implements Backend {
         keyspace.get(),
         TABLE_REFS,
         CREATE_TABLE_REFS,
-        Stream.of(COL_REPO_ID, COL_REFS_NAME, COL_REFS_POINTER, COL_REFS_DELETED)
+        Stream.of(
+                COL_REPO_ID,
+                COL_REFS_NAME,
+                COL_REFS_POINTER,
+                COL_REFS_DELETED,
+                COL_REFS_CREATED_AT,
+                COL_REFS_EXTENDED_INFO,
+                COL_REFS_PREVIOUS)
             .collect(Collectors.toSet()),
         ImmutableMap.of(COL_REPO_ID, NAME.type(), COL_REFS_NAME, NAME.type()));
     createTableIfNotExists(
