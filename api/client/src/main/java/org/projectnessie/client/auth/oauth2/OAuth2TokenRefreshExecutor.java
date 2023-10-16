@@ -50,13 +50,8 @@ class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
     }
 
     @Override
-    public synchronized void start() {
-      LOGGER.debug("Starting new OAuth2 token refresh thread");
-      super.start();
-    }
-
-    @Override
     public void run() {
+      LOGGER.debug("Starting new OAuth2 token refresh thread");
       try {
         super.run();
       } finally {
