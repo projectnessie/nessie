@@ -361,7 +361,7 @@ class TestOAuth2Client {
             oneMinute,
             MIN_REFRESH_DELAY,
             MIN_REFRESH_DELAY),
-        // expirationTime - no safety window <= ZERO (immediate refresh use case)
+        // expirationTime - safety window <= ZERO (immediate refresh use case)
         Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, ZERO, ZERO));
   }
 
