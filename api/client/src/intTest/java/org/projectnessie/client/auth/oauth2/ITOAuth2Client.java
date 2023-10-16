@@ -177,13 +177,13 @@ public class ITOAuth2Client {
       // (10 secs lifespan - 5 secs safety window)
       client.start();
       assertThat(client.sleeping).isFalse();
-      Thread.sleep(5100); // will refresh tokens then enter sleep mode (idle interval 5 secs)
+      Thread.sleep(5000); // will refresh tokens then enter sleep mode (idle interval 5 secs)
       await().until(client.sleeping::get);
-      Thread.sleep(5100); // thread will exit (keep alive interval)
-      assertThat(((OAuth2TokenRefreshExecutor) client.executor).getPoolSize()).isZero();
-      Thread.sleep(5100); // access token will expire (10 secs lifespan)
+      Thread.sleep(5000); // thread will exit (keep alive interval)
+      await().until(() -> ((OAuth2TokenRefreshExecutor) client.executor).getPoolSize() == 0);
+      Thread.sleep(5000); // access token will expire (10 secs lifespan)
       // will wake up client, fetch new tokens immediately (on main thread),
-      // then schedule refresh, which will spawn a new thread
+      // then schedule refresh, which will in turn spawn a new thread
       AccessToken accessToken = client.authenticate();
       assertThat(client.sleeping).isFalse();
       assertThat(((OAuth2TokenRefreshExecutor) client.executor).getPoolSize()).isOne();

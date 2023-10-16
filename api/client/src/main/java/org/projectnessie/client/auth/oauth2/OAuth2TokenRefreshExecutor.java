@@ -33,7 +33,7 @@ class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
     allowCoreThreadTimeOut(true);
   }
 
-  static class OAuth2TokenRefreshThreadFactory implements ThreadFactory {
+  private static class OAuth2TokenRefreshThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(@Nonnull Runnable r) {
@@ -50,7 +50,7 @@ class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
 
       @Override
       public synchronized void start() {
-        LOGGER.debug("Starting new thread for OAuth2 token refresh");
+        LOGGER.debug("Starting new OAuth2 token refresh thread");
         super.start();
       }
 
