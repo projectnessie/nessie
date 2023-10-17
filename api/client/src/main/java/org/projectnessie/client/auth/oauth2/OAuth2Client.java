@@ -88,7 +88,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     defaultAccessTokenLifespan = params.getDefaultAccessTokenLifespan();
     defaultRefreshTokenLifespan = params.getDefaultRefreshTokenLifespan();
     refreshSafetyWindow = params.getRefreshSafetyWindow();
-    idleInterval = params.getIdleInterval();
+    idleInterval = params.getPreemptiveTokenRefreshIdleTimeout();
     tokenExchangeEnabled = params.getTokenExchangeEnabled();
     httpClient = params.getHttpClient().addResponseFilter(this::checkErrorResponse).build();
     executor = params.getExecutor();
@@ -99,7 +99,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     currentTokensStage =
         started
             .thenApplyAsync((v) -> fetchNewTokens(), executor)
-            .whenComplete((tokens, error) -> this.log(error));
+            .whenComplete((tokens, error) -> log(error));
     currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
@@ -208,7 +208,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .thenApply(this::refreshTokens)
             // if that fails, try fetching brand-new tokens
             .exceptionally(error -> fetchNewTokens())
-            .whenComplete((tokens, error) -> this.log(error));
+            .whenComplete((tokens, error) -> log(error));
     currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 

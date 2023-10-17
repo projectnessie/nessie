@@ -46,7 +46,7 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
   private static final class TokenRefreshThread extends Thread {
 
     TokenRefreshThread(Runnable r) {
-      super(r, "oauth2-token-refresh");
+      super(r, "nessie-client-oauth2-token-refresh");
     }
 
     @Override

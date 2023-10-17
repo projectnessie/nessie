@@ -87,11 +87,12 @@ class TestOAuth2ClientParams {
             new IllegalArgumentException(
                 "refresh safety window must be less than the default token lifespan")),
         Arguments.of(
-            newBuilder().idleInterval(MIN_IDLE_INTERVAL.minusSeconds(1)),
+            newBuilder().preemptiveTokenRefreshIdleTimeout(MIN_IDLE_INTERVAL.minusSeconds(1)),
             new IllegalArgumentException(
-                "idle interval must be greater than or equal to " + MIN_IDLE_INTERVAL)),
+                "preemptive token refresh idle timeout must be greater than or equal to "
+                    + MIN_IDLE_INTERVAL)),
         Arguments.of(
-            newBuilder().keepAliveInterval(Duration.ZERO),
+            newBuilder().backgroundThreadIdleTimeout(Duration.ZERO),
             new IllegalArgumentException("Core threads must have nonzero keep alive times")));
   }
 

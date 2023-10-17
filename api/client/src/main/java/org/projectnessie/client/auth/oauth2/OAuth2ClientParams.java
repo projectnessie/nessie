@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
@@ -23,17 +24,16 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IDLE_INTERVAL;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN;
-import static org.projectnessie.client.NessieConfigConstants.DEFAULT_IDLE_INTERVAL;
-import static org.projectnessie.client.NessieConfigConstants.DEFAULT_KEEP_ALIVE_INTERVAL;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAFETY_WINDOW;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -97,27 +97,31 @@ interface OAuth2ClientParams {
   }
 
   @Value.Default
-  default Duration getIdleInterval() {
-    return Duration.parse(DEFAULT_IDLE_INTERVAL);
-  }
-
-  @Value.Default
   default boolean getTokenExchangeEnabled() {
     return true;
   }
 
   @Value.Default
   default ScheduledExecutorService getExecutor() {
-    return new OAuth2TokenRefreshExecutor(getKeepAliveInterval());
+    return new OAuth2TokenRefreshExecutor(getBackgroundThreadIdleTimeout());
   }
 
   /**
-   * The keep alive interval, that is, the maximum time a background thread can be idle before it is
-   * closed. Only relevant when using the default {@link #getExecutor() executor}.
+   * For how long the OAuth2 client should keep the tokens fresh, if the client is not being
+   * actively used.
    */
   @Value.Default
-  default Duration getKeepAliveInterval() {
-    return Duration.parse(DEFAULT_KEEP_ALIVE_INTERVAL);
+  default Duration getPreemptiveTokenRefreshIdleTimeout() {
+    return Duration.parse(DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT);
+  }
+
+  /**
+   * The maximum time a background thread can be idle before it is closed. Only relevant when using
+   * the default {@link #getExecutor() executor}.
+   */
+  @Value.Default
+  default Duration getBackgroundThreadIdleTimeout() {
+    return Duration.parse(DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT);
   }
 
   @Value.Default
@@ -183,9 +187,11 @@ interface OAuth2ClientParams {
       throw new IllegalArgumentException(
           "refresh safety window must be less than the default token lifespan");
     }
-    if (getIdleInterval().compareTo(MIN_IDLE_INTERVAL) < 0) {
+    if (getPreemptiveTokenRefreshIdleTimeout().compareTo(MIN_IDLE_INTERVAL) < 0) {
       throw new IllegalArgumentException(
-          String.format("idle interval must be greater than or equal to %s", MIN_IDLE_INTERVAL));
+          String.format(
+              "preemptive token refresh idle timeout must be greater than or equal to %s",
+              MIN_IDLE_INTERVAL));
     }
   }
 
@@ -229,14 +235,15 @@ interface OAuth2ClientParams {
             Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED))
                 .map(Boolean::parseBoolean)
                 .orElse(true))
-        .idleInterval(
+        .preemptiveTokenRefreshIdleTimeout(
             Duration.parse(
-                Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_IDLE_INTERVAL))
-                    .orElse(DEFAULT_IDLE_INTERVAL)))
-        .keepAliveInterval(
+                Optional.ofNullable(
+                        config.apply(CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT))
+                    .orElse(DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT)))
+        .backgroundThreadIdleTimeout(
             Duration.parse(
-                Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL))
-                    .orElse(DEFAULT_KEEP_ALIVE_INTERVAL)))
+                Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT))
+                    .orElse(DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT)))
         .build();
   }
 }
