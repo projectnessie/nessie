@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
+final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2TokenRefreshExecutor.class);
 
@@ -33,7 +33,7 @@ class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
     allowCoreThreadTimeOut(true);
   }
 
-  private static class OAuth2TokenRefreshThreadFactory implements ThreadFactory {
+  private static final class OAuth2TokenRefreshThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(@Nonnull Runnable r) {
@@ -43,7 +43,7 @@ class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
     }
   }
 
-  private static class TokenRefreshThread extends Thread {
+  private static final class TokenRefreshThread extends Thread {
 
     TokenRefreshThread(Runnable r) {
       super(r, "oauth2-token-refresh");

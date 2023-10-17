@@ -160,9 +160,11 @@ public final class NessieConfigConstants {
 
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_IDLE_INTERVAL}) for the OAuth2 authentication
-   * provider. The maximum idle interval to use; if the OAuth2 provider is not used after this
-   * interval, no more token refreshes will occur, until the provider is used again. Optional,
-   * defaults to {@value #DEFAULT_IDLE_INTERVAL}. Must be a valid <a
+   * provider. For how long the OAuth2 provider should keep the tokens fresh, if the client is not
+   * being actively used. Setting this value too high may cause an excessive usage of network I/O
+   * and thread resources; conversely, when setting it too low, if the client is used again, the
+   * calling thread may block if the tokens are expired and need to be renewed synchronously.
+   * Optional, defaults to {@value #DEFAULT_IDLE_INTERVAL}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
   public static final String CONF_NESSIE_OAUTH2_IDLE_INTERVAL =
@@ -172,10 +174,13 @@ public final class NessieConfigConstants {
 
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL}) for the OAuth2
-   * authentication provider. The keep alive interval to use; if the OAuth2 provider background
-   * thread is not used after this interval, it will be stopped; a new thread will be spawned if the
-   * provider is used again. Optional, defaults to {@value #DEFAULT_KEEP_ALIVE_INTERVAL}. Must be a
-   * valid <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   * authentication provider. How long the background thread should be kept running if the client is
+   * not being actively used, or no token refreshes are being executed. Optional, defaults to
+   * {@value #DEFAULT_KEEP_ALIVE_INTERVAL}. Setting this value too high will cause the background
+   * thread to keep running even if the client is not used anymore, potentially leaking thread and
+   * memory resources; conversely, setting it too low could cause the background thread to be
+   * restarted too often. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
   public static final String CONF_NESSIE_OAUTH2_KEEP_ALIVE_INTERVAL =
       "nessie.authentication.oauth2.keep-alive-interval";

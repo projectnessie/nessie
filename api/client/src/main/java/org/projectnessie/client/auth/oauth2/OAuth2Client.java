@@ -97,7 +97,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     clock = params.getClock();
     lastAccess = clock.get();
     currentTokensStage =
-        started.thenApplyAsync((v) -> fetchNewTokens(), executor).whenComplete(this::log);
+        started
+            .thenApplyAsync((v) -> fetchNewTokens(), executor)
+            .whenComplete((tokens, error) -> this.log(error));
     currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
@@ -107,7 +109,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     lastAccess = now;
     if (sleeping.compareAndSet(true, false)) {
       LOGGER.debug("Waking up...");
-      wakeUp(now);
+      scheduleOrExecuteTokensRenewal(getCurrentTokens(), now, Duration.ZERO);
     }
     return getCurrentTokens().getAccessToken();
   }
@@ -171,7 +173,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private void maybeScheduleTokensRenewal(Tokens currentTokens) {
     Instant now = clock.get();
-    if (idle(now)) {
+    if (Duration.between(lastAccess, now).compareTo(idleInterval) > 0) {
       sleeping.set(true);
       LOGGER.debug("Sleeping...");
     } else {
@@ -206,20 +208,11 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .thenApply(this::refreshTokens)
             // if that fails, try fetching brand-new tokens
             .exceptionally(error -> fetchNewTokens())
-            .whenComplete(this::log);
+            .whenComplete((tokens, error) -> this.log(error));
     currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
-  /** Visible for testing. */
-  boolean idle(Instant now) {
-    return Duration.between(lastAccess, now).compareTo(idleInterval) > 0;
-  }
-
-  private void wakeUp(Instant now) {
-    scheduleOrExecuteTokensRenewal(getCurrentTokens(), now, Duration.ZERO);
-  }
-
-  private void log(Tokens redacted, Throwable error) {
+  private void log(Throwable error) {
     if (error != null) {
       LOGGER.error("Failed to renew tokens", error);
     } else {
