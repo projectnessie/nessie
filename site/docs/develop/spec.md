@@ -94,7 +94,7 @@ local cache and using `id` to look up that auxiliary data.
 ### Content Types
 
 Nessie is designed to support various table formats, and currently supports the following types.
-See also [Tables & Views](../tables).
+See also [Tables & Views](../tables/index.md).
 
 #### Iceberg Table
 
