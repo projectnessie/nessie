@@ -69,7 +69,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final Duration idleInterval;
   private final boolean tokenExchangeEnabled;
   private final HttpClient httpClient;
-  /* Visible for testing. */ final ScheduledExecutorService executor;
+  private final ScheduledExecutorService executor;
   private final boolean shouldCloseExecutor;
   private final ObjectMapper objectMapper;
   private final CompletableFuture<Void> started = new CompletableFuture<>();

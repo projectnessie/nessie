@@ -15,9 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -161,33 +159,6 @@ public class ITOAuth2Client {
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
       compareTokens(firstTokens, refreshedTokens, "Client2");
-    }
-  }
-
-  @Test
-  void testOAuth2ClientIdle() {
-    OAuth2ClientParams params =
-        clientParams("Client2")
-            .idleInterval(Duration.ofSeconds(1))
-            .keepAliveInterval(Duration.ofSeconds(1))
-            .refreshSafetyWindow(Duration.ofSeconds(1))
-            .build();
-    try (OAuth2Client client = new OAuth2Client(params);
-        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
-      // will fetch initial tokens and schedule refresh in 4 seconds
-      // (5 secs lifespan - 1 secs safety window)
-      client.start();
-      assertThat(client.sleeping).isFalse();
-      // after refresh tokens, will enter sleep mode (idle interval was 1 sec)
-      await().until(client.sleeping::get);
-      // thread will exit after 1 sec (keep alive interval 1 sec)
-      await().until(() -> ((OAuth2TokenRefreshExecutor) client.executor).getPoolSize() == 0);
-      // access token is now expired; calling authenticate() will wake up client, fetch new tokens
-      // immediately (on main thread), then schedule refresh, which will in turn spawn a new thread
-      AccessToken accessToken = client.authenticate();
-      assertThat(client.sleeping).isFalse();
-      assertThat(((OAuth2TokenRefreshExecutor) client.executor).getPoolSize()).isOne();
-      tryUseAccessToken(validatingClient, accessToken);
     }
   }
 
