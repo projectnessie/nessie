@@ -18,51 +18,15 @@ package org.projectnessie.quarkus.config;
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
-import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
+import org.projectnessie.versioned.storage.bigtable.BigTableClientsConfig;
 
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.bigtable")
-public interface QuarkusBigTableConfig {
+public interface QuarkusBigTableConfig extends BigTableClientsConfig {
 
   @WithDefault("nessie")
   String instanceId();
-
-  Optional<String> appProfileId();
-
-  Optional<String> quotaProjectId();
-
-  Optional<String> endpoint();
-
-  Optional<String> mtlsEndpoint();
-
-  Optional<String> emulatorHost();
-
-  Optional<String> tablePrefix();
-
-  Map<String, String> jwtAudienceMapping();
-
-  Optional<Duration> maxRetryDelay();
-
-  OptionalInt maxAttempts();
-
-  Optional<Duration> initialRpcTimeout();
-
-  Optional<Duration> totalTimeout();
-
-  Optional<Duration> initialRetryDelay();
-
-  OptionalInt minChannelCount();
-
-  OptionalInt maxChannelCount();
-
-  OptionalInt initialChannelCount();
-
-  OptionalInt minRpcsPerChannel();
-
-  OptionalInt maxRpcsPerChannel();
 
   @WithDefault("false")
   boolean noTableAdminClient();
@@ -72,4 +36,6 @@ public interface QuarkusBigTableConfig {
 
   @WithDefault("true")
   boolean enableTelemetry();
+
+  Optional<String> tablePrefix();
 }

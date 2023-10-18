@@ -16,26 +16,21 @@
 package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.BIGTABLE;
-import static org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory.configureDataClient;
 
 import com.google.api.gax.core.CredentialsProvider;
-import com.google.api.gax.core.NoCredentialsProvider;
-import com.google.api.gax.grpc.ChannelPoolSettings;
 import com.google.api.gax.rpc.PermissionDeniedException;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
-import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
-import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import io.quarkiverse.googlecloudservices.common.GcpBootstrapConfiguration;
 import io.quarkiverse.googlecloudservices.common.GcpConfigHolder;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import java.util.Optional;
 import org.projectnessie.quarkus.config.QuarkusBigTableConfig;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendConfig;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory;
+import org.projectnessie.versioned.storage.bigtable.BigTableClientsFactory;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,80 +93,17 @@ public class BigTableBackendBuilder implements BackendBuilder {
     }
 
     try {
-      BigtableDataSettings.Builder dataSettings =
-          (bigTableConfig.emulatorHost().isPresent()
-              ? BigtableDataSettings.newBuilderForEmulator(
-                      bigTableConfig.emulatorHost().get(), bigTableConfig.emulatorPort())
-                  .setCredentialsProvider(NoCredentialsProvider.create())
-              : BigtableDataSettings.newBuilder().setCredentialsProvider(credentialsProvider));
-      dataSettings.setProjectId(projectId).setInstanceId(bigTableConfig.instanceId());
-      bigTableConfig.appProfileId().ifPresent(dataSettings::setAppProfileId);
-      bigTableConfig.mtlsEndpoint().ifPresent(dataSettings.stubSettings()::setMtlsEndpoint);
-      bigTableConfig.quotaProjectId().ifPresent(dataSettings.stubSettings()::setQuotaProjectId);
-      bigTableConfig.endpoint().ifPresent(dataSettings.stubSettings()::setEndpoint);
-      if (!bigTableConfig.jwtAudienceMapping().isEmpty()) {
-        dataSettings.stubSettings().setJwtAudienceMapping(bigTableConfig.jwtAudienceMapping());
-      }
 
-      ChannelPoolSettings defaultPoolSettings = ChannelPoolSettings.builder().build();
-
-      ChannelPoolSettings poolSettings =
-          ChannelPoolSettings.builder()
-              .setMinChannelCount(
-                  bigTableConfig.minChannelCount().orElse(defaultPoolSettings.getMinChannelCount()))
-              .setMaxChannelCount(
-                  bigTableConfig.maxChannelCount().orElse(defaultPoolSettings.getMaxChannelCount()))
-              .setInitialChannelCount(
-                  bigTableConfig
-                      .initialChannelCount()
-                      .orElse(defaultPoolSettings.getInitialChannelCount()))
-              .setMinRpcsPerChannel(
-                  bigTableConfig
-                      .minRpcsPerChannel()
-                      .orElse(defaultPoolSettings.getMinRpcsPerChannel()))
-              .setMaxRpcsPerChannel(
-                  bigTableConfig
-                      .maxRpcsPerChannel()
-                      .orElse(defaultPoolSettings.getMaxRpcsPerChannel()))
-              .setPreemptiveRefreshEnabled(true)
-              .build();
-
-      configureDataClient(
-          dataSettings,
-          Optional.of(poolSettings),
-          bigTableConfig.totalTimeout(),
-          bigTableConfig.maxAttempts(),
-          bigTableConfig.maxRetryDelay(),
-          bigTableConfig.initialRpcTimeout(),
-          bigTableConfig.initialRetryDelay());
-
-      if (bigTableConfig.enableTelemetry()) {
-        BigtableDataSettings.enableOpenCensusStats();
-        BigtableDataSettings.enableGfeOpenCensusStats();
-      }
-
-      LOGGER.info("Creating Google BigTable data client...");
-      BigtableDataClient dataClient = BigtableDataClient.create(dataSettings.build());
+      BigtableDataClient dataClient =
+          BigTableClientsFactory.createDataClient(projectId, bigTableConfig, credentialsProvider);
 
       BigtableTableAdminClient tableAdminClient = null;
       if (bigTableConfig.noTableAdminClient()) {
         LOGGER.info("Google BigTable table admin client creation disabled.");
       } else {
-
-        BigtableTableAdminSettings.Builder adminSettings =
-            bigTableConfig.emulatorHost().isPresent()
-                ? BigtableTableAdminSettings.newBuilderForEmulator(
-                        bigTableConfig.emulatorHost().get(), bigTableConfig.emulatorPort())
-                    .setCredentialsProvider(NoCredentialsProvider.create())
-                : BigtableTableAdminSettings.newBuilder()
-                    .setCredentialsProvider(credentialsProvider);
-        adminSettings.setProjectId(projectId).setInstanceId(bigTableConfig.instanceId());
-        bigTableConfig.mtlsEndpoint().ifPresent(adminSettings.stubSettings()::setMtlsEndpoint);
-        bigTableConfig.quotaProjectId().ifPresent(adminSettings.stubSettings()::setQuotaProjectId);
-        bigTableConfig.endpoint().ifPresent(adminSettings.stubSettings()::setEndpoint);
-
-        LOGGER.info("Creating Google BigTable table admin client...");
-        tableAdminClient = BigtableTableAdminClient.create(adminSettings.build());
+        tableAdminClient =
+            BigTableClientsFactory.createTableAdminClient(
+                projectId, bigTableConfig, credentialsProvider);
 
         // Check whether the admin client actually works (Google cloud API access could be
         // disabled). If not, we cannot even check whether tables need to be created, if necessary.
