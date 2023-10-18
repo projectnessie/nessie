@@ -106,6 +106,28 @@ public final class BigTableClientsFactory {
     return BigtableDataClient.create(dataSettings.build());
   }
 
+  /**
+   * Apply settings that are relevant to both production and test usage. Also called from {@link
+   * AbstractBigTableBackendTestFactory}.
+   */
+  static void applyCommonDataClientSettings(BigtableDataSettings.Builder settings) {
+    EnhancedBigtableStubSettings.Builder stubSettings = settings.stubSettings();
+
+    stubSettings
+        .bulkMutateRowsSettings()
+        .setBatchingSettings(
+            stubSettings.bulkMutateRowsSettings().getBatchingSettings().toBuilder()
+                .setElementCountThreshold((long) BigTableConstants.MAX_BULK_MUTATIONS)
+                .build());
+
+    stubSettings
+        .bulkReadRowsSettings()
+        .setBatchingSettings(
+            stubSettings.bulkReadRowsSettings().getBatchingSettings().toBuilder()
+                .setElementCountThreshold((long) BigTableConstants.MAX_BULK_READS)
+                .build());
+  }
+
   public static BigtableTableAdminClient createTableAdminClient(
       String projectId,
       BigTableClientsConfig config,
@@ -124,28 +146,6 @@ public final class BigTableClientsFactory {
     config.endpoint().ifPresent(adminSettings.stubSettings()::setEndpoint);
 
     return BigtableTableAdminClient.create(adminSettings.build());
-  }
-
-  /**
-   * Apply settings that are relevant to both production and test usage. Also called from {@link
-   * AbstractBigTableBackendTestFactory}.
-   */
-  public static void applyCommonDataClientSettings(BigtableDataSettings.Builder settings) {
-    EnhancedBigtableStubSettings.Builder stubSettings = settings.stubSettings();
-
-    stubSettings
-        .bulkMutateRowsSettings()
-        .setBatchingSettings(
-            stubSettings.bulkMutateRowsSettings().getBatchingSettings().toBuilder()
-                .setElementCountThreshold((long) BigTableConstants.MAX_BULK_MUTATIONS)
-                .build());
-
-    stubSettings
-        .bulkReadRowsSettings()
-        .setBatchingSettings(
-            stubSettings.bulkReadRowsSettings().getBatchingSettings().toBuilder()
-                .setElementCountThreshold((long) BigTableConstants.MAX_BULK_READS)
-                .build());
   }
 
   private static void configureDuration(
