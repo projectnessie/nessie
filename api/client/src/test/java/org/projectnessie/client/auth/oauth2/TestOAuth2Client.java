@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static java.time.Duration.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.entry;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,7 +81,9 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
+      AtomicReference<Instant> i = new AtomicReference<>(NOW);
+      ImmutableOAuth2ClientParams params =
+          paramsBuilder(server).executor(executor).clock(i::get).build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
@@ -115,6 +118,16 @@ class TestOAuth2Client {
         token = client.authenticate();
         assertThat(token.getPayload()).isEqualTo("access-refreshed");
         assertThat(client.getCurrentTokens()).isInstanceOf(RefreshTokensResponse.class);
+
+        // emulate executor running the scheduled renewal task and detecting that the client is idle
+        // after 30+ seconds of inactivity
+        i.set(i.get().plusSeconds(31));
+        currentRenewalTask.get().run();
+        assertThat(client.sleeping).isTrue();
+
+        // should exit sleeping mode on next authenticate() call
+        client.authenticate();
+        assertThat(client.sleeping).isFalse();
       }
     }
   }
@@ -287,8 +300,10 @@ class TestOAuth2Client {
       Instant accessExp,
       Instant refreshExp,
       Duration safetyWindow,
+      Duration minRefreshDelay,
       Duration expected) {
-    Duration actual = OAuth2Client.nextDelay(now, accessExp, refreshExp, safetyWindow);
+    Duration actual =
+        OAuth2Client.nextDelay(now, accessExp, refreshExp, safetyWindow, minRefreshDelay);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -304,6 +319,7 @@ class TestOAuth2Client {
             now.plus(oneMinute),
             now.plus(thirtySeconds),
             defaultWindow,
+            MIN_REFRESH_DELAY,
             thirtySeconds.minus(defaultWindow)),
         // refresh token > access token
         Arguments.of(
@@ -311,17 +327,42 @@ class TestOAuth2Client {
             now.plus(thirtySeconds),
             now.plus(oneMinute),
             defaultWindow,
+            MIN_REFRESH_DELAY,
             thirtySeconds.minus(defaultWindow)),
         // access token already expired: MIN_REFRESH_DELAY
         Arguments.of(
-            now, now.minus(oneMinute), now.plus(oneMinute), defaultWindow, MIN_REFRESH_DELAY),
+            now,
+            now.minus(oneMinute),
+            now.plus(oneMinute),
+            defaultWindow,
+            MIN_REFRESH_DELAY,
+            MIN_REFRESH_DELAY),
         // refresh token already expired: MIN_REFRESH_DELAY
         Arguments.of(
-            now, now.plus(oneMinute), now.minus(oneMinute), defaultWindow, MIN_REFRESH_DELAY),
+            now,
+            now.plus(oneMinute),
+            now.minus(oneMinute),
+            defaultWindow,
+            MIN_REFRESH_DELAY,
+            MIN_REFRESH_DELAY),
         // expirationTime - safety window > MIN_REFRESH_DELAY
-        Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), thirtySeconds, thirtySeconds),
+        Arguments.of(
+            now,
+            now.plus(oneMinute),
+            now.plus(oneMinute),
+            thirtySeconds,
+            MIN_REFRESH_DELAY,
+            thirtySeconds),
         // expirationTime - safety window <= MIN_REFRESH_DELAY
-        Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, MIN_REFRESH_DELAY));
+        Arguments.of(
+            now,
+            now.plus(oneMinute),
+            now.plus(oneMinute),
+            oneMinute,
+            MIN_REFRESH_DELAY,
+            MIN_REFRESH_DELAY),
+        // expirationTime - safety window <= ZERO (immediate refresh use case)
+        Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, ZERO, ZERO));
   }
 
   private HttpTestServer.RequestHandler handler() {

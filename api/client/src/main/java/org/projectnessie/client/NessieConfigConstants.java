@@ -156,6 +156,36 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW =
       "nessie.authentication.oauth2.refresh-safety-window";
 
+  public static final String DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT = "PT30S";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT}) for
+   * the OAuth2 authentication provider. For how long the OAuth2 provider should keep the tokens
+   * fresh, if the client is not being actively used. Setting this value too high may cause an
+   * excessive usage of network I/O and thread resources; conversely, when setting it too low, if
+   * the client is used again, the calling thread may block if the tokens are expired and need to be
+   * renewed synchronously. Optional, defaults to {@value
+   * #DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT}. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT =
+      "nessie.authentication.oauth2.preemptive-token-refresh-idle-timeout";
+
+  public static final String DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT = "PT30S";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT}) for the
+   * OAuth2 authentication provider. How long the background thread should be kept running if the
+   * client is not being actively used, or no token refreshes are being executed. Optional, defaults
+   * to {@value #DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT}. Setting this value too high will cause the
+   * background thread to keep running even if the client is not used anymore, potentially leaking
+   * thread and memory resources; conversely, setting it too low could cause the background thread
+   * to be restarted too often. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT =
+      "nessie.authentication.oauth2.background-thread-idle-timeout";
+
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES}) for the OAuth2 authentication
    * provider. Space-separated list of scopes to include in each request to the OAuth2 server.

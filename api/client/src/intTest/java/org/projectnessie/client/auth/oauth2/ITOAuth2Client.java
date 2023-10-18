@@ -73,7 +73,7 @@ public class ITOAuth2Client {
         URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
     Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
     master = keycloakAdmin.realms().realm("master");
-    updateMasterRealm(10, 15);
+    updateMasterRealm(5, 10);
     // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
     createClient("Client1", false);
     createClient("Client2", true);
@@ -87,7 +87,7 @@ public class ITOAuth2Client {
    * This test exercises the OAuth2 client "in real life", that is, with background token refresh
    * running.
    *
-   * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
+   * <p>For 15 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
    * meantime, another HTTP client will attempt to validate the obtained tokens.
    *
    * <p>This should be enough to exercise the OAuth2 client's background refresh logic with the 4
@@ -117,10 +117,10 @@ public class ITOAuth2Client {
                 tryUseAccessToken(validatingClient, client2.getCurrentTokens().getAccessToken());
               },
               0,
-              1,
-              TimeUnit.SECONDS);
+              500,
+              TimeUnit.MILLISECONDS);
       try {
-        future.get(20, TimeUnit.SECONDS);
+        future.get(15, TimeUnit.SECONDS);
       } catch (TimeoutException e) {
         // ok, expected for a ScheduledFuture
       } catch (ExecutionException e) {
@@ -356,9 +356,9 @@ public class ITOAuth2Client {
         .clientSecret("s3cr3t")
         .username("Alice")
         .password("s3cr3t")
-        .defaultAccessTokenLifespan(Duration.ofSeconds(10))
-        .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
-        .refreshSafetyWindow(Duration.ofSeconds(5));
+        .defaultAccessTokenLifespan(Duration.ofSeconds(5))
+        .defaultRefreshTokenLifespan(Duration.ofSeconds(10))
+        .refreshSafetyWindow(Duration.ofSeconds(2));
   }
 
   @SuppressWarnings("SameParameterValue")

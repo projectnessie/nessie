@@ -23,6 +23,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
+import static org.projectnessie.client.auth.oauth2.OAuth2ClientParams.MIN_IDLE_INTERVAL;
+import static org.projectnessie.client.auth.oauth2.OAuth2ClientParams.MIN_REFRESH_DELAY;
 
 import java.net.URI;
 import java.time.Duration;
@@ -71,20 +73,27 @@ class TestOAuth2ClientParams {
             newBuilder().grantType("password").username("Alice").password(""),
             new IllegalArgumentException("password must be set if grant type is 'password'")),
         Arguments.of(
-            newBuilder()
-                .defaultAccessTokenLifespan(OAuth2ClientParams.MIN_REFRESH_DELAY.minusSeconds(1)),
+            newBuilder().defaultAccessTokenLifespan(MIN_REFRESH_DELAY.minusSeconds(1)),
             new IllegalArgumentException(
-                "default token lifespan must be greater than or equal to PT1S")),
+                "default token lifespan must be greater than or equal to " + MIN_REFRESH_DELAY)),
         Arguments.of(
-            newBuilder().refreshSafetyWindow(OAuth2ClientParams.MIN_REFRESH_DELAY.minusSeconds(1)),
+            newBuilder().refreshSafetyWindow(MIN_REFRESH_DELAY.minusSeconds(1)),
             new IllegalArgumentException(
-                "refresh safety window must be greater than or equal to PT1S")),
+                "refresh safety window must be greater than or equal to " + MIN_REFRESH_DELAY)),
         Arguments.of(
             newBuilder()
                 .refreshSafetyWindow(Duration.ofMinutes(10))
                 .defaultAccessTokenLifespan(Duration.ofMinutes(5)),
             new IllegalArgumentException(
-                "refresh safety window must be less than the default token lifespan")));
+                "refresh safety window must be less than the default token lifespan")),
+        Arguments.of(
+            newBuilder().preemptiveTokenRefreshIdleTimeout(MIN_IDLE_INTERVAL.minusSeconds(1)),
+            new IllegalArgumentException(
+                "preemptive token refresh idle timeout must be greater than or equal to "
+                    + MIN_IDLE_INTERVAL)),
+        Arguments.of(
+            newBuilder().backgroundThreadIdleTimeout(Duration.ZERO),
+            new IllegalArgumentException("Core threads must have nonzero keep alive times")));
   }
 
   @ParameterizedTest
