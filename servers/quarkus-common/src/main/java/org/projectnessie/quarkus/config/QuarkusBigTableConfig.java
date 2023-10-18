@@ -46,11 +46,11 @@ public interface QuarkusBigTableConfig {
 
   Optional<Duration> maxRetryDelay();
 
-  OptionalInt maxRpcAttempts();
+  OptionalInt maxAttempts();
 
   Optional<Duration> initialRpcTimeout();
 
-  Optional<Duration> totalRpcTimeout();
+  Optional<Duration> totalTimeout();
 
   Optional<Duration> initialRetryDelay();
 
