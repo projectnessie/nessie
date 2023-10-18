@@ -28,7 +28,7 @@
     <maven.compiler.release>8</maven.compiler.release>
     <versionMavenResolver>1.9.16</versionMavenResolver>
     <versionMaven>3.9.5</versionMaven>
-    <nessie.version>0.72.0</nessie.version>
+    <nessie.version>0.72.1</nessie.version>
   </properties>
 
   <dependencyManagement>
