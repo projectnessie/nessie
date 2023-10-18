@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
-import static org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory.configureDataClient;
+import static org.projectnessie.versioned.storage.bigtable.BigTableClientsFactory.applyCommonDataClientSettings;
 
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
@@ -24,8 +24,6 @@ import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
-import java.util.Optional;
-import java.util.OptionalInt;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 
@@ -61,14 +59,7 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
               .setInstanceId(instanceId)
               .setCredentialsProvider(NoCredentialsProvider.create());
 
-      configureDataClient(
-          settings,
-          Optional.empty(),
-          Optional.empty(),
-          OptionalInt.empty(),
-          Optional.empty(),
-          Optional.empty(),
-          Optional.empty());
+      applyCommonDataClientSettings(settings);
 
       return BigtableDataClient.create(settings.build());
     } catch (IOException e) {
