@@ -23,14 +23,13 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface BigTableBackendConfig {
-
-  Optional<String> tablePrefix();
-
   BigtableDataClient dataClient();
 
   @Nullable
   @jakarta.annotation.Nullable
   BigtableTableAdminClient tableAdminClient();
+
+  Optional<String> tablePrefix();
 
   static ImmutableBigTableBackendConfig.Builder builder() {
     return ImmutableBigTableBackendConfig.builder();

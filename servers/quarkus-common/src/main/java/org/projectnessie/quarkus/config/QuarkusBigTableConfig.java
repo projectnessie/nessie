@@ -26,16 +26,19 @@ import org.projectnessie.versioned.storage.bigtable.BigTableClientsConfig;
 public interface QuarkusBigTableConfig extends BigTableClientsConfig {
 
   @WithDefault("nessie")
+  @Override
   String instanceId();
 
-  @WithDefault("false")
-  boolean noTableAdminClient();
-
   @WithDefault("8086")
+  @Override
   int emulatorPort();
 
   @WithDefault("true")
+  @Override
   boolean enableTelemetry();
 
   Optional<String> tablePrefix();
+
+  @WithDefault("false")
+  boolean noTableAdminClient();
 }
