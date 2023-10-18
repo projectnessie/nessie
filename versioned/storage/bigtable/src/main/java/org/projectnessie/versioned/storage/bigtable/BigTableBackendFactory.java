@@ -23,6 +23,7 @@ import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -56,6 +57,8 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
   public static void configureDataClient(
       BigtableDataSettings.Builder settings,
       Optional<ChannelPoolSettings> channelPoolSettings,
+      Optional<Duration> totalRpcTimeout,
+      OptionalInt maxAttempts,
       Optional<Duration> maxRetryDelay,
       Optional<Duration> initialRpcTimeout,
       Optional<Duration> initialRetryDelay) {
@@ -68,9 +71,11 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
             stubSettings.mutateRowSettings().retrySettings(),
             stubSettings.bulkMutateRowsSettings().retrySettings(),
             stubSettings.readChangeStreamSettings().retrySettings())) {
+      configureDuration(totalRpcTimeout, retrySettings::setTotalTimeout);
       configureDuration(initialRpcTimeout, retrySettings::setInitialRpcTimeout);
       configureDuration(initialRetryDelay, retrySettings::setInitialRetryDelay);
       configureDuration(maxRetryDelay, retrySettings::setMaxRetryDelay);
+      maxAttempts.ifPresent(retrySettings::setMaxAttempts);
     }
 
     channelPoolSettings.ifPresent(

@@ -139,6 +139,8 @@ public class BigTableBackendBuilder implements BackendBuilder {
       configureDataClient(
           dataSettings,
           Optional.of(poolSettings),
+          bigTableConfig.totalTimeout(),
+          bigTableConfig.maxAttempts(),
           bigTableConfig.maxRetryDelay(),
           bigTableConfig.initialRpcTimeout(),
           bigTableConfig.initialRetryDelay());
