@@ -2,6 +2,46 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.72.1 Release (October 18, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.1).
+
+### New Features
+
+- Spark SQL extensions now support the `DROP ... IF EXISTS` syntax for branches and tags.
+- `table-prefix` configuration option added to DynamoDB version store.
+- Ability to export repositories in V1 format. This is useful for migrating repositories to older 
+  Nessie servers that do not support the new storage model.
+- Added support for Spark 3.5, removed support for Spark 3.1 - along with the version bump of Apache Iceberg to 1.4.0.
+- Functionality that records current-HEAD changes of named references and APIs to expose the information.
+  This is useful to recover from a scenario when a "primary data center/region/zone" has been lost and
+  replication of a distributed database has been interrupted.
+
+### Changes
+
+- Introduces sizing of the Nessie object cache using a relative value of the max Java heap size.
+  The defaults have been changed to 70% of the Java max heap size (from the previous default of 64MB).
+  If a fixed cache size setting has been explicitly configured, consider to change it to the fraction based one.
+- Relative hashes are now supported in table references, thus allowing SQL queries to specify a relative hash
+  in the `FROM` clause, e.g. `FROM table1@main#1234^1`.
+- BigTable backend: ability to disable telemetry (which is enabled by default).
+- Spark SQL extensions use Nessie API V2 now.
+- DynamoDB backend now supports table prefixes.
+- Advanced configuration options for BigTable backend.
+
+### Fixes
+
+- Quarkus 3.4.3 includes a Netty version bump to address [CVE-2023-44487](https://github.com/advisories/GHSA-qppj-fm5r-hxr3) (HTTP/2 rapid reset). Note: Nessie uses undertow only for testing purposes, so the undertow release used in Nessie does _not_ expose this CVE to users.
+
+### Commits
+*  Set OAuth2Client idle when Nessie client is idle (#7626)
+* BigTable: simplify configuration of clients (#7639)
+* Allow Bigtable RPC retries (#7636)
+* Update undertow to 2.2.28.Final (#7616)
+* Site: some maintenance (#7634)
+* SQL+Cassandra: add new `refs` columns to schema check (#7631)
+* CI/Publish: Mitigate Gradle's annoying CME bug and GH's HTTP/502 (#7625)
+
 ## 0.72.0 Release (October 13, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.0).
