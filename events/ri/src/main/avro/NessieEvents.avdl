@@ -1,0 +1,129 @@
+/*
+ * Copyright (C) 2023 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * A protocol for modelling Nessie events as Avro records.
+ *
+ * This protocol contains record definitions that map
+ * directly to the event types defined in Nessie's
+ * org.projectnessie.events.api package.
+ *
+ * Note: to illustrate how to keep the number of record types low,
+ * and hence the number of Avro schemas low, this protocol groups
+ * together events that are similar in nature. For example, the
+ * ReferenceEvent record corresponds to three different event types
+ * in Nessie: ReferenceCreatedEvent, ReferenceDeletedEvent, and
+ * ReferenceUpdatedEvent. This grouping is not mandatory, and users
+ * are free to define a separate record for each event type if they
+ * wish to do so instead.
+ */
+@namespace("com.example.nessie.events.generated")
+protocol NessieEvents {
+
+  /**
+   * This record corresponds to Nessie's
+   * org.projectnessie.events.api.CommitEvent.
+   */
+  record CommitEvent {
+    uuid id;
+    string reference;
+    /** The hash on reference before the commit. */
+    string hashBefore;
+    /** The hash on reference after the commit. */
+    string hashAfter;
+  }
+
+  /**
+   * This record corresponds to Nessie's
+   * org.projectnessie.events.api.ReferenceCreatedEvent,
+   * org.projectnessie.events.api.ReferenceDeletedEvent, or
+   * org.projectnessie.events.api.ReferenceUpdatedEvent.
+   */
+  record ReferenceEvent {
+    ReferenceEventType type;
+    uuid id;
+    string reference;
+    /** Present when type is REASSIGNED or DELETED. */
+    string? hashBefore;
+    /** Present when type is REASSIGNED or CREATED. */
+    string? hashAfter;
+  }
+
+  enum ReferenceEventType {
+    // corresponds to Nessie's REFERENCE_CREATED event type
+    CREATED,
+    // corresponds to Nessie's REFERENCE_DELETED event type
+    DELETED,
+    // corresponds to Nessie's REFERENCE_UPDATED event type
+    REASSIGNED
+  }
+
+  /**
+   * This record corresponds to Nessie's
+   * org.projectnessie.events.api.ContentStoredEvent or
+   * org.projectnessie.events.api.ContentRemovedEvent.
+   */
+  record OperationEvent {
+    OperationEventType type;
+    uuid id;
+    string reference;
+    string hash;
+    string contentKey;
+    /** Present when type is PUT. */
+    string? contentId;
+    /** Present when type is PUT. */
+    string? contentType;
+    /** Contains content-specific information, e.g. metadata file location, snapshot id, etc.
+     * Present only when type is PUT, empty otherwise. */
+    map<string> contentProperties;
+  }
+
+  enum OperationEventType {
+    // corresponds to Nessie's CONTENT_STORED event type
+    PUT,
+    // corresponds to Nessie's CONTENT_REMOVED event type
+    DELETE
+  }
+
+  /**
+   * This record corresponds to Nessie's
+   * org.projectnessie.events.api.MergeEvent or
+   * org.projectnessie.events.api.TransplantEvent.
+   *
+   * Note: this record is not used in the example implementation; it is included
+   * here for completeness and to serve as a starting point for users who wish
+   * to process these events in Kafka using Avro.
+   */
+  record MultiBranchEvent {
+    MultiBranchEventType type;
+    uuid id;
+    string sourceReference;
+    string targetReference;
+    /** The hash on targetReference before the merge or transplant. */
+    string hashBefore;
+    /** The hash on targetReference after the merge or transplant. */
+    string hashAfter;
+    /** Present when type is MERGE. */
+    string? commonAncestorHash;
+  }
+
+  enum MultiBranchEventType {
+    // corresponds to Nessie's MERGE event type
+    MERGE,
+    // corresponds to Nessie's TRANSPLANT event type
+    TRANSPLANT
+  }
+}
