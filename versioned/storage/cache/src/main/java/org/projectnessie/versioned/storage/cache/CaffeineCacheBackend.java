@@ -42,6 +42,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
     return ImmutableCaffeineCacheBackend.builder();
   }
 
+  /** Cache capacity in MB. */
   abstract long capacity();
 
   @Nullable

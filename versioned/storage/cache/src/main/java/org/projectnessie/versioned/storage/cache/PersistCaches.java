@@ -21,7 +21,7 @@ public final class PersistCaches {
   private PersistCaches() {}
 
   /** Produces a {@link CacheBackend} with the given maximum capacity. */
-  public static CacheBackend newBackend(long capacity, MeterRegistry meterRegistry) {
-    return CaffeineCacheBackend.builder().capacity(capacity).meterRegistry(meterRegistry).build();
+  public static CacheBackend newBackend(long capacityMb, MeterRegistry meterRegistry) {
+    return CaffeineCacheBackend.builder().capacity(capacityMb).meterRegistry(meterRegistry).build();
   }
 }
