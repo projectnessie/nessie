@@ -56,9 +56,8 @@ abstract class CaffeineCacheBackend implements CacheBackend {
     MeterRegistry meterRegistry = meterRegistry();
     if (meterRegistry != null) {
       cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
-      meterRegistry
-          .counter("cache_capacity_mb", singletonList(Tag.of("cache", CACHE_NAME)))
-          .increment(capacity());
+      meterRegistry.gauge(
+          "cache_capacity_mb", singletonList(Tag.of("cache", CACHE_NAME)), "", x -> capacity());
     }
     return cacheBuilder.build();
   }
