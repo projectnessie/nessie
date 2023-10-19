@@ -20,7 +20,7 @@
 # (See site/docs/try/configuration.md)
 #
 ###
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.17-1.1696520325
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.17-2
 # NOTE: Do **NOT** bump ubi8 to ubi9 - that will break all the options above!
 
 ENV LANGUAGE='en_US:en'
