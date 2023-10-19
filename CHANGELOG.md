@@ -14,11 +14,15 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Exposes object cache metrics, meters use the tags `application="Nessie",cache="nessie-objects"`
+
 ### Changes
 
 ### Deprecations
 
 ### Fixes
+
+- Fix incorrectly calculated object cache maximum weight.
 
 ### Commits
 

@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -115,7 +116,7 @@ public class PersistProvider {
   @Singleton
   @Startup
   @NotObserved
-  public Persist producePersist() {
+  public Persist producePersist(MeterRegistry meterRegistry) {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
     if (!versionStoreType.isNewStorage()) {
       return null;
@@ -149,7 +150,7 @@ public class PersistProvider {
 
     String cacheInfo;
     if (effectiveCacheSizeMB > 0) {
-      CacheBackend cacheBackend = PersistCaches.newBackend(effectiveCacheSizeMB);
+      CacheBackend cacheBackend = PersistCaches.newBackend(effectiveCacheSizeMB, meterRegistry);
       persist = cacheBackend.wrap(persist);
       cacheInfo = "with " + effectiveCacheSizeMB + " MB objects cache";
     } else {

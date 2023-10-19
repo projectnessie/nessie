@@ -15,11 +15,16 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static java.util.Collections.singletonList;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -31,24 +36,30 @@ import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 abstract class CaffeineCacheBackend implements CacheBackend {
 
   public static final int JAVA_OBJ_HEADER = 32;
+  public static final String CACHE_NAME = "nessie-objects";
 
   static ImmutableCaffeineCacheBackend.Builder builder() {
     return ImmutableCaffeineCacheBackend.builder();
   }
 
+  /** Cache capacity in MB. */
   abstract long capacity();
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  abstract MeterRegistry meterRegistry();
 
   @Value.Derived
   Cache<CacheKey, byte[]> cache() {
-    // IMPORTANT!
-    // When changing the configuration of the Caffeine cache, make sure to run the
-    // _native_ Quarkus tests and adopt the `@ReflectionConfig` in
-    // org.projectnessie.quarkus.providers.PersistProvider.
-    return Caffeine.newBuilder()
-        .maximumWeight(capacity())
-        .recordStats()
-        .weigher(this::weigher)
-        .build();
+    Caffeine<CacheKey, byte[]> cacheBuilder =
+        Caffeine.newBuilder().maximumWeight(capacity() * 1024L * 1024L).weigher(this::weigher);
+    MeterRegistry meterRegistry = meterRegistry();
+    if (meterRegistry != null) {
+      cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
+      meterRegistry.gauge(
+          "cache_capacity_mb", singletonList(Tag.of("cache", CACHE_NAME)), "", x -> capacity());
+    }
+    return cacheBuilder.build();
   }
 
   @Override
