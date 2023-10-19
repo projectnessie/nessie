@@ -22,9 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
-import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
-import static org.assertj.core.data.MapEntry.entry;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.MergeBehavior.DROP;
@@ -258,12 +256,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
           .extracting(CommitMeta::getParentCommitHashes)
           .asInstanceOf(list(String.class))
           .containsExactly(baseHead.getHash(), committed2.getHash());
-      soft.assertThat(logOfMerged)
-          .first()
-          .extracting(LogEntry::getCommitMeta)
-          .extracting(CommitMeta::getProperties)
-          .asInstanceOf(map(String.class, String.class))
-          .containsExactly(entry(CommitMeta.MERGE_PARENT_PROPERTY, committed2.getHash()));
     }
   }
 

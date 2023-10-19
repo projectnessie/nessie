@@ -79,7 +79,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.IdentifiedContentKey;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
 import org.projectnessie.model.ImmutableContentKeyDetails;
 import org.projectnessie.model.ImmutableLogEntry;
@@ -553,9 +552,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit commit) {
-    CommitMeta commitMetaWithHash = enhanceCommitMeta(commit.getHash(), commit.getCommitMeta());
+    CommitMeta commitMeta = commit.getCommitMeta();
     ImmutableLogEntry.Builder logEntry = LogEntry.builder();
-    logEntry.commitMeta(commitMetaWithHash);
+    logEntry.commitMeta(commitMeta);
     if (commit.getParentHash() != null) {
       logEntry.parentCommitHash(commit.getParentHash().asString());
     }
@@ -578,19 +577,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       }
     }
     return logEntry.build();
-  }
-
-  private static CommitMeta enhanceCommitMeta(Hash hash, CommitMeta commitMeta) {
-    if (commitMeta.getParentCommitHashes().size() > 1) {
-      ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
-      // Only add the 1st commit ID (merge parent) to the legacy MERGE_PARENT_PROPERTY. It was
-      // introduced for compatibility with older clients. There is currently only one use case for
-      // the property: exposing the commit ID of the merged commit.
-      updatedCommitMeta.putProperties(
-          CommitMeta.MERGE_PARENT_PROPERTY, commitMeta.getParentCommitHashes().get(1));
-      return updatedCommitMeta.build();
-    }
-    return commitMeta;
   }
 
   /**
@@ -1163,8 +1149,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
     if (null != refWithHash.getHeadCommitMeta()) {
       found = true;
-      builder.commitMetaOfHEAD(
-          enhanceCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
+      builder.commitMetaOfHEAD(refWithHash.getHeadCommitMeta());
     }
     if (0L != refWithHash.getCommitSeq()) {
       found = true;
