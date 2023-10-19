@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,13 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import java.util.List;
-import org.immutables.value.Value;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-/**
- * Contains/references a list of keys that are "visible" from a specific {@link
- * org.projectnessie.versioned.persist.adapter.CommitLogEntry}.
- */
-@Value.Immutable
-@Value.Style(jdkOnly = true) // to allow null in collections
-public interface KeyList {
-
-  KeyList EMPTY = ImmutableKeyList.builder().build();
-
-  @AllowNulls
-  List<KeyListEntry> getKeys();
-
-  static KeyList of(List<KeyListEntry> keys) {
-    return ImmutableKeyList.builder().keys(keys).build();
-  }
-}
+@Documented
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE_USE})
+public @interface AllowNulls {}
