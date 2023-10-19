@@ -33,6 +33,8 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
 
+  implementation(libs.micrometer.core)
+
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
 

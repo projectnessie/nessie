@@ -37,6 +37,7 @@ dependencies {
 
   implementation(libs.guava)
   implementation(libs.caffeine)
+  implementation(libs.micrometer.core)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
