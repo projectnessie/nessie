@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.72.2 Release (October 19, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.2).
+
+### New Features
+
+- Exposes object cache metrics, meters use the tags `application="Nessie",cache="nessie-objects"`
+
+### Fixes
+
+- Fix incorrectly calculated object cache maximum weight.
+
+### Commits
+* Expose object cache metrics (#7643)
+* Cleanup: remove dependency on immutables-value-fixtures (#7644)
+
 ## 0.72.1 Release (October 18, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.1).

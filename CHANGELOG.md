@@ -14,17 +14,23 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Exposes object cache metrics, meters use the tags `application="Nessie",cache="nessie-objects"`
-
 ### Changes
 
 ### Deprecations
 
 ### Fixes
 
-- Fix incorrectly calculated object cache maximum weight.
-
 ### Commits
+
+## [0.72.2] Release (2023-10-19)
+
+### New Features
+
+- Exposes object cache metrics, meters use the tags `application="Nessie",cache="nessie-objects"`
+
+### Fixes
+
+- Fix incorrectly calculated object cache maximum weight.
 
 ## [0.72.0] Release (2023-10-13)
 
@@ -201,7 +207,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.72.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...HEAD
+[0.72.2]: https://github.com/projectnessie/nessie/compare/nessie-0.72.0...nessie-0.72.2
 [0.72.0]: https://github.com/projectnessie/nessie/compare/nessie-0.71.0...nessie-0.72.0
 [0.71.0]: https://github.com/projectnessie/nessie/compare/nessie-0.70.2...nessie-0.71.0
 [0.70.2]: https://github.com/projectnessie/nessie/compare/nessie-0.70.1...nessie-0.70.2
