@@ -28,7 +28,6 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   compileOnly(libs.immutables.value.annotations)
-  compileOnly(libs.immutables.value.fixture)
   annotationProcessor(libs.immutables.value.processor)
 
   // javax/jakarta
