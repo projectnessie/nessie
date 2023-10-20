@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
 import java.util.Properties
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
@@ -137,6 +139,64 @@ plugins.withType<JavaPlugin>().configureEach {
           "errorprone",
           "jp.skypencil.errorprone.slf4j:errorprone-slf4j:${libsRequiredVersion("errorproneSlf4j")}"
         )
+      }
+    }
+  }
+}
+
+// Adds Git/Build/System related information to the generated jars, if the `release` project
+// property is present. Do not add that information in development builds, so that the
+// generated jars are still cachable for Gradle.
+if (project.hasProperty("release")) {
+  tasks.withType<Jar>().configureEach {
+    manifest { MemoizedGitInfo.gitInfo(rootProject, attributes) }
+  }
+}
+
+class MemoizedGitInfo {
+  companion object {
+    private fun execProc(rootProject: Project, cmd: String, vararg args: Any): String {
+      val buf = ByteArrayOutputStream()
+      rootProject.exec {
+        executable = cmd
+        args(args.toList())
+        standardOutput = buf
+      }
+      return buf.toString(StandardCharsets.UTF_8).trim()
+    }
+
+    fun gitInfo(rootProject: Project, attribs: Attributes) {
+      val props = gitInfo(rootProject)
+      attribs.putAll(props)
+    }
+
+    fun gitInfo(rootProject: Project): Map<String, String> {
+      if (!rootProject.hasProperty("release")) {
+        return emptyMap()
+      }
+
+      return if (rootProject.extra.has("gitReleaseInfo")) {
+        @Suppress("UNCHECKED_CAST")
+        rootProject.extra["gitReleaseInfo"] as Map<String, String>
+      } else {
+        val gitHead = execProc(rootProject, "git", "rev-parse", "HEAD")
+        val gitDescribe = execProc(rootProject, "git", "describe")
+        val timestamp = execProc(rootProject, "date", "+%Y-%m-%d-%H:%M:%S%:z")
+        val system = execProc(rootProject, "uname", "-a")
+        val javaVersion = System.getProperty("java.version")
+
+        val info =
+          mapOf(
+            "Nessie-Version" to
+              rootProject.layout.projectDirectory.file("version.txt").asFile.readText(),
+            "Nessie-Build-Git-Head" to gitHead,
+            "Nessie-Build-Git-Describe" to gitDescribe,
+            "Nessie-Build-Timestamp" to timestamp,
+            "Nessie-Build-System" to system,
+            "Nessie-Build-Java-Version" to javaVersion
+          )
+        rootProject.extra["gitReleaseInfo"] = info
+        return info
       }
     }
   }
