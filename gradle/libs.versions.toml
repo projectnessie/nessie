@@ -109,7 +109,7 @@ javax-validation-api = { module = "javax.validation:validation-api", version = "
 javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 javax-ws-rs21 = { module = "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec", version = "2.0.2.Final" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "2.3.9" }
-jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "2.40" }
+jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "2.41" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "24.0.1" }
 jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
