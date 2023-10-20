@@ -185,15 +185,18 @@ class MemoizedGitInfo {
         val system = execProc(rootProject, "uname", "-a")
         val javaVersion = System.getProperty("java.version")
 
-        mapOf(
-          "Nessie-Version" to
-            rootProject.layout.projectDirectory.file("version.txt").asFile.readText(),
-          "Nessie-Build-Git-Head" to gitHead,
-          "Nessie-Build-Git-Describe" to gitDescribe,
-          "Nessie-Build-Timestamp" to timestamp,
-          "Nessie-Build-System" to system,
-          "Nessie-Build-Java-Version" to javaVersion
-        )
+        val info =
+          mapOf(
+            "Nessie-Version" to
+              rootProject.layout.projectDirectory.file("version.txt").asFile.readText(),
+            "Nessie-Build-Git-Head" to gitHead,
+            "Nessie-Build-Git-Describe" to gitDescribe,
+            "Nessie-Build-Timestamp" to timestamp,
+            "Nessie-Build-System" to system,
+            "Nessie-Build-Java-Version" to javaVersion
+          )
+        rootProject.extra["gitReleaseInfo"] = info
+        return info
       }
     }
   }
