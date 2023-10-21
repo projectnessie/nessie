@@ -54,17 +54,6 @@ import org.projectnessie.model.ser.Views;
 public abstract class CommitMeta {
 
   /**
-   * Key of the {@link #getProperties() property} that indicates the merged commit ID, if the commit
-   * represents a merge commit.
-   *
-   * <p>If the commit is the result of a merge operation, the properties map <em>may</em> contain
-   * the key {@value #MERGE_PARENT_PROPERTY}, if the merge was performed with a Nessie server
-   * version, after 0.30.0, that persists the merged reference.
-   */
-  @Deprecated // for removal
-  public static final String MERGE_PARENT_PROPERTY = "_merge_parent";
-
-  /**
    * Hash of this commit.
    *
    * <p>This is not known at creation time and is only valid when reading the log.

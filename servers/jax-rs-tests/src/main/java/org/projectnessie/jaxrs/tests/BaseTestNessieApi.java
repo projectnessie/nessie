@@ -699,7 +699,7 @@ public abstract class BaseTestNessieApi {
               singletonList("NessieHerself"),
               singletonList("Arctic"),
               Instant.EPOCH,
-              ImmutableMap.of("property", "value", "_merge_parent", branch.getHash()));
+              singletonMap("property", "value"));
     } else {
       api().mergeRefIntoBranch().fromRef(branch).branch(main).keepIndividualCommits(false).merge();
       main2 = api().getReference().refName(main.getName()).get();
