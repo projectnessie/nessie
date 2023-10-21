@@ -17,6 +17,7 @@ package org.projectnessie.client.auth.oauth2;
 
 import static java.time.Duration.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -31,8 +32,10 @@ import com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -58,32 +61,13 @@ class TestOAuth2Client {
 
     ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 
-    // handle the call to fetchNewTokens() for the initial token fetch
-    doAnswer(
-            invocation -> {
-              Runnable runnable = invocation.getArgument(0);
-              runnable.run();
-              return null;
-            })
-        .when(executor)
-        .execute(any(Runnable.class));
-
-    AtomicReference<Runnable> currentRenewalTask = new AtomicReference<>();
-
-    // handle successive calls to scheduleTokensRenewal()
-    when(executor.schedule(any(Runnable.class), anyLong(), any()))
-        .thenAnswer(
-            invocation -> {
-              Runnable runnable = invocation.getArgument(0);
-              currentRenewalTask.set(runnable);
-              return mock(ScheduledFuture.class);
-            });
+    mockInitialTokenFetch(executor);
+    AtomicReference<Runnable> currentRenewalTask = mockTokensRefreshSchedule(executor);
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
       AtomicReference<Instant> i = new AtomicReference<>(NOW);
-      ImmutableOAuth2ClientParams params =
-          paramsBuilder(server).executor(executor).clock(i::get).build();
+      OAuth2ClientParams params = paramsBuilder(server).executor(executor).clock(i::get).build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
@@ -128,6 +112,58 @@ class TestOAuth2Client {
         // should exit sleeping mode on next authenticate() call
         client.authenticate();
         assertThat(client.sleeping).isFalse();
+      }
+    }
+  }
+
+  @Test
+  void testExecutionRejected() throws Exception {
+
+    ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+    mockInitialTokenFetch(executor);
+    AtomicBoolean shouldReject = new AtomicBoolean(true);
+    AtomicReference<Runnable> currentRenewalTask =
+        mockTokensRefreshSchedule(executor, shouldReject);
+
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      OAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
+      params.getHttpClient().setSslContext(server.getSslContext());
+
+      // Execution rejected on initial token fetch
+      try (OAuth2Client client = new OAuth2Client(params)) {
+        client.start();
+        assertThatThrownBy(client::authenticate).isInstanceOf(RejectedExecutionException.class);
+      }
+
+      // Execution rejected on token refresh
+      try (OAuth2Client client = new OAuth2Client(params)) {
+
+        // should fetch the initial token and schedule a refresh
+        shouldReject.set(false);
+        client.start();
+        client.authenticate();
+
+        // Emulate executor running the scheduled refresh task,
+        // then rejecting scheduling the next one
+        shouldReject.set(true);
+        currentRenewalTask.get().run();
+        assertThatThrownBy(client::authenticate).isInstanceOf(RejectedExecutionException.class);
+      }
+
+      // Execution rejected on token refresh while waking up after sleeping
+      try (OAuth2Client client = new OAuth2Client(params)) {
+
+        // should fetch the initial token and schedule a refresh
+        shouldReject.set(false);
+        client.start();
+        client.authenticate();
+
+        client.sleeping.set(true);
+
+        // Emulate waking up, then rejecting scheduling the next refresh task
+        shouldReject.set(true);
+        assertThatThrownBy(client::authenticate).isInstanceOf(RejectedExecutionException.class);
       }
     }
   }
@@ -524,5 +560,40 @@ class TestOAuth2Client {
         .clientId("Alice")
         .clientSecret("s3cr3t")
         .scope("test");
+  }
+
+  /** handle the call to fetchNewTokens() for the initial token fetch. */
+  private static void mockInitialTokenFetch(ScheduledExecutorService executor) {
+    doAnswer(
+            invocation -> {
+              Runnable runnable = invocation.getArgument(0);
+              runnable.run();
+              return null;
+            })
+        .when(executor)
+        .execute(any(Runnable.class));
+  }
+
+  /** Handle successive calls to scheduleTokensRenewal(). */
+  private static AtomicReference<Runnable> mockTokensRefreshSchedule(
+      ScheduledExecutorService executor) {
+    return mockTokensRefreshSchedule(executor, new AtomicBoolean());
+  }
+
+  /** Handle successive calls to scheduleTokensRenewal() with option to reject scheduled tasks. */
+  private static AtomicReference<Runnable> mockTokensRefreshSchedule(
+      ScheduledExecutorService executor, AtomicBoolean rejectSchedule) {
+    AtomicReference<Runnable> task = new AtomicReference<>();
+    when(executor.schedule(any(Runnable.class), anyLong(), any()))
+        .thenAnswer(
+            invocation -> {
+              if (rejectSchedule.get()) {
+                throw new RejectedExecutionException("test");
+              }
+              Runnable runnable = invocation.getArgument(0);
+              task.set(runnable);
+              return mock(ScheduledFuture.class);
+            });
+    return task;
   }
 }

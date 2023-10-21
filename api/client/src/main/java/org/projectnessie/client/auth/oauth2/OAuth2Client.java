@@ -99,8 +99,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     currentTokensStage =
         started
             .thenApplyAsync((v) -> fetchNewTokens(), executor)
+            .thenApply(this::maybeScheduleTokensRenewal)
             .whenComplete((tokens, error) -> log(error));
-    currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
   @Override
@@ -171,7 +171,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
-  private void maybeScheduleTokensRenewal(Tokens currentTokens) {
+  private Tokens maybeScheduleTokensRenewal(Tokens currentTokens) {
     Instant now = clock.get();
     if (Duration.between(lastAccess, now).compareTo(idleInterval) > 0) {
       sleeping.set(true);
@@ -179,6 +179,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     } else {
       scheduleOrExecuteTokensRenewal(currentTokens, now, MIN_REFRESH_DELAY);
     }
+    return currentTokens;
   }
 
   private void scheduleOrExecuteTokensRenewal(
@@ -208,8 +209,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .thenApply(this::refreshTokens)
             // if that fails, try fetching brand-new tokens
             .exceptionally(error -> fetchNewTokens())
+            .thenApply(this::maybeScheduleTokensRenewal)
             .whenComplete((tokens, error) -> log(error));
-    currentTokensStage.thenAccept(this::maybeScheduleTokensRenewal);
   }
 
   private void log(Throwable error) {
