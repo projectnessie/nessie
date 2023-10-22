@@ -108,8 +108,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     Instant now = clock.get();
     lastAccess = now;
     if (sleeping.compareAndSet(true, false)) {
-      LOGGER.debug("Waking up...");
-      scheduleOrExecuteTokensRenewal(getCurrentTokens(), now, Duration.ZERO);
+      wakeUp(now);
     }
     return getCurrentTokens().getAccessToken();
   }
@@ -171,34 +170,32 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
+  private void wakeUp(Instant now) {
+    LOGGER.debug("Waking up...");
+    Duration delay = nextTokenRefresh(getCurrentTokens(), now, Duration.ZERO);
+    if (delay.compareTo(MIN_REFRESH_DELAY) < 0) {
+      LOGGER.debug("Refreshing tokens immediately");
+      renewTokens();
+    } else {
+      scheduleTokensRenewal(delay);
+    }
+  }
+
   private Tokens maybeScheduleTokensRenewal(Tokens currentTokens) {
     Instant now = clock.get();
     if (Duration.between(lastAccess, now).compareTo(idleInterval) > 0) {
       sleeping.set(true);
       LOGGER.debug("Sleeping...");
     } else {
-      scheduleOrExecuteTokensRenewal(currentTokens, now, MIN_REFRESH_DELAY);
+      scheduleTokensRenewal(nextTokenRefresh(currentTokens, now, MIN_REFRESH_DELAY));
     }
     return currentTokens;
   }
 
-  private void scheduleOrExecuteTokensRenewal(
-      Tokens currentTokens, Instant now, Duration minRefreshDelay) {
-    Instant accessExpirationTime =
-        tokenExpirationTime(now, currentTokens.getAccessToken(), defaultAccessTokenLifespan);
-    Instant refreshExpirationTime =
-        tokenExpirationTime(now, currentTokens.getRefreshToken(), defaultRefreshTokenLifespan);
-    Duration delay =
-        nextDelay(
-            now, accessExpirationTime, refreshExpirationTime, refreshSafetyWindow, minRefreshDelay);
-    if (delay.compareTo(MIN_REFRESH_DELAY) < 0) {
-      LOGGER.debug("Refreshing tokens immediately");
-      renewTokens();
-    } else {
-      LOGGER.debug("Scheduling token refresh in {}", delay);
-      tokenRefreshFuture =
-          executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
-    }
+  private void scheduleTokensRenewal(Duration delay) {
+    LOGGER.debug("Scheduling token refresh in {}", delay);
+    tokenRefreshFuture =
+        executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   private void renewTokens() {
@@ -284,7 +281,20 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         .isBefore(now.plus(refreshSafetyWindow));
   }
 
-  static Duration nextDelay(
+  /**
+   * Compute when the next token refresh should happen, depending on when the access token and the
+   * refresh token expire, and on the current time.
+   */
+  private Duration nextTokenRefresh(Tokens currentTokens, Instant now, Duration minRefreshDelay) {
+    Instant accessExpirationTime =
+        tokenExpirationTime(now, currentTokens.getAccessToken(), defaultAccessTokenLifespan);
+    Instant refreshExpirationTime =
+        tokenExpirationTime(now, currentTokens.getRefreshToken(), defaultRefreshTokenLifespan);
+    return shortestDelay(
+        now, accessExpirationTime, refreshExpirationTime, refreshSafetyWindow, minRefreshDelay);
+  }
+
+  static Duration shortestDelay(
       Instant now,
       Instant accessExpirationTime,
       Instant refreshExpirationTime,
