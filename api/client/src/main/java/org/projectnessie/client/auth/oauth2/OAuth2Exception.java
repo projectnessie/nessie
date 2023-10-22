@@ -23,7 +23,7 @@ public class OAuth2Exception extends HttpClientException {
   private final Status status;
   private final String errorCode;
 
-  public OAuth2Exception(Status status, ErrorResponse errorResponse) {
+  OAuth2Exception(Status status, ErrorResponse errorResponse) {
     super(createMessage(status, errorResponse));
     this.status = status;
     this.errorCode = errorResponse.getErrorCode();
