@@ -97,9 +97,6 @@ public interface CacheSizing {
 
   @Value.Check
   default void check() {
-    checkState(
-        !(fixedSizeInMB().isPresent() && fractionOfMaxHeapSize().isPresent()),
-        "Cache sizing: must not specify both fractionOfMaxHeapSize and sizeInBytes, use either.");
     if (fractionOfMaxHeapSize().isPresent()) {
       checkState(
           fractionOfMaxHeapSize().getAsDouble() > 0d && fractionOfMaxHeapSize().getAsDouble() < 1d,
@@ -109,8 +106,8 @@ public interface CacheSizing {
     if (fixedSizeInMB().isPresent()) {
       int fixed = fixedSizeInMB().getAsInt();
       checkState(
-          fixed == 0 || fixed > 64,
-          "Cache sizing: sizeInBytes must be greater than 64 MB, but is %s",
+          fixed >= 0,
+          "Cache sizing: sizeInBytes must be greater than 0, but is %s",
           fixedSizeInMB());
     }
     checkState(
