@@ -13,14 +13,16 @@ either:
 should be inserted inside the variable's value as `-D<name>=<value>` pairs: 
 
     ```bash
-    docker run -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=JDBC -Dquarkus.datasource.jdbc.url=jdbc:postgresql://host.com:5432/db" ghcr.io/projectnessie/nessie
+    docker run  -p 19120:19120 \
+   -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=JDBC -Dquarkus.datasource.jdbc.url=jdbc:postgresql://host.com:5432/db" \
+   ghcr.io/projectnessie/nessie
     ```
 
 2. Alternatively, set them via the `--env` (or `-e`) option in the Docker invocation. Each setting 
 must be provided separately as `--env NAME=value` options:
 
     ```bash
-    docker run \
+    docker run -p 19120:19120 \
     --env NESSIE_VERSION_STORE_TYPE=JDBC \
     --env QUARKUS_DATASOURCE_JDBC_URL="jdbc:postgresql://host.com:5432/db" \
     ghcr.io/projectnessie/nessie
@@ -298,12 +300,25 @@ via [localhost:19120/q/swagger-ui](http://localhost:19120/q/swagger-ui/)
 
 # Docker image options
 
-By default, Nessie listens on port 19120. To change the port, use the `-p` option to map the
-internal port to a different port on the host. For example, to run Nessie on port 8080, use the
-following command:
+By default, Nessie listens on port 19120. To expose that port on the host, use `-p 19120:19120`. 
+To expose that port on a different port on the host system, use the `-p` option and map the
+internal port to some port on the host. For example, to expose Nessie on port 8080 of the host 
+system, use the following command:
 
 ```bash
 docker run -p 8080:19120 ghcr.io/projectnessie/nessie
+```
+
+Then you can browse Nessie's UI on the host by pointing your browser to http://localhost:8080.
+
+Note: this doesn't change the port Nessie listens on, it only changes the port on the host system
+that is mapped to the port Nessie listens on. Nessie still listens on port 19120 inside the
+container. If you want to change the port Nessie listens on, you can use the `QUARKUS_HTTP_PORT`
+environment variable. For example, to make Nessie listen on port 8080 inside the container, 
+and expose it to the host system also on 8080, use the following command:
+
+```bash
+docker run -p 8080:8080 -e QUARKUS_HTTP_PORT=8080 ghcr.io/projectnessie/nessie
 ```
 
 ## Nessie Docker image types
