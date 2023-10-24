@@ -331,7 +331,7 @@ class TestOAuth2Client {
 
   @ParameterizedTest
   @MethodSource
-  void testNextDelay(
+  void testShortestDelay(
       Instant now,
       Instant accessExp,
       Instant refreshExp,
@@ -339,11 +339,11 @@ class TestOAuth2Client {
       Duration minRefreshDelay,
       Duration expected) {
     Duration actual =
-        OAuth2Client.nextDelay(now, accessExp, refreshExp, safetyWindow, minRefreshDelay);
+        OAuth2Client.shortestDelay(now, accessExp, refreshExp, safetyWindow, minRefreshDelay);
     assertThat(actual).isEqualTo(expected);
   }
 
-  static Stream<Arguments> testNextDelay() {
+  static Stream<Arguments> testShortestDelay() {
     Instant now = Instant.now();
     Duration oneMinute = Duration.ofMinutes(1);
     Duration thirtySeconds = Duration.ofSeconds(30);
