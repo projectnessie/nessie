@@ -30,14 +30,28 @@ public class TestCacheSizing {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
-  void illegalSettings() {
-    soft.assertThatIllegalStateException()
-        .isThrownBy(
-            () -> CacheSizing.builder().fixedSizeInMB(128).fractionOfMaxHeapSize(.5d).build());
+  void illegalFractionSettings() {
     soft.assertThatIllegalStateException()
         .isThrownBy(() -> CacheSizing.builder().fractionOfMaxHeapSize(-.1d).build());
     soft.assertThatIllegalStateException()
         .isThrownBy(() -> CacheSizing.builder().fractionOfMaxHeapSize(1.1d).build());
+  }
+
+  @Test
+  void illegalFixedSettings() {
+    soft.assertThatIllegalStateException()
+        .isThrownBy(() -> CacheSizing.builder().fixedSizeInMB(-1).build());
+  }
+
+  @Test
+  void fixedSizeWins() {
+    soft.assertThat(
+            CacheSizing.builder()
+                .fixedSizeInMB(3)
+                .fractionOfMaxHeapSize(.5)
+                .build()
+                .calculateEffectiveSizeInMB(BYTES_512M))
+        .isEqualTo(3);
   }
 
   @Test
@@ -50,6 +64,18 @@ public class TestCacheSizing {
                 .build()
                 .calculateEffectiveSizeInMB(BYTES_256M))
         .isEqualTo(64);
+  }
+
+  @Test
+  void tinyHeapNoCache() {
+    // Assuming a 256MB max heap, requesting 70% (179MB), calc yields fractionMinSizeMb, i.e. zero
+    soft.assertThat(
+            CacheSizing.builder()
+                .fractionOfMaxHeapSize(.7)
+                .fractionMinSizeMb(0)
+                .build()
+                .calculateEffectiveSizeInMB(BYTES_256M))
+        .isEqualTo(0);
   }
 
   @Test
