@@ -3,17 +3,37 @@
 
 The Nessie server is configurable via properties as listed in
 the [application.properties](https://github.com/projectnessie/nessie/blob/main/servers/quarkus-server/src/main/resources/application.properties)
-file. These properties can be set when starting up the docker image by adding them via the
-`JAVA_OPTS_APPEND` options to the Docker invocation prefixed with `-D`. For example, if you want to
-set Nessie to use the INMEMORY version store running on port 8080, you would run the following. For
-more information, see [Docker image options](#docker-image-options) below.
+file. 
 
-```bash
-docker run \
-  -p 8080:19120 \
-  -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=INMEMORY" \
-  ghcr.io/projectnessie/nessie
-```
+These properties can be set when starting up the docker image in two different ways. For example, if 
+you want to set Nessie to use the `JDBC` version store and provide a JDBC connection URL, you can 
+either:
+
+1. Set these values via the `JAVA_OPTS_APPEND` option in the Docker invocation. Each setting 
+should be inserted inside the variable's value as `-D<name>=<value>` pairs: 
+
+    ```bash
+    docker run  -p 19120:19120 \
+   -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=JDBC -Dquarkus.datasource.jdbc.url=jdbc:postgresql://host.com:5432/db" \
+   ghcr.io/projectnessie/nessie
+    ```
+
+2. Alternatively, set them via the `--env` (or `-e`) option in the Docker invocation. Each setting 
+must be provided separately as `--env NAME=value` options:
+
+    ```bash
+    docker run -p 19120:19120 \
+    --env NESSIE_VERSION_STORE_TYPE=JDBC \
+    --env QUARKUS_DATASOURCE_JDBC_URL="jdbc:postgresql://host.com:5432/db" \
+    ghcr.io/projectnessie/nessie
+    ```
+
+Note how the original property name is converted to an environment variable, e.g. 
+`nessie.version.store.type` becomes `NESSIE_VERSION_STORE_TYPE`. The conversion is done by replacing 
+all `.` with `_` and converting the name to upper case. 
+See [here](https://smallrye.io/smallrye-config/Main/config/environment-variables/) for more details.
+
+For more information on docker images, see [Docker image options](#docker-image-options) below.
 
 ## Core Nessie Configuration Settings
 
@@ -28,10 +48,10 @@ docker run \
 
 ### Version Store Settings
 
-| Property                              | Default values | Type               | Description                                                                                                                                                                                                                                                                                         |
-|---------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`           | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`, `BIGTABLE`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
-| `nessie.version.store.events.enable`  | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                  |
+| Property                             | Default values | Type               | Description                                                                                                                                                                                                                                                                                         |
+|--------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.type`          | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`, `BIGTABLE`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
+| `nessie.version.store.events.enable` | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                              |
 
 !!! info
 Starting with Nessie 0.66.0, tracing and metrics are always used, if OpenTelemetry is enabled via the Quarkus configuration.
@@ -82,14 +102,13 @@ When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable 
 
 
 !!! info
-A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/)
+A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/).
 
 #### JDBC Version Store Settings
 
-When setting `nessie.version.store.type=JDBC` which enables transactional/RDBMS as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
-
-!!! info
-A complete set of JDBC configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/datasource)
+Setting `nessie.version.store.type=JDBC` enables transactional/RDBMS as the version store used by the Nessie server.
+Configuration of the datastore will be done by Quarkus and depends on many factors, such as the actual database in use. 
+A complete set of JDBC configuration options can be found on [quarkus.io](https://quarkus.io/guides/datasource).
 
 #### RocksDB Version Store Settings
 
@@ -115,22 +134,22 @@ When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandr
 | `nessie.version.store.cassandra.dml-timeout` | `PT3S`         | `String`  | DML statement timeout for DDL.                                                                                                       |
 
 !!! info
-A complete set of the Quarkus Cassandra extension configuration options can be found on [quarkus.io/guides/cassandra](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database)
+A complete set of the Quarkus Cassandra extension configuration options can be found on [quarkus.io](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database)
 
 #### DynamoDB Version Store Settings
 
 When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-| Property                                             | Default values | Type          | Description                                                                                                                                        |
-|------------------------------------------------------|----------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `quarkus.dynamodb.aws.region`                        |                | `String`      | Sets DynamoDB AWS region.                                                                                                                          |
-| `quarkus.dynamodb.aws.credentials.type`              |                |               | Sets the credentials provider that should be used to authenticate with AWS.                                                                        |
-| `quarkus.dynamodb.endpoint-override`                 |                | `URI`         | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region. |
-| `quarkus.dynamodb.sync-client.type`                  | `url`          | `url, apache` | Sets the type of the sync HTTP client implementation                                                                                               |
-| `nessie.version.store.persist.dynamodb.table-prefix` | n/a            | `String`      | Prefix for tables, default is no prefix.                                                                                                           |
+| Property                                             | Default values | Type     | Description                                                                                                                                                                                                                                       |
+|------------------------------------------------------|----------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `quarkus.dynamodb.aws.region`                        |                | `String` | Sets DynamoDB AWS region.                                                                                                                                                                                                                         |
+| `quarkus.dynamodb.aws.credentials.type`              | `default`      | `String` | See [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference) docs for possible values. Sets the credentials provider that should be used to authenticate with AWS. |
+| `quarkus.dynamodb.endpoint-override`                 |                | `URI`    | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region.                                                                                               |
+| `quarkus.dynamodb.sync-client.type`                  | `url`          | `String` | Possible values are: `url`, `apache`. Sets the type of the sync HTTP client implementation                                                                                                                                                        |
+| `nessie.version.store.persist.dynamodb.table-prefix` | n/a            | `String` | Prefix for tables, default is no prefix.                                                                                                                                                                                                          |
 
 !!! info
-A complete set of DynamoDB configuration options for Quarkus can be found on [quarkiverse.github.io](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference)
+A complete set of DynamoDB configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference).
 
 #### MongoDB Version Store Settings
 
@@ -142,7 +161,7 @@ When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the ve
 | `quarkus.mongodb.connection-string` |                | `String` | Sets MongoDB connection string. |
 
 !!! info
-A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client)
+A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client).
 
 #### In-Memory Version Store Settings
 
@@ -281,18 +300,26 @@ via [localhost:19120/q/swagger-ui](http://localhost:19120/q/swagger-ui/)
 
 # Docker image options
 
-Nessie (Quarkus) opens a HTTP server on port 19120 by default. To expose the HTTP port on 8080
-instead of 19120, use the following command.
+By default, Nessie listens on port 19120. To expose that port on the host, use `-p 19120:19120`. 
+To expose that port on a different port on the host system, use the `-p` option and map the
+internal port to some port on the host. For example, to expose Nessie on port 8080 of the host 
+system, use the following command:
 
 ```bash
-docker run -p 8080:19120 \
-  -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=INMEMORY" \
-  ghcr.io/projectnessie/nessie
+docker run -p 8080:19120 ghcr.io/projectnessie/nessie
 ```
 
-Java VM options are passed via the `JAVA_OPTS_APPEND` environment variable.
+Then you can browse Nessie's UI on the host by pointing your browser to http://localhost:8080.
 
-Quarkus specific settings are passed using the standard Java `-D` option to set system properties.
+Note: this doesn't change the port Nessie listens on, it only changes the port on the host system
+that is mapped to the port Nessie listens on. Nessie still listens on port 19120 inside the
+container. If you want to change the port Nessie listens on, you can use the `QUARKUS_HTTP_PORT`
+environment variable. For example, to make Nessie listen on port 8080 inside the container, 
+and expose it to the host system also on 8080, use the following command:
+
+```bash
+docker run -p 8080:8080 -e QUARKUS_HTTP_PORT=8080 ghcr.io/projectnessie/nessie
+```
 
 ## Nessie Docker image types
 
@@ -300,10 +327,12 @@ Nessie publishes a Java based multiplatform (for amd64, arm64, ppc64le, s390x) i
 
 ## Advanced Docker image tuning (Java images only)
 
-There are a bunch of environment variables to configure the Docker image. If in doubt, leave
+There are many environment variables available to configure the Docker image. If in doubt, leave
 everything at its default. You can configure the behavior using the following environment
-properties. These settings come from the base image
+variables. They come from the base image used by Nessie,
 [ubi8/openjdk-17](https://catalog.redhat.com/software/containers/ubi8/openjdk-17/618bdbf34ae3739687568813).
+The extensive list of supported environment variables can be found 
+[here](https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html/red_hat_java_s2i_for_openshift/reference#configuration_environment_variables).
 
 ### Examples
 
@@ -316,8 +345,8 @@ properties. These settings come from the base image
 
 | Environment variable             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 |----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `JAVA_OPTS`                      | JVM options passed to the `java` command (example: "-verbose:class")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `JAVA_OPTS_APPEND`               | User specified Java options to be appended to generated options in JAVA_OPTS (example: "-Dsome.property=foo")                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `JAVA_OPTS` or `JAVA_OPTIONS`    | **NOT RECOMMENDED**. JVM options passed to the `java` command (example: "-verbose:class"). Setting this variable will override all options set by any of the other variables in this table. To pass extra settings, use `JAVA_OPTS_APPEND` instead.                                                                                                                                                                                                                                                                                                              |
+| `JAVA_OPTS_APPEND`               | User specified Java options to be appended to generated options in `JAVA_OPTS` (example: "-Dsome.property=foo").                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `JAVA_MAX_MEM_RATIO`             | Is used when no `-Xmx` option is given in JAVA_OPTS. This is used to calculate a default maximal heap memory based on a containers restriction. If used in a container without any memory constraints for the container then this option has no effect. If there is a memory constraint then `-Xmx` is set to a ratio of the container available memory as set here. The default is `50` which means 50% of the available memory is used as an upper boundary. You can skip this mechanism by setting this value to `0` in which case no `-Xmx` option is added. |
 | `JAVA_INITIAL_MEM_RATIO`         | Is used when no `-Xms` option is given in JAVA_OPTS. This is used to calculate a default initial heap memory based on the maximum heap memory. If used in a container without any memory constraints for the container then this option has no effect. If there is a memory constraint then `-Xms` is set to a ratio of the `-Xmx` memory as set here. The default is `25` which means 25% of the `-Xmx` is used as the initial heap size. You can skip this mechanism by setting this value to `0` in which case no `-Xms` option is added (example: "25")      |
 | `JAVA_MAX_INITIAL_MEM`           | Is used when no `-Xms` option is given in JAVA_OPTS. This is used to calculate the maximum value of the initial heap memory. If used in a container without any memory constraints for the container then this option has no effect. If there is a memory constraint then `-Xms` is limited to the value set here. The default is 4096MB which means the calculated value of `-Xms` never will be greater than 4096MB. The value of this variable is expressed in MB (example: "4096")                                                                           |

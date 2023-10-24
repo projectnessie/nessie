@@ -20,6 +20,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Docker images again honor environment variables such as `JAVA_OPTS_APPEND` that are used to pass
+  additional JVM options to the Nessie server. See the 
+  [ubi8/openjdk-17](https://catalog.redhat.com/software/containers/ubi8/openjdk-17/618bdbf34ae3739687568813)
+  base image documentation for the list of all supported environment variables.
+
 ### Commits
 
 ## [0.72.2] Release (2023-10-19)
