@@ -68,7 +68,7 @@ public class TestCacheSizing {
 
   @Test
   void tinyHeapNoCache() {
-    // Assuming a 256MB max heap, requesting 70% (358MB), calc yields fractionMinSizeMb, i.e. zero
+    // Assuming a 256MB max heap, requesting 70% (179MB), calc yields fractionMinSizeMb, i.e. zero
     soft.assertThat(
             CacheSizing.builder()
                 .fractionOfMaxHeapSize(.7)
