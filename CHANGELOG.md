@@ -20,12 +20,16 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+### Commits
+
+## [0.72.4] Release (2023-10-24)
+
+### Fixes
+
 - Docker images again honor environment variables such as `JAVA_OPTS_APPEND` that are used to pass
   additional JVM options to the Nessie server. See the 
   [ubi8/openjdk-17](https://catalog.redhat.com/software/containers/ubi8/openjdk-17/618bdbf34ae3739687568813)
   base image documentation for the list of all supported environment variables.
-
-### Commits
 
 ## [0.72.2] Release (2023-10-19)
 
@@ -212,7 +216,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...HEAD
+[0.72.4]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...nessie-0.72.4
 [0.72.2]: https://github.com/projectnessie/nessie/compare/nessie-0.72.0...nessie-0.72.2
 [0.72.0]: https://github.com/projectnessie/nessie/compare/nessie-0.71.0...nessie-0.72.0
 [0.71.0]: https://github.com/projectnessie/nessie/compare/nessie-0.70.2...nessie-0.71.0

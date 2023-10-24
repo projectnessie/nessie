@@ -2,6 +2,24 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.72.4 Release (October 24, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.4).
+
+### Fixes
+
+- Docker images again honor environment variables such as `JAVA_OPTS_APPEND` that are used to pass
+  additional JVM options to the Nessie server. See the 
+  [ubi8/openjdk-17](https://catalog.redhat.com/software/containers/ubi8/openjdk-17/618bdbf34ae3739687568813)
+  base image documentation for the list of all supported environment variables.
+
+### Commits
+* Docker: re-enable JAVA_OPTS_APPEND env var (#7659)
+* Relax CacheSizing validation rules. (#7660)
+* OAuth2Client: propagate scheduling failures when calling authenticate() (#7656)
+* Remove commit-meta property containing the merge-parent commit-ID (#7646)
+* Enhance released jars (#7651)
+
 ## 0.72.2 Release (October 19, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.2).
