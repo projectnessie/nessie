@@ -34,8 +34,6 @@ import org.immutables.value.Value;
     ignoreUnknown = true)
 public interface Conflict {
   @Value.Parameter(order = 1)
-  @Nullable
-  @jakarta.annotation.Nullable
   @JsonDeserialize(using = ConflictType.Deserializer.class)
   ConflictType conflictType();
 
@@ -48,7 +46,7 @@ public interface Conflict {
   String message();
 
   static Conflict conflict(
-      @Nullable @jakarta.annotation.Nullable ConflictType conflictType,
+      ConflictType conflictType,
       @Nullable @jakarta.annotation.Nullable ContentKey key,
       String message) {
     return ImmutableConflict.of(conflictType, key, message);
@@ -106,11 +104,17 @@ public interface Conflict {
     }
 
     public static final class Deserializer extends JsonDeserializer<ConflictType> {
+
+      @Override
+      public ConflictType getNullValue(DeserializationContext ctxt) {
+        return UNKNOWN;
+      }
+
       @Override
       public ConflictType deserialize(JsonParser p, DeserializationContext ctxt)
           throws IOException {
         String name = p.readValueAs(String.class);
-        return name != null ? ConflictType.parse(name) : null;
+        return ConflictType.parse(name);
       }
     }
   }
