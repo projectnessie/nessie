@@ -67,7 +67,11 @@ class TestNessieError {
                 .put("message", "msg")
                 .put("someNewField", "blah")
                 .set("key", ckJson),
-            conflict(UNKNOWN, ContentKey.of("foo"), "msg")));
+            conflict(UNKNOWN, ContentKey.of("foo"), "msg")),
+        arguments(
+            objectNode().putNull("conflictType").put("message", "msg"),
+            conflict(UNKNOWN, null, "msg")),
+        arguments(objectNode().put("message", "msg"), conflict(UNKNOWN, null, "msg")));
   }
 
   /**

@@ -35,7 +35,10 @@ import org.immutables.value.Value;
 public interface Conflict {
   @Value.Parameter(order = 1)
   @JsonDeserialize(using = ConflictType.Deserializer.class)
-  ConflictType conflictType();
+  @Value.Default
+  default ConflictType conflictType() {
+    return ConflictType.UNKNOWN;
+  }
 
   @Value.Parameter(order = 2)
   @Nullable
@@ -104,11 +107,17 @@ public interface Conflict {
     }
 
     public static final class Deserializer extends JsonDeserializer<ConflictType> {
+
+      @Override
+      public ConflictType getNullValue(DeserializationContext ctxt) {
+        return UNKNOWN;
+      }
+
       @Override
       public ConflictType deserialize(JsonParser p, DeserializationContext ctxt)
           throws IOException {
         String name = p.readValueAs(String.class);
-        return name != null ? ConflictType.parse(name) : UNKNOWN;
+        return ConflictType.parse(name);
       }
     }
   }
