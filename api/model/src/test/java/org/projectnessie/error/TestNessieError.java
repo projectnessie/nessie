@@ -70,8 +70,7 @@ class TestNessieError {
             conflict(UNKNOWN, ContentKey.of("foo"), "msg")),
         arguments(
             objectNode().putNull("conflictType").put("message", "msg"),
-            conflict(UNKNOWN, null, "msg")),
-        arguments(objectNode().put("message", "msg"), conflict(UNKNOWN, null, "msg")));
+            conflict(UNKNOWN, null, "msg")));
   }
 
   /**

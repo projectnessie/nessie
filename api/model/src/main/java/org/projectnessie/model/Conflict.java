@@ -35,10 +35,7 @@ import org.immutables.value.Value;
 public interface Conflict {
   @Value.Parameter(order = 1)
   @JsonDeserialize(using = ConflictType.Deserializer.class)
-  @Value.Default
-  default ConflictType conflictType() {
-    return ConflictType.UNKNOWN;
-  }
+  ConflictType conflictType();
 
   @Value.Parameter(order = 2)
   @Nullable
