@@ -28,9 +28,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -96,11 +99,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     objectMapper = params.getObjectMapper();
     clock = params.getClock();
     lastAccess = clock.get();
-    currentTokensStage =
-        started
-            .thenApplyAsync((v) -> fetchNewTokens(), executor)
-            .thenApply(this::maybeScheduleTokensRenewal)
-            .whenComplete((tokens, error) -> log(error));
+    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), executor);
+    currentTokensStage
+        .whenComplete((tokens, error) -> log(error))
+        .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
   }
 
   @Override
@@ -132,11 +134,19 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
+  private Tokens getCurrentTokensIfAvailable() {
+    try {
+      return currentTokensStage.toCompletableFuture().getNow(null);
+    } catch (CancellationException | CompletionException ignored) {
+    }
+    return null;
+  }
+
   /**
    * Starts the client.
    *
-   * <p>Calling this method will trigger a first access token fetch, using the "client_credentials"
-   * grant type. It will also schedule a refresh of the access token when needed.
+   * <p>Calling this method will trigger a first access token fetch. It will also schedule a refresh
+   * of the access token when needed.
    *
    * <p>Calling this method twice or more is a no-op.
    */
@@ -172,42 +182,50 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private void wakeUp(Instant now) {
     LOGGER.debug("Waking up...");
-    Duration delay = nextTokenRefresh(getCurrentTokens(), now, Duration.ZERO);
+    Tokens currentTokens = getCurrentTokensIfAvailable();
+    Duration delay = nextTokenRefresh(currentTokens, now, Duration.ZERO);
     if (delay.compareTo(MIN_REFRESH_DELAY) < 0) {
       LOGGER.debug("Refreshing tokens immediately");
       renewTokens();
     } else {
+      LOGGER.debug("Tokens are still valid");
       scheduleTokensRenewal(delay);
     }
   }
 
-  private Tokens maybeScheduleTokensRenewal(Tokens currentTokens) {
+  private void maybeScheduleTokensRenewal(Tokens currentTokens) {
     Instant now = clock.get();
     if (Duration.between(lastAccess, now).compareTo(idleInterval) > 0) {
       sleeping.set(true);
       LOGGER.debug("Sleeping...");
     } else {
-      scheduleTokensRenewal(nextTokenRefresh(currentTokens, now, MIN_REFRESH_DELAY));
+      Duration delay = nextTokenRefresh(currentTokens, now, MIN_REFRESH_DELAY);
+      scheduleTokensRenewal(delay);
     }
-    return currentTokens;
   }
 
   private void scheduleTokensRenewal(Duration delay) {
     LOGGER.debug("Scheduling token refresh in {}", delay);
-    tokenRefreshFuture =
-        executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
+    try {
+      tokenRefreshFuture =
+          executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (RejectedExecutionException e) {
+      LOGGER.warn("Failed to schedule next token renewal, forcibly sleeping", e);
+      sleeping.set(true);
+    }
   }
 
   private void renewTokens() {
     CompletionStage<Tokens> oldTokensStage = currentTokensStage;
     currentTokensStage =
         oldTokensStage
-            // try refreshing the current tokens
+            // try refreshing the current tokens (if they exist)
             .thenApply(this::refreshTokens)
-            // if that fails, try fetching brand-new tokens
-            .exceptionally(error -> fetchNewTokens())
-            .thenApply(this::maybeScheduleTokensRenewal)
-            .whenComplete((tokens, error) -> log(error));
+            // if that fails, of if tokens weren't available, try fetching brand-new tokens
+            .exceptionally(error -> fetchNewTokens());
+    currentTokensStage
+        .whenComplete((tokens, error) -> log(error))
+        .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
   }
 
   private void log(Throwable error) {
@@ -286,6 +304,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
    * refresh token expire, and on the current time.
    */
   private Duration nextTokenRefresh(Tokens currentTokens, Instant now, Duration minRefreshDelay) {
+    if (currentTokens == null) {
+      return minRefreshDelay;
+    }
     Instant accessExpirationTime =
         tokenExpirationTime(now, currentTokens.getAccessToken(), defaultAccessTokenLifespan);
     Instant refreshExpirationTime =
