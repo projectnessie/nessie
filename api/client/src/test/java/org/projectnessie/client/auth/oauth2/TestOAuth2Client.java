@@ -17,7 +17,6 @@ package org.projectnessie.client.auth.oauth2;
 
 import static java.time.Duration.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -145,6 +144,7 @@ class TestOAuth2Client {
 
     ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
     doThrow(RejectedExecutionException.class).when(executor).execute(any(Runnable.class));
+    AtomicReference<Runnable> currentRenewalTask = mockTokensRefreshSchedule(executor);
 
     // If the executor rejects the initial token fetch, a call to authenticate()
     // throws RejectedExecutionException immediately.
@@ -154,8 +154,16 @@ class TestOAuth2Client {
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
+
         client.start();
-        assertThatThrownBy(client::authenticate).isInstanceOf(RejectedExecutionException.class);
+        soft.assertThatThrownBy(client::authenticate)
+            .isInstanceOf(RejectedExecutionException.class);
+
+        // should have scheduled a refresh, when that refresh is executed successfully,
+        // client should recover
+        soft.assertThat(currentRenewalTask.get()).isNotNull();
+        currentRenewalTask.get().run();
+        client.authenticate();
       }
     }
   }
