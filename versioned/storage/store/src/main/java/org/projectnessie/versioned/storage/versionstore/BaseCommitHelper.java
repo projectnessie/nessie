@@ -357,13 +357,19 @@ class BaseCommitHelper {
       }
 
       StoreIndexElement<CommitOp> ns = headIndex.get(keyToStoreKey(key));
-      if (ns == null || !ns.content().action().exists()) {
+      for (;
+          ns == null || !ns.content().action().exists();
+          key = key.getParent(), ns = headIndex.get(keyToStoreKey(key))) {
         conflictConsumer.accept(
             conflict(
                 Conflict.ConflictType.NAMESPACE_ABSENT,
                 key,
                 format("namespace '%s' must exist", key)));
-      } else {
+        if (key.getElementCount() == 1) {
+          break;
+        }
+      }
+      if (ns != null && ns.content().action().exists()) {
         CommitOp nsContent = ns.content();
         if (nsContent.payload() != payloadForContent(Content.Type.NAMESPACE)) {
           conflictConsumer.accept(

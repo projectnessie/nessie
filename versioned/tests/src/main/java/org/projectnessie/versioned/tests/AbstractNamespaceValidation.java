@@ -21,6 +21,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_ABSENT;
 import static org.projectnessie.model.Conflict.ConflictType.NOT_A_NAMESPACE;
@@ -62,16 +63,17 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
   }
 
   static Stream<ContentKey> contentKeys() {
-    return Stream.of(
-        ContentKey.of("ns", "table"),
-        ContentKey.of("ns", "table"),
-        ContentKey.of("ns2", "ns", "table"),
-        ContentKey.of("ns2", "ns", "table"));
+    return Stream.of(ContentKey.of("ns", "table"), ContentKey.of("ns2", "ns", "table"));
   }
 
   @ParameterizedTest
   @MethodSource("contentKeys")
   void commitWithNonExistingNamespace(ContentKey key) throws Exception {
+
+    assumeTrue(
+        key.getElementCount() == 2 || !isNewStorageModel(),
+        "multiple missing namespaces are tested separately below for the new storage");
+
     BranchName branch = BranchName.of("commitWithNonExistingNamespace");
     store().create(branch, Optional.empty());
 
@@ -121,6 +123,106 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                 NAMESPACE_ABSENT,
                 key.getNamespace().toContentKey(),
                 "namespace '" + key.getNamespace() + "' must exist"));
+  }
+
+  @Test
+  void commitWithNonExistingNamespaceMultipleNewStorage() throws Exception {
+    assumeTrue(isNewStorageModel());
+    ContentKey a = ContentKey.of("a");
+    ContentKey b = ContentKey.of("a", "b");
+    ContentKey c = ContentKey.of("a", "b", "c");
+    ContentKey table = ContentKey.of("a", "b", "c", "table");
+    BranchName branch = BranchName.of("commitWithNonExistingNamespace");
+    store().create(branch, Optional.empty());
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            fromMessage("create ns a"),
+            singletonList(Put.of(a, Namespace.of(a))));
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        fromMessage("non-existing-ns"),
+                        singletonList(Put.of(table, newOnRef("value")))))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are multiple conflicts that prevent committing the provided operations: "
+                + "namespace 'a.b.c' must exist, "
+                + "namespace 'a.b' must exist.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(NAMESPACE_ABSENT, c, "namespace 'a.b.c' must exist"),
+            tuple(NAMESPACE_ABSENT, b, "namespace 'a.b' must exist"));
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            fromMessage("create content b"),
+            singletonList(Put.of(b, newOnRef("value"))));
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        fromMessage("non-existing-ns"),
+                        singletonList(Put.of(table, newOnRef("value")))))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are multiple conflicts that prevent committing the provided operations: "
+                + "namespace 'a.b.c' must exist, "
+                + "expecting the key 'a.b' to be a namespace, but is not a namespace (using a content object that is not a namespace as a namespace is forbidden).")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(NAMESPACE_ABSENT, c, "namespace 'a.b.c' must exist"),
+            tuple(
+                NOT_A_NAMESPACE,
+                b,
+                "expecting the key 'a.b' to be a namespace, but is not a namespace (using a content object that is not a namespace as a namespace is forbidden)"));
+
+    store()
+        .commit(
+            branch, Optional.empty(), fromMessage("delete content b"), singletonList(Delete.of(b)));
+    store()
+        .commit(
+            branch, Optional.empty(), fromMessage("delete content a"), singletonList(Delete.of(a)));
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        fromMessage("non-existing-ns"),
+                        singletonList(Put.of(table, newOnRef("value")))))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are multiple conflicts that prevent committing the provided operations: "
+                + "namespace 'a.b.c' must exist, "
+                + "namespace 'a.b' must exist, "
+                + "namespace 'a' must exist.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(NAMESPACE_ABSENT, c, "namespace 'a.b.c' must exist"),
+            tuple(NAMESPACE_ABSENT, b, "namespace 'a.b' must exist"),
+            tuple(NAMESPACE_ABSENT, a, "namespace 'a' must exist"));
   }
 
   @ParameterizedTest
