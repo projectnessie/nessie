@@ -22,6 +22,13 @@ well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
+# 2.1.3
+
+* Released with Nessie version 0.73.0.
+* When a commit attempts to create a content inside a non-existing namespace, the server will not 
+  only return a `NAMESPACE_ABSENT` conflict for the non-existing namespace itself, but will also 
+  return additional `NAMESPACE_ABSENT` conflicts for all the non-existing ancestor namespaces.
+
 # 2.1.2
 
 * Released with Nessie version 0.68.0.
