@@ -77,6 +77,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final ObjectMapper objectMapper;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
   /* Visible for testing. */ final AtomicBoolean sleeping = new AtomicBoolean();
+  private final AtomicBoolean closing = new AtomicBoolean();
   private final Supplier<Instant> clock;
 
   private volatile CompletionStage<Tokens> currentTokensStage;
@@ -156,27 +157,31 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   @Override
   public void close() {
-    try {
-      currentTokensStage.toCompletableFuture().cancel(true);
-      ScheduledFuture<?> tokenRefreshFuture = this.tokenRefreshFuture;
-      if (tokenRefreshFuture != null) {
-        tokenRefreshFuture.cancel(true);
-      }
-      if (shouldCloseExecutor) {
-        if (!executor.isShutdown()) {
-          executor.shutdown();
-          if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-            executor.shutdownNow();
+    if (closing.compareAndSet(false, true)) {
+      LOGGER.debug("Closing...");
+      try {
+        currentTokensStage.toCompletableFuture().cancel(true);
+        ScheduledFuture<?> tokenRefreshFuture = this.tokenRefreshFuture;
+        if (tokenRefreshFuture != null) {
+          tokenRefreshFuture.cancel(true);
+        }
+        if (shouldCloseExecutor) {
+          if (!executor.isShutdown()) {
+            executor.shutdown();
+            if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+              executor.shutdownNow();
+            }
           }
         }
+        if (password != null) {
+          Arrays.fill(password, (byte) 0);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      } finally {
+        tokenRefreshFuture = null;
       }
-      if (password != null) {
-        Arrays.fill(password, (byte) 0);
-      }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    } finally {
-      tokenRefreshFuture = null;
+      LOGGER.debug("Closed");
     }
   }
 
@@ -205,11 +210,18 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   private void scheduleTokensRenewal(Duration delay) {
+    if (closing.get()) {
+      return;
+    }
     LOGGER.debug("Scheduling token refresh in {}", delay);
     try {
       tokenRefreshFuture =
           executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
     } catch (RejectedExecutionException e) {
+      if (closing.get()) {
+        // We raced with close(), ignore
+        return;
+      }
       LOGGER.warn("Failed to schedule next token renewal, forcibly sleeping", e);
       sleeping.set(true);
     }
@@ -230,7 +242,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private void log(Throwable error) {
     if (error != null) {
-      LOGGER.error("Failed to renew tokens", error);
+      boolean tokensStageCancelled = error instanceof CancellationException && closing.get();
+      if (!tokensStageCancelled) {
+        LOGGER.error("Failed to renew tokens", error);
+      }
     } else {
       LOGGER.debug("Successfully renewed tokens");
     }
