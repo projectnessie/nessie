@@ -15,15 +15,18 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
+import com.google.api.gax.retrying.RetrySettings;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 /**
  * Settings used to create and configure BigTable clients (data and table admin).
  *
  * @see BigTableClientsFactory
+ * @see RetrySettings
  */
 public interface BigTableClientsConfig {
 
@@ -47,15 +50,21 @@ public interface BigTableClientsConfig {
 
   Map<String, String> jwtAudienceMapping();
 
+  Optional<Duration> initialRetryDelay();
+
   Optional<Duration> maxRetryDelay();
+
+  OptionalDouble retryDelayMultiplier();
 
   OptionalInt maxAttempts();
 
   Optional<Duration> initialRpcTimeout();
 
-  Optional<Duration> totalTimeout();
+  Optional<Duration> maxRpcTimeout();
 
-  Optional<Duration> initialRetryDelay();
+  OptionalDouble rpcTimeoutMultiplier();
+
+  Optional<Duration> totalTimeout();
 
   OptionalInt minChannelCount();
 

@@ -89,8 +89,11 @@ public final class BigTableClientsFactory {
             stubSettings.readChangeStreamSettings().retrySettings())) {
       configureDuration(config.totalTimeout(), retrySettings::setTotalTimeout);
       configureDuration(config.initialRpcTimeout(), retrySettings::setInitialRpcTimeout);
+      configureDuration(config.maxRpcTimeout(), retrySettings::setMaxRpcTimeout);
+      config.rpcTimeoutMultiplier().ifPresent(retrySettings::setRpcTimeoutMultiplier);
       configureDuration(config.initialRetryDelay(), retrySettings::setInitialRetryDelay);
       configureDuration(config.maxRetryDelay(), retrySettings::setMaxRetryDelay);
+      config.retryDelayMultiplier().ifPresent(retrySettings::setRetryDelayMultiplier);
       config.maxAttempts().ifPresent(retrySettings::setMaxAttempts);
     }
 
