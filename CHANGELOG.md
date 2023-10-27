@@ -8,11 +8,19 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Nessie API spec was upgraded to 2.1.3. The only change is that when a commit attempts to create a content
+  inside a non-existing namespace, the server will not only return a `NAMESPACE_ABSENT` conflict for the
+  non-existing namespace itself, but will also return additional `NAMESPACE_ABSENT` conflicts for all the
+  non-existing ancestor namespaces.
+
 ### Upgrade notes
 
 ### Breaking changes
 
 ### New Features
+
+* Nessie client: the OAuth2 authentication provider is now able to recover from transient failures when
+  refreshing the access token.
 
 ### Changes
 
