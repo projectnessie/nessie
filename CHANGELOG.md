@@ -8,19 +8,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
-- Nessie API spec was upgraded to 2.1.3. The only change is that when a commit attempts to create a content
-  inside a non-existing namespace, the server will not only return a `NAMESPACE_ABSENT` conflict for the
-  non-existing namespace itself, but will also return additional `NAMESPACE_ABSENT` conflicts for all the
-  non-existing ancestor namespaces.
-
 ### Upgrade notes
 
 ### Breaking changes
 
 ### New Features
-
-* Nessie client: the OAuth2 authentication provider is now able to recover from transient failures when
-  refreshing the access token.
 
 ### Changes
 
@@ -29,6 +21,20 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.73.0] Release (2023-10-27)
+
+### Highlights
+
+- Nessie API spec was upgraded to 2.1.3. The only change is that when a commit attempts to create a content
+  inside a non-existing namespace, the server will not only return a `NAMESPACE_ABSENT` conflict for the
+  non-existing namespace itself, but will also return additional `NAMESPACE_ABSENT` conflicts for all the
+  non-existing ancestor namespaces.
+
+### New Features
+
+- Nessie client: the OAuth2 authentication provider is now able to recover from transient failures when
+  refreshing the access token.
 
 ## [0.72.4] Release (2023-10-24)
 
@@ -224,7 +230,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.73.0...HEAD
+[0.73.0]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...nessie-0.73.0
 [0.72.4]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...nessie-0.72.4
 [0.72.2]: https://github.com/projectnessie/nessie/compare/nessie-0.72.0...nessie-0.72.2
 [0.72.0]: https://github.com/projectnessie/nessie/compare/nessie-0.71.0...nessie-0.72.0

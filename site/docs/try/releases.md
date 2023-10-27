@@ -2,6 +2,30 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.73.0 Release (October 27, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.73.0).
+
+### Highlights
+
+- Nessie API spec was upgraded to 2.1.3. The only change is that when a commit attempts to create a content
+  inside a non-existing namespace, the server will not only return a `NAMESPACE_ABSENT` conflict for the
+  non-existing namespace itself, but will also return additional `NAMESPACE_ABSENT` conflicts for all the
+  non-existing ancestor namespaces.
+
+### New Features
+
+- Nessie client: the OAuth2 authentication provider is now able to recover from transient failures when
+  refreshing the access token.
+
+### Commits
+* Update CHANGELOG.md (#7674)
+* Expose full set of Bigtable retry settings in BigTableClientsConfig (#7672)
+* Report all missing namespaces at once (#7671)
+* OAuth2Client: implement fault tolerance (#7669)
+* Make Conflict.conflictType non nullable (#7667)
+* OAuth2Client: forbid recursive calls to renewTokens() (#7663)
+
 ## 0.72.4 Release (October 24, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.72.4).
