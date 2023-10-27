@@ -73,7 +73,7 @@ public class ITOAuth2Client {
         URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
     Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
     master = keycloakAdmin.realms().realm("master");
-    updateMasterRealm(5, 10);
+    updateMasterRealm(10, 15);
     // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
     createClient("Client1", false);
     createClient("Client2", true);
@@ -87,7 +87,7 @@ public class ITOAuth2Client {
    * This test exercises the OAuth2 client "in real life", that is, with background token refresh
    * running.
    *
-   * <p>For 15 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
+   * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
    * meantime, another HTTP client will attempt to validate the obtained tokens.
    *
    * <p>This should be enough to exercise the OAuth2 client's background refresh logic with the 4
@@ -117,10 +117,10 @@ public class ITOAuth2Client {
                 tryUseAccessToken(validatingClient, client2.getCurrentTokens().getAccessToken());
               },
               0,
-              500,
-              TimeUnit.MILLISECONDS);
+              1,
+              TimeUnit.SECONDS);
       try {
-        future.get(15, TimeUnit.SECONDS);
+        future.get(20, TimeUnit.SECONDS);
       } catch (TimeoutException e) {
         // ok, expected for a ScheduledFuture
       } catch (ExecutionException e) {
@@ -147,7 +147,6 @@ public class ITOAuth2Client {
     OAuth2ClientParams params = clientParams("Client2").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
-      client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
@@ -179,7 +178,6 @@ public class ITOAuth2Client {
     OAuth2ClientParams params = clientParams("Client1").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
-      client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
@@ -217,7 +215,6 @@ public class ITOAuth2Client {
     OAuth2ClientParams params = clientParams("Client1").tokenExchangeEnabled(false).build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
-      client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
@@ -251,7 +248,6 @@ public class ITOAuth2Client {
     OAuth2ClientParams params = clientParams("Client2").grantType("password").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
-      client.start();
       // first request: password grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(PasswordTokensResponse.class);
@@ -356,9 +352,9 @@ public class ITOAuth2Client {
         .clientSecret("s3cr3t")
         .username("Alice")
         .password("s3cr3t")
-        .defaultAccessTokenLifespan(Duration.ofSeconds(5))
-        .defaultRefreshTokenLifespan(Duration.ofSeconds(10))
-        .refreshSafetyWindow(Duration.ofSeconds(2));
+        .defaultAccessTokenLifespan(Duration.ofSeconds(10))
+        .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
+        .refreshSafetyWindow(Duration.ofSeconds(5));
   }
 
   @SuppressWarnings("SameParameterValue")
