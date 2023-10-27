@@ -61,6 +61,7 @@ import org.slf4j.LoggerFactory;
 class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2Client.class);
+  private static final Duration MIN_WARN_INTERVAL = Duration.ofSeconds(10);
 
   private final String grantType;
   private final String username;
@@ -83,6 +84,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private volatile CompletionStage<Tokens> currentTokensStage;
   private volatile ScheduledFuture<?> tokenRefreshFuture;
   private volatile Instant lastAccess;
+  private volatile Instant lastWarn;
 
   OAuth2Client(OAuth2ClientParams params) {
     grantType = params.getGrantType();
@@ -126,11 +128,12 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     } catch (ExecutionException e) {
       Throwable cause = e.getCause();
       if (cause instanceof RuntimeException) {
+        cause.fillInStackTrace();
         throw (RuntimeException) cause;
       } else if (cause instanceof Error) {
         throw (Error) cause;
       } else {
-        throw new RuntimeException(cause);
+        throw new RuntimeException(cause.getMessage());
       }
     }
   }
@@ -222,7 +225,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         // We raced with close(), ignore
         return;
       }
-      LOGGER.warn("Failed to schedule next token renewal, forcibly sleeping", e);
+      maybeWarn("Failed to schedule next token renewal, forcibly sleeping");
       sleeping.set(true);
     }
   }
@@ -243,9 +246,13 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private void log(Throwable error) {
     if (error != null) {
       boolean tokensStageCancelled = error instanceof CancellationException && closing.get();
-      if (!tokensStageCancelled) {
-        LOGGER.error("Failed to renew tokens", error);
+      if (tokensStageCancelled) {
+        return;
       }
+      if (error instanceof CompletionException) {
+        error = error.getCause();
+      }
+      maybeWarn("Failed to renew tokens: {}", error.getMessage());
     } else {
       LOGGER.debug("Successfully renewed tokens");
     }
@@ -387,6 +394,18 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       throw e;
     } catch (Exception e) {
       throw new HttpClientException(e);
+    }
+  }
+
+  private void maybeWarn(String message, Object... args) {
+    Instant now = clock.get();
+    boolean shouldWarn =
+        lastWarn == null || Duration.between(lastWarn, now).compareTo(MIN_WARN_INTERVAL) > 0;
+    if (shouldWarn) {
+      LOGGER.warn(message, args);
+      lastWarn = now;
+    } else {
+      LOGGER.debug(message, args);
     }
   }
 
