@@ -222,7 +222,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         // We raced with close(), ignore
         return;
       }
-      maybeWarn("Failed to schedule next token renewal, forcibly sleeping");
+      maybeWarn("Failed to schedule next token renewal, forcibly sleeping", null);
       sleeping.set(true);
     }
   }
@@ -394,15 +394,15 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
-  private void maybeWarn(String message, Object... args) {
+  private void maybeWarn(String message, Throwable error) {
     Instant now = clock.get();
     boolean shouldWarn =
         lastWarn == null || Duration.between(lastWarn, now).compareTo(MIN_WARN_INTERVAL) > 0;
     if (shouldWarn) {
-      LOGGER.warn(message, args);
+      LOGGER.warn(message, error);
       lastWarn = now;
     } else {
-      LOGGER.debug(message, args);
+      LOGGER.debug(message, error);
     }
   }
 
