@@ -249,7 +249,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       if (error instanceof CompletionException) {
         error = error.getCause();
       }
-      maybeWarn("Failed to renew tokens: {}", error.getMessage());
+      maybeWarn("Failed to renew tokens", error);
     } else {
       LOGGER.debug("Successfully renewed tokens");
     }
