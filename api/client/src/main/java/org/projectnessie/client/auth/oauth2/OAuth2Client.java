@@ -127,13 +127,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
       Throwable cause = e.getCause();
-      if (cause instanceof RuntimeException) {
-        cause.fillInStackTrace();
-        throw (RuntimeException) cause;
-      } else if (cause instanceof Error) {
+      if (cause instanceof Error) {
         throw (Error) cause;
       } else {
-        throw new RuntimeException(cause.getMessage());
+        throw new RuntimeException(cause);
       }
     }
   }
