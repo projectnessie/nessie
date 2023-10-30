@@ -17,6 +17,7 @@ package org.projectnessie.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
@@ -52,8 +53,10 @@ public abstract class AbstractOAuth2Authentication extends BaseClientAuthTest {
     NessieAuthentication authentication = oauth2Authentication(wrongPasswordConfig());
     withClientCustomizer(b -> b.withAuthentication(authentication));
     assertThatThrownBy(() -> api().getAllReferences().stream())
-        .isInstanceOfSatisfying(
-            OAuth2Exception.class, e -> assertThat(e.getStatus()).isEqualTo(Status.UNAUTHORIZED));
+        .cause()
+        .asInstanceOf(type(OAuth2Exception.class))
+        .extracting(OAuth2Exception::getStatus)
+        .isEqualTo(Status.UNAUTHORIZED);
   }
 
   protected Properties clientCredentialsConfig() {

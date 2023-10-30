@@ -130,7 +130,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       if (cause instanceof Error) {
         throw (Error) cause;
       } else {
-        throw new RuntimeException(cause);
+        throw new RuntimeException("Cannot acquire a valid OAuth2 access token", cause);
       }
     }
   }
