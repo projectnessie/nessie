@@ -17,12 +17,8 @@ package org.projectnessie.client.auth.oauth2;
 
 public interface OAuth2Authenticator extends AutoCloseable {
 
-  /**
-   * Attempts to authenticate the client and returns a valid {@link AccessToken}.
-   *
-   * @throws OAuth2Exception if authentication failed.
-   */
-  AccessToken authenticate() throws OAuth2Exception;
+  /** Attempts to authenticate the client and returns a valid {@link AccessToken}. */
+  AccessToken authenticate();
 
   @Override
   void close();

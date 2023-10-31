@@ -268,6 +268,7 @@ public class ITOAuth2Client {
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
+          .cause()
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
           .isEqualTo(Status.UNAUTHORIZED);
@@ -281,6 +282,7 @@ public class ITOAuth2Client {
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
+          .cause()
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
           .isEqualTo(Status.UNAUTHORIZED);
