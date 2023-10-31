@@ -417,6 +417,8 @@ class CommitImpl extends BaseCommitHelper {
       // Check for a Delete-op in the same commit, representing a rename operation.
       UUID expectedContentID = UUID.fromString(putValueId);
       deletedKey = deleted.remove(expectedContentID);
+      // consider a content as new content for rename operation to consider for namespace validation
+      newContent.put(putKey, putValue);
     }
     if (storeKeyExists && putValueId == null && deleted.containsValue(storeKey)) {
       // Check for a Delete-op with same key in the same commit, representing a re-add operation.

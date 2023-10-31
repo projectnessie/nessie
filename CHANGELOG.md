@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Add namespace validation for rename operation.
+
 ### Commits
 
 ## [0.73.0] Release (2023-10-27)
