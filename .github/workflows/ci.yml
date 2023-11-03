@@ -826,7 +826,7 @@ jobs:
 
       - name: Set up chart-testing
         if: env.WF_EXEC != 'false'
-        uses: helm/chart-testing-action@v2.6.0
+        uses: helm/chart-testing-action@v2.6.1
         with:
           # https://github.com/adrienverge/yamllint/tags
           # default is 1.27.1, but leads to Python install issues
