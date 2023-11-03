@@ -163,7 +163,10 @@ public class ITDynamoDBBackendFactory {
         try (DynamoDBBackend backend = testFactory.createNewBackend()) {
           soft.assertThatIllegalStateException()
               .isThrownBy(backend::setupSchema)
-              .withMessageStartingWith("Invalid key schema for table: ");
+              .withMessage(
+                  "Invalid key schema for table: %s. "
+                      + "Key schema should be a hash partitioned attribute with the name '%s'.",
+                  TABLE_REFS, KEY_NAME);
         }
 
         client.deleteTable(b -> b.tableName(TABLE_REFS));
@@ -187,7 +190,10 @@ public class ITDynamoDBBackendFactory {
         try (DynamoDBBackend backend = testFactory.createNewBackend()) {
           soft.assertThatIllegalStateException()
               .isThrownBy(backend::setupSchema)
-              .withMessageStartingWith("Invalid key schema for table: ");
+              .withMessage(
+                  "Invalid key schema for table: %s. "
+                      + "Key schema should be a hash partitioned attribute with the name '%s'.",
+                  TABLE_REFS, KEY_NAME);
         }
       }
     } finally {

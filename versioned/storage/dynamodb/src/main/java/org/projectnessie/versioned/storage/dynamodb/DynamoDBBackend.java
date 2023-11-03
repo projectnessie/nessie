@@ -136,8 +136,8 @@ final class DynamoDBBackend implements Backend {
     throw new IllegalStateException(
         String.format(
             "Invalid key schema for table: %s. Key schema should be a hash partitioned "
-                + "attribute with the name 'id'.",
-            description.tableName()));
+                + "attribute with the name '%s'.",
+            description.tableName(), KEY_NAME));
   }
 
   @Override
