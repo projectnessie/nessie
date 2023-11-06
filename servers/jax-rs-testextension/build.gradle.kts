@@ -19,9 +19,9 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension"
+extra["maven.name"] = "Nessie - JUnit Jupiter Test Extension"
 
-description = "JUnit Jupyter Extension to run tests against an \"embedded\" Nessie instance."
+description = "JUnit Jupiter Extension to run tests against an \"embedded\" Nessie instance."
 
 dependencies {
   api(project(":nessie-jaxrs"))

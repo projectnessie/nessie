@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension for Client-Side Tests"
+extra["maven.name"] = "Nessie - JUnit Jupiter Test Extension for Client-Side Tests"
 
 dependencies {
   api(platform(libs.junit.bom))
