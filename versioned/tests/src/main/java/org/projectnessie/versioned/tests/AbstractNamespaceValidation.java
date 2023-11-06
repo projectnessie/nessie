@@ -43,6 +43,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
@@ -508,5 +509,34 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                                 tables.stream().map(Delete::of))
                             .collect(Collectors.toList())))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  void renameWithNonExistingNamespace() throws Exception {
+    BranchName branch = BranchName.of("renameWithNonExistingNamespace");
+    store().create(branch, Optional.empty());
+
+    ContentKey key1 = ContentKey.of("table");
+    ContentKey key2 = ContentKey.of(Namespace.of("non_existing"), "tbl");
+
+    store()
+        .commit(
+            branch,
+            Optional.empty(),
+            fromMessage("create a table"),
+            singletonList(Put.of(key1, newOnRef("value"))));
+
+    Content table = store().getValue(branch, key1).content();
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        branch,
+                        Optional.empty(),
+                        fromMessage("rename table"),
+                        asList(Delete.of(key1), Put.of(key2, table))))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage("Namespace 'non_existing' must exist.");
   }
 }
