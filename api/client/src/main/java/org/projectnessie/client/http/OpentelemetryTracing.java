@@ -17,17 +17,22 @@ package org.projectnessie.client.http;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import java.io.IOException;
 import org.projectnessie.api.NessieVersion;
 
 final class OpentelemetryTracing {
+  static final AttributeKey<String> HTTP_URL = AttributeKey.stringKey("http.url");
+  static final AttributeKey<String> HTTP_METHOD = AttributeKey.stringKey("http.method");
+  static final AttributeKey<String> NESSIE_VERSION = AttributeKey.stringKey("nessie.version");
+  static final AttributeKey<Long> HTTP_STATUS_CODE = AttributeKey.longKey("http.status_code");
+
   private OpentelemetryTracing() {}
 
   static void addTracing(HttpClient.Builder httpClient) {
@@ -44,9 +49,9 @@ final class OpentelemetryTracing {
                     .spanBuilder("Nessie-HTTP")
                     .setSpanKind(SpanKind.CLIENT)
                     .startSpan()
-                    .setAttribute(SemanticAttributes.HTTP_URL, context.getUri().toString())
-                    .setAttribute(SemanticAttributes.HTTP_METHOD, context.getMethod().name())
-                    .setAttribute("nessie.version", NessieVersion.NESSIE_VERSION);
+                    .setAttribute(HTTP_URL, context.getUri().toString())
+                    .setAttribute(HTTP_METHOD, context.getMethod().name())
+                    .setAttribute(NESSIE_VERSION, NessieVersion.NESSIE_VERSION);
 
             W3CTraceContextPropagator.getInstance()
                 .inject(Context.current().with(span), context, RequestContext::putHeader);
@@ -56,8 +61,7 @@ final class OpentelemetryTracing {
                   if (responseContext != null) {
                     try {
                       span.setAttribute(
-                          SemanticAttributes.HTTP_STATUS_CODE,
-                          responseContext.getResponseCode().getCode());
+                          HTTP_STATUS_CODE, responseContext.getResponseCode().getCode());
                     } catch (IOException e) {
                       // There's not much we can (and probably should) do here.
                     }

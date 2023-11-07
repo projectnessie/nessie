@@ -17,8 +17,8 @@ package org.projectnessie.events.quarkus.delivery;
 
 import static io.opentelemetry.api.trace.StatusCode.ERROR;
 import static io.opentelemetry.api.trace.StatusCode.OK;
-import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.ENDUSER_ID;
-import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.PEER_SERVICE;
+import static org.projectnessie.events.quarkus.collector.QuarkusTracingResultCollector.ENDUSER_ID;
+import static org.projectnessie.events.quarkus.collector.QuarkusTracingResultCollector.PEER_SERVICE;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;

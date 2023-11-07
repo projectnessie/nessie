@@ -58,7 +58,6 @@ dependencies {
 
   compileOnly(platform(libs.opentelemetry.bom.alpha))
   compileOnly("io.opentelemetry:opentelemetry-api")
-  compileOnly("io.opentelemetry:opentelemetry-semconv")
 
   compileOnly(platform(libs.awssdk.bom))
   compileOnly("software.amazon.awssdk:auth")
@@ -69,7 +68,6 @@ dependencies {
   testFixturesApi(platform(libs.opentelemetry.bom.alpha))
   testFixturesApi("io.opentelemetry:opentelemetry-api")
   testFixturesApi("io.opentelemetry:opentelemetry-sdk")
-  testFixturesApi("io.opentelemetry:opentelemetry-semconv")
   testFixturesApi("io.opentelemetry:opentelemetry-exporter-otlp")
   testFixturesApi(platform(libs.awssdk.bom))
   testFixturesApi("software.amazon.awssdk:auth")
