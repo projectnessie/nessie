@@ -201,7 +201,7 @@ jobs:
         # Nessie ${RELEASE_VERSION} release
 
         * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
-        * Maven Central: https://search.maven.org/search?q=g:org.projectnessie+v:${RELEASE_VERSION}
+        * Maven Central: https://search.maven.org/search?q=g:org.projectnessie.nessie+v:${RELEASE_VERSION}
         * Docker images: https://github.com/projectnessie/nessie/pkgs/container/nessie and https://quay.io/repository/projectnessie/nessie?tab=tags
           It is a multiplatform Java image (amd64, arm64, ppc64le, s390x): \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-java\`
         * PyPI: https://pypi.org/project/pynessie/ (See [pynessie](https://github.com/projectnessie/pynessie/releases))
