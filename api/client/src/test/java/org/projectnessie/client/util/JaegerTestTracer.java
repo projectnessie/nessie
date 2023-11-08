@@ -17,18 +17,20 @@ package org.projectnessie.client.util;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JaegerTestTracer {
   private static final AtomicBoolean REGISTERED = new AtomicBoolean();
+
+  public static final AttributeKey<String> SERVICE_NAME = AttributeKey.stringKey("service.name");
 
   public static void register() {
     if (!REGISTERED.compareAndSet(false, true)) {
@@ -42,7 +44,7 @@ public class JaegerTestTracer {
             .build();
 
     Resource serviceNameResource =
-        Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "TestNessieHttpClient"));
+        Resource.create(Attributes.of(SERVICE_NAME, "TestNessieHttpClient"));
 
     SdkTracerProvider tracerProvider =
         SdkTracerProvider.builder()

@@ -37,7 +37,6 @@ dependencies {
 
   // OpenTelemetry
   implementation("io.opentelemetry:opentelemetry-api")
-  implementation("io.opentelemetry:opentelemetry-semconv")
 
   testImplementation(project(":nessie-model"))
 
