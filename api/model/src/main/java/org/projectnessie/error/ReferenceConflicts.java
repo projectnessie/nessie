@@ -46,7 +46,7 @@ public interface ReferenceConflicts extends NessieErrorDetails {
     return referenceConflicts(singletonList(singleConflict));
   }
 
-  static ReferenceConflicts referenceConflicts(List<Conflict> conflicts) {
+  static ReferenceConflicts referenceConflicts(Iterable<? extends Conflict> conflicts) {
     return ImmutableReferenceConflicts.of(conflicts);
   }
 }

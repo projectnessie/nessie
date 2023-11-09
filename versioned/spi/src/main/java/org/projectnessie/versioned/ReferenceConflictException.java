@@ -18,7 +18,7 @@ package org.projectnessie.versioned;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Collectors;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
@@ -40,13 +40,13 @@ public class ReferenceConflictException extends VersionStoreException {
     this(singletonList(conflict));
   }
 
-  public ReferenceConflictException(List<Conflict> conflicts) {
+  public ReferenceConflictException(Collection<Conflict> conflicts) {
     this(referenceConflicts(conflicts), buildMessage(conflicts));
   }
 
-  private static String buildMessage(List<Conflict> conflicts) {
+  private static String buildMessage(Collection<Conflict> conflicts) {
     if (conflicts.size() == 1) {
-      String msg = conflicts.get(0).message();
+      String msg = conflicts.iterator().next().message();
       return Character.toUpperCase(msg.charAt(0)) + msg.substring(1) + '.';
     }
     return "There are multiple conflicts that prevent committing the provided operations: "

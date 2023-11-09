@@ -21,6 +21,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 - Add namespace validation for rename operation.
+- Namespace validation now correctly reports only one conflict when deleting a namespace that has
+  children, whereas previously it reported one conflict for each child.
 
 ### Commits
 

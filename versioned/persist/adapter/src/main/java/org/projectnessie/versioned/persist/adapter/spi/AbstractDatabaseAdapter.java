@@ -1243,7 +1243,7 @@ public abstract class AbstractDatabaseAdapter<
 
     int namespacePayload = payloadForContent(Content.Type.NAMESPACE);
 
-    List<Conflict> conflicts = new ArrayList<>();
+    Set<Conflict> conflicts = new LinkedHashSet<>();
 
     for (ContentKey key : keysToCheck) {
       Byte payloadInPut = putPayloads.get(key);
