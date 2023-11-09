@@ -27,6 +27,7 @@ dependencies {
   constraints {
     api(rootProject)
     api(project(":nessie-client"))
+    api(project(":nessie-client-testextension"))
     api(project(":nessie-combined-cs"))
     api(project(":nessie-compatibility-common"))
     api(project(":nessie-compatibility-tests"))
