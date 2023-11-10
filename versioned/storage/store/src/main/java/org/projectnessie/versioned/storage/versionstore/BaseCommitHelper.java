@@ -318,9 +318,7 @@ class BaseCommitHelper {
                   conflict(
                       Conflict.ConflictType.NAMESPACE_NOT_EMPTY,
                       namespaceKey,
-                      format(
-                          "the namespace '%s' would be deleted, but cannot, because it has children",
-                          namespaceKey)));
+                      format("namespace '%s' is not empty", namespaceKey)));
             }
             if (cmp > 0) {
               // iterated past the namespaceKey - break

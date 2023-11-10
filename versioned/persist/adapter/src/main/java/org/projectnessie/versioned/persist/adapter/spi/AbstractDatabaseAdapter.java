@@ -1314,11 +1314,7 @@ public abstract class AbstractDatabaseAdapter<
         if (ckLen > nsLen && ck.startsWith(deleted)) {
           conflicts.add(
               conflict(
-                  NAMESPACE_NOT_EMPTY,
-                  deleted,
-                  format(
-                      "the namespace '%s' would be deleted, but cannot, because it has children",
-                      deleted)));
+                  NAMESPACE_NOT_EMPTY, deleted, format("namespace '%s' is not empty", deleted)));
         }
       }
     }

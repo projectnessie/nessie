@@ -314,16 +314,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     fromMessage("try delete ns"),
                     singletonList(Delete.of(ns.toContentKey()))))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage("The namespace 'ns' would be deleted, but cannot, because it has children.")
+        .hasMessage("Namespace 'ns' is not empty.")
         .asInstanceOf(type(ReferenceConflictException.class))
         .extracting(ReferenceConflictException::getReferenceConflicts)
         .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
         .singleElement()
         .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
-        .containsExactly(
-            NAMESPACE_NOT_EMPTY,
-            ns.toContentKey(),
-            "the namespace 'ns' would be deleted, but cannot, because it has children");
+        .containsExactly(NAMESPACE_NOT_EMPTY, ns.toContentKey(), "namespace 'ns' is not empty");
   }
 
   enum NamespaceValidationMergeTransplant {
