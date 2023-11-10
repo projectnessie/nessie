@@ -313,6 +313,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     Optional.empty(),
                     fromMessage("try delete ns"),
                     singletonList(Delete.of(ns.toContentKey()))))
+        .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("The namespace 'ns' would be deleted, but cannot, because it has children.")
         .asInstanceOf(type(ReferenceConflictException.class))
         .extracting(ReferenceConflictException::getReferenceConflicts)
