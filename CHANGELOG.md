@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Nessie-GC: Support Google Cloud Storage (GCS) (experimental)
+
 ### Changes
 
 ### Deprecations

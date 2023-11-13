@@ -71,13 +71,13 @@ dependencies {
   intTestImplementation(libs.iceberg.core)
   intTestRuntimeOnly(libs.iceberg.hive.metastore)
   intTestRuntimeOnly(libs.iceberg.aws)
+  intTestRuntimeOnly(libs.iceberg.gcp)
   intTestRuntimeOnly(libs.iceberg.nessie)
   intTestRuntimeOnly(libs.iceberg.core)
   intTestRuntimeOnly(
     "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
   intTestRuntimeOnly(libs.iceberg.hive.metastore)
-  intTestRuntimeOnly(libs.iceberg.aws)
 
   intTestRuntimeOnly(libs.hadoop.client)
   intTestRuntimeOnly(libs.hadoop.aws)
@@ -90,6 +90,10 @@ dependencies {
   intTestRuntimeOnly("software.amazon.awssdk:dynamodb")
   intTestRuntimeOnly("software.amazon.awssdk:glue")
   intTestRuntimeOnly("software.amazon.awssdk:kms")
+
+  intTestRuntimeOnly(platform(libs.google.cloud.storage.bom))
+  intTestRuntimeOnly("com.google.cloud:google-cloud-storage")
+  intTestRuntimeOnly(libs.google.cloud.nio)
 
   intTestCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   intTestCompileOnly(libs.microprofile.openapi)

@@ -58,6 +58,9 @@ errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", 
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.29.1" }
+google-cloud-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version = "hadoop3-2.2.18" }
+google-cloud-nio = { module = "com.google.cloud:google-cloud-nio", version = "0.127.7" }
+google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.29.1" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
 guava = { module = "com.google.guava:guava", version = "32.1.3-jre" }
 h2 = { module = "com.h2database:h2", version = "2.2.224" }
@@ -70,6 +73,7 @@ iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceber
 iceberg-bundled-guava = { module = "org.apache.iceberg:iceberg-bundled-guava", version.ref = "iceberg" }
 iceberg-common = { module = "org.apache.iceberg:iceberg-common", version.ref = "iceberg" }
 iceberg-core = { module = "org.apache.iceberg:iceberg-core", version.ref = "iceberg" }
+iceberg-gcp = { module = "org.apache.iceberg:iceberg-gcp", version.ref = "iceberg" }
 iceberg-hive-metastore = { module = "org.apache.iceberg:iceberg-hive-metastore", version.ref = "iceberg" }
 iceberg-nessie = { module = "org.apache.iceberg:iceberg-nessie", version.ref = "iceberg" }
 iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg" }

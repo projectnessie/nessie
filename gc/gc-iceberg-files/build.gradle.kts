@@ -44,6 +44,7 @@ dependencies {
 
   implementation(libs.iceberg.core)
   implementation(libs.iceberg.aws)
+  implementation(libs.iceberg.gcp)
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
@@ -68,6 +69,10 @@ dependencies {
   testFixturesApi("software.amazon.awssdk:s3")
   testFixturesRuntimeOnly("software.amazon.awssdk:sts")
   testFixturesRuntimeOnly(libs.hadoop.aws)
+
+  testFixturesRuntimeOnly(platform(libs.google.cloud.storage.bom))
+  testFixturesRuntimeOnly("com.google.cloud:google-cloud-storage")
+  testFixturesRuntimeOnly(libs.google.cloud.nio)
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
