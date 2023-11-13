@@ -43,10 +43,9 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.store
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -256,7 +255,7 @@ class BaseCommitHelper {
       Object2IntHashMap<ContentKey> allKeysToDelete,
       StoreIndex<CommitOp> headIndex)
       throws ReferenceConflictException {
-    List<Conflict> conflicts = new ArrayList<>();
+    Set<Conflict> conflicts = new LinkedHashSet<>();
 
     validateNamespacesExistForContentKeys(newContent, headIndex, conflicts::add);
     validateNamespacesToDeleteHaveNoChildren(allKeysToDelete, headIndex, conflicts::add);
@@ -319,9 +318,7 @@ class BaseCommitHelper {
                   conflict(
                       Conflict.ConflictType.NAMESPACE_NOT_EMPTY,
                       namespaceKey,
-                      format(
-                          "The namespace '%s' would be deleted, but cannot, because it has children.",
-                          namespaceKey)));
+                      format("namespace '%s' is not empty", namespaceKey)));
             }
             if (cmp > 0) {
               // iterated past the namespaceKey - break

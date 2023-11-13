@@ -24,6 +24,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_ABSENT;
+import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_NOT_EMPTY;
 import static org.projectnessie.model.Conflict.ConflictType.NOT_A_NAMESPACE;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -285,7 +286,6 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
     store().create(branch, Optional.empty());
 
     Namespace ns = Namespace.of("ns");
-    ContentKey key = ContentKey.of(ns, "table");
 
     store()
         .commit(
@@ -294,7 +294,17 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("initial"),
             asList(
                 Put.of(ns.toContentKey(), ns),
-                Put.of(key, childNamespace ? Namespace.of(key) : newOnRef("foo"))));
+                Put.of(ContentKey.of(ns, "table"), newOnRef("foo"))));
+
+    if (childNamespace) {
+      Namespace child = Namespace.of("ns", "child");
+      store()
+          .commit(
+              branch,
+              Optional.empty(),
+              fromMessage("child ns"),
+              singletonList(Put.of(child.toContentKey(), child)));
+    }
 
     soft.assertThatThrownBy(
             () ->
@@ -303,7 +313,14 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     Optional.empty(),
                     fromMessage("try delete ns"),
                     singletonList(Delete.of(ns.toContentKey()))))
-        .isInstanceOf(ReferenceConflictException.class);
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage("Namespace 'ns' is not empty.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .singleElement()
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(NAMESPACE_NOT_EMPTY, ns.toContentKey(), "namespace 'ns' is not empty");
   }
 
   enum NamespaceValidationMergeTransplant {

@@ -1243,7 +1243,7 @@ public abstract class AbstractDatabaseAdapter<
 
     int namespacePayload = payloadForContent(Content.Type.NAMESPACE);
 
-    List<Conflict> conflicts = new ArrayList<>();
+    Set<Conflict> conflicts = new LinkedHashSet<>();
 
     for (ContentKey key : keysToCheck) {
       Byte payloadInPut = putPayloads.get(key);
@@ -1314,11 +1314,7 @@ public abstract class AbstractDatabaseAdapter<
         if (ckLen > nsLen && ck.startsWith(deleted)) {
           conflicts.add(
               conflict(
-                  NAMESPACE_NOT_EMPTY,
-                  deleted,
-                  format(
-                      "the namespace '%s' would be deleted, but cannot, because it has children",
-                      deleted)));
+                  NAMESPACE_NOT_EMPTY, deleted, format("namespace '%s' is not empty", deleted)));
         }
       }
     }
