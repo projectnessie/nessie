@@ -198,6 +198,20 @@ The following properties are available for the `OAUTH2` authentication type:
   recent versions of Keycloak support token exchange, but it is disabled by default. See [Using
   token exchange] for more information and how to enable this feature.
 
+* `nessie.authentication.oauth2.preemptive-token-refresh-idle-timeout`: for how long the Nessie 
+  client should keep the tokens fresh, if the client is not being actively used. Setting this value 
+  too high may cause an excessive usage of network I/O and thread resources; conversely, when 
+  setting it too low, if the client is used again, the calling thread may block if the tokens are 
+  expired and need to be renewed synchronously. Optional, defaults to `PT30S` (30 seconds). Must be 
+  a valid [ISO-8601 duration].
+
+* `nessie.authentication.oauth2.background-thread-idle-timeout`: how long the Nessie client should 
+  keep a background thread alive, if the client is not being actively used, or no token refreshes 
+  are being executed. Setting this value too high will cause the background thread to keep running 
+  even if the client is not used anymore, potentially leaking thread and memory resources; 
+  conversely, setting it too low could cause the background thread to be restarted too often.
+  Optional, defaults to `PT30S` (30 seconds). Must be a valid [ISO-8601 duration].
+
 [ISO-8601 duration]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 [RFC 6749 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
 [Using token exchange]: https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange

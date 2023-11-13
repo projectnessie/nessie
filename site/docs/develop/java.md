@@ -210,18 +210,46 @@ The documentation for how to configure Nessie server authentication can be found
 The `BasicAuthenticationProvider` allows connecting to a Nessie server that has `BASIC` authentication enabled.
 Note that `BASIC` is not supported in production and should only be used for development/testing.
 ```java
-NessieApiV1 api =
-  HttpClientBuilder.builder()
-  .withUri(URI.create("http://localhost:19120/api/v1"))
+NessieApiV2 api =
+  NessieClientBuilder.createClientBuilder(null, null)
+  .withUri(URI.create("http://localhost:19120/api/v2"))
   .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
-  .build(NessieApiV1.class);
+  .build(NessieApiV2.class);
 ```
 
-The `BearerAuthenticationProvider` allows connecting to a Nessie server that has `BEARER` authentication enabled.
-```java
-NessieApiV1 api =
-  HttpClientBuilder.builder()
-  .withUri(URI.create("http://localhost:19120/api/v1"))
-  .withAuthentication(BearerAuthenticationProvider.create("bearerToken"))
-  .build(NessieApiV1.class);
-```
+Two other providers allow connecting to a Nessie server that has authentication enabled and expects
+a Bearer token to be provided in HTTP headers:
+
+1. The `BearerAuthenticationProvider` is the simplest one and directly takes the Bearer token as a 
+parameter; the token must be valid for the entire duration of the client's lifetime:
+
+    ```java
+    NessieApiV2 api =
+      NessieClientBuilder.createClientBuilder(null, null)
+      .withUri(URI.create("http://localhost:19120/api/v2"))
+      .withAuthentication(BearerAuthenticationProvider.create("bearerToken"))
+      .build(NessieApiV2.class);
+    ```
+
+2. The `Oauth2AuthenticationProvider` is more elaborate; at a minimum, it takes an OAuth2 token 
+endpoint URI, a Client ID and a Client Secret, and uses them to obtain an access token from the 
+token endpoint, which is then used as a Bearer token to authenticate against Nessie:
+
+    ```java
+    Map<String, String> authConfig =
+        Map.of(
+            CONF_NESSIE_AUTH_TYPE, "OAUTH2",
+            CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
+                "https://<oidc-server>/realms/<realm-name>/protocol/openid-connect/token",
+            CONF_NESSIE_OAUTH2_CLIENT_ID, "my_client_id",
+            CONF_NESSIE_OAUTH2_CLIENT_SECRET, "very_secret");
+    NessieApiV2 api =
+        NessieClientBuilder.createClientBuilder(null, null)
+            .withUri(URI.create("http://localhost:19120/api/v2"))
+            .withAuthenticationFromConfig(authConfig::get)
+            .build(NessieApiV2.class);
+    ```
+   
+    The main advantage of the `Oauth2AuthenticationProvider` over `BearerAuthenticationProvider` is 
+    that the token is automatically refreshed when it expires. It has more configuration options, 
+    which are documented in the [Tools Configuration](../tools/client_config.md) section.
