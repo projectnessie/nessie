@@ -41,6 +41,7 @@ dependencies {
   implementation(libs.iceberg.core)
   runtimeOnly(libs.iceberg.hive.metastore)
   runtimeOnly(libs.iceberg.aws)
+  runtimeOnly(libs.iceberg.gcp)
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))
@@ -63,6 +64,11 @@ dependencies {
   runtimeOnly("software.amazon.awssdk:url-connection-client")
   runtimeOnly("software.amazon.awssdk:sts")
 
+  implementation(platform(libs.google.cloud.storage.bom))
+  runtimeOnly("com.google.cloud:google-cloud-storage")
+  runtimeOnly(libs.google.cloud.nio)
+  runtimeOnly(libs.google.cloud.gcs.connector)
+
   implementation(libs.picocli)
   annotationProcessor(libs.picocli.codegen)
 
@@ -84,7 +90,7 @@ dependencies {
   testCompileOnly(platform(libs.jackson.bom))
 
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
-  testImplementation(nessieProject(":nessie-versioned-storage-inmemory"))
+  testImplementation(nessieProject("nessie-versioned-storage-inmemory"))
 
   testRuntimeOnly(libs.logback.classic)
 
