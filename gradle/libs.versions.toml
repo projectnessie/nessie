@@ -3,7 +3,7 @@
 [versions]
 antlr4 = "4.13.1"
 bouncycastle = "1.70"
-checkstyle = "10.12.4"
+checkstyle = "10.12.5"
 errorprone = "2.23.0"
 errorproneSlf4j = "0.1.20"
 gatling = "3.9.5"
