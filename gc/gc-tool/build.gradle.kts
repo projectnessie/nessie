@@ -42,6 +42,7 @@ dependencies {
   runtimeOnly(libs.iceberg.hive.metastore)
   runtimeOnly(libs.iceberg.aws)
   runtimeOnly(libs.iceberg.gcp)
+  runtimeOnly(libs.iceberg.azure)
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))
@@ -68,6 +69,11 @@ dependencies {
   runtimeOnly("com.google.cloud:google-cloud-storage")
   runtimeOnly(libs.google.cloud.nio)
   runtimeOnly(libs.google.cloud.gcs.connector)
+
+  implementation(platform(libs.azuresdk.bom))
+  runtimeOnly("com.azure:azure-storage-file-datalake")
+  runtimeOnly("com.azure:azure-identity")
+  runtimeOnly(libs.hadoop.azure)
 
   implementation(libs.picocli)
   annotationProcessor(libs.picocli.codegen)

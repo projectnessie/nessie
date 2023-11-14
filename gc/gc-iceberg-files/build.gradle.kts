@@ -45,6 +45,7 @@ dependencies {
   implementation(libs.iceberg.core)
   implementation(libs.iceberg.aws)
   implementation(libs.iceberg.gcp)
+  implementation(libs.iceberg.azure)
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
