@@ -253,7 +253,6 @@ The following configurations are advanced configurations needed for **legacy** v
 | Property                  | Default values | Type      | Description                           |
 |---------------------------|----------------|-----------|---------------------------------------|
 | `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port                    |
-| `quarkus.http.auth.basic` |                | `boolean` | Sets if basic auth should be enabled. |
 
 
 !!! info

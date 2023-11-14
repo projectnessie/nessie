@@ -226,7 +226,7 @@ public final class NessieConfigConstants {
 
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
-   * Valid values are {@code BASIC}, {@code BEARER} and {@code AWS}.
+   * Valid values are {@code BASIC}, {@code BEARER}, {@code OAUTH2} and {@code AWS}.
    *
    * <p>The value is matched against the values returned by {@link
    * NessieAuthenticationProvider#getAuthTypeValue()} of the available authentication providers.
