@@ -92,10 +92,10 @@ String fullPathToWarehouse = ...;
 // (if different from default branch).
 // Can be the name of a Nessie branch or tag name.
 String ref = "main";
-// Nessie authentication type (BASIC, NONE or AWS)
+// Nessie authentication type (NONE, BEARER, OAUTH2 or AWS)
 String authType = "NONE";
 
-    //for a local spark instance
+    // for a local spark instance
     conf.set("spark.jars.packages", "{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}")
         .set("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
         .set("spark.sql.catalog.nessie.uri", url)
@@ -118,10 +118,9 @@ full_path_to_warehouse = ...
 # The ref or context that nessie will operate on (if different from default branch).
 # Can be the name of a Nessie branch or tag name.
 ref = "main"
-# Nessie authentication type (BASIC, NONE or AWS)
+# Nessie authentication type (NONE, BEARER, OAUTH2 or AWS)
 auth_type = "NONE"
 
-    # here we are assuming NONE authorisation
     spark = SparkSession.builder \
             .config("spark.jars.packages","{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}") \
             .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
@@ -143,7 +142,7 @@ The following properties are **required** in Spark when creating the Nessie Cata
 - `spark.sql.catalog.<catalog_name>.uri` : The location of the Nessie server.
 - `spark.sql.catalog.<catalog_name>.ref` : The default Nessie branch that the iceberg
   catalog will use.
-- `spark.sql.catalog.<catalog_name>.authentication.type` : The authentication type to be used, set to `NONE` by default. Please refer to the [authentication docs](../auth_config.md) for more info.
+- `spark.sql.catalog.<catalog_name>.authentication.type` : The authentication type to be used, set to `NONE` by default. Please refer to the [Configuration and authentication in Tools docs](../client_config.md) for more info.
 - `spark.sql.catalog.<catalog_name>.catalog-impl` : This **must** be `org.apache.iceberg.nessie.NessieCatalog` in order to tell Spark to use Nessie catalog implementation.
 - `spark.sql.catalog.<catalog_name>.warehouse` : The location where to store Iceberg tables managed by Nessie catalog.
 - `spark.sql.catalog.<catalog_name>` : This **must** be `org.apache.iceberg.spark.SparkCatalog`. This is a Spark

@@ -207,21 +207,12 @@ api.transplantCommitsIntoBranch()
 Nessie has multiple `NessieAuthenticationProvider` implementations that allow different client authentication mechanisms as can be seen below.
 The documentation for how to configure Nessie server authentication can be found [here](../try/authentication.md).
 
-The `BasicAuthenticationProvider` allows connecting to a Nessie server that has `BASIC` authentication enabled.
-Note that `BASIC` is not supported in production and should only be used for development/testing.
-```java
-NessieApiV2 api =
-  NessieClientBuilder.createClientBuilder(null, null)
-  .withUri(URI.create("http://localhost:19120/api/v2"))
-  .withAuthentication(BasicAuthenticationProvider.create("my_username", "very_secret"))
-  .build(NessieApiV2.class);
-```
-
-Two other providers allow connecting to a Nessie server that has authentication enabled and expects
-a Bearer token to be provided in HTTP headers:
+When configured with authentication enabled, a Nessie server expects every HTTP request to contain a 
+valid Bearer token in an `Authorization` header. Two authentication providers allow a Nessie client
+to automatically add the required token to the HTTP requests:
 
 1. The `BearerAuthenticationProvider` is the simplest one and directly takes the Bearer token as a 
-parameter; the token must be valid for the entire duration of the client's lifetime:
+parameter; _the token must be valid for the entire duration of the client's lifetime_:
 
     ```java
     NessieApiV2 api =
@@ -250,6 +241,6 @@ token endpoint, which is then used as a Bearer token to authenticate against Nes
             .build(NessieApiV2.class);
     ```
    
-    The main advantage of the `Oauth2AuthenticationProvider` over `BearerAuthenticationProvider` is 
-    that the token is automatically refreshed when it expires. It has more configuration options, 
-    which are documented in the [Tools Configuration](../tools/client_config.md) section.
+The main advantage of the `Oauth2AuthenticationProvider` over `BearerAuthenticationProvider` is 
+that the token is automatically refreshed when it expires. It has more configuration options, 
+which are documented in the [Tools Configuration](../tools/client_config.md) section.

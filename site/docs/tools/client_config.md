@@ -113,7 +113,6 @@ The value of the `authentication.type` property can be one of the following:
 * `BEARER`
 * `OAUTH2`
 * `AWS`
-* `BASIC` (deprecated)
 
 ## Authentication Type `NONE`
 
@@ -222,11 +221,3 @@ For the `AWS` Authentication Type the `authentication.aws.region` property shoul
 AWS region where the Nessie Server endpoint is located.
 
 Additional AWS authentication configuration should be provided via standard AWS configuration files. 
-
-## Authentication Type `BASIC`
-
-For the `BASIC` Authentication Type the `authentication.username` and `authentication.password` properties
-should be set.
-
-Note: the `BASIC` authentication type is considered insecure and Nessie Servers do not support it in production
-mode. This authentication type can only be used when the Nessie Server runs in test or "development" mode.
