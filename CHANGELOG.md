@@ -15,6 +15,7 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - Nessie-GC: Support Google Cloud Storage (GCS) (experimental)
+- Nessie-GC: Support Azure Blob Storage (experimental)
 
 ### Changes
 

@@ -29,6 +29,7 @@ dependencies {
   implementation(libs.iceberg.core)
   implementation(libs.iceberg.aws)
   implementation(libs.iceberg.gcp)
+  implementation(libs.iceberg.azure)
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.microprofile.openapi)
@@ -79,6 +80,7 @@ dependencies {
   intTestRuntimeOnly(libs.iceberg.hive.metastore)
   intTestRuntimeOnly(libs.iceberg.aws)
   intTestRuntimeOnly(libs.iceberg.gcp)
+  intTestRuntimeOnly(libs.iceberg.azure)
 
   intTestRuntimeOnly(libs.hadoop.client)
   intTestRuntimeOnly(libs.hadoop.aws)
@@ -96,6 +98,9 @@ dependencies {
   intTestImplementation("com.google.cloud:google-cloud-storage")
   intTestRuntimeOnly(libs.google.cloud.nio)
   intTestRuntimeOnly(libs.google.cloud.gcs.connector)
+
+  intTestImplementation(project(":nessie-azurite-testcontainer"))
+  intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly(libs.immutables.builder)
   intTestCompileOnly(libs.immutables.value.annotations)

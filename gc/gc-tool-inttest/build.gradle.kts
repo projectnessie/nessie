@@ -72,6 +72,7 @@ dependencies {
   intTestRuntimeOnly(libs.iceberg.hive.metastore)
   intTestRuntimeOnly(libs.iceberg.aws)
   intTestRuntimeOnly(libs.iceberg.gcp)
+  intTestRuntimeOnly(libs.iceberg.azure)
   intTestRuntimeOnly(libs.iceberg.nessie)
   intTestRuntimeOnly(libs.iceberg.core)
   intTestRuntimeOnly(
@@ -94,6 +95,11 @@ dependencies {
   intTestRuntimeOnly(platform(libs.google.cloud.storage.bom))
   intTestRuntimeOnly("com.google.cloud:google-cloud-storage")
   intTestRuntimeOnly(libs.google.cloud.nio)
+
+  intTestRuntimeOnly(platform(libs.azuresdk.bom))
+  intTestRuntimeOnly("com.azure:azure-storage-file-datalake")
+  intTestRuntimeOnly("com.azure:azure-identity")
+  intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   intTestCompileOnly(libs.microprofile.openapi)
