@@ -14,15 +14,15 @@
   packageRules: [
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper"],
-      "labels": ["dependencies", "java"],
+      "labels": ["dependencies"],
     },
     {
       matchManagers: ["pip_requirements", "pip_setup"],
-      "labels": ["dependencies", "python"],
+      "labels": ["dependencies"],
     },
     {
       matchManagers: ["dockerfile"],
-      "labels": ["dependencies", "docker"],
+      "labels": ["dependencies"],
     },
 
     // Check for updates, merge automatically
