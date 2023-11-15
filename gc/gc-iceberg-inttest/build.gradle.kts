@@ -99,7 +99,7 @@ dependencies {
   intTestRuntimeOnly(libs.google.cloud.nio)
   intTestRuntimeOnly(libs.google.cloud.gcs.connector)
 
-  intTestImplementation(project(":nessie-azurite-testcontainer"))
+  intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
   intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly(libs.immutables.builder)
