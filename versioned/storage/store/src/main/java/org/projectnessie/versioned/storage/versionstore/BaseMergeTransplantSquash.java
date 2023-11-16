@@ -119,10 +119,8 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     } else {
       CommitLogic commitLogic = commitLogic(persist);
       newHead = mergeCommit.id();
-      boolean committed = commitLogic.storeCommit(mergeCommit, objsToStore);
-      if (committed) {
-        mergeResult.addCreatedCommits(commitObjToCommit(mergeCommit));
-      }
+      commitLogic.storeCommit(mergeCommit, objsToStore);
+      mergeResult.addCreatedCommits(commitObjToCommit(mergeCommit));
     }
 
     return finishMergeTransplant(

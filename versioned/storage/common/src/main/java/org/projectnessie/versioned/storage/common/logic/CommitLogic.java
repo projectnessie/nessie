@@ -63,11 +63,10 @@ public interface CommitLogic {
    * @param createCommit parameters for {@link #buildCommitObj(CreateCommit, ConflictHandler,
    *     CommitOpHandler, ValueReplacement, ValueReplacement)}
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return the non-null commit, if the commit was stored as a new record, or {@code null} if an
-   *     object with the same ID already exists.
+   * @return the persisted commit.
    */
-  @Nullable
-  @jakarta.annotation.Nullable
+  @Nonnull
+  @jakarta.annotation.Nonnull
   CommitObj doCommit(
       @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
@@ -80,13 +79,12 @@ public interface CommitLogic {
    *
    * @param commit commit to store
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return {@code true} if committed
    * @see #doCommit(CreateCommit, List)
    * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler, ValueReplacement,
    *     ValueReplacement)
    * @see #updateCommit(CommitObj)
    */
-  boolean storeCommit(
+  void storeCommit(
       @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects);
 
@@ -98,6 +96,8 @@ public interface CommitLogic {
    * @param commit the commit to update
    * @return the persisted commit, containing the updated incremental and reference indexes
    */
+  @Nonnull
+  @jakarta.annotation.Nonnull
   CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit);
 
   /**

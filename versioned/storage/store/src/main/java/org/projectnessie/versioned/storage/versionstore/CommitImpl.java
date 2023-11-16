@@ -188,11 +188,6 @@ class CommitImpl extends BaseCommitHelper {
     try {
       CommitObj newHead = commitLogic.doCommit(commit.build(), objectsToStore);
 
-      checkState(
-          newHead != null,
-          "Hash collision detected, a commit with the same parent commit, commit message, "
-              + "headers/commit-metadata and operations already exists");
-
       bumpReferencePointer(newHead.id(), Optional.of(commitRetryState));
 
       commitRetryState.generatedContentIds.forEach(addedContents);

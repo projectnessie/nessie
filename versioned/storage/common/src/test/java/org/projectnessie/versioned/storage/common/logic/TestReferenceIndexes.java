@@ -176,7 +176,7 @@ public class TestReferenceIndexes {
 
     // Remove all keys added above.
     for (int i = REF_INDEX_LIFECYCLE_TEST_CYCLES_EMBEDDED - 1; i >= 0; i--) {
-      head = requireNonNull(commitLogic.doCommit(remove.apply(head, i), emptyList())).id();
+      head = commitLogic.doCommit(remove.apply(head, i), emptyList()).id();
       CommitObj commit = requireNonNull(persist.fetchTypedObj(head, COMMIT, CommitObj.class));
       soft.assertThat(commit.referenceIndex()).isNull();
       soft.assertThat(commit.referenceIndexStripes()).isEmpty();
@@ -197,7 +197,7 @@ public class TestReferenceIndexes {
     // Adds new keys, one per commits.
     // Loop until it has to spill out to reference index stripes...
     for (num = 0; ; num++) {
-      head = requireNonNull(commitLogic.doCommit(add.apply(head, num), emptyList())).id();
+      head = commitLogic.doCommit(add.apply(head, num), emptyList()).id();
 
       CommitObj commit = requireNonNull(persist.fetchTypedObj(head, COMMIT, CommitObj.class));
 
@@ -285,7 +285,7 @@ public class TestReferenceIndexes {
     // Remove keys now... until we're back at "embedded" reference segments list (no longer need
     // ObjType.INDEX_SEGMENTS)...
     for (num--; num >= 0; num--) {
-      head = requireNonNull(commitLogic.doCommit(remove.apply(head, num), emptyList())).id();
+      head = commitLogic.doCommit(remove.apply(head, num), emptyList()).id();
 
       CommitObj commit = requireNonNull(persist.fetchTypedObj(head, COMMIT, CommitObj.class));
 
@@ -311,7 +311,7 @@ public class TestReferenceIndexes {
     // Remove keys now... until we're done removing all keys...
     // Can't get back to "incremental only" w/o another "spill out".
     for (num--; num >= 0; num--) {
-      head = requireNonNull(commitLogic.doCommit(remove.apply(head, num), emptyList())).id();
+      head = commitLogic.doCommit(remove.apply(head, num), emptyList()).id();
 
       CommitObj commit = requireNonNull(persist.fetchTypedObj(head, COMMIT, CommitObj.class));
 
@@ -355,7 +355,7 @@ public class TestReferenceIndexes {
         .extracting(ObjNotFoundException::objIds)
         .asInstanceOf(list(ObjId.class))
         .hasSize(values.size());
-    head = requireNonNull(commitLogic.doCommit(add.apply(head, num), values)).id();
+    head = commitLogic.doCommit(add.apply(head, num), values).id();
     soft.assertThat(persist.fetchObjs(values.stream().map(Obj::id).toArray(ObjId[]::new)))
         .doesNotContainNull();
     return head;
@@ -449,7 +449,7 @@ public class TestReferenceIndexes {
       }
       soft.assertThat(knownKeys.size()).describedAs("num keys: %d", numKeys).isEqualTo(numKeys);
 
-      tip = requireNonNull(commitLogic.doCommit(createCommit.build(), emptyList())).id();
+      tip = commitLogic.doCommit(createCommit.build(), emptyList()).id();
       commitIds.add(tip);
       soft.assertThat(tip).describedAs("num keys: %d", numKeys).isNotNull();
 
@@ -542,7 +542,7 @@ public class TestReferenceIndexes {
         createCommit.addAdds(commitAdd(key, 0, value, expected, null));
       }
 
-      tip = requireNonNull(commitLogic.doCommit(createCommit.build(), emptyList())).id();
+      tip = commitLogic.doCommit(createCommit.build(), emptyList()).id();
       commitIds.add(tip);
       soft.assertThat(tip).describedAs("num keys: %d", numKeys).isNotNull();
 

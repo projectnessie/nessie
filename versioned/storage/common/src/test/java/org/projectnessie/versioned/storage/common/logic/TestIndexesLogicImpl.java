@@ -211,7 +211,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
                   .headers(EMPTY_COMMIT_HEADERS)
                   .build(),
               emptyList());
-      headId = requireNonNull(commit).id();
+      headId = commit.id();
       tail.add(0, headId);
     }
 

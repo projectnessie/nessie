@@ -129,7 +129,7 @@ final class StringLogicImpl implements StringLogic {
               .addAdds(commitAdd(storeKey, 0, newValueId, existingValueId, contentId));
       commitEnhancer.accept(builder);
       CommitObj committed = commitLogic.doCommit(builder.build(), singletonList(newValue));
-      persist.updateReferencePointer(reference, requireNonNull(committed).id());
+      persist.updateReferencePointer(reference, committed.id());
     }
     return existing;
   }

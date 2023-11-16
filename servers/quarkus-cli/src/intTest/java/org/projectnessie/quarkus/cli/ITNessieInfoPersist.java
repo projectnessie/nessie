@@ -81,7 +81,7 @@ class ITNessieInfoPersist {
                     .build(),
                 emptyList());
     Reference reference = persist.fetchReference("refs/heads/main");
-    referenceLogic(persist).assignReference(requireNonNull(reference), requireNonNull(head).id());
+    referenceLogic(persist).assignReference(requireNonNull(reference), head.id());
 
     LaunchResult result = launcher.launch("info");
     assertThat(result.getOutput())

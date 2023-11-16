@@ -137,14 +137,14 @@ public class AbstractRepositoryLogicTests {
 
     CommitLogic commitLogic = commitLogic(persist);
     ObjId tip =
-        requireNonNull(
-                commitLogic.doCommit(
-                    CreateCommit.newCommitBuilder()
-                        .parentCommitId(EMPTY_OBJ_ID)
-                        .headers(EMPTY_COMMIT_HEADERS)
-                        .message("no key")
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                CreateCommit.newCommitBuilder()
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("no key")
+                    .build(),
+                emptyList())
             .id();
     ref = persist.updateReferencePointer(ref, tip);
     soft.assertThat(ref.pointer()).isEqualTo(tip);

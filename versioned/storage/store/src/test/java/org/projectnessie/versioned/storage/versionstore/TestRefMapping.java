@@ -19,7 +19,6 @@ import static java.time.Instant.ofEpochSecond;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.RelativeCommitSpec.Type.N_TH_PARENT;
@@ -487,17 +486,16 @@ public class TestRefMapping {
   }
 
   private CommitObj generateCommit(ObjId head, String msg, int i) throws Exception {
-    return requireNonNull(
-        commitLogic(persist)
-            .doCommit(
-                newCommitBuilder()
-                    .parentCommitId(head)
-                    .message("commit " + msg + " " + i)
-                    .headers(
-                        newCommitHeaders()
-                            .add(COMMIT_TIME, instantToHeaderValue(ofEpochSecond(i)))
-                            .build())
-                    .build(),
-                emptyList()));
+    return commitLogic(persist)
+        .doCommit(
+            newCommitBuilder()
+                .parentCommitId(head)
+                .message("commit " + msg + " " + i)
+                .headers(
+                    newCommitHeaders()
+                        .add(COMMIT_TIME, instantToHeaderValue(ofEpochSecond(i)))
+                        .build())
+                .build(),
+            emptyList());
   }
 }

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.commontests;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -132,7 +131,7 @@ public class AbstractConsistencyLogicTests {
 
     assertThat(commitLogic.fetchCommit(EMPTY_OBJ_ID)).isNull();
 
-    ObjId commitId = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
+    ObjId commitId = commitLogic.doCommit(stdCommit().build(), emptyList()).id();
 
     soft.assertThat(commitLogic.fetchCommits(commitId, commitId))
         .extracting(Obj::id, CommitObj::message)
@@ -147,10 +146,9 @@ public class AbstractConsistencyLogicTests {
 
     String otherMessage = "other";
 
-    ObjId commitId1 = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
+    ObjId commitId1 = commitLogic.doCommit(stdCommit().build(), emptyList()).id();
     ObjId commitId2 =
-        requireNonNull(commitLogic.doCommit(stdCommit().message(otherMessage).build(), emptyList()))
-            .id();
+        commitLogic.doCommit(stdCommit().message(otherMessage).build(), emptyList()).id();
 
     soft.assertThat(commitLogic.fetchCommits(commitId1, commitId2))
         .extracting(Obj::id, CommitObj::message)
@@ -169,15 +167,15 @@ public class AbstractConsistencyLogicTests {
   public void commonAncestor() throws Exception {
     CommitLogic commitLogic = commitLogic(persist);
 
-    ObjId root = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
+    ObjId root = commitLogic.doCommit(stdCommit().build(), emptyList()).id();
 
     ObjId commonAncestor = root;
     for (int i = 0; i < 5; i++) {
       commonAncestor =
-          requireNonNull(
-                  commitLogic.doCommit(
-                      stdCommit().parentCommitId(commonAncestor).message("Commit #" + i).build(),
-                      emptyList()))
+          commitLogic
+              .doCommit(
+                  stdCommit().parentCommitId(commonAncestor).message("Commit #" + i).build(),
+                  emptyList())
               .id();
     }
 
@@ -186,13 +184,13 @@ public class AbstractConsistencyLogicTests {
     for (int branch = 0; branch < 5; branch++) {
       for (int i = 0; i < 5; i++) {
         branches[branch] =
-            requireNonNull(
-                    commitLogic.doCommit(
-                        stdCommit()
-                            .parentCommitId(branches[branch])
-                            .message("Branch " + branch + " commit #" + i)
-                            .build(),
-                        emptyList()))
+            commitLogic
+                .doCommit(
+                    stdCommit()
+                        .parentCommitId(branches[branch])
+                        .message("Branch " + branch + " commit #" + i)
+                        .build(),
+                    emptyList())
                 .id();
       }
     }
@@ -221,36 +219,32 @@ public class AbstractConsistencyLogicTests {
         .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
 
     ObjId branch1commit1 =
-        requireNonNull(
-                commitLogic.doCommit(stdCommit().message("branch1commit1").build(), emptyList()))
-            .id();
+        commitLogic.doCommit(stdCommit().message("branch1commit1").build(), emptyList()).id();
     ObjId branch1commit2 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit().message("branch1commit2").parentCommitId(branch1commit1).build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit().message("branch1commit2").parentCommitId(branch1commit1).build(),
+                emptyList())
             .id();
     ObjId branch1commit3 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit().message("branch1commit3").parentCommitId(branch1commit2).build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit().message("branch1commit3").parentCommitId(branch1commit2).build(),
+                emptyList())
             .id();
     ObjId branch2commit1 =
-        requireNonNull(
-                commitLogic.doCommit(stdCommit().message("branch2commit1").build(), emptyList()))
-            .id();
+        commitLogic.doCommit(stdCommit().message("branch2commit1").build(), emptyList()).id();
     ObjId branch2commit2 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit().message("branch2commit2").parentCommitId(branch2commit1).build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit().message("branch2commit2").parentCommitId(branch2commit1).build(),
+                emptyList())
             .id();
     ObjId branch2commit3 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit().message("branch2commit3").parentCommitId(branch2commit2).build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit().message("branch2commit3").parentCommitId(branch2commit2).build(),
+                emptyList())
             .id();
 
     soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit1, branch2commit1))
@@ -305,7 +299,7 @@ public class AbstractConsistencyLogicTests {
 
     soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(EMPTY_OBJ_ID)))).isEmpty();
 
-    ObjId tip = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
+    ObjId tip = commitLogic.doCommit(stdCommit().build(), emptyList()).id();
 
     List<ObjId> tail = new ArrayList<>();
     tail.add(EMPTY_OBJ_ID);
@@ -326,9 +320,8 @@ public class AbstractConsistencyLogicTests {
 
       String msg = "commit #" + i;
       tip =
-          requireNonNull(
-                  commitLogic.doCommit(
-                      stdCommit().parentCommitId(tip).message(msg).build(), emptyList()))
+          commitLogic
+              .doCommit(stdCommit().parentCommitId(tip).message(msg).build(), emptyList())
               .id();
 
       expected.add(0, tuple(new ArrayList<>(tail), msg, 2L + i));
@@ -382,7 +375,7 @@ public class AbstractConsistencyLogicTests {
 
     soft.assertThat(newArrayList(commitLogic.commitIdLog(commitLogQuery(EMPTY_OBJ_ID)))).isEmpty();
 
-    ObjId tip = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList())).id();
+    ObjId tip = commitLogic.doCommit(stdCommit().build(), emptyList()).id();
 
     List<ObjId> expected = new ArrayList<>();
     expected.add(tip);
@@ -394,9 +387,8 @@ public class AbstractConsistencyLogicTests {
     for (int i = 0; i < 100; i++) {
       String msg = "commit #" + i;
       tip =
-          requireNonNull(
-                  commitLogic.doCommit(
-                      stdCommit().parentCommitId(tip).message(msg).build(), emptyList()))
+          commitLogic
+              .doCommit(stdCommit().parentCommitId(tip).message(msg).build(), emptyList())
               .id();
 
       expected.add(0, tip);
@@ -508,10 +500,8 @@ public class AbstractConsistencyLogicTests {
       throws Exception {
     CommitLogic commitLogic = commitLogic(persist);
 
-    ObjId commitId1 =
-        requireNonNull(commitLogic.doCommit(commitBuilder1.build(), emptyList())).id();
-    ObjId commitId2 =
-        requireNonNull(commitLogic.doCommit(commitBuilder2.build(), emptyList())).id();
+    ObjId commitId1 = commitLogic.doCommit(commitBuilder1.build(), emptyList()).id();
+    ObjId commitId2 = commitLogic.doCommit(commitBuilder2.build(), emptyList()).id();
     CommitObj commit1 = commitLogic.fetchCommit(commitId1);
     CommitObj commit2 = commitLogic.fetchCommit(commitId2);
 
@@ -578,24 +568,24 @@ public class AbstractConsistencyLogicTests {
     UUID cidFff = randomUUID();
 
     ObjId commitId1 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit()
-                        .addAdds(commitAdd(KEY_AAA, 0, idAaa, null, cidAaa))
-                        .addAdds(commitAdd(key("ccc"), 0, idCcc, null, cidCcc))
-                        .addAdds(commitAdd(key("eee"), 0, idEee, null, cidEee))
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit()
+                    .addAdds(commitAdd(KEY_AAA, 0, idAaa, null, cidAaa))
+                    .addAdds(commitAdd(key("ccc"), 0, idCcc, null, cidCcc))
+                    .addAdds(commitAdd(key("eee"), 0, idEee, null, cidEee))
+                    .build(),
+                emptyList())
             .id();
     ObjId commitId2 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit()
-                        .addAdds(commitAdd(key("bbb"), 0, idBbb, null, cidBbb))
-                        .addAdds(commitAdd(key("ddd"), 0, idDdd, null, cidDdd))
-                        .addAdds(commitAdd(key("fff"), 0, idFff, null, cidFff))
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit()
+                    .addAdds(commitAdd(key("bbb"), 0, idBbb, null, cidBbb))
+                    .addAdds(commitAdd(key("ddd"), 0, idDdd, null, cidDdd))
+                    .addAdds(commitAdd(key("fff"), 0, idFff, null, cidFff))
+                    .build(),
+                emptyList())
             .id();
     CommitObj commit1 = commitLogic.fetchCommit(commitId1);
     CommitObj commit2 = commitLogic.fetchCommit(commitId2);
@@ -638,26 +628,26 @@ public class AbstractConsistencyLogicTests {
     ObjId idDdd = randomObjId();
     ObjId idEee = randomObjId();
     ObjId commitId1 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit()
-                        .addAdds(commitAdd(KEY_AAA, 0, idAaa, null, null))
-                        .addAdds(commitAdd(key("bbb"), 0, idBbb, null, null))
-                        .addAdds(commitAdd(key("ccc"), 0, idCcc, null, null))
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit()
+                    .addAdds(commitAdd(KEY_AAA, 0, idAaa, null, null))
+                    .addAdds(commitAdd(key("bbb"), 0, idBbb, null, null))
+                    .addAdds(commitAdd(key("ccc"), 0, idCcc, null, null))
+                    .build(),
+                emptyList())
             .id();
     ObjId commitId2 =
-        requireNonNull(
-                commitLogic.doCommit(
-                    stdCommit()
-                        .parentCommitId(commitId1)
-                        .addAdds(commitAdd(key("ccc"), 0, idCcc2, idCcc, null))
-                        .addAdds(commitAdd(key("ddd"), 0, idDdd, null, null))
-                        .addAdds(commitAdd(key("eee"), 0, idEee, null, null))
-                        .addRemoves(commitRemove(key("bbb"), 0, idBbb, null))
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                stdCommit()
+                    .parentCommitId(commitId1)
+                    .addAdds(commitAdd(key("ccc"), 0, idCcc2, idCcc, null))
+                    .addAdds(commitAdd(key("ddd"), 0, idDdd, null, null))
+                    .addAdds(commitAdd(key("eee"), 0, idEee, null, null))
+                    .addRemoves(commitRemove(key("bbb"), 0, idBbb, null))
+                    .build(),
+                emptyList())
             .id();
     CommitObj commit1 = commitLogic.fetchCommit(commitId1);
     CommitObj commit2 = commitLogic.fetchCommit(commitId2);
@@ -683,14 +673,14 @@ public class AbstractConsistencyLogicTests {
     ReferenceLogic refLogic = referenceLogic(persist);
     CommitLogic commitLogic = commitLogic(persist);
     ObjId tip =
-        requireNonNull(
-                commitLogic.doCommit(
-                    newCommitBuilder()
-                        .headers(EMPTY_COMMIT_HEADERS)
-                        .message("msg foo")
-                        .parentCommitId(EMPTY_OBJ_ID)
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                newCommitBuilder()
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("msg foo")
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .build(),
+                emptyList())
             .id();
     Reference ref = refLogic.createReference("foo", tip, randomObjId());
     soft.assertThat(commitLogic.headCommit(ref))
@@ -716,15 +706,15 @@ public class AbstractConsistencyLogicTests {
     ObjId otherExpectedValue = randomObjId();
 
     ObjId tip =
-        requireNonNull(
-                commitLogic.doCommit(
-                    newCommitBuilder()
-                        .headers(EMPTY_COMMIT_HEADERS)
-                        .message("msg foo")
-                        .parentCommitId(EMPTY_OBJ_ID)
-                        .addAdds(commitAdd(key, 0, correctValue, null, null))
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                newCommitBuilder()
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("msg foo")
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .addAdds(commitAdd(key, 0, correctValue, null, null))
+                    .build(),
+                emptyList())
             .id();
 
     // Put the correct expected value into the Commit-ADD operation, but "break" it in the callback
@@ -783,15 +773,15 @@ public class AbstractConsistencyLogicTests {
     ObjId updateValue = randomObjId();
 
     ObjId tip =
-        requireNonNull(
-                commitLogic.doCommit(
-                    newCommitBuilder()
-                        .headers(EMPTY_COMMIT_HEADERS)
-                        .message("msg foo")
-                        .parentCommitId(EMPTY_OBJ_ID)
-                        .addAdds(commitAdd(key, 0, initialValue, null, null))
-                        .build(),
-                    emptyList()))
+        commitLogic
+            .doCommit(
+                newCommitBuilder()
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("msg foo")
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .addAdds(commitAdd(key, 0, initialValue, null, null))
+                    .build(),
+                emptyList())
             .id();
 
     CommitObj commit =
@@ -861,7 +851,6 @@ public class AbstractConsistencyLogicTests {
                       "commit #" + commitNum + " of " + numCommits + " - unifier: " + branchNum)
                   .build(),
               emptyList());
-      checkState(commit != null);
       head = commit.id();
     }
 
@@ -915,7 +904,7 @@ public class AbstractConsistencyLogicTests {
         lastContent = value;
         commit.addAdds(commitAdd(contentKey.apply(c, k), 0, value.id(), null, contentId));
       }
-      CommitObj newCommit = requireNonNull(commitLogic.doCommit(commit.build(), objects));
+      CommitObj newCommit = commitLogic.doCommit(commit.build(), objects);
       commits.addFirst(newCommit);
       branch = persist.updateReferencePointer(branch, newCommit.id());
       expected.addFirst(tuple(newCommit.id(), true, true, true));

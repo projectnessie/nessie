@@ -293,6 +293,12 @@ public interface Persist {
    */
   void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException;
 
+  default void upsertObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
+    upsertObj(obj);
+  }
+
   /**
    * Updates existing objects or inserts those as new objects.
    *

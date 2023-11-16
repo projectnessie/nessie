@@ -376,7 +376,7 @@ public class ITExportImportPersist {
                 .headers(EMPTY_COMMIT_HEADERS)
                 .build(),
             emptyList());
-    referenceLogic.assignReference(refMain, requireNonNull(main).id());
+    referenceLogic.assignReference(refMain, main.id());
 
     Reference refFoo =
         referenceLogic.createReference("refs/heads/branch-foo", main.id(), randomObjId());
@@ -396,7 +396,7 @@ public class ITExportImportPersist {
                 .headers(EMPTY_COMMIT_HEADERS)
                 .build(),
             emptyList());
-    referenceLogic.assignReference(refFoo, requireNonNull(foo).id());
+    referenceLogic.assignReference(refFoo, foo.id());
   }
 
   private void populateRepositoryWithMergeCommit(Persist persist) throws Exception {
@@ -439,7 +439,7 @@ public class ITExportImportPersist {
         commitLogic.doCommit(
             newCommitBuilder()
                 .parentCommitId(refMain.pointer())
-                .addSecondaryParents(requireNonNull(temp).id())
+                .addSecondaryParents(temp.id())
                 .addAdds(
                     commitAdd(
                         key,
@@ -452,6 +452,6 @@ public class ITExportImportPersist {
                 .build(),
             emptyList());
 
-    referenceLogic.assignReference(refMain, requireNonNull(merge).id());
+    referenceLogic.assignReference(refMain, merge.id());
   }
 }

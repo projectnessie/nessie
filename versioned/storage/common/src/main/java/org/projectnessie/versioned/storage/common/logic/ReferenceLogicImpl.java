@@ -635,8 +635,6 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       throw new RuntimeException("Internal error committing to log of references", e);
     }
 
-    checkState(commit != null);
-
     // Commit to REF_REFS
     try {
       p.updateReferencePointer(refRefs, commit.id());

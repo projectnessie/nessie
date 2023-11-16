@@ -114,10 +114,8 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
       empty = false;
       if (!transplantOp.dryRun()) {
         newHead = newCommit.id();
-        boolean committed = commitLogic.storeCommit(newCommit, objsToStore);
-        if (committed) {
-          mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
-        }
+        commitLogic.storeCommit(newCommit, objsToStore);
+        mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
       }
 
       sourceParentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());
