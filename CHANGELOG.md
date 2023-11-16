@@ -8,6 +8,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Nessie's storage layer has been reworked in order to significantly reduce the usage of conditional
+  writes, such as `INSERT ... IF NOT EXISTS` SQL statements. This change is backwards-compatible 
+  with existing database schemas. It should allow for better performance and scalability, especially
+  when using Nessie with a distributed database such as BigTable, Cassandra or MongoDB.
+
 ### Upgrade notes
 
 ### Breaking changes
