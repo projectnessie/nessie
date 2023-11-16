@@ -132,17 +132,17 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public void upsertObj(
+  public void storeObj(
       @jakarta.annotation.Nonnull @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    persist.upsertObj(obj, ignoreSoftSizeRestrictions);
+    persist.storeObj(obj, ignoreSoftSizeRestrictions);
     cache.put(obj);
   }
 
   @Override
-  public void upsertObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
+  public void storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    persist.upsertObjs(objs);
+    persist.storeObjs(objs);
     for (Obj obj : objs) {
       if (obj != null) {
         cache.put(obj);

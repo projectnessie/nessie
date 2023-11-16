@@ -63,7 +63,7 @@ public class TestBatchingPersist {
   @MethodSource("allObjectTypeSamples")
   void singleObj(Obj obj) throws Exception {
     // Obj that exists in "base"
-    base.upsertObj(obj);
+    base.storeObj(obj);
     soft.assertThat(batching.fetchObj(obj.id())).isEqualTo(obj);
     base.deleteObj(obj.id());
     soft.assertThatThrownBy(() -> batching.fetchObj(obj.id()))
@@ -72,15 +72,15 @@ public class TestBatchingPersist {
         .isInstanceOf(ObjNotFoundException.class);
 
     // Obj inserted via "batching"
-    batching.upsertObj(obj);
-    soft.assertThat(batching.pendingUpserts()).containsExactly(entry(obj.id(), obj));
+    batching.storeObj(obj);
+    soft.assertThat(batching.pendingStores()).containsExactly(entry(obj.id(), obj));
     soft.assertThatThrownBy(() -> base.fetchObj(obj.id())).isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(() -> base.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThat(batching.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(batching.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
     batching.flush();
-    soft.assertThat(batching.pendingUpserts()).isEmpty();
+    soft.assertThat(batching.pendingStores()).isEmpty();
     soft.assertThat(base.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(base.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
     soft.assertThat(batching.fetchObj(obj.id())).isEqualTo(obj);
@@ -88,14 +88,14 @@ public class TestBatchingPersist {
 
     // Obj updated via "batching"
     Obj updated = updateObjChange(obj);
-    batching.upsertObj(updated);
-    soft.assertThat(batching.pendingUpserts()).containsExactly(entry(obj.id(), updated));
+    batching.storeObj(updated);
+    soft.assertThat(batching.pendingStores()).containsExactly(entry(obj.id(), updated));
     soft.assertThat(base.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(base.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
     soft.assertThat(batching.fetchObj(obj.id())).isEqualTo(updated);
     soft.assertThat(batching.fetchObjs(new ObjId[] {obj.id()})).containsExactly(updated);
     batching.flush();
-    soft.assertThat(batching.pendingUpserts()).isEmpty();
+    soft.assertThat(batching.pendingStores()).isEmpty();
     soft.assertThat(base.fetchObj(obj.id())).isEqualTo(updated);
     soft.assertThat(base.fetchObjs(new ObjId[] {obj.id()})).containsExactly(updated);
     soft.assertThat(batching.fetchObj(obj.id())).isEqualTo(updated);
@@ -109,7 +109,7 @@ public class TestBatchingPersist {
     Map<ObjId, Obj> objsMap = stream(objs).collect(Collectors.toMap(Obj::id, o -> o));
 
     // Obj that exists in "base"
-    base.upsertObjs(objs);
+    base.storeObjs(objs);
     soft.assertThat(batching.fetchObjs(ids)).containsExactly(objs);
     base.deleteObjs(ids);
     soft.assertThatThrownBy(() -> batching.fetchObjs(ids))
@@ -120,8 +120,8 @@ public class TestBatchingPersist {
         .containsExactly(ids);
 
     // Obj inserted via "batching"
-    batching.upsertObjs(objs);
-    soft.assertThat(batching.pendingUpserts()).isEqualTo(objsMap);
+    batching.storeObjs(objs);
+    soft.assertThat(batching.pendingStores()).isEqualTo(objsMap);
     soft.assertThatThrownBy(() -> base.fetchObjs(ids))
         .isInstanceOf(ObjNotFoundException.class)
         .asInstanceOf(type(ObjNotFoundException.class))
@@ -130,19 +130,19 @@ public class TestBatchingPersist {
         .containsExactly(ids);
     soft.assertThat(batching.fetchObjs(ids)).containsExactly(objs);
     batching.flush();
-    soft.assertThat(batching.pendingUpserts()).isEmpty();
+    soft.assertThat(batching.pendingStores()).isEmpty();
     soft.assertThat(base.fetchObjs(ids)).containsExactly(objs);
     soft.assertThat(batching.fetchObjs(ids)).containsExactly(objs);
 
     // Obj updated via "batching"
     Obj[] updated = stream(objs).map(AbstractBasePersistTests::updateObjChange).toArray(Obj[]::new);
     Map<ObjId, Obj> updatedMap = stream(updated).collect(Collectors.toMap(Obj::id, o -> o));
-    batching.upsertObjs(updated);
-    soft.assertThat(batching.pendingUpserts()).isEqualTo(updatedMap);
+    batching.storeObjs(updated);
+    soft.assertThat(batching.pendingStores()).isEqualTo(updatedMap);
     soft.assertThat(base.fetchObjs(ids)).containsExactly(objs);
     soft.assertThat(batching.fetchObjs(ids)).containsExactly(updated);
     batching.flush();
-    soft.assertThat(batching.pendingUpserts()).isEmpty();
+    soft.assertThat(batching.pendingStores()).isEmpty();
     soft.assertThat(base.fetchObjs(ids)).containsExactly(updated);
     soft.assertThat(batching.fetchObjs(ids)).containsExactly(updated);
   }
@@ -151,10 +151,10 @@ public class TestBatchingPersist {
   void erase() throws Exception {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
 
-    batching.upsertObjs(objs);
-    soft.assertThat(batching.pendingUpserts()).hasSize(objs.length);
+    batching.storeObjs(objs);
+    soft.assertThat(batching.pendingStores()).hasSize(objs.length);
     batching.erase();
-    soft.assertThat(batching.pendingUpserts()).isEmpty();
+    soft.assertThat(batching.pendingStores()).isEmpty();
   }
 
   @Test
@@ -169,14 +169,14 @@ public class TestBatchingPersist {
             .incrementalIndex(
                 ByteString.copyFrom(new byte[base.effectiveIncrementalIndexSizeLimit() + 1]))
             .build();
-    soft.assertThatThrownBy(() -> batching.upsertObj(o)).isInstanceOf(ObjTooLargeException.class);
-    soft.assertThatThrownBy(() -> batching.upsertObjs(new Obj[] {o}))
+    soft.assertThatThrownBy(() -> batching.storeObj(o)).isInstanceOf(ObjTooLargeException.class);
+    soft.assertThatThrownBy(() -> batching.storeObjs(new Obj[] {o}))
         .isInstanceOf(ObjTooLargeException.class);
 
     IndexObj s =
         IndexObj.index(ByteString.copyFrom(new byte[base.effectiveIndexSegmentSizeLimit() + 1]));
-    soft.assertThatThrownBy(() -> batching.upsertObj(s)).isInstanceOf(ObjTooLargeException.class);
-    soft.assertThatThrownBy(() -> batching.upsertObjs(new Obj[] {s}))
+    soft.assertThatThrownBy(() -> batching.storeObj(s)).isInstanceOf(ObjTooLargeException.class);
+    soft.assertThatThrownBy(() -> batching.storeObjs(new Obj[] {s}))
         .isInstanceOf(ObjTooLargeException.class);
   }
 
@@ -185,11 +185,11 @@ public class TestBatchingPersist {
   void noFlush(Obj obj) throws Exception {
     BatchingPersistImpl persist =
         (BatchingPersistImpl) WriteBatching.builder().persist(base).batchSize(0).build().create();
-    persist.upsertObj(obj);
+    persist.storeObj(obj);
     Obj updated = updateObjChange(obj);
-    persist.upsertObj(updated);
+    persist.storeObj(updated);
     persist.flush();
-    soft.assertThat(persist.pendingUpserts()).containsExactly(entry(obj.id(), updated));
+    soft.assertThat(persist.pendingStores()).containsExactly(entry(obj.id(), updated));
   }
 
   private Persist base() {

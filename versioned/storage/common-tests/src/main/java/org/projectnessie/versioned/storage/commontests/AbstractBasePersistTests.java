@@ -493,7 +493,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
 
-    persist.upsertObj(obj);
+    persist.storeObj(obj);
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(persist.fetchObjType(obj.id())).isEqualTo(obj.type());
@@ -521,9 +521,9 @@ public class AbstractBasePersistTests {
   }
 
   @Test
-  public void multipleUpsertAndFetch() throws Exception {
+  public void multipleStoreAndFetch() throws Exception {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
-    persist.upsertObjs(objs);
+    persist.storeObjs(objs);
 
     objs = persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new));
     soft.assertThat(objs).doesNotContainNull();
@@ -541,7 +541,7 @@ public class AbstractBasePersistTests {
             .mapToObj(i -> tag(randomObjId(), null, null, ByteString.copyFrom(new byte[42])))
             .collect(Collectors.toList());
 
-    persist.upsertObjs(objects.toArray(new Obj[0]));
+    persist.storeObjs(objects.toArray(new Obj[0]));
     ObjId[] ids = objects.stream().map(Obj::id).toArray(ObjId[]::new);
 
     Obj[] fetched = persist.fetchObjs(ids);
@@ -556,26 +556,26 @@ public class AbstractBasePersistTests {
     Obj obj4 = tag(randomObjId(), null, null, ByteString.EMPTY);
     Obj obj5 = tag(randomObjId(), null, null, ByteString.EMPTY);
 
-    persist.upsertObjs(new Obj[] {obj1});
+    persist.storeObjs(new Obj[] {obj1});
     soft.assertThat(persist.fetchObj(requireNonNull(obj1.id()))).isEqualTo(obj1);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj1.id()})).containsExactly(obj1);
 
-    persist.upsertObjs(new Obj[] {obj1, obj2});
+    persist.storeObjs(new Obj[] {obj1, obj2});
     soft.assertThat(persist.fetchObj(requireNonNull(obj2.id()))).isEqualTo(obj2);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj1.id(), obj2.id()}))
         .containsExactly(obj1, obj2);
 
-    persist.upsertObjs(new Obj[] {obj1, obj2, obj3});
+    persist.storeObjs(new Obj[] {obj1, obj2, obj3});
     soft.assertThat(persist.fetchObj(requireNonNull(obj3.id()))).isEqualTo(obj3);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj1.id(), obj2.id(), obj3.id()}))
         .containsExactly(obj1, obj2, obj3);
 
-    persist.upsertObjs(new Obj[] {obj1, obj2, obj3, obj4});
+    persist.storeObjs(new Obj[] {obj1, obj2, obj3, obj4});
     soft.assertThat(persist.fetchObj(requireNonNull(obj4.id()))).isEqualTo(obj4);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj1.id(), obj2.id(), obj3.id(), obj4.id()}))
         .containsExactly(obj1, obj2, obj3, obj4);
 
-    persist.upsertObjs(new Obj[] {obj1, obj2, obj3, obj4, obj5});
+    persist.storeObjs(new Obj[] {obj1, obj2, obj3, obj4, obj5});
     soft.assertThat(persist.fetchObj(requireNonNull(obj5.id()))).isEqualTo(obj5);
     soft.assertThat(
             persist.fetchObjs(new ObjId[] {obj1.id(), obj2.id(), obj3.id(), obj4.id(), obj5.id()}))
@@ -662,11 +662,11 @@ public class AbstractBasePersistTests {
   }
 
   private void verifyObjSizeLimit(Persist persist, StoreIndex<CommitOp> index) {
-    soft.assertThatThrownBy(() -> persist.upsertObj(index(randomObjId(), index.serialize())))
+    soft.assertThatThrownBy(() -> persist.storeObj(index(randomObjId(), index.serialize())))
         .isInstanceOf(ObjTooLargeException.class);
     soft.assertThatThrownBy(
             () ->
-                persist.upsertObj(
+                persist.storeObj(
                     commitBuilder()
                         .id(randomObjId())
                         .created(123L)
@@ -678,7 +678,7 @@ public class AbstractBasePersistTests {
         .isInstanceOf(ObjTooLargeException.class);
     soft.assertThatThrownBy(
             () ->
-                persist.upsertObjs(
+                persist.storeObjs(
                     new Obj[] {
                       commitBuilder()
                           .id(randomObjId())
@@ -723,7 +723,7 @@ public class AbstractBasePersistTests {
   public void upsertNonExisting(Obj obj) throws Exception {
     soft.assertThatThrownBy(() -> persist.fetchObj(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
-    persist.upsertObj(obj);
+    persist.storeObj(obj);
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
   }
 
@@ -732,14 +732,14 @@ public class AbstractBasePersistTests {
   public void upsertNonExistingBulk(Obj obj) throws Exception {
     soft.assertThatThrownBy(() -> persist.fetchObj(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
-    persist.upsertObjs(new Obj[] {obj});
+    persist.storeObjs(new Obj[] {obj});
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
   }
 
   @ParameterizedTest
   @MethodSource("allObjectTypeSamples")
   public void updateSingle(Obj obj) throws Exception {
-    persist.upsertObj(obj);
+    persist.storeObj(obj);
     Obj newObj = updateObjChange(obj);
     if (newObj == null) {
       return;
@@ -747,11 +747,11 @@ public class AbstractBasePersistTests {
 
     soft.assertThat(newObj).isNotEqualTo(obj);
 
-    persist.upsertObj(obj);
+    persist.storeObj(obj);
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
 
-    persist.upsertObj(newObj);
+    persist.storeObj(newObj);
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(newObj);
   }
@@ -798,11 +798,11 @@ public class AbstractBasePersistTests {
             .mapToObj(i -> ((i & 1) == 0) ? objs[i / 2] : newCommit.get())
             .toArray(Obj[]::new);
 
-    persist.upsertObjs(objs);
+    persist.storeObjs(objs);
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(objs);
 
-    persist.upsertObjs(newObjs);
+    persist.storeObjs(newObjs);
     soft.assertThat(persist.fetchObjs(stream(newObjs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(newObjs);
   }
@@ -816,11 +816,11 @@ public class AbstractBasePersistTests {
       soft.assertThat(newObjs[i]).isNotEqualTo(objs[i]);
     }
 
-    persist.upsertObjs(objs);
+    persist.storeObjs(objs);
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(objs);
 
-    persist.upsertObjs(newObjs);
+    persist.storeObjs(newObjs);
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(newObjs);
   }
@@ -909,9 +909,9 @@ public class AbstractBasePersistTests {
     // Clear the already initialized repo...
     persist.erase();
 
-    persist.upsertObjs(values);
-    persist.upsertObjs(strings);
-    persist.upsertObjs(commits);
+    persist.storeObjs(values);
+    persist.storeObjs(strings);
+    persist.storeObjs(commits);
 
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
       soft.assertThat(Lists.newArrayList(scan))

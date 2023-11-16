@@ -67,7 +67,7 @@ public class AbstractBackendRepositoryTests {
     soft.assertThat(repositoryLogic.repositoryExists()).isTrue();
 
     int objs = 250;
-    repo1.upsertObjs(
+    repo1.storeObjs(
         IntStream.range(0, objs)
             .mapToObj(
                 x ->
@@ -139,7 +139,7 @@ public class AbstractBackendRepositoryTests {
                 ByteString.copyFromUtf8("text-" + i));
         objects[i] = stringObj;
       }
-      repo.upsertObjs(objects);
+      repo.storeObjs(objects);
     }
     soft.assertThat(repos).allMatch(r -> repositoryLogic(r).repositoryExists());
     List<Persist> toDelete = repos.subList(0, 5);

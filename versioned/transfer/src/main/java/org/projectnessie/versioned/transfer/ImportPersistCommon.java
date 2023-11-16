@@ -146,7 +146,7 @@ abstract class ImportPersistCommon extends ImportCommon {
           ByteString onRef = importer.storeWorker().toStoreOnReferenceState(content);
 
           ContentValueObj value = contentValue(op.getContentId(), payload, onRef);
-          persist.upsertObj(value);
+          persist.storeObj(value);
           index.add(
               indexElement(
                   storeKey, commitOp(ADD, payload, value.id(), contentIdMaybe(op.getContentId()))));

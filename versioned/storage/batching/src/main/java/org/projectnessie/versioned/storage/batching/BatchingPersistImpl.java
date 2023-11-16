@@ -41,7 +41,7 @@ import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   private final WriteBatching batching;
 
-  private final Map<ObjId, Obj> pendingUpserts = new HashMap<>();
+  private final Map<ObjId, Obj> pendingStores = new HashMap<>();
 
   private final ReentrantReadWriteLock lock;
 
@@ -52,8 +52,8 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @VisibleForTesting
-  Map<ObjId, Obj> pendingUpserts() {
-    return pendingUpserts;
+  Map<ObjId, Obj> pendingStores() {
+    return pendingStores;
   }
 
   @Override
@@ -61,9 +61,9 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     if (batching.batchSize() > 0) {
       writeLock();
       try {
-        if (!pendingUpserts.isEmpty()) {
-          delegate().upsertObjs(pendingUpserts.values().toArray(new Obj[0]));
-          pendingUpserts.clear();
+        if (!pendingStores.isEmpty()) {
+          delegate().storeObjs(pendingStores.values().toArray(new Obj[0]));
+          pendingStores.clear();
         }
       } catch (ObjTooLargeException e) {
         throw new RuntimeException(e);
@@ -95,14 +95,14 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   private void maybeFlush() {
     if (batching.batchSize() > 0) {
-      if (pendingUpserts.size() > batching.batchSize()) {
+      if (pendingStores.size() > batching.batchSize()) {
         flush();
       }
     }
   }
 
   @Override
-  public void upsertObj(
+  public void storeObj(
       @Nonnull @javax.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     if (!ignoreSoftSizeRestrictions) {
@@ -110,7 +110,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     }
     writeLock();
     try {
-      pendingUpserts.put(obj.id(), obj);
+      pendingStores.put(obj.id(), obj);
       maybeFlush();
     } finally {
       writeUnlock();
@@ -118,13 +118,12 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void storeObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs) throws ObjTooLargeException {
     writeLock();
     try {
       for (Obj obj : objs) {
         if (obj != null) {
-          upsertObj(obj);
+          storeObj(obj);
         }
       }
     } finally {
@@ -150,7 +149,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   private Obj pendingObj(ObjId id) {
-    return pendingUpserts.get(id);
+    return pendingStores.get(id);
   }
 
   @Override
@@ -242,7 +241,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     writeLock();
     try {
       delegate().deleteObj(id);
-      pendingUpserts.remove(id);
+      pendingStores.remove(id);
     } finally {
       writeUnlock();
     }
@@ -266,7 +265,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   public void erase() {
     writeLock();
     try {
-      pendingUpserts.clear();
+      pendingStores.clear();
       delegate().erase();
     } finally {
       writeUnlock();

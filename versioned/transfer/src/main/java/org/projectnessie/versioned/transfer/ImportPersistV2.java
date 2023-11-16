@@ -126,7 +126,7 @@ final class ImportPersistV2 extends ImportPersistCommon {
 
     c.incrementalIndex(index.serialize());
 
-    persist.upsertObj(c.build());
+    persist.storeObj(c.build());
 
     importer.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
   }

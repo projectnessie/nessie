@@ -182,7 +182,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
                   null,
                   "application/json",
                   SHARED_OBJECT_MAPPER.writeValueAsBytes(repoDesc.build()));
-      persist.upsertObj(string);
+      persist.storeObj(string);
       b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
     } catch (ObjTooLargeException | ObjNotFoundException | IOException e) {
       throw new RuntimeException(e);

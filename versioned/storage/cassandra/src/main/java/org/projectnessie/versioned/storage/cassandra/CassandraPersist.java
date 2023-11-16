@@ -381,7 +381,7 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public void upsertObj(
+  public void storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     writeSingleObj(
@@ -391,7 +391,7 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public void storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 

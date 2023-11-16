@@ -109,7 +109,7 @@ public class TestContentMapping {
     int payload = payloadForContent(content);
     ContentValueObj value = contentMapping.buildContent(content, payload);
     ObjId id = value.id();
-    persist.upsertObj(value);
+    persist.storeObj(value);
 
     soft.assertThat(id).isNotNull();
 
@@ -130,7 +130,7 @@ public class TestContentMapping {
     int payload = payloadForContent(content);
     ContentValueObj value = contentMapping.buildContent(content, payload);
     ObjId id = value.id();
-    persist.upsertObj(value);
+    persist.storeObj(value);
 
     List<ContentKey> dupKeys =
         IntStream.rangeClosed(1, 3)
@@ -224,7 +224,7 @@ public class TestContentMapping {
     IcebergTable table = IcebergTable.of("/dev/null", 42, 43, 44, 45, UUID.randomUUID().toString());
     ContentValueObj tableObj = contentMapping.buildContent(table, 1);
     ObjId tableId = tableObj.id();
-    persist.upsertObj(tableObj);
+    persist.storeObj(tableObj);
 
     StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
     index.add(

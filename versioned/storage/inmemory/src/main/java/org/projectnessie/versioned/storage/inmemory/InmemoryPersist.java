@@ -254,7 +254,7 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
-  public void upsertObj(
+  public void storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
@@ -267,11 +267,11 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public void storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     for (Obj obj : objs) {
       if (obj != null) {
-        upsertObj(obj);
+        storeObj(obj);
       }
     }
   }

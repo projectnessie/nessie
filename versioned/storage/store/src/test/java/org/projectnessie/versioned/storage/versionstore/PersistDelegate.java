@@ -153,21 +153,21 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    delegate.upsertObj(obj);
+  public void storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+    delegate.storeObj(obj);
   }
 
   @Override
-  public void upsertObj(
+  public void storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    delegate.upsertObj(obj, ignoreSoftSizeRestrictions);
+    delegate.storeObj(obj, ignoreSoftSizeRestrictions);
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public void storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    delegate.upsertObjs(objs);
+    delegate.storeObjs(objs);
   }
 
   @Override

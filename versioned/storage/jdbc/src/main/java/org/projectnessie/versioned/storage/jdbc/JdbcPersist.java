@@ -224,14 +224,14 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public void upsertObj(
+  public void storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     withConnectionException(false, conn -> super.upsertObj(conn, obj, ignoreSoftSizeRestrictions));
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public void storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     withConnectionException(false, conn -> super.upsertObjs(conn, objs, false));
   }

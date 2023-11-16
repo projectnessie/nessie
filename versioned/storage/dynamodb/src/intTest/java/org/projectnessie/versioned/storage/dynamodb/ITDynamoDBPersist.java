@@ -53,10 +53,10 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
 
     @Test
     public void dynamoDbHardItemSizeLimit() throws Exception {
-      persist.upsertObj(
+      persist.storeObj(
           contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024])));
 
-      persist.upsertObjs(
+      persist.storeObjs(
           new Obj[] {
             contentValue(ObjId.randomObjId(), "foo", 42, ByteString.copyFrom(new byte[350 * 1024]))
           });
@@ -64,7 +64,7 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
       // DynamoDB's hard 400k limit
       soft.assertThatThrownBy(
               () ->
-                  persist.upsertObj(
+                  persist.storeObj(
                       contentValue(
                           ObjId.randomObjId(),
                           "foo",
@@ -73,7 +73,7 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
           .isInstanceOf(ObjTooLargeException.class);
       soft.assertThatThrownBy(
               () ->
-                  persist.upsertObjs(
+                  persist.storeObjs(
                       new Obj[] {
                         contentValue(
                             ObjId.randomObjId(),

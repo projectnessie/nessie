@@ -421,7 +421,7 @@ public class AbstractIndexesLogicTests {
       soft.assertThat(serialized.size() * 4 / 3).isGreaterThan(SMALL_INCREMENTAL_INDEX_SIZE);
       c.incrementalIndex(serialized);
       CommitObj commit = c.build();
-      persist.upsertObj(commit);
+      persist.storeObj(commit);
       current = commit;
     }
     return current.id();

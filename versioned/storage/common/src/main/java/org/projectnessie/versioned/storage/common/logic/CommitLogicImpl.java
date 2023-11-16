@@ -298,13 +298,13 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects) {
 
     try {
-      persist.upsertObjs(additionalObjects.toArray(new Obj[0]));
+      persist.storeObjs(additionalObjects.toArray(new Obj[0]));
     } catch (ObjTooLargeException ex) {
       throw new RuntimeException(ex);
     }
 
     try {
-      persist.upsertObj(commit);
+      persist.storeObj(commit);
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
       // the reference index.
@@ -312,7 +312,7 @@ final class CommitLogicImpl implements CommitLogic {
       commit = indexTooBigStoreUpdate(commit);
 
       try {
-        persist.upsertObj(commit, true);
+        persist.storeObj(commit, true);
       } catch (ObjTooLargeException ex) {
         // Hit the "Hard database object size limit"
         throw new RuntimeException(ex);
@@ -325,14 +325,14 @@ final class CommitLogicImpl implements CommitLogic {
   @Override
   public CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
     try {
-      persist.upsertObj(commit);
+      persist.storeObj(commit);
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
       // the reference index.
 
       commit = indexTooBigStoreUpdate(commit);
       try {
-        persist.upsertObj(commit);
+        persist.storeObj(commit);
       } catch (ObjTooLargeException ex) {
         // Hit the "Hard database object size limit"
         throw new RuntimeException(ex);

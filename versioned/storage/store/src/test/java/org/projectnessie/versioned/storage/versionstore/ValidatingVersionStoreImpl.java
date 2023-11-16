@@ -102,25 +102,24 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
     }
 
     @Override
-    public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-        throws ObjTooLargeException {
+    public void storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
       recordWrite();
-      super.upsertObj(obj);
+      super.storeObj(obj);
     }
 
     @Override
-    public void upsertObj(
+    public void storeObj(
         @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
         throws ObjTooLargeException {
       recordWrite();
-      super.upsertObj(obj, ignoreSoftSizeRestrictions);
+      super.storeObj(obj, ignoreSoftSizeRestrictions);
     }
 
     @Override
-    public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+    public void storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
         throws ObjTooLargeException {
       recordWrite();
-      super.upsertObjs(objs);
+      super.storeObjs(objs);
     }
   }
 

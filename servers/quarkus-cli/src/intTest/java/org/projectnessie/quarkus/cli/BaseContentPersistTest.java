@@ -76,7 +76,7 @@ abstract class BaseContentPersistTest<OutputType> extends BaseContentTest<Output
       ByteString namespaceValue = DefaultStoreWorker.instance().toStoreOnReferenceState(namespace);
       byte nsPayload = (byte) DefaultStoreWorker.payloadForContent(namespace);
       ContentValueObj nsValueObj = contentValue(namespace.getId(), nsPayload, namespaceValue);
-      persist.upsertObj(nsValueObj);
+      persist.storeObj(nsValueObj);
 
       ContentKey nsKey = ContentKey.of("test_namespace");
       builder.addAdds(
@@ -87,7 +87,7 @@ abstract class BaseContentPersistTest<OutputType> extends BaseContentTest<Output
 
     ContentValueObj valueObj = contentValue(contentId.toString(), payload, value);
     if (add) {
-      persist.upsertObj(valueObj);
+      persist.storeObj(valueObj);
       // Note: cannot PUT an existing value for now (missing expected value)
       builder.addAdds(commitAdd(keyToStoreKey(key), payload, valueObj.id(), null, contentId));
     } else {
