@@ -161,32 +161,6 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
-  public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
-    return delegate.storeObj(obj);
-  }
-
-  @WithSpan
-  @Override
-  @Counted(PREFIX)
-  @Timed(value = PREFIX, histogram = true)
-  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
-  }
-
-  @WithSpan
-  @Override
-  @Counted(PREFIX)
-  @Timed(value = PREFIX, histogram = true)
-  @Nonnull
-  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
-    return delegate.storeObjs(objs);
-  }
-
-  @WithSpan
-  @Override
-  @Counted(PREFIX)
-  @Timed(value = PREFIX, histogram = true)
   public void deleteObj(@Nonnull ObjId id) {
     delegate.deleteObj(id);
   }
@@ -197,6 +171,15 @@ public class ObservingPersist implements Persist {
   @Timed(value = PREFIX, histogram = true)
   public void deleteObjs(@Nonnull ObjId[] ids) {
     delegate.deleteObjs(ids);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  public void upsertObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
+    delegate.upsertObj(obj, ignoreSoftSizeRestrictions);
   }
 
   @WithSpan

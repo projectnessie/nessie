@@ -64,7 +64,6 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.M
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_STORES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.PURGE_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.SCAN_OBJS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_REFERENCE_POINTER;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
@@ -382,37 +381,17 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public boolean storeObj(
+  public void upsertObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return writeSingleObj(
+    writeSingleObj(
         obj,
         ignoreSoftSizeRestrictions,
-        (storeObj, values) -> backend.executeCas(storeObj.cql(true), values));
-  }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return persistObjs(objs, true);
-  }
-
-  @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    writeSingleObj(obj, false, (storeObj, values) -> backend.execute(storeObj.cql(false), values));
+        (storeObj, values) -> backend.executeCas(storeObj.cql(), values));
   }
 
   @Override
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    persistObjs(objs, false);
-  }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  private boolean[] persistObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs, boolean insert)
       throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
@@ -428,7 +407,7 @@ public class CassandraPersist implements Persist {
               (storeObj, values) -> {
                 CompletionStage<?> cs =
                     backend
-                        .executeAsync(storeObj.cql(insert), values)
+                        .executeAsync(storeObj.cql(), values)
                         .handle(
                             (resultSet, e) -> {
                               if (e != null) {
@@ -448,29 +427,21 @@ public class CassandraPersist implements Persist {
                             })
                         .thenAccept(x -> {});
                 requests.submitted(cs);
-                return null;
               });
         }
       }
     }
-
-    int l = results.length();
-    boolean[] array = new boolean[l];
-    for (int i = 0; i < l; i++) {
-      array[i] = results.get(i) == 1;
-    }
-    return array;
   }
 
   @FunctionalInterface
-  interface WriteSingleObj<R> {
-    R apply(StoreObjDesc<?> storeObj, Object[] values);
+  private interface WriteSingleObj {
+    void apply(StoreObjDesc<?> storeObj, Object[] values);
   }
 
-  private <R> R writeSingleObj(
+  private void writeSingleObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean ignoreSoftSizeRestrictions,
-      WriteSingleObj<R> consumer)
+      WriteSingleObj consumer)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     ObjType type = obj.type();
@@ -487,7 +458,7 @@ public class CassandraPersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit(),
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit());
 
-    return consumer.apply(storeObj, values.toArray(new Object[0]));
+    consumer.apply(storeObj, values.toArray(new Object[0]));
   }
 
   @SuppressWarnings("unchecked")
@@ -542,10 +513,7 @@ public class CassandraPersist implements Persist {
         Consumer<Object> values, O obj, int incrementalIndexLimit, int maxSerializedIndexSize)
         throws ObjTooLargeException;
 
-    String cql(boolean insert) {
-      if (insert) {
-        return insertCql + STORE_OBJ_SUFFIX;
-      }
+    String cql() {
       return insertCql;
     }
   }

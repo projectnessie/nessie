@@ -369,101 +369,11 @@ public class BigTablePersist implements Persist {
     }
   }
 
-  @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-
-    try {
-      ConditionalRowMutation conditionalRowMutation =
-          mutationForStoreObj(obj, ignoreSoftSizeRestrictions);
-
-      boolean success = backend.client().checkAndMutateRow(conditionalRowMutation);
-      return !success;
-    } catch (ApiException e) {
-      throw apiException(e);
-    }
-  }
-
   private static final ByteString[] OBJ_TYPE_VALUES =
       Arrays.stream(ObjType.values())
           .map(Enum::name)
           .map(ByteString::copyFromUtf8)
           .toArray(ByteString[]::new);
-
-  @NotNull
-  private ConditionalRowMutation mutationForStoreObj(
-      @NotNull Obj obj, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
-    checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
-    ByteString key = dbKey(obj.id());
-
-    int incrementalIndexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-    int indexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit);
-
-    ByteString ref = unsafeWrap(serialized);
-
-    Mutation mutation =
-        Mutation.create()
-            .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, ref)
-            .setCell(
-                FAMILY_OBJS,
-                QUALIFIER_OBJ_TYPE,
-                CELL_TIMESTAMP,
-                OBJ_TYPE_VALUES[obj.type().ordinal()]);
-    Filter condition =
-        FILTERS
-            .chain()
-            .filter(FILTERS.key().exactMatch(key))
-            .filter(FILTERS.family().exactMatch(FAMILY_OBJS))
-            .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJS));
-    return ConditionalRowMutation.create(backend.tableObjs, key)
-        .condition(condition)
-        .otherwise(mutation);
-  }
-
-  @Override
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    if (objs.length == 0) {
-      return new boolean[0];
-    }
-
-    if (objs.length == 1) {
-      Obj obj = objs[0];
-      boolean r = obj != null && storeObj(obj);
-      return new boolean[] {r};
-    }
-
-    @SuppressWarnings("unchecked")
-    ApiFuture<Boolean>[] futures = new ApiFuture[objs.length];
-    int idx = 0;
-    for (int i = 0; i < objs.length; i++) {
-      Obj obj = objs[i];
-      if (obj != null) {
-        ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
-        futures[idx] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
-      }
-      idx++;
-    }
-
-    boolean[] r = new boolean[objs.length];
-    for (int i = 0; i < objs.length; i++) {
-      Obj o = objs[i];
-      if (o != null) {
-        try {
-          r[i] = !futures[i].get();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }
-    }
-    return r;
-  }
 
   @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
@@ -497,23 +407,33 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
     try {
       ByteString key = dbKey(id);
 
+      int incrementalIndexSizeLimit =
+          ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
+      int indexSizeLimit =
+          ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
+
       ByteString serialized =
-          unsafeWrap(
-              serializeObj(
-                  obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit()));
+          unsafeWrap(serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit));
 
       backend
           .client()
           .mutateRow(
               RowMutation.create(backend.tableObjs, key)
-                  .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
+                  .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized)
+                  .setCell(
+                      FAMILY_OBJS,
+                      QUALIFIER_OBJ_TYPE,
+                      CELL_TIMESTAMP,
+                      OBJ_TYPE_VALUES[obj.type().ordinal()]));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -526,9 +446,19 @@ public class BigTablePersist implements Persist {
       return;
     }
 
+    if (objs.length == 1) {
+      if (objs[0] != null) {
+        upsertObj(objs[0]);
+      }
+      return;
+    }
+
     try (Batcher<RowMutationEntry, Void> batcher =
         backend.client().newBulkMutationBatcher(backend.tableObjs)) {
       for (Obj obj : objs) {
+        if (obj == null) {
+          continue;
+        }
         ObjId id = obj.id();
         checkArgument(id != null, "Obj to store must have a non-null ID");
 
@@ -541,7 +471,12 @@ public class BigTablePersist implements Persist {
 
         batcher.add(
             RowMutationEntry.create(key)
-                .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
+                .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized)
+                .setCell(
+                    FAMILY_OBJS,
+                    QUALIFIER_OBJ_TYPE,
+                    CELL_TIMESTAMP,
+                    OBJ_TYPE_VALUES[obj.type().ordinal()]));
       }
     } catch (ApiException e) {
       throw apiException(e);

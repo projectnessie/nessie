@@ -67,20 +67,17 @@ public class AbstractBackendRepositoryTests {
     soft.assertThat(repositoryLogic.repositoryExists()).isTrue();
 
     int objs = 250;
-    soft.assertThat(
-            repo1.storeObjs(
-                IntStream.range(0, objs)
-                    .mapToObj(
-                        x ->
-                            stringData(
-                                "content-type",
-                                Compression.NONE,
-                                "file-" + x,
-                                Collections.emptyList(),
-                                ByteString.copyFromUtf8("text-" + x)))
-                    .toArray(Obj[]::new)))
-        .hasSize(objs)
-        .doesNotContain(false);
+    repo1.upsertObjs(
+        IntStream.range(0, objs)
+            .mapToObj(
+                x ->
+                    stringData(
+                        "content-type",
+                        Compression.NONE,
+                        "file-" + x,
+                        Collections.emptyList(),
+                        ByteString.copyFromUtf8("text-" + x)))
+            .toArray(Obj[]::new));
     try (CloseableIterator<Obj> scan = repo1.scanAllObjects(EnumSet.allOf(ObjType.class))) {
       soft.assertThat(scan)
           .toIterable()
@@ -142,7 +139,7 @@ public class AbstractBackendRepositoryTests {
                 ByteString.copyFromUtf8("text-" + i));
         objects[i] = stringObj;
       }
-      repo.storeObjs(objects);
+      repo.upsertObjs(objects);
     }
     soft.assertThat(repos).allMatch(r -> repositoryLogic(r).repositoryExists());
     List<Persist> toDelete = repos.subList(0, 5);

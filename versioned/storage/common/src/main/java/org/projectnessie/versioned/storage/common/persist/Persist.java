@@ -218,63 +218,6 @@ public interface Persist {
   @jakarta.annotation.Nonnull
   Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) throws ObjNotFoundException;
 
-  /**
-   * Stores the given object as a new record.
-   *
-   * <p>This is a very low level persist operation. Prefer the persist operations on the various
-   * logic interfaces to ensure a stable and deterministic ID generation.
-   *
-   * @param obj the object to store
-   * @return {@code true}, if the object was stored as a new record or {@code false} if an object
-   *     with the same ID already exists.
-   * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
-   *     "soft" size restriction in {@link #config()}
-   * @see #storeObjs(Obj[])
-   */
-  default boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException {
-    return storeObj(obj, false);
-  }
-
-  /**
-   * Stores the given object as a new record, variant of {@link #storeObj(Obj)} that explicitly
-   * allows ignoring soft object/attribute size restrictions.
-   *
-   * <p>This is a very low level persist operation. Prefer the persist operations on the various
-   * logic interfaces to ensure a stable and deterministic ID generation.
-   *
-   * @param obj the object to store
-   * @param ignoreSoftSizeRestrictions whether to explicitly ignore soft size restrictions, use
-   *     {@code false}, if in doubt
-   * @return {@code true}, if the object was stored as a new record or {@code false} if an object
-   *     with the same ID already exists.
-   * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or,
-   *     if {@code ignoreSoftSizeRestrictions} is {@code false}, a "soft" size restriction in {@link
-   *     #config()}
-   * @see #storeObjs(Obj[])
-   */
-  boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException;
-
-  /**
-   * Like {@link #storeObj(Obj)}, but stores multiple objects at once.
-   *
-   * <p>Providing the same ID multiple times via the {@code objs} to store is not supported.
-   * Implementations may or may not fail, the behavior is undefined in this case.
-   *
-   * <p>In case an object failed to be stored, it is undefined whether other objects have been
-   * stored or not.
-   *
-   * @return an array with {@code boolean}s indicating whether the corresponding objects were
-   *     created ({@code true}) or already present ({@code false}), see {@link #storeObj(Obj)}
-   * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
-   *     "soft" size restriction in {@link #config()}
-   * @see #storeObj(Obj)
-   */
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;
-
   void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id);
 
   /**
@@ -288,16 +231,28 @@ public interface Persist {
   /**
    * Updates an existing object or inserts it as a new object.
    *
+   * @param obj the object to store
    * @see #upsertObjs (Obj[])
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit
    */
-  void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException;
-
-  default void upsertObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    upsertObj(obj);
+  default void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+    upsertObj(obj, false);
   }
+
+  /**
+   * Updates an existing object. Variant of {@link #upsertObj(Obj)} that explicitly allows ignoring
+   * soft object/attribute size restrictions.
+   *
+   * @param obj the object to store
+   * @param ignoreSoftSizeRestrictions whether to explicitly ignore soft size restrictions, use
+   *     {@code false}, if in doubt
+   * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or,
+   *     if {@code ignoreSoftSizeRestrictions} is {@code false}, a "soft" size restriction in {@link
+   *     #config()}
+   * @see #upsertObjs(Obj[])
+   */
+  void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException;
 
   /**
    * Updates existing objects or inserts those as new objects.

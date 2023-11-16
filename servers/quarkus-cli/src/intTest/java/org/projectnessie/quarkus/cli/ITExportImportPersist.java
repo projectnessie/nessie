@@ -365,7 +365,7 @@ public class ITExportImportPersist {
     ContentValueObj valueMain = contentValue(contentIdStr, payload, contentMain);
     ContentValueObj valueFoo = contentValue(contentIdStr, payload, contentFoo);
 
-    soft.assertThat(persist.storeObj(valueMain)).isTrue();
+    persist.upsertObj(valueMain);
     StoreKey key = keyToStoreKey(ContentKey.of("namespace123", "table123"));
     CommitObj main =
         commitLogic.doCommit(
@@ -380,7 +380,7 @@ public class ITExportImportPersist {
 
     Reference refFoo =
         referenceLogic.createReference("refs/heads/branch-foo", main.id(), randomObjId());
-    soft.assertThat(persist.storeObj(valueFoo)).isTrue();
+    persist.upsertObj(valueFoo);
     CommitObj foo =
         commitLogic.doCommit(
             newCommitBuilder()
@@ -415,7 +415,7 @@ public class ITExportImportPersist {
     ContentValueObj valueMain = contentValue(contentIdStr, payload, contentMain);
     ContentValueObj valueTemp = contentValue(contentIdStr, payload, contentTemp);
 
-    soft.assertThat(persist.storeObj(valueTemp)).isTrue();
+    persist.upsertObj(valueTemp);
 
     StoreKey key = keyToStoreKey(ContentKey.of("namespace123", "table123"));
 

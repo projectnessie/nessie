@@ -224,19 +224,16 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public boolean storeObj(
+  public void upsertObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return withConnectionException(
-        false, conn -> super.storeObj(conn, obj, ignoreSoftSizeRestrictions));
+    withConnectionException(false, conn -> super.upsertObj(conn, obj, ignoreSoftSizeRestrictions));
   }
 
   @Override
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    return withConnectionException(false, conn -> super.storeObjs(conn, objs));
+    withConnectionException(false, conn -> super.upsertObjs(conn, objs, false));
   }
 
   @Override
@@ -247,17 +244,6 @@ class JdbcPersist extends AbstractJdbcPersist {
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
     withConnectionVoid(conn -> super.deleteObjs(conn, ids));
-  }
-
-  @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    withConnectionException(false, conn -> super.updateObj(conn, obj));
-  }
-
-  @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    withConnectionException(false, conn -> super.updateObjs(conn, objs));
   }
 
   @Override

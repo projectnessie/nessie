@@ -485,54 +485,27 @@ abstract class AbstractJdbcPersist implements Persist {
     return objDesc.deserialize(rs, id);
   }
 
-  protected final boolean storeObj(
+  protected final boolean upsertObj(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions, true)[0];
-  }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  protected final boolean[] storeObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return upsertObjs(conn, objs, false, true);
-  }
-
-  protected final Void updateObj(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException {
-    updateObjs(conn, new Obj[] {obj});
-    return null;
-  }
-
-  protected final Void updateObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    upsertObjs(conn, objs, false, false);
-    return null;
+    return upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions)[0];
   }
 
   @SuppressWarnings("unchecked")
   @Nonnull
   @jakarta.annotation.Nonnull
-  private boolean[] upsertObjs(
+  protected final boolean[] upsertObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
-      boolean ignoreSoftSizeRestrictions,
-      boolean insert)
+      boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    if (!insert) {
-      // Sadly an INSERT INTO ... ON CONFLICT DO UPDATE SET ... does not work with parameters in the
-      // UPDATE SET clause. Since the JDBC connection is configured with auto-commit=false, we can
-      // just DELETE the updates to be upserted and INSERT them again.
-      deleteObjs(conn, stream(objs).map(Obj::id).toArray(ObjId[]::new));
-    }
+
+    // Sadly an INSERT INTO ... ON CONFLICT DO UPDATE SET ... does not work with parameters in the
+    // UPDATE SET clause. Since the JDBC connection is configured with auto-commit=false, we can
+    // just DELETE the updates to be upserted and INSERT them again.
+    deleteObjs(conn, stream(objs).map(Obj::id).toArray(ObjId[]::new));
 
     try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(STORE_OBJ))) {
       boolean[] r = new boolean[objs.length];

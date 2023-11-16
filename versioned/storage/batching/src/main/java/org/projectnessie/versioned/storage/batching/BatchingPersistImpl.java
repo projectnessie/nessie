@@ -20,7 +20,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +42,6 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   private final WriteBatching batching;
 
   private final Map<ObjId, Obj> pendingUpserts = new HashMap<>();
-  private final Map<ObjId, Obj> pendingStores = new HashMap<>();
 
   private final ReentrantReadWriteLock lock;
 
@@ -58,20 +56,11 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     return pendingUpserts;
   }
 
-  @VisibleForTesting
-  Map<ObjId, Obj> pendingStores() {
-    return pendingStores;
-  }
-
   @Override
   public void flush() {
     if (batching.batchSize() > 0) {
       writeLock();
       try {
-        if (!pendingStores.isEmpty()) {
-          delegate().storeObjs(pendingStores.values().toArray(new Obj[0]));
-          pendingStores.clear();
-        }
         if (!pendingUpserts.isEmpty()) {
           delegate().upsertObjs(pendingUpserts.values().toArray(new Obj[0]));
           pendingUpserts.clear();
@@ -106,15 +95,14 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   private void maybeFlush() {
     if (batching.batchSize() > 0) {
-      if (pendingStores.size() > batching.batchSize()
-          || pendingUpserts.size() > batching.batchSize()) {
+      if (pendingUpserts.size() > batching.batchSize()) {
         flush();
       }
     }
   }
 
   @Override
-  public boolean storeObj(
+  public void upsertObj(
       @Nonnull @javax.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     if (!ignoreSoftSizeRestrictions) {
@@ -122,44 +110,11 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     }
     writeLock();
     try {
-      pendingStores.putIfAbsent(obj.id(), obj);
-      maybeFlush();
-    } finally {
-      writeUnlock();
-    }
-    return true;
-  }
-
-  @Override
-  public void upsertObj(@Nonnull @javax.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    verifySoftRestrictions(obj);
-    writeLock();
-    try {
       pendingUpserts.put(obj.id(), obj);
       maybeFlush();
     } finally {
       writeUnlock();
     }
-  }
-
-  @Override
-  @Nonnull
-  @javax.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    writeLock();
-    try {
-      for (Obj obj : objs) {
-        if (obj != null) {
-          storeObj(obj);
-        }
-      }
-    } finally {
-      writeUnlock();
-    }
-    boolean[] r = new boolean[objs.length];
-    Arrays.fill(r, true);
-    return r;
   }
 
   @Override
@@ -195,11 +150,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   private Obj pendingObj(ObjId id) {
-    Obj r = pendingUpserts.get(id);
-    if (r == null) {
-      r = pendingStores.get(id);
-    }
-    return r;
+    return pendingUpserts.get(id);
   }
 
   @Override
@@ -291,7 +242,6 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     writeLock();
     try {
       delegate().deleteObj(id);
-      pendingStores.remove(id);
       pendingUpserts.remove(id);
     } finally {
       writeUnlock();
@@ -316,7 +266,6 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   public void erase() {
     writeLock();
     try {
-      pendingStores.clear();
       pendingUpserts.clear();
       delegate().erase();
     } finally {

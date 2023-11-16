@@ -83,7 +83,6 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_VALUE_CONTENT_ID;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_VALUE_DATA;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_VALUE_PAYLOAD;
-import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CONDITION_STORE_OBJ;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CONDITION_STORE_REF;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.ITEM_SIZE_LIMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.KEY_NAME;
@@ -485,53 +484,6 @@ public class DynamoDBPersist implements Persist {
             });
   }
 
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
-    boolean[] r = new boolean[objs.length];
-    for (int i = 0; i < objs.length; i++) {
-      Obj o = objs[i];
-      if (o != null) {
-        r[i] = storeObj(o);
-      }
-    }
-    return r;
-  }
-
-  @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    ObjId id = obj.id();
-    checkArgument(id != null, "Obj to store must have a non-null ID");
-
-    Map<String, AttributeValue> item = objToItem(obj, id, ignoreSoftSizeRestrictions);
-
-    try {
-      backend
-          .client()
-          .putItem(
-              b ->
-                  b.tableName(backend.tableObjs)
-                      .conditionExpression(CONDITION_STORE_OBJ)
-                      .item(item));
-    } catch (ConditionalCheckFailedException e) {
-      return false;
-    } catch (DynamoDbException e) {
-      // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
-      AwsErrorDetails errorDetails = e.awsErrorDetails();
-      if (checkItemSizeExceeded(errorDetails)) {
-        throw new ObjTooLargeException();
-      }
-      throw e;
-    }
-
-    return true;
-  }
-
   @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
     backend.client().deleteItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
@@ -547,38 +499,47 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Map<String, AttributeValue> item = objToItem(obj, id, false);
+    Map<String, AttributeValue> item = objToItem(obj, id, ignoreSoftSizeRestrictions);
 
     try {
       backend.client().putItem(b -> b.tableName(backend.tableObjs).item(item));
     } catch (DynamoDbException e) {
-      // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
-      AwsErrorDetails errorDetails = e.awsErrorDetails();
-      if (checkItemSizeExceeded(errorDetails)) {
-        throw new ObjTooLargeException();
-      }
-      throw e;
+      checkAndRethrow(e);
     }
   }
 
   @Override
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (Obj obj : objs) {
-        ObjId id = obj.id();
-        checkArgument(id != null, "Obj to store must have a non-null ID");
+        if (obj != null) {
+          ObjId id = obj.id();
+          checkArgument(id != null, "Obj to store must have a non-null ID");
 
-        Map<String, AttributeValue> item = objToItem(obj, id, false);
+          Map<String, AttributeValue> item = objToItem(obj, id, false);
 
-        batchWrite.addPut(item);
+          batchWrite.addPut(item);
+        }
       }
+    } catch (DynamoDbException e) {
+      checkAndRethrow(e);
     }
+  }
+
+  private static void checkAndRethrow(DynamoDbException e) throws ObjTooLargeException {
+    // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
+    AwsErrorDetails errorDetails = e.awsErrorDetails();
+    if (checkItemSizeExceeded(errorDetails)) {
+      throw new ObjTooLargeException();
+    }
+    throw e;
   }
 
   @Nonnull

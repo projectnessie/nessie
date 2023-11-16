@@ -51,7 +51,6 @@ final class CassandraConstants {
           + ", "
           + COL_OBJ_TYPE
           + ", ";
-  static final String STORE_OBJ_SUFFIX = " IF NOT EXISTS";
   static final String INSERT_OBJ_STRING =
       INSERT_OBJ_PREFIX + COLS_STRING + ") VALUES (?,?,?, ?,?,?,?,?)";
   static final String INSERT_OBJ_TAG = INSERT_OBJ_PREFIX + COLS_TAG + ") VALUES (?,?,?, ?,?,?)";

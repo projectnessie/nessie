@@ -143,27 +143,6 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
-  public boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException {
-    return delegate.storeObj(obj);
-  }
-
-  @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
-  }
-
-  @Override
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return delegate.storeObjs(objs);
-  }
-
-  @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
     delegate.deleteObj(id);
   }
@@ -176,6 +155,13 @@ public class PersistDelegate implements Persist {
   @Override
   public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
     delegate.upsertObj(obj);
+  }
+
+  @Override
+  public void upsertObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
+    delegate.upsertObj(obj, ignoreSoftSizeRestrictions);
   }
 
   @Override

@@ -46,7 +46,6 @@ final class DynamoDBConstants {
   static final String COL_STRING = "s";
 
   static final String CONDITION_STORE_REF = "attribute_not_exists(" + COL_REFERENCES_POINTER + ")";
-  static final String CONDITION_STORE_OBJ = "attribute_not_exists(" + COL_OBJ_TYPE + ")";
 
   static final String COL_COMMIT_CREATED = "c";
   static final String COL_COMMIT_SEQ = "q";

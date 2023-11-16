@@ -92,14 +92,10 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.d
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.google.common.collect.AbstractIterator;
-import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoWriteException;
-import com.mongodb.bulk.BulkWriteError;
-import com.mongodb.bulk.BulkWriteInsert;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
@@ -512,69 +508,6 @@ public class MongoDBPersist implements Persist {
     }
   }
 
-  @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    Document doc = objToDoc(obj, ignoreSoftSizeRestrictions);
-    try {
-      backend.objs().insertOne(doc);
-    } catch (MongoWriteException e) {
-      if (e.getError().getCategory() == DUPLICATE_KEY) {
-        return false;
-      }
-      throw e;
-    }
-
-    return true;
-  }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
-    for (Obj obj : objs) {
-      if (obj != null) {
-        docs.add(new InsertOneModel<>(objToDoc(obj, false)));
-      }
-    }
-
-    boolean[] r = new boolean[objs.length];
-
-    List<WriteModel<Document>> inserts = new ArrayList<>(docs);
-    while (!inserts.isEmpty()) {
-      try {
-        BulkWriteResult res = backend.objs().bulkWrite(inserts);
-        for (BulkWriteInsert insert : res.getInserts()) {
-          ObjId id = objIdFromBulkWriteInsert(insert);
-          r[objIdIndex(objs, id)] = id != null;
-        }
-        break;
-      } catch (MongoBulkWriteException e) {
-        // Handle "insert of already existing objects".
-        //
-        // MongoDB returns a BulkWriteResult of what _would_ have succeeded. Use that information
-        // to retry the bulk write to make progress.
-        List<BulkWriteError> errs = e.getWriteErrors();
-        for (BulkWriteError err : errs) {
-          if (err.getCategory() != DUPLICATE_KEY) {
-            throw e;
-          }
-        }
-        BulkWriteResult res = e.getWriteResult();
-        inserts.clear();
-        res.getInserts().stream()
-            .map(MongoDBPersist::objIdFromBulkWriteInsert)
-            .mapToInt(id -> objIdIndex(objs, id))
-            .mapToObj(docs::get)
-            .forEach(inserts::add);
-      }
-    }
-    return r;
-  }
-
   private static ObjId objIdFromDoc(Document doc) {
     return binaryToObjId(doc.get(ID_PROPERTY_NAME, Document.class).get(COL_OBJ_ID, Binary.class));
   }
@@ -599,19 +532,6 @@ public class MongoDBPersist implements Persist {
     return storeObj;
   }
 
-  private static int objIdIndex(Obj[] objs, ObjId id) {
-    for (int i = 0; i < objs.length; i++) {
-      if (id.equals(objs[i].id())) {
-        return i;
-      }
-    }
-    throw new IllegalArgumentException("ObjId " + id + " not in objs");
-  }
-
-  private static ObjId objIdFromBulkWriteInsert(BulkWriteInsert insert) {
-    return ObjId.objIdFromByteArray(insert.getId().asDocument().getBinary(COL_OBJ_ID).getData());
-  }
-
   @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
     backend.objs().deleteOne(eq(ID_PROPERTY_NAME, idObjDoc(id)));
@@ -628,13 +548,15 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
     ReplaceOptions options = upsertOptions();
 
-    Document doc = objToDoc(obj, false);
+    Document doc = objToDoc(obj, ignoreSoftSizeRestrictions);
     UpdateResult result =
         backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc, options);
     if (!result.wasAcknowledged()) {
