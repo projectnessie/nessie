@@ -295,22 +295,18 @@ final class CommitLogicImpl implements CommitLogic {
   public boolean storeCommit(
       @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects) {
-    int numAdditional = additionalObjects.size();
-    try {
-      Obj[] allObjs = additionalObjects.toArray(new Obj[numAdditional + 1]);
-      allObjs[numAdditional] = commit;
 
-      boolean[] stored = persist.storeObjs(allObjs);
-      return stored[numAdditional];
+    try {
+      persist.upsertObjs(additionalObjects.toArray(new Obj[0]));
+    } catch (ObjTooLargeException ex) {
+      throw new RuntimeException(ex);
+    }
+
+    try {
+      return persist.storeObj(commit);
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
       // the reference index.
-
-      try {
-        persist.storeObjs(additionalObjects.toArray(new Obj[numAdditional]));
-      } catch (ObjTooLargeException ex) {
-        throw new RuntimeException(ex);
-      }
 
       commit = indexTooBigStoreUpdate(commit);
 

@@ -397,7 +397,7 @@ final class IndexesLogicImpl implements IndexesLogic {
     IndexSegmentsObj referenceIndex = indexSegments(indexStripes);
     toStore.add(referenceIndex);
 
-    persist.storeObjs(toStore.toArray(new Obj[0]));
+    persist.upsertObjs(toStore.toArray(new Obj[0]));
 
     return requireNonNull(referenceIndex.id());
   }
@@ -411,7 +411,7 @@ final class IndexesLogicImpl implements IndexesLogic {
     List<StoreIndex<CommitOp>> stripes = stripedIndex.stripes();
     List<Obj> toStore = new ArrayList<>();
     List<IndexStripe> indexStripes = buildIndexStripes(stripes, toStore);
-    persist.storeObjs(toStore.toArray(new Obj[0]));
+    persist.upsertObjs(toStore.toArray(new Obj[0]));
     return indexStripes;
   }
 
@@ -446,7 +446,7 @@ final class IndexesLogicImpl implements IndexesLogic {
           indexSegment.getObjId(), "Loaded index segment does not contain its ObjId");
     }
     IndexObj segment = index(indexSegment.serialize());
-    persist.storeObj(segment);
+    persist.upsertObj(segment);
     return segment.id();
   }
 

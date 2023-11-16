@@ -484,7 +484,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
             RefObj ref = ref(name, pointer, refCreatedTimestamp, extendedInfoObj);
             try {
-              p.storeObj(ref);
+              p.upsertObj(ref);
             } catch (ObjTooLargeException e) {
               throw new RuntimeException(e);
             }
