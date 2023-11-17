@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import org.apache.iceberg.exceptions.ValidationException;
 
 /** Metadata for versioning a view. */
@@ -31,10 +32,17 @@ public class ViewVersionMetadata {
       BaseVersion version,
       String location,
       ViewDefinition definition,
-      Map<String, String> properties) {
+      Map<String, String> properties,
+      @Nullable String metadataFileLocation) {
 
     return new ViewVersionMetadata(
-        version, location, definition, properties, ImmutableList.of(), ImmutableList.of());
+        version,
+        location,
+        definition,
+        properties,
+        ImmutableList.of(),
+        ImmutableList.of(),
+        metadataFileLocation);
   }
 
   public static ViewVersionMetadata newViewVersionMetadata(
@@ -43,9 +51,11 @@ public class ViewVersionMetadata {
       ViewDefinition definition,
       Map<String, String> properties,
       List<Version> versions,
-      List<HistoryEntry> history) {
+      List<HistoryEntry> history,
+      @Nullable String metadataFileLocation) {
 
-    return new ViewVersionMetadata(version, location, definition, properties, versions, history);
+    return new ViewVersionMetadata(
+        version, location, definition, properties, versions, history, metadataFileLocation);
   }
 
   public static ViewVersionMetadata newViewVersionMetadata(
@@ -53,14 +63,16 @@ public class ViewVersionMetadata {
       String location,
       ViewDefinition definition,
       ViewVersionMetadata viewVersionMetadata,
-      Map<String, String> properties) {
+      Map<String, String> properties,
+      @Nullable String metadataFileLocation) {
     return new ViewVersionMetadata(
         version,
         location,
         definition,
         properties,
         viewVersionMetadata.versions(),
-        viewVersionMetadata.history());
+        viewVersionMetadata.history(),
+        metadataFileLocation);
   }
 
   // stored metadata
@@ -71,6 +83,7 @@ public class ViewVersionMetadata {
   private final Map<Integer, Version> versionsById;
   private List<HistoryEntry> versionLog;
   private final ViewDefinition definition;
+  private final @Nullable String metadataFileLocation;
 
   // Creates a new view version metadata by simply assigning variables
   public ViewVersionMetadata(
@@ -79,7 +92,8 @@ public class ViewVersionMetadata {
       Map<String, String> properties,
       int currentVersionId,
       List<Version> versions,
-      List<HistoryEntry> versionLog) {
+      List<HistoryEntry> versionLog,
+      @Nullable String metadataFileLocation) {
     this.location = location;
     this.definition = definition;
     this.properties = properties;
@@ -89,6 +103,7 @@ public class ViewVersionMetadata {
     this.versions = versions;
     this.versionLog = versionLog;
     this.versionsById = indexVersions(versions);
+    this.metadataFileLocation = metadataFileLocation;
 
     HistoryEntry last = null;
     for (HistoryEntry logEntry : versionLog) {
@@ -108,7 +123,8 @@ public class ViewVersionMetadata {
       ViewDefinition definition,
       Map<String, String> properties,
       List<Version> versions,
-      List<HistoryEntry> versionLog) {
+      List<HistoryEntry> versionLog,
+      @Nullable String metadataFileLocation) {
     this.location = location;
     this.definition = definition;
     this.properties = properties;
@@ -118,6 +134,7 @@ public class ViewVersionMetadata {
     allVersions.add(version);
     List<HistoryEntry> allHistory = new ArrayList<>(versionLog);
     allHistory.add(new VersionLogEntry(version.timestampMillis(), currentVersionId));
+    this.metadataFileLocation = metadataFileLocation;
 
     int numVersionsToKeep =
         propertyAsInt(
@@ -206,6 +223,12 @@ public class ViewVersionMetadata {
     ValidationException.check(newProperties != null, "Cannot set properties to null");
 
     return new ViewVersionMetadata(
-        location, definition, newProperties, currentVersionId, versions, versionLog);
+        location,
+        definition,
+        newProperties,
+        currentVersionId,
+        versions,
+        versionLog,
+        metadataFileLocation);
   }
 }

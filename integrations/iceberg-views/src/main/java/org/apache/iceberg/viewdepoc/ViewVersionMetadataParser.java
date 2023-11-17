@@ -72,6 +72,14 @@ public class ViewVersionMetadataParser {
     }
   }
 
+  public static String toJson(ViewVersionMetadata metadata) {
+    return toJson(metadata, false);
+  }
+
+  public static String toJson(ViewVersionMetadata metadata, boolean pretty) {
+    return JsonUtil.generate(gen -> toJson(metadata, gen), pretty);
+  }
+
   public static void toJson(ViewVersionMetadata metadata, JsonGenerator generator)
       throws IOException {
     generator.writeStartObject();
@@ -105,13 +113,26 @@ public class ViewVersionMetadataParser {
 
   public static ViewVersionMetadata read(InputFile file) {
     try (InputStream is = file.newStream()) {
-      return fromJson(file, JsonUtil.mapper().readValue(is, JsonNode.class));
+      return fromJson(null, JsonUtil.mapper().readValue(is, JsonNode.class));
     } catch (IOException e) {
       throw new RuntimeIOException(e, "Failed to read file: %s", file);
     }
   }
 
-  static ViewVersionMetadata fromJson(InputFile file, JsonNode node) {
+  public static ViewVersionMetadata fromJson(String metadataLocation, String json) {
+    return JsonUtil.parse(json, node -> ViewVersionMetadataParser.fromJson(metadataLocation, node));
+  }
+
+  public static ViewVersionMetadata fromJson(String json) {
+    Preconditions.checkArgument(json != null, "Cannot parse view metadata from null string");
+    return JsonUtil.parse(json, ViewVersionMetadataParser::fromJson);
+  }
+
+  public static ViewVersionMetadata fromJson(JsonNode json) {
+    return fromJson(null, json);
+  }
+
+  public static ViewVersionMetadata fromJson(String metadataLocation, JsonNode node) {
     Preconditions.checkArgument(
         node.isObject(), "Cannot parse metadata from a non-object: %s", node);
 
@@ -164,6 +185,7 @@ public class ViewVersionMetadataParser {
         properties,
         currentVersionId,
         versions,
-        ImmutableList.copyOf(entries.iterator()));
+        ImmutableList.copyOf(entries.iterator()),
+        metadataLocation);
   }
 }

@@ -169,7 +169,7 @@ public class ViewUtils {
     if (prevViewVersionMetadata == null) {
       viewVersionMetadata =
           ViewVersionMetadata.newViewVersionMetadata(
-              version, location, definitionWithComments, viewVersionMetadataProperties);
+              version, location, definitionWithComments, viewVersionMetadataProperties, null);
     } else {
       viewVersionMetadata =
           ViewVersionMetadata.newViewVersionMetadata(
@@ -177,7 +177,8 @@ public class ViewUtils {
               location,
               definitionWithComments,
               prevViewVersionMetadata,
-              viewVersionMetadataProperties);
+              viewVersionMetadataProperties,
+              null);
     }
 
     ops.commit(prevViewVersionMetadata, viewVersionMetadata, metacatProps);

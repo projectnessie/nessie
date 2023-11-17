@@ -135,7 +135,8 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
               v.viewDefinition(),
               metadata.properties(),
               versions,
-              history);
+              history,
+              metadataLocation);
     }
 
     return metadata;

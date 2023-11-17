@@ -93,7 +93,7 @@ public class CommentUpdate implements UpdateComment {
             viewDefinition);
     ViewVersionMetadata update =
         ViewVersionMetadata.newViewVersionMetadata(
-            version, base.location(), viewDefinition, base, base.properties());
+            version, base.location(), viewDefinition, base, base.properties(), null);
     ops.commit(base, update, new HashMap<>());
   }
 
