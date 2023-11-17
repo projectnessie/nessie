@@ -66,6 +66,7 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -969,6 +970,34 @@ public class AbstractBasePersistTests {
     }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(TAG, INDEX))) {
       soft.assertThat(Lists.newArrayList(scan)).isEmpty();
+    }
+  }
+
+  /**
+   * Make sure that objects <em>inserted</em> with {@link Persist#upsertObj(Obj)} and {@link
+   * Persist#upsertObjs(Obj[])} can be retrieved with {@link Persist#fetchObjs(ObjId[])} and {@link
+   * Persist#scanAllObjects(Set)}.
+   */
+  @Test
+  public void createObjectsWithUpsertThenFetchAndScan() throws Exception {
+    Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
+
+    persist.erase();
+
+    persist.upsertObj(objs[0]);
+    persist.upsertObjs(stream(objs).skip(1).toArray(Obj[]::new));
+
+    soft.assertThat(persist.fetchObj(objs[0].id())).isEqualTo(objs[0]);
+
+    soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
+        .containsExactly(objs);
+
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(objs);
+    }
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(COMMIT))) {
+      Obj[] expected = stream(objs).filter(c -> c.type() == COMMIT).toArray(Obj[]::new);
+      soft.assertThat(newArrayList(scan)).containsExactlyInAnyOrder(expected);
     }
   }
 
