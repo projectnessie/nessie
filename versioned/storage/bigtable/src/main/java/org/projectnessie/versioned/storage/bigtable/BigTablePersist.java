@@ -513,7 +513,12 @@ public class BigTablePersist implements Persist {
           .client()
           .mutateRow(
               RowMutation.create(backend.tableObjs, key)
-                  .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
+                  .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized)
+                  .setCell(
+                      FAMILY_OBJS,
+                      QUALIFIER_OBJ_TYPE,
+                      CELL_TIMESTAMP,
+                      OBJ_TYPE_VALUES[obj.type().ordinal()]));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -541,7 +546,12 @@ public class BigTablePersist implements Persist {
 
         batcher.add(
             RowMutationEntry.create(key)
-                .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized));
+                .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, serialized)
+                .setCell(
+                    FAMILY_OBJS,
+                    QUALIFIER_OBJ_TYPE,
+                    CELL_TIMESTAMP,
+                    OBJ_TYPE_VALUES[obj.type().ordinal()]));
       }
     } catch (ApiException e) {
       throw apiException(e);
