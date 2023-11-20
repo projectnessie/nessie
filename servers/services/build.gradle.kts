@@ -30,8 +30,7 @@ dependencies {
   implementation(libs.slf4j.api)
 
   implementation(platform(libs.cel.bom))
-  implementation("org.projectnessie.cel:cel-tools")
-  implementation("org.projectnessie.cel:cel-jackson")
+  implementation("org.projectnessie.cel:cel-standalone")
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)

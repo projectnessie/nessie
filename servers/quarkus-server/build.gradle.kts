@@ -72,8 +72,7 @@ dependencies {
   implementation("io.micrometer:micrometer-registry-prometheus")
 
   implementation(platform(libs.cel.bom))
-  implementation("org.projectnessie.cel:cel-tools")
-  implementation("org.projectnessie.cel:cel-jackson")
+  implementation("org.projectnessie.cel:cel-standalone")
 
   if (project.hasProperty("k8s")) {
     /*
