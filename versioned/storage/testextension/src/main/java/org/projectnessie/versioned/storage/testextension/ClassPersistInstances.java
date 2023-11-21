@@ -52,8 +52,8 @@ final class ClassPersistInstances {
     NessiePersistCache nessiePersistCache =
         PersistExtension.annotationInstance(context, NessiePersistCache.class);
     cacheBackend =
-        nessiePersistCache != null
-            ? PersistCaches.newBackend(nessiePersistCache.capacity(), null)
+        nessiePersistCache != null && nessiePersistCache.capacityMb() >= 0
+            ? PersistCaches.newBackend(nessiePersistCache.capacityMb(), null)
             : null;
 
     backendTestFactory = reusableTestBackend.backendTestFactory(context);

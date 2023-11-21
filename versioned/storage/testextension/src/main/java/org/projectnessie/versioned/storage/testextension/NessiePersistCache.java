@@ -23,12 +23,14 @@ import java.lang.annotation.Target;
 
 /**
  * Adds a cache in front of the created {@link
- * org.projectnessie.versioned.storage.common.persist.Persist} instances, if the {@link #capacity()}
- * is {@code >= 0}.
+ * org.projectnessie.versioned.storage.common.persist.Persist} instances, if the {@link
+ * #capacityMb()} is {@code >= 0}.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface NessiePersistCache {
-  long capacity() default 1024 * 1024;
+
+  /** The maximum capacity of the cache in MB. Default is 1 MB. */
+  long capacityMb() default 1;
 }
