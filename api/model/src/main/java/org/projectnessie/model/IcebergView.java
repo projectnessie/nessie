@@ -49,6 +49,8 @@ public abstract class IcebergView extends IcebergContent {
 
   public abstract int getSchemaId();
 
+  @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @Value.Default
   public String getSqlText() {
     return "default sql text";
