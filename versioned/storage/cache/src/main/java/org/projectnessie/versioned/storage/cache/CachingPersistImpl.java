@@ -48,14 +48,9 @@ class CachingPersistImpl implements Persist {
     if (o != null) {
       return o;
     }
-    try {
-      o = persist.fetchObj(id);
-      cache.put(o);
-      return o;
-    } catch (ObjNotFoundException e) {
-      cache.remove(id);
-      throw e;
-    }
+    o = persist.fetchObj(id);
+    cache.put(o);
+    return o;
   }
 
   @Override
@@ -158,23 +153,17 @@ class CachingPersistImpl implements Persist {
 
   @Override
   public void upsertObj(@jakarta.annotation.Nonnull @Nonnull Obj obj) throws ObjTooLargeException {
-    try {
-      persist.upsertObj(obj);
-    } finally {
-      cache.remove(obj.id());
-    }
+    persist.upsertObj(obj);
+    cache.put(obj);
   }
 
   @Override
   public void upsertObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    try {
-      persist.upsertObjs(objs);
-    } finally {
-      for (Obj obj : objs) {
-        if (obj != null) {
-          cache.remove(obj.id());
-        }
+    persist.upsertObjs(objs);
+    for (Obj obj : objs) {
+      if (obj != null) {
+        cache.put(obj);
       }
     }
   }
@@ -210,6 +199,8 @@ class CachingPersistImpl implements Persist {
     }
   }
 
+  // plain delegates...
+
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
@@ -217,8 +208,6 @@ class CachingPersistImpl implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
     return persist.scanAllObjects(returnedObjTypes);
   }
-
-  // plain delegates...
 
   @Override
   public int hardObjectSizeLimit() {
