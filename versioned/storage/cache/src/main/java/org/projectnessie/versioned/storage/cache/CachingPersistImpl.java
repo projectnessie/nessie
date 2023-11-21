@@ -130,11 +130,16 @@ class CachingPersistImpl implements Persist {
   public boolean storeObj(
       @jakarta.annotation.Nonnull @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    if (persist.storeObj(obj, ignoreSoftSizeRestrictions)) {
-      cache.put(obj);
-      return true;
+    try {
+      if (persist.storeObj(obj, ignoreSoftSizeRestrictions)) {
+        cache.put(obj);
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      cache.remove(obj.id());
+      throw e;
     }
-    return false;
   }
 
   @Override
@@ -142,29 +147,52 @@ class CachingPersistImpl implements Persist {
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    boolean[] stored = persist.storeObjs(objs);
-    for (int i = 0; i < stored.length; i++) {
-      if (stored[i]) {
-        cache.put(objs[i]);
+    try {
+      boolean[] stored = persist.storeObjs(objs);
+      for (int i = 0; i < stored.length; i++) {
+        if (stored[i]) {
+          cache.put(objs[i]);
+        }
       }
+      return stored;
+    } catch (Exception e) {
+      for (Obj obj : objs) {
+        if (obj != null) {
+          cache.remove(obj.id());
+        }
+      }
+      throw e;
     }
-    return stored;
   }
 
   @Override
   public void upsertObj(@jakarta.annotation.Nonnull @Nonnull Obj obj) throws ObjTooLargeException {
-    persist.upsertObj(obj);
-    cache.put(obj);
+    try {
+      persist.upsertObj(obj);
+      cache.put(obj);
+    } catch (Exception e) {
+      cache.remove(obj.id());
+      throw e;
+    }
   }
 
   @Override
   public void upsertObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    persist.upsertObjs(objs);
-    for (Obj obj : objs) {
-      if (obj != null) {
-        cache.put(obj);
+    try {
+      persist.upsertObjs(objs);
+      for (Obj obj : objs) {
+        if (obj != null) {
+          cache.put(obj);
+        }
       }
+    } catch (Exception e) {
+      for (Obj obj : objs) {
+        if (obj != null) {
+          cache.remove(obj.id());
+        }
+      }
+      throw e;
     }
   }
 

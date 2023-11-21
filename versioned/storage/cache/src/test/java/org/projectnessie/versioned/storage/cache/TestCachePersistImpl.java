@@ -221,6 +221,7 @@ public class TestCachePersistImpl {
 
   @Test
   void storeObjTooLarge() throws ObjTooLargeException {
+    persist.upsertObj(OBJ1);
     doThrow(new ObjTooLargeException(0, 0)).when(persist).storeObj(OBJ1, false);
     assertThatExceptionOfType(ObjTooLargeException.class)
         .isThrownBy(() -> cachingPersist.storeObj(OBJ1, false));
@@ -261,6 +262,18 @@ public class TestCachePersistImpl {
   }
 
   @Test
+  void storeObjsTooLarge() throws ObjTooLargeException {
+    persist.upsertObjs(new Obj[] {OBJ1, OBJ2, OBJ3});
+    doThrow(new ObjTooLargeException(0, 0)).when(persist).storeObjs(new Obj[] {OBJ1, OBJ2, OBJ3});
+    assertThatExceptionOfType(ObjTooLargeException.class)
+        .isThrownBy(() -> cachingPersist.storeObjs(new Obj[] {OBJ1, OBJ2, OBJ3}));
+    assertThat(cache.get(OBJ1.id())).isNull();
+    assertThat(cache.get(OBJ2.id())).isNull();
+    assertThat(cache.get(OBJ3.id())).isNull();
+    verify(persist).storeObjs(new Obj[] {OBJ1, OBJ2, OBJ3});
+  }
+
+  @Test
   void upsertObj() throws ObjTooLargeException {
     cachingPersist.upsertObj(OBJ1);
     assertThat(cache.get(OBJ1.id())).isEqualTo(OBJ1);
@@ -269,6 +282,7 @@ public class TestCachePersistImpl {
 
   @Test
   void upsertObjTooLarge() throws ObjTooLargeException {
+    persist.storeObj(OBJ1);
     doThrow(new ObjTooLargeException(0, 0)).when(persist).upsertObj(OBJ1);
     assertThatExceptionOfType(ObjTooLargeException.class)
         .isThrownBy(() -> cachingPersist.upsertObj(OBJ1));
@@ -283,6 +297,18 @@ public class TestCachePersistImpl {
     assertThat(cache.get(OBJ2.id())).isEqualTo(OBJ2);
     assertThat(cache.get(OBJ3.id())).isEqualTo(OBJ3);
     verify(persist).upsertObjs(new Obj[] {null, OBJ1, OBJ2, OBJ3});
+  }
+
+  @Test
+  void upsertObjsTooLarge() throws ObjTooLargeException {
+    persist.storeObjs(new Obj[] {OBJ1, OBJ2, OBJ3});
+    doThrow(new ObjTooLargeException(0, 0)).when(persist).upsertObjs(new Obj[] {OBJ1, OBJ2, OBJ3});
+    assertThatExceptionOfType(ObjTooLargeException.class)
+        .isThrownBy(() -> cachingPersist.upsertObjs(new Obj[] {OBJ1, OBJ2, OBJ3}));
+    assertThat(cache.get(OBJ1.id())).isNull();
+    assertThat(cache.get(OBJ2.id())).isNull();
+    assertThat(cache.get(OBJ3.id())).isNull();
+    verify(persist).upsertObjs(new Obj[] {OBJ1, OBJ2, OBJ3});
   }
 
   @Test
