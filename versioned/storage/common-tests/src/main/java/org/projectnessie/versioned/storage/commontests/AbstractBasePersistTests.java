@@ -1001,6 +1001,20 @@ public class AbstractBasePersistTests {
     }
   }
 
+  @Test
+  public void nullHandlingInArrays() throws ObjTooLargeException, ObjNotFoundException {
+    soft.assertThat(persist.storeObjs(new Obj[] {null})).containsExactly(false);
+    soft.assertThatCode(() -> persist.upsertObjs(new Obj[] {null})).doesNotThrowAnyException();
+    soft.assertThat(persist.fetchObjs(new ObjId[] {null})).containsExactly((Obj) null);
+    soft.assertThatCode(() -> persist.deleteObjs(new ObjId[] {null})).doesNotThrowAnyException();
+    soft.assertThat(persist.storeObjs(new Obj[] {null, null})).containsExactly(false, false);
+    soft.assertThatCode(() -> persist.upsertObjs(new Obj[] {null, null}))
+        .doesNotThrowAnyException();
+    soft.assertThat(persist.fetchObjs(new ObjId[] {null, null})).containsExactly(null, null);
+    soft.assertThatCode(() -> persist.deleteObjs(new ObjId[] {null, null}))
+        .doesNotThrowAnyException();
+  }
+
   public static String randomContentId() {
     return randomUUID().toString();
   }

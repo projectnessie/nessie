@@ -265,6 +265,8 @@ public interface Persist {
    * <p>In case an object failed to be stored, it is undefined whether other objects have been
    * stored or not.
    *
+   * @param objs array with {@link Obj}s to store. {@code null} array elements are legal, the
+   *     corresponding elements in the returned array will be {@code false}.
    * @return an array with {@code boolean}s indicating whether the corresponding objects were
    *     created ({@code true}) or already present ({@code false}), see {@link #storeObj(Obj)}
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
@@ -282,6 +284,8 @@ public interface Persist {
    *
    * <p>In case an object failed to be deleted, it is undefined whether other objects have been
    * deleted or not.
+   *
+   * @param ids array with {@link ObjId}s to delete. {@code null} array elements are legal.
    */
   void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids);
 
@@ -302,6 +306,7 @@ public interface Persist {
    * <p>In case an object failed to be updated, it is undefined whether other objects have been
    * updated or not.
    *
+   * @param objs array with {@link Obj}s to upsert. {@code null} array elements are legal.
    * @see #upsertObj( Obj)
    */
   void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;

@@ -485,8 +485,10 @@ public class BigTablePersist implements Persist {
     try (Batcher<RowMutationEntry, Void> batcher =
         backend.client().newBulkMutationBatcher(backend.tableObjs)) {
       for (ObjId id : ids) {
-        ByteString key = dbKey(id);
-        batcher.add(RowMutationEntry.create(key).deleteRow());
+        if (id != null) {
+          ByteString key = dbKey(id);
+          batcher.add(RowMutationEntry.create(key).deleteRow());
+        }
       }
     } catch (ApiException e) {
       throw apiException(e);
@@ -534,6 +536,9 @@ public class BigTablePersist implements Persist {
     try (Batcher<RowMutationEntry, Void> batcher =
         backend.client().newBulkMutationBatcher(backend.tableObjs)) {
       for (Obj obj : objs) {
+        if (obj == null) {
+          continue;
+        }
         ObjId id = obj.id();
         checkArgument(id != null, "Obj to store must have a non-null ID");
 

@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singleton;
-import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.rocksdb.RocksDBBackend.keyPrefix;
 import static org.projectnessie.versioned.storage.rocksdb.RocksDBBackend.rocksDbException;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
@@ -424,7 +423,9 @@ class RocksDBPersist implements Persist {
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
     for (ObjId id : ids) {
-      deleteObj(id);
+      if (id != null) {
+        deleteObj(id);
+      }
     }
   }
 
@@ -455,7 +456,9 @@ class RocksDBPersist implements Persist {
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     for (Obj obj : objs) {
-      upsertObj(obj);
+      if (obj != null) {
+        upsertObj(obj);
+      }
     }
   }
 
