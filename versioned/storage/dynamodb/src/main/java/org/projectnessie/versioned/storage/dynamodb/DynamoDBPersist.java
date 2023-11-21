@@ -541,7 +541,9 @@ public class DynamoDBPersist implements Persist {
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (ObjId id : ids) {
-        batchWrite.addDelete(objKey(id));
+        if (id != null) {
+          batchWrite.addDelete(objKey(id));
+        }
       }
     }
   }
@@ -571,12 +573,14 @@ public class DynamoDBPersist implements Persist {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (Obj obj : objs) {
-        ObjId id = obj.id();
-        checkArgument(id != null, "Obj to store must have a non-null ID");
+        if (obj != null) {
+          ObjId id = obj.id();
+          checkArgument(id != null, "Obj to store must have a non-null ID");
 
-        Map<String, AttributeValue> item = objToItem(obj, id, false);
+          Map<String, AttributeValue> item = objToItem(obj, id, false);
 
-        batchWrite.addPut(item);
+          batchWrite.addPut(item);
+        }
       }
     }
   }

@@ -274,7 +274,9 @@ class InmemoryPersist implements ValidatingPersist {
       throws ObjTooLargeException {
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
-      r[i] = storeObj(objs[i]);
+      if (objs[i] != null) {
+        r[i] = storeObj(objs[i]);
+      }
     }
     return r;
   }
@@ -287,7 +289,9 @@ class InmemoryPersist implements ValidatingPersist {
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
     for (ObjId id : ids) {
-      deleteObj(id);
+      if (id != null) {
+        deleteObj(id);
+      }
     }
   }
 
@@ -301,7 +305,9 @@ class InmemoryPersist implements ValidatingPersist {
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     for (Obj obj : objs) {
-      upsertObj(obj);
+      if (obj != null) {
+        upsertObj(obj);
+      }
     }
   }
 
