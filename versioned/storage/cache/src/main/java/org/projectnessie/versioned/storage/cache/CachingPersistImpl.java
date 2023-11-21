@@ -227,8 +227,6 @@ class CachingPersistImpl implements Persist {
     }
   }
 
-  // plain delegates...
-
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
