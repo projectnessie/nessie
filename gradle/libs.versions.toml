@@ -167,7 +167,7 @@ spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { s
 spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.5[", prefer = "3.4.1"}}
 spark-sql-v35-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.5, 3.6[", prefer = "3.5.0"}}
 spark-sql-v35-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.5, 3.6[", prefer = "3.5.0"}}
-testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.19.2" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.19.3" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "2.6.0" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.7.2" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
