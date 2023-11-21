@@ -49,11 +49,10 @@ public abstract class IcebergView extends IcebergContent {
 
   public abstract int getSchemaId();
 
-  @NotBlank
-  @jakarta.validation.constraints.NotBlank
-  @NotNull
-  @jakarta.validation.constraints.NotNull
-  public abstract String getSqlText();
+  @Value.Default
+  public String getSqlText() {
+    return "default sql text";
+  }
 
   @Nullable
   @jakarta.annotation.Nullable // TODO this is currently undefined in Iceberg

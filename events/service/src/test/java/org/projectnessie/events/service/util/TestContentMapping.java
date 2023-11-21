@@ -118,6 +118,23 @@ class TestContentMapping {
                 .putProperty("sqlText", "sqlText")
                 .build()),
         Arguments.of(
+            org.projectnessie.model.ImmutableIcebergView.builder()
+                .id("id")
+                .metadataLocation("metadataLocation")
+                .versionId(1L)
+                .schemaId(2)
+                // no sql text
+                // no dialect
+                .build(),
+            ImmutableContent.builder()
+                .id("id")
+                .type("ICEBERG_VIEW")
+                .putProperty("metadataLocation", "metadataLocation")
+                .putProperty("versionId", 1L)
+                .putProperty("schemaId", 2)
+                .putProperty("sqlText", "default sql text")
+                .build()),
+        Arguments.of(
             org.projectnessie.model.ImmutableDeltaLakeTable.builder()
                 .id("id")
                 .addCheckpointLocationHistory("checkpoint")
