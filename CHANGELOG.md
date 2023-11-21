@@ -14,20 +14,26 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Nessie-GC: Support Google Cloud Storage (GCS) (experimental)
-- Nessie-GC: Support Azure Blob Storage (experimental)
-
 ### Changes
 
 ### Deprecations
 
 ### Fixes
 
+### Commits
+
+## [0.74.0] Release (2023-11-21)
+
+### New Features
+
+- Nessie-GC: Support Google Cloud Storage (GCS) (experimental)
+- Nessie-GC: Support Azure Blob Storage (experimental)
+
+### Fixes
+
 - Add namespace validation for rename operation.
 - Namespace validation now correctly reports only one conflict when deleting a namespace that has
   children, whereas previously it reported one conflict for each child.
-
-### Commits
 
 ## [0.73.0] Release (2023-10-27)
 
@@ -237,7 +243,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.73.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...HEAD
+[0.74.0]: https://github.com/projectnessie/nessie/compare/nessie-0.73.0...nessie-0.74.0
 [0.73.0]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...nessie-0.73.0
 [0.72.4]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...nessie-0.72.4
 [0.72.2]: https://github.com/projectnessie/nessie/compare/nessie-0.72.0...nessie-0.72.2

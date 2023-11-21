@@ -2,6 +2,42 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.74.0 Release (November 21, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.74.0).
+
+### New Features
+
+- Nessie-GC: Support Google Cloud Storage (GCS) (experimental)
+- Nessie-GC: Support Azure Blob Storage (experimental)
+
+### Fixes
+
+- Add namespace validation for rename operation.
+- Namespace validation now correctly reports only one conflict when deleting a namespace that has
+  children, whereas previously it reported one conflict for each child.
+
+### Commits
+* Fix wrong cache capacity unit in `NessiePersistCache` (#7746)
+* Persist: enforce that null array elements are legal (#7741)
+* BigTable: set QUALIFIER_OBJ_TYPE cell when upserting (#7731)
+* Fix Nesqueit after #7715 (#7722)
+* Renovate: only add one label (#7720)
+* Nessie-GC: Support Azure Blob Storage (experimental) (#7715)
+* Minor doc enhancements around authentication providers (#7710)
+* Nessie-GC: Support Google Cloud Storage (GCS) (experimental) (#7709)
+* Report a single conflict when deleting a namespace with many children (#7704)
+* Add nessie-client-testextension to nessie-bom (#7703)
+* Fix Maven-Central search URL in release notes (#7696)
+* Align opentelemetry-alpha version (#7694)
+* Fix snapshot publishing (#7692)
+* Add namespace validation for rename operation (#7650)
+* fix JUnit Jupiter references (#7690)
+* DynamoDB: fix wrong error message when key schema invalid (#7685)
+* OAuth2Client: improve stack traces and reduce log frequency (#7678)
+* ITOAuth2Client: improve shutdown sequence (#7676)
+* ITOAuth2Client: use less aggressive token lifespans (#7675)
+
 ## 0.73.0 Release (October 27, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.73.0).
