@@ -1412,6 +1412,16 @@ public abstract class BaseTestNessieApi {
       namespace4WithId = api().createNamespace().refName(mainName).namespace(namespace4).create();
     }
 
+    // Add some non-namespace content to check that it is not returned by the namespace API
+    IcebergTable table = IcebergTable.of("irrelevant", 1, 2, 3, 4);
+    ContentKey table1 = ContentKey.of(namespace4, "table1");
+    api()
+        .commitMultipleOperations()
+        .branch(main)
+        .commitMeta(CommitMeta.fromMessage("Add table1"))
+        .operation(Put.of(table1, table))
+        .commit();
+
     for (Map.Entry<Namespace, List<Namespace>> c :
         ImmutableMap.of(
                 Namespace.EMPTY,
@@ -1569,6 +1579,7 @@ public abstract class BaseTestNessieApi {
             namespace1WithId, namespace2update2, namespace3WithId, namespace4WithId);
 
     if (isV2()) {
+      // contains other namespaces
       soft.assertThatThrownBy(
               () -> api().deleteNamespace().refName(mainName).namespace(namespace2).delete())
           .isInstanceOf(NessieNamespaceNotEmptyException.class)
@@ -1576,7 +1587,30 @@ public abstract class BaseTestNessieApi {
           .extracting(NessieNamespaceNotEmptyException::getErrorDetails)
           .extracting(ContentKeyErrorDetails::contentKey)
           .isEqualTo(namespace2.toContentKey());
+      // contains a table
+      soft.assertThatThrownBy(
+              () -> api().deleteNamespace().refName(mainName).namespace(namespace4).delete())
+          .isInstanceOf(NessieNamespaceNotEmptyException.class)
+          .asInstanceOf(type(NessieNamespaceNotEmptyException.class))
+          .extracting(NessieNamespaceNotEmptyException::getErrorDetails)
+          .extracting(ContentKeyErrorDetails::contentKey)
+          .isEqualTo(namespace4.toContentKey());
+    } else {
+      soft.assertThatThrownBy(
+              () -> api().deleteNamespace().refName(mainName).namespace(namespace2).delete())
+          .isInstanceOf(NessieNamespaceNotEmptyException.class);
+      soft.assertThatThrownBy(
+              () -> api().deleteNamespace().refName(mainName).namespace(namespace4).delete())
+          .isInstanceOf(NessieNamespaceNotEmptyException.class);
     }
+
+    main = (Branch) api().getReference().refName(mainName).get();
+    api()
+        .commitMultipleOperations()
+        .branch(main)
+        .commitMeta(CommitMeta.fromMessage("Delete table1"))
+        .operation(Delete.of(table1))
+        .commit();
 
     if (isV2()) {
       main = (Branch) api().getReference().refName(mainName).get();
