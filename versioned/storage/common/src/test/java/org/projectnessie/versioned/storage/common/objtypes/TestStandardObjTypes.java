@@ -42,9 +42,11 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
+import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
@@ -101,7 +103,8 @@ public class TestStandardObjTypes {
             STRING),
         arguments(indexSegments(randomObjId(), emptyList()), INDEX_SEGMENTS),
         arguments(
-            index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()), INDEX));
+            index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()), INDEX),
+        arguments(uniqueId(randomObjId(), "space", "value"), UNIQUE));
   }
 
   @ParameterizedTest

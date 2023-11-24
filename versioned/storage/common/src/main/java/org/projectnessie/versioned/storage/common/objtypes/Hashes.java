@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 
 import com.google.common.hash.Hasher;
@@ -120,6 +121,12 @@ public final class Hashes {
     }
     predecessors.forEach(id -> hasher.putBytes(id.asByteArray()));
     hasher.putBytes(text.asReadOnlyByteBuffer());
+    return hashAsObjId(hasher);
+  }
+
+  static ObjId uniqueIdHash(String space, String value) {
+    Hasher hasher =
+        newHasher().putString(UNIQUE.name(), UTF_8).putString(space, UTF_8).putString(value, UTF_8);
     return hashAsObjId(hasher);
   }
 }
