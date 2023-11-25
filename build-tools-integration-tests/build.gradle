@@ -22,7 +22,7 @@ group 'org.projectnessie.nessie.build-tool-integration-tests'
 version '0.0.2-SNAPSHOT'
 
 def nessieVersion = file("../version.txt").text.trim()
-def versionMavenResolver = "1.9.17"
+def versionMavenResolver = "1.9.18"
 def versionMaven = "3.9.5"
 
 dependencies {
