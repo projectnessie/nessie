@@ -69,7 +69,7 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
                     " && size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
                     namespace.getElementCount() + 1, nsName)
                 : format(
-                    "&& entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')",
+                    "&& (entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.'))",
                     nsName, nsName);
       } else if (onlyDirectChildren) {
         filter += " && size(entry.keyElements) == 1";
