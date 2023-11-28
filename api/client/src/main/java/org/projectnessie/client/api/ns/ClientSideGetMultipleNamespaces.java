@@ -27,7 +27,6 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseGetMultipleNamespacesBuilder;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
@@ -38,7 +37,7 @@ import org.projectnessie.model.Namespace;
 /**
  * Supports previous "get multiple namespaces" functionality of the java client over Nessie API v2.
  *
- * <p>API v2 does not have methods dedicated to manging namespaces. Namespaces are expected to be
+ * <p>API v2 does not have methods dedicated to managing namespaces. Namespaces are expected to be
  * managed as ordinary content objects.
  */
 public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamespacesBuilder {
@@ -61,33 +60,24 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
     try {
       GetEntriesBuilder getEntries = api.getEntries().refName(refName).hashOnRef(hashOnRef);
 
-      String filter = null;
+      String filter = "entry.contentType == 'NAMESPACE'";
       if (namespace != null && !namespace.isEmpty()) {
         String nsName = namespace.name();
-        filter =
+        filter +=
             onlyDirectChildren
                 ? format(
-                    "size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
+                    " && size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
                     namespace.getElementCount() + 1, nsName)
                 : format(
-                    "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')",
+                    "&& (entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.'))",
                     nsName, nsName);
       } else if (onlyDirectChildren) {
-        filter = "size(entry.keyElements) == 1";
+        filter += " && size(entry.keyElements) == 1";
       }
-      if (filter != null) {
-        getEntries.filter(filter);
-      }
+      getEntries.filter(filter);
 
       entries =
-          getEntries.stream()
-              .filter(e -> Content.Type.NAMESPACE.equals(e.getType()))
-              .map(EntriesResponse.Entry::getName)
-              .filter(
-                  name ->
-                      namespace == null
-                          || Namespace.of(name.getElements()).isSameOrSubElementOf(namespace))
-              .collect(Collectors.toList());
+          getEntries.stream().map(EntriesResponse.Entry::getName).collect(Collectors.toList());
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
