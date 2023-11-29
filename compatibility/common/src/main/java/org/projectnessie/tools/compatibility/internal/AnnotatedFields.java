@@ -28,7 +28,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 
-final class AnnotatedFields {
+public final class AnnotatedFields {
   private AnnotatedFields() {}
 
   static void populateNessieApiFields(
@@ -40,7 +40,7 @@ final class AnnotatedFields {
         context, instance, NessieAPI.class, a -> a.targetVersion() == targetVersion, fieldValue);
   }
 
-  static <A extends Annotation> void populateAnnotatedFields(
+  public static <A extends Annotation> void populateAnnotatedFields(
       ExtensionContext context,
       Object instance,
       Class<A> annotationType,

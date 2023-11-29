@@ -28,13 +28,13 @@ import java.util.stream.Stream;
 import org.junit.platform.engine.ConfigurationParameters;
 import org.projectnessie.tools.compatibility.api.Version;
 
-final class VersionsToExercise {
+public final class VersionsToExercise {
 
   public static final String NESSIE_VERSIONS_PROPERTY = "nessie.versions";
 
   private VersionsToExercise() {}
 
-  static SortedSet<Version> versionsFromValue(String value) {
+  public static SortedSet<Version> versionsFromValue(String value) {
     TreeSet<Version> versions =
         Stream.of(value)
             .filter(Objects::nonNull)
@@ -49,7 +49,7 @@ final class VersionsToExercise {
     return versions;
   }
 
-  static String valueFromResource(String propertyName) {
+  public static String valueFromResource(String propertyName) {
     URL res =
         Thread.currentThread()
             .getContextClassLoader()

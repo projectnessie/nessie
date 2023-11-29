@@ -27,7 +27,7 @@ import org.projectnessie.tools.compatibility.api.NessieServerProperty;
 import org.projectnessie.tools.compatibility.api.Version;
 
 /** Value object representing the version, type and configuration of a {@link NessieApi}. */
-final class ServerKey {
+public final class ServerKey {
   private final Version version;
   private final String storageName;
   private final Map<String, String> config;

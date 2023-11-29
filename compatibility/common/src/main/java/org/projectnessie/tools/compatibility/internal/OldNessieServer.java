@@ -35,7 +35,7 @@ import org.projectnessie.tools.compatibility.api.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class OldNessieServer implements NessieServer {
+public final class OldNessieServer implements NessieServer {
   private static final Logger LOGGER = LoggerFactory.getLogger(OldNessieServer.class);
 
   private final ServerKey serverKey;
@@ -47,7 +47,7 @@ final class OldNessieServer implements NessieServer {
   private URI uri;
   private AutoCloseable jerseyServer;
 
-  static OldNessieServer oldNessieServer(
+  public static OldNessieServer oldNessieServer(
       ExtensionContext context,
       ServerKey serverKey,
       BooleanSupplier initializeRepository,

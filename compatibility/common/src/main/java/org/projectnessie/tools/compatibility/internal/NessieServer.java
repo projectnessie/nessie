@@ -28,7 +28,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.Version;
 
-interface NessieServer extends CloseableResource {
+public interface NessieServer extends CloseableResource {
 
   static NessieServer nessieServerExisting(ExtensionContext context, ServerKey serverKey) {
     return Objects.requireNonNull(
