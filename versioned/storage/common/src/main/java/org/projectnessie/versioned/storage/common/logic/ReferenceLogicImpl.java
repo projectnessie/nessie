@@ -39,9 +39,9 @@ import static org.projectnessie.versioned.storage.common.logic.ReferenceLogicImp
 import static org.projectnessie.versioned.storage.common.logic.ReferenceLogicImpl.CommitReferenceResult.Kind.REF_ROW_MISSING;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.REF;
 import static org.projectnessie.versioned.storage.common.persist.Reference.INTERNAL_PREFIX;
 import static org.projectnessie.versioned.storage.common.persist.Reference.isInternalReferenceName;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;

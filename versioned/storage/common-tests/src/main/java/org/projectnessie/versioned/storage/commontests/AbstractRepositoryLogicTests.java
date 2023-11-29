@@ -27,13 +27,12 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.referenceL
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import java.time.Instant;
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -58,7 +57,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -83,7 +82,7 @@ public class AbstractRepositoryLogicTests {
     persist.erase();
     soft.assertThat(repositoryLogic.repositoryExists()).isFalse();
 
-    try (CloseableIterator<Obj> iter = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+    try (CloseableIterator<Obj> iter = persist.scanAllObjects(ObjTypes.allObjTypes())) {
       soft.assertThat(iter).isExhausted();
     }
   }

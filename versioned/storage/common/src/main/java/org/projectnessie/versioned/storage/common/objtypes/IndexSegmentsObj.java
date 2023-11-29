@@ -30,7 +30,7 @@ public interface IndexSegmentsObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.INDEX_SEGMENTS;
+    return StandardObjType.INDEX_SEGMENTS;
   }
 
   @Override

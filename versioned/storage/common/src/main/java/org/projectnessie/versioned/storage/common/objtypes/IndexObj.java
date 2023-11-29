@@ -30,7 +30,7 @@ public interface IndexObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.INDEX;
+    return StandardObjType.INDEX;
   }
 
   @Override

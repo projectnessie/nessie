@@ -15,11 +15,9 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-public interface ObjType {
+import java.util.function.Consumer;
 
-  /** Must be unique among all registered object types. */
-  String name();
+public interface ObjTypeBundle {
 
-  /** Must be unique among all registered object types. */
-  String shortName();
+  void register(Consumer<ObjType> registrar);
 }

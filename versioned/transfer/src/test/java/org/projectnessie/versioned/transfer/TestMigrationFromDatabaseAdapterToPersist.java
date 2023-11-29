@@ -20,7 +20,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
-import java.util.EnumSet;
+import java.util.Set;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -37,9 +37,9 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackendName;
@@ -106,7 +106,7 @@ public class TestMigrationFromDatabaseAdapterToPersist extends BaseExportImport 
   @Override
   @MustBeClosed
   Stream<Hash> scanAllTargetCommits() {
-    CloseableIterator<Obj> iter = persist.scanAllObjects(EnumSet.of(ObjType.COMMIT));
+    CloseableIterator<Obj> iter = persist.scanAllObjects(Set.of(StandardObjType.COMMIT));
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iter, 0), false)
         .onClose(iter::close)
         .map(CommitObj.class::cast)

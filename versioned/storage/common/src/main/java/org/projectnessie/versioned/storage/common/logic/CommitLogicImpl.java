@@ -51,14 +51,14 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commi
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.hashAsObjId;
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.hashCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.newHasher;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.hash.Hasher;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1115,7 +1115,7 @@ final class CommitLogicImpl implements CommitLogic {
 
     // scanAllCommitLogEntries() returns all commits in no specific order, parents may be scanned
     // before or after their children.
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(COMMIT))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Collections.singleton(COMMIT))) {
       while (scan.hasNext()) {
         CommitObj commit = (CommitObj) scan.next();
 

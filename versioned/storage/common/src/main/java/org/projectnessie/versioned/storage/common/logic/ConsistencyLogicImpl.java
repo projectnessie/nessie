@@ -28,8 +28,8 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
@@ -60,7 +60,7 @@ final class ConsistencyLogicImpl implements ConsistencyLogic {
     Set<ObjId> test = new HashSet<>();
     CommitObj commitObj = null;
     try {
-      commitObj = persist.fetchTypedObj(commitId, ObjType.COMMIT, CommitObj.class);
+      commitObj = persist.fetchTypedObj(commitId, StandardObjType.COMMIT, CommitObj.class);
 
       if (commitObj.referenceIndex() != null) {
         test.add(commitObj.referenceIndex());

@@ -30,7 +30,7 @@ public interface StringObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.STRING;
+    return StandardObjType.STRING;
   }
 
   @Override

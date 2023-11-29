@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.common.persist;
+package org.projectnessie.versioned.storage.common.objtypes;
 
-public interface ObjType {
+import java.util.function.Consumer;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
 
-  /** Must be unique among all registered object types. */
-  String name();
+public class StandardObjTypeBundle implements ObjTypeBundle {
 
-  /** Must be unique among all registered object types. */
-  String shortName();
+  @Override
+  public void register(Consumer<ObjType> registrar) {
+    for (StandardObjType objType : StandardObjType.values()) {
+      registrar.accept(objType);
+    }
+  }
 }

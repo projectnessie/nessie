@@ -34,8 +34,8 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.fromString;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.committingOperation;
 import static org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.dryRunCommitterSupplier;

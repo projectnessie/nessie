@@ -20,7 +20,7 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.io.IOException;
-import java.util.EnumSet;
+import java.util.Set;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -30,9 +30,9 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackendName;
@@ -101,7 +101,7 @@ public class TestExportImportV2 extends BaseExportImport {
 
   @Override
   Stream<Hash> scanAllTargetCommits() {
-    CloseableIterator<Obj> iter = persistImport.scanAllObjects(EnumSet.of(ObjType.COMMIT));
+    CloseableIterator<Obj> iter = persistImport.scanAllObjects(Set.of(StandardObjType.COMMIT));
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iter, 0), false)
         .onClose(iter::close)
         .map(CommitObj.class::cast)
