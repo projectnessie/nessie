@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.mongodb;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static com.mongodb.ErrorCategory.DUPLICATE_KEY;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -27,67 +26,20 @@ import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
-import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
-import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
-import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
-import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
-import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
-import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
-import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
-import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_CREATED;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_HEADERS;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_INCOMPLETE_INDEX;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_INCREMENTAL_INDEX;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_MESSAGE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_REFERENCE_INDEX;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_REFERENCE_INDEX_STRIPES;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_SECONDARY_PARENTS;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_SEQ;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_TAIL;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_TYPE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_INDEX;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_INDEX_INDEX;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_TYPE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_DELETED;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_EXTENDED_INFO;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_POINTER;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_PREVIOUS;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_CREATED_AT;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_EXTENDED_INFO;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_INITIAL_POINTER;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REF_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REPO;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_SEGMENTS;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_SEGMENTS_STRIPES;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRING;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRING_COMPRESSION;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRING_CONTENT_TYPE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRING_FILENAME;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRING_PREDECESSORS;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRING_TEXT;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRIPES_FIRST_KEY;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRIPES_LAST_KEY;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_STRIPES_SEGMENT;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_HEADERS;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_MESSAGE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_TAG_SIGNATURE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_VALUE;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_VALUE_CONTENT_ID;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_VALUE_DATA;
-import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_VALUE_PAYLOAD;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_PROPERTY_NAME;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_REPO_PATH;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBSerde.binaryToObjId;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBSerde.objIdToBinary;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
@@ -107,12 +59,9 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.agrona.collections.Hashing;
@@ -120,34 +69,23 @@ import org.agrona.collections.Object2IntHashMap;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
-import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.CommitType;
-import org.projectnessie.versioned.storage.common.objtypes.Compression;
-import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
-import org.projectnessie.versioned.storage.common.objtypes.RefObj;
-import org.projectnessie.versioned.storage.common.objtypes.StringObj;
-import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializer;
+import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializers;
 
 public class MongoDBPersist implements Persist {
-  private static final Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
-  private static final ObjType[] ALL_OBJ_TYPES = ObjType.values();
 
   private final StoreConfig config;
   private final MongoDBBackend backend;
@@ -187,49 +125,6 @@ public class MongoDBPersist implements Persist {
     idDoc.put(COL_REPO, config.repositoryId());
     idDoc.put(COL_OBJ_ID, objIdToBinary(id));
     return idDoc;
-  }
-
-  private static Binary bytesToBinary(ByteString bytes) {
-    return new Binary(bytes.toByteArray());
-  }
-
-  private static ByteString binaryToBytes(Binary binary) {
-    return binary != null ? unsafeWrap(binary.getData()) : null;
-  }
-
-  private static Binary objIdToBinary(ObjId id) {
-    return new Binary(id.asByteArray());
-  }
-
-  private static ObjId binaryToObjId(Binary id) {
-    return id != null ? ObjId.objIdFromByteArray(id.getData()) : null;
-  }
-
-  private static void objIdsToDoc(Document doc, String n, List<ObjId> ids) {
-    if (ids == null || ids.isEmpty()) {
-      return;
-    }
-    doc.put(n, objIdsToBinary(ids));
-  }
-
-  private static List<Binary> objIdsToBinary(List<ObjId> ids) {
-    if (ids == null) {
-      return emptyList();
-    }
-    return ids.stream().map(MongoDBPersist::objIdToBinary).collect(toList());
-  }
-
-  private static List<ObjId> binaryToObjIds(List<Binary> ids) {
-    if (ids == null) {
-      return emptyList();
-    }
-    return ids.stream().map(MongoDBPersist::binaryToObjId).collect(toList());
-  }
-
-  private static void binaryToObjIds(List<Binary> ids, Consumer<ObjId> receiver) {
-    if (ids != null) {
-      ids.stream().map(MongoDBPersist::binaryToObjId).forEach(receiver);
-    }
   }
 
   @Nonnull
@@ -460,7 +355,7 @@ public class MongoDBPersist implements Persist {
       throw new ObjNotFoundException(id);
     }
 
-    return objTypeFromItem(doc);
+    return ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
   }
 
   @Nonnull
@@ -579,26 +474,6 @@ public class MongoDBPersist implements Persist {
     return binaryToObjId(doc.get(ID_PROPERTY_NAME, Document.class).get(COL_OBJ_ID, Binary.class));
   }
 
-  private ObjType objTypeFromItem(Document doc) {
-    return objTypeFromItem(doc.getString(COL_OBJ_TYPE));
-  }
-
-  private ObjType objTypeFromItem(String shortType) {
-    for (ObjType type : ALL_OBJ_TYPES) {
-      if (type.shortName().equals(shortType)) {
-        return type;
-      }
-    }
-    throw new IllegalStateException("Cannot deserialize object short type " + shortType);
-  }
-
-  private StoreObjDesc<?> objTypeFromDoc(Document doc) {
-    ObjType type = objTypeFromItem(doc);
-    StoreObjDesc<?> storeObj = STORE_OBJ_TYPE.get(type);
-    checkState(storeObj != null, "Cannot deserialize object type %s", type);
-    return storeObj;
-  }
-
   private static int objIdIndex(Obj[] objs, ObjId id) {
     for (int i = 0; i < objs.length; i++) {
       if (id.equals(objs[i].id())) {
@@ -693,12 +568,12 @@ public class MongoDBPersist implements Persist {
   }
 
   private Obj docToObj(@Nonnull @jakarta.annotation.Nonnull ObjId id, Document doc) {
-    StoreObjDesc<?> storeObj = objTypeFromDoc(doc);
-    Document inner = doc.get(storeObj.typeName, Document.class);
-    return storeObj.docToObj(id, inner);
+    ObjType type = ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
+    ObjSerializer<?> serializer = ObjSerializers.forType(type);
+    Document inner = doc.get(serializer.fieldName(), Document.class);
+    return serializer.docToObj(id, inner);
   }
 
-  @SuppressWarnings("unchecked")
   private Document objToDoc(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
@@ -706,9 +581,7 @@ public class MongoDBPersist implements Persist {
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
     ObjType type = obj.type();
-    @SuppressWarnings("rawtypes")
-    StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);
-    checkArgument(storeObj != null, "Cannot serialize object type %s ", type);
+    ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
     Document doc = new Document();
     Document inner = new Document();
@@ -718,301 +591,9 @@ public class MongoDBPersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    storeObj.objToDoc(obj, inner, incrementalIndexSizeLimit, indexSizeLimit);
-    doc.put(storeObj.typeName, inner);
+    serializer.objToDoc(obj, inner, incrementalIndexSizeLimit, indexSizeLimit);
+    doc.put(serializer.fieldName(), inner);
     return doc;
-  }
-
-  abstract static class StoreObjDesc<O extends Obj> {
-    final String typeName;
-
-    StoreObjDesc(String typeName) {
-      this.typeName = typeName;
-    }
-
-    abstract void objToDoc(
-        O obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
-        throws ObjTooLargeException;
-
-    abstract O docToObj(ObjId id, Document doc);
-  }
-
-  static {
-    STORE_OBJ_TYPE.put(
-        ObjType.COMMIT,
-        new StoreObjDesc<CommitObj>(COL_COMMIT) {
-          @Override
-          void objToDoc(
-              CommitObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
-              throws ObjTooLargeException {
-            doc.put(COL_COMMIT_SEQ, obj.seq());
-            doc.put(COL_COMMIT_CREATED, obj.created());
-            ObjId referenceIndex = obj.referenceIndex();
-            if (referenceIndex != null) {
-              doc.put(COL_COMMIT_REFERENCE_INDEX, objIdToBinary(referenceIndex));
-            }
-            doc.put(COL_COMMIT_MESSAGE, obj.message());
-            objIdsToDoc(doc, COL_COMMIT_TAIL, obj.tail());
-            objIdsToDoc(doc, COL_COMMIT_SECONDARY_PARENTS, obj.secondaryParents());
-
-            ByteString index = obj.incrementalIndex();
-            if (index.size() > incrementalIndexLimit) {
-              throw new ObjTooLargeException(index.size(), incrementalIndexLimit);
-            }
-            doc.put(COL_COMMIT_INCREMENTAL_INDEX, bytesToBinary(index));
-
-            List<IndexStripe> indexStripes = obj.referenceIndexStripes();
-            if (!indexStripes.isEmpty()) {
-              doc.put(COL_COMMIT_REFERENCE_INDEX_STRIPES, stripesToDocs(indexStripes));
-            }
-
-            Document headerDoc = new Document();
-            CommitHeaders headers = obj.headers();
-            for (String s : headers.keySet()) {
-              headerDoc.put(s, headers.getAll(s));
-            }
-            if (!headerDoc.isEmpty()) {
-              doc.put(COL_COMMIT_HEADERS, headerDoc);
-            }
-
-            doc.put(COL_COMMIT_INCOMPLETE_INDEX, obj.incompleteIndex());
-            doc.put(COL_COMMIT_TYPE, obj.commitType().shortName());
-          }
-
-          @Override
-          CommitObj docToObj(ObjId id, Document doc) {
-            CommitObj.Builder b =
-                commitBuilder()
-                    .id(id)
-                    .seq(doc.getLong(COL_COMMIT_SEQ))
-                    .created(doc.getLong(COL_COMMIT_CREATED))
-                    .message(doc.getString(COL_COMMIT_MESSAGE))
-                    .incrementalIndex(
-                        binaryToBytes(doc.get(COL_COMMIT_INCREMENTAL_INDEX, Binary.class)))
-                    .incompleteIndex(doc.getBoolean(COL_COMMIT_INCOMPLETE_INDEX))
-                    .commitType(CommitType.fromShortName(doc.getString(COL_COMMIT_TYPE)));
-            Binary v = doc.get(COL_COMMIT_REFERENCE_INDEX, Binary.class);
-            if (v != null) {
-              b.referenceIndex(binaryToObjId(v));
-            }
-
-            fromStripesDocList(
-                doc, COL_COMMIT_REFERENCE_INDEX_STRIPES, b::addReferenceIndexStripes);
-
-            binaryToObjIds(doc.getList(COL_COMMIT_TAIL, Binary.class), b::addTail);
-            binaryToObjIds(
-                doc.getList(COL_COMMIT_SECONDARY_PARENTS, Binary.class), b::addSecondaryParents);
-
-            CommitHeaders.Builder headers = newCommitHeaders();
-            Document headerDoc = doc.get(COL_COMMIT_HEADERS, Document.class);
-            if (headerDoc != null) {
-              headerDoc.forEach(
-                  (k, o) -> {
-                    @SuppressWarnings({"unchecked", "rawtypes"})
-                    List<String> l = (List) o;
-                    l.forEach(hv -> headers.add(k, hv));
-                  });
-            }
-            b.headers(headers.build());
-
-            return b.build();
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.REF,
-        new StoreObjDesc<RefObj>(COL_REF) {
-
-          @Override
-          void objToDoc(
-              RefObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
-            doc.put(COL_REF_NAME, obj.name());
-            doc.put(COL_REF_CREATED_AT, obj.createdAtMicros());
-            doc.put(COL_REF_INITIAL_POINTER, objIdToBinary(obj.initialPointer()));
-            ObjId extendedInfoObj = obj.extendedInfoObj();
-            if (extendedInfoObj != null) {
-              doc.put(COL_REF_EXTENDED_INFO, objIdToBinary(extendedInfoObj));
-            }
-          }
-
-          @Override
-          RefObj docToObj(ObjId id, Document doc) {
-            return ref(
-                id,
-                doc.getString(COL_REF_NAME),
-                binaryToObjId(doc.get(COL_REF_INITIAL_POINTER, Binary.class)),
-                doc.getLong(COL_REF_CREATED_AT),
-                binaryToObjId(doc.get(COL_REF_EXTENDED_INFO, Binary.class)));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.VALUE,
-        new StoreObjDesc<ContentValueObj>(COL_VALUE) {
-          @Override
-          void objToDoc(
-              ContentValueObj obj,
-              Document doc,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            doc.put(COL_VALUE_CONTENT_ID, obj.contentId());
-            doc.put(COL_VALUE_PAYLOAD, obj.payload());
-            doc.put(COL_VALUE_DATA, bytesToBinary(obj.data()));
-          }
-
-          @Override
-          ContentValueObj docToObj(ObjId id, Document doc) {
-            return contentValue(
-                id,
-                doc.getString(COL_VALUE_CONTENT_ID),
-                doc.getInteger(COL_VALUE_PAYLOAD),
-                binaryToBytes(doc.get(COL_VALUE_DATA, Binary.class)));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.INDEX_SEGMENTS,
-        new StoreObjDesc<IndexSegmentsObj>(COL_SEGMENTS) {
-          @Override
-          void objToDoc(
-              IndexSegmentsObj obj,
-              Document doc,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            doc.put(COL_SEGMENTS_STRIPES, stripesToDocs(obj.stripes()));
-          }
-
-          @Override
-          IndexSegmentsObj docToObj(ObjId id, Document doc) {
-            List<IndexStripe> stripes = new ArrayList<>();
-            fromStripesDocList(doc, COL_SEGMENTS_STRIPES, stripes::add);
-            return indexSegments(id, stripes);
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.INDEX,
-        new StoreObjDesc<IndexObj>(COL_INDEX) {
-          @Override
-          void objToDoc(
-              IndexObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
-              throws ObjTooLargeException {
-            ByteString index = obj.index();
-            if (index.size() > maxSerializedIndexSize) {
-              throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
-            }
-            doc.put(COL_INDEX_INDEX, bytesToBinary(index));
-          }
-
-          @Override
-          IndexObj docToObj(ObjId id, Document doc) {
-            return index(id, binaryToBytes(doc.get(COL_INDEX_INDEX, Binary.class)));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.TAG,
-        new StoreObjDesc<TagObj>(COL_TAG) {
-          @Override
-          void objToDoc(
-              TagObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
-            String message = obj.message();
-            if (message != null) {
-              doc.put(COL_TAG_MESSAGE, message);
-            }
-
-            Document headerDoc = new Document();
-            CommitHeaders headers = obj.headers();
-            if (headers != null) {
-              for (String s : headers.keySet()) {
-                headerDoc.put(s, headers.getAll(s));
-              }
-              if (!headerDoc.isEmpty()) {
-                doc.put(COL_TAG_HEADERS, headerDoc);
-              }
-            }
-
-            ByteString signature = obj.signature();
-            if (signature != null) {
-              doc.put(COL_TAG_SIGNATURE, bytesToBinary(signature));
-            }
-          }
-
-          @Override
-          TagObj docToObj(ObjId id, Document doc) {
-            CommitHeaders tagHeaders = null;
-            Document headerDoc = doc.get(COL_COMMIT_HEADERS, Document.class);
-            if (headerDoc != null) {
-              CommitHeaders.Builder headers = newCommitHeaders();
-              headerDoc.forEach(
-                  (k, o) -> {
-                    @SuppressWarnings({"unchecked", "rawtypes"})
-                    List<String> l = (List) o;
-                    l.forEach(hv -> headers.add(k, hv));
-                  });
-              tagHeaders = headers.build();
-            }
-
-            return tag(
-                id,
-                doc.getString(COL_TAG_MESSAGE),
-                tagHeaders,
-                binaryToBytes(doc.get(COL_TAG_SIGNATURE, Binary.class)));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.STRING,
-        new StoreObjDesc<StringObj>(COL_STRING) {
-          @Override
-          void objToDoc(
-              StringObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
-            String s = obj.contentType();
-            if (s != null && !s.isEmpty()) {
-              doc.put(COL_STRING_CONTENT_TYPE, s);
-            }
-            doc.put(COL_STRING_COMPRESSION, obj.compression().name());
-            s = obj.filename();
-            if (s != null && !s.isEmpty()) {
-              doc.put(COL_STRING_FILENAME, s);
-            }
-            objIdsToDoc(doc, COL_STRING_PREDECESSORS, obj.predecessors());
-            doc.put(COL_STRING_TEXT, bytesToBinary(obj.text()));
-          }
-
-          @Override
-          StringObj docToObj(ObjId id, Document doc) {
-            return stringData(
-                id,
-                doc.getString(COL_STRING_CONTENT_TYPE),
-                Compression.valueOf(doc.getString(COL_STRING_COMPRESSION)),
-                doc.getString(COL_STRING_FILENAME),
-                binaryToObjIds(doc.getList(COL_STRING_PREDECESSORS, Binary.class)),
-                binaryToBytes(doc.get(COL_STRING_TEXT, Binary.class)));
-          }
-        });
-  }
-
-  private static void fromStripesDocList(
-      Document doc, String attrName, Consumer<IndexStripe> consumer) {
-    List<Document> refIndexStripes = doc.getList(attrName, Document.class);
-    if (refIndexStripes != null) {
-      for (Document seg : refIndexStripes) {
-        consumer.accept(
-            indexStripe(
-                keyFromString(seg.getString(COL_STRIPES_FIRST_KEY)),
-                keyFromString(seg.getString(COL_STRIPES_LAST_KEY)),
-                binaryToObjId(seg.get(COL_STRIPES_SEGMENT, Binary.class))));
-      }
-    }
-  }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  private static List<Document> stripesToDocs(List<IndexStripe> stripes) {
-    List<Document> stripesDocs = new ArrayList<>();
-    for (IndexStripe stripe : stripes) {
-      Document sv = new Document();
-      sv.put(COL_STRIPES_FIRST_KEY, stripe.firstKey().rawString());
-      sv.put(COL_STRIPES_LAST_KEY, stripe.lastKey().rawString());
-      sv.put(COL_STRIPES_SEGMENT, objIdToBinary(stripe.segment()));
-      stripesDocs.add(sv);
-    }
-    return stripesDocs;
   }
 
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>
