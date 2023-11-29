@@ -23,6 +23,10 @@
 FROM registry.access.redhat.com/ubi8/openjdk-17:1.18-2
 # NOTE: Do **NOT** bump ubi8 to ubi9 - that will break all the options above!
 
+LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
+LABEL org.opencontainers.image.description="Projectnessie Nessie Core Server"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 ENV LANGUAGE='en_US:en'
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
