@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.common.persist;
+package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.function.Consumer;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
 
-public interface Obj {
+public class SimpleCustomObjTypeBundle implements ObjTypeBundle {
 
-  /** The ID of this object. */
-  @JsonIgnore
-  ObjId id();
-
-  ObjType type();
+  @Override
+  public void register(Consumer<ObjType> registrar) {
+    registrar.accept(SimpleCustomObjType.INSTANCE);
+  }
 }

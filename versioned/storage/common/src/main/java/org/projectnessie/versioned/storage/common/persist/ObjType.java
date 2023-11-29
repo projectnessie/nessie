@@ -22,4 +22,7 @@ public interface ObjType {
 
   /** Must be unique among all registered object types. */
   String shortName();
+
+  /** The target class that objects of this type should be serialized from and deserialized to. */
+  Class<? extends Obj> targetClass();
 }

@@ -27,34 +27,42 @@ public enum StandardObjType implements ObjType {
    *
    * <p>{@link Obj} is a {@link RefObj}.
    */
-  REF("r"),
+  REF("r", RefObj.class),
 
   /** {@link Obj} is a {@link CommitObj}. */
-  COMMIT("c"),
+  COMMIT("c", CommitObj.class),
 
   /** {@link Obj} is a {@link TagObj}. */
-  TAG("t"),
+  TAG("t", TagObj.class),
 
   /** {@link Obj} is a {@link ContentValueObj}. */
-  VALUE("v"),
+  VALUE("v", ContentValueObj.class),
 
   /** {@link Obj} is a {@link StringObj}. */
-  STRING("s"),
+  STRING("s", StringObj.class),
 
   /** {@link Obj} is a {@link IndexSegmentsObj}. */
-  INDEX_SEGMENTS("I"),
+  INDEX_SEGMENTS("I", IndexSegmentsObj.class),
 
   /** {@link Obj} is a {@link IndexObj}. */
-  INDEX("i");
+  INDEX("i", IndexObj.class);
 
   private final String shortName;
 
-  StandardObjType(String shortName) {
+  private final Class<? extends Obj> targetClass;
+
+  StandardObjType(String shortName, Class<? extends Obj> targetClass) {
     this.shortName = shortName;
+    this.targetClass = targetClass;
   }
 
   @Override
   public String shortName() {
     return shortName;
+  }
+
+  @Override
+  public Class<? extends Obj> targetClass() {
+    return targetClass;
   }
 }

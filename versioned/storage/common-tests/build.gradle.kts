@@ -49,8 +49,14 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(platform(libs.jackson.bom))
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson.bom))
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+
+  // required for custom object serialization tests
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-guava")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
   implementation(platform(libs.junit.bom))
   implementation(libs.bundles.junit.testing)

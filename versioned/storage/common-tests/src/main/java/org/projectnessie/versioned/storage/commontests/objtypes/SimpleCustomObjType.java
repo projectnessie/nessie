@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.common.persist;
+package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public interface Obj {
+public final class SimpleCustomObjType implements ObjType {
 
-  /** The ID of this object. */
-  @JsonIgnore
-  ObjId id();
+  public static final SimpleCustomObjType INSTANCE = new SimpleCustomObjType();
 
-  ObjType type();
+  private SimpleCustomObjType() {}
+
+  @Override
+  public String name() {
+    return "test";
+  }
+
+  @Override
+  public String shortName() {
+    return "tt";
+  }
+
+  @Override
+  public Class<SimpleCustomObj> targetClass() {
+    return SimpleCustomObj.class;
+  }
 }

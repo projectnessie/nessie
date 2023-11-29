@@ -63,9 +63,12 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.google.common.collect.Lists;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntFunction;
@@ -94,9 +97,6 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
-import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
@@ -105,8 +105,11 @@ import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObjType;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
@@ -436,32 +439,19 @@ public class AbstractBasePersistTests {
                 objIdFromString("0000000000000000")),
             copyFromUtf8("This is not a markdown")),
         ref(randomObjId(), "foo", randomObjId(), 123L, null),
-        ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()));
-  }
-
-  @SuppressWarnings("rawtypes")
-  public static Class classForType(ObjType type) {
-    if (type instanceof StandardObjType) {
-      switch (((StandardObjType) type)) {
-        case COMMIT:
-          return CommitObj.class;
-        case VALUE:
-          return ContentValueObj.class;
-        case INDEX_SEGMENTS:
-          return IndexSegmentsObj.class;
-        case INDEX:
-          return IndexObj.class;
-        case REF:
-          return RefObj.class;
-        case TAG:
-          return TagObj.class;
-        case STRING:
-          return StringObj.class;
-        default:
-          // fall through
-      }
-    }
-    throw new IllegalArgumentException(type.name());
+        ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()),
+        // custom object types
+        SimpleCustomObj.builder()
+            .id(randomObjId())
+            .parent(randomObjId())
+            .text("foo")
+            .number(42.42d)
+            .map(Map.of("k1", "v1", "k2", "v2"))
+            .list(List.of("a", "b", "c"))
+            .optional("optional")
+            .instant(Instant.ofEpochMilli(1234567890L))
+            .build(),
+        SimpleCustomObj.builder().id(randomObjId()).build());
   }
 
   static StandardObjType typeDifferentThan(ObjType type) {
@@ -485,6 +475,9 @@ public class AbstractBasePersistTests {
           // fall through
       }
     }
+    if (type instanceof SimpleCustomObjType) {
+      return StandardObjType.COMMIT;
+    }
     throw new IllegalArgumentException(type.name());
   }
 
@@ -497,7 +490,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObjType(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(
-            () -> persist.fetchTypedObj(obj.id(), obj.type(), classForType(obj.type())))
+            () -> persist.fetchTypedObj(obj.id(), obj.type(), obj.type().targetClass()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
@@ -506,11 +499,11 @@ public class AbstractBasePersistTests {
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(persist.fetchObjType(obj.id())).isEqualTo(obj.type());
-    soft.assertThat(persist.fetchTypedObj(obj.id(), obj.type(), classForType(obj.type())))
+    soft.assertThat(persist.fetchTypedObj(obj.id(), obj.type(), obj.type().targetClass()))
         .isEqualTo(obj);
     StandardObjType otherType = typeDifferentThan(obj.type());
     soft.assertThatThrownBy(
-            () -> persist.fetchTypedObj(obj.id(), otherType, classForType(otherType)))
+            () -> persist.fetchTypedObj(obj.id(), otherType, otherType.targetClass()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
 
@@ -523,7 +516,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObjType(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(
-            () -> persist.fetchTypedObj(obj.id(), obj.type(), classForType(obj.type())))
+            () -> persist.fetchTypedObj(obj.id(), obj.type(), obj.type().targetClass()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
@@ -902,6 +895,16 @@ public class AbstractBasePersistTests {
           // fall through
       }
     }
+    if (obj instanceof SimpleCustomObj) {
+      return SimpleCustomObj.builder()
+          .id(obj.id())
+          .parent(randomObjId())
+          .text("updated")
+          .number(43.43d)
+          .map(Map.of("k2", "v2", "k3", "v3"))
+          .list(List.of("b", "c", "d"))
+          .build();
+    }
     throw new UnsupportedOperationException("Unknown object type " + type);
   }
 
@@ -982,6 +985,10 @@ public class AbstractBasePersistTests {
   @Test
   public void createObjectsWithUpsertThenFetchAndScan() throws Exception {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
+    Obj[] standardObjs =
+        Arrays.stream(objs).filter(o -> o.type() instanceof StandardObjType).toArray(Obj[]::new);
+    Obj[] testObjs =
+        Arrays.stream(objs).filter(o -> o instanceof SimpleCustomObj).toArray(Obj[]::new);
 
     persist.erase();
 
@@ -993,9 +1000,16 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(objs);
 
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(ObjTypes.allObjTypes())) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(objs);
+    }
     try (CloseableIterator<Obj> scan =
         persist.scanAllObjects(Set.copyOf(EnumSet.allOf(StandardObjType.class)))) {
-      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(objs);
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(standardObjs);
+    }
+    try (CloseableIterator<Obj> scan =
+        persist.scanAllObjects(Set.of(SimpleCustomObjType.INSTANCE))) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(testObjs);
     }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
       Obj[] expected = stream(objs).filter(c -> c.type() == COMMIT).toArray(Obj[]::new);

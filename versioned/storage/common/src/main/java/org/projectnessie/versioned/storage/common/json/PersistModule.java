@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.common.persist;
+package org.projectnessie.versioned.storage.common.json;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 
-public interface Obj {
+public class PersistModule extends SimpleModule {
 
-  /** The ID of this object. */
-  @JsonIgnore
-  ObjId id();
+  private static final long serialVersionUID = 1L;
 
-  ObjType type();
+  public PersistModule() {
+    addSerializer(new ObjIdSerializer());
+    addDeserializer(ObjId.class, new ObjIdDeserializer());
+  }
 }
