@@ -212,7 +212,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     try {
       Obj r = pendingObj(id);
       if (r != null) {
-        if (r.type() != type) {
+        if (!r.type().equals(type)) {
           throw new ObjNotFoundException(id);
         }
         @SuppressWarnings("unchecked")

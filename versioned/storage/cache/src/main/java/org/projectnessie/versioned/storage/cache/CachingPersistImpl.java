@@ -66,7 +66,7 @@ class CachingPersistImpl implements Persist {
       throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
-      if (o.type() != type) {
+      if (!o.type().equals(type)) {
         throw new ObjNotFoundException(id);
       }
     } else {
