@@ -48,12 +48,13 @@ import com.google.cloud.bigtable.data.v2.models.RowCell;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -72,6 +73,7 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
@@ -316,7 +318,7 @@ public class BigTablePersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = fetchObj(id);
-    if (obj.type() != type) {
+    if (!obj.type().equals(type)) {
       throw new ObjNotFoundException(id);
     }
     @SuppressWarnings("unchecked")
@@ -385,11 +387,11 @@ public class BigTablePersist implements Persist {
     }
   }
 
-  private static final ByteString[] OBJ_TYPE_VALUES =
-      Arrays.stream(ObjType.values())
-          .map(Enum::name)
-          .map(ByteString::copyFromUtf8)
-          .toArray(ByteString[]::new);
+  private static final Map<ObjType, ByteString> OBJ_TYPE_VALUES =
+      ObjTypes.allObjTypes().stream()
+          .collect(
+              ImmutableMap.toImmutableMap(
+                  Function.identity(), (ObjType type) -> ByteString.copyFromUtf8(type.name())));
 
   @NotNull
   private ConditionalRowMutation mutationForStoreObj(
@@ -409,10 +411,7 @@ public class BigTablePersist implements Persist {
         Mutation.create()
             .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, ref)
             .setCell(
-                FAMILY_OBJS,
-                QUALIFIER_OBJ_TYPE,
-                CELL_TIMESTAMP,
-                OBJ_TYPE_VALUES[obj.type().ordinal()]);
+                FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, OBJ_TYPE_VALUES.get(obj.type()));
     Filter condition =
         FILTERS
             .chain()
@@ -441,14 +440,12 @@ public class BigTablePersist implements Persist {
 
     @SuppressWarnings("unchecked")
     ApiFuture<Boolean>[] futures = new ApiFuture[objs.length];
-    int idx = 0;
     for (int i = 0; i < objs.length; i++) {
       Obj obj = objs[i];
       if (obj != null) {
         ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
-        futures[idx] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
+        futures[i] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
       }
-      idx++;
     }
 
     boolean[] r = new boolean[objs.length];
@@ -520,7 +517,7 @@ public class BigTablePersist implements Persist {
                       FAMILY_OBJS,
                       QUALIFIER_OBJ_TYPE,
                       CELL_TIMESTAMP,
-                      OBJ_TYPE_VALUES[obj.type().ordinal()]));
+                      OBJ_TYPE_VALUES.get(obj.type())));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -556,7 +553,7 @@ public class BigTablePersist implements Persist {
                     FAMILY_OBJS,
                     QUALIFIER_OBJ_TYPE,
                     CELL_TIMESTAMP,
-                    OBJ_TYPE_VALUES[obj.type().ordinal()]));
+                    OBJ_TYPE_VALUES.get(obj.type())));
       }
     } catch (ApiException e) {
       throw apiException(e);
@@ -596,7 +593,7 @@ public class BigTablePersist implements Persist {
 
       Filters.InterleaveFilter typeFilter = null;
       boolean all = true;
-      for (ObjType type : ObjType.values()) {
+      for (ObjType type : ObjTypes.allObjTypes()) {
         boolean match = filter.test(type);
         if (match) {
           if (typeFilter == null) {
@@ -606,7 +603,7 @@ public class BigTablePersist implements Persist {
               FILTERS
                   .chain()
                   .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
-                  .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES[type.ordinal()])));
+                  .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES.get(type))));
         } else {
           all = false;
         }
@@ -658,7 +655,7 @@ public class BigTablePersist implements Persist {
     }
   }
 
-  public static ObjId deserializeObjId(ByteString bytes) {
+  private static ObjId deserializeObjId(ByteString bytes) {
     if (bytes == null) {
       return null;
     }
