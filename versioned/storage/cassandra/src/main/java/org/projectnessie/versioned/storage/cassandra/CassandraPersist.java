@@ -16,117 +16,59 @@
 package org.projectnessie.versioned.storage.cassandra;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_CREATED;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_HEADERS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_INCOMPLETE_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_INCREMENTAL_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_MESSAGE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_REFERENCE_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_REFERENCE_INDEX_STRIPES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_SECONDARY_PARENTS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_SEQ;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_TAIL;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_TYPE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_INDEX_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_CREATED_AT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_EXTENDED_INFO;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_INITIAL_POINTER;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REF_NAME;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_SEGMENTS_STRIPES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_COMPRESSION;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_CONTENT_TYPE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_FILENAME;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_PREDECESSORS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_STRING_TEXT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_HEADERS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_MESSAGE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_TAG_SIGNATURE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_VALUE_CONTENT_ID;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_VALUE_DATA;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_VALUE_PAYLOAD;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_REFERENCES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_COMMIT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_REF;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_SEGMENTS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_STRING;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_TAG;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MARK_REFERENCE_AS_DELETED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_STORES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.PURGE_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.SCAN_OBJS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_REFERENCE_POINTER;
-import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
-import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
-import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
-import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
-import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
-import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
+import static org.projectnessie.versioned.storage.cassandra.CassandraSerde.deserializeObjId;
+import static org.projectnessie.versioned.storage.cassandra.CassandraSerde.serializeObjId;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.datastax.oss.driver.api.core.DriverException;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.AbstractIterator;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicIntegerArray;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackend.BatchedQuery;
+import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializer;
+import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializers;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
-import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.CommitType;
-import org.projectnessie.versioned.storage.common.objtypes.Compression;
-import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
-import org.projectnessie.versioned.storage.common.objtypes.RefObj;
-import org.projectnessie.versioned.storage.common.objtypes.StringObj;
-import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 
 public class CassandraPersist implements Persist {
 
@@ -163,8 +105,10 @@ public class CassandraPersist implements Persist {
   public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     try (BatchedQuery<String, Reference> batchedQuery =
         backend.newBatchedQuery(
-            keys -> backend.executeAsync(FIND_REFERENCES, config.repositoryId(), keys),
-            CassandraPersist::deserializeReference,
+            keys ->
+                backend.executeAsync(
+                    backend.buildStatement(FIND_REFERENCES, config.repositoryId(), keys)),
+            CassandraSerde::deserializeReference,
             Reference::name,
             names.length,
             Reference.class)) {
@@ -190,15 +134,17 @@ public class CassandraPersist implements Persist {
     byte[] serializedPreviousPointers = serializePreviousPointers(reference.previousPointers());
     ByteBuffer previous =
         serializedPreviousPointers != null ? ByteBuffer.wrap(serializedPreviousPointers) : null;
-    if (backend.executeCas(
-        ADD_REFERENCE,
-        config.repositoryId(),
-        reference.name(),
-        serializeObjId(reference.pointer()),
-        reference.deleted(),
-        reference.createdAtMicros(),
-        serializeObjId(reference.extendedInfoObj()),
-        previous)) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            ADD_REFERENCE,
+            config.repositoryId(),
+            reference.name(),
+            serializeObjId(reference.pointer()),
+            reference.deleted(),
+            reference.createdAtMicros(),
+            serializeObjId(reference.extendedInfoObj()),
+            previous);
+    if (backend.executeCas(stmt)) {
       return reference;
     }
     throw new RefAlreadyExistsException(fetchReference(reference.name()));
@@ -209,15 +155,17 @@ public class CassandraPersist implements Persist {
   @Override
   public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    if (backend.executeCas(
-        MARK_REFERENCE_AS_DELETED,
-        true,
-        config().repositoryId(),
-        reference.name(),
-        serializeObjId(reference.pointer()),
-        false,
-        reference.createdAtMicros(),
-        serializeObjId(reference.extendedInfoObj()))) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            MARK_REFERENCE_AS_DELETED,
+            true,
+            config().repositoryId(),
+            reference.name(),
+            serializeObjId(reference.pointer()),
+            false,
+            reference.createdAtMicros(),
+            serializeObjId(reference.extendedInfoObj()));
+    if (backend.executeCas(stmt)) {
       return reference.withDeleted(true);
     }
 
@@ -231,14 +179,16 @@ public class CassandraPersist implements Persist {
   @Override
   public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    if (!backend.executeCas(
-        PURGE_REFERENCE,
-        config().repositoryId(),
-        reference.name(),
-        serializeObjId(reference.pointer()),
-        true,
-        reference.createdAtMicros(),
-        serializeObjId(reference.extendedInfoObj()))) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            PURGE_REFERENCE,
+            config().repositoryId(),
+            reference.name(),
+            serializeObjId(reference.pointer()),
+            true,
+            reference.createdAtMicros(),
+            serializeObjId(reference.extendedInfoObj()));
+    if (!backend.executeCas(stmt)) {
       Reference ref = fetchReference(reference.name());
       if (ref == null) {
         throw new RefNotFoundException(reference);
@@ -258,16 +208,18 @@ public class CassandraPersist implements Persist {
     byte[] serializedPreviousPointers = serializePreviousPointers(updated.previousPointers());
     ByteBuffer previous =
         serializedPreviousPointers != null ? ByteBuffer.wrap(serializedPreviousPointers) : null;
-    if (!backend.executeCas(
-        UPDATE_REFERENCE_POINTER,
-        serializeObjId(newPointer),
-        previous,
-        config().repositoryId(),
-        reference.name(),
-        serializeObjId(reference.pointer()),
-        false,
-        reference.createdAtMicros(),
-        serializeObjId(reference.extendedInfoObj()))) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            UPDATE_REFERENCE_POINTER,
+            serializeObjId(newPointer),
+            previous,
+            config().repositoryId(),
+            reference.name(),
+            serializeObjId(reference.pointer()),
+            false,
+            reference.createdAtMicros(),
+            serializeObjId(reference.extendedInfoObj()));
+    if (!backend.executeCas(stmt)) {
       Reference ref = fetchReference(reference.name());
       if (ref == null) {
         throw new RefNotFoundException(reference);
@@ -304,13 +256,13 @@ public class CassandraPersist implements Persist {
   @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
-    Row row =
-        backend
-            .execute(FETCH_OBJ_TYPE, config.repositoryId(), singletonList(serializeObjId(id)))
-            .one();
+    BoundStatement stmt =
+        backend.buildStatement(
+            FETCH_OBJ_TYPE, config.repositoryId(), singletonList(serializeObjId(id)));
+    Row row = backend.execute(stmt).one();
     if (row != null) {
-      String objType = row.getString(0);
-      return ObjType.valueOf(objType);
+      String objType = requireNonNull(row.getString(0));
+      return ObjTypes.forName(objType);
     }
     throw new ObjNotFoundException(id);
   }
@@ -333,12 +285,15 @@ public class CassandraPersist implements Persist {
         queryIds -> queryIds.stream().map(ObjId::toString).collect(Collectors.toList());
 
     Function<List<ObjId>, CompletionStage<AsyncResultSet>> queryFunc =
-        keys -> backend.executeAsync(FIND_OBJS, config.repositoryId(), idsToStrings.apply(keys));
+        keys ->
+            backend.executeAsync(
+                backend.buildStatement(FIND_OBJS, config.repositoryId(), idsToStrings.apply(keys)));
 
     Function<Row, Obj> rowMapper =
         row -> {
-          ObjType objType = ObjType.valueOf(row.getString(1));
-          return deserializeObj(row, objType);
+          ObjType objType = ObjTypes.forName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
+          ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
+          return ObjSerializers.forType(objType).deserialize(row, id);
         };
 
     Obj[] r;
@@ -358,7 +313,7 @@ public class CassandraPersist implements Persist {
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (id != null && (r[i] == null || (type != null && r[i].type() != type))) {
+      if (id != null && (r[i] == null || (type != null && !r[i].type().equals(type)))) {
         if (notFound == null) {
           notFound = new ArrayList<>();
         }
@@ -372,23 +327,12 @@ public class CassandraPersist implements Persist {
     return r;
   }
 
-  private Obj deserializeObj(Row row, ObjType type) {
-    ObjId id = deserializeObjId(row.getString(0));
-
-    @SuppressWarnings("rawtypes")
-    StoreObjDesc objDesc = STORE_OBJ_TYPE.get(type);
-    checkState(objDesc != null, "Cannot deserialize object type %s", type);
-    return objDesc.deserialize(row, id);
-  }
-
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return writeSingleObj(
-        obj,
-        ignoreSoftSizeRestrictions,
-        (storeObj, values) -> backend.executeCas(storeObj.cql(true), values));
+        obj, false, ignoreSoftSizeRestrictions, (serializer, stmt) -> backend.executeCas(stmt));
   }
 
   @Nonnull
@@ -396,23 +340,23 @@ public class CassandraPersist implements Persist {
   @Override
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    return persistObjs(objs, true);
+    return persistObjs(objs, false);
   }
 
   @Override
   public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    writeSingleObj(obj, false, (storeObj, values) -> backend.execute(storeObj.cql(false), values));
+    writeSingleObj(obj, true, false, (serializer, stmt) -> backend.execute(stmt));
   }
 
   @Override
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    persistObjs(objs, false);
+    persistObjs(objs, true);
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  private boolean[] persistObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs, boolean insert)
+  private boolean[] persistObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs, boolean upsert)
       throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
@@ -424,11 +368,12 @@ public class CassandraPersist implements Persist {
           int idx = i;
           writeSingleObj(
               o,
+              upsert,
               false,
-              (storeObj, values) -> {
+              (serializer, stmt) -> {
                 CompletionStage<?> cs =
                     backend
-                        .executeAsync(storeObj.cql(insert), values)
+                        .executeAsync(stmt)
                         .handle(
                             (resultSet, e) -> {
                               if (e != null) {
@@ -463,44 +408,42 @@ public class CassandraPersist implements Persist {
   }
 
   @FunctionalInterface
-  interface WriteSingleObj<R> {
-    R apply(StoreObjDesc<?> storeObj, Object[] values);
+  private interface WriteSingleObj<R> {
+    R apply(ObjSerializer<?> serializer, BoundStatement stmt);
   }
 
   private <R> R writeSingleObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      boolean upsert,
       boolean ignoreSoftSizeRestrictions,
       WriteSingleObj<R> consumer)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     ObjType type = obj.type();
 
-    StoreObjDesc<Obj> storeObj = storeObjForObj(type);
+    ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
-    List<Object> values = new ArrayList<>();
-    values.add(config.repositoryId());
-    values.add(serializeObjId(id));
-    values.add(type.name());
-    storeObj.store(
-        values::add,
+    BoundStatementBuilder stmt =
+        backend
+            .newBoundStatementBuilder(serializer.insertCql(upsert))
+            .setString(COL_REPO_ID.name(), config.repositoryId())
+            .setString(COL_OBJ_ID.name(), serializeObjId(id))
+            .setString(COL_OBJ_TYPE.name(), type.name());
+
+    serializer.serialize(
         obj,
+        stmt,
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit(),
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit());
 
-    return consumer.apply(storeObj, values.toArray(new Object[0]));
-  }
-
-  @SuppressWarnings("unchecked")
-  private static StoreObjDesc<Obj> storeObjForObj(ObjType type) {
-    @SuppressWarnings("rawtypes")
-    StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);
-    checkArgument(storeObj != null, "Cannot serialize object type %s ", type);
-    return storeObj;
+    return consumer.apply(serializer, stmt.build());
   }
 
   @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
-    backend.execute(DELETE_OBJ, config.repositoryId(), serializeObjId(id));
+    BoundStatement stmt =
+        backend.buildStatement(DELETE_OBJ, config.repositoryId(), serializeObjId(id));
+    backend.execute(stmt);
   }
 
   @Override
@@ -510,7 +453,8 @@ public class CassandraPersist implements Persist {
       String repoId = config.repositoryId();
       for (ObjId id : ids) {
         if (id != null) {
-          requests.submitted(backend.executeAsync(DELETE_OBJ, repoId, serializeObjId(id)));
+          BoundStatement stmt = backend.buildStatement(DELETE_OBJ, repoId, serializeObjId(id));
+          requests.submitted(backend.executeAsync(stmt));
         }
       }
     }
@@ -529,366 +473,6 @@ public class CassandraPersist implements Persist {
     return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
-  private abstract static class StoreObjDesc<O extends Obj> {
-    private final String insertCql;
-
-    StoreObjDesc(String insertCql) {
-      this.insertCql = insertCql;
-    }
-
-    abstract O deserialize(Row row, ObjId id);
-
-    abstract void store(
-        Consumer<Object> values, O obj, int incrementalIndexLimit, int maxSerializedIndexSize)
-        throws ObjTooLargeException;
-
-    String cql(boolean insert) {
-      if (insert) {
-        return insertCql + STORE_OBJ_SUFFIX;
-      }
-      return insertCql;
-    }
-  }
-
-  private static final Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
-
-  static {
-    STORE_OBJ_TYPE.put(
-        ObjType.COMMIT,
-        new StoreObjDesc<CommitObj>(INSERT_OBJ_COMMIT) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              CommitObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws ObjTooLargeException {
-            values.accept(obj.created());
-            values.accept(obj.seq());
-            values.accept(obj.message());
-
-            Headers.Builder hb = Headers.newBuilder();
-            for (String h : obj.headers().keySet()) {
-              hb.addHeaders(
-                  HeaderEntry.newBuilder().setName(h).addAllValues(obj.headers().getAll(h)));
-            }
-            values.accept(ByteBuffer.wrap(hb.build().toByteArray()));
-
-            values.accept(serializeObjId(obj.referenceIndex()));
-
-            Stripes.Builder b = Stripes.newBuilder();
-            obj.referenceIndexStripes().stream()
-                .map(
-                    s ->
-                        Stripe.newBuilder()
-                            .setFirstKey(s.firstKey().rawString())
-                            .setLastKey(s.lastKey().rawString())
-                            .setSegment(s.segment().asBytes()))
-                .forEach(b::addStripes);
-            values.accept(b.build().toByteString().asReadOnlyByteBuffer());
-
-            values.accept(serializeObjIds(obj.tail()));
-            values.accept(serializeObjIds(obj.secondaryParents()));
-
-            ByteString index = obj.incrementalIndex();
-            if (index.size() > incrementalIndexLimit) {
-              throw new ObjTooLargeException(index.size(), incrementalIndexLimit);
-            }
-            values.accept(index.asReadOnlyByteBuffer());
-
-            values.accept(obj.incompleteIndex());
-            values.accept(obj.commitType().name());
-          }
-
-          @Override
-          CommitObj deserialize(Row row, ObjId id) {
-            CommitObj.Builder b =
-                CommitObj.commitBuilder()
-                    .id(id)
-                    .created(row.getLong(COL_COMMIT_CREATED))
-                    .seq(row.getLong(COL_COMMIT_SEQ))
-                    .message(row.getString(COL_COMMIT_MESSAGE))
-                    .referenceIndex(deserializeObjId(row.getString(COL_COMMIT_REFERENCE_INDEX)))
-                    .incrementalIndex(deserializeBytes(row, COL_COMMIT_INCREMENTAL_INDEX))
-                    .incompleteIndex(row.getBoolean(COL_COMMIT_INCOMPLETE_INDEX))
-                    .commitType(CommitType.valueOf(row.getString(COL_COMMIT_TYPE)));
-            deserializeObjIds(row, COL_COMMIT_TAIL, b::addTail);
-            deserializeObjIds(row, COL_COMMIT_SECONDARY_PARENTS, b::addSecondaryParents);
-
-            try {
-              CommitHeaders.Builder h = CommitHeaders.newCommitHeaders();
-              Headers headers = Headers.parseFrom(row.getByteBuffer(COL_COMMIT_HEADERS));
-              for (HeaderEntry e : headers.getHeadersList()) {
-                for (String v : e.getValuesList()) {
-                  h.add(e.getName(), v);
-                }
-              }
-              b.headers(h.build());
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-
-            try {
-              Stripes stripes =
-                  Stripes.parseFrom(row.getByteBuffer(COL_COMMIT_REFERENCE_INDEX_STRIPES));
-              stripes.getStripesList().stream()
-                  .map(
-                      s ->
-                          indexStripe(
-                              keyFromString(s.getFirstKey()),
-                              keyFromString(s.getLastKey()),
-                              objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
-                  .forEach(b::addReferenceIndexStripes);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-
-            return b.build();
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.REF,
-        new StoreObjDesc<RefObj>(INSERT_OBJ_REF) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              RefObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            values.accept(obj.name());
-            values.accept(serializeObjId(obj.initialPointer()));
-            values.accept(obj.createdAtMicros());
-            values.accept(serializeObjId(obj.extendedInfoObj()));
-          }
-
-          @Override
-          RefObj deserialize(Row row, ObjId id) {
-            return ref(
-                id,
-                row.getString(COL_REF_NAME),
-                deserializeObjId(row.getString(COL_REF_INITIAL_POINTER)),
-                row.getLong(COL_REF_CREATED_AT),
-                deserializeObjId(row.getString(COL_REF_EXTENDED_INFO)));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.VALUE,
-        new StoreObjDesc<ContentValueObj>(INSERT_OBJ_VALUE) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              ContentValueObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            values.accept(obj.contentId());
-            values.accept(obj.payload());
-            values.accept(obj.data().asReadOnlyByteBuffer());
-          }
-
-          @Override
-          ContentValueObj deserialize(Row row, ObjId id) {
-            ByteString value = deserializeBytes(row, COL_VALUE_DATA);
-            if (value != null) {
-              return contentValue(
-                  id, row.getString(COL_VALUE_CONTENT_ID), row.getInt(COL_VALUE_PAYLOAD), value);
-            }
-            throw new IllegalStateException("Data value of obj " + id + " of type VALUE is null");
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.INDEX_SEGMENTS,
-        new StoreObjDesc<IndexSegmentsObj>(INSERT_OBJ_SEGMENTS) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              IndexSegmentsObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            Stripes.Builder b = Stripes.newBuilder();
-            obj.stripes().stream()
-                .map(
-                    s ->
-                        Stripe.newBuilder()
-                            .setFirstKey(s.firstKey().rawString())
-                            .setLastKey(s.lastKey().rawString())
-                            .setSegment(s.segment().asBytes()))
-                .forEach(b::addStripes);
-            values.accept(b.build().toByteString().asReadOnlyByteBuffer());
-          }
-
-          @Override
-          IndexSegmentsObj deserialize(Row row, ObjId id) {
-            try {
-              Stripes stripes = Stripes.parseFrom(row.getByteBuffer(COL_SEGMENTS_STRIPES));
-              List<IndexStripe> stripeList =
-                  stripes.getStripesList().stream()
-                      .map(
-                          s ->
-                              indexStripe(
-                                  keyFromString(s.getFirstKey()),
-                                  keyFromString(s.getLastKey()),
-                                  objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
-                      .collect(Collectors.toList());
-              return indexSegments(id, stripeList);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.INDEX,
-        new StoreObjDesc<IndexObj>(INSERT_OBJ_INDEX) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              IndexObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws ObjTooLargeException {
-            ByteString index = obj.index();
-            if (index.size() > maxSerializedIndexSize) {
-              throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
-            }
-            values.accept(index.asReadOnlyByteBuffer());
-          }
-
-          @Override
-          IndexObj deserialize(Row row, ObjId id) {
-            ByteString indexValue = deserializeBytes(row, COL_INDEX_INDEX);
-            if (indexValue != null) {
-              return index(id, indexValue);
-            }
-            throw new IllegalStateException("Index value of obj " + id + " of type INDEX is null");
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.TAG,
-        new StoreObjDesc<TagObj>(INSERT_OBJ_TAG) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              TagObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            values.accept(obj.message());
-            Headers.Builder hb = Headers.newBuilder();
-            CommitHeaders headers = obj.headers();
-            if (headers != null) {
-              for (String h : headers.keySet()) {
-                hb.addHeaders(HeaderEntry.newBuilder().setName(h).addAllValues(headers.getAll(h)));
-              }
-            }
-            values.accept(ByteBuffer.wrap(hb.build().toByteArray()));
-            ByteString signature = obj.signature();
-            values.accept(signature != null ? signature.asReadOnlyByteBuffer() : null);
-          }
-
-          @Override
-          TagObj deserialize(Row row, ObjId id) {
-            CommitHeaders tagHeaders = null;
-            try {
-              Headers headers = Headers.parseFrom(row.getByteBuffer(COL_TAG_HEADERS));
-              if (headers.getHeadersCount() > 0) {
-                CommitHeaders.Builder h = CommitHeaders.newCommitHeaders();
-                for (HeaderEntry e : headers.getHeadersList()) {
-                  for (String v : e.getValuesList()) {
-                    h.add(e.getName(), v);
-                  }
-                }
-                tagHeaders = h.build();
-              }
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-
-            return tag(
-                id,
-                row.getString(COL_TAG_MESSAGE),
-                tagHeaders,
-                deserializeBytes(row, COL_TAG_SIGNATURE));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.STRING,
-        new StoreObjDesc<StringObj>(INSERT_OBJ_STRING) {
-          @Override
-          void store(
-              Consumer<Object> values,
-              StringObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize) {
-            values.accept(obj.contentType());
-            values.accept(obj.compression().name());
-            values.accept(obj.filename());
-            values.accept(serializeObjIds(obj.predecessors()));
-            values.accept(obj.text().asReadOnlyByteBuffer());
-          }
-
-          @Override
-          StringObj deserialize(Row row, ObjId id) {
-            return stringData(
-                id,
-                row.getString(COL_STRING_CONTENT_TYPE),
-                Compression.valueOf(row.getString(COL_STRING_COMPRESSION)),
-                row.getString(COL_STRING_FILENAME),
-                deserializeObjIds(row, COL_STRING_PREDECESSORS),
-                deserializeBytes(row, COL_STRING_TEXT));
-          }
-        });
-  }
-
-  private static ByteString deserializeBytes(Row row, int idx) {
-    ByteBuffer bytes = row.getByteBuffer(idx);
-    return bytes != null ? unsafeWrap(bytes) : null;
-  }
-
-  private static Reference deserializeReference(Row row) {
-    ByteBuffer previous = row.getByteBuffer(5);
-    byte[] bytes;
-    if (previous != null) {
-      bytes = new byte[previous.remaining()];
-      previous.get(bytes);
-    } else {
-      bytes = null;
-    }
-    return Reference.reference(
-        row.getString(0),
-        deserializeObjId(row.getString(1)),
-        row.getBoolean(2),
-        row.getLong(3),
-        deserializeObjId(row.getString(4)),
-        deserializePreviousPointers(bytes));
-  }
-
-  private static ObjId deserializeObjId(String id) {
-    return id != null ? objIdFromString(id) : null;
-  }
-
-  private static String serializeObjId(ObjId id) {
-    return id != null ? id.toString() : null;
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static List<ObjId> deserializeObjIds(Row row, int col) {
-    List<ObjId> r = new ArrayList<>();
-    deserializeObjIds(row, col, r::add);
-    return r;
-  }
-
-  private static void deserializeObjIds(Row row, int col, Consumer<ObjId> consumer) {
-    List<String> s = row.getList(col, String.class);
-    if (s == null || s.isEmpty()) {
-      return;
-    }
-    s.stream().map(ObjId::objIdFromString).forEach(consumer);
-  }
-
-  private static List<String> serializeObjIds(List<ObjId> values) {
-    return (values != null && !values.isEmpty())
-        ? values.stream().map(ObjId::toString).collect(Collectors.toList())
-        : null;
-  }
-
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>
       implements CloseableIterator<Obj> {
 
@@ -897,7 +481,8 @@ public class CassandraPersist implements Persist {
 
     ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
       this.returnedObjTypes = returnedObjTypes;
-      rs = backend.execute(SCAN_OBJS, config.repositoryId()).iterator();
+      BoundStatement stmt = backend.buildStatement(SCAN_OBJS, config.repositoryId());
+      rs = backend.execute(stmt).iterator();
     }
 
     @Override
@@ -913,12 +498,13 @@ public class CassandraPersist implements Persist {
         }
 
         Row row = rs.next();
-        ObjType type = ObjType.valueOf(row.getString(1));
+        ObjType type = ObjTypes.forName(requireNonNull(row.getString(1)));
         if (!returnedObjTypes.contains(type)) {
           continue;
         }
 
-        return deserializeObj(row, type);
+        ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
+        return ObjSerializers.forType(type).deserialize(row, id);
       }
     }
   }

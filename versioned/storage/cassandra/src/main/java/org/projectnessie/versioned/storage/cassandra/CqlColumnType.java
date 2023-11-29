@@ -15,31 +15,38 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+
 public enum CqlColumnType {
   // 0
-  NAME("TEXT"),
+  NAME(DataTypes.TEXT),
   // 1
-  OBJ_ID("ASCII"),
+  OBJ_ID(DataTypes.ASCII),
   // 2
-  OBJ_ID_LIST("LIST<TEXT>"),
+  OBJ_ID_LIST(DataTypes.listOf(DataTypes.TEXT)),
   // 3
-  BOOL("BOOLEAN"),
+  BOOL(DataTypes.BOOLEAN),
   // 4
-  VARBINARY("BLOB"),
+  VARBINARY(DataTypes.BLOB),
   // 5
-  BIGINT("BIGINT"),
+  BIGINT(DataTypes.BIGINT),
   // 6
-  VARCHAR("TEXT"),
+  VARCHAR(DataTypes.TEXT),
   // 7
-  INT("INT");
+  INT(DataTypes.INT);
 
-  private final String type;
+  private final DataType dataType;
 
-  CqlColumnType(String type) {
-    this.type = type;
+  CqlColumnType(DataType dataType) {
+    this.dataType = dataType;
   }
 
-  public String type() {
-    return type;
+  public String cqlName() {
+    return dataType.asCql(false, false);
+  }
+
+  public DataType dataType() {
+    return dataType;
   }
 }
