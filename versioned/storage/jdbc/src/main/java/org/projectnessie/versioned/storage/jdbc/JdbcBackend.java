@@ -17,8 +17,11 @@ package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.storage.jdbc.AbstractJdbcPersist.sqlSelectMultiple;
+import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.BIGINT;
+import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.BOOL;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.NAME;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.OBJ_ID;
+import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.VARBINARY;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_CREATED_AT;
@@ -28,8 +31,6 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_NAM
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_POINTER;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_PREVIOUS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.CREATE_TABLE_OBJS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.CREATE_TABLE_REFS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ERASE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ERASE_REFS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
@@ -41,11 +42,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,6 +60,8 @@ final class JdbcBackend implements Backend {
   private final DataSource dataSource;
   private final boolean closeDataSource;
   private final JdbcBackendConfig config;
+  private final String createTableRefsSql;
+  private final String createTableObjsSql;
 
   JdbcBackend(
       @Nonnull @jakarta.annotation.Nonnull JdbcBackendConfig config,
@@ -69,6 +71,70 @@ final class JdbcBackend implements Backend {
     this.dataSource = config.dataSource();
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
+    createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
+    createTableObjsSql = buildCreateTableObjsSql(databaseSpecific);
+  }
+
+  private String buildCreateTableRefsSql(DatabaseSpecific databaseSpecific) {
+    Map<JdbcColumnType, String> columnTypes = databaseSpecific.columnTypes();
+    return "CREATE TABLE "
+        + TABLE_REFS
+        + "\n  (\n    "
+        + COL_REPO_ID
+        + " "
+        + columnTypes.get(NAME)
+        + ",\n    "
+        + COL_REFS_NAME
+        + " "
+        + columnTypes.get(NAME)
+        + ",\n    "
+        + COL_REFS_POINTER
+        + " "
+        + columnTypes.get(OBJ_ID)
+        + ",\n    "
+        + COL_REFS_DELETED
+        + " "
+        + columnTypes.get(BOOL)
+        + ",\n    "
+        + COL_REFS_CREATED_AT
+        + " "
+        + columnTypes.get(BIGINT)
+        + " DEFAULT 0,\n    "
+        + COL_REFS_EXTENDED_INFO
+        + " "
+        + columnTypes.get(OBJ_ID)
+        + ",\n    "
+        + COL_REFS_PREVIOUS
+        + " "
+        + columnTypes.get(VARBINARY)
+        + ",\n    PRIMARY KEY ("
+        + COL_REPO_ID
+        + ", "
+        + COL_REFS_NAME
+        + ")\n  )";
+  }
+
+  private String buildCreateTableObjsSql(DatabaseSpecific databaseSpecific) {
+    Map<JdbcColumnType, String> columnTypes = databaseSpecific.columnTypes();
+    StringBuilder sb =
+        new StringBuilder()
+            .append("CREATE TABLE ")
+            .append(TABLE_OBJS)
+            .append(" (\n    ")
+            .append(COL_REPO_ID)
+            .append(" ")
+            .append(columnTypes.get(NAME));
+    for (Entry<String, JdbcColumnType> entry : COLS_OBJS_ALL.entrySet()) {
+      String colName = entry.getKey();
+      String colType = columnTypes.get(entry.getValue());
+      sb.append(",\n    ").append(colName).append(" ").append(colType);
+    }
+    sb.append(",\n    PRIMARY KEY (")
+        .append(COL_REPO_ID)
+        .append(", ")
+        .append(COL_OBJ_ID)
+        .append(")\n  )");
+    return sb.toString();
   }
 
   static RuntimeException unhandledSQLException(SQLException e) {
@@ -113,7 +179,7 @@ final class JdbcBackend implements Backend {
       createTableIfNotExists(
           conn,
           TABLE_REFS,
-          CREATE_TABLE_REFS,
+          createTableRefsSql,
           Stream.of(
                   COL_REPO_ID,
                   COL_REFS_NAME,
@@ -127,9 +193,8 @@ final class JdbcBackend implements Backend {
       createTableIfNotExists(
           conn,
           TABLE_OBJS,
-          CREATE_TABLE_OBJS,
-          Stream.concat(
-                  Stream.of(COL_REPO_ID), Arrays.stream(COLS_OBJS_ALL.split(",")).map(String::trim))
+          createTableObjsSql,
+          Stream.concat(Stream.of(COL_REPO_ID), COLS_OBJS_ALL.keySet().stream())
               .collect(Collectors.toSet()),
           ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_OBJ_ID, objIdTypeId));
     } catch (SQLException e) {
@@ -144,15 +209,10 @@ final class JdbcBackend implements Backend {
       Set<String> expectedColumns,
       Map<String, Integer> expectedPrimaryKey)
       throws SQLException {
-    Map<JdbcColumnType, String> columnTypesMap = databaseSpecific.columnTypes();
-    Object[] types =
-        Arrays.stream(JdbcColumnType.values()).map(columnTypesMap::get).toArray(Object[]::new);
 
     // TODO implement catalog + schema stuff...
     String catalog = config.catalog();
     String schema = config.schema();
-
-    createTable = MessageFormat.format(createTable, types);
 
     try (Statement st = conn.createStatement()) {
       if (conn.getMetaData().storesLowerCaseIdentifiers()) {

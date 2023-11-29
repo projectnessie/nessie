@@ -16,52 +16,17 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Arrays.stream;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
-import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
-import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
-import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
-import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
-import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
-import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static java.util.stream.Collectors.joining;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
 import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
+import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.deserializeObjId;
+import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.serializeObjId;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENCE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_CREATED;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_HEADERS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_INCOMPLETE_INDEX;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_INCREMENTAL_INDEX;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_MESSAGE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_REFERENCE_INDEX;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_REFERENCE_INDEX_STRIPES;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_SECONDARY_PARENTS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_SEQ;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_TAIL;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_TYPE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_INDEX_INDEX;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_CREATED_AT;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_EXTENDED_INFO;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_INITIAL_POINTER;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REF_NAME;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_SEGMENTS_STRIPES;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_COMPRESSION;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_CONTENT_TYPE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_FILENAME;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_PREDECESSORS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_STRING_TEXT;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_HEADERS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_MESSAGE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_TAG_SIGNATURE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_VALUE_CONTENT_ID;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_VALUE_DATA;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_VALUE_PAYLOAD;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS;
@@ -73,70 +38,78 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.PURGE_REFERE
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_CREATED_AT_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_EXTENDED_INFO_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.STORE_OBJ;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_REFERENCE_POINTER;
-import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
-import java.io.IOException;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Object2IntHashMap;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
-import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.CommitType;
-import org.projectnessie.versioned.storage.common.objtypes.Compression;
-import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
-import org.projectnessie.versioned.storage.common.objtypes.RefObj;
-import org.projectnessie.versioned.storage.common.objtypes.StringObj;
-import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
-import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
+import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializer;
+import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializers;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 abstract class AbstractJdbcPersist implements Persist {
 
   private final StoreConfig config;
   private final DatabaseSpecific databaseSpecific;
+  private final String storeObjSql;
+  private final Map<String, Integer> storeObjSqlParams;
 
   AbstractJdbcPersist(DatabaseSpecific databaseSpecific, StoreConfig config) {
     this.config = config;
     this.databaseSpecific = databaseSpecific;
+    this.storeObjSqlParams = buildStoreObjSqlParams();
+    this.storeObjSql = buildStoreObjSql();
+  }
+
+  private Map<String, Integer> buildStoreObjSqlParams() {
+    Builder<String, Integer> params = ImmutableMap.builder();
+    int i = 1;
+    params.put(COL_REPO_ID, i++);
+    for (String col : COLS_OBJS_ALL.keySet()) {
+      params.put(col, i++);
+    }
+    return params.build();
+  }
+
+  private String buildStoreObjSql() {
+    return "INSERT INTO "
+        + TABLE_OBJS
+        + " ("
+        + String.join(", ", storeObjSqlParams.keySet())
+        + ") VALUES ("
+        + storeObjSqlParams.keySet().stream().map(c -> "?").collect(joining(", "))
+        + ")";
   }
 
   @Nonnull
@@ -189,7 +162,7 @@ abstract class AbstractJdbcPersist implements Persist {
       }
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
-          Reference ref = deserializeReference(rs);
+          Reference ref = JdbcSerde.deserializeReference(rs);
           int i = nameToIndex.getValue(ref.name());
           if (i != -1) {
             r[i] = ref;
@@ -214,14 +187,14 @@ abstract class AbstractJdbcPersist implements Persist {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, config.repositoryId());
       ps.setString(2, reference.name());
-      serializeObjId(ps, 3, reference.pointer());
+      serializeObjId(ps, 3, reference.pointer(), databaseSpecific);
       ps.setBoolean(4, reference.deleted());
       if (reference.createdAtMicros() != 0L) {
         ps.setLong(5, reference.createdAtMicros());
       } else {
         ps.setNull(5, Types.BIGINT);
       }
-      serializeObjId(ps, 6, reference.extendedInfoObj());
+      serializeObjId(ps, 6, reference.extendedInfoObj(), databaseSpecific);
       byte[] previous = serializePreviousPointers(reference.previousPointers());
       if (previous != null) {
         ps.setBytes(7, previous);
@@ -254,7 +227,7 @@ abstract class AbstractJdbcPersist implements Persist {
       ps.setBoolean(idx++, true);
       ps.setString(idx++, config().repositoryId());
       ps.setString(idx++, reference.name());
-      serializeObjId(ps, idx++, reference.pointer());
+      serializeObjId(ps, idx++, reference.pointer(), databaseSpecific);
       ps.setBoolean(idx++, false);
       long createdAtMicros = reference.createdAtMicros();
       if (createdAtMicros != 0L) {
@@ -262,7 +235,7 @@ abstract class AbstractJdbcPersist implements Persist {
       }
       ObjId extendedInfoObj = reference.extendedInfoObj();
       if (extendedInfoObj != null) {
-        serializeObjId(ps, idx, extendedInfoObj);
+        serializeObjId(ps, idx, extendedInfoObj, databaseSpecific);
       }
 
       if (ps.executeUpdate() != 1) {
@@ -287,7 +260,7 @@ abstract class AbstractJdbcPersist implements Persist {
       int idx = 1;
       ps.setString(idx++, config().repositoryId());
       ps.setString(idx++, reference.name());
-      serializeObjId(ps, idx++, reference.pointer());
+      serializeObjId(ps, idx++, reference.pointer(), databaseSpecific);
       ps.setBoolean(idx++, true);
       long createdAtMicros = reference.createdAtMicros();
       if (createdAtMicros != 0L) {
@@ -295,7 +268,7 @@ abstract class AbstractJdbcPersist implements Persist {
       }
       ObjId extendedInfoObj = reference.extendedInfoObj();
       if (extendedInfoObj != null) {
-        serializeObjId(ps, idx, extendedInfoObj);
+        serializeObjId(ps, idx, extendedInfoObj, databaseSpecific);
       }
 
       if (ps.executeUpdate() != 1) {
@@ -320,7 +293,7 @@ abstract class AbstractJdbcPersist implements Persist {
     try (PreparedStatement ps =
         conn.prepareStatement(referencesDml(UPDATE_REFERENCE_POINTER, reference))) {
       int idx = 1;
-      serializeObjId(ps, idx++, newPointer);
+      serializeObjId(ps, idx++, newPointer, databaseSpecific);
       Reference updated = reference.forNewPointer(newPointer, config);
       byte[] previous = serializePreviousPointers(updated.previousPointers());
       if (previous != null) {
@@ -331,7 +304,7 @@ abstract class AbstractJdbcPersist implements Persist {
 
       ps.setString(idx++, config().repositoryId());
       ps.setString(idx++, reference.name());
-      serializeObjId(ps, idx++, reference.pointer());
+      serializeObjId(ps, idx++, reference.pointer(), databaseSpecific);
       ps.setBoolean(idx++, false);
       long createdAtMicros = reference.createdAtMicros();
       if (createdAtMicros != 0L) {
@@ -339,7 +312,7 @@ abstract class AbstractJdbcPersist implements Persist {
       }
       ObjId extendedInfoObj = reference.extendedInfoObj();
       if (extendedInfoObj != null) {
-        serializeObjId(ps, idx, extendedInfoObj);
+        serializeObjId(ps, idx, extendedInfoObj, databaseSpecific);
       }
 
       if (ps.executeUpdate() != 1) {
@@ -363,9 +336,9 @@ abstract class AbstractJdbcPersist implements Persist {
         .replace(REFS_EXTENDED_INFO_COND, extendedInfoCond);
   }
 
-  @SuppressWarnings("unused")
   protected <T extends Obj> T fetchTypedObj(
-      Connection conn, ObjId id, ObjType type, Class<T> typeClass) throws ObjNotFoundException {
+      Connection conn, ObjId id, ObjType type, @SuppressWarnings("unused") Class<T> typeClass)
+      throws ObjNotFoundException {
     Obj obj = fetchObjs(conn, new ObjId[] {id}, type)[0];
 
     @SuppressWarnings("unchecked")
@@ -386,11 +359,11 @@ abstract class AbstractJdbcPersist implements Persist {
       throws ObjNotFoundException {
     try (PreparedStatement ps = conn.prepareStatement(sqlSelectMultiple(FETCH_OBJ_TYPE, 1))) {
       ps.setString(1, config.repositoryId());
-      serializeObjId(ps, 2, id);
+      serializeObjId(ps, 2, id, databaseSpecific);
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
           String objType = rs.getString(1);
-          return ObjType.valueOf(objType);
+          return ObjTypes.forName(objType);
         }
       }
       throw new ObjNotFoundException(id);
@@ -438,7 +411,7 @@ abstract class AbstractJdbcPersist implements Persist {
       int idx = 1;
       ps.setString(idx++, config.repositoryId());
       for (ObjId key : keys) {
-        serializeObjId(ps, idx++, key);
+        serializeObjId(ps, idx++, key, databaseSpecific);
       }
       if (type != null) {
         ps.setString(idx, type.name());
@@ -475,14 +448,11 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   private Obj deserializeObj(ResultSet rs) throws SQLException {
-    ObjId id = deserializeObjId(rs, 1);
-    String objType = rs.getString(2);
-    ObjType type = ObjType.valueOf(objType);
-
-    @SuppressWarnings("rawtypes")
-    StoreObjDesc objDesc = STORE_OBJ_TYPE.get(type);
-    checkState(objDesc != null, "Cannot deserialize object type %s", objType);
-    return objDesc.deserialize(rs, id);
+    ObjId id = deserializeObjId(rs, COL_OBJ_ID);
+    String objType = rs.getString(COL_OBJ_TYPE);
+    ObjType type = ObjTypes.forName(objType);
+    ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
+    return serializer.deserialize(rs, id);
   }
 
   protected final boolean storeObj(
@@ -518,7 +488,6 @@ abstract class AbstractJdbcPersist implements Persist {
     return null;
   }
 
-  @SuppressWarnings("unchecked")
   @Nonnull
   @jakarta.annotation.Nonnull
   private boolean[] upsertObjs(
@@ -535,7 +504,7 @@ abstract class AbstractJdbcPersist implements Persist {
           conn, stream(objs).map(obj -> obj == null ? null : obj.id()).toArray(ObjId[]::new));
     }
 
-    try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(STORE_OBJ))) {
+    try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(storeObjSql))) {
       boolean[] r = new boolean[objs.length];
 
       Int2IntHashMap batchIndexToObjIndex =
@@ -567,22 +536,22 @@ abstract class AbstractJdbcPersist implements Persist {
 
         checkArgument(id != null, "Obj to store must have a non-null ID");
 
-        checkArgument(STORE_OBJ_TYPE.containsKey(type), "Cannot serialize object type %s ", type);
+        ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
+        serializeObjId(ps, storeObjSqlParams.get(COL_OBJ_ID), id, databaseSpecific);
+        ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
 
-        //
+        ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
+        serializer.serialize(
+            ps,
+            obj,
+            incrementalIndexSizeLimit,
+            indexSizeLimit,
+            storeObjSqlParams::get,
+            databaseSpecific);
 
-        int idx = 1;
-        ps.setString(idx++, config.repositoryId());
-        serializeObjId(ps, idx++, id);
-        ps.setString(idx++, type.name());
-
-        for (Entry<ObjType, StoreObjDesc<?>> e : STORE_OBJ_TYPE.entrySet()) {
-          if (e.getKey() == type) {
-            @SuppressWarnings("rawtypes")
-            StoreObjDesc storeType = e.getValue();
-            idx = storeType.store(ps, idx, obj, incrementalIndexSizeLimit, indexSizeLimit);
-          } else {
-            idx = e.getValue().storeNone(ps, idx);
+        for (ObjSerializer<?> other : ObjSerializers.ALL_SERIALIZERS) {
+          if (serializer != other) {
+            other.setNull(ps, storeObjSqlParams::get, databaseSpecific);
           }
         }
 
@@ -616,7 +585,7 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull ObjId id) {
     try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ)) {
       ps.setString(1, config.repositoryId());
-      serializeObjId(ps, 2, id);
+      serializeObjId(ps, 2, id, databaseSpecific);
 
       ps.executeUpdate();
     } catch (SQLException e) {
@@ -639,7 +608,7 @@ abstract class AbstractJdbcPersist implements Persist {
           continue;
         }
         ps.setString(1, config.repositoryId());
-        serializeObjId(ps, 2, id);
+        serializeObjId(ps, 2, id, databaseSpecific);
         ps.addBatch();
 
         if (++batchSize == MAX_BATCH_SIZE) {
@@ -663,467 +632,6 @@ abstract class AbstractJdbcPersist implements Persist {
 
   protected CloseableIterator<Obj> scanAllObjects(Connection conn, Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(conn, returnedObjTypes);
-  }
-
-  private abstract static class StoreObjDesc<O extends Obj> {
-
-    abstract O deserialize(ResultSet rs, ObjId id) throws SQLException;
-
-    abstract int storeNone(PreparedStatement ps, int idx) throws SQLException;
-
-    abstract int store(
-        PreparedStatement ps, int idx, O obj, int incrementalIndexLimit, int maxSerializedIndexSize)
-        throws SQLException, ObjTooLargeException;
-  }
-
-  private static final Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
-
-  static {
-    STORE_OBJ_TYPE.put(
-        ObjType.COMMIT,
-        new StoreObjDesc<CommitObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.BIGINT);
-            ps.setNull(idx++, Types.BIGINT);
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.BINARY);
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.BINARY);
-
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.VARCHAR);
-
-            ps.setNull(idx++, Types.BINARY);
-
-            ps.setNull(idx++, Types.BOOLEAN);
-            ps.setNull(idx++, Types.VARCHAR);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              CommitObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException, ObjTooLargeException {
-            ps.setLong(idx++, obj.created());
-            ps.setLong(idx++, obj.seq());
-            ps.setString(idx++, obj.message());
-
-            obj.headers();
-            Headers.Builder hb = Headers.newBuilder();
-            for (String h : obj.headers().keySet()) {
-              hb.addHeaders(
-                  HeaderEntry.newBuilder().setName(h).addAllValues(obj.headers().getAll(h)));
-            }
-            ps.setBytes(idx++, hb.build().toByteArray());
-
-            serializeObjId(ps, idx++, obj.referenceIndex());
-
-            Stripes.Builder b = Stripes.newBuilder();
-            obj.referenceIndexStripes().stream()
-                .map(
-                    s ->
-                        Stripe.newBuilder()
-                            .setFirstKey(s.firstKey().rawString())
-                            .setLastKey(s.lastKey().rawString())
-                            .setSegment(s.segment().asBytes()))
-                .forEach(b::addStripes);
-            serializeBytes(ps, idx++, b.build().toByteString());
-
-            serializeObjIds(ps, idx++, obj.tail());
-            serializeObjIds(ps, idx++, obj.secondaryParents());
-
-            ByteString index = obj.incrementalIndex();
-            if (index.size() > incrementalIndexLimit) {
-              throw new ObjTooLargeException(index.size(), incrementalIndexLimit);
-            }
-            serializeBytes(ps, idx++, index);
-
-            ps.setBoolean(idx++, obj.incompleteIndex());
-            ps.setString(idx++, obj.commitType().name());
-            return idx;
-          }
-
-          @Override
-          CommitObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            CommitObj.Builder b =
-                CommitObj.commitBuilder()
-                    .id(id)
-                    .created(rs.getLong(COL_COMMIT_CREATED))
-                    .seq(rs.getLong(COL_COMMIT_SEQ))
-                    .message(rs.getString(COL_COMMIT_MESSAGE))
-                    .referenceIndex(deserializeObjId(rs, COL_COMMIT_REFERENCE_INDEX))
-                    .incrementalIndex(deserializeBytes(rs, COL_COMMIT_INCREMENTAL_INDEX))
-                    .incompleteIndex(rs.getBoolean(COL_COMMIT_INCOMPLETE_INDEX))
-                    .commitType(CommitType.valueOf(rs.getString(COL_COMMIT_TYPE)));
-            deserializeObjIds(rs, COL_COMMIT_TAIL, b::addTail);
-            deserializeObjIds(rs, COL_COMMIT_SECONDARY_PARENTS, b::addSecondaryParents);
-
-            try {
-              CommitHeaders.Builder h = CommitHeaders.newCommitHeaders();
-              Headers headers = Headers.parseFrom(rs.getBytes(COL_COMMIT_HEADERS));
-              for (HeaderEntry e : headers.getHeadersList()) {
-                for (String v : e.getValuesList()) {
-                  h.add(e.getName(), v);
-                }
-              }
-              b.headers(h.build());
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-
-            try {
-              Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_COMMIT_REFERENCE_INDEX_STRIPES));
-              stripes.getStripesList().stream()
-                  .map(
-                      s ->
-                          indexStripe(
-                              keyFromString(s.getFirstKey()),
-                              keyFromString(s.getLastKey()),
-                              objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
-                  .forEach(b::addReferenceIndexStripes);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-
-            return b.build();
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.REF,
-        new StoreObjDesc<RefObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.BIGINT);
-            ps.setNull(idx++, Types.VARCHAR);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              RefObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException {
-            ps.setString(idx++, obj.name());
-            serializeObjId(ps, idx++, obj.initialPointer());
-            ps.setLong(idx++, obj.createdAtMicros());
-            serializeObjId(ps, idx++, obj.extendedInfoObj());
-            return idx;
-          }
-
-          @Override
-          RefObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            return ref(
-                id,
-                rs.getString(COL_REF_NAME),
-                deserializeObjId(rs, COL_REF_INITIAL_POINTER),
-                rs.getLong(COL_REF_CREATED_AT),
-                deserializeObjId(rs, COL_REF_EXTENDED_INFO));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.VALUE,
-        new StoreObjDesc<ContentValueObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.TINYINT);
-            ps.setNull(idx++, Types.BINARY);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              ContentValueObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException {
-            ps.setString(idx++, obj.contentId());
-            ps.setInt(idx++, obj.payload());
-            serializeBytes(ps, idx++, obj.data());
-            return idx;
-          }
-
-          @Override
-          ContentValueObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            return contentValue(
-                id,
-                rs.getString(COL_VALUE_CONTENT_ID),
-                rs.getInt(COL_VALUE_PAYLOAD),
-                requireNonNull(deserializeBytes(rs, COL_VALUE_DATA)));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.INDEX_SEGMENTS,
-        new StoreObjDesc<IndexSegmentsObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.BINARY);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              IndexSegmentsObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException {
-            Stripes.Builder b = Stripes.newBuilder();
-            obj.stripes().stream()
-                .map(
-                    s ->
-                        Stripe.newBuilder()
-                            .setFirstKey(s.firstKey().rawString())
-                            .setLastKey(s.lastKey().rawString())
-                            .setSegment(s.segment().asBytes()))
-                .forEach(b::addStripes);
-            serializeBytes(ps, idx++, b.build().toByteString());
-            return idx;
-          }
-
-          @Override
-          IndexSegmentsObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            try {
-              Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_SEGMENTS_STRIPES));
-              List<IndexStripe> stripeList =
-                  stripes.getStripesList().stream()
-                      .map(
-                          s ->
-                              indexStripe(
-                                  keyFromString(s.getFirstKey()),
-                                  keyFromString(s.getLastKey()),
-                                  objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
-                      .collect(Collectors.toList());
-              return indexSegments(id, stripeList);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.INDEX,
-        new StoreObjDesc<IndexObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.BINARY);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              IndexObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException, ObjTooLargeException {
-            ByteString index = obj.index();
-            if (index.size() > maxSerializedIndexSize) {
-              throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
-            }
-            serializeBytes(ps, idx++, index);
-            return idx;
-          }
-
-          @Override
-          IndexObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            ByteString index = deserializeBytes(rs, COL_INDEX_INDEX);
-            if (index != null) {
-              return index(id, index);
-            }
-            throw new IllegalStateException("Index column for object ID " + id + " is null");
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.TAG,
-        new StoreObjDesc<TagObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.BINARY);
-            ps.setNull(idx++, Types.BINARY);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              TagObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException {
-            ps.setString(idx++, obj.message());
-            Headers.Builder hb = Headers.newBuilder();
-            CommitHeaders headers = obj.headers();
-            if (headers != null) {
-              for (String h : headers.keySet()) {
-                hb.addHeaders(HeaderEntry.newBuilder().setName(h).addAllValues(headers.getAll(h)));
-              }
-            }
-            ps.setBytes(idx++, hb.build().toByteArray());
-            serializeBytes(ps, idx++, obj.signature());
-            return idx;
-          }
-
-          @Override
-          TagObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            CommitHeaders tagHeaders = null;
-            try {
-              Headers headers = Headers.parseFrom(deserializeBytes(rs, COL_TAG_HEADERS));
-              if (headers.getHeadersCount() > 0) {
-                CommitHeaders.Builder h = CommitHeaders.newCommitHeaders();
-                for (HeaderEntry e : headers.getHeadersList()) {
-                  for (String v : e.getValuesList()) {
-                    h.add(e.getName(), v);
-                  }
-                }
-                tagHeaders = h.build();
-              }
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-
-            return tag(
-                id,
-                rs.getString(COL_TAG_MESSAGE),
-                tagHeaders,
-                deserializeBytes(rs, COL_TAG_SIGNATURE));
-          }
-        });
-    STORE_OBJ_TYPE.put(
-        ObjType.STRING,
-        new StoreObjDesc<StringObj>() {
-          @Override
-          int storeNone(PreparedStatement ps, int idx) throws SQLException {
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.VARCHAR);
-            ps.setNull(idx++, Types.BINARY);
-            return idx;
-          }
-
-          @Override
-          int store(
-              PreparedStatement ps,
-              int idx,
-              StringObj obj,
-              int incrementalIndexLimit,
-              int maxSerializedIndexSize)
-              throws SQLException {
-            ps.setString(idx++, obj.contentType());
-            ps.setString(idx++, obj.compression().name());
-            ps.setString(idx++, obj.filename());
-            serializeObjIds(ps, idx++, obj.predecessors());
-            serializeBytes(ps, idx++, obj.text());
-            return idx;
-          }
-
-          @Override
-          StringObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-            return stringData(
-                id,
-                rs.getString(COL_STRING_CONTENT_TYPE),
-                Compression.valueOf(rs.getString(COL_STRING_COMPRESSION)),
-                rs.getString(COL_STRING_FILENAME),
-                deserializeObjIds(rs, COL_STRING_PREDECESSORS),
-                deserializeBytes(rs, COL_STRING_TEXT));
-          }
-        });
-  }
-
-  private static void serializeBytes(PreparedStatement ps, int idx, ByteString blob)
-      throws SQLException {
-    if (blob == null) {
-      ps.setNull(idx, Types.BLOB);
-      return;
-    }
-    ps.setBinaryStream(idx, blob.newInput());
-  }
-
-  private static ByteString deserializeBytes(ResultSet rs, int idx) throws SQLException {
-    byte[] bytes = rs.getBytes(idx);
-    return bytes != null ? unsafeWrap(bytes) : null;
-  }
-
-  private static Reference deserializeReference(ResultSet rs) throws SQLException {
-    byte[] prevBytes = rs.getBytes(6);
-    List<Reference.PreviousPointer> previousPointers =
-        prevBytes != null ? deserializePreviousPointers(prevBytes) : emptyList();
-    return Reference.reference(
-        rs.getString(1),
-        deserializeObjId(rs, 2),
-        rs.getBoolean(3),
-        rs.getLong(4),
-        deserializeObjId(rs, 5),
-        previousPointers);
-  }
-
-  private static ObjId deserializeObjId(ResultSet rs, int col) throws SQLException {
-    String s = rs.getString(col);
-    return s != null ? objIdFromString(s) : null;
-  }
-
-  private static void serializeObjId(PreparedStatement ps, int col, ObjId value)
-      throws SQLException {
-    if (value != null) {
-      ps.setString(col, value.toString());
-    } else {
-      ps.setNull(col, Types.VARCHAR);
-    }
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static List<ObjId> deserializeObjIds(ResultSet rs, int col) throws SQLException {
-    List<ObjId> r = new ArrayList<>();
-    deserializeObjIds(rs, col, r::add);
-    return r;
-  }
-
-  private static void deserializeObjIds(ResultSet rs, int col, Consumer<ObjId> consumer)
-      throws SQLException {
-    String s = rs.getString(col);
-    if (s == null || s.isEmpty()) {
-      return;
-    }
-    int i = 0;
-    while (true) {
-      int next = s.indexOf(',', i);
-      String idAsString;
-      if (next == -1) {
-        idAsString = s.substring(i);
-      } else {
-        idAsString = s.substring(i, next);
-        i = next + 1;
-      }
-      consumer.accept(objIdFromString(idAsString));
-      if (next == -1) {
-        return;
-      }
-    }
-  }
-
-  private static void serializeObjIds(PreparedStatement ps, int col, List<ObjId> values)
-      throws SQLException {
-    if (values != null && !values.isEmpty()) {
-      ps.setString(col, values.stream().map(ObjId::toString).collect(Collectors.joining(",")));
-    } else {
-      ps.setNull(col, Types.VARCHAR);
-    }
   }
 
   @VisibleForTesting
