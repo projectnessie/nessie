@@ -3,8 +3,8 @@ description: 'Sets up Java + Gradle'
 inputs:
   java-version:
     required: false
-    default: '11'
-    description: 'Java version, defaults to 11'
+    default: '17'
+    description: 'Java version, defaults to 17'
   gpg-private-key:
     required: false
     default: ''
@@ -16,7 +16,8 @@ runs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: ${{ inputs.java-version }}
+        java-version: |
+          ${{ inputs.java-version }}
         server-id: ossrh
         server-username: MAVEN_USERNAME
         server-password: MAVEN_OSSRH_TOKEN

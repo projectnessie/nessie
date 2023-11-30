@@ -6,7 +6,7 @@ inputs:
     default: 'true'
   java-version:
     description: 'Java version'
-    default: '11'
+    default: '17'
   job-id:
     description: 'Job name to prefer'
     default: 'nessie-ci'

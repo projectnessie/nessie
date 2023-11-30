@@ -209,7 +209,7 @@ jobs:
 
         ## Try it
 
-        The attached [\`nessie-quarkus-${RELEASE_VERSION}-runner.jar\`](${Q_UBER_URL}) is a standalone uber-jar file that runs on Java 11 or newer and it is also available via [Maven Central](${Q_MC_URL}). Download and run it (requires Java 11):
+        The attached [\`nessie-quarkus-${RELEASE_VERSION}-runner.jar\`](${Q_UBER_URL}) is a standalone uber-jar file that runs on Java 17 or newer and it is also available via [Maven Central](${Q_MC_URL}). Download and run it (requires Java 17):
         \`\`\`
         wget ${Q_UBER_URL}
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar

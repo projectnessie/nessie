@@ -22,9 +22,6 @@
 # of the jobs in the checks stage are saved as artifacts (with the minimum
 # retention period). The updated build cache is pushed back to GigHub's
 # cache when the checks have successfully finished.
-#
-# Java CI runs against Java 11 and Java 17, where it is meaningful.
-# (Spark tests always run against 11, so not run against Java 17.)
 
 name: CI build
 
@@ -63,7 +60,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup runner
@@ -137,7 +134,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup runner
@@ -187,7 +184,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup runner
@@ -244,7 +241,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -305,7 +302,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup runner
@@ -394,7 +391,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup runner
@@ -739,7 +736,10 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 11
+          # Java 17 required for Nessie build, Java 11 required for Flink & Presto
+          java-version: | 
+            11
+            17
 
       - name: Iceberg Nessie test
         uses: gradle/gradle-build-action@v2
@@ -910,7 +910,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
+        java-version: ['17']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup runner

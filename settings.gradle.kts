@@ -19,8 +19,8 @@ import java.util.Properties
 
 includeBuild("build-logic") { name = "nessie-build-logic" }
 
-if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
-  throw GradleException("Build requires Java 11")
+if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+  throw GradleException("Build requires Java 17")
 }
 
 val baseVersion = file("version.txt").readText().trim()
