@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.ObjIdSerializer.OBJ_ID_SERIALIZER;
+import static org.projectnessie.versioned.storage.common.objtypes.ObjIdElementSerializer.OBJ_ID_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.deserializeObjId;
 import static org.projectnessie.versioned.storage.common.util.Ser.varIntLen;
 import static org.projectnessie.versioned.storage.common.util.Util.generateObjIdBuffer;
@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestObjIdSerializer {
+public class TestObjIdElementSerializer {
 
   @InjectSoftAssertions SoftAssertions soft;
 

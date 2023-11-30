@@ -22,10 +22,14 @@ import java.nio.ByteBuffer;
 import org.projectnessie.versioned.storage.common.indexes.ElementSerializer;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
-public final class ObjIdSerializer implements ElementSerializer<ObjId> {
-  public static final ElementSerializer<ObjId> OBJ_ID_SERIALIZER = new ObjIdSerializer();
+/**
+ * An {@link ElementSerializer} for {@link ObjId} instances, used to facilitate testing index
+ * element serialization logic.
+ */
+public final class ObjIdElementSerializer implements ElementSerializer<ObjId> {
+  public static final ElementSerializer<ObjId> OBJ_ID_SERIALIZER = new ObjIdElementSerializer();
 
-  private ObjIdSerializer() {}
+  private ObjIdElementSerializer() {}
 
   @Override
   public int serializedSize(ObjId value) {
