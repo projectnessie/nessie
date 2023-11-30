@@ -29,7 +29,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Actio
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.NONE;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
-import static org.projectnessie.versioned.storage.common.objtypes.ObjIdSerializer.OBJ_ID_SERIALIZER;
+import static org.projectnessie.versioned.storage.common.objtypes.ObjIdElementSerializer.OBJ_ID_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
