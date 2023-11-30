@@ -21,29 +21,9 @@ runs:
       run: docker image ls -a
     - name: Remove unused Docker images
       shell: bash
-      # (as of 2023-08-23:)
-      # REPOSITORY       TAG         IMAGE ID       CREATED        SIZE
-      # node             14          1d12470fa662   4 months ago   912MB
-      # node             14-alpine   0dac3dc27b1a   4 months ago   119MB
-      # node             16          ebdc80ddefea   6 days ago     909MB
-      # node             16-alpine   2573171e0124   12 days ago    118MB
-      # node             18          95d8a703ee8c   6 days ago     1.09GB
-      # node             18-alpine   50c7e33a9de1   12 days ago    176MB
-      # buildpack-deps   buster      0053f1bb059a   7 days ago     802MB
-      # buildpack-deps   bullseye    eac77ea4e8a0   7 days ago     833MB
-      # debian           10          de08540e8ff0   7 days ago     114MB
-      # debian           11          07585eb55737   7 days ago     124MB
-      # alpine           3.16        187eae39ad94   2 weeks ago    5.54MB
-      # alpine           3.17        1e0b8b5322fc   2 weeks ago    7.05MB
-      # alpine           3.18        7e01a0d0a1dc   2 weeks ago    7.33MB
-      # ubuntu           22.04       01f29b872827   2 weeks ago    77.8MB
-      # ubuntu           20.04       6df894023726   3 weeks ago    72.8MB
-      # ubuntu           18.04       f9a80a55f492   2 months ago   63.2MB
-      # moby/buildkit    latest      896276ced360   2 weeks ago    172MB
+      # See https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#cached-docker-images
       run: |
         docker image rm \
-          node:14 \
-          node:14-alpine \
           node:16 \
           node:16-alpine \
           node:18 \
@@ -57,8 +37,7 @@ runs:
           debian:10 \
           debian:11 \
           ubuntu:22.04 \
-          ubuntu:20.04 \
-          ubuntu:18.04
+          ubuntu:20.04
     - name: Delete unneeded files
       shell: bash
       run: |
