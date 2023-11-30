@@ -25,6 +25,16 @@ on:
     - cron:  '0 4 * * 1-5'
   workflow_dispatch:
 
+# For the main branch: let all CI runs complete, one after the other. This has a couple advantages:
+# * Site deployments happen in commit-order
+# * Saved Gradle cache are persisted in commit-order
+# * (Potentially) more GH runners available for PRs
+concurrency:
+  # PRs: 1 CI run concurrently / older ones are cancelled
+  # main branch: 1 CI run concurrently / all commits / no cancellation
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   java:
     name: Java/Gradle Windows
@@ -55,7 +65,7 @@ jobs:
       uses: gradle/gradle-build-action@v2
       env:
         # Same as for ci.yml
-        GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-11
+        GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB: nessie-ci
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
