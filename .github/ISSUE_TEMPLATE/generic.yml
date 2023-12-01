@@ -1,0 +1,14 @@
+name: Generic issue
+description: Issue that is neither a bug nor a feature request nor a question.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit an issue that is neither a bug nor a feature request nor a question.
+        
+        Ask questions on https://project-nessie.zulipchat.com/
+  - type: textarea
+    attributes:
+      label: Issue description
+      placeholder: |
+        Please use this template to submit an issue that is neither a bug nor a feature request nor a question.

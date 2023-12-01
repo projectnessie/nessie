@@ -1,0 +1,38 @@
+name: Bug Report
+description: Report a bug encountered while using Nessie
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please use this template while reporting a **bug** and provide as much info as possible.
+  - type: textarea
+    attributes:
+      label: What happened
+      description: Provide a general description of the bug, as minimally and precisely as possible.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: How to reproduce it
+      description: Describe all the steps that are needed to reproduce the bug, as minimally and precisely as possible.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Nessie server type (docker/uber-jar/built from source) and version
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Client type (Ex: UI/Spark/pynessie ...) and version"
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Additional information
+    validations:
+      required: false
