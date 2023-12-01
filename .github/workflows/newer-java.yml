@@ -41,7 +41,7 @@ jobs:
       uses: ./.github/actions/dev-tool-java
       env:
         # Same as for ci.yml
-        GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17
+        GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-11
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB: nessie-ci
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
