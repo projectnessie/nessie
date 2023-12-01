@@ -1,0 +1,23 @@
+name: Feature Request
+description: Request a new feature or improvement in Nessie
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please use this template to request a **new feature** and provide as much info as possible.
+  - type: textarea
+    attributes:
+      label: Description
+      description: General of the requested feature and its value for users/developers.
+  - type: textarea
+    attributes:
+      label: Expected Use Cases
+  - type: textarea
+    attributes:
+      label: Requested Changes in public API
+      placeholder: |
+        - Changes in REST API
+        - Changes in Java Client API
+        - Changes in Python Client API
+        - Changes in SQL extensions
