@@ -97,9 +97,9 @@ import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -1023,7 +1023,8 @@ public class AbstractConsistencyLogicTests {
 
       refRefs = persist.fetchReference(InternalRef.REF_REFS.name());
       refRefsHead =
-          persist.fetchTypedObj(requireNonNull(refRefs).pointer(), ObjType.COMMIT, CommitObj.class);
+          persist.fetchTypedObj(
+              requireNonNull(refRefs).pointer(), StandardObjType.COMMIT, CommitObj.class);
       if (refRefsHead.referenceIndex() != null) {
         refsUntilRefIndex = refRefsHead.referenceIndex();
         break;
@@ -1044,7 +1045,8 @@ public class AbstractConsistencyLogicTests {
 
       refRefs = persist.fetchReference(InternalRef.REF_REFS.name());
       refRefsHead =
-          persist.fetchTypedObj(requireNonNull(refRefs).pointer(), ObjType.COMMIT, CommitObj.class);
+          persist.fetchTypedObj(
+              requireNonNull(refRefs).pointer(), StandardObjType.COMMIT, CommitObj.class);
       if (!Objects.equals(refsUntilRefIndex, refRefsHead.referenceIndex())) {
         lostReferences.add(ref);
         break;

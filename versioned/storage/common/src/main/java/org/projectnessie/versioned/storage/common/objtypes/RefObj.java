@@ -35,7 +35,7 @@ public interface RefObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.REF;
+    return StandardObjType.REF;
   }
 
   @Value.Parameter(order = 1)

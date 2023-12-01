@@ -48,24 +48,27 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX_SEGMENTS;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX_SEGMENTS;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.REF;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.STRING;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.TAG;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.google.common.collect.Lists;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntFunction;
@@ -94,9 +97,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
-import org.projectnessie.versioned.storage.common.objtypes.RefObj;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
@@ -104,8 +105,11 @@ import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObjType;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
@@ -435,50 +439,46 @@ public class AbstractBasePersistTests {
                 objIdFromString("0000000000000000")),
             copyFromUtf8("This is not a markdown")),
         ref(randomObjId(), "foo", randomObjId(), 123L, null),
-        ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()));
+        ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()),
+        // custom object types
+        SimpleCustomObj.builder()
+            .id(randomObjId())
+            .parent(randomObjId())
+            .text("foo")
+            .number(42.42d)
+            .map(Map.of("k1", "v1", "k2", "v2"))
+            .list(List.of("a", "b", "c"))
+            .optional("optional")
+            .instant(Instant.ofEpochMilli(1234567890L))
+            .build(),
+        SimpleCustomObj.builder().id(randomObjId()).build());
   }
 
-  @SuppressWarnings("rawtypes")
-  static Class classForType(ObjType type) {
-    switch (type) {
-      case COMMIT:
-        return CommitObj.class;
-      case VALUE:
-        return ContentValueObj.class;
-      case INDEX_SEGMENTS:
-        return IndexSegmentsObj.class;
-      case INDEX:
-        return IndexObj.class;
-      case REF:
-        return RefObj.class;
-      case TAG:
-        return TagObj.class;
-      case STRING:
-        return StringObj.class;
-      default:
-        throw new IllegalArgumentException(type.name());
+  static StandardObjType typeDifferentThan(ObjType type) {
+    if (type instanceof StandardObjType) {
+      switch (((StandardObjType) type)) {
+        case COMMIT:
+          return VALUE;
+        case VALUE:
+          return COMMIT;
+        case INDEX_SEGMENTS:
+          return TAG;
+        case INDEX:
+          return REF;
+        case REF:
+          return INDEX;
+        case TAG:
+          return STRING;
+        case STRING:
+          return INDEX_SEGMENTS;
+        default:
+          // fall through
+      }
     }
-  }
-
-  static ObjType typeDifferentThan(ObjType type) {
-    switch (type) {
-      case COMMIT:
-        return VALUE;
-      case VALUE:
-        return COMMIT;
-      case INDEX_SEGMENTS:
-        return TAG;
-      case INDEX:
-        return REF;
-      case REF:
-        return INDEX;
-      case TAG:
-        return STRING;
-      case STRING:
-        return INDEX_SEGMENTS;
-      default:
-        throw new IllegalArgumentException(type.name());
+    if (type instanceof SimpleCustomObjType) {
+      return StandardObjType.COMMIT;
     }
+    throw new IllegalArgumentException(type.name());
   }
 
   @SuppressWarnings("unchecked")
@@ -490,7 +490,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObjType(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(
-            () -> persist.fetchTypedObj(obj.id(), obj.type(), classForType(obj.type())))
+            () -> persist.fetchTypedObj(obj.id(), obj.type(), obj.type().targetClass()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
@@ -499,11 +499,11 @@ public class AbstractBasePersistTests {
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(persist.fetchObjType(obj.id())).isEqualTo(obj.type());
-    soft.assertThat(persist.fetchTypedObj(obj.id(), obj.type(), classForType(obj.type())))
+    soft.assertThat(persist.fetchTypedObj(obj.id(), obj.type(), obj.type().targetClass()))
         .isEqualTo(obj);
-    ObjType otherType = typeDifferentThan(obj.type());
+    StandardObjType otherType = typeDifferentThan(obj.type());
     soft.assertThatThrownBy(
-            () -> persist.fetchTypedObj(obj.id(), otherType, classForType(otherType)))
+            () -> persist.fetchTypedObj(obj.id(), otherType, otherType.targetClass()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
 
@@ -516,7 +516,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObjType(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(
-            () -> persist.fetchTypedObj(obj.id(), obj.type(), classForType(obj.type())))
+            () -> persist.fetchTypedObj(obj.id(), obj.type(), obj.type().targetClass()))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
@@ -721,20 +721,20 @@ public class AbstractBasePersistTests {
         .isNotEqualTo(otherRepo.config().repositoryId());
 
     ArrayList<Obj> list1;
-    try (CloseableIterator<Obj> iter = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+    try (CloseableIterator<Obj> iter = persist.scanAllObjects(ObjTypes.allObjTypes())) {
       list1 = newArrayList(iter);
     }
     ArrayList<Obj> list2;
-    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(ObjTypes.allObjTypes())) {
       list2 = newArrayList(iter);
     }
     soft.assertThat(list1).isNotEmpty().doesNotContainAnyElementsOf(list2);
     soft.assertThat(list2).isNotEmpty().doesNotContainAnyElementsOf(list1);
 
-    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(EnumSet.of(COMMIT))) {
+    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(Set.of(COMMIT))) {
       soft.assertThat(newArrayList(iter)).isNotEmpty().allMatch(o -> o.type() == COMMIT);
     }
-    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(EnumSet.of(COMMIT))) {
+    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(Set.of(COMMIT))) {
       soft.assertThat(newArrayList(iter)).isNotEmpty().allMatch(o -> o.type() == COMMIT);
     }
   }
@@ -847,61 +847,65 @@ public class AbstractBasePersistTests {
   }
 
   public static Obj updateObjChange(Obj obj) {
-    Obj newObj;
-    switch (obj.type()) {
-      case COMMIT:
-        StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
-        index.add(indexElement(key("updated", "added", "key"), commitOp(ADD, 123, randomObjId())));
-        index.add(
-            indexElement(key("updated", "removed", "key"), commitOp(REMOVE, 123, randomObjId())));
-        CommitObj c = ((CommitObj) obj);
-        newObj =
-            commitBuilder()
-                .id(obj.id())
-                .created(123123L)
-                .headers(newCommitHeaders().add("update", "that").build())
-                .message("updated commit")
-                .incrementalIndex(index.serialize())
-                .commitType(CommitType.values()[c.commitType().ordinal() ^ 1])
-                .seq(1231231253L)
-                .incompleteIndex(!c.incompleteIndex())
-                .build();
-        break;
-      case VALUE:
-        newObj = contentValue(obj.id(), randomContentId(), 123, copyFromUtf8("updated stuff"));
-        break;
-      case REF:
-        newObj = ref(obj.id(), "hello", randomObjId(), 42L, randomObjId());
-        break;
-      case INDEX:
-        index = newStoreIndex(COMMIT_OP_SERIALIZER);
-        index.add(indexElement(key("updated", "added", "key"), commitOp(ADD, 123, randomObjId())));
-        index.add(
-            indexElement(key("updated", "removed", "key"), commitOp(REMOVE, 123, randomObjId())));
-        newObj = index(obj.id(), index.serialize());
-        break;
-      case INDEX_SEGMENTS:
-        newObj =
-            indexSegments(
-                obj.id(), singletonList(indexStripe(key("abc"), key("def"), randomObjId())));
-        break;
-      case TAG:
-        newObj = tag(obj.id(), null, null, copyFromUtf8("updated-tag"));
-        break;
-      case STRING:
-        newObj =
-            stringData(
-                obj.id(),
-                "text/plain",
-                Compression.LZ4,
-                "filename",
-                asList(randomObjId(), randomObjId(), randomObjId(), randomObjId()),
-                ByteString.copyFrom(new byte[123]));
-        break;
-      default:
-        throw new UnsupportedOperationException("Unknown object type " + obj.type());
+    ObjType type = obj.type();
+    if (type instanceof StandardObjType) {
+      switch (((StandardObjType) type)) {
+        case COMMIT:
+          StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
+          index.add(
+              indexElement(key("updated", "added", "key"), commitOp(ADD, 123, randomObjId())));
+          index.add(
+              indexElement(key("updated", "removed", "key"), commitOp(REMOVE, 123, randomObjId())));
+          CommitObj c = ((CommitObj) obj);
+          return commitBuilder()
+              .id(obj.id())
+              .created(123123L)
+              .headers(newCommitHeaders().add("update", "that").build())
+              .message("updated commit")
+              .incrementalIndex(index.serialize())
+              .commitType(CommitType.values()[c.commitType().ordinal() ^ 1])
+              .seq(1231231253L)
+              .incompleteIndex(!c.incompleteIndex())
+              .build();
+        case VALUE:
+          return contentValue(obj.id(), randomContentId(), 123, copyFromUtf8("updated stuff"));
+        case REF:
+          return ref(obj.id(), "hello", randomObjId(), 42L, randomObjId());
+        case INDEX:
+          index = newStoreIndex(COMMIT_OP_SERIALIZER);
+          index.add(
+              indexElement(key("updated", "added", "key"), commitOp(ADD, 123, randomObjId())));
+          index.add(
+              indexElement(key("updated", "removed", "key"), commitOp(REMOVE, 123, randomObjId())));
+          return index(obj.id(), index.serialize());
+        case INDEX_SEGMENTS:
+          return indexSegments(
+              obj.id(), singletonList(indexStripe(key("abc"), key("def"), randomObjId())));
+        case TAG:
+          return tag(obj.id(), null, null, copyFromUtf8("updated-tag"));
+        case STRING:
+          return stringData(
+              obj.id(),
+              "text/plain",
+              Compression.LZ4,
+              "filename",
+              asList(randomObjId(), randomObjId(), randomObjId(), randomObjId()),
+              ByteString.copyFrom(new byte[123]));
+        default:
+          // fall through
+      }
     }
-    return newObj;
+    if (obj instanceof SimpleCustomObj) {
+      return SimpleCustomObj.builder()
+          .id(obj.id())
+          .parent(randomObjId())
+          .text("updated")
+          .number(43.43d)
+          .map(Map.of("k2", "v2", "k3", "v3"))
+          .list(List.of("b", "c", "d"))
+          .build();
+    }
+    throw new UnsupportedOperationException("Unknown object type " + type);
   }
 
   @ParameterizedTest
@@ -943,32 +947,32 @@ public class AbstractBasePersistTests {
       storedAssert.containsOnly(true);
     }
 
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(ObjTypes.allObjTypes())) {
       soft.assertThat(Lists.newArrayList(scan))
           .hasSize(3 * numObjs)
           .contains(values)
           .contains(strings)
           .contains(commits);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(VALUE, STRING))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(VALUE, STRING))) {
       soft.assertThat(Lists.newArrayList(scan))
           .hasSize(2 * numObjs)
           .contains(values)
           .contains(strings);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(VALUE, COMMIT))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(VALUE, COMMIT))) {
       soft.assertThat(Lists.newArrayList(scan))
           .hasSize(2 * numObjs)
           .contains(values)
           .contains(commits);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(COMMIT))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(commits);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(COMMIT, TAG, INDEX))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT, TAG, INDEX))) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(commits);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(TAG, INDEX))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(TAG, INDEX))) {
       soft.assertThat(Lists.newArrayList(scan)).isEmpty();
     }
   }
@@ -981,6 +985,10 @@ public class AbstractBasePersistTests {
   @Test
   public void createObjectsWithUpsertThenFetchAndScan() throws Exception {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
+    Obj[] standardObjs =
+        Arrays.stream(objs).filter(o -> o.type() instanceof StandardObjType).toArray(Obj[]::new);
+    Obj[] testObjs =
+        Arrays.stream(objs).filter(o -> o instanceof SimpleCustomObj).toArray(Obj[]::new);
 
     persist.erase();
 
@@ -992,10 +1000,18 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(objs);
 
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(ObjTypes.allObjTypes())) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(objs);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(COMMIT))) {
+    try (CloseableIterator<Obj> scan =
+        persist.scanAllObjects(Set.copyOf(EnumSet.allOf(StandardObjType.class)))) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(standardObjs);
+    }
+    try (CloseableIterator<Obj> scan =
+        persist.scanAllObjects(Set.of(SimpleCustomObjType.INSTANCE))) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(testObjs);
+    }
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
       Obj[] expected = stream(objs).filter(c -> c.type() == COMMIT).toArray(Obj[]::new);
       soft.assertThat(newArrayList(scan)).containsExactlyInAnyOrder(expected);
     }

@@ -60,8 +60,8 @@ import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.SuppliedCommitIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
@@ -362,7 +362,7 @@ public class AbstractIndexesLogicTests {
     indexesLogic.completeIndexesInCommitChain(currentId, () -> {});
 
     for (int i = 5; i > 0; i--) {
-      CommitObj current = persist.fetchTypedObj(currentId, ObjType.COMMIT, CommitObj.class);
+      CommitObj current = persist.fetchTypedObj(currentId, StandardObjType.COMMIT, CommitObj.class);
       if (i > 1) {
         // All commits except commit 1 should have stripes
         soft.assertThat(current.referenceIndexStripes()).isNotEmpty();

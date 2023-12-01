@@ -24,8 +24,8 @@ import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.STRING;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;

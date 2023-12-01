@@ -19,13 +19,16 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Common proto serialization"
+extra["maven.name"] = "Nessie - Storage - Common serialization"
 
-description = "Protobuf based serialization for storage objects."
+description = "Serialization for storage objects."
 
 dependencies {
   api(project(":nessie-versioned-storage-common"))
   api(project(":nessie-versioned-storage-common-proto"))
+
+  implementation(platform(libs.jackson.bom))
+  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-smile")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

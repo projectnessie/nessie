@@ -15,9 +15,12 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public interface Obj {
 
   /** The ID of this object. */
+  @JsonIgnore
   ObjId id();
 
   ObjType type();

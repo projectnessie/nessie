@@ -290,7 +290,7 @@ class RocksDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = fetchObj(id);
-    if (obj.type() != type) {
+    if (!obj.type().equals(type)) {
       throw new ObjNotFoundException(id);
     }
     @SuppressWarnings("unchecked")

@@ -29,7 +29,7 @@ public interface TagObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.TAG;
+    return StandardObjType.TAG;
   }
 
   @Override

@@ -29,7 +29,7 @@ public interface ContentValueObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.VALUE;
+    return StandardObjType.VALUE;
   }
 
   @Override

@@ -106,6 +106,7 @@ message ObjProto {
     IndexProto index = 6;
     StringProto string_data = 7;
     TagProto tag = 8;
+    CustomProto custom = 9;
   }
 }
 
@@ -130,4 +131,9 @@ message ReferenceProto {
 message ReferencePreviousProto {
   bytes pointer = 1;
   int64 timestamp = 2;;
+}
+
+message CustomProto {
+  string target_class = 1;
+  bytes data = 2;
 }

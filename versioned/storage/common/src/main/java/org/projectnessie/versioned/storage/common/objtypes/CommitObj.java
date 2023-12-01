@@ -77,7 +77,7 @@ public interface CommitObj extends Obj {
 
   @Override
   default ObjType type() {
-    return ObjType.COMMIT;
+    return StandardObjType.COMMIT;
   }
 
   static Builder commitBuilder() {
@@ -184,17 +184,17 @@ public interface CommitObj extends Obj {
   /**
    * Pointer to the reference {@link StoreKey}-to-{@link CommitOp} index for this commit.
    *
-   * <p>This value, if not {@code null}, can point to {@link ObjType#INDEX_SEGMENTS}, in which case
-   * the reference index is already big and organized in multiple segments, or to {@link
-   * ObjType#INDEX} when the full index is small enough to fit into a single segment and indirection
-   * is not necessary.
+   * <p>This value, if not {@code null}, can point to {@link StandardObjType#INDEX_SEGMENTS}, in
+   * which case the reference index is already big and organized in multiple segments, or to {@link
+   * StandardObjType#INDEX} when the full index is small enough to fit into a single segment and
+   * indirection is not necessary.
    *
    * <p>A {@code null} value means that the "embedded" {@link #incrementalIndex()} was never big
    * enough, a "reference index" does not exist and {@link #incrementalIndex()} contains everything.
    *
-   * <p>An external {@link ObjType#INDEX_SEGMENTS} object will only be created, if the number of
-   * stripes is higher than {@link StoreConfig#maxReferenceStripesPerCommit()}, otherwise the
-   * stripes for the reference index will be stored {@link #referenceIndexStripes() inside} the
+   * <p>An external {@link StandardObjType#INDEX_SEGMENTS} object will only be created, if the
+   * number of stripes is higher than {@link StoreConfig#maxReferenceStripesPerCommit()}, otherwise
+   * the stripes for the reference index will be stored {@link #referenceIndexStripes() inside} the
    * commit.
    *
    * @see #incrementalIndex()
@@ -207,9 +207,9 @@ public interface CommitObj extends Obj {
 
   /**
    * Pointers to the composite reference index stripes, an "embedded" version of {@link
-   * ObjType#INDEX_SEGMENTS}. Commits that require to "externalize" index elements to a reference
-   * index, which requires up to {@link StoreConfig#maxReferenceStripesPerCommit()} will be kept
-   * here and not create another indirection via a {@link IndexSegmentsObj}.
+   * StandardObjType#INDEX_SEGMENTS}. Commits that require to "externalize" index elements to a
+   * reference index, which requires up to {@link StoreConfig#maxReferenceStripesPerCommit()} will
+   * be kept here and not create another indirection via a {@link IndexSegmentsObj}.
    *
    * @see #incrementalIndex()
    * @see #incompleteIndex()

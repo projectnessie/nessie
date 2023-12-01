@@ -35,9 +35,9 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commi
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX;
 import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -65,6 +65,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -243,7 +244,6 @@ final class IndexesLogicImpl implements IndexesLogic {
   private StoreIndex<CommitOp> loadReferenceIndex(
       @Nonnull @jakarta.annotation.Nonnull ObjId indexId,
       @Nonnull @jakarta.annotation.Nonnull ObjId commitId) {
-    StoreIndex<CommitOp> referenceIndex;
     Obj keyIndex;
     try {
       keyIndex = persist.fetchObj(indexId);
@@ -252,21 +252,21 @@ final class IndexesLogicImpl implements IndexesLogic {
           format("Commit %s references a reference index, which does not exist", indexId));
     }
     ObjType indexType = keyIndex.type();
-    switch (indexType) {
-      case INDEX_SEGMENTS:
-        IndexSegmentsObj split = (IndexSegmentsObj) keyIndex;
-        List<IndexStripe> indexStripes = split.stripes();
-        referenceIndex = referenceIndexFromStripes(indexStripes, commitId);
-        break;
-      case INDEX:
-        referenceIndex = deserializeIndex(((IndexObj) keyIndex).index()).setObjId(keyIndex.id());
-        break;
-      default:
-        throw new IllegalStateException(
-            "Commit %s references a reference index, which is of unsupported key index type "
-                + indexType);
+    if (indexType instanceof StandardObjType) {
+      switch ((StandardObjType) indexType) {
+        case INDEX_SEGMENTS:
+          IndexSegmentsObj split = (IndexSegmentsObj) keyIndex;
+          List<IndexStripe> indexStripes = split.stripes();
+          return referenceIndexFromStripes(indexStripes, commitId);
+        case INDEX:
+          return deserializeIndex(((IndexObj) keyIndex).index()).setObjId(keyIndex.id());
+        default:
+          // fall through
+      }
     }
-    return referenceIndex;
+    throw new IllegalStateException(
+        "Commit %s references a reference index, which is of unsupported key index type "
+            + indexType);
   }
 
   static StoreIndex<CommitOp> deserializeIndex(ByteString serialized) {

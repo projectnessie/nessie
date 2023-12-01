@@ -206,7 +206,7 @@ class InmemoryPersist implements ValidatingPersist {
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = inmemory.objects.get(compositeKey(id));
-    if (obj == null || obj.type() != type) {
+    if (obj == null || !obj.type().equals(type)) {
       throw new ObjNotFoundException(id);
     }
     @SuppressWarnings("unchecked")

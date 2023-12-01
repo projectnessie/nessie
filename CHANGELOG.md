@@ -10,8 +10,19 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
-* Nessie Quarkus parts are now built against Java 17 and Java 17 is required to run Nessie Quarkus Server directly.
+- Nessie Quarkus parts are now built against Java 17 and Java 17 is required to run Nessie Quarkus Server directly.
   If you use the Docker image, nothing needs to be done, because the image already contains a compatible Java runtime.
+- Due to the introduction of extensible object types in the storage layer, some storage backends
+  will require a schema upgrade:
+  - JDBC: the following SQL statement must be executed on the Nessie database (please adapt the
+    statement to the actual database SQL dialect):
+    ```sql
+    ALTER TABLE objs ADD COLUMN x_class VARCHAR, ADD COLUMN x_data BYTEA;
+    ```
+  - Cassandra: the following CQL statement must be executed on the Nessie database and keyspace:
+    ```cql
+    ALTER TABLE <keyspace>.objs ADD x_class text, ADD x_data blob;
+    ```
 
 ### Breaking changes
 

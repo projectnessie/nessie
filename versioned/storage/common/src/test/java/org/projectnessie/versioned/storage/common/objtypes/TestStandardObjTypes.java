@@ -36,18 +36,18 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX_SEGMENTS;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX_SEGMENTS;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.REF;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.STRING;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.TAG;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.VALUE;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,10 +66,10 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestObjTypes {
+public class TestStandardObjTypes {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  static Stream<Arguments> objTypes() {
+  static Stream<Arguments> standardObjTypes() {
     return Stream.of(
         arguments(ref(randomObjId(), "hello", randomObjId(), 42L, randomObjId()), REF),
         arguments(
@@ -105,8 +105,8 @@ public class TestObjTypes {
   }
 
   @ParameterizedTest
-  @MethodSource("objTypes")
-  public void objTypes(Obj obj, ObjType type) {
+  @MethodSource("standardObjTypes")
+  public void standardObjTypes(Obj obj, ObjType type) {
     soft.assertThat(obj).extracting(Obj::type).isSameAs(type);
   }
 

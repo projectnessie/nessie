@@ -47,11 +47,11 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Actio
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.REMOVE;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX_SEGMENTS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX_SEGMENTS;
 import static org.projectnessie.versioned.storage.commontests.AbstractCommitLogicTests.stdCommit;
 
 import com.google.common.base.Strings;
@@ -227,7 +227,7 @@ public class TestReferenceIndexes {
 
     // Adds new keys, one per commits.
     // Loop until the amount of allowed reference index stripes per commit is exceeded and
-    // a reference index lookup object is created (ObjType.INDEX_SEGMENTS).
+    // a reference index lookup object is created (StandardObjType.INDEX_SEGMENTS).
     for (num++; ; num++) {
       head = commitWithValues(persist, commitLogic, add, contents, num, head);
 
@@ -283,7 +283,7 @@ public class TestReferenceIndexes {
     }
 
     // Remove keys now... until we're back at "embedded" reference segments list (no longer need
-    // ObjType.INDEX_SEGMENTS)...
+    // StandardObjType.INDEX_SEGMENTS)...
     for (num--; num >= 0; num--) {
       head = requireNonNull(commitLogic.doCommit(remove.apply(head, num), emptyList())).id();
 

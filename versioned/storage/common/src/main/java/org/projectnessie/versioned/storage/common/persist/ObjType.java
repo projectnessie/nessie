@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,61 +15,14 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import org.projectnessie.versioned.storage.common.logic.InternalRef;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
-import org.projectnessie.versioned.storage.common.objtypes.RefObj;
-import org.projectnessie.versioned.storage.common.objtypes.StringObj;
-import org.projectnessie.versioned.storage.common.objtypes.TagObj;
+public interface ObjType {
 
-public enum ObjType {
-  /**
-   * Identifies a named reference and contains the initial referencee.
-   *
-   * <p>Managed in the well-known internal reference {@link InternalRef#REF_REFS}.
-   *
-   * <p>{@link Obj} is a {@link RefObj}.
-   */
-  REF("r"),
+  /** Must be unique among all registered object types. */
+  String name();
 
-  /** {@link Obj} is a {@link CommitObj}. */
-  COMMIT("c"),
+  /** Must be unique among all registered object types. */
+  String shortName();
 
-  /** {@link Obj} is a {@link TagObj}. */
-  TAG("t"),
-
-  /** {@link Obj} is a {@link ContentValueObj}. */
-  VALUE("v"),
-
-  /** {@link Obj} is a {@link StringObj}. */
-  STRING("s"),
-
-  /** {@link Obj} is a {@link IndexSegmentsObj}. */
-  INDEX_SEGMENTS("I"),
-
-  /** {@link Obj} is a {@link IndexObj}. */
-  INDEX("i");
-
-  private static final ObjType[] ALL_OBJ_TYPES = ObjType.values();
-
-  private final String shortName;
-
-  ObjType(String shortName) {
-    this.shortName = shortName;
-  }
-
-  public static ObjType fromShortName(String shortName) {
-    for (ObjType type : ALL_OBJ_TYPES) {
-      if (type.shortName().equals(shortName)) {
-        return type;
-      }
-    }
-    throw new IllegalStateException("Unknown object short type name " + shortName);
-  }
-
-  public String shortName() {
-    return shortName;
-  }
+  /** The target class that objects of this type should be serialized from and deserialized to. */
+  Class<? extends Obj> targetClass();
 }

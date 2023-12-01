@@ -24,15 +24,16 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
+import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 
 /**
  * Reference is a generic named pointer.
  *
  * <ul>
  *   <li>Branches: reference names for branches start with {@code refs/heads/} and points to {@link
- *       ObjType#COMMIT}.
+ *       StandardObjType#COMMIT}.
  *   <li>Tags: reference names for branches start with {@code refs/tags/} and points to {@link
- *       ObjType#TAG} or {@link ObjType#COMMIT}.
+ *       StandardObjType#TAG} or {@link StandardObjType#COMMIT}.
  *   <li>Internal references, not publicly exposed, see {@link InternalRef}.
  * </ul>
  */
