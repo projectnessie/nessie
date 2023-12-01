@@ -10,6 +10,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+* Nessie Quarkus parts are now built against Java 17 and Java 17 is required to run Nessie Quarkus Server directly.
+  If you use the Docker image, nothing needs to be done, because the image already contains a compatible Java runtime.
+
 ### Breaking changes
 
 ### New Features

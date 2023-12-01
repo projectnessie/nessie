@@ -133,12 +133,6 @@ most likely find the Java 11 runtime required to run the Spark tests. Run `./gra
 to see the Java toolchains that Gradle discovered. If Gradle could not locate your Java 11 runtime,
 consult the [docs](https://docs.gradle.org/current/userguide/toolchains.html).
 
-#### Building with Java 17 (and 16)
-
-Due to [JEP 396](https://openjdk.java.net/jeps/396), introduced in Java 16, a couple JVM options are required for
-[google-java-format](https://github.com/google/google-java-format#jdk-16) and [errorprone](https://errorprone.info/docs/installation)
-to work. These options are harmless when using Java 11.
-
 Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark use the Gradle toolchain mechanism
 to force Java 11 for the execution of those tests.
 

@@ -5,7 +5,7 @@ inputs:
     description: 'job name'
   java-version:
     description: 'Java version'
-    default: '11'
+    default: '17'
 runs:
   using: "composite"
   steps:
