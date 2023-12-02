@@ -331,8 +331,7 @@ public class CassandraPersist implements Persist {
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return writeSingleObj(
-        obj, false, ignoreSoftSizeRestrictions, (serializer, stmt) -> backend.executeCas(stmt));
+    return writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
   }
 
   @Nonnull
@@ -345,7 +344,7 @@ public class CassandraPersist implements Persist {
 
   @Override
   public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    writeSingleObj(obj, true, false, (serializer, stmt) -> backend.execute(stmt));
+    writeSingleObj(obj, true, false, backend::execute);
   }
 
   @Override
@@ -366,35 +365,25 @@ public class CassandraPersist implements Persist {
         Obj o = objs[i];
         if (o != null) {
           int idx = i;
-          writeSingleObj(
-              o,
-              upsert,
-              false,
-              (serializer, stmt) -> {
-                CompletionStage<?> cs =
-                    backend
-                        .executeAsync(stmt)
-                        .handle(
-                            (resultSet, e) -> {
-                              if (e != null) {
-                                if (e instanceof DriverException) {
-                                  backend.handleDriverException((DriverException) e);
-                                }
-                                if (e instanceof RuntimeException) {
-                                  throw (RuntimeException) e;
-                                }
-                                throw new RuntimeException(e);
-                              }
-
-                              if (resultSet.wasApplied()) {
-                                results.set(idx, 1);
-                              }
-                              return null;
-                            })
-                        .thenAccept(x -> {});
-                requests.submitted(cs);
-                return null;
-              });
+          CompletionStage<?> cs =
+              writeSingleObj(o, upsert, false, backend::executeAsync)
+                  .handle(
+                      (resultSet, e) -> {
+                        if (e != null) {
+                          if (e instanceof DriverException) {
+                            backend.handleDriverException((DriverException) e);
+                          }
+                          if (e instanceof RuntimeException) {
+                            throw (RuntimeException) e;
+                          }
+                          throw new RuntimeException(e);
+                        }
+                        if (resultSet.wasApplied()) {
+                          results.set(idx, 1);
+                        }
+                        return null;
+                      });
+          requests.submitted(cs);
         }
       }
     }
@@ -409,7 +398,7 @@ public class CassandraPersist implements Persist {
 
   @FunctionalInterface
   private interface WriteSingleObj<R> {
-    R apply(ObjSerializer<?> serializer, BoundStatement stmt);
+    R apply(BoundStatement stmt);
   }
 
   private <R> R writeSingleObj(
@@ -436,7 +425,7 @@ public class CassandraPersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit(),
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit());
 
-    return consumer.apply(serializer, stmt.build());
+    return consumer.apply(stmt.build());
   }
 
   @Override
