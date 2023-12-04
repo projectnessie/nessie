@@ -18,7 +18,6 @@ package org.projectnessie.quarkus.providers.storage;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Any;
@@ -75,7 +74,6 @@ public class PersistProvider {
 
   @Produces
   @Singleton
-  @Startup
   public Backend produceBackend() {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
 
@@ -107,7 +105,6 @@ public class PersistProvider {
 
   @Produces
   @Singleton
-  @Startup
   @NotObserved
   public Persist producePersist(MeterRegistry meterRegistry) {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
