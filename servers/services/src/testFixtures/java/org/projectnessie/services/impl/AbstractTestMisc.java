@@ -40,10 +40,8 @@ public abstract class AbstractTestMisc extends BaseTestServiceImpl {
     soft.assertThat(info.getNoAncestorHash())
         .isNotNull()
         .isEqualTo(versionStore().noAncestorHash().asString());
-    if (isNewStorageModel()) {
-      soft.assertThat(info.getRepositoryCreationTimestamp()).isNotNull();
-      soft.assertThat(info.getOldestPossibleCommitTimestamp()).isNotNull();
-    }
+    soft.assertThat(info.getRepositoryCreationTimestamp()).isNotNull();
+    soft.assertThat(info.getOldestPossibleCommitTimestamp()).isNotNull();
   }
 
   @Test

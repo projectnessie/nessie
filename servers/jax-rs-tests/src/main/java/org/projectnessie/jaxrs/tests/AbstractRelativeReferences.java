@@ -16,7 +16,6 @@
 package org.projectnessie.jaxrs.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.error.ErrorCode.BAD_REQUEST;
 import static org.projectnessie.jaxrs.tests.BaseTestNessieRest.rest;
 
@@ -92,7 +91,6 @@ public abstract class AbstractRelativeReferences {
                            |
                           tag1
     */
-    assumeTrue(outer.isNewModel());
     Branch base = outer.createBranchV2("base");
     base = outer.commitV2(base, key1, table1);
     c1 = base.getHash();

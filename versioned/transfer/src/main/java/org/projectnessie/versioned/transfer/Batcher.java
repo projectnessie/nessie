@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /**
  * Buffers a configurable amount of objects and passes those as batches to a consumer, should be
@@ -31,20 +29,6 @@ final class Batcher<T> implements AutoCloseable {
   private final Set<T> buffer;
   private final int capacity;
   private final Consumer<List<T>> flush;
-
-  static Batcher<CommitLogEntry> commitBatchWriter(int batchSize, DatabaseAdapter databaseAdapter) {
-    return new Batcher<>(
-        batchSize,
-        entries -> {
-          try {
-            databaseAdapter.writeMultipleCommits(entries);
-          } catch (RuntimeException e) {
-            throw e;
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
-  }
 
   Batcher(int capacity, Consumer<List<T>> flush) {
     this.capacity = capacity;

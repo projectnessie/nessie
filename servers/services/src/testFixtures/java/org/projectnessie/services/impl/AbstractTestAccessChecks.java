@@ -22,7 +22,6 @@ import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 import static org.projectnessie.model.FetchOption.MINIMAL;
@@ -106,8 +105,6 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
   @Test
   public void commitMergeTransplantAccessChecks() throws BaseNessieClientServerException {
-    assumeThat(databaseAdapter).isNull();
-
     ContentKey keyUnrelated = ContentKey.of("unrelated");
     ContentKey keyNamespace1 = ContentKey.of("ns1");
     ContentKey keyNamespace2 = ContentKey.of("ns1", "ns2");

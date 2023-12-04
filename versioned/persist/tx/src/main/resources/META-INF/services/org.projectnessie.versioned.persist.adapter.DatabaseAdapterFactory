@@ -1,2 +1,0 @@
-org.projectnessie.versioned.persist.tx.h2.H2DatabaseAdapterFactory
-org.projectnessie.versioned.persist.tx.postgres.PostgresDatabaseAdapterFactory

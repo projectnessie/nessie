@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.function.Consumer;
-import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.NessieExporter;
@@ -136,16 +135,7 @@ public class ExportRepository extends BaseCommand {
   private int exportVersion;
 
   @Override
-  protected Integer callWithDatabaseAdapter() throws Exception {
-    return export(
-        b -> {
-          b.databaseAdapter(databaseAdapter);
-          b.versionStore(new PersistVersionStore(databaseAdapter));
-        });
-  }
-
-  @Override
-  protected Integer callWithPersist() throws Exception {
+  public Integer call() throws Exception {
     if (!repositoryLogic(persist).repositoryExists()) {
       spec.commandLine().getErr().println("Nessie repository does not exist");
       return EXIT_CODE_REPO_DOES_NOT_EXIST;

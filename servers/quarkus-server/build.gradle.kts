@@ -50,8 +50,6 @@ dependencies {
   implementation(project(":nessie-events-quarkus"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
-  implementation(project(":nessie-versioned-persist-adapter"))
-  implementation(project(":nessie-versioned-persist-store"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
@@ -96,9 +94,6 @@ dependencies {
   testFixturesApi(project(":nessie-events-service"))
   testFixturesImplementation(project(":nessie-versioned-spi"))
   testFixturesImplementation(project(":nessie-versioned-tests"))
-  testFixturesImplementation(project(":nessie-versioned-persist-adapter"))
-  testFixturesImplementation(project(":nessie-versioned-persist-store"))
-  testFixturesImplementation(project(":nessie-versioned-persist-tests"))
   testFixturesApi(project(":nessie-versioned-storage-common"))
   testFixturesApi(project(":nessie-versioned-storage-store"))
   testFixturesImplementation(project(":nessie-versioned-storage-testextension")) {

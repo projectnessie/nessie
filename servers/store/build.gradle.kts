@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-server8")
+  id("nessie-conventions-server")
   id("nessie-jacoco")
   alias(libs.plugins.annotations.stripper)
 }

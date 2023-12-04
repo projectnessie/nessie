@@ -19,7 +19,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
-import org.projectnessie.quarkus.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
 @ApplicationScoped
@@ -41,12 +40,7 @@ public class RepositoryIdProvider {
   @Produces
   @Singleton
   @Named(REPOSITORY_ID_BEAN_NAME)
-  public String produceRepositoryId(
-      StoreConfig config, QuarkusVersionStoreAdvancedConfig legacyConfig) {
-    String repositoryId = config.repositoryId();
-    if (repositoryId.isEmpty()) {
-      repositoryId = legacyConfig.getRepositoryId();
-    }
-    return repositoryId;
+  public String produceRepositoryId(StoreConfig config) {
+    return config.repositoryId();
   }
 }

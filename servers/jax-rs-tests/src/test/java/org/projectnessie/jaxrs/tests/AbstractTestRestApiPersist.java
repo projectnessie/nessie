@@ -30,14 +30,4 @@ abstract class AbstractTestRestApiPersist extends BaseTestNessieRest {
   @NessiePersist protected static Persist persist;
 
   @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
-
-  @Override
-  protected boolean fullPagingSupport() {
-    return true;
-  }
-
-  @Override
-  protected boolean isNewModel() {
-    return true;
-  }
 }

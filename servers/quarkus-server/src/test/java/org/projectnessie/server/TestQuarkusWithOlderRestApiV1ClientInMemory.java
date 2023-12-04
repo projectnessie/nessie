@@ -21,20 +21,14 @@ import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientResponseFactory;
 import org.projectnessie.jaxrs.tests.ValidatingApiV1ResponseFactory;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 /**
  * This tests runs the usual API v1 tests, but checks that JSON responses do not have API v2
  * attributes.
  */
 @QuarkusTest
-@TestProfile(QuarkusTestProfileInmemory.class)
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
 @NessieApiVersions(versions = NessieApiVersion.V1)
 @NessieClientResponseFactory(ValidatingApiV1ResponseFactory.class)
-class TestQuarkusWithOlderRestApiV1ClientInMemory extends AbstractQuarkusRest {
-
-  @Override
-  protected boolean isNewModel() {
-    return false;
-  }
-}
+class TestQuarkusWithOlderRestApiV1ClientInMemory extends AbstractQuarkusRest {}

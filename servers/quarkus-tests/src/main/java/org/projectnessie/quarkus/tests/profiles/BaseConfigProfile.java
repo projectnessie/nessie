@@ -32,10 +32,7 @@ public class BaseConfigProfile implements QuarkusTestProfile {
     ImmutableMap.Builder<String, String> config =
         ImmutableMap.<String, String>builder()
             .put("nessie.version.store.persist.repository-id", TEST_REPO_ID)
-            .put("nessie.version.store.persist.commit-retries", "42")
-            .put("nessie.version.store.advanced.repository-id", TEST_REPO_ID)
-            .put("nessie.version.store.advanced.commit-retries", "42")
-            .put("nessie.version.store.advanced.tx.batch-size", "41");
+            .put("nessie.version.store.persist.commit-retries", "42");
 
     // Pass relevant system properties to Quarkus integration tests, which are run "externally"
     // in a Docker container. This code is rather a "no op" for Quarkus unit tests.

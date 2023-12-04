@@ -19,9 +19,4 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.jaxrs.tests.BaseTestNessieApi;
 
 @ExtendWith(CombinedNessieClientFactory.class)
-public class TestNessieApiCombined extends BaseTestNessieApi {
-  @Override
-  protected boolean fullPagingSupport() {
-    return true;
-  }
-}
+public class TestNessieApiCombined extends BaseTestNessieApi {}

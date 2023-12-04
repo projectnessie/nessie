@@ -53,10 +53,6 @@ dependencies {
   testFixturesApi(project(":nessie-model"))
   testFixturesApi(project(":nessie-versioned-spi"))
 
-  testFixturesApi(project(":nessie-versioned-persist-adapter"))
-  testFixturesApi(project(":nessie-versioned-persist-store"))
-  testFixturesApi(project(":nessie-versioned-persist-testextension"))
-
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
@@ -64,18 +60,6 @@ dependencies {
   testFixturesCompileOnly(libs.findbugs.jsr305)
 
   testRuntimeOnly(project(":nessie-server-store"))
-
-  testImplementation(project(":nessie-versioned-persist-serialize"))
-  testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
-  intTestImplementation(project(":nessie-versioned-persist-rocks"))
-  intTestImplementation(project(":nessie-versioned-persist-rocks-test"))
-  intTestImplementation(project(":nessie-versioned-persist-dynamodb"))
-  intTestImplementation(project(":nessie-versioned-persist-dynamodb-test"))
-  intTestImplementation(project(":nessie-versioned-persist-mongodb"))
-  intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
-  testImplementation(project(":nessie-versioned-persist-transactional"))
-  testImplementation(project(":nessie-versioned-persist-transactional-test"))
 
   testFixturesApi(project(":nessie-versioned-storage-common"))
   testFixturesApi(project(":nessie-versioned-storage-store"))

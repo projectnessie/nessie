@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_ATTACHMENT_BATCH_SIZE;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.EXPORT_METADATA;
@@ -25,10 +24,12 @@ import static org.projectnessie.versioned.transfer.ExportImportConstants.REPOSIT
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
+import org.projectnessie.versioned.storage.common.logic.Logics;
+import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ImportFileSupplier;
@@ -45,11 +46,14 @@ public abstract class NessieImporter {
 
   @SuppressWarnings("UnusedReturnValue")
   public interface Builder {
-    /** Specify the {@code DatabaseAdapter} to use. */
-    Builder databaseAdapter(DatabaseAdapter databaseAdapter);
-
     /** Specify the {@code Persist} to use. */
     Builder persist(Persist persist);
+
+    Builder referenceLogic(ReferenceLogic referenceLogic);
+
+    Builder repositoryLogic(RepositoryLogic repositoryLogic);
+
+    Builder indexesLogic(IndexesLogic indexesLogic);
 
     /** Optional, specify a custom {@link ObjectMapper}. */
     Builder objectMapper(ObjectMapper objectMapper);
@@ -76,19 +80,21 @@ public abstract class NessieImporter {
     NessieImporter build();
   }
 
-  @Nullable
-  @jakarta.annotation.Nullable
-  abstract DatabaseAdapter databaseAdapter();
-
-  @Nullable
-  @jakarta.annotation.Nullable
   abstract Persist persist();
 
-  @Value.Check
-  void check() {
-    checkState(
-        persist() == null ^ databaseAdapter() == null,
-        "Must supply either persist() or databaseAdapter(), never both");
+  @Value.Default
+  ReferenceLogic referenceLogic() {
+    return Logics.referenceLogic(persist());
+  }
+
+  @Value.Default
+  RepositoryLogic repositoryLogic() {
+    return Logics.repositoryLogic(persist());
+  }
+
+  @Value.Default
+  IndexesLogic indexesLogic() {
+    return Logics.indexesLogic(persist());
   }
 
   @Value.Default
@@ -141,10 +147,6 @@ public abstract class NessieImporter {
     progressListener().progress(ProgressEvent.START_META);
     ExportMeta exportMeta = loadExportMeta();
     progressListener().progress(ProgressEvent.END_META, exportMeta);
-
-    if (databaseAdapter() != null) {
-      return new ImportDatabaseAdapter(exportMeta, this).importRepo();
-    }
 
     switch (exportMeta.getVersion()) {
       case V1:

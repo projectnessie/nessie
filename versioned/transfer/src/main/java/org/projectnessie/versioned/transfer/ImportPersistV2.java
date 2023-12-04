@@ -17,8 +17,6 @@ package org.projectnessie.versioned.transfer;
 
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
-import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromBytes;
@@ -32,7 +30,6 @@ import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsExc
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
-import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -51,7 +48,8 @@ final class ImportPersistV2 extends ImportPersistCommon {
   void prepareRepository() throws IOException {
     RepositoryDescriptionProto repositoryDescription = importer.loadRepositoryDescription();
 
-    repositoryLogic(persist)
+    importer
+        .repositoryLogic()
         .initialize(
             repositoryDescription.getDefaultBranchName(),
             false,
@@ -68,7 +66,6 @@ final class ImportPersistV2 extends ImportPersistCommon {
   long importNamedReferences() throws IOException {
     try {
       long namedReferenceCount = 0L;
-      ReferenceLogic refLogic = referenceLogic(persist);
       for (String fileName : exportMeta.getNamedReferencesFilesList()) {
         try (InputStream input = importFiles.newFileInput(fileName)) {
           while (true) {
@@ -79,10 +76,12 @@ final class ImportPersistV2 extends ImportPersistCommon {
 
             try {
               ByteString ext = ref.getExtendedInfoObj();
-              refLogic.createReference(
-                  ref.getName(),
-                  objIdFromBytes(ref.getPointer()),
-                  ext == null ? null : objIdFromBytes(ext));
+              importer
+                  .referenceLogic()
+                  .createReference(
+                      ref.getName(),
+                      objIdFromBytes(ref.getPointer()),
+                      ext == null ? null : objIdFromBytes(ext));
             } catch (RefAlreadyExistsException | RetryTimeoutException e) {
               throw new RuntimeException(e);
             }

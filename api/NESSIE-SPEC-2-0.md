@@ -84,8 +84,7 @@ Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-s
 
 ## Related Server Configuration
 
-Note that setting the `nessie.version.store.advanced.validate-namespaces` or
-`nessie.version.store.persist.namespace-validation` configuration properties to `false` will 
+Note that setting the `nessie.version.store.persist.namespace-validation` configuration property to `false` will 
 make the server violate the Namespace existence validation rule (above). Nessie Server administrators MUST NOT set those
 properties to `false` on pre-built servers published by Project Nessie. If the server is custom-built and namespace
 validation is disabled, `NessieConfiguration.getSpecVersion()` MUST NOT return `2.0.0-beta.1`.

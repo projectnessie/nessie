@@ -16,7 +16,6 @@
 package org.projectnessie.jaxrs.ext;
 
 import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
-import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.net.URI;
@@ -65,9 +64,7 @@ import org.projectnessie.services.restjavax.NessieJaxRsJsonMappingExceptionMappe
 import org.projectnessie.services.restjavax.NessieJaxRsJsonParseExceptionMapper;
 import org.projectnessie.services.restjavax.ReferenceTypeParamConverterProvider;
 import org.projectnessie.services.restjavax.ValidationExceptionMapper;
-import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.VersionStoreImplExtension;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
@@ -81,31 +78,18 @@ public class NessieJaxRsExtension extends NessieClientResolver
   private static final ExtensionContext.Namespace NAMESPACE =
       ExtensionContext.Namespace.create(NessieJaxRsExtension.class);
 
-  private final Supplier<DatabaseAdapter> databaseAdapterSupplier;
   private final Supplier<Persist> persistSupplier;
 
   public NessieJaxRsExtension() {
     throw new UnsupportedOperationException();
   }
 
-  @Deprecated
-  public NessieJaxRsExtension(Supplier<DatabaseAdapter> databaseAdapterSupplier) {
-    this(databaseAdapterSupplier, null);
-  }
-
-  private NessieJaxRsExtension(
-      Supplier<DatabaseAdapter> databaseAdapterSupplier, Supplier<Persist> persistSupplier) {
-    this.databaseAdapterSupplier = databaseAdapterSupplier;
+  public NessieJaxRsExtension(Supplier<Persist> persistSupplier) {
     this.persistSupplier = persistSupplier;
   }
 
-  public static NessieJaxRsExtension jaxRsExtensionForDatabaseAdapter(
-      Supplier<DatabaseAdapter> databaseAdapterSupplier) {
-    return new NessieJaxRsExtension(databaseAdapterSupplier, null);
-  }
-
   public static NessieJaxRsExtension jaxRsExtension(Supplier<Persist> persistSupplier) {
-    return new NessieJaxRsExtension(null, persistSupplier);
+    return new NessieJaxRsExtension(persistSupplier);
   }
 
   private EnvHolder getEnv(ExtensionContext extensionContext) {
@@ -130,22 +114,14 @@ public class NessieJaxRsExtension extends NessieClientResolver
             key -> {
               try {
                 Extension versionStoreExtension =
-                    databaseAdapterSupplier != null
-                        ? PersistVersionStoreExtension.forDatabaseAdapter(
-                            () -> {
-                              DatabaseAdapter databaseAdapter = databaseAdapterSupplier.get();
-                              databaseAdapter.eraseRepo();
-                              databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
-                              return databaseAdapter;
-                            })
-                        : VersionStoreImplExtension.forPersist(
-                            () -> {
-                              Persist persist = persistSupplier.get();
-                              persist.erase();
-                              RepositoryLogic repositoryLogic = repositoryLogic(persist);
-                              repositoryLogic.initialize("main");
-                              return persist;
-                            });
+                    VersionStoreImplExtension.forPersist(
+                        () -> {
+                          Persist persist = persistSupplier.get();
+                          persist.erase();
+                          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+                          repositoryLogic.initialize("main");
+                          return persist;
+                        });
 
                 return new EnvHolder(versionStoreExtension);
               } catch (Exception e) {

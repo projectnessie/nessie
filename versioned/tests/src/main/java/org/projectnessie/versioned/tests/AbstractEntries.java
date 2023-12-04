@@ -16,9 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -56,8 +54,6 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
 
   @Test
   public void entriesWrongParameters() {
-    assumeThat(isNewStorageModel()).isTrue();
-
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
             () ->
@@ -96,8 +92,6 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
 
   @Test
   public void entriesRanges() throws Exception {
-    assumeThat(isNewStorageModel()).isTrue();
-
     BranchName branch = BranchName.of("foo");
     ContentKey key1 = ContentKey.of("k1");
     ContentKey key2 = ContentKey.of("k2");
@@ -172,8 +166,6 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 49, 50, 51, 100, 101})
   void getKeys(int numKeys) throws Exception {
-    assumeThat(isNewStorageModel()).isTrue();
-
     BranchName branch = BranchName.of("foo");
     Hash head = store().create(branch, Optional.empty()).getHash();
 
@@ -233,44 +225,30 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
               tuple(content23a.identifiedKey(), content23a.content()));
     }
 
-    if (isNewStorageModel()) {
-      soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2, key2a, key23, key23a)))
-          .containsExactly(
-              content2.identifiedKey(),
-              content2a.identifiedKey(),
-              content23.identifiedKey(),
-              content23a.identifiedKey());
+    soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2, key2a, key23, key23a)))
+        .containsExactly(
+            content2.identifiedKey(),
+            content2a.identifiedKey(),
+            content23.identifiedKey(),
+            content23a.identifiedKey());
 
-      soft.assertThat(content2a.identifiedKey().elements())
-          .startsWith(
-              content2
-                  .identifiedKey()
-                  .elements()
-                  .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
-      soft.assertThat(content23.identifiedKey().elements())
-          .startsWith(
-              content2
-                  .identifiedKey()
-                  .elements()
-                  .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
-      soft.assertThat(content23a.identifiedKey().elements())
-          .startsWith(
-              content23
-                  .identifiedKey()
-                  .elements()
-                  .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
-    } else {
-      soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2, key2a, key23, key23a)))
-          .extracting(IdentifiedContentKey::lastElement)
-          .extracting(IdentifiedContentKey.IdentifiedElement::element)
-          .containsExactly(key2.getName(), key2a.getName(), key23.getName(), key23a.getName());
-
-      soft.assertThat(content2a.identifiedKey().lastElement())
-          .isEqualTo(identifiedElement(key2a.getName(), content2a.content().getId()));
-      soft.assertThat(content23.identifiedKey().lastElement())
-          .isEqualTo(identifiedElement(key23.getName(), content23.content().getId()));
-      soft.assertThat(content23a.identifiedKey().lastElement())
-          .isEqualTo(identifiedElement(key23a.getName(), content23a.content().getId()));
-    }
+    soft.assertThat(content2a.identifiedKey().elements())
+        .startsWith(
+            content2
+                .identifiedKey()
+                .elements()
+                .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
+    soft.assertThat(content23.identifiedKey().elements())
+        .startsWith(
+            content2
+                .identifiedKey()
+                .elements()
+                .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
+    soft.assertThat(content23a.identifiedKey().elements())
+        .startsWith(
+            content23
+                .identifiedKey()
+                .elements()
+                .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
   }
 }

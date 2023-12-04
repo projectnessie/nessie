@@ -23,12 +23,9 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -65,12 +62,8 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
 import org.projectnessie.client.api.DeleteReferenceBuilder;
-import org.projectnessie.client.api.GetAllReferencesBuilder;
-import org.projectnessie.client.api.GetDiffBuilder;
-import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -223,21 +216,6 @@ public abstract class BaseTestNessieApi {
 
   private static IcebergTable dummyTable() {
     return IcebergTable.of("foo", 1, 2, 3, 4);
-  }
-
-  protected boolean fullPagingSupport() {
-    return false;
-  }
-
-  protected boolean pagingSupported(PagingBuilder<?, ?, ?> apiRequestBuilder) {
-    if (fullPagingSupport()) {
-      return isV2() || !(apiRequestBuilder instanceof GetDiffBuilder);
-    }
-    // Note: paging API is provided for diff, entries and references API, but the server does not
-    // support that yet.
-    return !(apiRequestBuilder instanceof GetDiffBuilder)
-        && !(apiRequestBuilder instanceof GetAllReferencesBuilder)
-        && !(apiRequestBuilder instanceof GetEntriesBuilder);
   }
 
   @Test
@@ -593,19 +571,6 @@ public abstract class BaseTestNessieApi {
   }
 
   @Test
-  public void referencesWithLimitInFirstPage() throws Exception {
-    assumeFalse(pagingSupported(api().getAllReferences()));
-    // Verify that result limiting produces expected errors when paging is not supported
-    api()
-        .createReference()
-        .reference(Branch.of("branch", api().getDefaultBranch().getHash()))
-        .create();
-    assertThatThrownBy(() -> api().getAllReferences().maxRecords(1).get())
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("Paging not supported");
-  }
-
-  @Test
   public void commitMergeTransplant() throws Exception {
     Branch main = api().getDefaultBranch();
 
@@ -913,27 +878,26 @@ public abstract class BaseTestNessieApi {
       soft.assertThat(diff1response.getEffectiveToReference()).isEqualTo(branch2);
 
       // Key filtering
-      if (fullPagingSupport()) {
-        soft.assertThat(
-                api()
-                    .getDiff()
-                    .fromRef(branch1)
-                    .toRef(branch2)
-                    .minKey(key12)
-                    .maxKey(key31)
-                    .get()
-                    .getDiffs())
-            .extracting(DiffEntry::getKey)
-            .containsExactlyInAnyOrder(key12, key13, key3, key31);
-        soft.assertThat(
-                api().getDiff().fromRef(branch1).toRef(branch2).minKey(key31).get().getDiffs())
-            .extracting(DiffEntry::getKey)
-            .containsExactlyInAnyOrder(key31, key4, key41);
-        soft.assertThat(
-                api().getDiff().fromRef(branch1).toRef(branch2).maxKey(key12).get().getDiffs())
-            .extracting(DiffEntry::getKey)
-            .containsExactlyInAnyOrder(key1, key11, key12);
-      }
+      soft.assertThat(
+              api()
+                  .getDiff()
+                  .fromRef(branch1)
+                  .toRef(branch2)
+                  .minKey(key12)
+                  .maxKey(key31)
+                  .get()
+                  .getDiffs())
+          .extracting(DiffEntry::getKey)
+          .containsExactlyInAnyOrder(key12, key13, key3, key31);
+      soft.assertThat(
+              api().getDiff().fromRef(branch1).toRef(branch2).minKey(key31).get().getDiffs())
+          .extracting(DiffEntry::getKey)
+          .containsExactlyInAnyOrder(key31, key4, key41);
+      soft.assertThat(
+              api().getDiff().fromRef(branch1).toRef(branch2).maxKey(key12).get().getDiffs())
+          .extracting(DiffEntry::getKey)
+          .containsExactlyInAnyOrder(key1, key11, key12);
+
       soft.assertThat(api().getDiff().fromRef(branch1).toRef(branch2).key(key12).get().getDiffs())
           .extracting(DiffEntry::getKey)
           .containsExactlyInAnyOrder(key12);
@@ -979,10 +943,8 @@ public abstract class BaseTestNessieApi {
         api().getDiff().fromRef(branch1).toRefName(branch2.getName()).get().getDiffs();
     soft.assertThat(diff1).isEqualTo(diff2).isEqualTo(diff3);
 
-    if (pagingSupported(api().getDiff())) {
-
-      // Paging
-
+    // Paging
+    if (isV2()) {
       List<DiffEntry> all = new ArrayList<>();
       String token = null;
       for (int i = 0; i < 8; i++) {
@@ -1002,23 +964,6 @@ public abstract class BaseTestNessieApi {
       soft.assertThat(api().getDiff().fromRef(branch1).toRef(branch2).maxRecords(1).stream())
           .containsExactlyInAnyOrderElementsOf(diff1);
     }
-  }
-
-  @Test
-  @NessieApiVersions(versions = NessieApiVersion.V2) // v1 throws on getDiff().maxRecords(1)
-  public void diffWithLimitInFirstPage() throws Exception {
-    Branch main = api().getDefaultBranch();
-    assumeFalse(pagingSupported(api().getDiff()));
-    // Verify that result limiting produces expected errors when paging is not supported
-    Branch branch1 = createReference(Branch.of("b1", main.getHash()), main.getName());
-    Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
-
-    Branch from = prepCommit(branch1, "c1", dummyPut("1-1")).commit();
-    Branch to = prepCommit(branch2, "c2", dummyPut("2-2")).commit();
-
-    assertThatThrownBy(() -> api().getDiff().maxRecords(1).fromRef(from).toRef(to).get())
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("Paging not supported");
   }
 
   @Test
@@ -1076,27 +1021,25 @@ public abstract class BaseTestNessieApi {
     List<Reference> notPaged = api().getAllReferences().get().getReferences();
     soft.assertThat(notPaged).containsExactlyInAnyOrderElementsOf(expect);
 
-    if (pagingSupported(api().getAllReferences())) {
-      List<Reference> all = new ArrayList<>();
-      String token = null;
-      for (int i = 0; i < 11; i++) {
-        ReferencesResponse resp = api().getAllReferences().maxRecords(1).pageToken(token).get();
-        all.addAll(resp.getReferences());
-        token = resp.getToken();
-        if (i == 10) {
-          soft.assertThat(token).isNull();
-        } else {
-          soft.assertThat(token).isNotNull();
-        }
+    List<Reference> all = new ArrayList<>();
+    String token = null;
+    for (int i = 0; i < 11; i++) {
+      ReferencesResponse resp = api().getAllReferences().maxRecords(1).pageToken(token).get();
+      all.addAll(resp.getReferences());
+      token = resp.getToken();
+      if (i == 10) {
+        soft.assertThat(token).isNull();
+      } else {
+        soft.assertThat(token).isNotNull();
       }
-
-      soft.assertThat(all).containsExactlyElementsOf(notPaged);
-
-      soft.assertAll();
-
-      soft.assertThat(api().getAllReferences().maxRecords(1).stream())
-          .containsExactlyInAnyOrderElementsOf(all);
     }
+
+    soft.assertThat(all).containsExactlyElementsOf(notPaged);
+
+    soft.assertAll();
+
+    soft.assertThat(api().getAllReferences().maxRecords(1).stream())
+        .containsExactlyInAnyOrderElementsOf(all);
   }
 
   @Test
@@ -1199,76 +1142,72 @@ public abstract class BaseTestNessieApi {
           .doesNotContainNull()
           .isNotEmpty();
 
-      if (fullPagingSupport()) {
-        soft.assertThat(
-                api()
-                    .getEntries()
-                    .reference(main)
-                    .minKey(ContentKey.of("c", "2"))
-                    .maxKey(ContentKey.of("c", "4"))
-                    .get()
-                    .getEntries())
-            .extracting(Entry::getName)
-            .containsExactlyInAnyOrder(
-                ContentKey.of("c", "2"), ContentKey.of("c", "3"), ContentKey.of("c", "4"));
-        soft.assertThat(
-                api().getEntries().reference(main).prefixKey(ContentKey.of("c")).get().getEntries())
-            .extracting(Entry::getName)
-            .contains(ContentKey.of("c"))
-            .containsAll(
-                IntStream.range(0, 9)
-                    .mapToObj(i -> ContentKey.of("c", Integer.toString(i)))
-                    .collect(Collectors.toList()));
-        soft.assertThat(
-                api()
-                    .getEntries()
-                    .reference(main)
-                    .key(ContentKey.of("c", "2"))
-                    .key(ContentKey.of("c", "4"))
-                    .get()
-                    .getEntries())
-            .extracting(Entry::getName)
-            .containsExactlyInAnyOrder(ContentKey.of("c", "2"), ContentKey.of("c", "4"));
-        soft.assertThat(
-                api()
-                    .getEntries()
-                    .reference(main)
-                    .prefixKey(ContentKey.of("c", "5"))
-                    .get()
-                    .getEntries())
-            .extracting(Entry::getName)
-            .containsExactlyInAnyOrder(ContentKey.of("c", "5"));
+      soft.assertThat(
+              api()
+                  .getEntries()
+                  .reference(main)
+                  .minKey(ContentKey.of("c", "2"))
+                  .maxKey(ContentKey.of("c", "4"))
+                  .get()
+                  .getEntries())
+          .extracting(Entry::getName)
+          .containsExactlyInAnyOrder(
+              ContentKey.of("c", "2"), ContentKey.of("c", "3"), ContentKey.of("c", "4"));
+      soft.assertThat(
+              api().getEntries().reference(main).prefixKey(ContentKey.of("c")).get().getEntries())
+          .extracting(Entry::getName)
+          .contains(ContentKey.of("c"))
+          .containsAll(
+              IntStream.range(0, 9)
+                  .mapToObj(i -> ContentKey.of("c", Integer.toString(i)))
+                  .collect(Collectors.toList()));
+      soft.assertThat(
+              api()
+                  .getEntries()
+                  .reference(main)
+                  .key(ContentKey.of("c", "2"))
+                  .key(ContentKey.of("c", "4"))
+                  .get()
+                  .getEntries())
+          .extracting(Entry::getName)
+          .containsExactlyInAnyOrder(ContentKey.of("c", "2"), ContentKey.of("c", "4"));
+      soft.assertThat(
+              api()
+                  .getEntries()
+                  .reference(main)
+                  .prefixKey(ContentKey.of("c", "5"))
+                  .get()
+                  .getEntries())
+          .extracting(Entry::getName)
+          .containsExactlyInAnyOrder(ContentKey.of("c", "5"));
+    }
+
+    List<Entry> all = new ArrayList<>();
+    String token = null;
+    for (int i = 0; i < 10; i++) {
+      EntriesResponse resp =
+          api()
+              .getEntries()
+              .withContent(isV2())
+              .reference(main)
+              .maxRecords(1)
+              .pageToken(token)
+              .get();
+      all.addAll(resp.getEntries());
+      token = resp.getToken();
+      if (i == 9) {
+        soft.assertThat(token).isNull();
+      } else {
+        soft.assertThat(token).isNotNull();
       }
     }
 
-    if (pagingSupported(api().getEntries())) {
-      List<Entry> all = new ArrayList<>();
-      String token = null;
-      for (int i = 0; i < 10; i++) {
-        EntriesResponse resp =
-            api()
-                .getEntries()
-                .withContent(isV2())
-                .reference(main)
-                .maxRecords(1)
-                .pageToken(token)
-                .get();
-        all.addAll(resp.getEntries());
-        token = resp.getToken();
-        if (i == 9) {
-          soft.assertThat(token).isNull();
-        } else {
-          soft.assertThat(token).isNotNull();
-        }
-      }
+    soft.assertThat(all).containsExactlyElementsOf(notPaged);
 
-      soft.assertThat(all).containsExactlyElementsOf(notPaged);
+    soft.assertAll();
 
-      soft.assertAll();
-
-      soft.assertThat(api().getEntries().withContent(isV2()).reference(main).maxRecords(1).stream())
-          .containsExactlyInAnyOrderElementsOf(all);
-    }
+    soft.assertThat(api().getEntries().withContent(isV2()).reference(main).maxRecords(1).stream())
+        .containsExactlyInAnyOrderElementsOf(all);
   }
 
   @NessieApiVersions(versions = NessieApiVersion.V2)
@@ -1279,17 +1218,6 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getEntries().reference(main).stream())
         .isNotEmpty()
         .allSatisfy(e -> assertThat(e.getContentId()).isNotNull());
-  }
-
-  @Test
-  public void entriesWithLimitInFirstPage() throws Exception {
-    assumeFalse(pagingSupported(api().getEntries()));
-    // Verify that result limiting produces expected errors when paging is not supported
-    Branch main =
-        prepCommit(api().getDefaultBranch(), "commit", dummyPut("t1"), dummyPut("t2")).commit();
-    assertThatThrownBy(() -> api().getEntries().maxRecords(1).reference(main).get())
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("Paging not supported");
   }
 
   @Test
@@ -1760,8 +1688,6 @@ public abstract class BaseTestNessieApi {
   public void relativeCommitLocations() throws BaseNessieClientServerException {
     Branch main = api().getDefaultBranch();
 
-    assumeTrue(fullPagingSupport());
-
     int numCommits = 3;
 
     Branch branch =
@@ -1874,11 +1800,6 @@ public abstract class BaseTestNessieApi {
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
   void createAndUpdateRepositoryConfig() throws Exception {
-    // Dummy to make TestRestInMemoryNaiveClient happy (not fail)
-    api().getConfig();
-
-    assumeTrue(fullPagingSupport());
-
     @SuppressWarnings("resource")
     NessieApiV2 api = apiV2();
 
@@ -1926,12 +1847,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void genericRepositoryConfigForbidden() throws Exception {
-    // Dummy to make TestRestInMemoryNaiveClient happy (not fail)
-    api().getConfig();
-
-    assumeTrue(fullPagingSupport());
-
+  void genericRepositoryConfigForbidden() {
     @SuppressWarnings("resource")
     NessieApiV2 api = apiV2();
 
@@ -1962,14 +1878,11 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void invalidCreateRepositoryConfig() throws Exception {
-    // Dummy to make TestRestInMemoryNaiveClient happy (not fail)
-    api().getConfig();
-
-    assumeTrue(fullPagingSupport());
-
+  void invalidCreateRepositoryConfig() {
     @SuppressWarnings("resource")
     NessieApiV2 api = apiV2();
+
+    api().getConfig();
 
     soft.assertThatThrownBy(
             () ->
@@ -1986,8 +1899,8 @@ public abstract class BaseTestNessieApi {
   }
 
   @Test
-  void invalidParameters() throws Exception {
-    assertThatThrownBy(() -> api().getEntries().refName("..invalid..").get())
+  void invalidParameters() {
+    soft.assertThatThrownBy(() -> api().getEntries().refName("..invalid..").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining(Validation.REF_NAME_MESSAGE);
   }
@@ -2110,8 +2023,6 @@ public abstract class BaseTestNessieApi {
   @NessieApiVersions(versions = {NessieApiVersion.V2})
   public void referenceHistory() throws Exception {
     Branch main = api().getDefaultBranch();
-
-    assumeTrue(fullPagingSupport());
 
     Branch branch =
         (Branch)

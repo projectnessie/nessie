@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.transfer;
 
 import org.immutables.value.Value;
-import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 
@@ -28,9 +27,7 @@ public interface ImportResult {
   ExportMeta exportMeta();
 
   /**
-   * Heads and fork-points generated during the export, can be used as an input to {@link
-   * CommitLogOptimization.Builder#headsAndForks(HeadsAndForkPoints)} when running commits
-   * optimization after a repository import.
+   * Heads and fork-points generated during the export.
    *
    * <p>Note: the HEADS of the named references in an export may not match the heads in {@link
    * HeadsAndForks} when commits happened while the export has been created.

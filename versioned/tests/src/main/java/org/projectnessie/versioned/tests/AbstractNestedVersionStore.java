@@ -54,10 +54,6 @@ public abstract class AbstractNestedVersionStore {
     return store;
   }
 
-  protected boolean isNewStorageModel() {
-    return store().getClass().getName().endsWith("VersionStoreImpl");
-  }
-
   protected StorageAssertions storageCheckpoint() {
     if (store instanceof ValidatingVersionStore) {
       return ((ValidatingVersionStore) store).storageCheckpoint();

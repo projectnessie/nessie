@@ -17,7 +17,6 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
@@ -64,8 +63,6 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
 
   @Test
   protected void checkDiffDifferentContents() throws VersionStoreException {
-    assumeThat(isNewStorageModel()).isTrue();
-
     BranchName branch1 = BranchName.of("checkDiffOtherContent1");
     BranchName branch2 = BranchName.of("checkDiffOtherContent2");
     store().create(branch1, Optional.empty());
@@ -250,80 +247,77 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     soft.assertThat(diffAsList(firstCommit, firstCommit)).isEmpty();
 
     // Key restrictions
-    if (isNewStorageModel()) {
-      soft.assertThat(
-              diffAsList(
-                  initial,
-                  secondCommit,
-                  KeyRestrictions.builder()
-                      .minKey(ContentKey.of("k"))
-                      .maxKey(ContentKey.of("l"))
-                      .build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .containsExactlyInAnyOrder(
-              tuple(null, ik1), tuple(null, ik2), tuple(null, ik3), tuple(null, ik1a));
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder()
+                    .minKey(ContentKey.of("k"))
+                    .maxKey(ContentKey.of("l"))
+                    .build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .containsExactlyInAnyOrder(
+            tuple(null, ik1), tuple(null, ik2), tuple(null, ik3), tuple(null, ik1a));
 
-      soft.assertThat(
-              diffAsList(
-                  initial,
-                  secondCommit,
-                  KeyRestrictions.builder().minKey(ContentKey.of("k")).build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .containsExactlyInAnyOrder(
-              tuple(null, ik1), tuple(null, ik2), tuple(null, ik3), tuple(null, ik1a));
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder().minKey(ContentKey.of("k")).build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .containsExactlyInAnyOrder(
+            tuple(null, ik1), tuple(null, ik2), tuple(null, ik3), tuple(null, ik1a));
 
-      soft.assertThat(
-              diffAsList(initial, secondCommit, KeyRestrictions.builder().maxKey(k2).build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .containsExactlyInAnyOrder(tuple(null, ik1), tuple(null, ik2), tuple(null, ik1a));
+    soft.assertThat(diffAsList(initial, secondCommit, KeyRestrictions.builder().maxKey(k2).build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .containsExactlyInAnyOrder(tuple(null, ik1), tuple(null, ik2), tuple(null, ik1a));
 
-      soft.assertThat(
-              diffAsList(
-                  initial, secondCommit, KeyRestrictions.builder().minKey(k1a).maxKey(k2).build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .containsExactlyInAnyOrder(tuple(null, ik1a), tuple(null, ik2));
+    soft.assertThat(
+            diffAsList(
+                initial, secondCommit, KeyRestrictions.builder().minKey(k1a).maxKey(k2).build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .containsExactlyInAnyOrder(tuple(null, ik1a), tuple(null, ik2));
 
-      soft.assertThat(
-              diffAsList(
-                  initial, secondCommit, KeyRestrictions.builder().minKey(k2).maxKey(k2).build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .containsExactlyInAnyOrder(tuple(null, ik2));
+    soft.assertThat(
+            diffAsList(
+                initial, secondCommit, KeyRestrictions.builder().minKey(k2).maxKey(k2).build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .containsExactlyInAnyOrder(tuple(null, ik2));
 
-      soft.assertThat(
-              diffAsList(
-                  initial,
-                  secondCommit,
-                  KeyRestrictions.builder()
-                      .minKey(ContentKey.of("k4"))
-                      .maxKey(ContentKey.of("l"))
-                      .build()))
-          .isEmpty();
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder()
+                    .minKey(ContentKey.of("k4"))
+                    .maxKey(ContentKey.of("l"))
+                    .build()))
+        .isEmpty();
 
-      // prefix
+    // prefix
 
-      soft.assertThat(
-              diffAsList(
-                  initial,
-                  secondCommit,
-                  KeyRestrictions.builder().prefixKey(ContentKey.of("k1")).build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .containsExactlyInAnyOrder(tuple(null, ik1));
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder().prefixKey(ContentKey.of("k1")).build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .containsExactlyInAnyOrder(tuple(null, ik1));
 
-      soft.assertThat(
-              diffAsList(
-                  initial,
-                  secondCommit,
-                  KeyRestrictions.builder().prefixKey(ContentKey.of("k")).build()))
-          .extracting(Diff::getFromKey, Diff::getToKey)
-          .isEmpty();
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder().prefixKey(ContentKey.of("k")).build()))
+        .extracting(Diff::getFromKey, Diff::getToKey)
+        .isEmpty();
 
-      soft.assertThat(
-              diffAsList(
-                  initial,
-                  secondCommit,
-                  KeyRestrictions.builder().prefixKey(ContentKey.of("x")).build()))
-          .isEmpty();
-    }
+    soft.assertThat(
+            diffAsList(
+                initial,
+                secondCommit,
+                KeyRestrictions.builder().prefixKey(ContentKey.of("x")).build()))
+        .isEmpty();
     soft.assertThat(
             diffAsList(
                 initial,

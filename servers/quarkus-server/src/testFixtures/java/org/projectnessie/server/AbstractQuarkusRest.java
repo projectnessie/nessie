@@ -23,40 +23,23 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.jaxrs.tests.BaseTestNessieRest;
-import org.projectnessie.quarkus.config.VersionStoreConfig;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 @ExtendWith(QuarkusNessieClientResolver.class)
 public abstract class AbstractQuarkusRest extends BaseTestNessieRest {
 
-  @Inject Instance<DatabaseAdapter> databaseAdapter;
-
   @Inject Instance<Persist> persist;
-
-  @Inject VersionStoreConfig storeConfig;
 
   @Override
   @AfterEach
   public void tearDown() throws Exception {
     try {
-      if (storeConfig.getVersionStoreType().isNewStorage()) {
-        Persist p = persist.select(Default.Literal.INSTANCE).get();
-        if (p != null) {
-          try {
-            p.erase();
-          } finally {
-            repositoryLogic(p).initialize("main");
-          }
-        }
-      } else {
-        DatabaseAdapter da = databaseAdapter.select().get();
-        if (da != null) {
-          try {
-            da.eraseRepo();
-          } finally {
-            da.initializeRepo("main");
-          }
+      Persist p = persist.select(Default.Literal.INSTANCE).get();
+      if (p != null) {
+        try {
+          p.erase();
+        } finally {
+          repositoryLogic(p).initialize("main");
         }
       }
     } finally {

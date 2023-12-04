@@ -22,7 +22,6 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
-import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.MergeBehavior.DROP;
@@ -43,11 +42,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.error.NessieReferenceConflictException;
-import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -183,7 +179,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     // try again --> conflict
 
-    if (isNewStorageModel() && isMerge) {
+    if (isMerge) {
       // New storage model allows "merging the same branch again". If nothing changed, it returns a
       // successful, but not-applied merge-response. This request is effectively a merge without any
       // commits to merge, reported as "successful".
@@ -195,24 +191,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
               MergeResponse::wasApplied,
               MergeResponse::wasSuccessful)
           .containsExactly(committed2.getHash(), newHead.getHash(), newHead.getHash(), false, true);
-    } else if (!isNewStorageModel()) {
-      // For the new storage model, the following transplant will NOT fail (correct behavior),
-      // because the eventually
-      // applied content-value is exactly the same as the currently existing one.
-
-      soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
-          .isInstanceOf(NessieReferenceConflictException.class)
-          .hasMessageContaining("keys have been changed in conflict")
-          .asInstanceOf(type(NessieReferenceConflictException.class))
-          .extracting(NessieReferenceConflictException::getErrorDetails)
-          .isNotNull()
-          .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
-          .hasSizeGreaterThan(0);
-
-      // try again --> conflict, but return information
-
-      conflictExceptionReturnedAsMergeResult(
-          actor, target, source, key1, committed1, committed2, newHead);
     }
 
     List<LogEntry> log = commitLog(target.getName(), MINIMAL, target.getHash(), null, null);
@@ -226,7 +204,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
           .isEqualTo(
               format(
                   "%s %s at %s into %s at %s",
-                  isMerge ? "Merged" : "Transplanted 2 commits from",
+                  "Merged",
                   detached ? "DETACHED" : source.getName(),
                   committed2.getHash(),
                   target.getName(),
@@ -311,57 +289,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     }
 
     return newHead;
-  }
-
-  @SuppressWarnings("deprecation")
-  private void conflictExceptionReturnedAsMergeResult(
-      MergeTransplantActor actor,
-      Branch target,
-      Branch source,
-      ContentKey key1,
-      Branch committed1,
-      Branch committed2,
-      Reference newHead)
-      throws NessieNotFoundException, NessieConflictException {
-    MergeResponse conflictResult = actor.act(target, source, committed1, committed2, true);
-
-    soft.assertThat(conflictResult)
-        .extracting(
-            MergeResponse::wasApplied,
-            MergeResponse::wasSuccessful,
-            MergeResponse::getExpectedHash,
-            MergeResponse::getTargetBranch,
-            MergeResponse::getEffectiveTargetHash)
-        .containsExactly(false, false, source.getHash(), target.getName(), newHead.getHash());
-
-    soft.assertThat(conflictResult.getCommonAncestor())
-        .satisfiesAnyOf(
-            a -> assertThat(a).isNull(), b -> assertThat(b).isEqualTo(target.getHash()));
-    soft.assertThat(conflictResult.getDetails())
-        .asInstanceOf(list(ContentKeyDetails.class))
-        .extracting(
-            ContentKeyDetails::getKey,
-            ContentKeyDetails::getConflictType,
-            ContentKeyDetails::getMergeBehavior)
-        .contains(tuple(key1, ContentKeyConflict.UNRESOLVABLE, NORMAL));
-    if (conflictResult.getSourceCommits() != null && !conflictResult.getSourceCommits().isEmpty()) {
-      // Database adapter
-      soft.assertThat(conflictResult.getSourceCommits())
-          .asInstanceOf(list(LogEntry.class))
-          .extracting(LogEntry::getCommitMeta)
-          .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-          .containsExactly(
-              tuple(committed2.getHash(), "test-branch2"),
-              tuple(committed1.getHash(), "test-branch1"));
-    }
-    if (conflictResult.getTargetCommits() != null) {
-      // Database adapter
-      soft.assertThat(conflictResult.getTargetCommits())
-          .asInstanceOf(list(LogEntry.class))
-          .extracting(LogEntry::getCommitMeta)
-          .extracting(CommitMeta::getMessage)
-          .containsAnyOf("test-branch2", "test-branch1", "test-main");
-    }
   }
 
   @Test

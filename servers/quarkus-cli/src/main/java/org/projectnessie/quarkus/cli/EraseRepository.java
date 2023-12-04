@@ -17,8 +17,6 @@ package org.projectnessie.quarkus.cli;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
@@ -45,7 +43,7 @@ public class EraseRepository extends BaseCommand {
   private String confirmationCode;
 
   @Override
-  protected Integer callWithPersist() {
+  public Integer call() {
     warnOnInMemory();
 
     if (!repositoryLogic(persist).repositoryExists()) {
@@ -73,45 +71,6 @@ public class EraseRepository extends BaseCommand {
     }
 
     return 0;
-  }
-
-  @Override
-  protected Integer callWithDatabaseAdapter() {
-    warnOnInMemory();
-
-    String code = getConfirmationCode(databaseAdapter);
-    if (!code.equals(confirmationCode)) {
-      spec.commandLine()
-          .getErr()
-          .printf(
-              "Please use the '--confirmation-code=%s' option to indicate that the"
-                  + " repository erasure operation is intentional.%nAll Nessie data will be lost!%n",
-              code);
-      return EXIT_CODE_GENERIC_ERROR;
-    }
-
-    databaseAdapter.eraseRepo();
-    spec.commandLine().getOut().println("Repository erased.");
-
-    if (newDefaultBranch != null) {
-      databaseAdapter.initializeRepo(newDefaultBranch);
-      spec.commandLine().getOut().println("Repository initialized.");
-    }
-
-    return 0;
-  }
-
-  static String getConfirmationCode(DatabaseAdapter databaseAdapter) {
-    DatabaseAdapterConfig adapterConfig = databaseAdapter.getConfig();
-
-    // Derive some stable number from configuration
-    long code = adapterConfig.getRepositoryId().hashCode();
-    code += 1; // avoid zero for an empty repo ID
-    code = 31L * code + adapterConfig.getParentsPerCommit();
-    code = 31L * code + adapterConfig.getKeyListDistance();
-    code = 31L * code + adapterConfig.getMaxKeyListSize();
-    // Format the code using MAX_RADIX to reduce the resultant string length
-    return Long.toString(code, Character.MAX_RADIX);
   }
 
   static String getConfirmationCode(Persist persist) {

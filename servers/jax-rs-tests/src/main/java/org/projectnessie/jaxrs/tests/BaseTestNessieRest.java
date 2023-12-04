@@ -80,8 +80,6 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
   protected URI clientUri;
 
-  protected abstract boolean isNewModel();
-
   @BeforeEach
   public void enableLogging() {
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();

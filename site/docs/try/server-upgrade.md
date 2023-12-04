@@ -31,6 +31,21 @@ See [Releases](releases.md) for release notes.
 **Also read the [release notes on GitHub](https://github.com/projectnessie/nessie/releases) and the
 [release notes page](releases.md).**
 
+### Nessie 0.75.0
+
+**The version store types `ROCKS`, `MONGO`, `DYNAMO`, `TRANSACTIONAL` and `INMEMORY` were deprecated for a long time
+and have been removed!**
+
+If you are using one of these version types migrate to one of the supported version store type mentioned above
+**before** upgrading to Nessie 0.75.0 or newer.
+
+Migration steps:
+1. shutdown Nessie
+2. export the Nessie repository using the `nessie-quarkus-cli` tool's export functionality using the old repository settings
+3. configure Nessie to use one of the new version store types
+4. export the Nessie repository using the `nessie-quarkus-cli` tool's import functionality using the new repository settings
+5. startup Nessie
+
 ### Nessie 0.61.0
 
 The serialized format of internal key-indexes got bumped. For a rolling-upgrade to version 0.61.0 or newer, follow these

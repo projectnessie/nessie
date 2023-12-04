@@ -28,10 +28,8 @@ import picocli.CommandLine.HelpCommand;
     description = "Nessie repository CLI",
     subcommands = {
       NessieInfo.class,
-      RepoMaintenance.class,
       HelpCommand.class,
       CheckContent.class,
-      ContentInfo.class,
       EraseRepository.class,
       ExportRepository.class,
       ImportRepository.class
@@ -39,12 +37,7 @@ import picocli.CommandLine.HelpCommand;
 public class NessieCli extends BaseCommand {
 
   @Override
-  protected Integer callWithDatabaseAdapter() {
-    return info();
-  }
-
-  @Override
-  protected Integer callWithPersist() {
+  public Integer call() {
     return info();
   }
 

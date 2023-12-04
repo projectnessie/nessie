@@ -18,7 +18,6 @@ package org.projectnessie.services.impl;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -197,45 +196,6 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
           .isInstanceOf(NessieNamespaceNotEmptyException.class)
           .hasMessage(String.format("Namespace '%s' is not empty", namespace));
     }
-  }
-
-  @Test
-  public void testNamespaceMerge() throws BaseNessieClientServerException {
-    assumeThat(databaseAdapter).isNotNull();
-
-    Branch base = createBranch("merge-base");
-    base =
-        commit(
-                base,
-                fromMessage("root"),
-                Put.of(ContentKey.of("root"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
-            .getTargetBranch();
-
-    Namespace ns = Namespace.parse("a.b.c");
-    Branch branch =
-        ensureNamespacesForKeysExist(createBranch("merge-branch", base), ns.toContentKey());
-    // create the same namespace on both branches
-    namespaceApi().createNamespace(branch.getName(), ns);
-
-    base = (Branch) getReference(base.getName());
-    branch = (Branch) getReference(branch.getName());
-    treeApi()
-        .mergeRefIntoBranch(
-            base.getName(),
-            base.getHash(),
-            branch.getName(),
-            branch.getHash(),
-            null,
-            emptyList(),
-            NORMAL,
-            false,
-            false,
-            false);
-
-    soft.assertThat(entries(base.getName(), null).stream().map(EntriesResponse.Entry::getName))
-        .contains(ns.toContentKey());
-
-    soft.assertThat(namespaceApi().getNamespace(base.getName(), null, ns)).isNotNull();
   }
 
   @Test
