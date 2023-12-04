@@ -18,7 +18,6 @@ package org.projectnessie.quarkus.providers.storage;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Default;
@@ -44,11 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
-@RegisterForReflection(
-    classNames = {
-      "com.github.benmanes.caffeine.cache.SSSMW",
-      "com.github.benmanes.caffeine.cache.PSMW"
-    })
 public class PersistProvider {
   private static final Logger LOGGER = LoggerFactory.getLogger(PersistProvider.class);
 
