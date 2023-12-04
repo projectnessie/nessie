@@ -7,4 +7,4 @@ idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle
 jandex = { module = "com.github.vlsi.gradle:jandex-plugin", version = "1.90" }
 junit-bom = { module = "org.junit:junit-bom", version = "5.10.1" }
 shadow = { module = "com.github.johnrengelman:shadow", version = "8.1.1" }
-spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "6.23.2" }
+spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "6.23.3" }
