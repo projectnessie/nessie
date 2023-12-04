@@ -123,8 +123,7 @@ fun JavaExec.forceJavaVersion(requestedJavaVersion: Int) {
  */
 fun JavaForkOptions.addSparkJvmOptions() {
   jvmArgs =
-    (jvmArgs
-      ?: emptyList()) +
+    (jvmArgs ?: emptyList()) +
       listOf(
         // Spark 3.3+
         "-XX:+IgnoreUnrecognizedVMOptions",
