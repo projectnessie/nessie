@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Semaphore;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -36,10 +37,12 @@ final class LimitedConcurrentRequests implements AutoCloseable {
   final Throwable[] failureHolder = new Throwable[1];
 
   /** Number of started queries. */
-  volatile int started;
+  @GuardedBy("this")
+  int started;
 
   /** Number of finished queries. */
-  volatile int finished;
+  @GuardedBy("this")
+  int finished;
 
   LimitedConcurrentRequests(int maxChildQueries) {
     permits = new Semaphore(maxChildQueries);
@@ -60,19 +63,19 @@ final class LimitedConcurrentRequests implements AutoCloseable {
     }
 
     cs.whenComplete(
-        (resultSet, throable) -> {
+        (resultSet, throwable) -> {
           try {
             // Release the acquired permit
             permits.release();
 
             // Record the failure (if the query failed)
-            if (throable != null) {
+            if (throwable != null) {
               synchronized (failureHolder) {
                 Throwable ex = failureHolder[0];
                 if (ex == null) {
-                  failureHolder[0] = throable;
+                  failureHolder[0] = throwable;
                 } else {
-                  ex.addSuppressed(throable);
+                  ex.addSuppressed(throwable);
                 }
               }
             }
