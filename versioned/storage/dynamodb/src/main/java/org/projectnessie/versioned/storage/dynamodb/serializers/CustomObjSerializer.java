@@ -36,8 +36,9 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   private static final String COL_CUSTOM = "x";
 
-  private static final String COL_CUSTOM_CLASS = "x_class";
-  private static final String COL_CUSTOM_DATA = "x_data";
+  private static final String COL_CUSTOM_CLASS = "xc";
+  private static final String COL_CUSTOM_DATA = "xd";
+  private static final String COL_CUSTOM_COMPRESSION = "xC";
 
   private CustomObjSerializer() {}
 
@@ -51,12 +52,23 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
       Obj obj, Map<String, AttributeValue> i, int incrementalIndexSize, int maxSerializedIndexSize)
       throws ObjTooLargeException {
     i.put(COL_CUSTOM_CLASS, fromS(obj.type().targetClass().getName()));
-    bytesAttribute(i, COL_CUSTOM_DATA, ByteString.copyFrom(SmileSerialization.serializeObj(obj)));
+    bytesAttribute(
+        i,
+        COL_CUSTOM_DATA,
+        ByteString.copyFrom(
+            SmileSerialization.serializeObj(
+                obj,
+                compression -> i.put(COL_CUSTOM_COMPRESSION, fromS(compression.valueString())))));
+    ;
   }
 
   @Override
   public Obj fromMap(ObjId id, Map<String, AttributeValue> i) {
     ByteBuffer buffer = requireNonNull(attributeToBytes(i, COL_CUSTOM_DATA)).asReadOnlyByteBuffer();
-    return SmileSerialization.deserializeObj(id, buffer, attributeToString(i, COL_CUSTOM_CLASS));
+    return SmileSerialization.deserializeObj(
+        id,
+        buffer,
+        attributeToString(i, COL_CUSTOM_CLASS),
+        attributeToString(i, COL_CUSTOM_COMPRESSION));
   }
 }

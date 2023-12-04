@@ -495,12 +495,20 @@ public final class ProtoSerialization {
 
   private static Obj deserializeCustom(ObjId id, CustomProto custom) {
     return SmileSerialization.deserializeObj(
-        id, custom.getData().toByteArray(), custom.getTargetClass());
+        id,
+        custom.getData().toByteArray(),
+        custom.getTargetClass(),
+        custom.getCompression().name());
   }
 
   private static CustomProto.Builder serializeCustom(Obj obj) {
-    return CustomProto.newBuilder()
-        .setTargetClass(obj.type().targetClass().getName())
-        .setData(ByteString.copyFrom(SmileSerialization.serializeObj(obj)));
+    CustomProto.Builder builder =
+        CustomProto.newBuilder().setTargetClass(obj.type().targetClass().getName());
+    byte[] bytes =
+        SmileSerialization.serializeObj(
+            obj,
+            compression -> builder.setCompression(CompressionProto.valueOf(compression.name())));
+    builder.setData(ByteString.copyFrom(bytes));
+    return builder;
   }
 }

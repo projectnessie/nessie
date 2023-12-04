@@ -88,6 +88,7 @@ enum CompressionProto {
   DEFLATE = 3;
   ZSTD = 4;
   LZ4 = 5;
+  SNAPPY = 6;
 }
 
 message TagProto {
@@ -136,4 +137,5 @@ message ReferencePreviousProto {
 message CustomProto {
   string target_class = 1;
   bytes data = 2;
+  CompressionProto compression = 3;
 }

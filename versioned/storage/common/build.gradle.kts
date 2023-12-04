@@ -49,6 +49,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
+  implementation(libs.snappy.java)
+
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 

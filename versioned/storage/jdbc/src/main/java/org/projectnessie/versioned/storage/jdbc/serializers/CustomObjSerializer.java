@@ -37,11 +37,16 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   private static final String COL_CUSTOM_CLASS = "x_class";
   private static final String COL_CUSTOM_DATA = "x_data";
+  private static final String COL_CUSTOM_COMPRESSION = "x_compress";
 
   private static final Map<String, JdbcColumnType> COLS =
       ImmutableMap.of(
-          COL_CUSTOM_CLASS, JdbcColumnType.NAME,
-          COL_CUSTOM_DATA, JdbcColumnType.VARBINARY);
+          COL_CUSTOM_CLASS,
+          JdbcColumnType.NAME,
+          COL_CUSTOM_DATA,
+          JdbcColumnType.VARBINARY,
+          COL_CUSTOM_COMPRESSION,
+          JdbcColumnType.NAME);
 
   private CustomObjSerializer() {}
 
@@ -63,13 +68,27 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
     serializeBytes(
         ps,
         nameToIdx.apply(COL_CUSTOM_DATA),
-        ByteString.copyFrom(SmileSerialization.serializeObj(obj)),
+        ByteString.copyFrom(
+            SmileSerialization.serializeObj(
+                obj,
+                compression -> {
+                  try {
+                    ps.setString(
+                        nameToIdx.apply(COL_CUSTOM_COMPRESSION), compression.valueString());
+                  } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                  }
+                })),
         databaseSpecific);
+    ;
   }
 
   @Override
   public Obj deserialize(ResultSet rs, ObjId id) throws SQLException {
     return SmileSerialization.deserializeObj(
-        id, rs.getBytes(COL_CUSTOM_DATA), rs.getString(COL_CUSTOM_CLASS));
+        id,
+        rs.getBytes(COL_CUSTOM_DATA),
+        rs.getString(COL_CUSTOM_CLASS),
+        rs.getString(COL_CUSTOM_COMPRESSION));
   }
 }
