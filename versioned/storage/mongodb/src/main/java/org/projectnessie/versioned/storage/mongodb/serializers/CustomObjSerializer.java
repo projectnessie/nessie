@@ -28,8 +28,9 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   private static final String COL_CUSTOM = "x";
 
-  private static final String COL_CUSTOM_CLASS = "x_class";
-  private static final String COL_CUSTOM_DATA = "x_data";
+  private static final String COL_CUSTOM_CLASS = "xc";
+  private static final String COL_CUSTOM_DATA = "xd";
+  private static final String COL_CUSTOM_COMPRESSION = "xC";
 
   private CustomObjSerializer() {}
 
@@ -42,12 +43,17 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   public void objToDoc(Obj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException {
     doc.put(COL_CUSTOM_CLASS, obj.type().targetClass().getName());
-    doc.put(COL_CUSTOM_DATA, new Binary(SmileSerialization.serializeObj(obj)));
+    doc.put(
+        COL_CUSTOM_DATA,
+        new Binary(
+            SmileSerialization.serializeObj(
+                obj, compression -> doc.put(COL_CUSTOM_COMPRESSION, compression.valueString()))));
   }
 
   @Override
   public Obj docToObj(ObjId id, Document doc) {
     byte[] data = doc.get(COL_CUSTOM_DATA, Binary.class).getData();
-    return SmileSerialization.deserializeObj(id, data, doc.getString(COL_CUSTOM_CLASS));
+    return SmileSerialization.deserializeObj(
+        id, data, doc.getString(COL_CUSTOM_CLASS), doc.getString(COL_CUSTOM_COMPRESSION));
   }
 }

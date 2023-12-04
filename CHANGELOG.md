@@ -17,11 +17,11 @@ as necessary. Empty sections will not end in the release notes.
   - JDBC: the following SQL statement must be executed on the Nessie database (please adapt the
     statement to the actual database SQL dialect):
     ```sql
-    ALTER TABLE objs ADD COLUMN x_class VARCHAR, ADD COLUMN x_data BYTEA;
+    ALTER TABLE objs ADD COLUMN x_class VARCHAR, ADD COLUMN x_data BYTEA, ADD COLUMN x_compress VARCHAR;
     ```
   - Cassandra: the following CQL statement must be executed on the Nessie database and keyspace:
     ```cql
-    ALTER TABLE <keyspace>.objs ADD x_class text, ADD x_data blob;
+    ALTER TABLE <keyspace>.objs ADD x_class text, ADD x_data blob, ADD x_compress text;
     ```
 
 ### Breaking changes

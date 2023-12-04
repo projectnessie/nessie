@@ -15,12 +15,22 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
+import java.util.Locale;
+
 public enum Compression {
   NONE('N'),
   GZIP('G'),
   DEFLATE('D'),
   ZSTD('Z'),
-  LZ4('L');
+  LZ4('L'),
+  SNAPPY('S');
+
+  public static Compression fromValue(String valueString) {
+    if (valueString.length() == 1) {
+      return fromValue(valueString.charAt(0));
+    }
+    return Compression.valueOf(valueString.toUpperCase(Locale.ROOT));
+  }
 
   public static Compression fromValue(char value) {
     switch (value) {
@@ -34,18 +44,26 @@ public enum Compression {
         return ZSTD;
       case 'L':
         return LZ4;
+      case 'S':
+        return SNAPPY;
       default:
         throw new IllegalArgumentException("Illegal value '" + value + "' for Compression");
     }
   }
 
   private final char value;
+  private final String valueString;
 
   Compression(char value) {
     this.value = value;
+    this.valueString = "" + value;
   }
 
   public char value() {
     return value;
+  }
+
+  public String valueString() {
+    return valueString;
   }
 }

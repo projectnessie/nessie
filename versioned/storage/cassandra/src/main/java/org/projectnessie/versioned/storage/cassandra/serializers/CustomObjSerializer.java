@@ -39,8 +39,11 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   private static final CqlColumn COL_CUSTOM_CLASS = new CqlColumn("x_class", CqlColumnType.NAME);
   private static final CqlColumn COL_CUSTOM_DATA = new CqlColumn("x_data", CqlColumnType.VARBINARY);
+  private static final CqlColumn COL_CUSTOM_COMPRESSION =
+      new CqlColumn("x_compress", CqlColumnType.NAME);
 
-  private static final Set<CqlColumn> COLS = ImmutableSet.of(COL_CUSTOM_CLASS, COL_CUSTOM_DATA);
+  private static final Set<CqlColumn> COLS =
+      ImmutableSet.of(COL_CUSTOM_CLASS, COL_CUSTOM_DATA, COL_CUSTOM_COMPRESSION);
 
   private static final String INSERT_CQL =
       INSERT_OBJ_PREFIX
@@ -70,12 +73,22 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
       throws ObjTooLargeException {
     stmt.setString(COL_CUSTOM_CLASS.name(), obj.type().targetClass().getName());
     stmt.setByteBuffer(
-        COL_CUSTOM_DATA.name(), ByteBuffer.wrap(SmileSerialization.serializeObj(obj)));
+        COL_CUSTOM_DATA.name(),
+        ByteBuffer.wrap(
+            SmileSerialization.serializeObj(
+                obj,
+                compression ->
+                    stmt.setString(COL_CUSTOM_COMPRESSION.name(), compression.valueString()))));
+    ;
   }
 
   @Override
   public Obj deserialize(Row row, ObjId id) {
     ByteBuffer buffer = Objects.requireNonNull(row.getByteBuffer(COL_CUSTOM_DATA.name()));
-    return SmileSerialization.deserializeObj(id, buffer, row.getString(COL_CUSTOM_CLASS.name()));
+    return SmileSerialization.deserializeObj(
+        id,
+        buffer,
+        row.getString(COL_CUSTOM_CLASS.name()),
+        row.getString(COL_CUSTOM_COMPRESSION.name()));
   }
 }
