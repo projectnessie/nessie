@@ -17,8 +17,12 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.uniqueIdHash;
 
+import java.nio.ByteBuffer;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -47,13 +51,33 @@ public interface UniqueIdObj extends Obj {
 
   /** The value of the ID within the {@link #space()}. */
   @Value.Parameter(order = 3)
-  String value();
+  ByteString value();
 
-  static UniqueIdObj uniqueId(ObjId id, String space, String value) {
+  @Value.NonAttribute
+  default UUID valueAsUUID() {
+    ByteBuffer buffer = value().asReadOnlyByteBuffer();
+    long msb = buffer.getLong();
+    long lsb = buffer.getLong();
+    return new UUID(msb, lsb);
+  }
+
+  static UniqueIdObj uniqueId(ObjId id, String space, ByteString value) {
     return ImmutableUniqueIdObj.of(id, space, value);
   }
 
-  static UniqueIdObj uniqueId(String space, String value) {
+  static UniqueIdObj uniqueId(String space, ByteString value) {
     return uniqueId(uniqueIdHash(space, value), space, value);
+  }
+
+  static UniqueIdObj uniqueId(String space, UUID value) {
+    return uniqueId(space, uuidToBytes(value));
+  }
+
+  static ByteString uuidToBytes(UUID value) {
+    ByteBuffer buffer = ByteBuffer.allocate(16);
+    buffer.putLong(value.getMostSignificantBits());
+    buffer.putLong(value.getLeastSignificantBits());
+    buffer.flip();
+    return UnsafeByteOperations.unsafeWrap(buffer);
   }
 }

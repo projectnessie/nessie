@@ -124,9 +124,12 @@ public final class Hashes {
     return hashAsObjId(hasher);
   }
 
-  static ObjId uniqueIdHash(String space, String value) {
+  static ObjId uniqueIdHash(String space, ByteString value) {
     Hasher hasher =
-        newHasher().putString(UNIQUE.name(), UTF_8).putString(space, UTF_8).putString(value, UTF_8);
+        newHasher()
+            .putString(UNIQUE.name(), UTF_8)
+            .putString(space, UTF_8)
+            .putBytes(value.asReadOnlyByteBuffer());
     return hashAsObjId(hasher);
   }
 }

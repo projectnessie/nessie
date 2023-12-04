@@ -16,8 +16,11 @@
 package org.projectnessie.versioned.storage.mongodb.serializers;
 
 import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBSerde.binaryToBytes;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBSerde.bytesToBinary;
 
 import org.bson.Document;
+import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -41,11 +44,14 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   public void objToDoc(
       UniqueIdObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
     doc.put(COL_UNIQUE_SPACE, obj.space());
-    doc.put(COL_UNIQUE_VALUE, obj.value());
+    doc.put(COL_UNIQUE_VALUE, bytesToBinary(obj.value()));
   }
 
   @Override
   public UniqueIdObj docToObj(ObjId id, Document doc) {
-    return uniqueId(id, doc.getString(COL_UNIQUE_SPACE), doc.getString(COL_UNIQUE_VALUE));
+    return uniqueId(
+        id,
+        doc.getString(COL_UNIQUE_SPACE),
+        binaryToBytes(doc.get(COL_UNIQUE_VALUE, Binary.class)));
   }
 }

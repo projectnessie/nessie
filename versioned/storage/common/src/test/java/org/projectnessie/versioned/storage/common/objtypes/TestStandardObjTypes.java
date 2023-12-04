@@ -47,11 +47,13 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
+import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uuidToBytes;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -104,7 +106,7 @@ public class TestStandardObjTypes {
         arguments(indexSegments(randomObjId(), emptyList()), INDEX_SEGMENTS),
         arguments(
             index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()), INDEX),
-        arguments(uniqueId(randomObjId(), "space", "value"), UNIQUE));
+        arguments(uniqueId(randomObjId(), "space", uuidToBytes(UUID.randomUUID())), UNIQUE));
   }
 
   @ParameterizedTest

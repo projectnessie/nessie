@@ -16,6 +16,8 @@
 package org.projectnessie.versioned.storage.jdbc.serializers;
 
 import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
+import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.deserializeBytes;
+import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.serializeBytes;
 
 import com.google.common.collect.ImmutableMap;
 import java.sql.PreparedStatement;
@@ -38,7 +40,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   private static final Map<String, JdbcColumnType> COLS =
       ImmutableMap.of(
           COL_UNIQUE_SPACE, JdbcColumnType.VARCHAR,
-          COL_UNIQUE_VALUE, JdbcColumnType.VARCHAR);
+          COL_UNIQUE_VALUE, JdbcColumnType.VARBINARY);
 
   private UniqueIdObjSerializer() {}
 
@@ -57,11 +59,11 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
       DatabaseSpecific databaseSpecific)
       throws SQLException {
     ps.setString(nameToIdx.apply(COL_UNIQUE_SPACE), obj.space());
-    ps.setString(nameToIdx.apply(COL_UNIQUE_VALUE), obj.value());
+    serializeBytes(ps, nameToIdx.apply(COL_UNIQUE_VALUE), obj.value(), databaseSpecific);
   }
 
   @Override
   public UniqueIdObj deserialize(ResultSet rs, ObjId id) throws SQLException {
-    return uniqueId(id, rs.getString(COL_UNIQUE_SPACE), rs.getString(COL_UNIQUE_VALUE));
+    return uniqueId(id, rs.getString(COL_UNIQUE_SPACE), deserializeBytes(rs, COL_UNIQUE_VALUE));
   }
 }

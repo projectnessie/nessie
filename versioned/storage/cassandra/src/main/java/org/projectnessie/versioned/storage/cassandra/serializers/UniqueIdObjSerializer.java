@@ -25,6 +25,7 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -36,7 +37,8 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   public static final ObjSerializer<UniqueIdObj> INSTANCE = new UniqueIdObjSerializer();
 
   private static final CqlColumn COL_UNIQUE_SPACE = new CqlColumn("u_space", CqlColumnType.VARCHAR);
-  private static final CqlColumn COL_UNIQUE_VALUE = new CqlColumn("u_value", CqlColumnType.VARCHAR);
+  private static final CqlColumn COL_UNIQUE_VALUE =
+      new CqlColumn("u_value", CqlColumnType.VARBINARY);
 
   private static final Set<CqlColumn> COLS = ImmutableSet.of(COL_UNIQUE_SPACE, COL_UNIQUE_VALUE);
 
@@ -70,12 +72,14 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
       int maxSerializedIndexSize)
       throws ObjTooLargeException {
     stmt.setString(COL_UNIQUE_SPACE.name(), obj.space());
-    stmt.setString(COL_UNIQUE_VALUE.name(), obj.value());
+    stmt.setByteBuffer(COL_UNIQUE_VALUE.name(), obj.value().asReadOnlyByteBuffer());
   }
 
   @Override
   public UniqueIdObj deserialize(Row row, ObjId id) {
     return uniqueId(
-        id, row.getString(COL_UNIQUE_SPACE.name()), row.getString(COL_UNIQUE_VALUE.name()));
+        id,
+        row.getString(COL_UNIQUE_SPACE.name()),
+        CassandraSerde.deserializeBytes(row, COL_UNIQUE_VALUE.name()));
   }
 }

@@ -77,7 +77,7 @@ message StringProto {
 
 message UniqueIdProto {
   string space = 1;
-  string value = 2;
+  bytes value = 2;
 }
 
 enum CommitTypeProto {

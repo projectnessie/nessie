@@ -16,7 +16,9 @@
 package org.projectnessie.versioned.storage.dynamodb.serializers;
 
 import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBSerde.attributeToBytes;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBSerde.attributeToString;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBSerde.bytesAttribute;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromS;
 
 import java.util.Map;
@@ -47,12 +49,12 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
       int incrementalIndexSize,
       int maxSerializedIndexSize) {
     i.put(COL_UNIQUE_SPACE, fromS(obj.space()));
-    i.put(COL_UNIQUE_VALUE, fromS(obj.value()));
+    bytesAttribute(i, COL_UNIQUE_VALUE, obj.value());
   }
 
   @Override
   public UniqueIdObj fromMap(ObjId id, Map<String, AttributeValue> i) {
     return uniqueId(
-        id, attributeToString(i, COL_UNIQUE_SPACE), attributeToString(i, COL_UNIQUE_VALUE));
+        id, attributeToString(i, COL_UNIQUE_SPACE), attributeToBytes(i, COL_UNIQUE_VALUE));
   }
 }

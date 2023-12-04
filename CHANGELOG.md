@@ -22,7 +22,7 @@ as necessary. Empty sections will not end in the release notes.
       ADD COLUMN x_data BYTEA,
       ADD COLUMN x_compress VARCHAR,
       ADD COLUMN u_space VARCHAR,
-      ADD COLUMN u_value VARCHAR;
+      ADD COLUMN u_value BYTEA;
     ```
   - Cassandra: the following CQL statement must be executed on the Nessie database and keyspace:
     ```cql
@@ -31,7 +31,7 @@ as necessary. Empty sections will not end in the release notes.
       ADD x_data blob,
       ADD x_compress text,
       ADD u_space text,
-      ADD u_value text;
+      ADD u_value blob;
     ```
 
 ### Breaking changes
