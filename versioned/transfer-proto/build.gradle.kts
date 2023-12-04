@@ -19,7 +19,6 @@ import com.google.protobuf.gradle.ProtobufExtension
 import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
-  alias(libs.plugins.nessie.reflectionconfig)
   id("nessie-conventions-server")
   alias(libs.plugins.protobuf)
 }
@@ -45,27 +44,8 @@ tasks.named<GenerateProtoTask>("generateProto").configure {
   )
 }
 
-reflectionConfig {
-  // Consider classes that extend one of these classes...
-  classExtendsPatterns.set(
-    listOf(
-      "org.projectnessie.nessie.relocated.protobuf.GeneratedMessageV3",
-      "org.projectnessie.nessie.relocated.protobuf.GeneratedMessageV3.Builder"
-    )
-  )
-  // ... and classes the implement this interface.
-  classImplementsPatterns.set(
-    listOf("org.projectnessie.nessie.relocated.protobuf.ProtocolMessageEnum")
-  )
-  // Also include generated classes (e.g. google.protobuf.Empty) via the "runtimeClasspath",
-  // which contains the the "com.google.protobuf:protobuf-java" dependency.
-  includeConfigurations.set(listOf("runtimeClasspath"))
-}
-
 // The protobuf-plugin should ideally do this
-tasks.named<Jar>("sourcesJar").configure {
-  dependsOn(tasks.named("generateProto"), tasks.named("generateReflectionConfig"))
-}
+tasks.named<Jar>("sourcesJar").configure { dependsOn("generateProto") }
 
 tasks.withType(ProtobufExtract::class).configureEach {
   when (name) {
