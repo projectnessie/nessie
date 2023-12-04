@@ -19,16 +19,13 @@ import static org.projectnessie.versioned.storage.common.objtypes.Hashes.uniqueI
 
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
- * Describes the <em>internal</em> state of a reference when it has been created, managed by {@link
- * ReferenceLogic} implementations, not available/tracked for transactional {@link Persist}
- * instances.
+ * Describes a unique ID, used to ensure that an ID defined in some {@linkplain #space()} is unique
+ * within a Nessie repository.
  */
 @Value.Immutable
 public interface UniqueIdObj extends Obj {
