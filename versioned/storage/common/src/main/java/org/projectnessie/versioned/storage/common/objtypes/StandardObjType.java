@@ -45,7 +45,11 @@ public enum StandardObjType implements ObjType {
   INDEX_SEGMENTS("I", IndexSegmentsObj.class),
 
   /** {@link Obj} is a {@link IndexObj}. */
-  INDEX("i", IndexObj.class);
+  INDEX("i", IndexObj.class),
+
+  /** Obj is a {@link UniqueIdObj}. */
+  UNIQUE("u", UniqueIdObj.class),
+  ;
 
   private final String shortName;
 

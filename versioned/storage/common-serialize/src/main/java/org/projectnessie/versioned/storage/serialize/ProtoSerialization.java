@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
+import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,6 +50,7 @@ import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
+import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -68,6 +70,7 @@ import org.projectnessie.versioned.storage.common.proto.StorageTypes.ReferencePr
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.StringProto;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.TagProto;
+import org.projectnessie.versioned.storage.common.proto.StorageTypes.UniqueIdProto;
 
 public final class ProtoSerialization {
 
@@ -230,6 +233,8 @@ public final class ProtoSerialization {
           return b.setStringData(serializeStringData((StringObj) obj)).build().toByteArray();
         case TAG:
           return b.setTag(serializeTag((TagObj) obj)).build().toByteArray();
+        case UNIQUE:
+          return b.setUniqueId(serializeUniqueId((UniqueIdObj) obj)).build().toByteArray();
         default:
           throw new UnsupportedOperationException("Unknown standard object type " + obj.type());
       }
@@ -283,6 +288,9 @@ public final class ProtoSerialization {
     }
     if (obj.hasTag()) {
       return deserializeTag(id, obj.getTag());
+    }
+    if (obj.hasUniqueId()) {
+      return deserializeUniqueId(id, obj.getUniqueId());
     }
     if (obj.hasCustom()) {
       return deserializeCustom(id, obj.getCustom());
@@ -491,6 +499,14 @@ public final class ProtoSerialization {
       }
     }
     return tag;
+  }
+
+  private static UniqueIdObj deserializeUniqueId(ObjId id, UniqueIdProto uniqueId) {
+    return uniqueId(id, uniqueId.getSpace(), uniqueId.getValue());
+  }
+
+  private static UniqueIdProto.Builder serializeUniqueId(UniqueIdObj obj) {
+    return UniqueIdProto.newBuilder().setSpace(obj.space()).setValue(obj.value());
   }
 
   private static Obj deserializeCustom(ObjId id, CustomProto custom) {

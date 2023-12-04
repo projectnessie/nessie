@@ -75,6 +75,11 @@ message StringProto {
   bytes text = 54;
 }
 
+message UniqueIdProto {
+  string space = 1;
+  bytes value = 2;
+}
+
 enum CommitTypeProto {
   T_UNKNOWN = 0;
   NORMAL = 1;
@@ -108,6 +113,7 @@ message ObjProto {
     StringProto string_data = 7;
     TagProto tag = 8;
     CustomProto custom = 9;
+    UniqueIdProto uniqueId = 10;
   }
 }
 

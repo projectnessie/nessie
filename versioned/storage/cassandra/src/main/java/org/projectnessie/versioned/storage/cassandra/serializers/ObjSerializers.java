@@ -34,6 +34,7 @@ public final class ObjSerializers {
           RefObjSerializer.INSTANCE,
           StringObjSerializer.INSTANCE,
           TagObjSerializer.INSTANCE,
+          UniqueIdObjSerializer.INSTANCE,
           CustomObjSerializer.INSTANCE);
 
   static {
@@ -74,6 +75,9 @@ public final class ObjSerializers {
           break;
         case VALUE:
           serializer = ContentValueObjSerializer.INSTANCE;
+          break;
+        case UNIQUE:
+          serializer = UniqueIdObjSerializer.INSTANCE;
           break;
         default:
           throw new IllegalArgumentException("Unknown standard object type: " + type);

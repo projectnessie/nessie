@@ -33,6 +33,7 @@ import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newC
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.contentIdMaybe;
+import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
@@ -472,7 +473,21 @@ class CommitImpl extends BaseCommitHelper {
 
       putValueId =
           commitRetryState.generatedContentIds.computeIfAbsent(
-              putKey, x -> UUID.randomUUID().toString());
+              putKey,
+              x -> {
+                try {
+                  UUID generatedContentId;
+                  while (true) {
+                    generatedContentId = UUID.randomUUID();
+                    if (persist.storeObj(uniqueId("content-id", generatedContentId))) {
+                      break;
+                    }
+                  }
+                  return generatedContentId.toString();
+                } catch (ObjTooLargeException e) {
+                  throw new RuntimeException(e);
+                }
+              });
       putValue = putValue.withId(putValueId);
 
       newContent.put(putKey, putValue);
