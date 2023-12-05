@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.tools.compatibility.engine;
+package org.projectnessie.junit.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
@@ -29,9 +29,6 @@ import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
 import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.testkit.engine.EngineTestKit;
-import org.projectnessie.junit.engine.MultiEnvTestEngine;
-import org.projectnessie.junit.engine.MultiEnvTestExtension;
-import org.projectnessie.junit.engine.MultiEnvTestFilter;
 
 class TestMultiEnvTestEngine {
   @Test
@@ -39,7 +36,7 @@ class TestMultiEnvTestEngine {
     // Validates that the filter permits plain test in the Jupiter test engine
     assertThat(
             EngineTestKit.engine(JupiterEngineDescriptor.ENGINE_ID)
-                .selectors(selectClass(TestMultiEnvTestEngine.PlainTest.class))
+                .selectors(selectClass(PlainTest.class))
                 .filters(new MultiEnvTestFilter())
                 .execute()
                 .testEvents()
@@ -83,11 +80,54 @@ class TestMultiEnvTestEngine {
                 .flatMap(
                     id ->
                         id.getSegments().stream()
-                            .filter(s -> "test-segment".equals(s.getType()))
+                            .filter(s -> "test-segment-2".equals(s.getType()))
                             .map(UniqueId.Segment::getValue)))
-        .containsExactlyInAnyOrder("TE1", "TE2", "TE1", "TE2");
+        .containsExactlyInAnyOrder("TE2-1", "TE2-2", "TE2-1", "TE2-2");
   }
 
+  @Test
+  void cartesianProduct() {
+    Set<UniqueId> ids =
+      EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+        .selectors(selectClass(CartesianProductTest.class))
+        .selectors(selectClass(CartesianProductTest.Inner.class))
+        .filters(new MultiEnvTestFilter())
+        .execute()
+        .testEvents()
+        .list()
+        .stream()
+        .map(e -> e.getTestDescriptor().getUniqueId())
+        .collect(Collectors.toSet());
+    assertThat(ids).hasSize(12); // 6 from the outer class, 6 from the inner
+    assertThat(ids)
+      .allSatisfy(id -> assertThat(id.getEngineId()).hasValue(MultiEnvTestEngine.ENGINE_ID));
+    assertThat(
+      ids.stream()
+        .flatMap(
+          id ->
+            id.getSegments().stream()
+              .filter(s -> "test-segment-1".equals(s.getType()))
+              .map(UniqueId.Segment::getValue)))
+      .containsExactlyInAnyOrder("TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1", "TE1-1");
+    assertThat(
+      ids.stream()
+        .flatMap(
+          id ->
+            id.getSegments().stream()
+              .filter(s -> "test-segment-2".equals(s.getType()))
+              .map(UniqueId.Segment::getValue)))
+      .containsExactlyInAnyOrder("TE2-1", "TE2-2", "TE2-1", "TE2-2", "TE2-1", "TE2-2", "TE2-1", "TE2-2", "TE2-1", "TE2-2", "TE2-1", "TE2-2");
+    assertThat(
+      ids.stream()
+        .flatMap(
+          id ->
+            id.getSegments().stream()
+              .filter(s -> "test-segment-3".equals(s.getType()))
+              .map(UniqueId.Segment::getValue)))
+      .containsExactlyInAnyOrder("TE3-1", "TE3-2", "TE3-3", "TE3-1", "TE3-2", "TE3-3", "TE3-1", "TE3-2", "TE3-3", "TE3-1", "TE3-2", "TE3-3");
+  }
+
+  @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
   public static class PlainTest {
     @Test
     void test() {
@@ -103,7 +143,8 @@ class TestMultiEnvTestEngine {
     }
   }
 
-  @ExtendWith(TestExtension.class)
+  @ExtendWith(TestExtension2.class)
+  @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
   public static class MultiEnvAcceptedTest {
     @Test
     void test() {
@@ -119,15 +160,58 @@ class TestMultiEnvTestEngine {
     }
   }
 
-  public static class TestExtension implements MultiEnvTestExtension {
+  @ExtendWith(TestExtension1.class)
+  @ExtendWith(TestExtension2.class)
+  @ExtendWith(TestExtension3.class)
+  @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
+  public static class CartesianProductTest {
+    @Test
+    void test() {
+      // nop
+    }
+
+    @Nested
+    class Inner {
+      @Test
+      void test() {
+        // nop
+      }
+    }
+  }
+
+  public static class TestExtension1 implements MultiEnvTestExtension {
     @Override
     public String segmentType() {
-      return "test-segment";
+      return "test-segment-1";
     }
 
     @Override
     public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
-      return Arrays.asList("TE1", "TE2");
+      return List.of("TE1-1");
+    }
+  }
+
+  public static class TestExtension2 implements MultiEnvTestExtension {
+    @Override
+    public String segmentType() {
+      return "test-segment-2";
+    }
+
+    @Override
+    public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
+      return Arrays.asList("TE2-1", "TE2-2");
+    }
+  }
+
+  public static class TestExtension3 implements MultiEnvTestExtension {
+    @Override
+    public String segmentType() {
+      return "test-segment-3";
+    }
+
+    @Override
+    public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
+      return Arrays.asList("TE3-1", "TE3-2", "TE3-3");
     }
   }
 }
