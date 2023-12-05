@@ -15,12 +15,18 @@
  */
 package org.projectnessie.client.http.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.net.URI;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.HttpClientException;
 
 class TestUriBuilder {
@@ -57,6 +63,22 @@ class TestUriBuilder {
     assertEquals(
         "http://localhost/foo/bar",
         new UriBuilder(URI.create("http://localhost")).path("foo").path("bar").build().toString());
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void backwards(String base, String path, String expect) {
+    URI uri = new UriBuilder(URI.create(base)).path(path).build();
+    assertThat(uri).isEqualTo(URI.create(expect));
+  }
+
+  static Stream<Arguments> backwards() {
+    return Stream.of(
+        arguments("http://localhost/foo/bar/", "../moo", "http://localhost/foo/moo"),
+        arguments("http://localhost/foo/bar", "../moo", "http://localhost/foo/moo"),
+        arguments("http://localhost/foo/bar", "../moo/nope/../yep", "http://localhost/foo/moo/yep"),
+        arguments("http://localhost/foo/bar", "../../moo", "http://localhost/moo"),
+        arguments("http://localhost/foo/bar/", "../../moo", "http://localhost/moo"));
   }
 
   @Test
