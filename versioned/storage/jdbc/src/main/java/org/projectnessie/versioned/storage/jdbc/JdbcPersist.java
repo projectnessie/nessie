@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -226,17 +227,20 @@ class JdbcPersist extends AbstractJdbcPersist {
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    return withConnectionException(
-        false, conn -> super.storeObj(conn, obj, ignoreSoftSizeRestrictions));
+      throws ObjTooLargeException, ObjMismatchException {
+    return withConnectionExceptions(
+        (SQLRunnableExceptions<Boolean, ObjTooLargeException, ObjMismatchException>)
+            conn -> super.storeObj(conn, obj, ignoreSoftSizeRestrictions));
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return withConnectionException(false, conn -> super.storeObjs(conn, objs));
+      throws ObjTooLargeException, ObjMismatchException {
+    return withConnectionExceptions(
+        (SQLRunnableExceptions<boolean[], ObjTooLargeException, ObjMismatchException>)
+            conn -> super.storeObjs(conn, objs));
   }
 
   @Override

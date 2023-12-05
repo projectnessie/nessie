@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.versionstore;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -144,14 +145,14 @@ public class PersistDelegate implements Persist {
 
   @Override
   public boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     return delegate.storeObj(obj);
   }
 
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
   }
 
@@ -159,7 +160,7 @@ public class PersistDelegate implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     return delegate.storeObjs(objs);
   }
 

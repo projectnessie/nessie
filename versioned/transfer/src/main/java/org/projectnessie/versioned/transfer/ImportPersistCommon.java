@@ -29,6 +29,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
 import org.projectnessie.versioned.storage.batching.WriteBatching;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
@@ -100,7 +101,7 @@ abstract class ImportPersistCommon extends ImportCommon {
             processCommit(commit);
             commitCount++;
           }
-        } catch (ObjTooLargeException e) {
+        } catch (ObjTooLargeException | ObjMismatchException e) {
           throw new RuntimeException(e);
         }
       }
@@ -126,7 +127,8 @@ abstract class ImportPersistCommon extends ImportCommon {
     }
   }
 
-  abstract void processCommit(Commit commit) throws IOException, ObjTooLargeException;
+  abstract void processCommit(Commit commit)
+      throws IOException, ObjTooLargeException, ObjMismatchException;
 
   void processCommitOp(StoreIndex<CommitOp> index, Operation op, StoreKey storeKey) {
     byte payload = (byte) op.getPayload();
@@ -146,7 +148,7 @@ abstract class ImportPersistCommon extends ImportCommon {
           index.add(
               indexElement(
                   storeKey, commitOp(ADD, payload, value.id(), contentIdMaybe(op.getContentId()))));
-        } catch (ObjTooLargeException | IOException e) {
+        } catch (ObjTooLargeException | ObjMismatchException | IOException e) {
           throw new RuntimeException(e);
         }
         break;

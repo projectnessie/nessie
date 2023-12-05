@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.cache;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -134,7 +135,7 @@ class CachingPersistImpl implements Persist {
   @Override
   public boolean storeObj(
       @jakarta.annotation.Nonnull @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     if (persist.storeObj(obj, ignoreSoftSizeRestrictions)) {
       cache.put(obj);
       return true;
@@ -146,7 +147,7 @@ class CachingPersistImpl implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     boolean[] stored = persist.storeObjs(objs);
     for (int i = 0; i < stored.length; i++) {
       if (stored[i]) {

@@ -48,6 +48,7 @@ import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.
 
 import com.google.common.collect.AbstractIterator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -59,6 +60,7 @@ import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -357,6 +359,11 @@ public class DynamoDBPersist implements Persist {
   @Override
   public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
       throws ObjNotFoundException {
+    return fetchObjs(ids, true);
+  }
+
+  private Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids, boolean throwOnNotFound)
+      throws ObjNotFoundException {
     List<Map<String, AttributeValue>> keys = new ArrayList<>(Math.min(ids.length, BATCH_GET_LIMIT));
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -379,18 +386,20 @@ public class DynamoDBPersist implements Persist {
       fetchObjsPage(r, keys, idToIndex);
     }
 
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (id != null && r[i] == null) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
+    if (throwOnNotFound) {
+      List<ObjId> notFound = null;
+      for (int i = 0; i < ids.length; i++) {
+        ObjId id = ids[i];
+        if (id != null && r[i] == null) {
+          if (notFound == null) {
+            notFound = new ArrayList<>();
+          }
+          notFound.add(id);
         }
-        notFound.add(id);
       }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
+      if (notFound != null) {
+        throw new ObjNotFoundException(notFound);
+      }
     }
 
     return r;
@@ -422,20 +431,57 @@ public class DynamoDBPersist implements Persist {
   @jakarta.annotation.Nonnull
   @Override
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
-    boolean[] r = new boolean[objs.length];
+    boolean[] stored = new boolean[objs.length];
+    Obj[] duplicates = null;
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
-        r[i] = storeObj(o);
+        stored[i] = doStoreObj(o, false);
+        if (!stored[i]) {
+          if (duplicates == null) {
+            duplicates = new Obj[objs.length];
+          }
+          duplicates[i] = o;
+        }
       }
     }
-    return r;
+
+    if (duplicates != null) {
+      try {
+        Obj[] existing =
+            fetchObjs(
+                (Arrays.stream(duplicates)
+                    .map(obj -> obj == null ? null : obj.id())
+                    .toArray(ObjId[]::new)),
+                false);
+        ObjMismatchException.checkAndThrow(existing, duplicates);
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+
+    return stored;
   }
 
   @Override
   public boolean storeObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException, ObjMismatchException {
+    boolean stored = doStoreObj(obj, ignoreSoftSizeRestrictions);
+    if (!stored) {
+      try {
+        Obj existing = fetchObj(obj.id());
+        if (!existing.equals(obj)) {
+          throw new ObjMismatchException(existing, obj);
+        }
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+    return stored;
+  }
+
+  private boolean doStoreObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();

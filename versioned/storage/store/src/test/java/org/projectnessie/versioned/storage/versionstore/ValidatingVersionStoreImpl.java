@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 import org.assertj.core.api.SoftAssertions;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
@@ -117,7 +118,7 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
 
     @Override
     public boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-        throws ObjTooLargeException {
+        throws ObjTooLargeException, ObjMismatchException {
       recordWrite();
       return super.storeObj(obj);
     }
@@ -125,7 +126,7 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
     @Override
     public boolean storeObj(
         @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-        throws ObjTooLargeException {
+        throws ObjTooLargeException, ObjMismatchException {
       recordWrite();
       return super.storeObj(obj, ignoreSoftSizeRestrictions);
     }
@@ -134,7 +135,7 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
     @jakarta.annotation.Nonnull
     @Override
     public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-        throws ObjTooLargeException {
+        throws ObjTooLargeException, ObjMismatchException {
       recordWrite();
       return super.storeObjs(objs);
     }

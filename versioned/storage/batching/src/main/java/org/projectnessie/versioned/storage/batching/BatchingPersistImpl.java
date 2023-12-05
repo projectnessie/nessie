@@ -20,12 +20,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException.ObjMismatch;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -76,7 +79,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
           delegate().upsertObjs(pendingUpserts.values().toArray(new Obj[0]));
           pendingUpserts.clear();
         }
-      } catch (ObjTooLargeException e) {
+      } catch (ObjTooLargeException | ObjMismatchException e) {
         throw new RuntimeException(e);
       } finally {
         writeUnlock();
@@ -116,18 +119,23 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Override
   public boolean storeObj(
       @Nonnull @javax.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     if (!ignoreSoftSizeRestrictions) {
       verifySoftRestrictions(obj);
     }
+    boolean stored;
     writeLock();
     try {
-      pendingStores.putIfAbsent(obj.id(), obj);
+      Obj existing = pendingStores.putIfAbsent(obj.id(), obj);
+      stored = existing == null;
+      if (existing != null && !existing.equals(obj)) {
+        throw new ObjMismatchException(existing, obj);
+      }
       maybeFlush();
     } finally {
       writeUnlock();
     }
-    return true;
+    return stored;
   }
 
   @Override
@@ -146,20 +154,33 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Nonnull
   @javax.annotation.Nonnull
   public boolean[] storeObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     writeLock();
+    boolean[] stored = new boolean[objs.length];
+    List<ObjMismatch> mismatches = null;
     try {
-      for (Obj obj : objs) {
+      for (int i = 0; i < objs.length; i++) {
+        Obj obj = objs[i];
         if (obj != null) {
-          storeObj(obj);
+          verifySoftRestrictions(obj);
+          Obj existing = pendingStores.putIfAbsent(obj.id(), obj);
+          stored[i] = existing == null;
+          if (existing != null && !existing.equals(obj)) {
+            if (mismatches == null) {
+              mismatches = new ArrayList<>();
+            }
+            mismatches.add(ObjMismatch.of(existing, obj));
+          }
+          maybeFlush();
         }
       }
     } finally {
       writeUnlock();
     }
-    boolean[] r = new boolean[objs.length];
-    Arrays.fill(r, true);
-    return r;
+    if (mismatches != null) {
+      throw new ObjMismatchException(mismatches);
+    }
+    return stored;
   }
 
   @Override

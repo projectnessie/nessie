@@ -75,6 +75,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -302,6 +303,8 @@ final class CommitLogicImpl implements CommitLogic {
 
       boolean[] stored = persist.storeObjs(allObjs);
       return stored[numAdditional];
+    } catch (ObjMismatchException e) {
+      return false;
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
       // the reference index.
@@ -310,6 +313,8 @@ final class CommitLogicImpl implements CommitLogic {
         persist.storeObjs(additionalObjects.toArray(new Obj[numAdditional]));
       } catch (ObjTooLargeException ex) {
         throw new RuntimeException(ex);
+      } catch (ObjMismatchException ex) {
+        return false;
       }
 
       commit = indexTooBigStoreUpdate(commit);
@@ -319,6 +324,8 @@ final class CommitLogicImpl implements CommitLogic {
       } catch (ObjTooLargeException ex) {
         // Hit the "Hard database object size limit"
         throw new RuntimeException(ex);
+      } catch (ObjMismatchException ex) {
+        return false;
       }
     }
   }
@@ -348,7 +355,7 @@ final class CommitLogicImpl implements CommitLogic {
 
     try {
       commit = persistReferenceIndexForCommit(commit, newIncremental, referenceIndex);
-    } catch (ObjTooLargeException ex) {
+    } catch (ObjTooLargeException | ObjMismatchException ex) {
       throw new RuntimeException(ex);
     }
     return commit;
@@ -356,7 +363,7 @@ final class CommitLogicImpl implements CommitLogic {
 
   private CommitObj persistReferenceIndexForCommit(
       CommitObj commit, StoreIndex<CommitOp> newIncremental, StoreIndex<CommitOp> referenceIndex)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     IndexesLogic indexesLogic = indexesLogic(persist);
     ObjId referenceIndexId = null;
     List<IndexStripe> referenceIndexStripes = emptyList();

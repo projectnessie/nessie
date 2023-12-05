@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException.ObjMismatch;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -256,7 +258,7 @@ class InmemoryPersist implements ValidatingPersist {
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
     if (!ignoreSoftSizeRestrictions) {
@@ -264,6 +266,10 @@ class InmemoryPersist implements ValidatingPersist {
     }
 
     Obj ex = inmemory.objects.putIfAbsent(compositeKey(obj.id()), obj);
+
+    if (ex != null && !ex.equals(obj)) {
+      throw new ObjMismatchException(ex, obj);
+    }
     return ex == null;
   }
 
@@ -271,12 +277,26 @@ class InmemoryPersist implements ValidatingPersist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     boolean[] r = new boolean[objs.length];
+    List<ObjMismatch> mismatches = null;
     for (int i = 0; i < objs.length; i++) {
-      if (objs[i] != null) {
-        r[i] = storeObj(objs[i]);
+      Obj obj = objs[i];
+      if (obj != null) {
+        checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
+        verifySoftRestrictions(obj);
+        Obj existing = inmemory.objects.putIfAbsent(compositeKey(obj.id()), obj);
+        if (existing != null && !existing.equals(obj)) {
+          if (mismatches == null) {
+            mismatches = new ArrayList<>();
+          }
+          mismatches.add(ObjMismatch.of(existing, obj));
+        }
+        r[i] = existing == null;
       }
+    }
+    if (mismatches != null) {
+      throw new ObjMismatchException(mismatches);
     }
     return r;
   }

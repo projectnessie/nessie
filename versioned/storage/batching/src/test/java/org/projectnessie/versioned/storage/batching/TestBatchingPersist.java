@@ -35,6 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
@@ -44,6 +45,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.commontests.AbstractBasePersistTests;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObj;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackend;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
 
@@ -215,6 +217,43 @@ public class TestBatchingPersist {
     persist.flush();
     soft.assertThat(persist.pendingStores()).containsExactly(entry(obj.id(), obj));
     soft.assertThat(persist.pendingUpserts()).containsExactly(entry(obj.id(), updated));
+  }
+
+  @Test
+  public void objectMismatches() throws ObjTooLargeException, ObjMismatchException {
+
+    ObjId id1 = ObjId.objIdFromByteArray(new byte[] {1});
+    ObjId id2 = ObjId.objIdFromByteArray(new byte[] {2});
+    Obj obj1 = SimpleCustomObj.builder().id(id1).text("foo").build();
+    Obj obj2 = SimpleCustomObj.builder().id(id2).text("bar").build();
+
+    batching.storeObj(obj1);
+    batching.storeObj(obj2);
+
+    Obj obj1b = SimpleCustomObj.builder().id(id1).text("foo update").build();
+    Obj obj2b = SimpleCustomObj.builder().id(id2).text("bar update").build();
+
+    soft.assertThatThrownBy(() -> batching.storeObj(obj1b))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Object does not match: existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}");
+
+    soft.assertThatThrownBy(() -> batching.storeObjs(new Obj[] {obj1b}))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Object does not match: existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}");
+
+    soft.assertThatThrownBy(() -> batching.storeObjs(new Obj[] {obj1b, obj2, null}))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Object does not match: existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}");
+
+    soft.assertThatThrownBy(() -> batching.storeObjs(new Obj[] {obj1b, obj2b, null}))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Objects do not match: "
+                + "existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}; "
+                + "existing: SimpleCustomObj{id=02, text=bar}, expected: SimpleCustomObj{id=02, text=bar update}");
   }
 
   private Persist base() {

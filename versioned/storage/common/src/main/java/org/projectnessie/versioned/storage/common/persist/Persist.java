@@ -19,6 +19,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -229,10 +230,12 @@ public interface Persist {
    *     with the same ID already exists.
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
    *     "soft" size restriction in {@link #config()}
+   * @throws ObjMismatchException thrown when an object with the same ID already exists, but the
+   *     existing object is not equal to {@code obj}.
    * @see #storeObjs(Obj[])
    */
   default boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     return storeObj(obj, false);
   }
 
@@ -251,10 +254,12 @@ public interface Persist {
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or,
    *     if {@code ignoreSoftSizeRestrictions} is {@code false}, a "soft" size restriction in {@link
    *     #config()}
+   * @throws ObjMismatchException thrown when an object with the same ID already exists, but the
+   *     existing object is not equal to {@code obj}.
    * @see #storeObjs(Obj[])
    */
   boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException;
+      throws ObjTooLargeException, ObjMismatchException;
 
   /**
    * Like {@link #storeObj(Obj)}, but stores multiple objects at once.
@@ -271,11 +276,14 @@ public interface Persist {
    *     created ({@code true}) or already present ({@code false}), see {@link #storeObj(Obj)}
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
    *     "soft" size restriction in {@link #config()}
+   * @throws ObjMismatchException thrown when an object with the same ID already exists, but the
+   *     existing object is not equal to {@code obj}.
    * @see #storeObj(Obj)
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;
+  boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException, ObjMismatchException;
 
   void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id);
 

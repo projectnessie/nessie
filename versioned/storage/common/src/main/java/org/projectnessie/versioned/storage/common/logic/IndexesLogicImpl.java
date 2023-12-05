@@ -54,6 +54,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.IndexLoader;
@@ -382,7 +383,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   @Override
   public ObjId persistStripedIndex(
       @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     List<StoreIndex<CommitOp>> stripes = stripedIndex.stripes();
     if (stripes.isEmpty()) {
       return persistIndex(stripedIndex);
@@ -407,7 +408,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   @Override
   public List<IndexStripe> persistIndexStripesFromIndex(
       @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     List<StoreIndex<CommitOp>> stripes = stripedIndex.stripes();
     List<Obj> toStore = new ArrayList<>();
     List<IndexStripe> indexStripes = buildIndexStripes(stripes, toStore);
@@ -440,7 +441,8 @@ final class IndexesLogicImpl implements IndexesLogic {
     return indexStripes;
   }
 
-  private ObjId persistIndex(StoreIndex<CommitOp> indexSegment) throws ObjTooLargeException {
+  private ObjId persistIndex(StoreIndex<CommitOp> indexSegment)
+      throws ObjTooLargeException, ObjMismatchException {
     if (!indexSegment.isModified()) {
       return requireNonNull(
           indexSegment.getObjId(), "Loaded index segment does not contain its ObjId");

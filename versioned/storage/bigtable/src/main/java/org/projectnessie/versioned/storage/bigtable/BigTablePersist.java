@@ -52,6 +52,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -342,19 +344,7 @@ public class BigTablePersist implements Persist {
     try {
       Obj[] r = new Obj[ids.length];
       List<ObjId> notFound = new ArrayList<>();
-      bulkFetch(
-          backend.tableObjs,
-          ids,
-          r,
-          this::dbKey,
-          row -> {
-            ByteString key = row.getKey().substring(keyPrefix.size());
-            ObjId id = deserializeObjId(key);
-            ByteBuffer data =
-                row.getCells(FAMILY_OBJS, QUALIFIER_OBJS).get(0).getValue().asReadOnlyByteBuffer();
-            return deserializeObj(id, data);
-          },
-          notFound::add);
+      bulkFetch(backend.tableObjs, ids, r, this::dbKey, this::rowToObj, notFound::add);
 
       if (!notFound.isEmpty()) {
         throw new ObjNotFoundException(notFound);
@@ -374,14 +364,24 @@ public class BigTablePersist implements Persist {
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
 
     try {
       ConditionalRowMutation conditionalRowMutation =
           mutationForStoreObj(obj, ignoreSoftSizeRestrictions);
 
-      boolean success = backend.client().checkAndMutateRow(conditionalRowMutation);
-      return !success;
+      // if the condition was met, the object was NOT stored
+      boolean stored = !backend.client().checkAndMutateRow(conditionalRowMutation);
+      if (!stored) {
+        try {
+          Obj existingObj = fetchObj(obj.id());
+          if (!existingObj.equals(obj)) {
+            throw new ObjMismatchException(existingObj, obj);
+          }
+        } catch (ObjNotFoundException ignored) {
+        }
+      }
+      return stored;
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -427,7 +427,7 @@ public class BigTablePersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     if (objs.length == 0) {
       return new boolean[0];
     }
@@ -449,16 +449,47 @@ public class BigTablePersist implements Persist {
     }
 
     boolean[] r = new boolean[objs.length];
+    Obj[] duplicates = null;
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
         try {
           r[i] = !futures[i].get();
+          if (!r[i]) {
+            if (duplicates == null) {
+              duplicates = new Obj[objs.length];
+            }
+            duplicates[i] = o;
+          }
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
       }
     }
+
+    if (duplicates != null) {
+      Obj[] existing = new Obj[objs.length];
+      try {
+        bulkFetch(
+            backend.tableObjs,
+            (Arrays.stream(duplicates)
+                .map(obj -> obj == null ? null : obj.id())
+                .toArray(ObjId[]::new)),
+            existing,
+            this::dbKey,
+            this::rowToObj,
+            x -> {});
+      } catch (ExecutionException | TimeoutException e) {
+        throw new RuntimeException(e);
+      } catch (ApiException e) {
+        throw apiException(e);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException(e);
+      }
+      ObjMismatchException.checkAndThrow(existing, duplicates);
+    }
+
     return r;
   }
 
@@ -710,5 +741,13 @@ public class BigTablePersist implements Persist {
       }
     }
     return handles;
+  }
+
+  private Obj rowToObj(Row row) {
+    ByteString key = row.getKey().substring(keyPrefix.size());
+    ObjId id = deserializeObjId(key);
+    ByteBuffer data =
+        row.getCells(FAMILY_OBJS, QUALIFIER_OBJS).get(0).getValue().asReadOnlyByteBuffer();
+    return deserializeObj(id, data);
   }
 }

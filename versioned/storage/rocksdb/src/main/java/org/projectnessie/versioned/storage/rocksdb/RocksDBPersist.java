@@ -35,6 +35,8 @@ import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException.ObjMismatch;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -358,7 +360,25 @@ class RocksDBPersist implements Persist {
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
+    return storeObj(
+        obj,
+        ignoreSoftSizeRestrictions,
+        (existing, expected) -> {
+          throw new ObjMismatchException(existing, expected);
+        });
+  }
+
+  @FunctionalInterface
+  private interface ObjMismatchConsumer {
+    void accept(Obj existing, Obj expected) throws ObjMismatchException;
+  }
+
+  private boolean storeObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      boolean ignoreSoftSizeRestrictions,
+      @Nonnull @jakarta.annotation.Nonnull ObjMismatchConsumer mismatches)
+      throws ObjTooLargeException, ObjMismatchException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
     Lock l = repo.objLock(obj.id());
@@ -370,6 +390,10 @@ class RocksDBPersist implements Persist {
 
       byte[] existing = db.get(cf, key);
       if (existing != null) {
+        Obj existingObj = deserializeObj(obj.id(), existing);
+        if (!existingObj.equals(obj)) {
+          mismatches.accept(existingObj, obj);
+        }
         return false;
       }
 
@@ -392,13 +416,21 @@ class RocksDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     boolean[] r = new boolean[objs.length];
+    List<ObjMismatch> mismatches = new ArrayList<>();
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
-        r[i] = storeObj(o, false);
+        r[i] =
+            storeObj(
+                o,
+                false,
+                (existing, expected) -> mismatches.add(ObjMismatch.of(existing, expected)));
       }
+    }
+    if (!mismatches.isEmpty()) {
+      throw new ObjMismatchException(mismatches);
     }
     return r;
   }

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
@@ -92,7 +93,7 @@ final class ImportPersistV1 extends ImportPersistCommon {
   }
 
   @Override
-  void processCommit(Commit commit) throws IOException, ObjTooLargeException {
+  void processCommit(Commit commit) throws IOException, ObjTooLargeException, ObjMismatchException {
     CommitMeta metadata;
     try (InputStream in = commit.getMetadata().newInput()) {
       metadata = importer.objectMapper().readValue(in, CommitMeta.class);

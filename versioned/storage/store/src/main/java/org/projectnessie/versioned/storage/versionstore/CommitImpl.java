@@ -77,6 +77,7 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -479,8 +480,11 @@ class CommitImpl extends BaseCommitHelper {
                   UUID generatedContentId;
                   while (true) {
                     generatedContentId = UUID.randomUUID();
-                    if (persist.storeObj(uniqueId("content-id", generatedContentId))) {
-                      break;
+                    try {
+                      if (persist.storeObj(uniqueId("content-id", generatedContentId))) {
+                        break;
+                      }
+                    } catch (ObjMismatchException ignored) {
                     }
                   }
                   return generatedContentId.toString();

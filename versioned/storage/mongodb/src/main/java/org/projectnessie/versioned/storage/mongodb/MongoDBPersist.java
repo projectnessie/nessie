@@ -70,6 +70,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -363,6 +364,11 @@ public class MongoDBPersist implements Persist {
   @Override
   public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
       throws ObjNotFoundException {
+    return fetchObjs(ids, true);
+  }
+
+  private Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids, boolean throwOnNotFound)
+      throws ObjNotFoundException {
     List<Document> list = new ArrayList<>(ids.length);
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(ids.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -379,18 +385,20 @@ public class MongoDBPersist implements Persist {
       fetchObjsPage(r, list, idToIndex);
     }
 
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (r[i] == null && id != null) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
+    if (throwOnNotFound) {
+      List<ObjId> notFound = null;
+      for (int i = 0; i < ids.length; i++) {
+        ObjId id = ids[i];
+        if (r[i] == null && id != null) {
+          if (notFound == null) {
+            notFound = new ArrayList<>();
+          }
+          notFound.add(id);
         }
-        notFound.add(id);
       }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
+      if (notFound != null) {
+        throw new ObjNotFoundException(notFound);
+      }
     }
 
     return r;
@@ -410,12 +418,19 @@ public class MongoDBPersist implements Persist {
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     Document doc = objToDoc(obj, ignoreSoftSizeRestrictions);
     try {
       backend.objs().insertOne(doc);
     } catch (MongoWriteException e) {
       if (e.getError().getCategory() == DUPLICATE_KEY) {
+        try {
+          Obj existing = fetchObj(obj.id());
+          if (!existing.equals(obj)) {
+            throw new ObjMismatchException(existing, obj);
+          }
+        } catch (ObjNotFoundException ignored) {
+        }
         return false;
       }
       throw e;
@@ -428,23 +443,27 @@ public class MongoDBPersist implements Persist {
   @jakarta.annotation.Nonnull
   @Override
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
-    for (Obj obj : objs) {
+      throws ObjTooLargeException, ObjMismatchException {
+    List<InsertOneModel<Document>> docs = new ArrayList<>(objs.length);
+    Object2IntHashMap<ObjId> objMap =
+        new Object2IntHashMap<>(objs.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
+    for (int i = 0; i < objs.length; i++) {
+      Obj obj = objs[i];
       if (obj != null) {
         docs.add(new InsertOneModel<>(objToDoc(obj, false)));
+        objMap.put(obj.id(), i);
       }
     }
 
     boolean[] r = new boolean[objs.length];
-
-    List<WriteModel<Document>> inserts = new ArrayList<>(docs);
+    Obj[] duplicates = null;
+    List<InsertOneModel<Document>> inserts = new ArrayList<>(docs);
     while (!inserts.isEmpty()) {
       try {
         BulkWriteResult res = backend.objs().bulkWrite(inserts);
         for (BulkWriteInsert insert : res.getInserts()) {
           ObjId id = objIdFromBulkWriteInsert(insert);
-          r[objIdIndex(objs, id)] = id != null;
+          r[objMap.get(id)] = id != null;
         }
         break;
       } catch (MongoBulkWriteException e) {
@@ -457,30 +476,40 @@ public class MongoDBPersist implements Persist {
           if (err.getCategory() != DUPLICATE_KEY) {
             throw e;
           }
+          if (duplicates == null) {
+            duplicates = new Obj[objs.length];
+          }
+          InsertOneModel<Document> model = inserts.get(err.getIndex());
+          ObjId objId = objIdFromDoc(model.getDocument());
+          int idx = objMap.getValue(objId);
+          duplicates[idx] = objs[idx];
         }
         BulkWriteResult res = e.getWriteResult();
         inserts.clear();
         res.getInserts().stream()
             .map(MongoDBPersist::objIdFromBulkWriteInsert)
-            .mapToInt(id -> objIdIndex(objs, id))
+            .mapToInt(objMap::getValue)
             .mapToObj(docs::get)
             .forEach(inserts::add);
       }
     }
+
+    if (duplicates != null) {
+      try {
+        Obj[] existing =
+            fetchObjs(
+                Arrays.stream(duplicates).map(o -> o == null ? null : o.id()).toArray(ObjId[]::new),
+                false);
+        ObjMismatchException.checkAndThrow(existing, duplicates);
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+
     return r;
   }
 
   private static ObjId objIdFromDoc(Document doc) {
     return binaryToObjId(doc.get(ID_PROPERTY_NAME, Document.class).get(COL_OBJ_ID, Binary.class));
-  }
-
-  private static int objIdIndex(Obj[] objs, ObjId id) {
-    for (int i = 0; i < objs.length; i++) {
-      if (id.equals(objs[i].id())) {
-        return i;
-      }
-    }
-    throw new IllegalArgumentException("ObjId " + id + " not in objs");
   }
 
   private static ObjId objIdFromBulkWriteInsert(BulkWriteInsert insert) {

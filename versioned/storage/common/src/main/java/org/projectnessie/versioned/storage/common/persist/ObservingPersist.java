@@ -22,6 +22,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -161,7 +162,7 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
-  public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
+  public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException, ObjMismatchException {
     return delegate.storeObj(obj);
   }
 
@@ -170,7 +171,7 @@ public class ObservingPersist implements Persist {
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
   public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      throws ObjTooLargeException, ObjMismatchException {
     return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
   }
 
@@ -179,7 +180,8 @@ public class ObservingPersist implements Persist {
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
   @Nonnull
-  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs)
+      throws ObjTooLargeException, ObjMismatchException {
     return delegate.storeObjs(objs);
   }
 

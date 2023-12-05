@@ -60,6 +60,7 @@ import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -485,7 +486,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             RefObj ref = ref(name, pointer, refCreatedTimestamp, extendedInfoObj);
             try {
               p.storeObj(ref);
-            } catch (ObjTooLargeException e) {
+            } catch (ObjTooLargeException | ObjMismatchException e) {
               throw new RuntimeException(e);
             }
 

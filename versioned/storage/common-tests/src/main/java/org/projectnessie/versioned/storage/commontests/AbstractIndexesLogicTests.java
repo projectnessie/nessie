@@ -51,7 +51,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
@@ -378,7 +377,7 @@ public class AbstractIndexesLogicTests {
     }
   }
 
-  private ObjId fiveIncompleteCommitsWithThreeOpsEach(Persist persist) throws ObjTooLargeException {
+  private ObjId fiveIncompleteCommitsWithThreeOpsEach(Persist persist) throws Exception {
 
     String[][] keys =
         new String[][] {

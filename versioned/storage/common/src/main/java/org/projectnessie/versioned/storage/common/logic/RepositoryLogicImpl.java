@@ -40,6 +40,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -185,7 +186,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
       // can safely ignore the response from storeObj() - it's fine, if the obj already exists
       persist.storeObj(string);
       b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
-    } catch (ObjTooLargeException | ObjNotFoundException | IOException e) {
+    } catch (ObjTooLargeException | ObjNotFoundException | IOException | ObjMismatchException e) {
       throw new RuntimeException(e);
     }
   }

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
@@ -98,7 +99,7 @@ final class ImportPersistV2 extends ImportPersistCommon {
   }
 
   @Override
-  void processCommit(Commit commit) throws ObjTooLargeException {
+  void processCommit(Commit commit) throws ObjTooLargeException, ObjMismatchException {
     CommitHeaders.Builder headers = newCommitHeaders();
     commit
         .getHeadersList()

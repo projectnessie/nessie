@@ -50,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -359,7 +360,7 @@ public abstract class AbstractExportImport {
           @Override
           public boolean storeObj(
               @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-              throws ObjTooLargeException {
+              throws ObjTooLargeException, ObjMismatchException {
             return inmemory.storeObj(obj, ignoreSoftSizeRestrictions);
           }
 
@@ -367,7 +368,7 @@ public abstract class AbstractExportImport {
           @jakarta.annotation.Nonnull
           @Override
           public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-              throws ObjTooLargeException {
+              throws ObjTooLargeException, ObjMismatchException {
             boolean[] r = new boolean[objs.length];
             for (int i = 0; i < objs.length; i++) {
               Obj obj = objs[i];

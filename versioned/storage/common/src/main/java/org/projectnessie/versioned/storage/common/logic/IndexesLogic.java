@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -98,17 +99,18 @@ public interface IndexesLogic {
    * @param stripedIndex the index to store
    * @return non-{@code null} ID, even if the content value already exists
    * @throws ObjTooLargeException see {@link Persist#storeObj(Obj)}
+   * @throws ObjMismatchException see {@link Persist#storeObj(Obj)}
    */
   @Nonnull
   @jakarta.annotation.Nonnull
   ObjId persistStripedIndex(@Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
-      throws ObjTooLargeException;
+      throws ObjTooLargeException, ObjMismatchException;
 
   @Nonnull
   @jakarta.annotation.Nonnull
   List<IndexStripe> persistIndexStripesFromIndex(
       @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
-      throws ObjTooLargeException;
+      throws ObjTooLargeException, ObjMismatchException;
 
   /**
    * Updates, if necessary, all commits in the given commit and all its predecessors to contain

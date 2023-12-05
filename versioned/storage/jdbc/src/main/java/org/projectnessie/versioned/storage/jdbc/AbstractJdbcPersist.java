@@ -52,6 +52,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +63,7 @@ import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -339,7 +341,7 @@ abstract class AbstractJdbcPersist implements Persist {
   protected <T extends Obj> T fetchTypedObj(
       Connection conn, ObjId id, ObjType type, @SuppressWarnings("unused") Class<T> typeClass)
       throws ObjNotFoundException {
-    Obj obj = fetchObjs(conn, new ObjId[] {id}, type)[0];
+    Obj obj = fetchObjs(conn, new ObjId[] {id}, type, true)[0];
 
     @SuppressWarnings("unchecked")
     T r = (T) obj;
@@ -378,15 +380,16 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
       throws ObjNotFoundException {
-    return fetchObjs(conn, ids, null);
+    return fetchObjs(conn, ids, null, true);
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  protected final Obj[] fetchObjs(
+  private Obj[] fetchObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull ObjId[] ids,
-      @Nullable @jakarta.annotation.Nullable ObjType type)
+      @Nullable @jakarta.annotation.Nullable ObjType type,
+      boolean throwOnNotFound)
       throws ObjNotFoundException {
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -426,18 +429,20 @@ abstract class AbstractJdbcPersist implements Persist {
           }
         }
 
-        List<ObjId> notFound = null;
-        for (int i = 0; i < ids.length; i++) {
-          ObjId id = ids[i];
-          if (r[i] == null && id != null) {
-            if (notFound == null) {
-              notFound = new ArrayList<>();
+        if (throwOnNotFound) {
+          List<ObjId> notFound = null;
+          for (int i = 0; i < ids.length; i++) {
+            ObjId id = ids[i];
+            if (r[i] == null && id != null) {
+              if (notFound == null) {
+                notFound = new ArrayList<>();
+              }
+              notFound.add(id);
             }
-            notFound.add(id);
           }
-        }
-        if (notFound != null) {
-          throw new ObjNotFoundException(notFound);
+          if (notFound != null) {
+            throw new ObjNotFoundException(notFound);
+          }
         }
 
         return r;
@@ -459,8 +464,18 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    return upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions, true)[0];
+      throws ObjTooLargeException, ObjMismatchException {
+    boolean stored = upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions, true)[0];
+    if (!stored) {
+      try {
+        Obj existing = fetchObj(conn, obj.id());
+        if (!existing.equals(obj)) {
+          throw new ObjMismatchException(existing, obj);
+        }
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+    return stored;
   }
 
   @Nonnull
@@ -468,8 +483,30 @@ abstract class AbstractJdbcPersist implements Persist {
   protected final boolean[] storeObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return upsertObjs(conn, objs, false, true);
+      throws ObjTooLargeException, ObjMismatchException {
+    boolean[] stored = upsertObjs(conn, objs, false, true);
+    Obj[] duplicates = null;
+    for (int i = 0; i < stored.length; i++) {
+      if (!stored[i]) {
+        if (duplicates == null) {
+          duplicates = new Obj[objs.length];
+        }
+        duplicates[i] = objs[i];
+      }
+    }
+    if (duplicates != null) {
+      try {
+        Obj[] existing =
+            fetchObjs(
+                conn,
+                Arrays.stream(duplicates).map(o -> o == null ? null : o.id()).toArray(ObjId[]::new),
+                null,
+                false);
+        ObjMismatchException.checkAndThrow(existing, duplicates);
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+    return stored;
   }
 
   protected final Void updateObj(

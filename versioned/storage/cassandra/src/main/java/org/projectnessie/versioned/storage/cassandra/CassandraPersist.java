@@ -44,6 +44,7 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.AbstractIterator;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -57,6 +58,7 @@ import org.projectnessie.versioned.storage.cassandra.CassandraBackend.BatchedQue
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializers;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -281,6 +283,14 @@ public class CassandraPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull ObjId[] ids,
       @Nullable @jakarta.annotation.Nullable ObjType type)
       throws ObjNotFoundException {
+    return fetchObjs(ids, type, true);
+  }
+
+  private Obj[] fetchObjs(
+      @Nonnull @jakarta.annotation.Nonnull ObjId[] ids,
+      @Nullable @jakarta.annotation.Nullable ObjType type,
+      boolean throwOnNotFound)
+      throws ObjNotFoundException {
     Function<List<ObjId>, List<String>> idsToStrings =
         queryIds -> queryIds.stream().map(ObjId::toString).collect(Collectors.toList());
 
@@ -310,18 +320,20 @@ public class CassandraPersist implements Persist {
       r = batchedQuery.finish();
     }
 
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (id != null && (r[i] == null || (type != null && !r[i].type().equals(type)))) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
+    if (throwOnNotFound) {
+      List<ObjId> notFound = null;
+      for (int i = 0; i < ids.length; i++) {
+        ObjId id = ids[i];
+        if (id != null && (r[i] == null || (type != null && !r[i].type().equals(type)))) {
+          if (notFound == null) {
+            notFound = new ArrayList<>();
+          }
+          notFound.add(id);
         }
-        notFound.add(id);
       }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
+      if (notFound != null) {
+        throw new ObjNotFoundException(notFound);
+      }
     }
 
     return r;
@@ -330,16 +342,52 @@ public class CassandraPersist implements Persist {
   @Override
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
-    return writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
+      throws ObjTooLargeException, ObjMismatchException {
+    boolean stored = writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
+    if (!stored) {
+      try {
+        Obj existing = fetchObjs(new ObjId[] {obj.id()}, null, false)[0];
+        if (existing != null && !existing.equals(obj)) {
+          throw new ObjMismatchException(existing, obj);
+        }
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+    return stored;
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return persistObjs(objs, false);
+      throws ObjTooLargeException, ObjMismatchException {
+    boolean[] stored = persistObjs(objs, false);
+    Obj[] duplicates = null;
+    for (int i = 0; i < objs.length; i++) {
+      Obj obj = objs[i];
+      if (obj != null && !stored[i]) {
+        if (duplicates == null) {
+          duplicates = new Obj[objs.length];
+        }
+        duplicates[i] = obj;
+      }
+    }
+
+    if (duplicates != null) {
+      try {
+        Obj[] existing =
+            fetchObjs(
+                (Arrays.stream(duplicates)
+                    .map(obj -> obj == null ? null : obj.id())
+                    .toArray(ObjId[]::new)),
+                null,
+                false);
+        ObjMismatchException.checkAndThrow(existing, duplicates);
+      } catch (ObjNotFoundException ignored) {
+      }
+    }
+
+    return stored;
   }
 
   @Override

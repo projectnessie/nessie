@@ -33,8 +33,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
-import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
@@ -117,7 +115,7 @@ public class AbstractBackendRepositoryTests {
 
   /** Check that erasing a few repos does not affect other repos. */
   @Test
-  public void createEraseSomeRepos() throws ObjTooLargeException, RefAlreadyExistsException {
+  public void createEraseSomeRepos() throws Exception {
     List<Persist> repos =
         IntStream.range(0, 10).mapToObj(x -> newRepo()).collect(Collectors.toList());
     int refs = 25;

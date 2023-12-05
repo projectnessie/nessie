@@ -54,7 +54,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
-import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
@@ -90,6 +89,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.exceptions.ObjMismatchException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
@@ -1037,7 +1037,8 @@ public class AbstractBasePersistTests {
   }
 
   @Test
-  public void nullHandlingInArrays() throws ObjTooLargeException, ObjNotFoundException {
+  public void nullHandlingInArrays()
+      throws ObjTooLargeException, ObjNotFoundException, ObjMismatchException {
     soft.assertThat(persist.storeObjs(new Obj[] {null})).containsExactly(false);
     soft.assertThatCode(() -> persist.upsertObjs(new Obj[] {null})).doesNotThrowAnyException();
     soft.assertThat(persist.fetchObjs(new ObjId[] {null})).containsExactly((Obj) null);
@@ -1048,6 +1049,43 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchObjs(new ObjId[] {null, null})).containsExactly(null, null);
     soft.assertThatCode(() -> persist.deleteObjs(new ObjId[] {null, null}))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void objectMismatches() throws ObjTooLargeException, ObjMismatchException {
+
+    ObjId id1 = ObjId.objIdFromByteArray(new byte[] {1});
+    ObjId id2 = ObjId.objIdFromByteArray(new byte[] {2});
+    Obj obj1 = SimpleCustomObj.builder().id(id1).text("foo").build();
+    Obj obj2 = SimpleCustomObj.builder().id(id2).text("bar").build();
+
+    persist.storeObj(obj1);
+    persist.storeObj(obj2);
+
+    Obj obj1b = SimpleCustomObj.builder().id(id1).text("foo update").build();
+    Obj obj2b = SimpleCustomObj.builder().id(id2).text("bar update").build();
+
+    soft.assertThatThrownBy(() -> persist.storeObj(obj1b))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Object does not match: existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}");
+
+    soft.assertThatThrownBy(() -> persist.storeObjs(new Obj[] {obj1b}))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Object does not match: existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}");
+
+    soft.assertThatThrownBy(() -> persist.storeObjs(new Obj[] {obj1b, obj2, null}))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Object does not match: existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}");
+
+    soft.assertThatThrownBy(() -> persist.storeObjs(new Obj[] {obj1b, obj2b, null}))
+        .isInstanceOf(ObjMismatchException.class)
+        .hasMessageContaining(
+            "Objects do not match: "
+                + "existing: SimpleCustomObj{id=01, text=foo}, expected: SimpleCustomObj{id=01, text=foo update}; "
+                + "existing: SimpleCustomObj{id=02, text=bar}, expected: SimpleCustomObj{id=02, text=bar update}");
   }
 
   public static String randomContentId() {
