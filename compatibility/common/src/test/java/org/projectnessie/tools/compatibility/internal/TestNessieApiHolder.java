@@ -55,7 +55,7 @@ class TestNessieApiHolder {
           new CurrentNessieApiHolder(
               new ClientKey(
                   Version.CURRENT,
-                  "org.projectnessie.client.http.HttpClientBuilder",
+                  "org.projectnessie.client.http.NessieHttpClientBuilderImpl",
                   NessieApiV1.class,
                   ImmutableMap.of(
                       "nessie.uri", "http://127.42.42.42:19120",

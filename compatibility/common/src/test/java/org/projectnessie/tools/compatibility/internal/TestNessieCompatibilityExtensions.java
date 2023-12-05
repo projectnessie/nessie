@@ -209,6 +209,7 @@ class TestNessieCompatibilityExtensions {
     soft.assertThat(UpgradeSample.never).isEmpty();
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieClientsExtension.class, SoftAssertionsExtension.class})
   static class OldClientsSample {
     @InjectSoftAssertions protected SoftAssertions soft;
@@ -254,6 +255,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
   static class OldServersSample {
     @InjectSoftAssertions protected SoftAssertions soft;
@@ -304,6 +306,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
   static class ApiEndpointServerSample {
     @InjectSoftAssertions protected SoftAssertions soft;
@@ -318,7 +321,7 @@ class TestNessieCompatibilityExtensions {
     static final List<Version> allVersions = new ArrayList<>();
 
     @Test
-    void testSome() throws Exception {
+    void testSome() {
       soft.assertThat(api).isNotNull().isSameAs(apiStatic);
       soft.assertThat(uri).isNotNull().isEqualTo(uriStatic);
       soft.assertThat(version).isNotNull().isEqualTo(versionStatic);
@@ -330,6 +333,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieServersExtension.class)
   static class OuterSample {
     static final List<Version> outerVersions = new ArrayList<>();
@@ -353,6 +357,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({NessieUpgradesExtension.class, SoftAssertionsExtension.class})
   static class UpgradeSample {
     @InjectSoftAssertions protected SoftAssertions soft;
@@ -398,6 +403,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   static class TooManyExtensions1 {
@@ -405,6 +411,7 @@ class TestNessieCompatibilityExtensions {
     void testSome() {}
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
   static class TooManyExtensions2 {
@@ -412,6 +419,7 @@ class TestNessieCompatibilityExtensions {
     void testSome() {}
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(NessieUpgradesExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   static class TooManyExtensions3 {
@@ -419,6 +427,7 @@ class TestNessieCompatibilityExtensions {
     void testSome() {}
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
