@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.rest.v2;
 
+import java.util.Optional;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignReferenceBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
@@ -51,6 +52,11 @@ public class HttpApiV2 implements NessieApiV2 {
   @Override
   public void close() {
     this.client.close();
+  }
+
+  @Override
+  public Optional<HttpClient> httpClient() {
+    return Optional.of(client);
   }
 
   @Override

@@ -16,11 +16,13 @@
 package org.projectnessie.client.rest.v1;
 
 import java.io.Closeable;
+import java.util.Optional;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.api.v1.http.HttpDiffApi;
 import org.projectnessie.api.v1.http.HttpNamespaceApi;
 import org.projectnessie.api.v1.http.HttpTreeApi;
+import org.projectnessie.client.http.HttpClient;
 
 public class NessieApiClient implements Closeable {
   private final HttpConfigApi config;
@@ -40,6 +42,10 @@ public class NessieApiClient implements Closeable {
     this.content = content;
     this.diff = diff;
     this.namespace = namespace;
+  }
+
+  public Optional<HttpClient> httpClient() {
+    return Optional.empty();
   }
 
   public HttpTreeApi getTreeApi() {

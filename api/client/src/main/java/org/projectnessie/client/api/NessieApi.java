@@ -15,10 +15,17 @@
  */
 package org.projectnessie.client.api;
 
+import java.util.Optional;
+import org.projectnessie.client.http.HttpClient;
+
 /** Base interface for all Nessie-API versions. */
 public interface NessieApi extends AutoCloseable {
 
   // Overridden to "remove 'throws Exception'"
   @Override
   void close();
+
+  default Optional<HttpClient> httpClient() {
+    return Optional.empty();
+  }
 }
