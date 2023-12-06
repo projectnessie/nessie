@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.rest.v1;
 
+import java.util.Optional;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -36,6 +37,7 @@ import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.api.UpdateNamespaceBuilder;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
@@ -51,6 +53,13 @@ public final class HttpApiV1 implements NessieApiV1 {
   @Override
   public void close() {
     client.close();
+  }
+
+  @Override
+  public <C> Optional<C> unwrapClient(Class<C> clientType) {
+    return clientType.isAssignableFrom(HttpClient.class)
+        ? client.httpClient().map(clientType::cast)
+        : Optional.empty();
   }
 
   @Override

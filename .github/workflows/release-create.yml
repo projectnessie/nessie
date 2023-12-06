@@ -65,7 +65,7 @@ jobs:
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
     ### END runner setup
 
     - name: Bump to release version

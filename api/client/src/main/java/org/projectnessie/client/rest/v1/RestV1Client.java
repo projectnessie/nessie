@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.api.v1.http.HttpDiffApi;
@@ -49,6 +50,11 @@ public final class RestV1Client extends NessieApiClient {
   @Override
   public void close() {
     this.httpClient.close();
+  }
+
+  @Override
+  public Optional<HttpClient> httpClient() {
+    return Optional.of(httpClient);
   }
 
   @SuppressWarnings("unchecked")

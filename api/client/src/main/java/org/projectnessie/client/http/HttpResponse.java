@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.error.ImmutableNessieError;
 
@@ -76,5 +77,9 @@ public class HttpResponse {
 
   public <V> V readEntity(Class<V> clazz) {
     return readEntity(mapper.readerFor(clazz));
+  }
+
+  public URI getRequestUri() {
+    return responseContext.getRequestedUri();
   }
 }
