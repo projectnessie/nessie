@@ -16,7 +16,6 @@
 package org.projectnessie.client.api;
 
 import java.util.Optional;
-import org.projectnessie.client.http.HttpClient;
 
 /** Base interface for all Nessie-API versions. */
 public interface NessieApi extends AutoCloseable {
@@ -25,7 +24,14 @@ public interface NessieApi extends AutoCloseable {
   @Override
   void close();
 
-  default Optional<HttpClient> httpClient() {
+  /**
+   * Returns the possibly protocol but definitely implementation specific client instance.
+   *
+   * @param clientType Expected client type.
+   * @return an {@link Optional} with either the client of the requested type or empty.
+   * @param <C> requested/expected client type.
+   */
+  default <C> Optional<C> unwrapClient(Class<C> clientType) {
     return Optional.empty();
   }
 }

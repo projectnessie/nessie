@@ -56,8 +56,10 @@ public final class HttpApiV1 implements NessieApiV1 {
   }
 
   @Override
-  public Optional<HttpClient> httpClient() {
-    return client.httpClient();
+  public <C> Optional<C> unwrapClient(Class<C> clientType) {
+    return clientType.isAssignableFrom(HttpClient.class)
+        ? Optional.of(clientType.cast(client))
+        : Optional.empty();
   }
 
   @Override

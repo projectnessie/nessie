@@ -55,8 +55,10 @@ public class HttpApiV2 implements NessieApiV2 {
   }
 
   @Override
-  public Optional<HttpClient> httpClient() {
-    return Optional.of(client);
+  public <C> Optional<C> unwrapClient(Class<C> clientType) {
+    return clientType.isAssignableFrom(HttpClient.class)
+        ? Optional.of(clientType.cast(client))
+        : Optional.empty();
   }
 
   @Override
