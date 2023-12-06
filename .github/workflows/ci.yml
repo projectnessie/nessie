@@ -820,7 +820,7 @@ jobs:
 
       - name: Setup Python
         if: env.WF_EXEC != 'false'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
