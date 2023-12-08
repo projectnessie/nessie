@@ -100,6 +100,8 @@ class TestMultiEnvTestEngine {
       .stream()
       .map(e -> e.getTestDescriptor().getUniqueId())
       .collect(Collectors.toSet());
+
+    assertThat(uniqueTestIds).isEmpty();
   }
 
   @Test
