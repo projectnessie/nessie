@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -64,6 +65,12 @@ class TestNessieCompatibilityExtensions {
                 "The following test events have failed:\n:"
                     + failedEvents.stream().map(Event::toString).collect(Collectors.joining()))
         .isEqualTo(0);
+  }
+
+  @BeforeEach
+  public void beforeEach() {
+    MultiEnvTestEngine.clearRegistry();
+    MultiEnvTestFilter.clear();
   }
 
   @Test
