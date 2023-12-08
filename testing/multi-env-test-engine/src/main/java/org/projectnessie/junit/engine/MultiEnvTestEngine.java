@@ -59,14 +59,15 @@ import org.slf4j.LoggerFactory;
 public class MultiEnvTestEngine implements TestEngine {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MultiEnvTestEngine.class);
-  private static final MultiEnvExtensionRegistry FILTER_REGISTRY = new MultiEnvExtensionRegistry();
 
   public static final String ENGINE_ID = "nessie-multi-env";
+
+  private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
 
   private final JupiterTestEngine delegate = new JupiterTestEngine();
 
   static MultiEnvExtensionRegistry registry() {
-    return FILTER_REGISTRY;
+    return registry;
   }
 
   @Override
@@ -86,13 +87,11 @@ public class MultiEnvTestEngine implements TestEngine {
       List<TestDescriptor> originalChildren = new ArrayList<>(originalRoot.getChildren());
 
       // Scan for multi-env test extensions
-      final MultiEnvExtensionRegistry currentRegistry = new MultiEnvExtensionRegistry();
       originalRoot.accept(
           descriptor -> {
             if (descriptor instanceof ClassBasedTestDescriptor) {
               Class<?> testClass = ((ClassBasedTestDescriptor) descriptor).getTestClass();
-              FILTER_REGISTRY.registerExtensions(testClass);
-              currentRegistry.registerExtensions(testClass);
+              registry.registerExtensions(testClass);
             }
           });
 
@@ -101,7 +100,7 @@ public class MultiEnvTestEngine implements TestEngine {
 
       // Append each extension's IDs in a new, nested, layer
       MultiEnvTestDescriptorTree tree = new MultiEnvTestDescriptorTree(originalRoot, discoveryRequest.getConfigurationParameters());
-      currentRegistry.stream()
+      registry.stream()
           .sorted(Comparator.comparing(ext -> ext.getClass().getSimpleName()))
           .forEach(tree::appendDescriptorsForExtension);
 
