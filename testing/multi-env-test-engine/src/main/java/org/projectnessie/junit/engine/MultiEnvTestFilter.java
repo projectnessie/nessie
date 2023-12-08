@@ -36,6 +36,8 @@ import org.junit.platform.launcher.PostDiscoveryFilter;
  */
 public class MultiEnvTestFilter implements PostDiscoveryFilter {
 
+  private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
+
   private Optional<Class<?>> classFor(TestDescriptor object) {
     for (TestDescriptor d = object; d != null; d = d.getParent().orElse(null)) {
       if (d instanceof ClassBasedTestDescriptor) {
@@ -47,11 +49,8 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
   }
 
   private FilterResult filter(Class<?> testClass, UniqueId id) {
-    // Use the static extension data collected during the discovery phase.
-    // It is possible to reload extensions based of class objects from test descriptors,
-    // however that would add unnecessary overhead.
-    MultiEnvExtensionRegistry registry = registry();
-
+    // Keep separate registry from MultiEnvTestEngine in case we are running on another engine and still need to filter.
+    registry.registerExtensions(testClass);
     if (id.getEngineId().map("junit-jupiter"::equals).orElse(false)) {
       if (registry.stream(testClass).findAny().isPresent()) {
         return FilterResult.excluded("Excluding multi-env test from Jupiter Engine: " + id);
