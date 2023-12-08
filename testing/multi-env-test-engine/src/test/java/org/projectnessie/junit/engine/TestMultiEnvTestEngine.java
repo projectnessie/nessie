@@ -260,6 +260,42 @@ class TestMultiEnvTestEngine {
     assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
   }
 
+  /**
+   * M before A because M sets higher order value
+   * A before Z because alphabetical
+   */
+  @Test
+  void orderedTest() {
+    Set<UniqueId> uniqueTestIds = EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+      .selectors(selectClass(OrderedTest.class))
+      .selectors(selectClass(OrderedTest.Inner.class))
+      .filters(new MultiEnvTestFilter())
+      .execute()
+      .testEvents()
+      .list()
+      .stream()
+      .map(e -> e.getTestDescriptor().getUniqueId())
+      .collect(Collectors.toSet());
+
+    List<UniqueId> expectedIds = List.of(
+      UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+        .append(MmmOrderedTestExtension.SEGMENT_TYPE, MmmOrderedTestExtension.SEGMENT_1)
+        .append(AaaOrderedTestExtension.SEGMENT_TYPE, AaaOrderedTestExtension.SEGMENT_1)
+        .append(ZzzOrderedTestExtension.SEGMENT_TYPE, ZzzOrderedTestExtension.SEGMENT_1)
+        .append(ClassTestDescriptor.SEGMENT_TYPE, OrderedTest.class.getName())
+        .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"),
+      UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+        .append(MmmOrderedTestExtension.SEGMENT_TYPE, MmmOrderedTestExtension.SEGMENT_1)
+        .append(AaaOrderedTestExtension.SEGMENT_TYPE, AaaOrderedTestExtension.SEGMENT_1)
+        .append(ZzzOrderedTestExtension.SEGMENT_TYPE, ZzzOrderedTestExtension.SEGMENT_1)
+        .append(ClassTestDescriptor.SEGMENT_TYPE, OrderedTest.class.getName())
+        .append(NestedClassTestDescriptor.SEGMENT_TYPE, OrderedTest.Inner.class.getSimpleName())
+        .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()")
+    );
+
+    assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
+  }
+
   @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
   public static class PlainTest {
     @Test
@@ -298,6 +334,25 @@ class TestMultiEnvTestEngine {
   @ExtendWith(TestExtension3.class)
   @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
   public static class CartesianProductTest {
+    @Test
+    void test() {
+      // nop
+    }
+
+    @Nested
+    class Inner {
+      @Test
+      void test() {
+        // nop
+      }
+    }
+  }
+
+  @ExtendWith(AaaOrderedTestExtension.class)
+  @ExtendWith(MmmOrderedTestExtension.class)
+  @ExtendWith(ZzzOrderedTestExtension.class)
+  @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
+  public static class OrderedTest {
     @Test
     void test() {
       // nop
@@ -358,6 +413,56 @@ class TestMultiEnvTestEngine {
     @Override
     public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
       return Arrays.asList(SEGMENT_1, SEGMENT_2, SEGMENT_3);
+    }
+  }
+
+  public static class AaaOrderedTestExtension implements MultiEnvTestExtension {
+    public static final String SEGMENT_TYPE = "test-segment-a";
+    public static final String SEGMENT_1 = "aaa";
+
+    @Override
+    public String segmentType() {
+      return SEGMENT_TYPE;
+    }
+
+    @Override
+    public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
+      return List.of(SEGMENT_1);
+    }
+  }
+
+  public static class MmmOrderedTestExtension implements MultiEnvTestExtension {
+    public static final String SEGMENT_TYPE = "test-segment-m";
+    public static final String SEGMENT_1 = "mmm";
+
+    @Override
+    public String segmentType() {
+      return SEGMENT_TYPE;
+    }
+
+    @Override
+    public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
+      return List.of(SEGMENT_1);
+    }
+
+    @Override
+    public int getOrder() {
+      return 1;
+    }
+  }
+
+  public static class ZzzOrderedTestExtension implements MultiEnvTestExtension {
+    public static final String SEGMENT_TYPE = "test-segment-z";
+    public static final String SEGMENT_1 = "zzz";
+
+    @Override
+    public String segmentType() {
+      return SEGMENT_TYPE;
+    }
+
+    @Override
+    public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
+      return List.of(SEGMENT_1);
     }
   }
 }

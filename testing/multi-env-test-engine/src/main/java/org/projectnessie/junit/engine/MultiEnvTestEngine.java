@@ -101,7 +101,7 @@ public class MultiEnvTestEngine implements TestEngine {
       // Append each extension's IDs in a new, nested, layer
       MultiEnvTestDescriptorTree tree = new MultiEnvTestDescriptorTree(originalRoot, discoveryRequest.getConfigurationParameters());
       registry.stream()
-          .sorted(Comparator.comparing(ext -> ext.getClass().getSimpleName()))
+          .sorted(Comparator.comparing(MultiEnvTestExtension::getOrder).reversed().thenComparing(MultiEnvTestExtension::segmentType))
           .forEach(tree::appendDescriptorsForExtension);
 
       // Migrate the actual tests from the root to each of the leaves of the new tree
