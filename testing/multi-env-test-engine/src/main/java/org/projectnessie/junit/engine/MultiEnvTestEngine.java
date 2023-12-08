@@ -66,10 +66,6 @@ public class MultiEnvTestEngine implements TestEngine {
 
   private final JupiterTestEngine delegate = new JupiterTestEngine();
 
-  static MultiEnvExtensionRegistry registry() {
-    return registry;
-  }
-
   @Override
   public String getId() {
     return ENGINE_ID;
@@ -122,5 +118,9 @@ public class MultiEnvTestEngine implements TestEngine {
   @Override
   public Optional<String> getArtifactId() {
     return Optional.of("nessie-multi-env-test-engine");
+  }
+
+  public static void clearRegistry() {
+    registry.clear();
   }
 }

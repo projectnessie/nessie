@@ -15,8 +15,6 @@
  */
 package org.projectnessie.junit.engine;
 
-import static org.projectnessie.junit.engine.MultiEnvTestEngine.registry;
-
 import java.util.Optional;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
@@ -36,7 +34,7 @@ import org.junit.platform.launcher.PostDiscoveryFilter;
  */
 public class MultiEnvTestFilter implements PostDiscoveryFilter {
 
-  private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
+  private static MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
 
   private Optional<Class<?>> classFor(TestDescriptor object) {
     for (TestDescriptor d = object; d != null; d = d.getParent().orElse(null)) {
@@ -79,5 +77,9 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
     return classFor(test)
         .map(testClass -> filter(testClass, test.getUniqueId()))
         .orElseGet(() -> FilterResult.included(null)); // fallback for non-class descriptors
+  }
+
+  public static void clear() {
+    registry = new MultiEnvExtensionRegistry();
   }
 }

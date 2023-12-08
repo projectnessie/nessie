@@ -69,7 +69,8 @@ class TestMultiEnvTestEngine {
 
   @BeforeEach
   public void beforeEach() {
-    MultiEnvTestEngine.registry().clear();
+    MultiEnvTestEngine.clearRegistry();
+    MultiEnvTestFilter.clear();
   }
 
   @Test
