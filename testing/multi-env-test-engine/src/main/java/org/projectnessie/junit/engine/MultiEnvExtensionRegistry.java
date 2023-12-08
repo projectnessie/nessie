@@ -31,7 +31,7 @@ import org.junit.platform.commons.util.AnnotationUtils;
  * execution.
  */
 public class MultiEnvExtensionRegistry {
-  private final MutableExtensionRegistry registry;
+  private MutableExtensionRegistry registry;
 
   public MultiEnvExtensionRegistry() {
     this.registry =
@@ -65,5 +65,10 @@ public class MultiEnvExtensionRegistry {
                 .filter(MultiEnvTestExtension.class::isAssignableFrom)
                 .flatMap(registry::stream);
     return r;
+  }
+
+  public void clear() {
+    registry = MutableExtensionRegistry.createRegistryWithDefaultExtensions(
+      new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
   }
 }
