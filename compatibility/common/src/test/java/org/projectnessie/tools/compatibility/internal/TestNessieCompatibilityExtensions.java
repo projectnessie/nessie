@@ -21,6 +21,8 @@ import static org.projectnessie.tools.compatibility.api.Version.NEW_STORAGE_MODE
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -29,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.junit.engine.MultiEnvTestEngine;
@@ -54,8 +57,43 @@ class TestNessieCompatibilityExtensions {
                     .execute())
         .hasMessageContaining("TestEngine with ID 'nessie-multi-env' failed to discover tests")
         .cause()
-        .hasMessageContaining(
-            "MultiEnvTestEngine was enabled, but test extensions [OlderNessieClientsExtension] did not discover any environment IDs.");
+        .hasMessageContaining("MultiEnvTestEngine was enabled, but test extensions [OlderNessieClientsExtension] did not discover any environment IDs.");
+  }
+
+  @Test
+  @DisabledOnOs(
+      value = OS.MAC,
+      disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
+  void tooManyExtensions() {
+    soft.assertThat(
+            Stream.of(
+                TooManyExtensions1.class,
+                TooManyExtensions2.class,
+                TooManyExtensions3.class,
+                TooManyExtensions4.class))
+        .allSatisfy(
+            c -> {
+              EngineExecutionResults result =
+                  EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+                      .configurationParameter(
+                          "nessie.versions",
+                          NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",0.59.0")
+                      .selectors(selectClass(c))
+                      .filters(new MultiEnvTestFilter())
+                      .execute();
+              soft.assertThat(
+                      result.allEvents().executions().failed().stream()
+                          .map(e -> e.getTerminationInfo().getExecutionResult().getThrowable())
+                          .filter(Optional::isPresent)
+                          .map(Optional::get))
+                  .isNotEmpty()
+                  .allSatisfy(
+                      e ->
+                          soft.assertThat(e)
+                              .isInstanceOf(IllegalStateException.class)
+                              .hasMessageEndingWith(
+                                  " contains more than one Nessie multi-version extension"));
+            });
   }
 
   @Test
@@ -284,5 +322,34 @@ class TestNessieCompatibilityExtensions {
     void never() {
       never.add(version);
     }
+  }
+
+  @ExtendWith(OlderNessieClientsExtension.class)
+  @ExtendWith(OlderNessieServersExtension.class)
+  static class TooManyExtensions1 {
+    @Test
+    void testSome() {}
+  }
+
+  @ExtendWith(OlderNessieClientsExtension.class)
+  @ExtendWith(NessieUpgradesExtension.class)
+  static class TooManyExtensions2 {
+    @Test
+    void testSome() {}
+  }
+
+  @ExtendWith(NessieUpgradesExtension.class)
+  @ExtendWith(OlderNessieServersExtension.class)
+  static class TooManyExtensions3 {
+    @Test
+    void testSome() {}
+  }
+
+  @ExtendWith(OlderNessieClientsExtension.class)
+  @ExtendWith(OlderNessieServersExtension.class)
+  @ExtendWith(NessieUpgradesExtension.class)
+  static class TooManyExtensions4 {
+    @Test
+    void testSome() {}
   }
 }
