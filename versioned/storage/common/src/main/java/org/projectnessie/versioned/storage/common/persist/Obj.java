@@ -23,5 +23,6 @@ public interface Obj {
   @JsonIgnore
   ObjId id();
 
+  @JsonIgnore
   ObjType type();
 }
