@@ -1,5 +1,5 @@
 # -- The number of replicas to deploy (horizontal scaling).
-# Beware that replicas are stateless; don't set this number > 1 when using INMEMORY or ROCKS version store types.
+# Beware that replicas are stateless; don't set this number > 1 when using IN_MEMORY or ROCKSDB version store types.
 replicaCount: 1
 
 image:
