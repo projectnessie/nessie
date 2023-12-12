@@ -24,6 +24,8 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class RefObjSerializer implements ObjSerializer<RefObj> {
@@ -46,10 +48,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
 
   @Override
   public void toMap(
-      RefObj obj,
-      Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize) {
+      RefObj obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits) {
     i.put(COL_REF_NAME, fromS(obj.name()));
     i.put(COL_REF_CREATED_AT, fromS(Long.toString(obj.createdAtMicros())));
     objIdToAttribute(i, COL_REF_INITIAL_POINTER, obj.initialPointer());

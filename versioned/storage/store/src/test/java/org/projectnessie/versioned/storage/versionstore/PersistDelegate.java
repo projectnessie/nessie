@@ -28,6 +28,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 public class PersistDelegate implements Persist {
@@ -150,9 +151,10 @@ public class PersistDelegate implements Persist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
+    return delegate.storeObj(obj, options);
   }
 
   @Override
@@ -161,6 +163,16 @@ public class PersistDelegate implements Persist {
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     return delegate.storeObjs(objs);
+  }
+
+  @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
+      throws ObjTooLargeException {
+    return delegate.storeObjs(objs, options);
   }
 
   @Override

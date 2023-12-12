@@ -54,7 +54,9 @@ import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitProto;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitTypeProto;
@@ -205,7 +207,7 @@ public final class ProtoSerialization {
     return result;
   }
 
-  public static byte[] serializeObj(Obj obj, int incrementalIndexSizeLimit, int indexSizeLimit)
+  public static byte[] serializeObj(Obj obj, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     if (obj == null) {
       return null;
@@ -214,7 +216,7 @@ public final class ProtoSerialization {
     if (obj.type() instanceof StandardObjType) {
       switch (((StandardObjType) obj.type())) {
         case COMMIT:
-          return b.setCommit(serializeCommit((CommitObj) obj, incrementalIndexSizeLimit))
+          return b.setCommit(serializeCommit((CommitObj) obj, limits.incrementalIndexSizeLimit()))
               .build()
               .toByteArray();
         case VALUE:
@@ -228,7 +230,9 @@ public final class ProtoSerialization {
               .build()
               .toByteArray();
         case INDEX:
-          return b.setIndex(serializeIndex((IndexObj) obj, indexSizeLimit)).build().toByteArray();
+          return b.setIndex(serializeIndex((IndexObj) obj, limits.serializedIndexSizeLimit()))
+              .build()
+              .toByteArray();
         case STRING:
           return b.setStringData(serializeStringData((StringObj) obj)).build().toByteArray();
         case TAG:
@@ -239,7 +243,7 @@ public final class ProtoSerialization {
           throw new UnsupportedOperationException("Unknown standard object type " + obj.type());
       }
     } else {
-      return b.setCustom(serializeCustom(obj)).build().toByteArray();
+      return b.setCustom(serializeCustom(obj, options)).build().toByteArray();
     }
   }
 
@@ -517,12 +521,14 @@ public final class ProtoSerialization {
         custom.getCompression().name());
   }
 
-  private static CustomProto.Builder serializeCustom(Obj obj) {
+  private static CustomProto.Builder serializeCustom(Obj obj, PersistOptions options)
+      throws ObjTooLargeException {
     CustomProto.Builder builder =
         CustomProto.newBuilder().setTargetClass(obj.type().targetClass().getName());
     byte[] bytes =
         SmileSerialization.serializeObj(
             obj,
+            options,
             compression -> builder.setCompression(CompressionProto.valueOf(compression.name())));
     builder.setData(ByteString.copyFrom(bytes));
     return builder;

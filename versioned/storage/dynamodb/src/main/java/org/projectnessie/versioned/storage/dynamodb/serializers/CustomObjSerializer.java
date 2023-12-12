@@ -27,6 +27,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -49,7 +51,7 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   @Override
   public void toMap(
-      Obj obj, Map<String, AttributeValue> i, int incrementalIndexSize, int maxSerializedIndexSize)
+      Obj obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     i.put(COL_CUSTOM_CLASS, fromS(obj.type().targetClass().getName()));
     bytesAttribute(
@@ -58,8 +60,8 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
         ByteString.copyFrom(
             SmileSerialization.serializeObj(
                 obj,
+                options,
                 compression -> i.put(COL_CUSTOM_COMPRESSION, fromS(compression.valueString())))));
-    ;
   }
 
   @Override

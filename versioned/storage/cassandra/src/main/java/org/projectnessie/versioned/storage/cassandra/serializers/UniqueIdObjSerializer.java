@@ -31,6 +31,8 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
 
@@ -66,10 +68,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      UniqueIdObj obj,
-      BoundStatementBuilder stmt,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize)
+      UniqueIdObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     stmt.setString(COL_UNIQUE_SPACE.name(), obj.space());
     stmt.setByteBuffer(COL_UNIQUE_VALUE.name(), obj.value().asReadOnlyByteBuffer());

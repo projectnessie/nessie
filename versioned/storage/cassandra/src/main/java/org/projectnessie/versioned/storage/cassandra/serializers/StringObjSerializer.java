@@ -32,6 +32,8 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class StringObjSerializer implements ObjSerializer<StringObj> {
 
@@ -79,10 +81,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      StringObj obj,
-      BoundStatementBuilder stmt,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize)
+      StringObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     stmt.setString(COL_STRING_CONTENT_TYPE.name(), obj.contentType());
     stmt.setString(COL_STRING_COMPRESSION.name(), obj.compression().name());

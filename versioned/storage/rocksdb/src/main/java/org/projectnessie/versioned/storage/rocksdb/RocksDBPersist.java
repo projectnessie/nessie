@@ -45,7 +45,9 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
@@ -58,12 +60,18 @@ class RocksDBPersist implements Persist {
   private final StoreConfig config;
 
   private final ByteString keyPrefix;
+  private final SizeLimits defaultLimits;
 
   RocksDBPersist(RocksDBBackend backend, RocksDBRepo repo, StoreConfig config) {
     this.backend = backend;
     this.repo = repo;
     this.config = config;
     this.keyPrefix = keyPrefix(config.repositoryId());
+    defaultLimits =
+        SizeLimits.builder()
+            .incrementalIndexSizeLimit(effectiveIncrementalIndexSizeLimit())
+            .serializedIndexSizeLimit(effectiveIndexSegmentSizeLimit())
+            .build();
   }
 
   private byte[] dbKey(ByteString key) {
@@ -357,7 +365,8 @@ class RocksDBPersist implements Persist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
@@ -373,11 +382,10 @@ class RocksDBPersist implements Persist {
         return false;
       }
 
-      int incrementalIndexSizeLimit =
-          ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-      int indexSizeLimit =
-          ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-      byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit);
+      SizeLimits limits =
+          options.ignoreSoftSizeRestrictions() ? SizeLimits.NO_LIMITS : defaultLimits;
+
+      byte[] serialized = serializeObj(obj, options, limits);
 
       db.put(cf, key, serialized);
       return true;
@@ -391,13 +399,15 @@ class RocksDBPersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
-        r[i] = storeObj(o, false);
+        r[i] = storeObj(o, options);
       }
     }
     return r;
@@ -441,8 +451,7 @@ class RocksDBPersist implements Persist {
       ColumnFamilyHandle cf = b.objs();
       byte[] key = dbKey(id);
 
-      byte[] serialized =
-          serializeObj(obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
+      byte[] serialized = serializeObj(obj, PersistOptions.DEFAULT, defaultLimits);
 
       db.put(cf, key, serialized);
     } catch (RocksDBException e) {

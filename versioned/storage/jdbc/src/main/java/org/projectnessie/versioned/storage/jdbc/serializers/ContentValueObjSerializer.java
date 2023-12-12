@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -56,8 +58,8 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   public void serialize(
       PreparedStatement ps,
       ContentValueObj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException {

@@ -29,6 +29,8 @@ import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
@@ -59,8 +61,8 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   public void serialize(
       PreparedStatement ps,
       TagObj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException {

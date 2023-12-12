@@ -25,6 +25,8 @@ import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsObj> {
@@ -45,8 +47,8 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   public void toMap(
       IndexSegmentsObj obj,
       Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize) {
+      PersistOptions options,
+      SizeLimits limits) {
     i.put(COL_SEGMENTS_STRIPES, stripesAttrList(obj.stripes()));
   }
 

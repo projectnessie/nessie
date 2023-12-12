@@ -68,16 +68,24 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class CassandraPersist implements Persist {
 
   private final CassandraBackend backend;
   private final StoreConfig config;
+  private final SizeLimits defaultLimits;
 
   CassandraPersist(CassandraBackend backend, StoreConfig config) {
     this.backend = backend;
     this.config = config;
+    defaultLimits =
+        SizeLimits.builder()
+            .incrementalIndexSizeLimit(effectiveIncrementalIndexSizeLimit())
+            .serializedIndexSizeLimit(effectiveIndexSegmentSizeLimit())
+            .build();
   }
 
   @Nonnull
@@ -329,33 +337,39 @@ public class CassandraPersist implements Persist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
+    return writeSingleObj(obj, false, options, backend::executeCas);
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return persistObjs(objs, false);
+    return persistObjs(objs, false, options);
   }
 
   @Override
   public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
-    writeSingleObj(obj, true, false, backend::execute);
+    writeSingleObj(obj, true, PersistOptions.DEFAULT, backend::execute);
   }
 
   @Override
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    persistObjs(objs, true);
+    persistObjs(objs, true, PersistOptions.DEFAULT);
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  private boolean[] persistObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs, boolean upsert)
+  private boolean[] persistObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      boolean upsert,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
@@ -366,7 +380,7 @@ public class CassandraPersist implements Persist {
         if (o != null) {
           int idx = i;
           CompletionStage<?> cs =
-              writeSingleObj(o, upsert, false, backend::executeAsync)
+              writeSingleObj(o, upsert, options, backend::executeAsync)
                   .handle(
                       (resultSet, e) -> {
                         if (e != null) {
@@ -404,7 +418,7 @@ public class CassandraPersist implements Persist {
   private <R> R writeSingleObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean upsert,
-      boolean ignoreSoftSizeRestrictions,
+      PersistOptions options,
       WriteSingleObj<R> consumer)
       throws ObjTooLargeException {
     ObjId id = obj.id();
@@ -419,11 +433,9 @@ public class CassandraPersist implements Persist {
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
             .setString(COL_OBJ_TYPE.name(), type.name());
 
-    serializer.serialize(
-        obj,
-        stmt,
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit(),
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit());
+    SizeLimits limits = options.ignoreSoftSizeRestrictions() ? SizeLimits.NO_LIMITS : defaultLimits;
+
+    serializer.serialize(obj, stmt, options, limits);
 
     return consumer.apply(stmt.build());
   }

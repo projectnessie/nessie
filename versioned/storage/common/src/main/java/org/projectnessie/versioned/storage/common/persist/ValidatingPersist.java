@@ -26,15 +26,18 @@ public interface ValidatingPersist extends Persist {
     if (obj instanceof CommitObj) {
       CommitObj c = (CommitObj) obj;
       ByteString serializedIndex = c.incrementalIndex();
-      if (serializedIndex.size() > effectiveIncrementalIndexSizeLimit()) {
+      if (serializedIndex.size()
+          > Math.min(config().maxIncrementalIndexSize(), hardObjectSizeLimit() / 2)) {
         throw new ObjTooLargeException(
-            serializedIndex.size(), effectiveIncrementalIndexSizeLimit());
+            serializedIndex.size(),
+            Math.min(config().maxIncrementalIndexSize(), hardObjectSizeLimit() / 2));
       }
     } else if (obj instanceof IndexObj) {
       IndexObj s = (IndexObj) obj;
       ByteString index = s.index();
-      if (index.size() > effectiveIndexSegmentSizeLimit()) {
-        throw new ObjTooLargeException(index.size(), effectiveIndexSegmentSizeLimit());
+      if (index.size() > Math.min(config().maxSerializedIndexSize(), hardObjectSizeLimit() / 2)) {
+        throw new ObjTooLargeException(
+            index.size(), Math.min(config().maxSerializedIndexSize(), hardObjectSizeLimit() / 2));
       }
     }
   }

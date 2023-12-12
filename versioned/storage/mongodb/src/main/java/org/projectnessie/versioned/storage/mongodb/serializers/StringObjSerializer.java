@@ -26,6 +26,8 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class StringObjSerializer implements ObjSerializer<StringObj> {
 
@@ -47,8 +49,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public void objToDoc(
-      StringObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
+  public void objToDoc(StringObj obj, Document doc, PersistOptions options, SizeLimits limits) {
     String s = obj.contentType();
     if (s != null && !s.isEmpty()) {
       doc.put(COL_STRING_CONTENT_TYPE, s);

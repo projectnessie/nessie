@@ -38,6 +38,8 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
@@ -108,10 +110,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      CommitObj obj,
-      BoundStatementBuilder stmt,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize)
+      CommitObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
 
     stmt.setLong(COL_COMMIT_CREATED.name(), obj.created());
@@ -145,8 +144,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
         String.class);
 
     ByteString index = obj.incrementalIndex();
-    if (index.size() > incrementalIndexLimit) {
-      throw new ObjTooLargeException(index.size(), incrementalIndexLimit);
+    if (index.size() > limits.incrementalIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.incrementalIndexSizeLimit());
     }
     stmt.setByteBuffer(COL_COMMIT_INCREMENTAL_INDEX.name(), index.asReadOnlyByteBuffer());
 

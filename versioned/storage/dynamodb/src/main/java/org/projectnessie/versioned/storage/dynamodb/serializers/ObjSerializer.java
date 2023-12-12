@@ -20,6 +20,8 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public interface ObjSerializer<O extends Obj> {
@@ -31,8 +33,7 @@ public interface ObjSerializer<O extends Obj> {
    */
   String attributeName();
 
-  void toMap(
-      O obj, Map<String, AttributeValue> i, int incrementalIndexSize, int maxSerializedIndexSize)
+  void toMap(O obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException;
 
   O fromMap(ObjId id, Map<String, AttributeValue> i);

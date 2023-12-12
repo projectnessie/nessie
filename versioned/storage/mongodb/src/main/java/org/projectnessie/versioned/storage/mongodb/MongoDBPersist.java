@@ -81,7 +81,9 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializers;
 
@@ -89,10 +91,16 @@ public class MongoDBPersist implements Persist {
 
   private final StoreConfig config;
   private final MongoDBBackend backend;
+  private final SizeLimits defaultLimits;
 
   MongoDBPersist(MongoDBBackend backend, StoreConfig config) {
     this.config = config;
     this.backend = backend;
+    defaultLimits =
+        SizeLimits.builder()
+            .incrementalIndexSizeLimit(effectiveIncrementalIndexSizeLimit())
+            .serializedIndexSizeLimit(effectiveIndexSegmentSizeLimit())
+            .build();
   }
 
   @Nonnull
@@ -409,9 +417,10 @@ public class MongoDBPersist implements Persist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    Document doc = objToDoc(obj, ignoreSoftSizeRestrictions);
+    Document doc = objToDoc(obj, options);
     try {
       backend.objs().insertOne(doc);
     } catch (MongoWriteException e) {
@@ -427,12 +436,14 @@ public class MongoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
     for (Obj obj : objs) {
       if (obj != null) {
-        docs.add(new InsertOneModel<>(objToDoc(obj, false)));
+        docs.add(new InsertOneModel<>(objToDoc(obj, options)));
       }
     }
 
@@ -509,7 +520,7 @@ public class MongoDBPersist implements Persist {
 
     ReplaceOptions options = upsertOptions();
 
-    Document doc = objToDoc(obj, false);
+    Document doc = objToDoc(obj, PersistOptions.DEFAULT);
     UpdateResult result =
         backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc, options);
     if (!result.wasAcknowledged()) {
@@ -536,7 +547,9 @@ public class MongoDBPersist implements Persist {
         ObjId id = obj.id();
         docs.add(
             new ReplaceOneModel<>(
-                eq(ID_PROPERTY_NAME, idObjDoc(id)), objToDoc(obj, false), options));
+                eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                objToDoc(obj, PersistOptions.DEFAULT),
+                options));
       }
     }
 
@@ -575,7 +588,8 @@ public class MongoDBPersist implements Persist {
   }
 
   private Document objToDoc(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -587,11 +601,11 @@ public class MongoDBPersist implements Persist {
     Document inner = new Document();
     doc.put(ID_PROPERTY_NAME, idObjDoc(id));
     doc.put(COL_OBJ_TYPE, type.shortName());
-    int incrementalIndexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-    int indexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    serializer.objToDoc(obj, inner, incrementalIndexSizeLimit, indexSizeLimit);
+
+    SizeLimits limits = options.ignoreSoftSizeRestrictions() ? SizeLimits.NO_LIMITS : defaultLimits;
+
+    serializer.objToDoc(obj, inner, options, limits);
+
     doc.put(serializer.fieldName(), inner);
     return doc;
   }

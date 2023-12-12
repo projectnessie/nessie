@@ -38,6 +38,8 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
@@ -87,8 +89,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   public void serialize(
       PreparedStatement ps,
       CommitObj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException, ObjTooLargeException {
@@ -129,8 +131,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
         databaseSpecific);
 
     ByteString index = obj.incrementalIndex();
-    if (index.size() > incrementalIndexLimit) {
-      throw new ObjTooLargeException(index.size(), incrementalIndexLimit);
+    if (index.size() > limits.incrementalIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.incrementalIndexSizeLimit());
     }
     serializeBytes(ps, nameToIdx.apply(COL_COMMIT_INCREMENTAL_INDEX), index, databaseSpecific);
 

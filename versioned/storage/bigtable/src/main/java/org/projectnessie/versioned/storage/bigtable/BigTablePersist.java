@@ -62,7 +62,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -75,18 +74,26 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class BigTablePersist implements Persist {
 
   private final BigTableBackend backend;
   private final StoreConfig config;
   private final ByteString keyPrefix;
+  private final SizeLimits defaultLimits;
 
   BigTablePersist(BigTableBackend backend, StoreConfig config) {
     this.backend = backend;
     this.config = config;
     this.keyPrefix = copyFromUtf8(config.repositoryId() + ':');
+    defaultLimits =
+        SizeLimits.builder()
+            .incrementalIndexSizeLimit(effectiveIncrementalIndexSizeLimit())
+            .serializedIndexSizeLimit(effectiveIndexSegmentSizeLimit())
+            .build();
   }
 
   static RuntimeException apiException(ApiException e) {
@@ -236,8 +243,8 @@ public class BigTablePersist implements Persist {
     }
   }
 
-  @NotNull
-  private static Mutation refsMutation(@NotNull Reference reference) {
+  @Nonnull
+  private static Mutation refsMutation(@Nonnull Reference reference) {
     return Mutation.create()
         .setCell(
             FAMILY_REFS,
@@ -248,7 +255,7 @@ public class BigTablePersist implements Persist {
             unsafeWrap(serializeReference(reference)));
   }
 
-  @NotNull
+  @Nonnull
   private static Filters.ChainFilter refsValueFilter(Reference expected) {
     return FILTERS
         .chain()
@@ -373,12 +380,12 @@ public class BigTablePersist implements Persist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
 
     try {
-      ConditionalRowMutation conditionalRowMutation =
-          mutationForStoreObj(obj, ignoreSoftSizeRestrictions);
+      ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, options);
 
       boolean success = backend.client().checkAndMutateRow(conditionalRowMutation);
       return !success;
@@ -391,19 +398,16 @@ public class BigTablePersist implements Persist {
       ObjTypes.allObjTypes().stream()
           .collect(
               ImmutableMap.toImmutableMap(
-                  Function.identity(), (ObjType type) -> ByteString.copyFromUtf8(type.name())));
+                  Function.identity(), (ObjType type) -> copyFromUtf8(type.name())));
 
-  @NotNull
+  @Nonnull
   private ConditionalRowMutation mutationForStoreObj(
-      @NotNull Obj obj, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
+      @Nonnull Obj obj, @Nonnull PersistOptions options) throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
 
-    int incrementalIndexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-    int indexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit);
+    SizeLimits limits = options.ignoreSoftSizeRestrictions() ? SizeLimits.NO_LIMITS : defaultLimits;
+    byte[] serialized = serializeObj(obj, options, limits);
 
     ByteString ref = unsafeWrap(serialized);
 
@@ -426,7 +430,9 @@ public class BigTablePersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     if (objs.length == 0) {
       return new boolean[0];
@@ -443,7 +449,7 @@ public class BigTablePersist implements Persist {
     for (int i = 0; i < objs.length; i++) {
       Obj obj = objs[i];
       if (obj != null) {
-        ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
+        ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, options);
         futures[i] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
       }
     }
@@ -503,10 +509,7 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(id);
 
-      ByteString serialized =
-          unsafeWrap(
-              serializeObj(
-                  obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit()));
+      ByteString serialized = unsafeWrap(serializeObj(obj, PersistOptions.DEFAULT, defaultLimits));
 
       backend
           .client()
@@ -542,9 +545,7 @@ public class BigTablePersist implements Persist {
         ByteString key = dbKey(id);
 
         ByteString serialized =
-            unsafeWrap(
-                serializeObj(
-                    obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit()));
+            unsafeWrap(serializeObj(obj, PersistOptions.DEFAULT, defaultLimits));
 
         batcher.add(
             RowMutationEntry.create(key)

@@ -70,7 +70,9 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializers;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
@@ -88,11 +90,17 @@ public class DynamoDBPersist implements Persist {
   private final DynamoDBBackend backend;
   private final StoreConfig config;
   private final String keyPrefix;
+  private final SizeLimits defaultLimits;
 
   DynamoDBPersist(DynamoDBBackend backend, StoreConfig config) {
     this.backend = backend;
     this.config = config;
     this.keyPrefix = keyPrefix(config.repositoryId());
+    defaultLimits =
+        SizeLimits.builder()
+            .incrementalIndexSizeLimit(effectiveIncrementalIndexSizeLimit())
+            .serializedIndexSizeLimit(effectiveIndexSegmentSizeLimit())
+            .build();
   }
 
   @Nonnull
@@ -421,14 +429,16 @@ public class DynamoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
-        r[i] = storeObj(o);
+        r[i] = storeObj(o, options);
       }
     }
     return r;
@@ -436,12 +446,13 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Map<String, AttributeValue> item = objToItem(obj, id, ignoreSoftSizeRestrictions);
+    Map<String, AttributeValue> item = objToItem(obj, id, options);
 
     try {
       backend
@@ -486,7 +497,7 @@ public class DynamoDBPersist implements Persist {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Map<String, AttributeValue> item = objToItem(obj, id, false);
+    Map<String, AttributeValue> item = objToItem(obj, id, PersistOptions.DEFAULT);
 
     try {
       backend.client().putItem(b -> b.tableName(backend.tableObjs).item(item));
@@ -510,7 +521,7 @@ public class DynamoDBPersist implements Persist {
           ObjId id = obj.id();
           checkArgument(id != null, "Obj to store must have a non-null ID");
 
-          Map<String, AttributeValue> item = objToItem(obj, id, false);
+          Map<String, AttributeValue> item = objToItem(obj, id, PersistOptions.DEFAULT);
 
           batchWrite.addPut(item);
         }
@@ -543,7 +554,7 @@ public class DynamoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   private Map<String, AttributeValue> objToItem(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, ObjId id, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj, ObjId id, PersistOptions options)
       throws ObjTooLargeException {
     ObjType type = obj.type();
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
@@ -552,11 +563,11 @@ public class DynamoDBPersist implements Persist {
     Map<String, AttributeValue> inner = new HashMap<>();
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
-    int incrementalIndexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-    int indexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    serializer.toMap(obj, inner, incrementalIndexSizeLimit, indexSizeLimit);
+
+    SizeLimits limits = options.ignoreSoftSizeRestrictions() ? SizeLimits.NO_LIMITS : defaultLimits;
+
+    serializer.toMap(obj, inner, options, limits);
+
     item.put(serializer.attributeName(), fromM(inner));
     return item;
   }

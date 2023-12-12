@@ -28,6 +28,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 class CachingPersistImpl implements Persist {
@@ -133,9 +134,10 @@ class CachingPersistImpl implements Persist {
 
   @Override
   public boolean storeObj(
-      @jakarta.annotation.Nonnull @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @jakarta.annotation.Nonnull @Nonnull Obj obj,
+      @jakarta.annotation.Nonnull @Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    if (persist.storeObj(obj, ignoreSoftSizeRestrictions)) {
+    if (persist.storeObj(obj, options)) {
       cache.put(obj);
       return true;
     }
@@ -145,9 +147,11 @@ class CachingPersistImpl implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @jakarta.annotation.Nonnull @Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    boolean[] stored = persist.storeObjs(objs);
+    boolean[] stored = persist.storeObjs(objs, options);
     for (int i = 0; i < stored.length; i++) {
       if (stored[i]) {
         cache.put(objs[i]);

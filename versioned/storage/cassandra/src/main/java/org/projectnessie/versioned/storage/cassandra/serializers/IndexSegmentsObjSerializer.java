@@ -36,6 +36,8 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 
@@ -72,10 +74,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      IndexSegmentsObj obj,
-      BoundStatementBuilder stmt,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize)
+      IndexSegmentsObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     Stripes.Builder b = Stripes.newBuilder();
     obj.stripes().stream()

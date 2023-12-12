@@ -30,6 +30,8 @@ import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -62,8 +64,8 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   public void serialize(
       PreparedStatement ps,
       StringObj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException {

@@ -233,7 +233,7 @@ public interface Persist {
    */
   default boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
       throws ObjTooLargeException {
-    return storeObj(obj, false);
+    return storeObj(obj, PersistOptions.DEFAULT);
   }
 
   /**
@@ -244,8 +244,7 @@ public interface Persist {
    * logic interfaces to ensure a stable and deterministic ID generation.
    *
    * @param obj the object to store
-   * @param ignoreSoftSizeRestrictions whether to explicitly ignore soft size restrictions, use
-   *     {@code false}, if in doubt
+   * @param options options to control the behavior of the persist operation
    * @return {@code true}, if the object was stored as a new record or {@code false} if an object
    *     with the same ID already exists.
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or,
@@ -253,7 +252,9 @@ public interface Persist {
    *     #config()}
    * @see #storeObjs(Obj[])
    */
-  boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  boolean storeObj(
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException;
 
   /**
@@ -275,7 +276,35 @@ public interface Persist {
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;
+  default boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    return storeObjs(objs, PersistOptions.DEFAULT);
+  }
+
+  /**
+   * Like {@link #storeObj(Obj)}, but stores multiple objects at once.
+   *
+   * <p>Providing the same ID multiple times via the {@code objs} to store is not supported.
+   * Implementations may or may not fail, the behavior is undefined in this case.
+   *
+   * <p>In case an object failed to be stored, it is undefined whether other objects have been
+   * stored or not.
+   *
+   * @param objs array with {@link Obj}s to store. {@code null} array elements are legal, the
+   *     corresponding elements in the returned array will be {@code false}.
+   * @param options options to control the behavior of the persist operation
+   * @return an array with {@code boolean}s indicating whether the corresponding objects were
+   *     created ({@code true}) or already present ({@code false}), see {@link #storeObj(Obj)}
+   * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
+   *     "soft" size restriction in {@link #config()}
+   * @see #storeObj(Obj)
+   */
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
+      throws ObjTooLargeException;
 
   void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id);
 

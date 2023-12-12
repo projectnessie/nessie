@@ -30,6 +30,8 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 
 @Value.Immutable
@@ -87,7 +89,8 @@ abstract class CaffeineCacheBackend implements CacheBackend {
       @Nonnull @jakarta.annotation.Nonnull Obj obj) {
     CacheKey key = cacheKey(repositoryId, obj.id());
     try {
-      cache().put(key, serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE));
+      cache()
+          .put(key, serializeObj(obj, PersistOptions.NO_SIZE_RESTRICTIONS, SizeLimits.NO_LIMITS));
     } catch (ObjTooLargeException e) {
       // this should never happen
       throw new RuntimeException(e);

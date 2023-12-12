@@ -20,6 +20,8 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public interface ObjSerializer<O extends Obj> {
 
@@ -29,7 +31,7 @@ public interface ObjSerializer<O extends Obj> {
    */
   String fieldName();
 
-  void objToDoc(O obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
+  void objToDoc(O obj, Document doc, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException;
 
   O docToObj(ObjId id, Document doc);

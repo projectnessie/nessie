@@ -33,14 +33,18 @@ public final class Compressions {
 
   private Compressions() {}
 
-  public static byte[] compressDefault(byte[] bytes, Consumer<Compression> compression) {
-    if (bytes.length <= KEEP_UNCOMPRESSED) {
-      compression.accept(Compression.NONE);
+  public static byte[] maybeCompressDefault(byte[] bytes, Consumer<Compression> compression) {
+    return maybeCompress(bytes, Compression.SNAPPY, compression);
+  }
+
+  public static byte[] maybeCompress(
+      byte[] bytes, Compression compression, Consumer<Compression> compressionConsumer) {
+    if (bytes.length <= KEEP_UNCOMPRESSED || compression == Compression.NONE) {
+      compressionConsumer.accept(Compression.NONE);
       return bytes;
     }
-    Compression compr = Compression.SNAPPY;
-    compression.accept(compr);
-    return compress(compr, bytes);
+    compressionConsumer.accept(compression);
+    return compress(compression, bytes);
   }
 
   public static byte[] compress(Compression compression, byte[] uncompressed) {

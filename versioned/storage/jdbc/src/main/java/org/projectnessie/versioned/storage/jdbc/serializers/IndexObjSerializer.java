@@ -29,6 +29,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -52,14 +54,14 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   public void serialize(
       PreparedStatement ps,
       IndexObj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException, ObjTooLargeException {
     ByteString index = obj.index();
-    if (index.size() > maxSerializedIndexSize) {
-      throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
+    if (index.size() > limits.serializedIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.serializedIndexSizeLimit());
     }
     serializeBytes(ps, nameToIdx.apply(COL_INDEX_INDEX), index, databaseSpecific);
   }

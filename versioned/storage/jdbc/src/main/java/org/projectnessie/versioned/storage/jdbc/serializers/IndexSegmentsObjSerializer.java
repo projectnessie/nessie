@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
@@ -58,8 +60,8 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   public void serialize(
       PreparedStatement ps,
       IndexSegmentsObj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException {

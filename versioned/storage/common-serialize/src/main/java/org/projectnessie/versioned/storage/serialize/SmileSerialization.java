@@ -15,18 +15,20 @@
  */
 package org.projectnessie.versioned.storage.serialize;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.json.ObjIdHelper;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.util.Compressions;
 
 public final class SmileSerialization {
@@ -75,10 +77,20 @@ public final class SmileSerialization {
     return deserializeObj(id, bytes, targetClass, compression);
   }
 
-  public static byte[] serializeObj(Obj obj, Consumer<Compression> compression) {
+  public static byte[] serializeObj(
+      Obj obj, PersistOptions options, Consumer<Compression> compression)
+      throws ObjTooLargeException {
     try {
-      return Compressions.compressDefault(SMILE_MAPPER.writeValueAsBytes(obj), compression);
-    } catch (JsonProcessingException e) {
+      ObjectWriter writer =
+          options.jsonView().isPresent()
+              ? SMILE_MAPPER.writerWithView(options.jsonView().get())
+              : SMILE_MAPPER.writer();
+      if (!options.jsonContext().isEmpty()) {
+        writer = writer.withAttributes(options.jsonContext());
+      }
+      return Compressions.maybeCompress(
+          writer.writeValueAsBytes(obj), options.compression(), compression);
+    } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
   }

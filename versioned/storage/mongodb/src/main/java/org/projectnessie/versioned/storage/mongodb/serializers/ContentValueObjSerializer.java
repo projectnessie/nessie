@@ -23,6 +23,8 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj> {
 
@@ -43,7 +45,7 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
 
   @Override
   public void objToDoc(
-      ContentValueObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
+      ContentValueObj obj, Document doc, PersistOptions options, SizeLimits limits) {
     doc.put(COL_VALUE_CONTENT_ID, obj.contentId());
     doc.put(COL_VALUE_PAYLOAD, obj.payload());
     doc.put(COL_VALUE_DATA, bytesToBinary(obj.data()));

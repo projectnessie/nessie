@@ -25,6 +25,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
@@ -41,12 +43,11 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public void objToDoc(
-      IndexObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
+  public void objToDoc(IndexObj obj, Document doc, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     ByteString index = obj.index();
-    if (index.size() > maxSerializedIndexSize) {
-      throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
+    if (index.size() > limits.serializedIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.serializedIndexSizeLimit());
     }
     doc.put(COL_INDEX_INDEX, bytesToBinary(index));
   }

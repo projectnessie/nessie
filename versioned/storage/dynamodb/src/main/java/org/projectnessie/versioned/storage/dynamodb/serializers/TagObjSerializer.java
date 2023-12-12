@@ -31,6 +31,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class TagObjSerializer implements ObjSerializer<TagObj> {
@@ -52,10 +54,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
 
   @Override
   public void toMap(
-      TagObj obj,
-      Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize) {
+      TagObj obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits) {
     String message = obj.message();
     if (message != null) {
       i.put(COL_TAG_MESSAGE, fromS(message));

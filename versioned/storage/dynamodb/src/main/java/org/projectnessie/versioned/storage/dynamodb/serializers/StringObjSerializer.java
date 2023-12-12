@@ -29,6 +29,8 @@ import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class StringObjSerializer implements ObjSerializer<StringObj> {
@@ -52,10 +54,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
 
   @Override
   public void toMap(
-      StringObj obj,
-      Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize) {
+      StringObj obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits) {
     String s = obj.contentType();
     if (s != null && !s.isEmpty()) {
       i.put(COL_STRING_CONTENT_TYPE, fromS(s));

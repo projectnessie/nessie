@@ -73,7 +73,9 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializers;
 
@@ -84,12 +86,18 @@ abstract class AbstractJdbcPersist implements Persist {
   private final DatabaseSpecific databaseSpecific;
   private final String storeObjSql;
   private final Map<String, Integer> storeObjSqlParams;
+  private final SizeLimits defaultLimits;
 
   AbstractJdbcPersist(DatabaseSpecific databaseSpecific, StoreConfig config) {
     this.config = config;
     this.databaseSpecific = databaseSpecific;
     this.storeObjSqlParams = buildStoreObjSqlParams();
     this.storeObjSql = buildStoreObjSql();
+    defaultLimits =
+        SizeLimits.builder()
+            .incrementalIndexSizeLimit(effectiveIncrementalIndexSizeLimit())
+            .serializedIndexSizeLimit(effectiveIndexSegmentSizeLimit())
+            .build();
   }
 
   private Map<String, Integer> buildStoreObjSqlParams() {
@@ -458,18 +466,19 @@ abstract class AbstractJdbcPersist implements Persist {
   protected final boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
-      boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions, true)[0];
+    return upsertObjs(conn, new Obj[] {obj}, options, true)[0];
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   protected final boolean[] storeObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return upsertObjs(conn, objs, false, true);
+    return upsertObjs(conn, objs, options, true);
   }
 
   protected final Void updateObj(
@@ -484,7 +493,7 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    upsertObjs(conn, objs, false, false);
+    upsertObjs(conn, objs, PersistOptions.DEFAULT, false);
     return null;
   }
 
@@ -493,7 +502,7 @@ abstract class AbstractJdbcPersist implements Persist {
   private boolean[] upsertObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
-      boolean ignoreSoftSizeRestrictions,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options,
       boolean insert)
       throws ObjTooLargeException {
     if (!insert) {
@@ -529,11 +538,6 @@ abstract class AbstractJdbcPersist implements Persist {
         ObjId id = obj.id();
         ObjType type = obj.type();
 
-        int incrementalIndexSizeLimit =
-            ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-        int indexSizeLimit =
-            ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-
         checkArgument(id != null, "Obj to store must have a non-null ID");
 
         ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
@@ -541,13 +545,11 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
 
         ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
-        serializer.serialize(
-            ps,
-            obj,
-            incrementalIndexSizeLimit,
-            indexSizeLimit,
-            storeObjSqlParams::get,
-            databaseSpecific);
+
+        SizeLimits limits =
+            options.ignoreSoftSizeRestrictions() ? SizeLimits.NO_LIMITS : defaultLimits;
+
+        serializer.serialize(ps, obj, options, limits, storeObjSqlParams::get, databaseSpecific);
 
         for (ObjSerializer<?> other : ObjSerializers.ALL_SERIALIZERS) {
           if (serializer != other) {

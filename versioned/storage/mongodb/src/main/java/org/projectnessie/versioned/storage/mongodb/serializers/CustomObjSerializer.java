@@ -20,6 +20,8 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
 
 public class CustomObjSerializer implements ObjSerializer<Obj> {
@@ -40,14 +42,16 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public void objToDoc(Obj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
+  public void objToDoc(Obj obj, Document doc, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     doc.put(COL_CUSTOM_CLASS, obj.type().targetClass().getName());
     doc.put(
         COL_CUSTOM_DATA,
         new Binary(
             SmileSerialization.serializeObj(
-                obj, compression -> doc.put(COL_CUSTOM_COMPRESSION, compression.valueString()))));
+                obj,
+                options,
+                compression -> doc.put(COL_CUSTOM_COMPRESSION, compression.valueString()))));
   }
 
   @Override

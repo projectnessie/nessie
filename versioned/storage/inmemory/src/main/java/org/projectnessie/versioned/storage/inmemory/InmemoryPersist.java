@@ -36,6 +36,7 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 
@@ -255,11 +256,12 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
-    if (!ignoreSoftSizeRestrictions) {
+    if (!options.ignoreSoftSizeRestrictions()) {
       verifySoftRestrictions(obj);
     }
 
@@ -270,12 +272,14 @@ class InmemoryPersist implements ValidatingPersist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       if (objs[i] != null) {
-        r[i] = storeObj(objs[i]);
+        r[i] = storeObj(objs[i], options);
       }
     }
     return r;

@@ -32,6 +32,8 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj> {
 
@@ -69,10 +71,7 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      ContentValueObj obj,
-      BoundStatementBuilder stmt,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize)
+      ContentValueObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     stmt.setString(COL_VALUE_CONTENT_ID.name(), obj.contentId());
     stmt.setInt(COL_VALUE_PAYLOAD.name(), obj.payload());

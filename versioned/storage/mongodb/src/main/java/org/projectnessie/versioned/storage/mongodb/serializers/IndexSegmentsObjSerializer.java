@@ -25,6 +25,8 @@ import org.bson.Document;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsObj> {
 
@@ -42,7 +44,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
 
   @Override
   public void objToDoc(
-      IndexSegmentsObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
+      IndexSegmentsObj obj, Document doc, PersistOptions options, SizeLimits limits) {
     doc.put(COL_SEGMENTS_STRIPES, stripesToDocs(obj.stripes()));
   }
 

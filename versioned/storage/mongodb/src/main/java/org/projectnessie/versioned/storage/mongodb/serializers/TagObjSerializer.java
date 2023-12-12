@@ -27,6 +27,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class TagObjSerializer implements ObjSerializer<TagObj> {
 
@@ -46,8 +48,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public void objToDoc(
-      TagObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
+  public void objToDoc(TagObj obj, Document doc, PersistOptions options, SizeLimits limits) {
     String message = obj.message();
     if (message != null) {
       doc.put(COL_TAG_MESSAGE, message);

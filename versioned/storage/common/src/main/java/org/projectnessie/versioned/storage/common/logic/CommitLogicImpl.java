@@ -93,6 +93,7 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,6 +104,7 @@ final class CommitLogicImpl implements CommitLogic {
   private static final Logger LOGGER = LoggerFactory.getLogger(CommitLogicImpl.class);
 
   static final String NO_COMMON_ANCESTOR_IN_PARENTS_OF = "No common ancestor in parents of ";
+
   private final Persist persist;
 
   CommitLogicImpl(Persist persist) {
@@ -315,7 +317,7 @@ final class CommitLogicImpl implements CommitLogic {
       commit = indexTooBigStoreUpdate(commit);
 
       try {
-        return persist.storeObj(commit, true);
+        return persist.storeObj(commit, PersistOptions.NO_SIZE_RESTRICTIONS);
       } catch (ObjTooLargeException ex) {
         // Hit the "Hard database object size limit"
         throw new RuntimeException(ex);
@@ -401,7 +403,8 @@ final class CommitLogicImpl implements CommitLogic {
 
   private List<StoreIndex<CommitOp>> updateExistingReferenceIndex(
       CommitObj commitObj, StoreIndex<CommitOp> newIncremental) {
-    int maxSize = persist.effectiveIndexSegmentSizeLimit();
+    int maxSize =
+        Math.min(persist.config().maxSerializedIndexSize(), persist.hardObjectSizeLimit() / 2);
     // use halt of the max as the initial size for _new_ segments/splits
     int newSegmentSize = maxSize / 2;
 
@@ -487,7 +490,8 @@ final class CommitLogicImpl implements CommitLogic {
 
   private List<StoreIndex<CommitOp>> createNewReferenceIndex(
       CommitObj commitObj, StoreIndex<CommitOp> newIncremental) {
-    int maxSize = persist.effectiveIndexSegmentSizeLimit();
+    int maxSize =
+        Math.min(persist.config().maxSerializedIndexSize(), persist.hardObjectSizeLimit() / 2);
     // use half of the max as the initial size for _new_ segments/splits
     int newSegmentSize = maxSize / 2;
 

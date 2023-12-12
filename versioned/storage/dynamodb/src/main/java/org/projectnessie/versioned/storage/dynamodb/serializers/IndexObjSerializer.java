@@ -25,6 +25,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class IndexObjSerializer implements ObjSerializer<IndexObj> {
@@ -43,14 +45,11 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
   @Override
   public void toMap(
-      IndexObj obj,
-      Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize)
+      IndexObj obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     ByteString index = obj.index();
-    if (index.size() > maxSerializedIndexSize) {
-      throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
+    if (index.size() > limits.serializedIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.serializedIndexSizeLimit());
     }
     bytesAttribute(i, COL_INDEX_INDEX, index);
   }

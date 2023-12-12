@@ -23,6 +23,8 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class RefObjSerializer implements ObjSerializer<RefObj> {
 
@@ -43,8 +45,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public void objToDoc(
-      RefObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
+  public void objToDoc(RefObj obj, Document doc, PersistOptions options, SizeLimits limits) {
     doc.put(COL_REF_NAME, obj.name());
     doc.put(COL_REF_CREATED_AT, obj.createdAtMicros());
     doc.put(COL_REF_INITIAL_POINTER, objIdToBinary(obj.initialPointer()));

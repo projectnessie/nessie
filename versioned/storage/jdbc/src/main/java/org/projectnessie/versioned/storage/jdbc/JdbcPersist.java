@@ -32,6 +32,7 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 class JdbcPersist extends AbstractJdbcPersist {
@@ -225,18 +226,20 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return withConnectionException(
-        false, conn -> super.storeObj(conn, obj, ignoreSoftSizeRestrictions));
+    return withConnectionException(false, conn -> super.storeObj(conn, obj, options));
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return withConnectionException(false, conn -> super.storeObjs(conn, objs));
+    return withConnectionException(false, conn -> super.storeObjs(conn, objs, options));
   }
 
   @Override

@@ -32,6 +32,8 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
@@ -65,14 +67,11 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
   @Override
   public void serialize(
-      IndexObj obj,
-      BoundStatementBuilder stmt,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize)
+      IndexObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     ByteString index = obj.index();
-    if (index.size() > maxSerializedIndexSize) {
-      throw new ObjTooLargeException(index.size(), maxSerializedIndexSize);
+    if (index.size() > limits.serializedIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.serializedIndexSizeLimit());
     }
     stmt.setByteBuffer(COL_INDEX_INDEX.name(), index.asReadOnlyByteBuffer());
   }

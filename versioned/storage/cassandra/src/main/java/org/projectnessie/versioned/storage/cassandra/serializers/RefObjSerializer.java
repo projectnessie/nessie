@@ -31,6 +31,8 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class RefObjSerializer implements ObjSerializer<RefObj> {
 
@@ -72,7 +74,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      RefObj obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
+      RefObj obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     stmt.setString(COL_REF_NAME.name(), obj.name());
     stmt.setString(

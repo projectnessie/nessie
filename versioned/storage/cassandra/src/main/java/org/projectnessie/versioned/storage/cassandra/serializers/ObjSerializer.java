@@ -22,6 +22,8 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public interface ObjSerializer<O extends Obj> {
 
@@ -29,8 +31,7 @@ public interface ObjSerializer<O extends Obj> {
 
   String insertCql(boolean upsert);
 
-  void serialize(
-      O obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
+  void serialize(O obj, BoundStatementBuilder stmt, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException;
 
   O deserialize(Row row, ObjId id);

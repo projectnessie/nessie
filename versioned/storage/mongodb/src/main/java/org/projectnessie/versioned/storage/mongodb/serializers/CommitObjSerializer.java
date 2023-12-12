@@ -36,6 +36,8 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class CommitObjSerializer implements ObjSerializer<CommitObj> {
 
@@ -63,8 +65,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public void objToDoc(
-      CommitObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
+  public void objToDoc(CommitObj obj, Document doc, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     doc.put(COL_COMMIT_SEQ, obj.seq());
     doc.put(COL_COMMIT_CREATED, obj.created());
@@ -77,8 +78,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
     objIdsToDoc(doc, COL_COMMIT_SECONDARY_PARENTS, obj.secondaryParents());
 
     ByteString index = obj.incrementalIndex();
-    if (index.size() > incrementalIndexLimit) {
-      throw new ObjTooLargeException(index.size(), incrementalIndexLimit);
+    if (index.size() > limits.incrementalIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.incrementalIndexSizeLimit());
     }
     doc.put(COL_COMMIT_INCREMENTAL_INDEX, bytesToBinary(index));
 

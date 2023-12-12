@@ -36,6 +36,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 
@@ -115,9 +116,10 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   public boolean storeObj(
-      @Nonnull @javax.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+      @Nonnull @javax.annotation.Nonnull Obj obj,
+      @Nonnull @javax.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    if (!ignoreSoftSizeRestrictions) {
+    if (!options.ignoreSoftSizeRestrictions()) {
       verifySoftRestrictions(obj);
     }
     writeLock();
@@ -145,13 +147,15 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Override
   @Nonnull
   @javax.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(
+      @Nonnull @javax.annotation.Nonnull Obj[] objs,
+      @javax.annotation.Nonnull @jakarta.annotation.Nonnull PersistOptions options)
       throws ObjTooLargeException {
     writeLock();
     try {
       for (Obj obj : objs) {
         if (obj != null) {
-          storeObj(obj);
+          storeObj(obj, options);
         }
       }
     } finally {

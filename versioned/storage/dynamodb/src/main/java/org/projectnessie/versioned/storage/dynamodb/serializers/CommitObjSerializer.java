@@ -42,6 +42,8 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class CommitObjSerializer implements ObjSerializer<CommitObj> {
@@ -71,10 +73,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
 
   @Override
   public void toMap(
-      CommitObj obj,
-      Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize)
+      CommitObj obj, Map<String, AttributeValue> i, PersistOptions options, SizeLimits limits)
       throws ObjTooLargeException {
     i.put(COL_COMMIT_SEQ, fromS(Long.toString(obj.seq())));
     i.put(COL_COMMIT_CREATED, fromS(Long.toString(obj.created())));
@@ -87,8 +86,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
     objIdsAttribute(i, COL_COMMIT_SECONDARY_PARENTS, obj.secondaryParents());
 
     ByteString index = obj.incrementalIndex();
-    if (index.size() > incrementalIndexSize) {
-      throw new ObjTooLargeException(index.size(), incrementalIndexSize);
+    if (index.size() > limits.incrementalIndexSizeLimit()) {
+      throw new ObjTooLargeException(index.size(), limits.incrementalIndexSizeLimit());
     }
     bytesAttribute(i, COL_COMMIT_INCREMENTAL_INDEX, index);
 

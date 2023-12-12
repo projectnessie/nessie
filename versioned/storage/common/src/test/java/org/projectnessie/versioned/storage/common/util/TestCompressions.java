@@ -38,7 +38,7 @@ public class TestCompressions {
   public void keepUncompressed(int len) {
     byte[] data = ("x".repeat(len)).getBytes(UTF_8);
     AtomicReference<Compression> compression = new AtomicReference<>();
-    byte[] compressed = Compressions.compressDefault(data, compression::set);
+    byte[] compressed = Compressions.maybeCompressDefault(data, compression::set);
     soft.assertThat(compressed).isSameAs(data);
     soft.assertThat(compression.get()).isSameAs(Compression.NONE);
   }
@@ -48,7 +48,7 @@ public class TestCompressions {
   public void doCompress(int len) {
     byte[] data = ("x".repeat(len)).getBytes(UTF_8);
     AtomicReference<Compression> compression = new AtomicReference<>();
-    byte[] compressed = Compressions.compressDefault(data, compression::set);
+    byte[] compressed = Compressions.maybeCompressDefault(data, compression::set);
     soft.assertThat(compressed.length).isLessThan(data.length);
     soft.assertThat(compression.get()).isSameAs(Compression.SNAPPY);
   }

@@ -27,6 +27,8 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
@@ -59,8 +61,8 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   public void serialize(
       PreparedStatement ps,
       Obj obj,
-      int incrementalIndexLimit,
-      int maxSerializedIndexSize,
+      PersistOptions options,
+      SizeLimits limits,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException, ObjTooLargeException {
@@ -71,6 +73,7 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
         ByteString.copyFrom(
             SmileSerialization.serializeObj(
                 obj,
+                options,
                 compression -> {
                   try {
                     ps.setString(
@@ -80,7 +83,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
                   }
                 })),
         databaseSpecific);
-    ;
   }
 
   @Override

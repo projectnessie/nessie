@@ -169,9 +169,9 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
-  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, @Nonnull PersistOptions options)
       throws ObjTooLargeException {
-    return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
+    return delegate.storeObj(obj, options);
   }
 
   @WithSpan
@@ -181,6 +181,17 @@ public class ObservingPersist implements Persist {
   @Nonnull
   public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     return delegate.storeObjs(objs);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  @Nonnull
+  public boolean[] storeObjs(
+      @Nonnull Obj[] objs, @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
+      throws ObjTooLargeException {
+    return delegate.storeObjs(objs, options);
   }
 
   @WithSpan

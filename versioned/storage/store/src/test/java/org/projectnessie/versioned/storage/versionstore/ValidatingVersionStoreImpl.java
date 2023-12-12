@@ -27,6 +27,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundExceptio
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.tests.StorageAssertions;
 import org.projectnessie.versioned.tests.ValidatingVersionStore;
@@ -124,10 +125,11 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
 
     @Override
     public boolean storeObj(
-        @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+        @Nonnull @jakarta.annotation.Nonnull Obj obj,
+        @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
         throws ObjTooLargeException {
       recordWrite();
-      return super.storeObj(obj, ignoreSoftSizeRestrictions);
+      return super.storeObj(obj, options);
     }
 
     @Nonnull
@@ -137,6 +139,17 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
         throws ObjTooLargeException {
       recordWrite();
       return super.storeObjs(objs);
+    }
+
+    @Nonnull
+    @jakarta.annotation.Nonnull
+    @Override
+    public boolean[] storeObjs(
+        @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+        @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
+        throws ObjTooLargeException {
+      recordWrite();
+      return super.storeObjs(objs, options);
     }
   }
 

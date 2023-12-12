@@ -67,6 +67,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackend;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
@@ -358,15 +359,18 @@ public abstract class AbstractExportImport {
 
           @Override
           public boolean storeObj(
-              @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+              @Nonnull @jakarta.annotation.Nonnull Obj obj,
+              @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
               throws ObjTooLargeException {
-            return inmemory.storeObj(obj, ignoreSoftSizeRestrictions);
+            return inmemory.storeObj(obj, options);
           }
 
           @Nonnull
           @jakarta.annotation.Nonnull
           @Override
-          public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+          public boolean[] storeObjs(
+              @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+              @Nonnull @jakarta.annotation.Nonnull PersistOptions options)
               throws ObjTooLargeException {
             boolean[] r = new boolean[objs.length];
             for (int i = 0; i < objs.length; i++) {
@@ -395,7 +399,7 @@ public abstract class AbstractExportImport {
                   continue;
                 }
               }
-              r[i] = inmemory.storeObj(obj);
+              r[i] = inmemory.storeObj(obj, options);
             }
             return r;
           }

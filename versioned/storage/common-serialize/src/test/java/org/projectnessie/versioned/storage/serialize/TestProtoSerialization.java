@@ -62,7 +62,9 @@ import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestProtoSerialization {
@@ -94,10 +96,12 @@ public class TestProtoSerialization {
   @ParameterizedTest
   @MethodSource("objs")
   void objs(Obj obj) throws Exception {
-    byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    byte[] serialized =
+        serializeObj(obj, PersistOptions.NO_SIZE_RESTRICTIONS, SizeLimits.NO_LIMITS);
     Obj deserialized = deserializeObj(obj.id(), serialized);
     Obj deserializedByteBuffer = deserializeObj(obj.id(), ByteBuffer.wrap(serialized));
-    byte[] reserialized = serializeObj(deserialized, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    byte[] reserialized =
+        serializeObj(deserialized, PersistOptions.NO_SIZE_RESTRICTIONS, SizeLimits.NO_LIMITS);
     soft.assertThat(deserialized).isEqualTo(obj).isEqualTo(deserializedByteBuffer);
     soft.assertThat(serialized).isEqualTo(reserialized);
   }

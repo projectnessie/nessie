@@ -25,6 +25,8 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj> {
@@ -48,8 +50,8 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   public void toMap(
       ContentValueObj obj,
       Map<String, AttributeValue> i,
-      int incrementalIndexSize,
-      int maxSerializedIndexSize) {
+      PersistOptions options,
+      SizeLimits limits) {
     i.put(COL_VALUE_CONTENT_ID, fromS(obj.contentId()));
     i.put(COL_VALUE_PAYLOAD, fromS(Integer.toString(obj.payload())));
     bytesAttribute(i, COL_VALUE_DATA, obj.data());

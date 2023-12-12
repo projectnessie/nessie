@@ -23,6 +23,8 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.PersistOptions;
+import org.projectnessie.versioned.storage.common.persist.SizeLimits;
 
 public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
 
@@ -41,8 +43,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public void objToDoc(
-      UniqueIdObj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
+  public void objToDoc(UniqueIdObj obj, Document doc, PersistOptions options, SizeLimits limits) {
     doc.put(COL_UNIQUE_SPACE, obj.space());
     doc.put(COL_UNIQUE_VALUE, bytesToBinary(obj.value()));
   }
