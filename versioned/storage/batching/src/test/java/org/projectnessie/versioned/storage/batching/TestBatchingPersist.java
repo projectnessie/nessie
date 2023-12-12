@@ -226,7 +226,11 @@ public class TestBatchingPersist {
 
   private BatchingPersistImpl batching(Persist base) {
     return (BatchingPersistImpl)
-        WriteBatching.builder().persist(base).batchSize(21).build().create();
+        WriteBatching.builder()
+            .persist(base)
+            .batchSize((int) allObjectTypeSamples().count())
+            .build()
+            .create();
   }
 
   static Stream<Obj> allObjectTypeSamples() {

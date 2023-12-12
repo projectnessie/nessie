@@ -60,7 +60,7 @@ public final class SmileSerialization {
   public static Obj deserializeObj(
       ObjId id, byte[] data, Class<? extends Obj> targetClass, String compression) {
     try {
-      ObjectReader reader = ObjIdHelper.storeObjIdInContext(SMILE_MAPPER, id);
+      ObjectReader reader = ObjIdHelper.readerWithObjId(SMILE_MAPPER, targetClass, id);
       data = Compressions.uncompress(Compression.fromValue(compression), data);
       return reader.readValue(data, targetClass);
     } catch (IOException e) {

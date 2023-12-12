@@ -15,23 +15,30 @@
  */
 package org.projectnessie.versioned.storage.common.json;
 
-import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.annotation.JacksonInject;
+import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 public final class ObjIdHelper {
 
-  private static final String DESERIALIZATION_CTX_ATTR_KEY = "nessie.storage.ObjId";
+  /**
+   * The key used to store the injectable {@link ObjId} instance, representing the id of the object
+   * being deserialized. Meant to be used in methods and constructor parameters annotated with
+   * {@link JacksonInject}.
+   */
+  public static final String OBJ_ID_KEY = "nessie.storage.ObjId";
 
-  /** Retrieves an {@link ObjId} from the {@link DeserializationContext}. */
-  public static ObjId retrieveObjIdFromContext(DeserializationContext ctx) {
-    return (ObjId) ctx.getAttribute(DESERIALIZATION_CTX_ATTR_KEY);
-  }
-
-  /** Returns an {@link ObjectReader} having the {@link ObjId} stored in its context attributes. */
-  public static ObjectReader storeObjIdInContext(ObjectMapper mapper, ObjId id) {
-    return mapper.reader().withAttribute(DESERIALIZATION_CTX_ATTR_KEY, id);
+  /**
+   * Returns an {@link ObjectReader} for the given target {@link Obj} class and with the given
+   * {@link ObjId} injectable under the key {@link #OBJ_ID_KEY}.
+   */
+  public static ObjectReader readerWithObjId(
+      ObjectMapper mapper, Class<? extends Obj> targetClass, ObjId id) {
+    InjectableValues values = new InjectableValues.Std().addValue(OBJ_ID_KEY, id);
+    return mapper.reader(values).forType(targetClass);
   }
 
   private ObjIdHelper() {}

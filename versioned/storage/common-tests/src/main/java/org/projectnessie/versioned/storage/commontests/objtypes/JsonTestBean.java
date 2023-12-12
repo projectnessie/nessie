@@ -15,26 +15,11 @@
  */
 package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import org.projectnessie.versioned.storage.common.persist.ObjType;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.immutables.value.Value;
 
-public final class SimpleCustomObjType implements ObjType {
-
-  public static final SimpleCustomObjType INSTANCE = new SimpleCustomObjType();
-
-  private SimpleCustomObjType() {}
-
-  @Override
-  public String name() {
-    return "test";
-  }
-
-  @Override
-  public String shortName() {
-    return "tt";
-  }
-
-  @Override
-  public Class<SimpleCustomObj> targetClass() {
-    return SimpleCustomObj.class;
-  }
-}
+@Value.Immutable
+@JsonSerialize(as = ImmutableJsonTestBean.class)
+@JsonDeserialize(as = ImmutableJsonTestBean.class)
+public interface JsonTestBean extends SimpleTestBean {}
