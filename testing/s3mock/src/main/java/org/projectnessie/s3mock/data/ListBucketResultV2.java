@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonRootName("ListBucketResult")
@@ -49,7 +49,6 @@ public interface ListBucketResultV2 extends ListBucketResultBase {
 
   @JsonProperty("ContinuationToken")
   @Nullable
-  @jakarta.annotation.Nullable
   String continuationToken();
 
   @JsonProperty("KeyCount")
@@ -57,11 +56,9 @@ public interface ListBucketResultV2 extends ListBucketResultBase {
 
   @JsonProperty("NextContinuationToken")
   @Nullable
-  @jakarta.annotation.Nullable
   String nextContinuationToken();
 
   @JsonProperty("StartAfter")
   @Nullable
-  @jakarta.annotation.Nullable
   String startAfter();
 }

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** A named reference representing a branch. */
@@ -29,8 +29,7 @@ public interface BranchName extends NamedRef {
    * @return an instance of {@code BranchName} for the provided name
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static BranchName of(@Nonnull @jakarta.annotation.Nonnull String name) {
+  static BranchName of(@Nonnull String name) {
     return ImmutableBranchName.builder().name(name).build();
   }
 }

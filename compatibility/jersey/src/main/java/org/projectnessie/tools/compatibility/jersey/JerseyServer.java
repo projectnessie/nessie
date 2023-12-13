@@ -17,12 +17,14 @@ package org.projectnessie.tools.compatibility.jersey;
 
 import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
 
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.ws.rs.core.Application;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.enterprise.inject.spi.Extension;
-import javax.ws.rs.core.Application;
 import org.glassfish.jersey.message.DeflateEncoder;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -172,20 +174,24 @@ public class JerseyServer implements AutoCloseable {
 
   private static void withJavaxClass(
       String javaxClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
-    try {
-      Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(javaxClassName);
-      whenClassExists.accept(clazz);
-    } catch (NoClassDefFoundError | ClassNotFoundException e) {
+    Iterator<String> classNames =
+        List.of(
+                javaxClassName,
+                javaxClassName.replace("restjavax.", "restjakarta."),
+                javaxClassName.replace("restjavax.", "rest."))
+            .iterator();
+    while (classNames.hasNext()) {
+      String className = classNames.next();
       try {
-        Class<?> clazz =
-            Thread.currentThread()
-                .getContextClassLoader()
-                .loadClass(javaxClassName.replace("restjavax.", "rest."));
+        Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
         whenClassExists.accept(clazz);
-      } catch (NoClassDefFoundError | ClassNotFoundException e2) {
-        e.addSuppressed(e2);
-        if (mandatory) {
-          throw new RuntimeException(e);
+        break;
+      } catch (NoClassDefFoundError | ClassNotFoundException e) {
+        if (!classNames.hasNext()) {
+          if (mandatory) {
+            throw new RuntimeException(e);
+          }
+          return;
         }
       }
     }

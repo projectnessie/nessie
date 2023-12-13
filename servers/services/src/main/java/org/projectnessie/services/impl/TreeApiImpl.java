@@ -45,6 +45,7 @@ import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nullable;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,7 +64,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
@@ -624,7 +624,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public MergeResponse transplantCommitsIntoBranch(
       String branchName,
       String expectedHash,
-      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
+      @Nullable CommitMeta commitMeta,
       List<String> hashesToTransplant,
       String fromRefName,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
@@ -720,7 +720,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String expectedHash,
       String fromRefName,
       String fromHash,
-      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
+      @Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeBehavior,
       Boolean dryRun,
@@ -1138,7 +1138,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   private static ReferenceMetadata extractReferenceMetadata(ReferenceInfo<CommitMeta> refWithHash) {
     ImmutableReferenceMetadata.Builder builder = ImmutableReferenceMetadata.builder();
     boolean found = false;

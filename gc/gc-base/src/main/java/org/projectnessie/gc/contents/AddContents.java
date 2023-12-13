@@ -15,10 +15,10 @@
  */
 package org.projectnessie.gc.contents;
 
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
 
 /**

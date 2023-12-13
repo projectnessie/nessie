@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
@@ -40,12 +40,10 @@ public interface MergeResult<COMMIT> extends Result {
 
   /** Commit-ID of the target branch after the merge/transplant operation. */
   @Nullable
-  @jakarta.annotation.Nullable
   Hash getResultantTargetHash();
 
   /** Commit-ID of the identified common ancestor, only returned for a merge operation. */
   @Nullable
-  @jakarta.annotation.Nullable
   Hash getCommonAncestor();
 
   /** The source ref. */
@@ -59,7 +57,6 @@ public interface MergeResult<COMMIT> extends Result {
 
   /** The expected commit-ID of the target branch, as specified by the caller. */
   @Nullable
-  @jakarta.annotation.Nullable
   Hash getExpectedHash();
 
   /** List of commit-IDs to be merged or transplanted. */
@@ -71,7 +68,6 @@ public interface MergeResult<COMMIT> extends Result {
    * the expected hash was provided.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
   List<COMMIT> getTargetCommits();
 
@@ -114,7 +110,6 @@ public interface MergeResult<COMMIT> extends Result {
 
     /** Optional message, usually present in case of a conflict. */
     @Nullable
-    @jakarta.annotation.Nullable
     @Value.Parameter(order = 3)
     Conflict getConflict();
 

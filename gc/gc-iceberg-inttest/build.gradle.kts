@@ -108,7 +108,6 @@ dependencies {
 
   intTestRuntimeOnly(libs.logback.classic)
 
-  // javax/jakarta
   intTestCompileOnly(libs.jakarta.validation.api)
   intTestCompileOnly(libs.jakarta.annotation.api)
 

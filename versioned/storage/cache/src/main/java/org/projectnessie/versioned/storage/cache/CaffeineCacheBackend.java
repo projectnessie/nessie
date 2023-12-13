@@ -23,8 +23,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -46,7 +46,6 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   abstract long capacity();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract MeterRegistry meterRegistry();
 
   @Value.Derived
@@ -63,7 +62,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
-  public Persist wrap(@Nonnull @jakarta.annotation.Nonnull Persist persist) {
+  public Persist wrap(@Nonnull Persist persist) {
     ObjCacheImpl cache = new ObjCacheImpl(this, persist.config().repositoryId());
     return new CachingPersistImpl(persist, cache);
   }
@@ -73,18 +72,14 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
-  public Obj get(
-      @Nonnull @jakarta.annotation.Nonnull String repositoryId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKey key = cacheKey(repositoryId, id);
     byte[] bytes = cache().getIfPresent(key);
     return bytes != null ? ProtoSerialization.deserializeObj(id, bytes) : null;
   }
 
   @Override
-  public void put(
-      @Nonnull @jakarta.annotation.Nonnull String repositoryId,
-      @Nonnull @jakarta.annotation.Nonnull Obj obj) {
+  public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {
     CacheKey key = cacheKey(repositoryId, obj.id());
     try {
       cache().put(key, serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -95,15 +90,13 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
-  public void remove(
-      @Nonnull @jakarta.annotation.Nonnull String repositoryId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void remove(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKey key = cacheKey(repositoryId, id);
     cache().invalidate(key);
   }
 
   @Override
-  public void clear(@Nonnull @jakarta.annotation.Nonnull String repositoryId) {
+  public void clear(@Nonnull String repositoryId) {
     cache().asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
   }
 

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonRootName("ListBucketResult")
@@ -45,11 +45,9 @@ public interface ListBucketResult extends ListBucketResultBase {
 
   @JsonProperty("Marker")
   @Nullable
-  @jakarta.annotation.Nullable
   String marker();
 
   @JsonProperty("NextMarker")
   @Nullable
-  @jakarta.annotation.Nullable
   String nextMarker();
 }

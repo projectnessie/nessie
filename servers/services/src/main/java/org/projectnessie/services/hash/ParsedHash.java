@@ -21,11 +21,11 @@ import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_ME
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN;
 import static org.projectnessie.versioned.RelativeCommitSpec.parseRelativeSpecs;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.RelativeCommitSpec;
@@ -58,8 +58,7 @@ interface ParsedHash {
   }
 
   static Optional<ParsedHash> parse(
-      @Nullable @jakarta.annotation.Nullable String hashOrRelativeSpec,
-      @Nonnull @jakarta.annotation.Nonnull Hash noAncestorHash) {
+      @Nullable String hashOrRelativeSpec, @Nonnull Hash noAncestorHash) {
     requireNonNull(noAncestorHash, "noAncestorHash");
     if (hashOrRelativeSpec == null || hashOrRelativeSpec.isEmpty()) {
       return Optional.empty();

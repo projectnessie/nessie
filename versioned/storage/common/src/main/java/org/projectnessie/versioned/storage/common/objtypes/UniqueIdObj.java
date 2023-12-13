@@ -17,9 +17,9 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.uniqueIdHash;
 
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
@@ -42,7 +42,6 @@ public interface UniqueIdObj extends Obj {
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   /** The "ID space", for example {@code content-id}. */

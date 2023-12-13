@@ -38,14 +38,14 @@ import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.protobuf.ByteString;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
@@ -62,8 +62,7 @@ final class BigTableBackend implements Backend {
   final String tableRefs;
   final String tableObjs;
 
-  BigTableBackend(
-      @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config, boolean closeClient) {
+  BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
     this.dataClient = config.dataClient();
     this.tableAdminClient = config.tableAdminClient();
     this.tableRefs =
@@ -74,20 +73,17 @@ final class BigTableBackend implements Backend {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   BigtableDataClient client() {
     return dataClient;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   BigtableTableAdminClient adminClient() {
     return tableAdminClient;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public PersistFactory createFactory() {
     return new BigTablePersistFactory(this);
   }

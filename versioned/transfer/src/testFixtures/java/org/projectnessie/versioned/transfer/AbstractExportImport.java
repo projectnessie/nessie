@@ -27,6 +27,8 @@ import static org.projectnessie.versioned.transfer.ExportImportConstants.EXPORT_
 import static org.projectnessie.versioned.transfer.ExportImportConstants.HEADS_AND_FORKS;
 import static org.projectnessie.versioned.transfer.ExportImportTestUtil.intToObjId;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
@@ -41,8 +43,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -142,7 +142,6 @@ public abstract class AbstractExportImport {
                   .iterator();
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public PagingToken tokenForKey(String key) {
             return null;
@@ -254,56 +253,48 @@ public abstract class AbstractExportImport {
     Persist importPersist =
         new Persist() {
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public String name() {
             return inmemory.name();
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public StoreConfig config() {
             return inmemory.config();
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+          public Reference addReference(@Nonnull Reference reference)
               throws RefAlreadyExistsException {
             return inmemory.addReference(reference);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public Reference markReferenceAsDeleted(
-              @Nonnull @jakarta.annotation.Nonnull Reference reference)
+          public Reference markReferenceAsDeleted(@Nonnull Reference reference)
               throws RefNotFoundException, RefConditionFailedException {
             return inmemory.markReferenceAsDeleted(reference);
           }
 
           @Override
-          public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+          public void purgeReference(@Nonnull Reference reference)
               throws RefNotFoundException, RefConditionFailedException {
             inmemory.purgeReference(reference);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public Reference updateReferencePointer(
-              @Nonnull @jakarta.annotation.Nonnull Reference reference,
-              @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+              @Nonnull Reference reference, @Nonnull ObjId newPointer)
               throws RefNotFoundException, RefConditionFailedException {
             return inmemory.updateReferencePointer(reference, newPointer);
           }
 
           @Nullable
-          @jakarta.annotation.Nullable
           @Override
-          public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+          public Reference fetchReference(@Nonnull String name) {
             if (name.startsWith("refs/heads/branch-")) {
               int refNum = parseInt(name.substring("refs/heads/branch-".length()));
               return reference(
@@ -317,57 +308,45 @@ public abstract class AbstractExportImport {
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+          public Reference[] fetchReferences(@Nonnull String[] names) {
             return inmemory.fetchReferences(names);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-              throws ObjNotFoundException {
+          public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
             return inmemory.fetchObj(id);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public <T extends Obj> T fetchTypedObj(
-              @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
-              throws ObjNotFoundException {
+              @Nonnull ObjId id, ObjType type, Class<T> typeClass) throws ObjNotFoundException {
             return inmemory.fetchTypedObj(id, type, typeClass);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-              throws ObjNotFoundException {
+          public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
             return inmemory.fetchObjType(id);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-              throws ObjNotFoundException {
+          public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
             return inmemory.fetchObjs(ids);
           }
 
           @Override
-          public boolean storeObj(
-              @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+          public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
               throws ObjTooLargeException {
             return inmemory.storeObj(obj, ignoreSoftSizeRestrictions);
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-              throws ObjTooLargeException {
+          public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
             boolean[] r = new boolean[objs.length];
             for (int i = 0; i < objs.length; i++) {
               Obj obj = objs[i];
@@ -401,30 +380,28 @@ public abstract class AbstractExportImport {
           }
 
           @Override
-          public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+          public void deleteObj(@Nonnull ObjId id) {
             throw new UnsupportedOperationException();
           }
 
           @Override
-          public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+          public void deleteObjs(@Nonnull ObjId[] ids) {
             throw new UnsupportedOperationException();
           }
 
           @Override
-          public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) {
+          public void upsertObj(@Nonnull Obj obj) {
             throw new UnsupportedOperationException();
           }
 
           @Override
-          public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) {
+          public void upsertObjs(@Nonnull Obj[] objs) {
             throw new UnsupportedOperationException();
           }
 
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
-          public CloseableIterator<Obj> scanAllObjects(
-              @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+          public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
             throw new UnsupportedOperationException();
           }
 

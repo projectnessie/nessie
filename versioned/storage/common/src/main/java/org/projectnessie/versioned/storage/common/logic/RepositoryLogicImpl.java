@@ -32,12 +32,12 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -68,13 +68,13 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   }
 
   @Override
-  public void initialize(@Nonnull @jakarta.annotation.Nonnull String defaultBranchName) {
+  public void initialize(@Nonnull String defaultBranchName) {
     initialize(defaultBranchName, true, b -> {});
   }
 
   @Override
   public void initialize(
-      @Nonnull @jakarta.annotation.Nonnull String defaultBranchName,
+      @Nonnull String defaultBranchName,
       boolean createDefaultBranch,
       Consumer<RepositoryDescription.Builder> repositoryDescription) {
     initializeInternalRef(REF_REFS, b -> {});
@@ -109,7 +109,6 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public RepositoryDescription fetchRepositoryDescription() {
     try {

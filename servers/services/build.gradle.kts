@@ -17,9 +17,8 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  id("nessie-conventions-server8")
+  id("nessie-conventions-server")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 extra["maven.name"] = "Nessie - Services"
@@ -37,11 +36,8 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
   implementation(libs.guava)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
@@ -79,7 +75,6 @@ dependencies {
   testRuntimeOnly(libs.agroal.pool)
   testRuntimeOnly(libs.h2)
 
-  // javax/jakarta
   testCompileOnly(libs.jakarta.annotation.api)
 
   testFixturesCompileOnly(libs.microprofile.openapi)
@@ -94,11 +89,4 @@ dependencies {
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.withType<Test>().configureEach { this.enabled = false }
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }

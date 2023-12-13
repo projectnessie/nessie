@@ -21,8 +21,8 @@ import static org.projectnessie.gc.iceberg.mocks.IcebergFileIOMocking.manifestFi
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Nullable;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.apache.iceberg.io.OutputFile;
 import org.immutables.value.Value;
 
@@ -44,7 +44,6 @@ public abstract class MockSnapshot {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String manifestListLocation();
 
   @Value.Default

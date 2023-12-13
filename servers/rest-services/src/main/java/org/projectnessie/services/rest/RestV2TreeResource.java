@@ -21,10 +21,10 @@ import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Locale;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
 import org.projectnessie.api.v2.http.HttpTreeApi;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.api.v2.params.DiffParams;
@@ -69,7 +69,6 @@ import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
 public class RestV2TreeResource implements HttpTreeApi {
 
   private final ConfigService configService;
@@ -83,7 +82,6 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestV2TreeResource(
       ConfigService configService,
       TreeService treeService,

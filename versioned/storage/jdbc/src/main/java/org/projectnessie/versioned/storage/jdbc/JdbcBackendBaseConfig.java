@@ -15,15 +15,13 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 public interface JdbcBackendBaseConfig {
 
   @Nullable
-  @jakarta.annotation.Nullable
   String catalog();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String schema();
 }

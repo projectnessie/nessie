@@ -18,11 +18,11 @@ package org.projectnessie.versioned.storage.common.logic;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.emptyImmutableIndex;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -37,60 +37,41 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 public interface IndexesLogic {
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Supplier<SuppliedCommitIndex> createIndexSupplier(
-      @Nonnull @jakarta.annotation.Nonnull Supplier<ObjId> commitIdSupplier);
+  Supplier<SuppliedCommitIndex> createIndexSupplier(@Nonnull Supplier<ObjId> commitIdSupplier);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   StoreIndex<CommitOp> buildCompleteIndex(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
-      Optional<StoreIndex<CommitOp>> loadedIncrementalIndex);
+      @Nonnull CommitObj commit, Optional<StoreIndex<CommitOp>> loadedIncrementalIndex);
 
   /**
    * Similar to {@link #buildCompleteIndex(CommitObj, Optional)}, but returns an empty and immutable
    * index for a {@code null} value for {@code commit}.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  default StoreIndex<CommitOp> buildCompleteIndexOrEmpty(
-      @Nullable @jakarta.annotation.Nullable CommitObj commit) {
+  default StoreIndex<CommitOp> buildCompleteIndexOrEmpty(@Nullable CommitObj commit) {
     return commit != null
         ? buildCompleteIndex(commit, Optional.empty())
         : emptyImmutableIndex(COMMIT_OP_SERIALIZER);
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
-  StoreIndex<CommitOp> buildReferenceIndexOnly(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit);
+  StoreIndex<CommitOp> buildReferenceIndexOnly(@Nonnull CommitObj commit);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  StoreIndex<CommitOp> buildReferenceIndexOnly(
-      @Nonnull @jakarta.annotation.Nonnull ObjId indexId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId);
+  StoreIndex<CommitOp> buildReferenceIndexOnly(@Nonnull ObjId indexId, @Nonnull ObjId commitId);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   StoreIndex<CommitOp> incrementalIndexForUpdate(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
-      Optional<StoreIndex<CommitOp>> loadedIncrementalIndex);
+      @Nonnull CommitObj commit, Optional<StoreIndex<CommitOp>> loadedIncrementalIndex);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  StoreIndex<CommitOp> incrementalIndexFromCommit(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit);
+  StoreIndex<CommitOp> incrementalIndexFromCommit(@Nonnull CommitObj commit);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Iterable<StoreIndexElement<CommitOp>> commitOperations(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commitObj);
+  Iterable<StoreIndexElement<CommitOp>> commitOperations(@Nonnull CommitObj commitObj);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Iterable<StoreIndexElement<CommitOp>> commitOperations(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> index);
+  Iterable<StoreIndexElement<CommitOp>> commitOperations(@Nonnull StoreIndex<CommitOp> index);
 
   /**
    * Store the given striped index, also storing the nested stripes, if necessary.
@@ -100,21 +81,16 @@ public interface IndexesLogic {
    * @throws ObjTooLargeException see {@link Persist#storeObj(Obj)}
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  ObjId persistStripedIndex(@Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
-      throws ObjTooLargeException;
+  ObjId persistStripedIndex(@Nonnull StoreIndex<CommitOp> stripedIndex) throws ObjTooLargeException;
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  List<IndexStripe> persistIndexStripesFromIndex(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
+  List<IndexStripe> persistIndexStripesFromIndex(@Nonnull StoreIndex<CommitOp> stripedIndex)
       throws ObjTooLargeException;
 
   /**
    * Updates, if necessary, all commits in the given commit and all its predecessors to contain
    * {@link CommitObj#incompleteIndex() complete indexes}.
    */
-  void completeIndexesInCommitChain(
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId, Runnable progressCallback)
+  void completeIndexesInCommitChain(@Nonnull ObjId commitId, Runnable progressCallback)
       throws ObjNotFoundException;
 }

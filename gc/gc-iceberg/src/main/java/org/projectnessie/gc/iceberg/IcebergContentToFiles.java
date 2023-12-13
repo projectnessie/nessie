@@ -18,12 +18,12 @@ package org.projectnessie.gc.iceberg;
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ManifestReaderUtil;
 import org.apache.iceberg.Snapshot;
@@ -237,16 +237,13 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   }
 
   static URI baseUri(
-      @Nonnull @jakarta.annotation.Nonnull TableMetadata tableMetadata,
-      @Nonnull @jakarta.annotation.Nonnull ContentReference contentReference) {
+      @Nonnull TableMetadata tableMetadata, @Nonnull ContentReference contentReference) {
     String location = tableMetadata.location();
     URI uri = URI.create(location.endsWith("/") ? location : (location + "/"));
     return checkUri("location", uri, contentReference);
   }
 
-  static URI manifestFileUri(
-      @Nonnull @jakarta.annotation.Nonnull ManifestFile mf,
-      @Nonnull @jakarta.annotation.Nonnull ContentReference contentReference) {
+  static URI manifestFileUri(@Nonnull ManifestFile mf, @Nonnull ContentReference contentReference) {
     String manifestFilePath =
         Preconditions.checkNotNull(
             mf.path(),
@@ -257,9 +254,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     return checkUri("manifest file", manifestFile, contentReference);
   }
 
-  static URI dataFileUri(
-      @Nonnull @jakarta.annotation.Nonnull String dataFilePath,
-      @Nonnull @jakarta.annotation.Nonnull ContentReference contentReference) {
+  static URI dataFileUri(@Nonnull String dataFilePath, @Nonnull ContentReference contentReference) {
     URI uri = URI.create(dataFilePath);
     return checkUri("data file", uri, contentReference);
   }

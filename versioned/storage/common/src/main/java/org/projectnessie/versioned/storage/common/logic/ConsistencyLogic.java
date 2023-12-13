@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -39,7 +39,6 @@ public interface ConsistencyLogic {
 
     @Value.Parameter(order = 2)
     @Nullable
-    @jakarta.annotation.Nullable
     CommitObj commit();
 
     @Value.Parameter(order = 3)

@@ -20,13 +20,13 @@ import static java.util.Collections.emptyList;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 final class ImmutableEmptyIndexImpl<V> implements StoreIndex<V> {
@@ -83,7 +83,7 @@ final class ImmutableEmptyIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element) {
+  public boolean add(@Nonnull StoreIndexElement<V> element) {
     throw new UnsupportedOperationException();
   }
 
@@ -91,31 +91,28 @@ final class ImmutableEmptyIndexImpl<V> implements StoreIndex<V> {
   public void updateAll(Function<StoreIndexElement<V>, V> updater) {}
 
   @Override
-  public boolean remove(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean remove(@Nonnull StoreKey key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public boolean contains(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean contains(@Nonnull StoreKey key) {
     return false;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public StoreIndexElement<V> get(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public StoreIndexElement<V> get(@Nonnull StoreKey key) {
     return null;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey first() {
     return null;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey last() {
     return null;
@@ -127,17 +124,13 @@ final class ImmutableEmptyIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Iterator<StoreIndexElement<V>> iterator(
-      @Nullable @jakarta.annotation.Nullable StoreKey begin,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch) {
+      @Nullable StoreKey begin, @Nullable StoreKey end, boolean prefetch) {
     return emptyIterator();
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public ByteString serialize() {
     ByteBuffer target = ByteBuffer.allocate(estimatedSerializedSize());

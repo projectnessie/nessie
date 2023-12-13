@@ -20,11 +20,11 @@ import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_RE
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_REGEX;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
@@ -39,46 +39,26 @@ import org.projectnessie.versioned.WithHash;
  */
 public interface DiffService {
   <R> R getDiff(
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = REF_NAME_REGEX,
-              message = REF_NAME_MESSAGE)
-          String fromRef,
+      @NotNull @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE) String fromRef,
       @Nullable
-          @jakarta.annotation.Nullable
           @Pattern(
-              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String fromHash,
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = REF_NAME_REGEX,
-              message = REF_NAME_MESSAGE)
-          String toRef,
+      @NotNull @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE) String toRef,
       @Nullable
-          @jakarta.annotation.Nullable
           @Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String toHash,
-      @Nullable @jakarta.annotation.Nullable String pagingToken,
+      @Nullable String pagingToken,
       PagedResponseHandler<R, DiffEntry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> fromReference,
       Consumer<WithHash<NamedRef>> toReference,
-      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
+      @Nullable ContentKey minKey,
+      @Nullable ContentKey maxKey,
       ContentKey prefixKey,
-      @Nullable @jakarta.annotation.Nullable List<ContentKey> requestedKeys,
-      @Nullable @jakarta.annotation.Nullable String filter)
+      @Nullable List<ContentKey> requestedKeys,
+      @Nullable String filter)
       throws NessieNotFoundException;
 }

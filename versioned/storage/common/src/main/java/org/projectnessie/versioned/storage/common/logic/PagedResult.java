@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import jakarta.annotation.Nonnull;
 import java.util.Iterator;
-import javax.annotation.Nonnull;
 
 /**
  * Extends {@link Iterator} with ability to generate a {@link PagingToken} instead of the next
@@ -24,6 +24,5 @@ import javax.annotation.Nonnull;
  */
 public interface PagedResult<E, K> extends Iterator<E> {
   @Nonnull
-  @jakarta.annotation.Nonnull
   PagingToken tokenForKey(K key);
 }

@@ -18,6 +18,8 @@ package org.projectnessie.gc.contents.inmem;
 import static java.util.Collections.emptySet;
 
 import com.google.common.base.Preconditions;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
@@ -32,8 +34,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.ImmutableLiveContentSet;
 import org.projectnessie.gc.contents.LiveContentSet;
@@ -105,7 +105,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   public void finishedIdentifyLiveContents(
       @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
       @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      @Nullable Throwable failure) {
     get(liveSetId)
         .liveContentSet
         .getAndUpdate(
@@ -142,7 +142,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   public LiveContentSet finishedExpireContents(
       @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
       @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      @Nullable Throwable failure) {
     return get(liveSetId)
         .liveContentSet
         .getAndUpdate(

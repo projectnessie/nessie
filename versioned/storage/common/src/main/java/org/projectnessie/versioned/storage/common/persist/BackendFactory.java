@@ -15,20 +15,17 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 public interface BackendFactory<C> {
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   String name();
 
   /** Helper to construct backend configurations from for example property bags. */
   @Nonnull
-  @jakarta.annotation.Nonnull
   C newConfigInstance();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Backend buildBackend(@Nonnull @jakarta.annotation.Nonnull C config);
+  Backend buildBackend(@Nonnull C config);
 }

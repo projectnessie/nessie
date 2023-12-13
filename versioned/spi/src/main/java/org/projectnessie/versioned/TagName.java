@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** A pointer to a hash. */
@@ -29,8 +29,7 @@ public interface TagName extends NamedRef {
    * @return an instance of {@code TagName} for the provided name
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static TagName of(@Nonnull @jakarta.annotation.Nonnull String name) {
+  static TagName of(@Nonnull String name) {
     return ImmutableTagName.builder().name(name).build();
   }
 }

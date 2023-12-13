@@ -23,6 +23,7 @@ import static org.projectnessie.gc.iceberg.inttest.Util.expire;
 import static org.projectnessie.gc.iceberg.inttest.Util.identifyLiveContents;
 import static org.projectnessie.gc.identify.CutoffPolicy.numCommits;
 
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.time.Instant;
 import java.util.HashSet;
@@ -32,7 +33,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -97,7 +97,6 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
 
     @Value.Parameter(order = 1)
     @Nullable
-    @jakarta.annotation.Nullable
     String branch();
 
     @Value.Parameter(order = 2)

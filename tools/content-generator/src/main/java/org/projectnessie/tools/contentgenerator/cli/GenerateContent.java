@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static org.projectnessie.model.ContentKey.fromPathString;
 import static org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.newKeyGenerator;
 
+import jakarta.validation.constraints.Min;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.validation.constraints.Min;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;

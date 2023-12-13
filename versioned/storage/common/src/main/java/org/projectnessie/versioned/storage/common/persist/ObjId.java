@@ -28,10 +28,10 @@ import static org.projectnessie.versioned.storage.common.util.Ser.varIntLen;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.Hashing;
+import jakarta.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
-import javax.annotation.Nonnull;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 public abstract class ObjId {
@@ -83,7 +83,7 @@ public abstract class ObjId {
    * @throws IllegalArgumentException if {@code hash} is not a valid representation of a hash
    * @throws NullPointerException if {@code hash} is {@code null}
    */
-  public static ObjId objIdFromString(@Nonnull @jakarta.annotation.Nonnull String hash) {
+  public static ObjId objIdFromString(@Nonnull String hash) {
     requireNonNull(hash);
     int len = hash.length();
     checkArgument(len % 2 == 0, "hash length needs to be a multiple of two, was %s", len);
@@ -138,7 +138,7 @@ public abstract class ObjId {
    * @return a {@link ObjId} instance
    * @throws NullPointerException if {@code bytes} is {@code null}
    */
-  public static ObjId objIdFromByteBuffer(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+  public static ObjId objIdFromByteBuffer(@Nonnull ByteBuffer bytes) {
     int len = bytes.remaining();
     return fromBytes(len, bytes);
   }
@@ -156,12 +156,12 @@ public abstract class ObjId {
    * @return a {@link ObjId} instance
    * @throws NullPointerException if {@code bytes} is {@code null}
    */
-  public static ObjId deserializeObjId(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+  public static ObjId deserializeObjId(@Nonnull ByteBuffer bytes) {
     int len = readVarInt(bytes);
     return fromBytes(len, bytes);
   }
 
-  public static void skipObjId(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+  public static void skipObjId(@Nonnull ByteBuffer bytes) {
     int len = readVarInt(bytes);
     bytes.position(bytes.position() + len);
   }

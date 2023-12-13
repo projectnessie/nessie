@@ -17,34 +17,31 @@ package org.projectnessie.versioned.storage.common.persist;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import jakarta.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import javax.annotation.Nonnull;
 
 public final class ObjTypes {
 
   /** Returns all registered {@link ObjType}s. */
   @Nonnull
-  @jakarta.annotation.Nonnull
   public static Set<ObjType> allObjTypes() {
     return Registry.OBJ_TYPES;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static ObjType forName(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public static ObjType forName(@Nonnull String name) {
     ObjType type = Registry.BY_NAME.get(name);
     checkArgument(type != null, "Unknown object type name: %s", name);
     return type;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static ObjType forShortName(@Nonnull @jakarta.annotation.Nonnull String shortName) {
+  public static ObjType forShortName(@Nonnull String shortName) {
     ObjType type = Registry.BY_SHORT_NAME.get(shortName);
     checkArgument(type != null, "Unknown object type short name: %s", shortName);
     return type;

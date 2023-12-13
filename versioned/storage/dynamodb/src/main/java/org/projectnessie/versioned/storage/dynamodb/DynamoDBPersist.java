@@ -47,6 +47,8 @@ import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.
 import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.IN;
 
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,8 +56,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -96,7 +96,6 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return DynamoDBBackendFactory.NAME;
@@ -108,17 +107,14 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public StoreConfig config() {
     return config;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
     try {
@@ -136,9 +132,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       reference = reference.withDeleted(false);
@@ -155,11 +150,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       reference = reference.withDeleted(false);
@@ -176,7 +168,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
     String condition = referenceCondition(reference);
@@ -203,8 +195,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(backend.tableRefs).key(referenceKeyMap(name)));
     if (!item.hasItem()) {
@@ -225,9 +216,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     List<Map<String, AttributeValue>> keys =
         new ArrayList<>(Math.min(names.length, BATCH_GET_LIMIT));
     Object2IntHashMap<String> nameToIndex =
@@ -299,8 +289,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
     if (!item.hasItem()) {
@@ -312,9 +301,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
@@ -334,9 +321,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     GetItemResponse item =
         backend
             .client()
@@ -353,10 +338,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     List<Map<String, AttributeValue>> keys = new ArrayList<>(Math.min(ids.length, BATCH_GET_LIMIT));
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -419,10 +402,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
@@ -435,8 +416,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -466,12 +446,12 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     backend.client().deleteItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (ObjId id : ids) {
         if (id != null) {
@@ -482,7 +462,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
@@ -501,8 +481,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (Obj obj : objs) {
@@ -519,10 +498,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
@@ -541,10 +518,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   private Map<String, AttributeValue> objToItem(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, ObjId id, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      @Nonnull Obj obj, ObjId id, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
     ObjType type = obj.type();
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
@@ -568,9 +543,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private Map<String, AttributeValue> referenceAttributeValues(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference) {
+  private Map<String, AttributeValue> referenceAttributeValues(@Nonnull Reference reference) {
     Map<String, AttributeValue> item = new HashMap<>();
     item.put(KEY_NAME, referenceKey(reference.name()));
     DynamoDBSerde.objIdToAttribute(item, COL_REFERENCES_POINTER, reference.pointer());
@@ -586,8 +559,7 @@ public class DynamoDBPersist implements Persist {
     return item;
   }
 
-  private void conditionalReferencePut(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference, Reference expected) {
+  private void conditionalReferencePut(@Nonnull Reference reference, Reference expected) {
     String condition = referenceCondition(expected);
     Map<String, AttributeValue> values = referenceConditionAttributes(expected);
 
@@ -626,27 +598,22 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private AttributeValue referenceKey(@Nonnull @jakarta.annotation.Nonnull String reference) {
+  private AttributeValue referenceKey(@Nonnull String reference) {
     return fromS(keyPrefix + reference);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private Map<String, AttributeValue> referenceKeyMap(
-      @Nonnull @jakarta.annotation.Nonnull String reference) {
+  private Map<String, AttributeValue> referenceKeyMap(@Nonnull String reference) {
     return singletonMap(KEY_NAME, referenceKey(reference));
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private AttributeValue objKey(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  private AttributeValue objKey(@Nonnull ObjId id) {
     return fromS(keyPrefix + id);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private Map<String, AttributeValue> objKeyMap(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  private Map<String, AttributeValue> objKeyMap(@Nonnull ObjId id) {
     return singletonMap(KEY_NAME, objKey(id));
   }
 

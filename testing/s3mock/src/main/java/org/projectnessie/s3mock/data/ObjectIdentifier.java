@@ -16,7 +16,7 @@
 package org.projectnessie.s3mock.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 public interface ObjectIdentifier {
@@ -27,7 +27,6 @@ public interface ObjectIdentifier {
 
   @JsonProperty("VersionId")
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   String versionId();
 }

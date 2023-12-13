@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.exceptions;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 public class RefAlreadyExistsException extends RefException {
@@ -28,7 +28,7 @@ public class RefAlreadyExistsException extends RefException {
    *     reflect the state fetched from the database and <em>never</em> the one of the
    *     create-attempt.
    */
-  public RefAlreadyExistsException(@Nullable @jakarta.annotation.Nullable Reference existing) {
+  public RefAlreadyExistsException(@Nullable Reference existing) {
     super(
         existing,
         existing != null

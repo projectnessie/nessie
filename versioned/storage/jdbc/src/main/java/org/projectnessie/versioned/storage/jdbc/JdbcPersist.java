@@ -18,10 +18,10 @@ package org.projectnessie.versioned.storage.jdbc;
 import static java.util.Collections.singleton;
 import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
 
+import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -139,29 +139,25 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     return withConnection(true, conn -> super.findReference(conn, name));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     return withConnection(true, conn -> super.findReferences(conn, names));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     return withConnectionException(false, conn -> super.addReference(conn, reference));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     return withConnectionExceptions(
         (SQLRunnableExceptions<Reference, RefNotFoundException, RefConditionFailedException>)
@@ -169,7 +165,7 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     withConnectionExceptions(
         (SQLRunnableExceptions<Reference, RefNotFoundException, RefConditionFailedException>)
@@ -181,10 +177,7 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     return withConnectionExceptions(
         (SQLRunnableExceptions<Reference, RefNotFoundException, RefConditionFailedException>)
@@ -193,39 +186,31 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     return withConnectionException(true, conn -> super.fetchObj(conn, id));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     return withConnectionException(true, conn -> super.fetchTypedObj(conn, id, type, typeClass));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     return withConnectionException(true, conn -> super.fetchObjType(conn, id));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     return withConnectionException(true, conn -> super.fetchObjs(conn, ids));
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return withConnectionException(
         false, conn -> super.storeObj(conn, obj, ignoreSoftSizeRestrictions));
@@ -233,30 +218,27 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     return withConnectionException(false, conn -> super.storeObjs(conn, objs));
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     withConnectionVoid(conn -> super.deleteObj(conn, id));
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     withConnectionVoid(conn -> super.deleteObjs(conn, ids));
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     withConnectionException(false, conn -> super.updateObj(conn, obj));
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     withConnectionException(false, conn -> super.updateObjs(conn, objs));
   }
 
@@ -266,10 +248,8 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     try {
       return super.scanAllObjects(backend.borrowConnection(), returnedObjTypes);
     } catch (SQLException e) {

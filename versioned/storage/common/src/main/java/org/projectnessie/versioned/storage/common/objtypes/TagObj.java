@@ -17,7 +17,7 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.tagHash;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -35,24 +35,20 @@ public interface TagObj extends Obj {
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   /** The tag message as plain text. */
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   String message();
 
   /** All headers and values. Headers are multi-valued. */
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   CommitHeaders headers();
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   ByteString signature();
 
   static TagObj tag(ObjId id, String message, CommitHeaders headers, ByteString signature) {

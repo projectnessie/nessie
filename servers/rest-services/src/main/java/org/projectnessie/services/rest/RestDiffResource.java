@@ -18,8 +18,8 @@ package org.projectnessie.services.rest;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import org.projectnessie.api.v1.http.HttpDiffApi;
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
@@ -32,7 +32,6 @@ import org.projectnessie.services.spi.PagedResponseHandler;
 
 /** REST endpoint for the diff-API. */
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
 public class RestDiffResource implements HttpDiffApi {
   // Cannot extend the DiffApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpContentApi or the plain ContentApi. This can lead
@@ -47,7 +46,6 @@ public class RestDiffResource implements HttpDiffApi {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestDiffResource(DiffService diffService) {
     this.diffService = diffService;
   }

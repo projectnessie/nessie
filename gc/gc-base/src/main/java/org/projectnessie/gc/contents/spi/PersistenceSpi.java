@@ -16,13 +16,13 @@
 package org.projectnessie.gc.contents.spi;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.contents.LiveContentSetNotFoundException;
@@ -52,7 +52,7 @@ public interface PersistenceSpi {
   void finishedIdentifyLiveContents(
       @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
       @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure);
+      @Nullable Throwable failure);
 
   LiveContentSet startExpireContents(
       @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
@@ -61,7 +61,7 @@ public interface PersistenceSpi {
   LiveContentSet finishedExpireContents(
       @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
       @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure);
+      @Nullable Throwable failure);
 
   LiveContentSet getLiveContentSet(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId)
       throws LiveContentSetNotFoundException;

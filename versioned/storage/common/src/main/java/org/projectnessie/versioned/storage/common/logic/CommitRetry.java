@@ -23,9 +23,9 @@ import com.google.common.annotations.VisibleForTesting;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import jakarta.annotation.Nonnull;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
@@ -71,7 +71,7 @@ public class CommitRetry {
       this(Optional.empty());
     }
 
-    public RetryException(@Nonnull @jakarta.annotation.Nonnull Optional<?> retryState) {
+    public RetryException(@Nonnull Optional<?> retryState) {
       this.retryState = retryState;
     }
 
@@ -90,9 +90,7 @@ public class CommitRetry {
      * @param retryState The initial call to this function will receive an empty value, subsequent
      *     calls receive the parameter passed to the previous {@link RetryException}.
      */
-    T attempt(
-        @Nonnull @jakarta.annotation.Nonnull Persist persist,
-        @Nonnull @jakarta.annotation.Nonnull Optional<?> retryState)
+    T attempt(@Nonnull Persist persist, @Nonnull Optional<?> retryState)
         throws CommitWrappedException, CommitConflictException, RetryException;
   }
 

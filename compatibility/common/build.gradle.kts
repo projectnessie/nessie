@@ -42,9 +42,7 @@ dependencies {
   implementation(libs.maven.resolver.transport.http)
   implementation(libs.guava)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.enterprise.cdi.api)
-  compileOnly(libs.javax.enterprise.cdi.api)
 
   compileOnly(libs.microprofile.openapi)
 

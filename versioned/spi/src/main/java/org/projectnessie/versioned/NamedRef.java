@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /** A ref that has a name. Includes both branches and tags. */
 public interface NamedRef extends Ref {
@@ -26,6 +26,5 @@ public interface NamedRef extends Ref {
    * @return the reference name
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
   String getName();
 }

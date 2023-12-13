@@ -16,8 +16,8 @@
 package org.projectnessie.gc.expire;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.validation.constraints.NotNull;
 import java.util.stream.Stream;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.model.Content;

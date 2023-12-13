@@ -18,10 +18,10 @@ package org.projectnessie.services.hash;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import jakarta.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.DetachedRef;
@@ -49,8 +49,7 @@ public final class HashResolver {
    *
    * <p>If {@code namedRef} is null, the default branch will be used.
    */
-  public ResolvedHash resolveToHead(@Nullable @jakarta.annotation.Nullable String namedRef)
-      throws ReferenceNotFoundException {
+  public ResolvedHash resolveToHead(@Nullable String namedRef) throws ReferenceNotFoundException {
     checkArgument(
         namedRef == null || !namedRef.equals(DetachedRef.REF_NAME),
         "Cannot resolve DETACHED to HEAD");
@@ -68,9 +67,7 @@ public final class HashResolver {
    *
    * <p>If {@code namedRef} is null, the default branch will be used.
    */
-  public ResolvedHash resolveHashOnRef(
-      @Nullable @jakarta.annotation.Nullable String namedRef,
-      @Nullable @jakarta.annotation.Nullable String hashOnRef)
+  public ResolvedHash resolveHashOnRef(@Nullable String namedRef, @Nullable String hashOnRef)
       throws ReferenceNotFoundException {
     return resolveHashOnRef(namedRef, hashOnRef, HashValidator.DEFAULT);
   }
@@ -80,9 +77,7 @@ public final class HashResolver {
    * HashValidator}.
    */
   public ResolvedHash resolveHashOnRef(
-      @Nullable @jakarta.annotation.Nullable String namedRef,
-      @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      HashValidator validator)
+      @Nullable String namedRef, @Nullable String hashOnRef, HashValidator validator)
       throws ReferenceNotFoundException {
     if (null == namedRef) {
       namedRef = config.getDefaultBranch();
@@ -109,9 +104,7 @@ public final class HashResolver {
    * <p>See {@link #resolveHashOnRef(String, String)} for important caveats.
    */
   public ResolvedHash resolveHashOnRef(
-      ResolvedHash head,
-      @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      HashValidator validator)
+      ResolvedHash head, @Nullable String hashOnRef, HashValidator validator)
       throws ReferenceNotFoundException {
     return resolveHashOnRef(head.getNamedRef(), head.getHead().orElse(null), hashOnRef, validator);
   }
@@ -126,10 +119,7 @@ public final class HashResolver {
    * <p>See {@link #resolveHashOnRef(String, String)} for important caveats.
    */
   public ResolvedHash resolveHashOnRef(
-      NamedRef ref,
-      @Nullable @jakarta.annotation.Nullable Hash currentHead,
-      @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      HashValidator validator)
+      NamedRef ref, @Nullable Hash currentHead, @Nullable String hashOnRef, HashValidator validator)
       throws ReferenceNotFoundException {
     checkState(currentHead != null || hashOnRef != null);
     Optional<ParsedHash> parsed = ParsedHash.parse(hashOnRef, store.noAncestorHash());

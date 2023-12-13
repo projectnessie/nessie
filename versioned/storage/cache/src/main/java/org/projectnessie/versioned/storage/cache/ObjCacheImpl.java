@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -29,17 +29,17 @@ final class ObjCacheImpl implements ObjCache {
   }
 
   @Override
-  public Obj get(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public Obj get(@Nonnull ObjId id) {
     return backend.get(repositoryId, id);
   }
 
   @Override
-  public void put(@Nonnull @jakarta.annotation.Nonnull Obj obj) {
+  public void put(@Nonnull Obj obj) {
     backend.put(repositoryId, obj);
   }
 
   @Override
-  public void remove(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void remove(@Nonnull ObjId id) {
     backend.remove(repositoryId, id);
   }
 

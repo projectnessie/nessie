@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,7 +23,6 @@ import java.sql.Types;
 import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
-import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 public final class DatabaseSpecifics {
@@ -61,7 +61,6 @@ public final class DatabaseSpecifics {
   }
 
   @Nonnull
-  @jakarta.validation.constraints.NotNull
   private static DatabaseSpecific detect(Connection conn) {
     try {
       String productName = conn.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);

@@ -20,11 +20,11 @@ import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_RE
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_REGEX;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.Valid;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
@@ -39,24 +39,12 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 public interface ContentService {
 
   ContentResponse getContent(
-      @Valid @jakarta.validation.Valid ContentKey key,
-      @Valid
-          @jakarta.validation.Valid
-          @Nullable
-          @jakarta.annotation.Nullable
-          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = REF_NAME_REGEX,
-              message = REF_NAME_MESSAGE)
+      @Valid ContentKey key,
+      @Valid @Nullable @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           String namedRef,
       @Valid
-          @jakarta.validation.Valid
           @Nullable
-          @jakarta.annotation.Nullable
           @Pattern(
-              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
@@ -64,28 +52,15 @@ public interface ContentService {
       throws NessieNotFoundException;
 
   GetMultipleContentsResponse getMultipleContents(
-      @Valid
-          @jakarta.validation.Valid
-          @Nullable
-          @jakarta.annotation.Nullable
-          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = REF_NAME_REGEX,
-              message = REF_NAME_MESSAGE)
+      @Valid @Nullable @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           String namedRef,
       @Valid
-          @jakarta.validation.Valid
           @Nullable
-          @jakarta.annotation.Nullable
           @Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
-      @Valid @jakarta.validation.Valid @Size @jakarta.validation.constraints.Size(min = 1)
-          List<ContentKey> keys,
+      @Valid @Size @jakarta.validation.constraints.Size(min = 1) List<ContentKey> keys,
       boolean withDocumentation)
       throws NessieNotFoundException;
 }

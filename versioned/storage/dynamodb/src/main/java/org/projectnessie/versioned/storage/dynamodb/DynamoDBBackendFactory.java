@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.dynamodb;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class DynamoDBBackendFactory implements BackendFactory<DynamoDBBackendConfig> {
@@ -24,23 +24,19 @@ public class DynamoDBBackendFactory implements BackendFactory<DynamoDBBackendCon
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public DynamoDBBackendConfig newConfigInstance() {
     return DynamoDBBackendConfig.builder().build();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public DynamoDBBackend buildBackend(
-      @Nonnull @jakarta.annotation.Nonnull DynamoDBBackendConfig config) {
+  public DynamoDBBackend buildBackend(@Nonnull DynamoDBBackendConfig config) {
     return new DynamoDBBackend(config, false);
   }
 }

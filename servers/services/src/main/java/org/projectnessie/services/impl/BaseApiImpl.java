@@ -24,13 +24,13 @@ import static org.projectnessie.services.cel.CELUtil.forCel;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nullable;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.CommitMeta;
@@ -125,8 +125,7 @@ public abstract class BaseApiImpl {
   }
 
   protected MetadataRewriter<CommitMeta> commitMetaUpdate(
-      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
-      IntFunction<String> squashMessage) {
+      @Nullable CommitMeta commitMeta, IntFunction<String> squashMessage) {
     Principal principal = getPrincipal();
     String committer = principal == null ? "" : principal.getName();
     return new DefaultMetadataRewriter(committer, Instant.now(), commitMeta, squashMessage);

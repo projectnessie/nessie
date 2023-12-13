@@ -15,8 +15,8 @@
  */
 package org.projectnessie.services.authz;
 
+import jakarta.annotation.Nullable;
 import java.security.Principal;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -27,7 +27,6 @@ public abstract class ServerAccessContext implements AccessContext {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Principal user();
 
   public static ServerAccessContext of(String operationId, Principal principal) {

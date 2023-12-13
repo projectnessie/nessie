@@ -15,22 +15,19 @@
  */
 package org.projectnessie.services.rest;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.validation.executable.ExecutableType;
+import jakarta.validation.executable.ValidateOnExecution;
 import java.security.Principal;
 import java.util.function.Supplier;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.validation.executable.ExecutableType;
-import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
-@jakarta.validation.executable.ValidateOnExecution(
-    type = jakarta.validation.executable.ExecutableType.ALL)
 public class RestTreeService extends TreeApiImpl {
   // Mandated by CDI 2.0
   public RestTreeService() {
@@ -38,7 +35,6 @@ public class RestTreeService extends TreeApiImpl {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestTreeService(
       ServerConfig config,
       VersionStore store,

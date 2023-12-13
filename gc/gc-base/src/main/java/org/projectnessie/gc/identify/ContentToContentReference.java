@@ -15,7 +15,7 @@
  */
 package org.projectnessie.gc.identify;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;

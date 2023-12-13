@@ -15,23 +15,22 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 
 /** Logic to setup/initialize a Nessie repository. */
 public interface RepositoryLogic {
 
-  void initialize(@Nonnull @jakarta.annotation.Nonnull String defaultBranchName);
+  void initialize(@Nonnull String defaultBranchName);
 
   void initialize(
-      @Nonnull @jakarta.annotation.Nonnull String defaultBranchName,
+      @Nonnull String defaultBranchName,
       boolean createDefaultBranch,
       Consumer<RepositoryDescription.Builder> repositoryDescription);
 
   @Nullable
-  @jakarta.annotation.Nullable
   RepositoryDescription fetchRepositoryDescription();
 
   /**
@@ -43,7 +42,6 @@ public interface RepositoryLogic {
    * @throws RetryTimeoutException if the update failed after all retries.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   RepositoryDescription updateRepositoryDescription(RepositoryDescription repositoryDescription)
       throws RetryTimeoutException;
 

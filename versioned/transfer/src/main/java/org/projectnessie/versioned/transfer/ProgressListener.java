@@ -15,13 +15,13 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 
 @FunctionalInterface
 public interface ProgressListener {
-  default void progress(@Nonnull @jakarta.annotation.Nonnull ProgressEvent type) {
+  default void progress(@Nonnull ProgressEvent type) {
     progress(type, null);
   }
 
@@ -29,7 +29,5 @@ public interface ProgressListener {
    * Reports a progress event. The {@code exportMeta} parameter is only valid for {@link
    * ProgressEvent#END_META}.
    */
-  void progress(
-      @Nonnull @jakarta.annotation.Nonnull ProgressEvent type,
-      @Nullable @jakarta.annotation.Nullable ExportMeta exportMeta);
+  void progress(@Nonnull ProgressEvent type, @Nullable ExportMeta exportMeta);
 }

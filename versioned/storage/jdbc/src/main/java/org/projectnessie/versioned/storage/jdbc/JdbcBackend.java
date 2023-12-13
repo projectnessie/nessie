@@ -37,6 +37,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_REFS;
 
 import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,7 +50,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
@@ -64,8 +64,8 @@ final class JdbcBackend implements Backend {
   private final String createTableObjsSql;
 
   JdbcBackend(
-      @Nonnull @jakarta.annotation.Nonnull JdbcBackendConfig config,
-      @Nonnull @jakarta.annotation.Nonnull DatabaseSpecific databaseSpecific,
+      @Nonnull JdbcBackendConfig config,
+      @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {
     this.config = config;
     this.dataSource = config.dataSource();
@@ -159,7 +159,6 @@ final class JdbcBackend implements Backend {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public PersistFactory createFactory() {
     return new JdbcPersistFactory(this);

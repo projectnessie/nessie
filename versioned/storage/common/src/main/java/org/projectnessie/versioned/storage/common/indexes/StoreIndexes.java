@@ -18,9 +18,9 @@ package org.projectnessie.versioned.storage.common.indexes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.versioned.storage.common.indexes.IndexLoader.notLoading;
 
+import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 
@@ -101,8 +101,8 @@ public final class StoreIndexes {
    * @param indexLoader the bulk-loading capable lazy index loader
    */
   public static <V> StoreIndex<V> indexFromSplits(
-      @Nonnull @jakarta.annotation.Nonnull List<StoreIndex<V>> stripes,
-      @Nonnull @jakarta.annotation.Nonnull List<StoreKey> firstLastKeys,
+      @Nonnull List<StoreIndex<V>> stripes,
+      @Nonnull List<StoreKey> firstLastKeys,
       IndexLoader<V> indexLoader) {
     @SuppressWarnings("unchecked")
     StoreIndex<V>[] stripesArr = stripes.toArray(new StoreIndex[0]);

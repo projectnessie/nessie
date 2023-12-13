@@ -18,7 +18,7 @@ package org.projectnessie.gc.iceberg.mocks;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.iceberg.BridgeToIceberg;
@@ -42,11 +42,9 @@ public abstract class MockManifestEntry implements IndexedRecord {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Long snapshotId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Long sequenceNumber();
 
   public abstract String filePath();

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.services.authz;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -30,32 +30,26 @@ public interface Check {
   CheckType type();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   NamedRef ref();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 3)
   ContentKey key();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 4)
   String contentId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 5)
   Content.Type contentType();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 6)
   IdentifiedContentKey identifiedKey();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 7)
   RepositoryConfig.Type repositoryConfigType();
 
@@ -67,14 +61,12 @@ public interface Check {
     return ImmutableCheck.of(type, null, null, null, null, null, repositoryConfigType);
   }
 
-  static Check check(CheckType type, @Nullable @jakarta.annotation.Nullable NamedRef ref) {
+  static Check check(CheckType type, @Nullable NamedRef ref) {
     return ImmutableCheck.of(type, ref, null, null, null, null, null);
   }
 
   static Check check(
-      CheckType type,
-      @Nullable @jakarta.annotation.Nullable NamedRef ref,
-      @Nullable @jakarta.annotation.Nullable IdentifiedContentKey identifiedKey) {
+      CheckType type, @Nullable NamedRef ref, @Nullable IdentifiedContentKey identifiedKey) {
     if (identifiedKey != null) {
       IdentifiedContentKey.IdentifiedElement element = identifiedKey.lastElement();
       return ImmutableCheck.of(
