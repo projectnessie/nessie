@@ -22,6 +22,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))

@@ -44,5 +44,10 @@ public class ServerConfigExtension implements Extension {
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
         .produceWith(i -> SERVER_CONFIG);
+    abd.addBean()
+        .addType(ExceptionConfig.class)
+        .addQualifier(Default.Literal.INSTANCE)
+        .scope(ApplicationScoped.class)
+        .produceWith(i -> SERVER_CONFIG);
   }
 }

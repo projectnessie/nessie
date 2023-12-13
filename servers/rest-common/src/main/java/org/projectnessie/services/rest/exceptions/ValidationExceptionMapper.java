@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.restjakarta;
+package org.projectnessie.services.rest.exceptions;
 
-import jakarta.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.ValidationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.projectnessie.error.ErrorCode;
-import org.projectnessie.services.config.ServerConfig;
 
 /**
  * "Special" implementation for exceptions that extend {@link ValidationException}, as those do not
@@ -29,18 +28,12 @@ import org.projectnessie.services.config.ServerConfig;
  * for the Nessie-server.
  */
 @Provider
+@ApplicationScoped
 public class ValidationExceptionMapper extends BaseExceptionMapper<ValidationException> {
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public ValidationExceptionMapper() {
-    this(null);
-  }
-
-  @Inject
-  public ValidationExceptionMapper(ServerConfig config) {
-    super(config);
-  }
+  public ValidationExceptionMapper() {}
 
   @Override
   public Response toResponse(ValidationException exception) {

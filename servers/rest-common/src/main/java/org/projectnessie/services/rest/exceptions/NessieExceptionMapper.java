@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.restjakarta;
+package org.projectnessie.services.rest.exceptions;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotSupportedException;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.util.stream.Collectors;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
-import org.projectnessie.services.authz.AccessCheckException;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,19 +35,13 @@ import org.slf4j.LoggerFactory;
  * (internal server errors) with a JSON-serialized {@link org.projectnessie.error.NessieError}.
  */
 @Provider
+@ApplicationScoped
 public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public NessieExceptionMapper() {
-    this(null);
-  }
-
-  @Inject
-  public NessieExceptionMapper(ServerConfig config) {
-    super(config);
-  }
+  public NessieExceptionMapper() {}
 
   @Override
   public Response toResponse(Exception exception) {
@@ -70,16 +60,6 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
         || exception instanceof JsonMappingException
         || exception instanceof IllegalArgumentException) {
       errorCode = ErrorCode.BAD_REQUEST;
-      message = exception.getMessage();
-    } else if (exception instanceof BackendLimitExceededException) {
-      LOGGER.warn("Backend throttled/refused the request: {}", exception.toString());
-      errorCode = ErrorCode.TOO_MANY_REQUESTS;
-      message = "Backend store refused to process the request: " + exception;
-    } else if (exception instanceof AccessCheckException) {
-      errorCode = ErrorCode.FORBIDDEN;
-      message = exception.getMessage();
-    } else if (exception instanceof NotSupportedException) {
-      errorCode = ErrorCode.UNSUPPORTED_MEDIA_TYPE;
       message = exception.getMessage();
     } else if (exception instanceof WebApplicationException) {
       if (exception.getCause() instanceof IllegalArgumentException

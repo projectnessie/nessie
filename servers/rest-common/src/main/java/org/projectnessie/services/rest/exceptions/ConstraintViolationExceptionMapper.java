@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.restjakarta;
+package org.projectnessie.services.rest.exceptions;
 
-import jakarta.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ElementKind;
@@ -23,7 +23,6 @@ import jakarta.validation.Path;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.projectnessie.error.ErrorCode;
-import org.projectnessie.services.config.ServerConfig;
 
 /**
  * "Special" implementation for exceptions that extend {@link ConstraintViolationException}, as
@@ -31,19 +30,13 @@ import org.projectnessie.services.config.ServerConfig;
  * ValidationExceptionMapper}.
  */
 @Provider
+@ApplicationScoped
 public class ConstraintViolationExceptionMapper
     extends BaseExceptionMapper<ConstraintViolationException> {
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public ConstraintViolationExceptionMapper() {
-    this(null);
-  }
-
-  @Inject
-  public ConstraintViolationExceptionMapper(ServerConfig config) {
-    super(config);
-  }
+  public ConstraintViolationExceptionMapper() {}
 
   @Override
   public Response toResponse(ConstraintViolationException exception) {

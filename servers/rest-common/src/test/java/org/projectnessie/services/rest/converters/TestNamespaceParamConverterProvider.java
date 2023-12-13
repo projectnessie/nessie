@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.restjakarta;
+package org.projectnessie.services.rest.converters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.ws.rs.ext.ParamConverter;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Namespace;
 
-public class TestContentKeyParamConverterProvider {
+public class TestNamespaceParamConverterProvider {
 
-  private final ParamConverter<ContentKey> converter =
-      new ContentKeyParamConverterProvider().getConverter(ContentKey.class, null, null);
+  private final ParamConverter<Namespace> converter =
+      new NamespaceParamConverterProvider().getConverter(Namespace.class, null, null);
 
   @Test
   public void testNulls() {
@@ -34,9 +34,9 @@ public class TestContentKeyParamConverterProvider {
 
   @Test
   public void testValid() {
-    ContentKey key = ContentKey.of("a.b.c");
+    Namespace namespace = Namespace.of("a.b.c");
     String name = "a\u001Db\u001Dc";
-    assertThat(converter.fromString(name)).isEqualTo(key);
-    assertThat(converter.toString(key)).isEqualTo(name);
+    assertThat(converter.fromString(name)).isEqualTo(namespace);
+    assertThat(converter.toString(namespace)).isEqualTo(name);
   }
 }

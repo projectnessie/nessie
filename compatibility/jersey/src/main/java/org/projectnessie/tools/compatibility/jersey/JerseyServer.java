@@ -110,6 +110,18 @@ public class JerseyServer implements AutoCloseable {
                 config::register,
                 true);
             withEEClass(
+                "org.projectnessie.services.restjakarta.AccessCheckExceptionMapper",
+                c -> config.register(c, 10),
+                false);
+            withEEClass(
+                "org.projectnessie.services.restjakarta.BackendLimitExceededExceptionMapper",
+                c -> config.register(c, 10),
+                false);
+            withEEClass(
+                "org.projectnessie.services.rest.exceptions.NotSupportedExceptionMapper",
+                c -> config.register(c, 10),
+                false);
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieJaxRsJsonParseExceptionMapper",
                 c -> config.register(c, 10),
                 true);
@@ -169,9 +181,10 @@ public class JerseyServer implements AutoCloseable {
       String eeClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
     Iterator<String> classNames =
         List.of(
-                eeClassName,
-                eeClassName.replace("restjavax.", "restjakarta."),
-                eeClassName.replace("restjavax.", "rest."))
+                eeClassName.replace("restjavax.", "rest.converters."),
+                eeClassName.replace("restjavax.", "rest.exceptions."),
+                eeClassName.replace("restjavax.", "rest."),
+                eeClassName)
             .iterator();
     while (classNames.hasNext()) {
       String className = classNames.next();

@@ -21,6 +21,7 @@ import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
+import org.projectnessie.services.config.ExceptionConfig;
 import org.projectnessie.services.config.ServerConfig;
 
 public class ServerConfigExtension implements Extension {
@@ -41,6 +42,11 @@ public class ServerConfigExtension implements Extension {
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
     abd.addBean()
         .addType(ServerConfig.class)
+        .addQualifier(Default.Literal.INSTANCE)
+        .scope(ApplicationScoped.class)
+        .produceWith(i -> SERVER_CONFIG);
+    abd.addBean()
+        .addType(ExceptionConfig.class)
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
         .produceWith(i -> SERVER_CONFIG);

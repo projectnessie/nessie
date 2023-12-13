@@ -15,7 +15,6 @@
  */
 package org.projectnessie.server.rest;
 
-import jakarta.inject.Inject;
 import jakarta.validation.ValidationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -23,9 +22,8 @@ import jakarta.ws.rs.ext.Provider;
 import org.jboss.resteasy.api.validation.ResteasyViolationException;
 import org.jboss.resteasy.api.validation.Validation;
 import org.projectnessie.error.ErrorCode;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.restjakarta.BaseExceptionMapper;
-import org.projectnessie.services.restjakarta.NessieExceptionMapper;
+import org.projectnessie.services.rest.exceptions.BaseExceptionMapper;
+import org.projectnessie.services.rest.exceptions.NessieExceptionMapper;
 
 /**
  * "Special" implementation for exceptions that extend {@link ValidationException}, as those do not
@@ -39,14 +37,7 @@ public class ResteasyExceptionMapper extends BaseExceptionMapper<ResteasyViolati
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public ResteasyExceptionMapper() {
-    this(null);
-  }
-
-  @Inject
-  public ResteasyExceptionMapper(ServerConfig config) {
-    super(config);
-  }
+  public ResteasyExceptionMapper() {}
 
   @Override
   public Response toResponse(ResteasyViolationException exception) {

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.restjakarta;
+package org.projectnessie.services.rest.exceptions;
 
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -24,27 +25,22 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import java.util.function.Consumer;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.NessieError;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.rest.RestCommon;
+import org.projectnessie.services.config.ExceptionConfig;
+import org.projectnessie.services.rest.common.RestCommon;
 
 /** Code shared between concrete exception-mapper implementations. */
 public abstract class BaseExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
 
-  private final ServerConfig serverConfig;
+  @Inject private ExceptionConfig config;
 
   @Context private HttpHeaders headers;
-
-  protected BaseExceptionMapper(ServerConfig serverConfig) {
-    this.serverConfig = serverConfig;
-  }
 
   protected Response buildBadRequestResponse(Exception e) {
     return buildExceptionResponse(ErrorCode.BAD_REQUEST, e.getMessage(), e);
   }
 
   protected Response buildExceptionResponse(ErrorCode errorCode, String message, Exception e) {
-    return buildExceptionResponse(
-        errorCode, message, e, serverConfig.sendStacktraceToClient(), h -> {});
+    return buildExceptionResponse(errorCode, message, e, config.sendStacktraceToClient(), h -> {});
   }
 
   protected Response buildExceptionResponse(
