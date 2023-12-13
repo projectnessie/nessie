@@ -39,6 +39,5 @@ public interface ContentToFiles {
    *     <em>must</em> correspond to the base path of the referenced content.
    */
   @MustBeClosed
-  Stream<FileReference> extractFiles(
-      @NotNull @jakarta.validation.constraints.NotNull ContentReference contentReference);
+  Stream<FileReference> extractFiles(@NotNull ContentReference contentReference);
 }

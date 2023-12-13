@@ -34,12 +34,11 @@ import org.projectnessie.gc.identify.IdentifyLiveContents;
  */
 public interface AddContents extends AutoCloseable {
 
-  long addLiveContent(
-      @NotNull @jakarta.validation.constraints.NotNull Stream<ContentReference> contentReference);
+  long addLiveContent(@NotNull Stream<ContentReference> contentReference);
 
   void finished();
 
-  void finishedExceptionally(@NotNull @jakarta.validation.constraints.NotNull Throwable e);
+  void finishedExceptionally(@NotNull Throwable e);
 
   Instant created();
 

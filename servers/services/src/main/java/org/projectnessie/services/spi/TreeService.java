@@ -124,8 +124,7 @@ public interface TreeService {
           String youngestHash,
       @Nullable String filter,
       @Nullable String pageToken,
-      @NotNull @jakarta.validation.constraints.NotNull
-          PagedResponseHandler<R, LogEntry> pagedResponseHandler)
+      @NotNull PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException;
 
   MergeResponse transplantCommitsIntoBranch(

@@ -24,7 +24,5 @@ import org.projectnessie.model.ContentKey;
 @FunctionalInterface
 public interface ContentToContentReference {
   ContentReference contentToReference(
-      @NotNull @jakarta.validation.constraints.NotNull Content content,
-      @NotNull @jakarta.validation.constraints.NotNull String commitId,
-      @NotNull @jakarta.validation.constraints.NotNull ContentKey key);
+      @NotNull Content content, @NotNull String commitId, @NotNull ContentKey key);
 }

@@ -169,7 +169,6 @@ public class ITContentToFilesCrossCheck extends SparkSqlTestBase {
   }
 
   @Nonnull
-  @jakarta.validation.constraints.NotNull
   private List<ContentReference> contentReferencesFromCommitLog() throws NessieNotFoundException {
     return api.getCommitLog().refName(defaultBranch()).fetch(FetchOption.ALL).stream()
         .map(LogEntry::getOperations)
