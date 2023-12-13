@@ -1,5 +1,5 @@
 # -- The number of replicas to deploy (horizontal scaling).
-# Beware that replicas are stateless; don't set this number > 1 when using INMEMORY or ROCKS version store types.
+# Beware that replicas are stateless; don't set this number > 1 when using IN_MEMORY or ROCKSDB version store types.
 replicaCount: 1
 
 image:
@@ -19,6 +19,7 @@ logLevel: INFO
 # store types using the nessie-quarkus-cli tool's export/import functionality.)
 versionStoreType: IN_MEMORY
 
+# Cassandra settings. Only required when using CASSANDRA version store type; ignored otherwise.
 cassandra:
   keyspace: nessie
   contactPoints:
@@ -28,7 +29,7 @@ cassandra:
     # username:
     # password:
 
-# RocksDB settings. Only required when using ROCKS version store type; ignored otherwise.
+# RocksDB settings. Only required when using ROCKSDB version store type; ignored otherwise.
 rocksdb:
   # -- The storage class name of the persistent volume claim to create.
   storageClassName: standard
@@ -41,7 +42,7 @@ rocksdb:
     # app.kubernetes.io/name: nessie
     # app.kubernetes.io/instance: RELEASE-NAME
 
-# DynamoDB settings. Only required when using DYNAMO version store type; ignored otherwise.
+# DynamoDB settings. Only required when using DYNAMODB version store type; ignored otherwise.
 dynamodb:
   # -- The AWS region to use.
   region: us-west-2
@@ -53,7 +54,7 @@ dynamodb:
     # -- The secret key storing the AWS secret access key.
     awsSecretAccessKey: aws_secret_access_key
 
-## Mongo DB settings. Only required when using MONGO version store type; ignored otherwise.
+## Mongo DB settings. Only required when using MONGODB version store type; ignored otherwise.
 mongodb:
   # -- The MongoDB database name.
   name: nessie
@@ -67,7 +68,7 @@ mongodb:
     # -- The secret key storing the MongoDB password.
     password: mongodb_password
 
-# Postgres settings. Only required when using TRANSACTIONAL version store type; ignored otherwise.
+# Postgres settings. Only required when using JDBC version store type; ignored otherwise.
 postgres:
   # -- The Postgres JDBC connection string.
   jdbcUrl: jdbc:postgresql://localhost:5432/my_database
@@ -260,7 +261,7 @@ resources:
 
 autoscaling:
   # -- Specifies whether automatic horizontal scaling should be enabled.
-  # Do not enable this when using ROCKS version store type.
+  # Do not enable this when using ROCKSDB version store type.
   enabled: false
   # -- The minimum number of replicas to maintain.
   minReplicas: 1
