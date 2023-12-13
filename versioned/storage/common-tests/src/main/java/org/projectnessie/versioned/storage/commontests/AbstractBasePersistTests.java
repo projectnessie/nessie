@@ -54,7 +54,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
-import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
@@ -112,8 +111,11 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObj;
-import org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObjType;
+import org.projectnessie.versioned.storage.commontests.objtypes.CustomObjType;
+import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestBean;
+import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.JsonTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
@@ -446,7 +448,7 @@ public class AbstractBasePersistTests {
         ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()),
         uniqueId(randomObjId(), "space", uuidToBytes(UUID.randomUUID())),
         // custom object types
-        SimpleCustomObj.builder()
+        SimpleTestObj.builder()
             .id(randomObjId())
             .parent(randomObjId())
             .text("foo".repeat(4000))
@@ -456,7 +458,7 @@ public class AbstractBasePersistTests {
             .optional("optional")
             .instant(Instant.ofEpochMilli(1234567890L))
             .build(),
-        SimpleCustomObj.builder()
+        SimpleTestObj.builder()
             .id(randomObjId())
             .parent(randomObjId())
             .text("foo")
@@ -466,7 +468,38 @@ public class AbstractBasePersistTests {
             .optional("optional")
             .instant(Instant.ofEpochMilli(1234567890L))
             .build(),
-        SimpleCustomObj.builder().id(randomObjId()).build());
+        SimpleTestObj.builder().id(randomObjId()).build(),
+        // JSON objects
+        ImmutableJsonTestObj.builder()
+            .id(randomObjId())
+            .model(
+                ImmutableJsonTestBean.builder()
+                    .parent(randomObjId())
+                    .text("foo".repeat(4000))
+                    .number(42.42d)
+                    .map(Map.of("k1", "v1".repeat(4000), "k2", "v2".repeat(4000)))
+                    .list(List.of("a", "b", "c"))
+                    .optional("optional")
+                    .instant(Instant.ofEpochMilli(1234567890L))
+                    .build())
+            .build(),
+        ImmutableJsonTestObj.builder()
+            .id(randomObjId())
+            .model(
+                ImmutableJsonTestBean.builder()
+                    .parent(randomObjId())
+                    .text("foo")
+                    .number(42.42d)
+                    .map(Map.of("k1", "v1", "k2", "v2"))
+                    .list(List.of("a", "b", "c"))
+                    .optional("optional")
+                    .instant(Instant.ofEpochMilli(1234567890L))
+                    .build())
+            .build(),
+        ImmutableJsonTestObj.builder()
+            .id(randomObjId())
+            .model(ImmutableJsonTestBean.builder().build())
+            .build());
   }
 
   static StandardObjType typeDifferentThan(ObjType type) {
@@ -492,13 +525,12 @@ public class AbstractBasePersistTests {
           // fall through
       }
     }
-    if (type instanceof SimpleCustomObjType) {
+    if (type instanceof CustomObjType) {
       return StandardObjType.COMMIT;
     }
     throw new IllegalArgumentException(type.name());
   }
 
-  @SuppressWarnings("unchecked")
   @ParameterizedTest
   @MethodSource("allObjectTypeSamples")
   public void singleObjectCreateDelete(Obj obj) throws Exception {
@@ -914,14 +946,27 @@ public class AbstractBasePersistTests {
           // fall through
       }
     }
-    if (obj instanceof SimpleCustomObj) {
-      return SimpleCustomObj.builder()
+    if (obj instanceof SimpleTestObj) {
+      return SimpleTestObj.builder()
           .id(obj.id())
           .parent(randomObjId())
           .text("updated")
           .number(43.43d)
           .map(Map.of("k2", "v2", "k3", "v3"))
           .list(List.of("b", "c", "d"))
+          .build();
+    }
+    if (obj instanceof JsonTestObj) {
+      return ImmutableJsonTestObj.builder()
+          .id(obj.id())
+          .model(
+              ImmutableJsonTestBean.builder()
+                  .parent(randomObjId())
+                  .text("updated")
+                  .number(43.43d)
+                  .map(Map.of("k2", "v2", "k3", "v3"))
+                  .list(List.of("b", "c", "d"))
+                  .build())
           .build();
     }
     throw new UnsupportedOperationException("Unknown object type " + type);
@@ -1006,8 +1051,8 @@ public class AbstractBasePersistTests {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
     Obj[] standardObjs =
         Arrays.stream(objs).filter(o -> o.type() instanceof StandardObjType).toArray(Obj[]::new);
-    Obj[] testObjs =
-        Arrays.stream(objs).filter(o -> o instanceof SimpleCustomObj).toArray(Obj[]::new);
+    Obj[] customObjs =
+        Arrays.stream(objs).filter(o -> o.type() instanceof CustomObjType).toArray(Obj[]::new);
 
     persist.erase();
 
@@ -1027,8 +1072,8 @@ public class AbstractBasePersistTests {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(standardObjs);
     }
     try (CloseableIterator<Obj> scan =
-        persist.scanAllObjects(Set.of(SimpleCustomObjType.INSTANCE))) {
-      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(testObjs);
+        persist.scanAllObjects(Set.copyOf(EnumSet.allOf(CustomObjType.class)))) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(customObjs);
     }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
       Obj[] expected = stream(objs).filter(c -> c.type() == COMMIT).toArray(Obj[]::new);

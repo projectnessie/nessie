@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.projectnessie.versioned.storage.commontests.objtypes.SimpleCustomObjTypeBundle
+org.projectnessie.versioned.storage.commontests.objtypes.CustomObjTypeBundle

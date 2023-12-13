@@ -15,27 +15,14 @@
  */
 package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-@Value.Immutable
-@JsonSerialize(as = ImmutableSimpleCustomObj.class)
-@JsonDeserialize(using = SimpleCustomObjDeserializer.class)
-public interface SimpleCustomObj extends Obj {
-
-  @Override
-  default ObjType type() {
-    return SimpleCustomObjType.INSTANCE;
-  }
+public interface SimpleTestBean {
 
   @Nullable
   @jakarta.annotation.Nullable
@@ -62,8 +49,4 @@ public interface SimpleCustomObj extends Obj {
   Instant instant();
 
   Optional<String> optional();
-
-  static ImmutableSimpleCustomObj.Builder builder() {
-    return ImmutableSimpleCustomObj.builder();
-  }
 }

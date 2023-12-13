@@ -39,19 +39,29 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.immutables.value.Value;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
+import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -144,6 +154,71 @@ public class TestProtoSerialization {
             emptyList(),
             ByteString.copyFrom(new byte[1])),
         indexSegments(randomObjId(), emptyList()),
-        index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()));
+        index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()),
+        ImmutableJsonTestObj.builder()
+            .id(randomObjId())
+            .model(
+                ImmutableJsonTestModel.builder()
+                    .parent(randomObjId())
+                    .text("foo")
+                    .number(42)
+                    .map(Map.of("foo", "bar"))
+                    .list(List.of("foo", "bar"))
+                    .instant(Instant.now())
+                    .optional(Optional.of("foo"))
+                    .build())
+            .build());
+  }
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableJsonTestObj.class)
+  @JsonDeserialize(as = ImmutableJsonTestObj.class)
+  public interface JsonTestObj extends JsonObj<JsonTestModel> {
+
+    ObjType TYPE =
+        new ObjType() {
+          @Override
+          public String name() {
+            return "json";
+          }
+
+          @Override
+          public String shortName() {
+            return "json";
+          }
+
+          @Override
+          public Class<? extends Obj> targetClass() {
+            return JsonTestObj.class;
+          }
+        };
+
+    @Override
+    default ObjType type() {
+      return TYPE;
+    }
+
+    @Override
+    @JsonUnwrapped
+    JsonTestModel model();
+  }
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableJsonTestModel.class)
+  @JsonDeserialize(as = ImmutableJsonTestModel.class)
+  public interface JsonTestModel {
+    ObjId parent();
+
+    String text();
+
+    Number number();
+
+    Map<String, String> map();
+
+    List<String> list();
+
+    Instant instant();
+
+    Optional<String> optional();
   }
 }

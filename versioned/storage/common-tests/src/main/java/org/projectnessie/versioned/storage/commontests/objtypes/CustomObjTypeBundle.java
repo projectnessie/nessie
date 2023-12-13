@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.common.persist;
+package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_ID_KEY;
+import java.util.function.Consumer;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
 
-import com.fasterxml.jackson.annotation.JacksonInject;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+public class CustomObjTypeBundle implements ObjTypeBundle {
 
-public interface Obj {
-
-  /** The ID of this object. */
-  @JsonIgnore
-  @JacksonInject(OBJ_ID_KEY)
-  ObjId id();
-
-  @JsonIgnore
-  ObjType type();
+  @Override
+  public void register(Consumer<ObjType> registrar) {
+    for (CustomObjType objType : CustomObjType.values()) {
+      registrar.accept(objType);
+    }
+  }
 }
