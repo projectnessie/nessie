@@ -46,7 +46,7 @@ runs:
           echo "::endgroup::"
         fi
     - name: Archive code-checks incremental
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ci-gradle-caches-${{ inputs.job-name }}-${{ inputs.java-version }}
         path: ~/ci-gradle-caches-${{ inputs.job-name }}-${{ inputs.java-version }}.tar
