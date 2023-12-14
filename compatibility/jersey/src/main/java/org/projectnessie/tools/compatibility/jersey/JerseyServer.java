@@ -86,38 +86,38 @@ public class JerseyServer implements AutoCloseable {
             withClass(
                 "org.projectnessie.services.rest.RestNamespaceResource", config::register, false);
             config.register(ConfigApiImpl.class);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.ContentKeyParamConverterProvider",
                 config::register,
                 true);
-            withJavaxClass(
+            withEEClass(
                 // Present since 0.19.0
                 "org.projectnessie.services.restjavax.ReferenceTypeParamConverterProvider",
                 config::register,
                 false);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.ValidationExceptionMapper",
                 c -> config.register(c, 10),
                 true);
-            withJavaxClass(
+            withEEClass(
                 // Present since 0.46.5
                 "org.projectnessie.services.restjavax.ConstraintViolationExceptionMapper",
                 c -> config.register(c, 10),
                 false);
-            withJavaxClass(
+            withEEClass(
                 // Present since 0.23.1
                 "org.projectnessie.services.restjavax.NamespaceParamConverterProvider",
                 config::register,
                 false);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieExceptionMapper",
                 config::register,
                 true);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieJaxRsJsonParseExceptionMapper",
                 c -> config.register(c, 10),
                 true);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieJaxRsJsonMappingExceptionMapper",
                 c -> config.register(c, 10),
                 true);
@@ -172,13 +172,13 @@ public class JerseyServer implements AutoCloseable {
     }
   }
 
-  private static void withJavaxClass(
-      String javaxClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
+  private static void withEEClass(
+      String eeClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
     Iterator<String> classNames =
         List.of(
-                javaxClassName,
-                javaxClassName.replace("restjavax.", "restjakarta."),
-                javaxClassName.replace("restjavax.", "rest."))
+                eeClassName,
+                eeClassName.replace("restjavax.", "restjakarta."),
+                eeClassName.replace("restjavax.", "rest."))
             .iterator();
     while (classNames.hasNext()) {
       String className = classNames.next();
