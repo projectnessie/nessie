@@ -33,16 +33,6 @@ val quarkusRunner by
 val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
-configurations.configureEach {
-  // Avoids dependency resolution error since Quarkus 3.3:
-  // Cannot select module with conflict on capability 'com.google.guava:listenablefuture:1.0' also
-  //   provided by
-  //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
-  resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
-    select("com.google.guava:guava:0")
-  }
-}
-
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
