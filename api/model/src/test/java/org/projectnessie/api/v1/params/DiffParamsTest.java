@@ -80,9 +80,7 @@ public class DiffParamsTest {
     "main*,main,",
   })
   public void testParameterParsing(String param, String expectedRefName, String expectedHash) {
-    DiffParams diffParams = new DiffParams();
-    diffParams.setFromRefWithHash(param);
-    diffParams.setToRefWithHash(param);
+    DiffParams diffParams = new DiffParams(param, param);
     assertThat(diffParams.getFromRef()).isEqualTo(expectedRefName);
     assertThat(diffParams.getToRef()).isEqualTo(expectedRefName);
     assertThat(diffParams.getFromHashOnRef()).isEqualTo(expectedHash);
