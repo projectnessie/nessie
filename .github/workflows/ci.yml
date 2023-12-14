@@ -162,7 +162,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-test-reports
@@ -218,7 +218,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-test-quarkus-reports
@@ -280,7 +280,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-reports
@@ -330,7 +330,7 @@ jobs:
           ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-stores-reports
@@ -370,7 +370,7 @@ jobs:
           ./gradlew $(cat ../spark-prjs.txt) --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-integrations-reports
@@ -425,7 +425,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-reports
