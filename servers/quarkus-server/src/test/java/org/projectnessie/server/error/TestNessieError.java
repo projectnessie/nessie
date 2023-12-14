@@ -69,7 +69,7 @@ class TestNessieError {
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     client =
         HttpClient.builder()
-            .setBaseUri(uri.resolve("nessieErrorTest"))
+            .setBaseUri(uri.resolve("../nessieErrorTest"))
             .setObjectMapper(mapper)
             .addResponseFilter(new NessieHttpResponseFilter())
             .build();

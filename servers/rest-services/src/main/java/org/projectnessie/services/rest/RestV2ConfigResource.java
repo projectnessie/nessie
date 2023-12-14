@@ -18,6 +18,7 @@ package org.projectnessie.services.rest;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
@@ -41,6 +42,7 @@ import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
+@Path("api/v2/config")
 public class RestV2ConfigResource implements HttpConfigApi {
 
   private final ConfigApiImpl config;

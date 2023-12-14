@@ -38,7 +38,7 @@ public enum NessieApiVersion {
   }
 
   public URI resolve(URI base) {
-    return base.resolve(getPathElement());
+    return base.resolve("api/" + getPathElement());
   }
 
   public NessieApiV1 build(NessieClientBuilder builder) {

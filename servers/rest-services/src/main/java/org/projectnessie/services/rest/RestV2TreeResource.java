@@ -23,6 +23,7 @@ import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import java.util.List;
 import java.util.Locale;
 import org.projectnessie.api.v2.http.HttpTreeApi;
@@ -69,6 +70,7 @@ import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
+@Path("api/v2/trees")
 public class RestV2TreeResource implements HttpTreeApi {
 
   private final ConfigService configService;
