@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 
 /**
@@ -49,9 +50,7 @@ import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 @Singleton
 public class NessieHttpAuthenticator extends HttpAuthenticator {
 
-  private final IdentityProviderManager identityProvider;
-  private final boolean authEnabled;
-  private final Set<String> anonymousPaths;
+  private final BaseNessieHttpAuthenticator base;
 
   @Inject
   public NessieHttpAuthenticator(
@@ -61,40 +60,56 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
       Instance<HttpAuthenticationMechanism> httpAuthenticationMechanism,
       Instance<IdentityProvider<?>> providers) {
     super(identityProviderManager, pathMatchingPolicy, httpAuthenticationMechanism, providers);
-    this.identityProvider = identityProviderManager;
-    this.authEnabled = config.enabled();
-    this.anonymousPaths = config.anonymousPaths();
+    this.base =
+        new BaseNessieHttpAuthenticator(
+            config,
+            () -> identityProviderManager.authenticate(AnonymousAuthenticationRequest.INSTANCE));
   }
 
   @Override
   public Uni<SecurityIdentity> attemptAuthentication(RoutingContext context) {
-    if (!authEnabled) {
-      return anonymous();
+    if (!base.authEnabled) {
+      return base.anonymous();
     }
 
     return super.attemptAuthentication(context)
         .onItem()
         .transformToUni(
-            securityIdentity -> {
-              if (securityIdentity == null) {
-                // Allow certain preconfigured paths (e.g. health checks) to be serviced without
-                // authentication.
-                String path = context.request().path();
-                if (path != null && anonymousPaths.contains(path)) {
-                  return anonymous();
-                }
-
-                // Disallow unauthenticated requests when requested by configuration.
-                // Note: Quarkus by default permits unauthenticated requests unless there are
-                // specific authorization rules that validate the security identity.
-                throw new AuthenticationFailedException("Missing or unrecognized credentials");
-              }
-
-              return Uni.createFrom().item(securityIdentity);
-            });
+            securityIdentity -> base.maybeTransform(securityIdentity, context.request().path()));
   }
 
-  private Uni<SecurityIdentity> anonymous() {
-    return identityProvider.authenticate(AnonymousAuthenticationRequest.INSTANCE);
+  static class BaseNessieHttpAuthenticator {
+    private final boolean authEnabled;
+    private final Set<String> anonymousPaths;
+    private final Supplier<Uni<SecurityIdentity>> anonymousSupplier;
+
+    BaseNessieHttpAuthenticator(
+        QuarkusNessieAuthenticationConfig config,
+        Supplier<Uni<SecurityIdentity>> anonymousSupplier) {
+      this.authEnabled = config.enabled();
+      this.anonymousPaths = config.anonymousPaths();
+      this.anonymousSupplier = anonymousSupplier;
+    }
+
+    Uni<SecurityIdentity> anonymous() {
+      return anonymousSupplier.get();
+    }
+
+    Uni<SecurityIdentity> maybeTransform(SecurityIdentity securityIdentity, String path) {
+      if (securityIdentity == null) {
+        // Allow certain preconfigured paths (e.g. health checks) to be serviced without
+        // authentication.
+        if (path != null && anonymousPaths.contains(path)) {
+          return anonymous();
+        }
+
+        // Disallow unauthenticated requests when requested by configuration.
+        // Note: Quarkus by default permits unauthenticated requests unless there are
+        // specific authorization rules that validate the security identity.
+        throw new AuthenticationFailedException("Missing or unrecognized credentials");
+      }
+
+      return Uni.createFrom().item(securityIdentity);
+    }
   }
 }
