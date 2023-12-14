@@ -22,10 +22,10 @@ import io.agroal.api.configuration.supplier.AgroalConnectionPoolConfigurationSup
 import io.agroal.api.configuration.supplier.AgroalDataSourceConfigurationSupplier;
 import io.agroal.api.security.NamePrincipal;
 import io.agroal.api.security.SimplePassword;
+import jakarta.annotation.Nullable;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.immutables.value.Value;
 
@@ -79,11 +79,9 @@ public abstract class DataSourceProducer {
   abstract String jdbcUrl();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract String jdbcUser();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract String jdbcPass();
 
   public DataSource createNewDataSource() throws SQLException {

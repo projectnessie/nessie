@@ -16,8 +16,8 @@
 package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.ser.Views;
@@ -25,7 +25,6 @@ import org.projectnessie.services.spi.ConfigService;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
 public class RestConfigResource implements HttpConfigApi {
 
   private final ConfigService configService;
@@ -36,7 +35,6 @@ public class RestConfigResource implements HttpConfigApi {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestConfigResource(ConfigService configService) {
     this.configService = configService;
   }

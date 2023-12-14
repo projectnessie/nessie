@@ -18,7 +18,7 @@ package org.projectnessie.s3mock.data;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableDeletedS3Object.class)
@@ -28,21 +28,17 @@ public interface ErrorObj {
 
   @JsonProperty("Code")
   @Nullable
-  @jakarta.annotation.Nullable
   String code();
 
   @JsonProperty("Key")
   @Nullable
-  @jakarta.annotation.Nullable
   String key();
 
   @JsonProperty("Message")
   @Nullable
-  @jakarta.annotation.Nullable
   String message();
 
   @JsonProperty("VersionId")
   @Nullable
-  @jakarta.annotation.Nullable
   String versionId();
 }

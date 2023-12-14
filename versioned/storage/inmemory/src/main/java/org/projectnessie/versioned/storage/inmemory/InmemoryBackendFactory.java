@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.inmemory;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class InmemoryBackendFactory implements BackendFactory<InmemoryBackendConfig> {
@@ -24,23 +24,19 @@ public class InmemoryBackendFactory implements BackendFactory<InmemoryBackendCon
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public InmemoryBackendConfig newConfigInstance() {
     return InmemoryBackendConfig.builder().build();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public InmemoryBackend buildBackend(
-      @Nonnull @jakarta.annotation.Nonnull InmemoryBackendConfig config) {
+  public InmemoryBackend buildBackend(@Nonnull InmemoryBackendConfig config) {
     return new InmemoryBackend();
   }
 }

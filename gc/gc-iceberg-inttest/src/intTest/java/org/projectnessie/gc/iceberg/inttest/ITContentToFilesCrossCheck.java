@@ -17,6 +17,7 @@ package org.projectnessie.gc.iceberg.inttest;
 
 import static java.util.Collections.emptySet;
 
+import jakarta.annotation.Nonnull;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +27,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.assertj.core.api.SoftAssertions;
@@ -169,7 +169,6 @@ public class ITContentToFilesCrossCheck extends SparkSqlTestBase {
   }
 
   @Nonnull
-  @jakarta.validation.constraints.NotNull
   private List<ContentReference> contentReferencesFromCommitLog() throws NessieNotFoundException {
     return api.getCommitLog().refName(defaultBranch()).fetch(FetchOption.ALL).stream()
         .map(LogEntry::getOperations)

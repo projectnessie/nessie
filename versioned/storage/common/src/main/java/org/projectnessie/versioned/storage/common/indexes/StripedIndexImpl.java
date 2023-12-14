@@ -20,14 +20,14 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.binarySearch;
 
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 final class StripedIndexImpl<V> implements StoreIndex<V> {
@@ -37,8 +37,8 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
   private final IndexLoader<V> indexLoader;
 
   StripedIndexImpl(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<V>[] stripes,
-      @Nonnull @jakarta.annotation.Nonnull StoreKey[] firstLastKeys,
+      @Nonnull StoreIndex<V>[] stripes,
+      @Nonnull StoreKey[] firstLastKeys,
       IndexLoader<V> indexLoader) {
     checkArgument(stripes.length > 1);
     checkArgument(
@@ -173,7 +173,7 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean contains(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean contains(@Nonnull StoreKey key) {
     int i = stripeForExistingKey(key);
     if (i == -1) {
       return false;
@@ -182,9 +182,8 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public StoreIndexElement<V> get(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public StoreIndexElement<V> get(@Nonnull StoreKey key) {
     int i = stripeForExistingKey(key);
     if (i == -1) {
       return null;
@@ -193,14 +192,12 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey first() {
     return stripes[0].first();
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey last() {
     StoreIndex<V>[] s = stripes;
@@ -217,12 +214,9 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Iterator<StoreIndexElement<V>> iterator(
-      @Nullable @jakarta.annotation.Nullable StoreKey begin,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch) {
+      @Nullable StoreKey begin, @Nullable StoreKey end, boolean prefetch) {
     StoreIndex<V>[] s = stripes;
 
     boolean prefix = begin != null && begin.equals(end);
@@ -264,19 +258,18 @@ final class StripedIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public ByteString serialize() {
     throw unsupported();
   }
 
   @Override
-  public boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element) {
+  public boolean add(@Nonnull StoreIndexElement<V> element) {
     return mutableStripe(element.key()).add(element);
   }
 
   @Override
-  public boolean remove(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean remove(@Nonnull StoreKey key) {
     return mutableStripe(key).remove(key);
   }
 

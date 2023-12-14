@@ -18,8 +18,8 @@ package org.projectnessie.versioned.storage.common.objtypes;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -89,7 +89,7 @@ public interface CommitObj extends Obj {
     Builder from(CommitObj instance);
 
     @CanIgnoreReturnValue
-    Builder id(@Nullable @jakarta.annotation.Nullable ObjId id);
+    Builder id(@Nullable ObjId id);
 
     @CanIgnoreReturnValue
     Builder created(long created);
@@ -116,7 +116,7 @@ public interface CommitObj extends Obj {
     Builder message(String message);
 
     @CanIgnoreReturnValue
-    Builder referenceIndex(@Nullable @jakarta.annotation.Nullable ObjId referenceIndex);
+    Builder referenceIndex(@Nullable ObjId referenceIndex);
 
     @CanIgnoreReturnValue
     Builder addAllReferenceIndexStripes(Iterable<? extends IndexStripe> referenceIndexStripes);
@@ -202,7 +202,6 @@ public interface CommitObj extends Obj {
    * @see #referenceIndexStripes()
    */
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId referenceIndex();
 
   /**

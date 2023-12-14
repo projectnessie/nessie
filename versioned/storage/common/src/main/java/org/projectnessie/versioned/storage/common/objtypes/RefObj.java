@@ -17,7 +17,7 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.refHash;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -44,7 +44,6 @@ public interface RefObj extends Obj {
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   /**
@@ -61,7 +60,6 @@ public interface RefObj extends Obj {
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId extendedInfoObj();
 
   static RefObj ref(

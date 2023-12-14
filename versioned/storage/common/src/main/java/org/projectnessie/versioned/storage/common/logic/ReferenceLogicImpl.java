@@ -48,6 +48,8 @@ import static org.projectnessie.versioned.storage.common.persist.Reference.refer
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -55,8 +57,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
@@ -185,9 +185,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public List<Reference> getReferences(
-      @Nonnull @jakarta.annotation.Nonnull List<String> references) {
+  public List<Reference> getReferences(@Nonnull List<String> references) {
     int refCount = references.size();
     String[] refsArray;
     int refRefsIndex = references.indexOf(REF_REFS.name());
@@ -219,9 +217,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public PagedResult<Reference, String> queryReferences(
-      @Nonnull @jakarta.annotation.Nonnull ReferencesQuery referencesQuery) {
+  public PagedResult<Reference, String> queryReferences(@Nonnull ReferencesQuery referencesQuery) {
     Optional<PagingToken> pagingToken = referencesQuery.pagingToken();
 
     StoreKey prefix = referencesQuery.referencePrefix().map(StoreKey::keyFromString).orElse(null);
@@ -303,7 +299,6 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
     public PagingToken tokenForKey(String key) {
       return key != null ? pagingToken(copyFromUtf8(key)) : emptyPagingToken();
@@ -312,11 +307,8 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Reference createReference(
-      @Nonnull @jakarta.annotation.Nonnull String name,
-      @Nonnull @jakarta.annotation.Nonnull ObjId pointer,
-      @Nullable @jakarta.annotation.Nullable ObjId extendedInfoObj)
+      @Nonnull String name, @Nonnull ObjId pointer, @Nullable ObjId extendedInfoObj)
       throws RefAlreadyExistsException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
@@ -374,9 +366,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   }
 
   @Override
-  public void deleteReference(
-      @Nonnull @jakarta.annotation.Nonnull String name,
-      @Nonnull @jakarta.annotation.Nonnull ObjId expectedPointer)
+  public void deleteReference(@Nonnull String name, @Nonnull ObjId expectedPointer)
       throws RefNotFoundException, RefConditionFailedException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
@@ -649,10 +639,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference assignReference(
-      @Nonnull @jakarta.annotation.Nonnull Reference current,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference assignReference(@Nonnull Reference current, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     checkArgument(!current.isInternal());
 
@@ -660,9 +647,9 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   }
 
   private Reference maybeRecover(
-      @Nonnull @jakarta.annotation.Nonnull String name,
+      @Nonnull String name,
       Reference ref,
-      @Nonnull @jakarta.annotation.Nonnull Supplier<SuppliedCommitIndex> refsIndexSupplier) {
+      @Nonnull Supplier<SuppliedCommitIndex> refsIndexSupplier) {
     if (ref == null) {
       SuppliedCommitIndex suppliedIndex = refsIndexSupplier.get();
 

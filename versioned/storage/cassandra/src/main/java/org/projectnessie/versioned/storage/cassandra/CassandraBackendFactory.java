@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class CassandraBackendFactory implements BackendFactory<CassandraBackendConfig> {
@@ -24,23 +24,19 @@ public class CassandraBackendFactory implements BackendFactory<CassandraBackendC
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public CassandraBackendConfig newConfigInstance() {
     return CassandraBackendConfig.builder().build();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public CassandraBackend buildBackend(
-      @Nonnull @jakarta.annotation.Nonnull CassandraBackendConfig config) {
+  public CassandraBackend buildBackend(@Nonnull CassandraBackendConfig config) {
     return new CassandraBackend(config, false);
   }
 }

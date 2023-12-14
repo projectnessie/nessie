@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 extra["maven.name"] = "Nessie - Server - Store"
@@ -34,9 +33,7 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
 
   testImplementation(libs.guava)
   testCompileOnly(libs.microprofile.openapi)
@@ -46,11 +43,4 @@ dependencies {
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }

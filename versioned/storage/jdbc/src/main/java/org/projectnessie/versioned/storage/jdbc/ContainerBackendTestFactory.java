@@ -17,8 +17,8 @@ package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import jakarta.annotation.Nonnull;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
@@ -96,6 +96,5 @@ public abstract class ContainerBackendTestFactory extends AbstractJdbcBackendTes
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   protected abstract JdbcDatabaseContainer<?> createContainer();
 }

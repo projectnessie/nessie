@@ -26,12 +26,12 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objId
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -64,18 +64,14 @@ public final class ContentMapping {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Content fetchContent(@Nonnull @jakarta.annotation.Nonnull ObjId objId)
-      throws ObjNotFoundException {
+  public Content fetchContent(@Nonnull ObjId objId) throws ObjNotFoundException {
     ContentValueObj contentValue = persist.fetchTypedObj(objId, VALUE, ContentValueObj.class);
     return valueToContent(contentValue);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Map<ContentKey, Content> fetchContents(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> index,
-      @Nonnull @jakarta.annotation.Nonnull Collection<ContentKey> keys)
+      @Nonnull StoreIndex<CommitOp> index, @Nonnull Collection<ContentKey> keys)
       throws ObjNotFoundException {
 
     // Eagerly bulk-(pre)fetch the requested keys
@@ -153,9 +149,7 @@ public final class ContentMapping {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ContentValueObj buildContent(
-      @Nonnull @jakarta.annotation.Nonnull Content putValue, int payload) {
+  public ContentValueObj buildContent(@Nonnull Content putValue, int payload) {
     checkArgument(payload > 0 && payload <= 127, "payload must be > 0 and <= 127");
     String contentId = putValue.getId();
     checkArgument(contentId != null, "Content to store must have a non-null content ID");
@@ -166,19 +160,14 @@ public final class ContentMapping {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Commit commitObjToCommit(
-      boolean fetchAdditionalInfo, @Nonnull @jakarta.annotation.Nonnull CommitObj commitObj)
+  public Commit commitObjToCommit(boolean fetchAdditionalInfo, @Nonnull CommitObj commitObj)
       throws ObjNotFoundException {
     return commitObjToCommit(fetchAdditionalInfo, commitObj, commitObj.id());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Commit commitObjToCommit(
-      boolean fetchAdditionalInfo,
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commitObj,
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId)
+      boolean fetchAdditionalInfo, @Nonnull CommitObj commitObj, @Nonnull ObjId commitId)
       throws ObjNotFoundException {
     ImmutableCommit.Builder commit =
         Commit.builder()

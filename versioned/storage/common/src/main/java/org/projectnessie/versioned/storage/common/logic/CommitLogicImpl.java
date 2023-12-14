@@ -56,6 +56,8 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.hash.Hasher;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,8 +73,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -111,9 +111,7 @@ final class CommitLogicImpl implements CommitLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public PagedResult<CommitObj, ObjId> commitLog(
-      @Nonnull @jakarta.annotation.Nonnull CommitLogQuery commitLogQuery) {
+  public PagedResult<CommitObj, ObjId> commitLog(@Nonnull CommitLogQuery commitLogQuery) {
     ObjId startCommitId =
         commitLogQuery
             .pagingToken()
@@ -189,7 +187,6 @@ final class CommitLogicImpl implements CommitLogic {
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
     public PagingToken tokenForKey(ObjId key) {
       return key != null ? pagingToken(key.asBytes()) : emptyPagingToken();
@@ -198,9 +195,7 @@ final class CommitLogicImpl implements CommitLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public PagedResult<ObjId, ObjId> commitIdLog(
-      @Nonnull @jakarta.annotation.Nonnull CommitLogQuery commitLogQuery) {
+  public PagedResult<ObjId, ObjId> commitIdLog(@Nonnull CommitLogQuery commitLogQuery) {
     ObjId startCommitId =
         commitLogQuery
             .pagingToken()
@@ -271,7 +266,6 @@ final class CommitLogicImpl implements CommitLogic {
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
     public PagingToken tokenForKey(ObjId key) {
       return key != null ? pagingToken(key.asBytes()) : emptyPagingToken();
@@ -279,11 +273,9 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public CommitObj doCommit(
-      @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
-      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
+      @Nonnull CreateCommit createCommit, @Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException {
     CommitObj commit =
         buildCommitObj(
@@ -292,9 +284,7 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Override
-  public boolean storeCommit(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
-      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects) {
+  public boolean storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects) {
     int numAdditional = additionalObjects.size();
     try {
       Obj[] allObjs = additionalObjects.toArray(new Obj[numAdditional + 1]);
@@ -324,7 +314,7 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Override
-  public CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
+  public CommitObj updateCommit(@Nonnull CommitObj commit) {
     try {
       persist.upsertObj(commit);
     } catch (ObjTooLargeException e) {
@@ -529,14 +519,13 @@ final class CommitLogicImpl implements CommitLogic {
 
   @SuppressWarnings("UnstableApiUsage")
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public CommitObj buildCommitObj(
-      @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
-      @Nonnull @jakarta.annotation.Nonnull ConflictHandler conflictHandler,
-      @Nonnull @jakarta.annotation.Nonnull CommitOpHandler commitOpHandler,
-      @Nonnull @jakarta.annotation.Nonnull ValueReplacement expectedValueReplacement,
-      @Nonnull @jakarta.annotation.Nonnull ValueReplacement committedValueReplacement)
+      @Nonnull CreateCommit createCommit,
+      @Nonnull ConflictHandler conflictHandler,
+      @Nonnull CommitOpHandler commitOpHandler,
+      @Nonnull ValueReplacement expectedValueReplacement,
+      @Nonnull ValueReplacement committedValueReplacement)
       throws CommitConflictException, ObjNotFoundException {
     StoreConfig config = persist.config();
 
@@ -795,9 +784,9 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   private static boolean handleConflict(
-      @Nonnull @jakarta.annotation.Nonnull ConflictHandler conflictHandler,
-      @Nonnull @jakarta.annotation.Nonnull List<CommitConflict> conflicts,
-      @Nonnull @jakarta.annotation.Nonnull CommitConflict conflict) {
+      @Nonnull ConflictHandler conflictHandler,
+      @Nonnull List<CommitConflict> conflicts,
+      @Nonnull CommitConflict conflict) {
     ConflictResolution resolution = conflictHandler.onConflict(conflict);
     switch (resolution) {
       case CONFLICT:
@@ -822,21 +811,15 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public ObjId findCommonAncestor(
-      @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
+  public ObjId findCommonAncestor(@Nonnull ObjId targetId, @Nonnull ObjId sourceId)
       throws NoSuchElementException {
     return identifyMergeBase(targetId, sourceId, false);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public ObjId findMergeBase(
-      @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
+  public ObjId findMergeBase(@Nonnull ObjId targetId, @Nonnull ObjId sourceId)
       throws NoSuchElementException {
     return identifyMergeBase(targetId, sourceId, true);
   }
@@ -859,10 +842,8 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public CommitObj fetchCommit(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)
-      throws ObjNotFoundException {
+  public CommitObj fetchCommit(@Nonnull ObjId commitId) throws ObjNotFoundException {
     if (EMPTY_OBJ_ID.equals(commitId)) {
       return null;
     }
@@ -870,11 +851,8 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CommitObj[] fetchCommits(
-      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId)
+  public CommitObj[] fetchCommits(@Nonnull ObjId startCommitId, @Nonnull ObjId endCommitId)
       throws ObjNotFoundException {
     CommitObj[] commitObjs = new CommitObj[2];
     if (startCommitId.equals(endCommitId)) {
@@ -905,10 +883,8 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public DiffPagedResult<DiffEntry, StoreKey> diff(
-      @Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery) {
+  public DiffPagedResult<DiffEntry, StoreKey> diff(@Nonnull DiffQuery diffQuery) {
     IndexesLogic indexesLogic = indexesLogic(persist);
 
     StoreKey start =
@@ -1054,7 +1030,6 @@ final class CommitLogicImpl implements CommitLogic {
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
     public PagingToken tokenForKey(StoreKey key) {
       return key != null ? pagingToken(copyFromUtf8(key.rawString())) : emptyPagingToken();
@@ -1062,11 +1037,9 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public CreateCommit.Builder diffToCreateCommit(
-      @Nonnull @jakarta.annotation.Nonnull PagedResult<DiffEntry, StoreKey> diff,
-      @Nonnull @jakarta.annotation.Nonnull CreateCommit.Builder createCommit) {
+      @Nonnull PagedResult<DiffEntry, StoreKey> diff, @Nonnull CreateCommit.Builder createCommit) {
     while (diff.hasNext()) {
       DiffEntry d = diff.next();
       if (d.fromId() == null) {
@@ -1089,9 +1062,7 @@ final class CommitLogicImpl implements CommitLogic {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  public CommitObj headCommit(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws ObjNotFoundException {
+  public CommitObj headCommit(@Nonnull Reference reference) throws ObjNotFoundException {
     return fetchCommit(reference.pointer());
   }
 

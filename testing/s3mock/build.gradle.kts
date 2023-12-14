@@ -21,15 +21,9 @@ extra["maven.name"] = "Nessie - GC - S3 mock"
 description = "Rudimentary S3 endpoint delegating to functions to serve content."
 
 dependencies {
-
-  // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)
-  compileOnly(libs.javax.ws.rs21)
-  compileOnly(libs.javax.ws.rs)
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.jakarta.inject.api)
 
   compileOnly(libs.microprofile.openapi)
@@ -51,8 +45,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
-  implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider")
-  implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider")
+  implementation("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider")
+  implementation("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-xml-provider")
 
   compileOnly(libs.avro)
 

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -30,12 +30,10 @@ public interface DeletedS3Object extends ObjectIdentifier {
 
   @JsonProperty("DeleteMarker")
   @Nullable
-  @jakarta.annotation.Nullable
   Boolean deleteMarker();
 
   @JsonProperty("DeleteMarkerVersionId")
   @Nullable
-  @jakarta.annotation.Nullable
   String deleteMarkerVersionId();
 
   static DeletedS3Object from(S3ObjectIdentifier s3ObjectIdentifier) {

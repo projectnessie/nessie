@@ -16,13 +16,13 @@
 package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
 import org.projectnessie.api.v2.http.HttpConfigApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.ImmutableRepositoryConfigResponse;
@@ -41,7 +41,6 @@ import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
 public class RestV2ConfigResource implements HttpConfigApi {
 
   private final ConfigApiImpl config;
@@ -52,7 +51,6 @@ public class RestV2ConfigResource implements HttpConfigApi {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestV2ConfigResource(
       ServerConfig config,
       VersionStore store,

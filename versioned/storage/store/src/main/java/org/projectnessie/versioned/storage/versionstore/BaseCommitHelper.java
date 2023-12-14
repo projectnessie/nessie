@@ -43,6 +43,8 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.store
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -54,8 +56,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Conflict;
@@ -117,11 +117,11 @@ class BaseCommitHelper {
   final CommitObj expected;
 
   BaseCommitHelper(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull Persist persist,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nullable @jakarta.annotation.Nullable CommitObj head)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull Persist persist,
+      @Nonnull Reference reference,
+      @Nullable CommitObj head)
       throws ReferenceNotFoundException {
     this.branch = branch;
     this.referenceHash = referenceHash;
@@ -149,11 +149,11 @@ class BaseCommitHelper {
   @FunctionalInterface
   interface CommitterSupplier<I> {
     I newCommitter(
-        @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-        @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-        @Nonnull @jakarta.annotation.Nonnull Persist persist,
-        @Nonnull @jakarta.annotation.Nonnull Reference reference,
-        @Nullable @jakarta.annotation.Nullable CommitObj head)
+        @Nonnull BranchName branch,
+        @Nonnull Optional<Hash> referenceHash,
+        @Nonnull Persist persist,
+        @Nonnull Reference reference,
+        @Nullable CommitObj head)
         throws ReferenceNotFoundException;
   }
 
@@ -194,12 +194,12 @@ class BaseCommitHelper {
   }
 
   static <R, I> R committingOperation(
-      @Nonnull @jakarta.annotation.Nonnull String operationName,
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull Persist persist,
-      @Nonnull @jakarta.annotation.Nonnull CommitterSupplier<I> committerSupplier,
-      @Nonnull @jakarta.annotation.Nonnull CommittingFunction<R, I> committingFunction)
+      @Nonnull String operationName,
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull Persist persist,
+      @Nonnull CommitterSupplier<I> committerSupplier,
+      @Nonnull CommittingFunction<R, I> committingFunction)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
       return commitRetry(

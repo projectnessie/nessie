@@ -32,6 +32,7 @@ import static org.projectnessie.model.FetchOption.ALL;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
+import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,7 +47,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import javax.validation.constraints.NotNull;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.ListAssert;
 import org.assertj.core.api.SoftAssertions;
@@ -151,7 +151,6 @@ public abstract class BaseTestNessieApi {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   public NessieApiV1 api() {
     return api;
   }

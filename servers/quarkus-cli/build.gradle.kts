@@ -49,9 +49,7 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-picocli")
 
-  // javax/jakarta
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.microprofile.openapi)

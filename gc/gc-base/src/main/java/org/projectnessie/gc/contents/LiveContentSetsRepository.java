@@ -19,12 +19,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.validation.constraints.NotNull;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
@@ -108,8 +108,7 @@ public abstract class LiveContentSetsRepository {
       }
 
       @Override
-      public void finishedExceptionally(
-          @NotNull @jakarta.validation.constraints.NotNull Throwable e) {
+      public void finishedExceptionally(@NotNull Throwable e) {
         if (failure == null) {
           failure = e;
         } else {
@@ -119,9 +118,7 @@ public abstract class LiveContentSetsRepository {
       }
 
       @Override
-      public long addLiveContent(
-          @NotNull @jakarta.validation.constraints.NotNull
-              Stream<ContentReference> contentReference) {
+      public long addLiveContent(@NotNull Stream<ContentReference> contentReference) {
         Preconditions.checkState(!closed, "AddContents instance already closed.");
         return persistenceSpi().addIdentifiedLiveContent(id, contentReference);
       }

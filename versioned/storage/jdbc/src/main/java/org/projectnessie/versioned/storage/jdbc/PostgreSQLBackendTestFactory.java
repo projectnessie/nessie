@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -27,7 +27,6 @@ public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
     String version = System.getProperty("it.nessie.container.postgres.tag", "latest");

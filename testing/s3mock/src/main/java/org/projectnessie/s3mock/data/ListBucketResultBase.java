@@ -17,8 +17,8 @@ package org.projectnessie.s3mock.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 
 public interface ListBucketResultBase {
   interface Builder<B extends Builder<B>> {
@@ -50,7 +50,6 @@ public interface ListBucketResultBase {
 
   @JsonProperty("Prefix")
   @Nullable
-  @jakarta.annotation.Nullable
   String prefix();
 
   @JsonProperty("MaxKeys")
@@ -58,7 +57,6 @@ public interface ListBucketResultBase {
 
   @JsonProperty("EncodingType")
   @Nullable
-  @jakarta.annotation.Nullable
   String encodingType();
 
   @JsonProperty("IsTruncated")

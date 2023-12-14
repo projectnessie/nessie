@@ -35,11 +35,8 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   testRuntimeOnly(libs.logback.classic)
 

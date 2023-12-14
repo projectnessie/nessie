@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Detached;
@@ -139,7 +139,6 @@ class TestRefUtil {
                     new NamedRef() {
                       @Override
                       @Nonnull
-                      @jakarta.annotation.Nonnull
                       public String getName() {
                         return REF_NAME;
                       }
@@ -171,7 +170,6 @@ class TestRefUtil {
                     new NamedRef() {
                       @Override
                       @Nonnull
-                      @jakarta.annotation.Nonnull
                       public String getName() {
                         return REF_NAME;
                       }

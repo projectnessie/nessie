@@ -29,6 +29,8 @@ import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractList;
@@ -38,8 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -274,7 +274,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element) {
+  public boolean add(@Nonnull StoreIndexElement<V> element) {
     modified = true;
     List<StoreIndexElement<V>> e = elements;
     ElementSerializer<V> serializer = this.serializer;
@@ -307,7 +307,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean remove(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean remove(@Nonnull StoreKey key) {
     List<StoreIndexElement<V>> e = elements;
     int idx = search(e, key);
     if (idx < 0) {
@@ -328,14 +328,13 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean contains(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean contains(@Nonnull StoreKey key) {
     int idx = search(elements, key);
     return idx >= 0;
   }
 
   @Override
-  public @Nullable @jakarta.annotation.Nullable StoreIndexElement<V> get(
-      @Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public @Nullable StoreIndexElement<V> get(@Nonnull StoreKey key) {
     List<StoreIndexElement<V>> e = elements;
     int idx = search(e, key);
     if (idx < 0) {
@@ -345,7 +344,6 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey first() {
     List<StoreIndexElement<V>> e = elements;
@@ -353,7 +351,6 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey last() {
     List<StoreIndexElement<V>> e = elements;
@@ -361,10 +358,8 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public @Nonnull @jakarta.annotation.Nonnull Iterator<StoreIndexElement<V>> iterator(
-      @Nullable @jakarta.annotation.Nullable StoreKey begin,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch) {
+  public @Nonnull Iterator<StoreIndexElement<V>> iterator(
+      @Nullable StoreKey begin, @Nullable StoreKey end, boolean prefetch) {
     List<StoreIndexElement<V>> e = elements;
 
     if (begin == null && end == null) {
@@ -457,7 +452,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public @Nonnull @jakarta.annotation.Nonnull ByteString serialize() {
+  public @Nonnull ByteString serialize() {
     ByteBuffer target;
 
     if (serialized == null || modified) {
@@ -839,8 +834,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     return ByteBuffer.allocate(MAX_KEY_BYTES);
   }
 
-  private static <V> int search(
-      List<StoreIndexElement<V>> e, @Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  private static <V> int search(List<StoreIndexElement<V>> e, @Nonnull StoreKey key) {
     // Need a StoreIndexElement for the sake of 'binarySearch()' (the content value isn't used)
     return search(e, indexElement(key, ""));
   }

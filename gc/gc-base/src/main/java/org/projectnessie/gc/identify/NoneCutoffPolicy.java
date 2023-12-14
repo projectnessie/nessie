@@ -15,13 +15,13 @@
  */
 package org.projectnessie.gc.identify;
 
+import jakarta.annotation.Nonnull;
 import java.time.Instant;
-import javax.annotation.Nonnull;
 
 final class NoneCutoffPolicy implements CutoffPolicy {
 
   @Override
-  public boolean isCutoff(@Nonnull @jakarta.annotation.Nonnull Instant commitTime, int numCommits) {
+  public boolean isCutoff(@Nonnull Instant commitTime, int numCommits) {
     return false;
   }
 

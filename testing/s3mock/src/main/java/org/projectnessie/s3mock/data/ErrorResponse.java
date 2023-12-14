@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonRootName("Error")
@@ -38,13 +38,11 @@ public interface ErrorResponse {
 
   @JsonProperty("Resource")
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 3)
   String resource();
 
   @JsonProperty("RequestId")
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 4)
   String requestId();
 

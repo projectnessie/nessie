@@ -17,10 +17,10 @@ package org.projectnessie.versioned.storage.common.persist;
 
 import static java.util.Collections.emptyList;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
@@ -56,7 +56,6 @@ public interface Reference {
 
   @Value.Parameter(order = 6)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId extendedInfoObj();
 
   // Not included in .equals/.hashCode to avoid having separate equals() implementation that does

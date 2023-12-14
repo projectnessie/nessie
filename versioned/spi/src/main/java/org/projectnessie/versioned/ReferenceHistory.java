@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
@@ -39,7 +39,6 @@ public interface ReferenceHistory {
 
     @Value.Parameter(order = 3)
     @Nullable
-    @jakarta.annotation.Nullable
     CommitMeta meta();
 
     static ReferenceHistoryElement referenceHistoryElement(

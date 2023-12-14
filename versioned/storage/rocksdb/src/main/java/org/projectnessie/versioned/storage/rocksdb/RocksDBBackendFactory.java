@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.rocksdb;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class RocksDBBackendFactory implements BackendFactory<RocksDBBackendConfig> {
@@ -24,23 +24,19 @@ public class RocksDBBackendFactory implements BackendFactory<RocksDBBackendConfi
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public RocksDBBackendConfig newConfigInstance() {
     return RocksDBBackendConfig.builder().build();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public RocksDBBackend buildBackend(
-      @Nonnull @jakarta.annotation.Nonnull RocksDBBackendConfig config) {
+  public RocksDBBackend buildBackend(@Nonnull RocksDBBackendConfig config) {
     return new RocksDBBackend(config);
   }
 }

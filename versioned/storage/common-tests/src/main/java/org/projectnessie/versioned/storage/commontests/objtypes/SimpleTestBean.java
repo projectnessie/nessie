@@ -15,37 +15,31 @@
  */
 package org.projectnessie.versioned.storage.commontests.objtypes;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 public interface SimpleTestBean {
 
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId parent();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String text();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Number number();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Map<String, String> map();
 
   @Nullable
-  @jakarta.annotation.Nullable
   List<String> list();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Instant instant();
 
   Optional<String> optional();

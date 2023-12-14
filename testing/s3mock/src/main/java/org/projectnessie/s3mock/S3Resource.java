@@ -15,11 +15,11 @@
  */
 package org.projectnessie.s3mock;
 
+import static jakarta.ws.rs.core.HttpHeaders.IF_MATCH;
+import static jakarta.ws.rs.core.HttpHeaders.IF_MODIFIED_SINCE;
+import static jakarta.ws.rs.core.HttpHeaders.IF_NONE_MATCH;
+import static jakarta.ws.rs.core.HttpHeaders.IF_UNMODIFIED_SINCE;
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
-import static javax.ws.rs.core.HttpHeaders.IF_MODIFIED_SINCE;
-import static javax.ws.rs.core.HttpHeaders.IF_NONE_MATCH;
-import static javax.ws.rs.core.HttpHeaders.IF_UNMODIFIED_SINCE;
 import static org.projectnessie.s3mock.util.S3Constants.CONTINUATION_TOKEN;
 import static org.projectnessie.s3mock.util.S3Constants.ENCODING_TYPE;
 import static org.projectnessie.s3mock.util.S3Constants.LIST_TYPE;
@@ -31,6 +31,24 @@ import static org.projectnessie.s3mock.util.S3Constants.X_AMZ_REQUEST_ID;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Nullable;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -43,24 +61,6 @@ import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.StreamingOutput;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.projectnessie.s3mock.S3Bucket.ListElement;
 import org.projectnessie.s3mock.data.BatchDeleteRequest;
@@ -85,20 +85,16 @@ import org.projectnessie.s3mock.util.PrefixSpliterator;
 import org.projectnessie.s3mock.util.StartAfterSpliterator;
 
 @Path("/")
-@jakarta.ws.rs.Path("/")
 @Produces(MediaType.APPLICATION_XML)
 @Consumes(MediaType.APPLICATION_XML)
 public class S3Resource {
-  @Inject @jakarta.inject.Inject IcebergS3Mock mockServer;
+  @Inject IcebergS3Mock mockServer;
 
   private static final Owner TEST_OWNER = Owner.of(42, "nessie-iceberg-s3-mock");
 
   @Path("ready")
-  @jakarta.ws.rs.Path("ready")
   @GET
-  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   public JsonNode ready() {
     ObjectNode node = new ObjectNode(JsonNodeFactory.instance);
     node.put("ready", true);
@@ -106,7 +102,6 @@ public class S3Resource {
   }
 
   @GET
-  @jakarta.ws.rs.GET
   public ListAllMyBucketsResult listBuckets() {
     ImmutableBuckets.Builder buckets = ImmutableBuckets.builder();
     mockServer
@@ -125,63 +120,38 @@ public class S3Resource {
   }
 
   @PUT
-  @jakarta.ws.rs.PUT
   @Path("/{bucketName:[a-z0-9.-]+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
-  public Response createBucket(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
+  public Response createBucket(@PathParam("bucketName") String bucketName) {
     return notImplemented();
   }
 
   @HEAD
-  @jakarta.ws.rs.HEAD
   @Path("/{bucketName:[a-z0-9.-]+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
-  public Response headBucket(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
+  public Response headBucket(@PathParam("bucketName") String bucketName) {
     return withBucket(bucketName, b -> Response.ok().build());
   }
 
   @DELETE
-  @jakarta.ws.rs.DELETE
   @Path("/{bucketName:[a-z0-9.-]+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
-  public Response deleteBucket(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
+  public Response deleteBucket(@PathParam("bucketName") String bucketName) {
     return notImplemented();
   }
 
   @GET
-  @jakarta.ws.rs.GET
   @Path("/{bucketName:[a-z0-9.-]+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   // TODO IF   params =  !UPLOADS
   public Response listObjectsInsideBucket(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
-      @QueryParam("prefix") @jakarta.ws.rs.QueryParam("prefix") String prefix,
-      @QueryParam("delimiter")
-          @jakarta.ws.rs.QueryParam("delimiter")
-          @DefaultValue("/")
-          @jakarta.ws.rs.DefaultValue("/")
-          String delimiter,
-      @QueryParam("marker") @jakarta.ws.rs.QueryParam("marker") String marker,
-      @QueryParam(ENCODING_TYPE) @jakarta.ws.rs.QueryParam(ENCODING_TYPE) String encodingType,
-      @QueryParam(MAX_KEYS)
-          @jakarta.ws.rs.QueryParam(MAX_KEYS)
-          @DefaultValue("1000")
-          @jakarta.ws.rs.DefaultValue("1000")
-          int maxKeys,
+      @PathParam("bucketName") String bucketName,
+      @QueryParam("prefix") String prefix,
+      @QueryParam("delimiter") @DefaultValue("/") String delimiter,
+      @QueryParam("marker") String marker,
+      @QueryParam(ENCODING_TYPE) String encodingType,
+      @QueryParam(MAX_KEYS) @DefaultValue("1000") int maxKeys,
       // V2 follows
-      @QueryParam(LIST_TYPE)
-          @jakarta.ws.rs.QueryParam(LIST_TYPE)
-          @DefaultValue("1")
-          @jakarta.ws.rs.DefaultValue("1")
-          int listType,
-      @QueryParam(CONTINUATION_TOKEN) @jakarta.ws.rs.QueryParam(CONTINUATION_TOKEN)
-          String continuationToken,
-      @QueryParam(START_AFTER) @jakarta.ws.rs.QueryParam(START_AFTER) String startAfter,
-      @HeaderParam(X_AMZ_REQUEST_ID) @jakarta.ws.rs.HeaderParam(X_AMZ_REQUEST_ID)
-          String requestId) {
+      @QueryParam(LIST_TYPE) @DefaultValue("1") int listType,
+      @QueryParam(CONTINUATION_TOKEN) String continuationToken,
+      @QueryParam(START_AFTER) String startAfter,
+      @HeaderParam(X_AMZ_REQUEST_ID) String requestId) {
     return withBucket(
         bucketName,
         b -> {
@@ -289,16 +259,10 @@ public class S3Resource {
   }
 
   @POST
-  @jakarta.ws.rs.POST
   @Path("/{bucketName:[a-z0-9.-]+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   public Response batchDeleteObjects(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
-      @QueryParam("delete")
-          @jakarta.ws.rs.QueryParam("delete")
-          @Nullable
-          @jakarta.annotation.Nullable
-          String deleteMarker,
+      @PathParam("bucketName") String bucketName,
+      @QueryParam("delete") @Nullable String deleteMarker,
       @RequestBody BatchDeleteRequest body) {
     return withBucket(
         bucketName,
@@ -325,13 +289,10 @@ public class S3Resource {
   }
 
   @HEAD
-  @jakarta.ws.rs.HEAD
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   @SuppressWarnings("JavaUtilDate")
   public Response headObject(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
-      @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName) {
+      @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
     return withBucketObject(
         bucketName,
         objectName,
@@ -345,12 +306,9 @@ public class S3Resource {
   }
 
   @DELETE
-  @jakarta.ws.rs.DELETE
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   public Response deleteObject(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
-      @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName) {
+      @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
     return withBucket(
         bucketName,
         b -> {
@@ -360,24 +318,20 @@ public class S3Resource {
   }
 
   @GET
-  @jakarta.ws.rs.GET
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
-  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   @Produces(MediaType.WILDCARD)
   // TODO NOT_UPLOADS,
   // TODO NOT_UPLOAD_ID,
   // TODO NOT_TAGGING
   @SuppressWarnings("JavaUtilDate")
   public Response getObject(
-      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
-      @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName,
-      @HeaderParam(RANGE) @jakarta.ws.rs.HeaderParam(RANGE) Range range,
-      @HeaderParam(IF_MATCH) @jakarta.ws.rs.HeaderParam(IF_MATCH) List<String> match,
-      @HeaderParam(IF_NONE_MATCH) @jakarta.ws.rs.HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
-      @HeaderParam(IF_MODIFIED_SINCE) @jakarta.ws.rs.HeaderParam(IF_MODIFIED_SINCE)
-          Date modifiedSince,
-      @HeaderParam(IF_UNMODIFIED_SINCE) @jakarta.ws.rs.HeaderParam(IF_UNMODIFIED_SINCE)
-          Date unmodifiedSince) {
+      @PathParam("bucketName") String bucketName,
+      @PathParam("object") String objectName,
+      @HeaderParam(RANGE) Range range,
+      @HeaderParam(IF_MATCH) List<String> match,
+      @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
+      @HeaderParam(IF_MODIFIED_SINCE) Date modifiedSince,
+      @HeaderParam(IF_UNMODIFIED_SINCE) Date unmodifiedSince) {
     if (range != null) {
       // TODO Iceberg does this :(    return notImplemented();
     }

@@ -25,19 +25,19 @@ import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 
 public final class BigTableClientsFactory {
 
   public static BigtableDataClient createDataClient(
       String projectId,
       BigTableClientsConfig config,
-      @Nullable @jakarta.annotation.Nullable CredentialsProvider credentialsProvider)
+      @Nullable CredentialsProvider credentialsProvider)
       throws IOException {
 
     if (config.enableTelemetry()) {
@@ -134,7 +134,7 @@ public final class BigTableClientsFactory {
   public static BigtableTableAdminClient createTableAdminClient(
       String projectId,
       BigTableClientsConfig config,
-      @Nullable @jakarta.annotation.Nullable CredentialsProvider credentialsProvider)
+      @Nullable CredentialsProvider credentialsProvider)
       throws IOException {
 
     BigtableTableAdminSettings.Builder adminSettings =

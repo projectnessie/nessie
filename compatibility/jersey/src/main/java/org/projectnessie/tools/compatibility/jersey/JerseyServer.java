@@ -17,12 +17,14 @@ package org.projectnessie.tools.compatibility.jersey;
 
 import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
 
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.ws.rs.core.Application;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.enterprise.inject.spi.Extension;
-import javax.ws.rs.core.Application;
 import org.glassfish.jersey.message.DeflateEncoder;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -71,51 +73,47 @@ public class JerseyServer implements AutoCloseable {
           @Override
           protected Application configure() {
             ResourceConfig config = new ResourceConfig();
-            withClass(
-                "org.projectnessie.services.rest.RestV2ConfigResource", config::register, false);
-            withClass(
-                "org.projectnessie.services.rest.RestV2TreeResource", config::register, false);
+            withClass("org.projectnessie.services.rest.RestV2ConfigResource", config::register);
+            withClass("org.projectnessie.services.rest.RestV2TreeResource", config::register);
             config.register(RestConfigResource.class);
             config.register(RestTreeResource.class);
             config.register(RestContentResource.class);
-            withClass("org.projectnessie.services.rest.RestDiffResource", config::register, false);
-            withClass(
-                "org.projectnessie.services.rest.RestRefLogResource", config::register, false);
-            withClass(
-                "org.projectnessie.services.rest.RestNamespaceResource", config::register, false);
+            withClass("org.projectnessie.services.rest.RestDiffResource", config::register);
+            withClass("org.projectnessie.services.rest.RestRefLogResource", config::register);
+            withClass("org.projectnessie.services.rest.RestNamespaceResource", config::register);
             config.register(ConfigApiImpl.class);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.ContentKeyParamConverterProvider",
                 config::register,
                 true);
-            withJavaxClass(
+            withEEClass(
                 // Present since 0.19.0
                 "org.projectnessie.services.restjavax.ReferenceTypeParamConverterProvider",
                 config::register,
                 false);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.ValidationExceptionMapper",
                 c -> config.register(c, 10),
                 true);
-            withJavaxClass(
+            withEEClass(
                 // Present since 0.46.5
                 "org.projectnessie.services.restjavax.ConstraintViolationExceptionMapper",
                 c -> config.register(c, 10),
                 false);
-            withJavaxClass(
+            withEEClass(
                 // Present since 0.23.1
                 "org.projectnessie.services.restjavax.NamespaceParamConverterProvider",
                 config::register,
                 false);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieExceptionMapper",
                 config::register,
                 true);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieJaxRsJsonParseExceptionMapper",
                 c -> config.register(c, 10),
                 true);
-            withJavaxClass(
+            withEEClass(
                 "org.projectnessie.services.restjavax.NessieJaxRsJsonMappingExceptionMapper",
                 c -> config.register(c, 10),
                 true);
@@ -158,34 +156,35 @@ public class JerseyServer implements AutoCloseable {
     return jerseyTest.target().getUri();
   }
 
-  private static void withClass(
-      String className, Consumer<Class<?>> whenClassExists, boolean mandatory) {
+  private static void withClass(String className, Consumer<Class<?>> whenClassExists) {
     try {
       Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
       whenClassExists.accept(clazz);
     } catch (ClassNotFoundException e) {
-      if (mandatory) {
-        throw new RuntimeException(e);
-      }
+      // ignore
     }
   }
 
-  private static void withJavaxClass(
-      String javaxClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
-    try {
-      Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(javaxClassName);
-      whenClassExists.accept(clazz);
-    } catch (NoClassDefFoundError | ClassNotFoundException e) {
+  private static void withEEClass(
+      String eeClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
+    Iterator<String> classNames =
+        List.of(
+                eeClassName,
+                eeClassName.replace("restjavax.", "restjakarta."),
+                eeClassName.replace("restjavax.", "rest."))
+            .iterator();
+    while (classNames.hasNext()) {
+      String className = classNames.next();
       try {
-        Class<?> clazz =
-            Thread.currentThread()
-                .getContextClassLoader()
-                .loadClass(javaxClassName.replace("restjavax.", "rest."));
+        Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
         whenClassExists.accept(clazz);
-      } catch (NoClassDefFoundError | ClassNotFoundException e2) {
-        e.addSuppressed(e2);
-        if (mandatory) {
-          throw new RuntimeException(e);
+        break;
+      } catch (NoClassDefFoundError | ClassNotFoundException e) {
+        if (!classNames.hasNext()) {
+          if (mandatory) {
+            throw new RuntimeException(e);
+          }
+          return;
         }
       }
     }

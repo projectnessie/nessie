@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import jakarta.annotation.Nonnull;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -42,8 +42,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
       return o;
@@ -60,9 +59,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
@@ -80,9 +77,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
       return o.type();
@@ -94,9 +89,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     ObjId[] backendIds = null;
     Obj[] r = new Obj[ids.length];
 
@@ -132,8 +125,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public boolean storeObj(
-      @jakarta.annotation.Nonnull @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     if (persist.storeObj(obj, ignoreSoftSizeRestrictions)) {
       cache.put(obj);
@@ -144,9 +136,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     boolean[] stored = persist.storeObjs(objs);
     for (int i = 0; i < stored.length; i++) {
       if (stored[i]) {
@@ -157,7 +147,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public void upsertObj(@jakarta.annotation.Nonnull @Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     try {
       persist.upsertObj(obj);
     } finally {
@@ -166,8 +156,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public void upsertObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     try {
       persist.upsertObjs(objs);
     } finally {
@@ -180,7 +169,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public void deleteObj(@jakarta.annotation.Nonnull @Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     try {
       persist.deleteObj(id);
     } finally {
@@ -189,7 +178,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public void deleteObjs(@jakarta.annotation.Nonnull @Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     try {
       persist.deleteObjs(ids);
     } finally {
@@ -212,9 +201,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return persist.scanAllObjects(returnedObjTypes);
   }
 
@@ -237,59 +224,50 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreConfig config() {
     return persist.config();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return persist.name();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     return persist.addReference(reference);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     return persist.markReferenceAsDeleted(reference);
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     persist.purgeReference(reference);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     return persist.updateReferencePointer(reference, newPointer);
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     return persist.fetchReference(name);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     return persist.fetchReferences(names);
   }
 }

@@ -15,8 +15,8 @@
  */
 package org.projectnessie.services.impl;
 
+import jakarta.annotation.Nonnull;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
@@ -32,7 +32,7 @@ import org.projectnessie.versioned.WithHash;
 public final class RefUtil {
   private RefUtil() {}
 
-  public static NamedRef toNamedRef(@Nonnull @jakarta.annotation.Nonnull Reference reference) {
+  public static NamedRef toNamedRef(@Nonnull Reference reference) {
     Objects.requireNonNull(reference, "reference must not be null");
     if (reference instanceof Branch) {
       return BranchName.of(reference.getName());
@@ -47,8 +47,7 @@ public final class RefUtil {
   }
 
   public static NamedRef toNamedRef(
-      @Nonnull @jakarta.annotation.Nonnull ReferenceType referenceType,
-      @Nonnull @jakarta.annotation.Nonnull String referenceName) {
+      @Nonnull ReferenceType referenceType, @Nonnull String referenceName) {
     Objects.requireNonNull(referenceType, "referenceType must not be null");
     switch (referenceType) {
       case BRANCH:
@@ -61,14 +60,12 @@ public final class RefUtil {
     }
   }
 
-  public static Reference toReference(
-      @Nonnull @jakarta.annotation.Nonnull NamedRef namedRef, Hash hash) {
+  public static Reference toReference(@Nonnull NamedRef namedRef, Hash hash) {
     Objects.requireNonNull(namedRef, "namedRef must not be null");
     return toReference(namedRef, hash != null ? hash.asString() : null);
   }
 
-  public static Reference toReference(
-      @Nonnull @jakarta.annotation.Nonnull NamedRef namedRef, String hash) {
+  public static Reference toReference(@Nonnull NamedRef namedRef, String hash) {
     Objects.requireNonNull(namedRef, "namedRef must not be null");
     if (namedRef instanceof BranchName) {
       return Branch.of(namedRef.getName(), hash);
@@ -83,13 +80,11 @@ public final class RefUtil {
     throw new IllegalArgumentException(String.format("Unsupported named reference '%s'", namedRef));
   }
 
-  public static Reference toReference(
-      @Nonnull @jakarta.annotation.Nonnull WithHash<NamedRef> hashWitRef) {
+  public static Reference toReference(@Nonnull WithHash<NamedRef> hashWitRef) {
     return toReference(hashWitRef.getValue(), hashWitRef.getHash());
   }
 
-  public static ReferenceType referenceType(
-      @Nonnull @jakarta.annotation.Nonnull NamedRef namedRef) {
+  public static ReferenceType referenceType(@Nonnull NamedRef namedRef) {
     if (namedRef instanceof BranchName) {
       return ReferenceType.BRANCH;
     }

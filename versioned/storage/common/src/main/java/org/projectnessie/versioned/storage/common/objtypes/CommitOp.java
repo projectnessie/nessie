@@ -22,10 +22,10 @@ import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.skipVarInt;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.indexes.ElementSerializer;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -44,28 +44,20 @@ public interface CommitOp {
 
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId value();
 
   // Note: the content-ID from legacy, imported Nessie repositories could theoretically been
   // any string value. If it's a UUID, use it, otherwise ignore it down the road.
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   UUID contentId();
 
-  static CommitOp commitOp(
-      @Nonnull @jakarta.annotation.Nonnull Action action,
-      int payload,
-      @Nullable @jakarta.annotation.Nullable ObjId value) {
+  static CommitOp commitOp(@Nonnull Action action, int payload, @Nullable ObjId value) {
     return commitOp(action, payload, value, null);
   }
 
   static CommitOp commitOp(
-      @Nonnull @jakarta.annotation.Nonnull Action action,
-      int payload,
-      @Nullable @jakarta.annotation.Nullable ObjId value,
-      @Nullable @jakarta.annotation.Nullable UUID contentId) {
+      @Nonnull Action action, int payload, @Nullable ObjId value, @Nullable UUID contentId) {
     checkArgument(payload >= 0 && payload <= 127);
     checkArgument(value == null || value.size() > 0);
     return ImmutableCommitOp.of(action, payload, value, contentId);

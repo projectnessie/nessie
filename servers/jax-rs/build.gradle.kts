@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 extra["maven.name"] = "Nessie - JAX-RS"
@@ -36,15 +35,10 @@ dependencies {
   api(project(":nessie-versioned-storage-testextension"))
   implementation(libs.slf4j.api)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)
-  compileOnly(libs.javax.ws.rs21)
   compileOnly(libs.jakarta.enterprise.cdi.api)
-  compileOnly(libs.javax.enterprise.cdi.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
 
   compileOnly(libs.microprofile.openapi)
 
@@ -53,11 +47,4 @@ dependencies {
   api(platform(libs.jackson.bom))
   api("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }

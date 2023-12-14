@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class JdbcBackendFactory implements BackendFactory<JdbcBackendConfig> {
@@ -24,22 +24,19 @@ public class JdbcBackendFactory implements BackendFactory<JdbcBackendConfig> {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public JdbcBackendConfig newConfigInstance() {
     return JdbcBackendConfig.builder().build();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public JdbcBackend buildBackend(@Nonnull @jakarta.annotation.Nonnull JdbcBackendConfig config) {
+  public JdbcBackend buildBackend(@Nonnull JdbcBackendConfig config) {
     DatabaseSpecific databaseSpecific = DatabaseSpecifics.detect(config.dataSource());
     return new JdbcBackend(config, databaseSpecific, false);
   }

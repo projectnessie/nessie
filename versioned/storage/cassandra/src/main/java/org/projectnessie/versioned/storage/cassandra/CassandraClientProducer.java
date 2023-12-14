@@ -19,9 +19,9 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import jakarta.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -34,15 +34,12 @@ public abstract class CassandraClientProducer {
   abstract List<InetSocketAddress> contactPoints();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract String localDc();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract AuthProvider authProvider();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract LoadBalancingPolicy loadBalancingPolicy();
 
   public CqlSession createClient() {

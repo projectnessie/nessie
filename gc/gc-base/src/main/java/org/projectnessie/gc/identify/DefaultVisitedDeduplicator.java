@@ -17,12 +17,12 @@ package org.projectnessie.gc.identify;
 
 import static org.projectnessie.gc.identify.CutoffPolicy.NO_TIMESTAMP;
 
+import jakarta.annotation.Nonnull;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.agrona.collections.ObjectHashSet;
 
 /**
@@ -47,8 +47,7 @@ public final class DefaultVisitedDeduplicator implements VisitedDeduplicator {
 
   @Override
   public synchronized boolean alreadyVisited(
-      @Nonnull @jakarta.annotation.Nonnull Instant cutoffTimestamp,
-      @Nonnull @jakarta.annotation.Nonnull String commitId) {
+      @Nonnull Instant cutoffTimestamp, @Nonnull String commitId) {
     if (cutoffTimestamp.equals(NO_TIMESTAMP)) {
       return false;
     }

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
@@ -27,7 +27,6 @@ public class CockroachBackendTestFactory extends PostgreSQLBackendTestFactory {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
     String version = System.getProperty("it.nessie.container.cockroach.tag", "latest");

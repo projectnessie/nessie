@@ -16,9 +16,9 @@
 package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.validation.constraints.NotNull;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.api.v1.http.HttpNamespaceApi;
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.api.v1.params.NamespaceParams;
@@ -34,7 +34,6 @@ import org.projectnessie.services.spi.NamespaceService;
 
 /** REST endpoint for the namespace-API. */
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
 public class RestNamespaceResource implements HttpNamespaceApi {
   // Cannot extend the NamespaceApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpNamespaceApi or the plain NamespaceApi. This can lead
@@ -49,7 +48,6 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestNamespaceResource(NamespaceService namespaceService) {
     this.namespaceService = namespaceService;
   }

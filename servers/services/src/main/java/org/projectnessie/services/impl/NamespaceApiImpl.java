@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RE
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.annotation.Nullable;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +36,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.projectnessie.api.v1.NamespaceApi;
 import org.projectnessie.api.v1.params.NamespaceParams;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
@@ -288,9 +288,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   @MustBeClosed
   private Stream<KeyEntry> getNamespacesKeyStream(
-      @Nullable @jakarta.annotation.Nullable Namespace namespace,
-      Hash hash,
-      Predicate<KeyEntry> earlyFilterPredicate)
+      @Nullable Namespace namespace, Hash hash, Predicate<KeyEntry> earlyFilterPredicate)
       throws ReferenceNotFoundException {
     PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null, false, NO_KEY_RESTRICTIONS);
     return stream(spliteratorUnknownSize(iter, 0), false)

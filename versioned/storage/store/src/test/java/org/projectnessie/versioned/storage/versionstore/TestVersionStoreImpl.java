@@ -21,10 +21,10 @@ import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_RETRIES;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_TIMEOUT_MILLIS;
 
+import jakarta.annotation.Nonnull;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nonnull;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.junit.jupiter.api.Test;
@@ -72,11 +72,9 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     Persist tested =
         new PersistDelegate(persist) {
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public Reference updateReferencePointer(
-              @Nonnull @jakarta.annotation.Nonnull Reference reference,
-              @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+              @Nonnull Reference reference, @Nonnull ObjId newPointer)
               throws RefNotFoundException, RefConditionFailedException {
 
             int num = intercepted.incrementAndGet();
@@ -126,11 +124,9 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     Persist tested =
         new PersistDelegate(persist) {
           @Nonnull
-          @jakarta.annotation.Nonnull
           @Override
           public Reference updateReferencePointer(
-              @Nonnull @jakarta.annotation.Nonnull Reference reference,
-              @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+              @Nonnull Reference reference, @Nonnull ObjId newPointer)
               throws RefNotFoundException, RefConditionFailedException {
 
             if (intercepted.compareAndSet(false, true)) {

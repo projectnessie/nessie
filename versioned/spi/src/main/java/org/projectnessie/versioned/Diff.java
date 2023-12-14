@@ -18,8 +18,8 @@ package org.projectnessie.versioned;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import jakarta.annotation.Nullable;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -30,12 +30,10 @@ public interface Diff {
 
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   IdentifiedContentKey getFromKey();
 
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   IdentifiedContentKey getToKey();
 
   @Value.Parameter(order = 3)

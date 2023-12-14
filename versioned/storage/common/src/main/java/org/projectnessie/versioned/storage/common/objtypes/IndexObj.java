@@ -17,8 +17,8 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.indexHash;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -36,23 +36,18 @@ public interface IndexObj extends Obj {
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   @Value.Parameter(order = 1)
   ByteString index();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static IndexObj index(
-      @Nullable @jakarta.annotation.Nullable ObjId id,
-      @Nonnull @jakarta.annotation.Nonnull ByteString index) {
+  static IndexObj index(@Nullable ObjId id, @Nonnull ByteString index) {
     return ImmutableIndexObj.of(id, index);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static IndexObj index(@Nonnull @jakarta.annotation.Nonnull ByteString index) {
+  static IndexObj index(@Nonnull ByteString index) {
     return index(indexHash(index), index);
   }
 }

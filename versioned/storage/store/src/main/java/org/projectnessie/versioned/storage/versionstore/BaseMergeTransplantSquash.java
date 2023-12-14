@@ -22,6 +22,8 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLog
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
@@ -62,11 +62,11 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 class BaseMergeTransplantSquash extends BaseCommitHelper {
 
   BaseMergeTransplantSquash(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull Persist persist,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nullable @jakarta.annotation.Nullable CommitObj head)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull Persist persist,
+      @Nonnull Reference reference,
+      @Nullable CommitObj head)
       throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
   }
@@ -75,7 +75,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       MergeTransplantOpBase mergeTransplantOpBase,
       ImmutableMergeResult.Builder<Commit> mergeResult,
       MergeTransplantContext mergeTransplantContext,
-      @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
+      @Nullable ObjId mergeFromId)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
 
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
@@ -134,7 +134,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       Map<ContentKey, KeyDetails> keyDetailsMap,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeTransplantContext mergeTransplantContext,
-      @Nullable @jakarta.annotation.Nullable ObjId mergeFromId) {
+      @Nullable ObjId mergeFromId) {
     CreateCommit.Builder commitBuilder = newCommitBuilder().parentCommitId(headId());
 
     fromCommitMeta(

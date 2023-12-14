@@ -61,6 +61,7 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCom
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -80,7 +81,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -162,7 +162,6 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public RepositoryInformation getRepositoryInformation() {
     ImmutableRepositoryInformation.Builder repoInfo =
@@ -178,7 +177,6 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Hash noAncestorHash() {
     return RefMapping.NO_ANCESTOR;
@@ -993,12 +991,12 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public CommitResult<Commit> commit(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
-      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
+      @Nonnull CommitValidator validator,
+      @Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return committingOperation(
         "commit",

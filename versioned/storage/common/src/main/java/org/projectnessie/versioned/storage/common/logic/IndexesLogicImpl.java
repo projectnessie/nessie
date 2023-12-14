@@ -42,6 +42,8 @@ import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,8 +53,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -83,9 +83,8 @@ final class IndexesLogicImpl implements IndexesLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Supplier<SuppliedCommitIndex> createIndexSupplier(
-      @Nonnull @jakarta.annotation.Nonnull Supplier<ObjId> commitIdSupplier) {
+      @Nonnull Supplier<ObjId> commitIdSupplier) {
     return memoize(
         () -> {
           try {
@@ -103,10 +102,8 @@ final class IndexesLogicImpl implements IndexesLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreIndex<CommitOp> incrementalIndexForUpdate(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
-      Optional<StoreIndex<CommitOp>> loadedIncrementalIndex) {
+      @Nonnull CommitObj commit, Optional<StoreIndex<CommitOp>> loadedIncrementalIndex) {
     checkArgument(!commit.incompleteIndex(), "Commit %s has no complete key index", commit.id());
 
     boolean hasReferenceIndex = commit.hasReferenceIndex();
@@ -143,18 +140,15 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Iterable<StoreIndexElement<CommitOp>> commitOperations(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commitObj) {
+  public Iterable<StoreIndexElement<CommitOp>> commitOperations(@Nonnull CommitObj commitObj) {
     return commitOperations(incrementalIndexFromCommit(commitObj));
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Iterable<StoreIndexElement<CommitOp>> commitOperations(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> index) {
+      @Nonnull StoreIndex<CommitOp> index) {
     return () ->
         new AbstractIterator<>() {
           final Iterator<StoreIndexElement<CommitOp>> delegate = index.iterator();
@@ -176,19 +170,15 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public StoreIndex<CommitOp> incrementalIndexFromCommit(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
+  public StoreIndex<CommitOp> incrementalIndexFromCommit(@Nonnull CommitObj commit) {
     return deserializeIndex(commit.incrementalIndex());
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreIndex<CommitOp> buildCompleteIndex(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
-      Optional<StoreIndex<CommitOp>> loadedIncrementalIndex) {
+      @Nonnull CommitObj commit, Optional<StoreIndex<CommitOp>> loadedIncrementalIndex) {
     checkArgument(!commit.incompleteIndex(), "Commit %s has no complete key index", commit.id());
 
     StoreIndex<CommitOp> incremental =
@@ -214,9 +204,7 @@ final class IndexesLogicImpl implements IndexesLogic {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  public StoreIndex<CommitOp> buildReferenceIndexOnly(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
+  public StoreIndex<CommitOp> buildReferenceIndexOnly(@Nonnull CommitObj commit) {
     ObjId referenceIndexId = commit.referenceIndex();
     List<IndexStripe> commitStripes = commit.referenceIndexStripes();
     if (!commitStripes.isEmpty()) {
@@ -234,16 +222,12 @@ final class IndexesLogicImpl implements IndexesLogic {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreIndex<CommitOp> buildReferenceIndexOnly(
-      @Nonnull @jakarta.annotation.Nonnull ObjId indexId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId) {
+      @Nonnull ObjId indexId, @Nonnull ObjId commitId) {
     return lazyStoreIndex(() -> loadReferenceIndex(indexId, commitId));
   }
 
-  private StoreIndex<CommitOp> loadReferenceIndex(
-      @Nonnull @jakarta.annotation.Nonnull ObjId indexId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId) {
+  private StoreIndex<CommitOp> loadReferenceIndex(@Nonnull ObjId indexId, @Nonnull ObjId commitId) {
     Obj keyIndex;
     try {
       keyIndex = persist.fetchObj(indexId);
@@ -273,8 +257,7 @@ final class IndexesLogicImpl implements IndexesLogic {
     return deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER);
   }
 
-  private StoreIndex<CommitOp> loadIndexSegment(
-      @Nonnull @jakarta.annotation.Nonnull ObjId indexId) {
+  private StoreIndex<CommitOp> loadIndexSegment(@Nonnull ObjId indexId) {
     IndexObj index;
     try {
       index = persist.fetchTypedObj(indexId, INDEX, IndexObj.class);
@@ -285,8 +268,7 @@ final class IndexesLogicImpl implements IndexesLogic {
     return deserializeIndex(index.index()).setObjId(indexId);
   }
 
-  private StoreIndex<CommitOp>[] loadIndexSegments(
-      @Nonnull @jakarta.annotation.Nonnull ObjId[] indexes) {
+  private StoreIndex<CommitOp>[] loadIndexSegments(@Nonnull ObjId[] indexes) {
     try {
       Obj[] objs = persist.fetchObjs(indexes);
       @SuppressWarnings("unchecked")
@@ -378,10 +360,8 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public ObjId persistStripedIndex(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
+  public ObjId persistStripedIndex(@Nonnull StoreIndex<CommitOp> stripedIndex)
       throws ObjTooLargeException {
     List<StoreIndex<CommitOp>> stripes = stripedIndex.stripes();
     if (stripes.isEmpty()) {
@@ -403,10 +383,8 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public List<IndexStripe> persistIndexStripesFromIndex(
-      @Nonnull @jakarta.annotation.Nonnull StoreIndex<CommitOp> stripedIndex)
+  public List<IndexStripe> persistIndexStripesFromIndex(@Nonnull StoreIndex<CommitOp> stripedIndex)
       throws ObjTooLargeException {
     List<StoreIndex<CommitOp>> stripes = stripedIndex.stripes();
     List<Obj> toStore = new ArrayList<>();
@@ -451,8 +429,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @Override
-  public void completeIndexesInCommitChain(
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId, Runnable progressCallback)
+  public void completeIndexesInCommitChain(@Nonnull ObjId commitId, Runnable progressCallback)
       throws ObjNotFoundException {
     Deque<ObjId> idsToProcess = new ArrayDeque<>();
     idsToProcess.add(commitId);
@@ -465,9 +442,7 @@ final class IndexesLogicImpl implements IndexesLogic {
 
   @VisibleForTesting
   void completeIndexesInCommitChain(
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId,
-      @Nonnull @jakarta.annotation.Nonnull Deque<ObjId> idsToProcess,
-      Runnable progressCallback)
+      @Nonnull ObjId commitId, @Nonnull Deque<ObjId> idsToProcess, Runnable progressCallback)
       throws ObjNotFoundException {
     CommitLogic commitLogic = commitLogic(persist);
 
@@ -574,7 +549,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @VisibleForTesting
-  List<ObjId> findCommitsWithIncompleteIndex(@Nonnull @jakarta.annotation.Nonnull ObjId commitId) {
+  List<ObjId> findCommitsWithIncompleteIndex(@Nonnull ObjId commitId) {
     ArrayList<ObjId> commitsToUpdate = new ArrayList<>();
     CommitLogic commitLogic = commitLogic(persist);
     for (PagedResult<CommitObj, ObjId> iter = commitLogic.commitLog(commitLogQuery(commitId));

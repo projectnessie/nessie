@@ -19,11 +19,11 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.KEY
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.TABLE_REFS;
 
+import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
@@ -51,8 +51,7 @@ final class DynamoDBBackend implements Backend {
   final String tableRefs;
   final String tableObjs;
 
-  DynamoDBBackend(
-      @Nonnull @jakarta.annotation.Nonnull DynamoDBBackendConfig config, boolean closeClient) {
+  DynamoDBBackend(@Nonnull DynamoDBBackendConfig config, boolean closeClient) {
     this.client = config.client();
     this.tableRefs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
@@ -62,14 +61,12 @@ final class DynamoDBBackend implements Backend {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   DynamoDbClient client() {
     return client;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public PersistFactory createFactory() {
     return new DynamoDBPersistFactory(this);
   }

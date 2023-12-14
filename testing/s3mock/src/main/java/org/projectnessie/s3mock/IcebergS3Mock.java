@@ -15,7 +15,7 @@
  */
 package org.projectnessie.s3mock;
 
-import com.fasterxml.jackson.jaxrs.xml.JacksonXMLProvider;
+import com.fasterxml.jackson.jakarta.rs.xml.JacksonXMLProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;

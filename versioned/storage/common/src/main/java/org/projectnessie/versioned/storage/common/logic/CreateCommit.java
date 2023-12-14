@@ -18,10 +18,10 @@ package org.projectnessie.versioned.storage.common.logic;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
@@ -98,22 +98,20 @@ public interface CreateCommit {
 
     @Value.Parameter(order = 4)
     @Nullable
-    @jakarta.annotation.Nullable
     ObjId expectedValue();
 
     // Note: the content-ID from legacy, imported Nessie repositories could theoretically been
     // any string value. If it's a UUID, use it, otherwise ignore it down the road.
     @Value.Parameter(order = 5)
     @Nullable
-    @jakarta.annotation.Nullable
     UUID contentId();
 
     static Add commitAdd(
-        @Nonnull @jakarta.annotation.Nonnull StoreKey key,
+        @Nonnull StoreKey key,
         int payload,
-        @Nonnull @jakarta.annotation.Nonnull ObjId value,
-        @Nullable @jakarta.annotation.Nullable ObjId expectedValue,
-        @Nullable @jakarta.annotation.Nullable UUID contentId) {
+        @Nonnull ObjId value,
+        @Nullable ObjId expectedValue,
+        @Nullable UUID contentId) {
       checkArgument(payload >= 0 && payload <= 127);
       return ImmutableAdd.of(key, payload, value, expectedValue, contentId);
     }
@@ -129,21 +127,19 @@ public interface CreateCommit {
 
     @Value.Parameter(order = 3)
     @Nullable
-    @jakarta.annotation.Nullable
     ObjId expectedValue();
 
     // Note: the content-ID from legacy, imported Nessie repositories could theoretically been
     // any string value. If it's a UUID, use it, otherwise ignore it down the road.
     @Value.Parameter(order = 4)
     @Nullable
-    @jakarta.annotation.Nullable
     UUID contentId();
 
     static Unchanged commitUnchanged(
-        @Nonnull @jakarta.annotation.Nonnull StoreKey key,
+        @Nonnull StoreKey key,
         int payload,
-        @Nullable @jakarta.annotation.Nullable ObjId expectedValue,
-        @Nullable @jakarta.annotation.Nullable UUID contentId) {
+        @Nullable ObjId expectedValue,
+        @Nullable UUID contentId) {
       checkArgument(payload >= 0 && payload <= 127);
       return ImmutableUnchanged.of(key, payload, expectedValue, contentId);
     }
@@ -162,14 +158,13 @@ public interface CreateCommit {
 
     @Value.Parameter(order = 4)
     @Nullable
-    @jakarta.annotation.Nullable
     UUID contentId();
 
     static Remove commitRemove(
-        @Nonnull @jakarta.annotation.Nonnull StoreKey key,
+        @Nonnull StoreKey key,
         int payload,
-        @Nonnull @jakarta.annotation.Nonnull ObjId expectedValue,
-        @Nullable @jakarta.annotation.Nullable UUID contentId) {
+        @Nonnull ObjId expectedValue,
+        @Nullable UUID contentId) {
       checkArgument(payload >= 0 && payload <= 127);
       return ImmutableRemove.of(key, payload, expectedValue, contentId);
     }

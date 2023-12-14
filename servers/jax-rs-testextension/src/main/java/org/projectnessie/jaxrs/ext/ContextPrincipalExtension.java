@@ -15,16 +15,16 @@
  */
 package org.projectnessie.jaxrs.ext;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.util.TypeLiteral;
+import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.function.Supplier;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.util.TypeLiteral;
-import javax.ws.rs.core.SecurityContext;
 
 public class ContextPrincipalExtension implements Extension {
   private final Supplier<Principal> principal;

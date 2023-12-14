@@ -15,13 +15,13 @@
  */
 package org.projectnessie.versioned.store;
 
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.StoreWorker;
@@ -98,13 +98,12 @@ public class DefaultStoreWorker implements StoreWorker {
     }
   }
 
-  private static @Nonnull @jakarta.annotation.Nonnull <C extends Content>
-      ContentSerializer<C> serializer(C content) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
     return serializer(content.getType());
   }
 
-  private static @Nonnull @jakarta.annotation.Nonnull <C extends Content>
-      ContentSerializer<C> serializer(Content.Type contentType) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(
+      Content.Type contentType) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer = (ContentSerializer<C>) Registry.BY_TYPE.get(contentType);
     if (serializer == null) {
@@ -113,8 +112,7 @@ public class DefaultStoreWorker implements StoreWorker {
     return serializer;
   }
 
-  private static @Nonnull @jakarta.annotation.Nonnull <C extends Content>
-      ContentSerializer<C> serializer(int payload) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(int payload) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer =
         payload >= 0 && payload < Registry.BY_PAYLOAD.length

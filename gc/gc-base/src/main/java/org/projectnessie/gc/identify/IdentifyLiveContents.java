@@ -17,6 +17,7 @@ package org.projectnessie.gc.identify;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -29,7 +30,6 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.gc.contents.AddContents;
@@ -417,7 +417,6 @@ public abstract class IdentifyLiveContents {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract ReferenceComparator referenceComparator();
 
   @Value.Default

@@ -23,11 +23,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -82,7 +82,6 @@ public interface RepositoryDescription {
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   @Nullable
-  @jakarta.annotation.Nullable
   Instant repositoryImportedTime();
 
   /**

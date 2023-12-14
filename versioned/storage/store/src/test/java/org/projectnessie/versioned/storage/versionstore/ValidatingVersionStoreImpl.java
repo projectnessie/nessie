@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import jakarta.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.Nonnull;
 import org.assertj.core.api.SoftAssertions;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -65,76 +65,63 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
-    public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-        throws RefAlreadyExistsException {
+    public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
       recordWrite();
       return super.addReference(reference);
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
-    public Reference markReferenceAsDeleted(
-        @Nonnull @jakarta.annotation.Nonnull Reference reference)
+    public Reference markReferenceAsDeleted(@Nonnull Reference reference)
         throws RefNotFoundException, RefConditionFailedException {
       recordWrite();
       return super.markReferenceAsDeleted(reference);
     }
 
     @Override
-    public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+    public void purgeReference(@Nonnull Reference reference)
         throws RefNotFoundException, RefConditionFailedException {
       recordWrite();
       super.purgeReference(reference);
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
-    public Reference updateReferencePointer(
-        @Nonnull @jakarta.annotation.Nonnull Reference reference,
-        @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+    public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
         throws RefNotFoundException, RefConditionFailedException {
       recordWrite();
       return super.updateReferencePointer(reference, newPointer);
     }
 
     @Override
-    public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-        throws ObjTooLargeException {
+    public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
       recordWrite();
       super.upsertObj(obj);
     }
 
     @Override
-    public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-        throws ObjTooLargeException {
+    public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
       recordWrite();
       super.upsertObjs(objs);
     }
 
     @Override
-    public boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-        throws ObjTooLargeException {
+    public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
       recordWrite();
       return super.storeObj(obj);
     }
 
     @Override
-    public boolean storeObj(
-        @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+    public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
         throws ObjTooLargeException {
       recordWrite();
       return super.storeObj(obj, ignoreSoftSizeRestrictions);
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
-    public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-        throws ObjTooLargeException {
+    public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
       recordWrite();
       return super.storeObjs(objs);
     }

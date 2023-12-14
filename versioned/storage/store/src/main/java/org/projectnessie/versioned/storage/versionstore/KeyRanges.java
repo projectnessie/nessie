@@ -21,7 +21,7 @@ import static org.projectnessie.versioned.storage.common.logic.PagingToken.fromS
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKeyMax;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKeyMin;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.VersionStore.KeyRestrictions;
@@ -40,22 +40,18 @@ abstract class KeyRanges {
 
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   abstract String pagingToken();
 
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   abstract ContentKey minKey();
 
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   abstract ContentKey maxKey();
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   abstract ContentKey prefixKey();
 
   @Value.NonAttribute

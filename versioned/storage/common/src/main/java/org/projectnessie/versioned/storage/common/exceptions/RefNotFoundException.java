@@ -15,16 +15,16 @@
  */
 package org.projectnessie.versioned.storage.common.exceptions;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 public class RefNotFoundException extends RefException {
 
-  public RefNotFoundException(@Nonnull @jakarta.annotation.Nonnull Reference reference) {
+  public RefNotFoundException(@Nonnull Reference reference) {
     super(reference, "Reference " + reference.name() + " does not exist");
   }
 
-  public RefNotFoundException(@Nonnull @jakarta.annotation.Nonnull String reference) {
+  public RefNotFoundException(@Nonnull String reference) {
     super(null, "Reference " + reference + " does not exist");
   }
 }

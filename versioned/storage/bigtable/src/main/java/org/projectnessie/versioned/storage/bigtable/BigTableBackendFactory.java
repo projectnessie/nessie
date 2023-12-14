@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
@@ -25,14 +25,12 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public BigTableBackendConfig newConfigInstance() {
     // Note: this method should not be called and will throw because dataClient is not set.
     // BigTableBackendConfig instances cannot be constructed using this method.
@@ -41,8 +39,7 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Backend buildBackend(@Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config) {
+  public Backend buildBackend(@Nonnull BigTableBackendConfig config) {
     return new BigTableBackend(config, false);
   }
 }

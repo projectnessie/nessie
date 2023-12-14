@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import jakarta.annotation.Nonnull;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -54,141 +54,118 @@ public class PersistDelegate implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return delegate.name();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreConfig config() {
     return delegate.config();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     return delegate.addReference(reference);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     return delegate.markReferenceAsDeleted(reference);
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     delegate.purgeReference(reference);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     return delegate.updateReferencePointer(reference, newPointer);
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     return delegate.fetchReference(name);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     return delegate.fetchReferences(names);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     return delegate.fetchObj(id);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     return delegate.fetchTypedObj(id, type, typeClass);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     return delegate.fetchObjType(id);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     return delegate.fetchObjs(ids);
   }
 
   @Override
-  public boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException {
+  public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
     return delegate.storeObj(obj);
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     return delegate.storeObjs(objs);
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     delegate.deleteObj(id);
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     delegate.deleteObjs(ids);
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     delegate.upsertObj(obj);
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     delegate.upsertObjs(objs);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return delegate.scanAllObjects(returnedObjTypes);
   }
 

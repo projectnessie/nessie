@@ -26,11 +26,8 @@ description = "Storage implementation using in-memory maps, not persisting."
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)

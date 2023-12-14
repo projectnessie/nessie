@@ -16,10 +16,10 @@
 package org.projectnessie.versioned;
 
 import com.google.common.base.MoreObjects;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -64,16 +64,12 @@ public abstract class Put implements Operation {
    * @return a put operation for the key and value
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static Put of(
-      @Nonnull @jakarta.annotation.Nonnull ContentKey key,
-      @Nonnull @jakarta.annotation.Nonnull Content value) {
+  public static Put of(@Nonnull ContentKey key, @Nonnull Content value) {
     return ImmutablePut.builder().key(key).valueSupplier(() -> value).build();
   }
 
   /** Creates a lazily-evaluated put-operation for the given key, payload and ByteString value. */
   @Nonnull
-  @jakarta.annotation.Nonnull
   public static Put ofLazy(ContentKey key, int payload, ByteString value) {
     return ofLazy(key, payload, value, () -> null);
   }
@@ -84,7 +80,6 @@ public abstract class Put implements Operation {
    */
   @SuppressWarnings("deprecation")
   @Nonnull
-  @jakarta.annotation.Nonnull
   public static Put ofLazy(
       ContentKey key, int payload, ByteString value, Supplier<ByteString> globalStateSupplier) {
     return ImmutablePut.builder()

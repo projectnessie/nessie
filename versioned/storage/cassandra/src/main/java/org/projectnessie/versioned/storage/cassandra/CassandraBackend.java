@@ -59,6 +59,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.servererrors.CASWriteUnknownException;
+import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +76,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -357,7 +357,6 @@ final class CassandraBackend implements Backend {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public PersistFactory createFactory() {
     return new CassandraPersistFactory(this);
   }

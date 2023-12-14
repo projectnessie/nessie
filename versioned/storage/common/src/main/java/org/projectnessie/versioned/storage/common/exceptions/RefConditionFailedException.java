@@ -15,17 +15,16 @@
  */
 package org.projectnessie.versioned.storage.common.exceptions;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 public class RefConditionFailedException extends RefException {
 
-  public RefConditionFailedException(@Nonnull @jakarta.annotation.Nonnull Reference reference) {
+  public RefConditionFailedException(@Nonnull Reference reference) {
     super(reference, "Reference " + reference.name() + " pointer expectation failed");
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Reference reference() {
     //noinspection DataFlowIssue

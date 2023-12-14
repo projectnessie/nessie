@@ -16,13 +16,13 @@
 package org.projectnessie.gc.contents;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.files.DeleteResult;
@@ -53,21 +53,17 @@ public abstract class LiveContentSet {
   public abstract Instant created();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Instant identifyCompleted();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Instant expiryStarted();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Instant expiryCompleted();
 
   public abstract Status status();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String errorMessage();
 
   public void delete() {
@@ -84,8 +80,7 @@ public abstract class LiveContentSet {
   }
 
   @MustBeClosed
-  public Stream<ContentReference> fetchContentReferences(
-      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
+  public Stream<ContentReference> fetchContentReferences(@NotNull String contentId) {
     return persistenceSpi().fetchContentReferences(id(), contentId);
   }
 
@@ -100,19 +95,16 @@ public abstract class LiveContentSet {
   }
 
   @MustBeClosed
-  public Stream<URI> fetchBaseLocations(
-      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
+  public Stream<URI> fetchBaseLocations(@NotNull String contentId) {
     return persistenceSpi().fetchBaseLocations(id(), contentId);
   }
 
-  public LiveContentSet startExpireContents(
-      @NotNull @jakarta.validation.constraints.NotNull Instant started) {
+  public LiveContentSet startExpireContents(@NotNull Instant started) {
     return persistenceSpi().startExpireContents(id(), started);
   }
 
   public LiveContentSet finishedExpireContents(
-      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      @NotNull Instant finished, @Nullable Throwable failure) {
     return persistenceSpi().finishedExpireContents(id(), finished, failure);
   }
 

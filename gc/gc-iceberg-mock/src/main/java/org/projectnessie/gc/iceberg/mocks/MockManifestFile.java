@@ -20,12 +20,12 @@ import static org.projectnessie.gc.iceberg.mocks.IcebergFileIOMocking.dataFilePa
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.iceberg.DataFile;
@@ -45,7 +45,6 @@ import org.immutables.value.Value;
 public abstract class MockManifestFile implements IndexedRecord {
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   public abstract String path();
 
   @Value.Default
@@ -60,7 +59,6 @@ public abstract class MockManifestFile implements IndexedRecord {
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public ByteBuffer keyMetadata() {
     return null;
   }
@@ -82,49 +80,42 @@ public abstract class MockManifestFile implements IndexedRecord {
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Long snapshotId() {
     return 0L;
   }
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Integer addedFilesCount() {
     return 0;
   }
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Long addedRowsCount() {
     return 0L;
   }
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Integer existingFilesCount() {
     return 0;
   }
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Long existingRowsCount() {
     return 0L;
   }
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Integer deletedFilesCount() {
     return 0;
   }
 
   @Value.Default
   @Nullable
-  @jakarta.annotation.Nullable
   public Long deletedRowsCount() {
     return 0L;
   }

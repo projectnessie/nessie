@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -31,23 +31,19 @@ public interface ReferenceInfo<METADATA> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   Hash getCommonAncestor();
 
-  ReferenceInfo<METADATA> withCommonAncestor(@Nullable @jakarta.annotation.Nullable Hash value);
+  ReferenceInfo<METADATA> withCommonAncestor(@Nullable Hash value);
 
   @Nullable
-  @jakarta.annotation.Nullable
   CommitsAheadBehind getAheadBehind();
 
-  ReferenceInfo<METADATA> withAheadBehind(
-      @Nullable @jakarta.annotation.Nullable CommitsAheadBehind value);
+  ReferenceInfo<METADATA> withAheadBehind(@Nullable CommitsAheadBehind value);
 
   @Nullable
-  @jakarta.annotation.Nullable
   METADATA getHeadCommitMeta();
 
-  ReferenceInfo<METADATA> withHeadCommitMeta(@Nullable @jakarta.annotation.Nullable METADATA value);
+  ReferenceInfo<METADATA> withHeadCommitMeta(@Nullable METADATA value);
 
   List<Hash> getParentHashes();
 

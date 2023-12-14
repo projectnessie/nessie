@@ -50,6 +50,7 @@ import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import jakarta.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -61,7 +62,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -106,7 +106,6 @@ public class BigTablePersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return BigTableBackendFactory.NAME;
@@ -114,13 +113,12 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreConfig config() {
     return config;
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     try {
       ByteString key = dbKey(name);
       Row row = backend.client().readRow(backend.tableRefs, key);
@@ -132,8 +130,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     try {
       Reference[] r = new Reference[names.length];
       bulkFetch(
@@ -151,9 +148,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
     try {
@@ -186,8 +181,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       ByteString key = dbKey(reference.name());
@@ -204,10 +198,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       ByteString key = dbKey(reference.name());
@@ -223,7 +214,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       ByteString key = dbKey(reference.name());
@@ -258,10 +249,7 @@ public class BigTablePersist implements Persist {
   }
 
   private void casReferenceAndThrow(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      ByteString key,
-      Reference expected,
-      Mutation mutation)
+      @Nonnull Reference reference, ByteString key, Reference expected, Mutation mutation)
       throws RefConditionFailedException, RefNotFoundException {
     if (!casReference(key, refsValueFilter(expected), mutation)) {
       Reference r = fetchReference(reference.name());
@@ -294,8 +282,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     try {
       ByteString key = dbKey(id);
 
@@ -313,9 +300,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = fetchObj(id);
     if (!obj.type().equals(type)) {
@@ -328,17 +313,13 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     return fetchObj(id).type();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     try {
       Obj[] r = new Obj[ids.length];
       List<ObjId> notFound = new ArrayList<>();
@@ -372,8 +353,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
 
     try {
@@ -425,9 +405,7 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     if (objs.length == 0) {
       return new boolean[0];
     }
@@ -463,7 +441,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     try {
       ByteString key = dbKey(id);
       backend
@@ -475,7 +453,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     if (ids.length == 0) {
       return;
     }
@@ -496,7 +474,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
@@ -524,8 +502,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     if (objs.length == 0) {
       return;
     }
@@ -569,10 +546,8 @@ public class BigTablePersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes::contains);
   }
 
