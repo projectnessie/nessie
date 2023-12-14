@@ -16,22 +16,14 @@
 package org.projectnessie.services.rest;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.services.rest.exceptions.BaseExceptionMapper;
-import org.projectnessie.services.rest.exceptions.NessieExceptionMapper;
-import org.projectnessie.services.rest.exceptions.ValidationExceptionMapper;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * "Special" implementation for exceptions that extend {@link ConstraintViolationException}, as
- * those do not "go through" {@link NessieExceptionMapper} and also not through the {@link
- * ValidationExceptionMapper}.
- */
 @Provider
 @ApplicationScoped
 public class BackendLimitExceededExceptionMapper
