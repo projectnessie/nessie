@@ -26,6 +26,7 @@ dependencies {
   api(project(":nessie-compatibility-jersey"))
   api(project(":nessie-multi-env-test-engine"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))
   compileOnly(project(":nessie-versioned-storage-mongodb"))

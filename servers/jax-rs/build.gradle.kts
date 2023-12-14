@@ -26,8 +26,10 @@ description = "Nessie on Glassfish/Jersey/Weld"
 dependencies {
   api(project(":nessie-client"))
   api(project(":nessie-model"))
+  api(project(":nessie-rest-common"))
   api(project(":nessie-rest-services"))
   api(project(":nessie-services"))
+  api(project(":nessie-services-config"))
   api(project(":nessie-server-store"))
   api(project(":nessie-versioned-spi"))
   api(project(":nessie-versioned-storage-common"))

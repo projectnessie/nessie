@@ -25,6 +25,7 @@ extra["maven.name"] = "Nessie - Services"
 
 dependencies {
   implementation(project(":nessie-model"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.slf4j.api)
 
@@ -62,6 +63,7 @@ dependencies {
   testFixturesApi(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(project(":nessie-versioned-storage-inmemory"))
   testFixturesApi(project(":nessie-versioned-storage-jdbc"))
+  testFixturesApi(project(":nessie-services-config"))
   testFixturesImplementation(libs.logback.classic)
   intTestImplementation(project(":nessie-versioned-storage-cassandra"))
   intTestImplementation(project(":nessie-versioned-storage-rocksdb"))

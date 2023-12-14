@@ -13,36 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.restjakarta;
+package org.projectnessie.services.rest.exceptions;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import jakarta.inject.Inject;
+import com.fasterxml.jackson.core.JsonParseException;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
-import org.projectnessie.services.config.ServerConfig;
 
 /**
- * "Special" implementation for exceptions that extend {@link JsonMappingException} that is needed
+ * "Special" implementation for exceptions that extend {@link JsonParseException} that is needed
  * when using Jackson-JaxRs, as those do not "go through" {@link NessieExceptionMapper}, because
- * Jackson-JaxRs provides its own mapper for {@link JsonMappingException}.
+ * Jackson-JaxRs provides its own mapper for {@link JsonParseException}.
  */
 @Provider
-public class NessieJaxRsJsonMappingExceptionMapper
-    extends BaseExceptionMapper<JsonMappingException> {
+@ApplicationScoped
+public class NessieJaxRsJsonParseExceptionMapper extends BaseExceptionMapper<JsonParseException> {
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public NessieJaxRsJsonMappingExceptionMapper() {
-    this(null);
-  }
-
-  @Inject
-  public NessieJaxRsJsonMappingExceptionMapper(ServerConfig config) {
-    super(config);
-  }
+  public NessieJaxRsJsonParseExceptionMapper() {}
 
   @Override
-  public Response toResponse(JsonMappingException exception) {
+  public Response toResponse(JsonParseException exception) {
     return buildBadRequestResponse(exception);
   }
 }

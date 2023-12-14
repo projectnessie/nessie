@@ -23,8 +23,10 @@ extra["maven.name"] = "Nessie - Quarkus Common"
 
 dependencies {
   implementation(project(":nessie-model"))
+  implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
 
   implementation(project(":nessie-versioned-storage-bigtable"))
