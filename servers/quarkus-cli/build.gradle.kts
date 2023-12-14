@@ -25,16 +25,6 @@ plugins {
 
 extra["maven.name"] = "Nessie - Quarkus CLI"
 
-configurations.configureEach {
-  // Avoids dependency resolution error since Quarkus 3.3:
-  // Cannot select module with conflict on capability 'com.google.guava:listenablefuture:1.0' also
-  //   provided by
-  //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
-  resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
-    select("com.google.guava:guava:0")
-  }
-}
-
 dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-services"))
