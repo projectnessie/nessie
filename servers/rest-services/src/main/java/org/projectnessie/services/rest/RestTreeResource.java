@@ -22,6 +22,7 @@ import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.api.v1.params.BaseMergeTransplant;
 import org.projectnessie.api.v1.params.CommitLogParams;
@@ -50,6 +51,7 @@ import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
+@Path("api/v1/trees")
 public class RestTreeResource implements HttpTreeApi {
   // Cannot extend the TreeApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpTreeApi or the plain TreeApi. This can lead
