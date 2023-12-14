@@ -41,6 +41,7 @@ dependencies {
     api(project(":nessie-jaxrs-tests"))
     api(project(":nessie-keycloak-testcontainer"))
     api(project(":nessie-nessie-testcontainer"))
+    api(project(":nessie-quarkus-auth"))
     api(project(":nessie-quarkus-common"))
     api(project(":nessie-quarkus-cli"))
     api(project(":nessie-quarkus"))
