@@ -73,18 +73,14 @@ public class JerseyServer implements AutoCloseable {
           @Override
           protected Application configure() {
             ResourceConfig config = new ResourceConfig();
-            withClass(
-                "org.projectnessie.services.rest.RestV2ConfigResource", config::register, false);
-            withClass(
-                "org.projectnessie.services.rest.RestV2TreeResource", config::register, false);
+            withClass("org.projectnessie.services.rest.RestV2ConfigResource", config::register);
+            withClass("org.projectnessie.services.rest.RestV2TreeResource", config::register);
             config.register(RestConfigResource.class);
             config.register(RestTreeResource.class);
             config.register(RestContentResource.class);
-            withClass("org.projectnessie.services.rest.RestDiffResource", config::register, false);
-            withClass(
-                "org.projectnessie.services.rest.RestRefLogResource", config::register, false);
-            withClass(
-                "org.projectnessie.services.rest.RestNamespaceResource", config::register, false);
+            withClass("org.projectnessie.services.rest.RestDiffResource", config::register);
+            withClass("org.projectnessie.services.rest.RestRefLogResource", config::register);
+            withClass("org.projectnessie.services.rest.RestNamespaceResource", config::register);
             config.register(ConfigApiImpl.class);
             withEEClass(
                 "org.projectnessie.services.restjavax.ContentKeyParamConverterProvider",
@@ -160,15 +156,12 @@ public class JerseyServer implements AutoCloseable {
     return jerseyTest.target().getUri();
   }
 
-  private static void withClass(
-      String className, Consumer<Class<?>> whenClassExists, boolean mandatory) {
+  private static void withClass(String className, Consumer<Class<?>> whenClassExists) {
     try {
       Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
       whenClassExists.accept(clazz);
     } catch (ClassNotFoundException e) {
-      if (mandatory) {
-        throw new RuntimeException(e);
-      }
+      // ignore
     }
   }
 
