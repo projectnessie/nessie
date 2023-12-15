@@ -31,7 +31,7 @@ import org.projectnessie.services.rest.common.RestCommon;
 /** Code shared between concrete exception-mapper implementations. */
 public abstract class BaseExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
 
-  @Inject private ExceptionConfig config;
+  @Inject ExceptionConfig config;
 
   @Context private HttpHeaders headers;
 
