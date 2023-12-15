@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.commontests.objtypes;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.storage.common.objtypes.SimpleObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
@@ -26,9 +27,11 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 @JsonDeserialize(as = ImmutableSimpleTestObj.class)
 public interface SimpleTestObj extends Obj, SimpleTestBean {
 
+  ObjType TYPE = new SimpleObjType<>("simple", "smp", SimpleTestObj.class);
+
   @Override
   default ObjType type() {
-    return CustomObjType.SIMPLE;
+    return TYPE;
   }
 
   static ImmutableSimpleTestObj.Builder builder() {

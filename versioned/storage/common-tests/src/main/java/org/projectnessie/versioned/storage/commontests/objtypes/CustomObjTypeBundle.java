@@ -23,8 +23,6 @@ public class CustomObjTypeBundle implements ObjTypeBundle {
 
   @Override
   public void register(Consumer<ObjType> registrar) {
-    for (CustomObjType objType : CustomObjType.values()) {
-      registrar.accept(objType);
-    }
+    registrar.accept(SimpleTestObj.TYPE);
   }
 }

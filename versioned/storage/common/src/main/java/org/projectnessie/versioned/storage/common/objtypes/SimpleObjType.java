@@ -13,26 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.commontests.objtypes;
+package org.projectnessie.versioned.storage.common.objtypes;
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
+import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-@Value.Immutable
-@JsonSerialize(as = ImmutableJsonTestObj.class)
-@JsonDeserialize(as = ImmutableJsonTestObj.class)
-public interface JsonTestObj extends JsonObj<JsonTestBean> {
+public final class SimpleObjType<T extends Obj> implements ObjType {
 
-  @Override
-  default ObjType type() {
-    return CustomObjType.JSON;
+  private final String name;
+  private final String shortName;
+  private final Class<T> targetClass;
+
+  public SimpleObjType(String name, String shortName, Class<T> targetClass) {
+    this.name = name;
+    this.shortName = shortName;
+    this.targetClass = targetClass;
   }
 
   @Override
-  @JsonUnwrapped
-  JsonTestBean model();
+  public String name() {
+    return name;
+  }
+
+  @Override
+  public String shortName() {
+    return shortName;
+  }
+
+  @Override
+  public Class<T> targetClass() {
+    return targetClass;
+  }
 }

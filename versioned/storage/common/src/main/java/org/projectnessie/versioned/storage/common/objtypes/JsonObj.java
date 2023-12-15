@@ -15,69 +15,97 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_ID_KEY;
-
-import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.google.common.base.Preconditions;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-/**
- * A generic {@link Obj} that can be used to store any JSON-serializable object.
- *
- * <p>A typical implementation using Java Immutables is:
- *
- * <pre>{@code
- * @Value.Immutable
- * @JsonSerialize(as = ImmutableJsonTestObj.class)
- * @JsonDeserialize(as = ImmutableJsonTestObj.class)
- * public interface MyJsonObj extends JsonObj<MyJsonModel> {
- *
- *   @Override
- *   default ObjType type() {
- *     return MyJsonType.INSTANCE;
- *   }
- *
- *   @Override
- *   @JsonUnwrapped
- *   MyJsonModel model();
- * }
- * }</pre>
- */
-public interface JsonObj<T> extends Obj {
+/** A generic {@link Obj} that can be used to store any JSON-serializable object. */
+@Value.Immutable
+@JsonSerialize(as = ImmutableJsonObj.class)
+@JsonDeserialize(as = ImmutableJsonObj.class)
+public interface JsonObj extends Obj {
 
-  /**
-   * {@inheritDoc}
-   *
-   * @implNote if this method is overridden, care should be taken to also copy the
-   *     {@code @JsonIgnore} and {@code @JacksonInject} annotations to the overridden method, as
-   *     these are not automatically inherited.
-   */
-  @JsonIgnore
-  @JacksonInject(OBJ_ID_KEY)
+  ObjType TYPE = new SimpleObjType<>("json", "j", JsonObj.class);
+
   @Override
-  ObjId id();
+  @JsonIgnore
+  default ObjType type() {
+    return TYPE;
+  }
+
+  /** A wrapper for the actual JSON object, to capture type information. */
+  @JsonUnwrapped
+  JsonBean bean();
 
   /**
-   * The model object to be serialized as JSON.
+   * Retrieves the bean cast to the given type.
    *
-   * @implNote subclasses may wish to override this method to provide a more specific return type,
-   *     although that is not required by Jackson serialization (but it is for Java Immutables). If
-   *     they do so, they should also copy the {@code @JsonUnwrapped} annotation to the overridden
-   *     method as it is not automatically inherited.
+   * @throws ClassCastException if the object cannot be cast to the given type.
    */
-  @JsonUnwrapped
-  T model();
+  @Value.Derived
+  @JsonIgnore
+  @Nullable
+  default <T> T bean(Class<T> expectedType) {
+    return expectedType.cast(bean().object());
+  }
 
-  @Value.Check
-  default void check() {
-    Preconditions.checkState(
-        type().targetClass().isAssignableFrom(getClass()),
-        "Type %s is not assignable from %s",
-        type(),
-        getClass());
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableJsonBean.class)
+  @JsonDeserialize(as = ImmutableJsonBean.class)
+  interface JsonBean {
+
+    @JsonProperty("t")
+    String type();
+
+    @JsonProperty("o")
+    @JsonTypeInfo(use = Id.CLASS, include = As.EXTERNAL_PROPERTY, property = "t")
+    @Nullable
+    Object object();
+  }
+
+  /**
+   * Creates a {@link JsonObj} for the given bean.
+   *
+   * <p>This method is NOT suitable for null beans: use either {@link #json(ObjId, Class, Object)}
+   * or {@link #json(ObjId, String, Object)} in order to properly capture the type of the object.
+   *
+   * <p>This method is NOT suitable either for generic bean types such as {@code MyBean<String>} :
+   * use {@link #json(ObjId, String, Object)} instead.
+   */
+  static JsonObj json(ObjId id, @Nonnull Object bean) {
+    return json(id, bean.getClass(), bean);
+  }
+
+  /**
+   * Creates a {@link JsonObj} for the given bean and raw type.
+   *
+   * <p>For generic types, use {@link #json(ObjId, String, Object)} instead.
+   */
+  static JsonObj json(ObjId id, Class<?> type, @Nullable Object bean) {
+    return json(id, type.getName(), bean);
+  }
+
+  /**
+   * Creates a {@link JsonObj} for the given bean and type.
+   *
+   * <p>The type must be parseable by Jackson's TypeParser. For generic types, use the following
+   * general format: {@code "com.example.MyType<com.example.OtherType>"}.
+   */
+  static JsonObj json(ObjId id, String type, @Nullable Object bean) {
+    return ImmutableJsonObj.builder()
+        .id(id)
+        .bean(ImmutableJsonBean.builder().object(bean).type(type).build())
+        .build();
   }
 }
