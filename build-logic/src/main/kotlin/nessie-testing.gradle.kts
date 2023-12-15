@@ -85,6 +85,8 @@ tasks.withType<Test>().configureEach {
   environment("TESTCONTAINERS_REUSE_ENABLE", "true")
 
   if (plugins.hasPlugin("io.quarkus")) {
+    systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+
     jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
     // Log-levels are required to be able to parse the HTTP listen URL
     jvmArgumentProviders.add(
