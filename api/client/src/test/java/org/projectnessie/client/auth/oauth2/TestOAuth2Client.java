@@ -253,7 +253,7 @@ class TestOAuth2Client {
         client.start();
         Runnable renewalTask = currentRenewalTask.get();
         soft.assertThat(renewalTask).isNotNull();
-        soft.assertThatThrownBy(client::authenticate).hasCauseInstanceOf(OAuth2Exception.class);
+        soft.assertThatThrownBy(client::authenticate).isInstanceOf(OAuth2Exception.class);
 
         // Emulate executor running the scheduled refresh task, then throwing an exception
         // => propagate the error but schedule another refresh
@@ -261,7 +261,7 @@ class TestOAuth2Client {
         renewalTask.run();
         soft.assertThat(currentRenewalTask.get()).isNotNull().isNotSameAs(renewalTask);
         renewalTask = currentRenewalTask.get();
-        soft.assertThatThrownBy(client::authenticate).hasCauseInstanceOf(OAuth2Exception.class);
+        soft.assertThatThrownBy(client::authenticate).isInstanceOf(OAuth2Exception.class);
 
         // Emulate executor running the scheduled refresh task again, then finally getting tokens
         // => should recover and return initial tokens + schedule next refresh
@@ -289,7 +289,7 @@ class TestOAuth2Client {
         // => should propagate the error but schedule another refresh
         handlerRef.set(failureHandler);
         now = now.plus(Duration.ofHours(3));
-        soft.assertThatThrownBy(client::authenticate).hasCauseInstanceOf(OAuth2Exception.class);
+        soft.assertThatThrownBy(client::authenticate).isInstanceOf(OAuth2Exception.class);
         soft.assertThat(client.sleeping).isFalse();
         soft.assertThat(currentRenewalTask.get()).isNotNull().isNotSameAs(renewalTask);
         renewalTask = currentRenewalTask.get();
@@ -300,7 +300,7 @@ class TestOAuth2Client {
         renewalTask.run();
         soft.assertThat(currentRenewalTask.get()).isSameAs(renewalTask);
         soft.assertThat(client.sleeping).isTrue();
-        soft.assertThatThrownBy(client::getCurrentTokens).hasCauseInstanceOf(OAuth2Exception.class);
+        soft.assertThatThrownBy(client::getCurrentTokens).isInstanceOf(OAuth2Exception.class);
 
         // Emulate waking up, then fetching tokens immediately because no tokens are available,
         // then scheduling next refresh
