@@ -35,10 +35,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.IcebergTable;
@@ -65,31 +63,8 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     api = buildNessieApi();
   }
 
-  private void create(IcebergTable table, ContentKey key)
-      throws NessieConflictException, NessieNotFoundException {
-    if (key.getElementCount() > 1) {
-      try {
-        api.createNamespace()
-            .namespace(key.getNamespace())
-            .reference(api.getDefaultBranch())
-            .create();
-      } catch (NessieNamespaceAlreadyExistsException ignore) {
-        //
-      }
-    }
-    api.commitMultipleOperations()
-        .branch(api.getDefaultBranch())
-        .commitMeta(CommitMeta.fromMessage("test-commit"))
-        .operation(Operation.Put.of(key, table))
-        .commit();
-  }
-
   private IcebergTable get(ContentKey key) throws NessieNotFoundException {
-    return get("main", key);
-  }
-
-  private IcebergTable get(String refName, ContentKey key) throws NessieNotFoundException {
-    return (IcebergTable) api.getContent().refName(refName).key(key).get().get(key);
+    return (IcebergTable) get(api, "main", key);
   }
 
   private List<LogResponse.LogEntry> log(int depth) throws NessieNotFoundException {
@@ -114,7 +89,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
 
   @Test
   void refreshOneKey() throws NessieNotFoundException, NessieConflictException {
-    create(table1, key1);
+    create(api, table1, key1);
     IcebergTable stored1 = get(key1);
 
     assertThat(
@@ -147,7 +122,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
 
   @Test
   void failOnExplicitTagArgument() throws NessieNotFoundException, NessieConflictException {
-    create(table3, key3);
+    create(api, table3, key3);
     IcebergTable stored3 = get(key3);
 
     String tagName = "testTag_" + UUID.randomUUID();
@@ -181,9 +156,9 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   @ParameterizedTest
   @ValueSource(ints = {1, 2, 3, 4, 100})
   void refreshFromFile(int batchSize, @TempDir File tempDir) throws IOException {
-    create(table1, key1);
-    create(table2, key2);
-    create(table3, key3);
+    create(api, table1, key1);
+    create(api, table2, key2);
+    create(api, table3, key3);
     IcebergTable stored1 = get(key1);
     IcebergTable stored2 = get(key2);
     IcebergTable stored3 = get(key3);
@@ -221,8 +196,8 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void partialRefreshFromFileWithRefOveride(@TempDir File tempDir) throws IOException {
-    create(table1, key1);
+  void partialRefreshFromFileWithRefOverride(@TempDir File tempDir) throws IOException {
+    create(api, table1, key1);
     IcebergTable stored1 = get(key1);
 
     Branch main = api.getDefaultBranch();
@@ -255,15 +230,15 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
                     .collect(Collectors.toList()))
         .containsExactly(key1); // Note: key2 is not present
 
-    assertThat(get(ref.getName(), key1)).isEqualTo(stored1);
+    assertThat(get(api, ref.getName(), key1)).isEqualTo(stored1);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2, 3, 4, 5, 6, 100})
   void refreshAllKeys(int batchSize) throws IOException {
-    create(table1, key1);
-    create(table2, key2);
-    create(table3, key3);
+    create(api, table1, key1);
+    create(api, table2, key2);
+    create(api, table3, key3);
     IcebergTable stored1 = get(key1);
     IcebergTable stored2 = get(key2);
     IcebergTable stored3 = get(key3);

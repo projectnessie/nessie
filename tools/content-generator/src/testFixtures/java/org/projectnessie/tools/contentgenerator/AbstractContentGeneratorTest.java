@@ -23,9 +23,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.IcebergTable;
@@ -89,6 +91,33 @@ public class AbstractContentGeneratorTest {
         .hash(branch.getHash())
         .commitMeta(CommitMeta.fromMessage(COMMIT_MSG))
         .operation(Operation.Put.of(CONTENT_KEY, IcebergTable.of("testMeta", 123, 456, 789, 321)))
+        .commit();
+  }
+
+  protected Content get(NessieApiV2 api, String refName, ContentKey key)
+      throws NessieNotFoundException {
+    return api.getContent().refName(refName).key(key).get().get(key);
+  }
+
+  protected void create(NessieApiV2 api, IcebergTable table, ContentKey key)
+      throws NessieNotFoundException, NessieConflictException {
+    create(api, api.getDefaultBranch(), table, key);
+  }
+
+  protected Branch create(NessieApiV2 api, Branch branch, IcebergTable table, ContentKey key)
+      throws NessieNotFoundException, NessieConflictException {
+    if (key.getElementCount() > 1) {
+      try {
+        api.createNamespace().namespace(key.getNamespace()).reference(branch).create();
+      } catch (NessieNamespaceAlreadyExistsException ignore) {
+        //
+      }
+    }
+
+    return api.commitMultipleOperations()
+        .branch(branch)
+        .commitMeta(CommitMeta.fromMessage("test-commit"))
+        .operation(Operation.Put.of(key, table))
         .commit();
   }
 

@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
@@ -26,9 +27,20 @@ public final class RunContentGenerator {
   private RunContentGenerator() {}
 
   public static ProcessResult runGeneratorCmd(String... params) {
+    return runGeneratorCmd(s -> {}, params);
+  }
+
+  public static ProcessResult runGeneratorCmd(Consumer<String> stdoutWatcher, String... params) {
     try (StringWriter stringOut = new StringWriter();
         StringWriter stringErr = new StringWriter();
-        PrintWriter out = new PrintWriter(stringOut);
+        PrintWriter out =
+            new PrintWriter(stringOut) {
+              @Override
+              public void write(String s, int off, int len) {
+                stdoutWatcher.accept(s.substring(off, off + len));
+                super.write(s, off, len);
+              }
+            };
         PrintWriter err = new PrintWriter(stringErr)) {
       int exitCode = NessieContentGenerator.runMain(out, err, params);
       String output = stringOut.toString();
