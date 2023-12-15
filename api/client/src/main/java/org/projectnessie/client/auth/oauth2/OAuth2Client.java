@@ -129,6 +129,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       Throwable cause = e.getCause();
       if (cause instanceof Error) {
         throw (Error) cause;
+      } else if (cause instanceof HttpClientException) {
+        throw (HttpClientException) cause;
       } else {
         throw new RuntimeException("Cannot acquire a valid OAuth2 access token", cause);
       }
@@ -399,7 +401,11 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     boolean shouldWarn =
         lastWarn == null || Duration.between(lastWarn, now).compareTo(MIN_WARN_INTERVAL) > 0;
     if (shouldWarn) {
-      LOGGER.warn(message, error);
+      if (error instanceof HttpClientException) {
+        LOGGER.warn("{}: {}", message, error.toString());
+      } else {
+        LOGGER.warn(message, error);
+      }
       lastWarn = now;
     } else {
       LOGGER.debug(message, error);

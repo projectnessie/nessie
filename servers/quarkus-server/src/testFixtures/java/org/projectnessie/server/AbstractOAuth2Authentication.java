@@ -53,7 +53,6 @@ public abstract class AbstractOAuth2Authentication extends BaseClientAuthTest {
     NessieAuthentication authentication = oauth2Authentication(wrongPasswordConfig());
     withClientCustomizer(b -> b.withAuthentication(authentication));
     assertThatThrownBy(() -> api().getAllReferences().stream())
-        .cause()
         .asInstanceOf(type(OAuth2Exception.class))
         .extracting(OAuth2Exception::getStatus)
         .isEqualTo(Status.UNAUTHORIZED);
