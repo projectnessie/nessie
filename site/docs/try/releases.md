@@ -2,6 +2,80 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.75.0 Release (December 15, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.75.0).
+
+### Upgrade notes
+
+- Nessie Quarkus parts are now built against Java 17 and Java 17 is required to run Nessie Quarkus Server directly.
+  If you use the Docker image, nothing needs to be done, because the image already contains a compatible Java runtime.
+- Due to the introduction of new object types in the storage layer, some storage backends
+  will require a schema upgrade:
+  - JDBC: the following SQL statement must be executed on the Nessie database (please adapt the
+    statement to the actual database SQL dialect):
+    ```sql
+    ALTER TABLE objs 
+      ADD COLUMN x_class VARCHAR,
+      ADD COLUMN x_data BYTEA,
+      ADD COLUMN x_compress VARCHAR,
+      ADD COLUMN u_space VARCHAR,
+      ADD COLUMN u_value BYTEA;
+    ```
+  - Cassandra: the following CQL statement must be executed on the Nessie database and keyspace:
+    ```cql
+    ALTER TABLE <keyspace>.objs 
+      ADD x_class text, 
+      ADD x_data blob,
+      ADD x_compress text,
+      ADD u_space text,
+      ADD u_value blob;
+    ```
+- When using one of the legacy and deprecated version-store implementations based on "database adapter",
+  make sure to migrate to the new storage model **before** upgrading to this version or newer Nessie
+  versions.
+
+### Breaking changes
+
+- The deprecated version-store implementations based on "database datapter" have been removed from the
+  code base.
+
+### Commits
+* Quarkus ITs: Remove LoggerFinder error log message (#7862)
+* Quarkus-tests: do not log OIDC connection + tracing warnings (#7860)
+* Let OAuth2 errors not lot stack traces (#7859)
+* stop testing spark-extensions 3.2 on iceberg main (#7863)
+* Fix Quarkus warning `@Inject` on private field (#7857)
+* Use `/` as the resteasy base path in Quarkus (#7854)
+* Extract reusable REST related functionality (#7838)
+* Move authN/Z code to separate module (#7851)
+* Make `DiffParams` work with resteasy-reactive (#7846)
+* Make server-side components use only Jakarta EE (#7837)
+* Remove dependency-resolution workaround for guava/listenablefuture (#7841)
+* renovate: reduce awssdk update frequency (#7840)
+* Helm chart: remove mentions of legacy storage types (#7830)
+* Persist: simplify serialization of custom objects (#7832)
+* Ignore Obj.type() when using Smile serialization (#7828)
+* Fix "older Jackson versions" tests in `:nessie-client` (#7820)
+* Expose `HttpClient` from `NessieApi` when available (#7808)
+* Expose request-URI in `HttpResponse` (#7807)
+* Build: remove no longer needed reflection-config-plugin (#7800)
+* Nit: Remove unsed Quarkus config options (#7799)
+* Remove unused `@RegisterForReflection` annotations (#7797)
+* Remove invalid `@Startup` annotation (#7796)
+* Ensure that content IDs are unique in a Nessie repository (#7757)
+* Remove database adapter code (#6890)
+* Persist/custom objects: allow compression (#7795)
+* CassandraPersist: minor code cleanup (#7793)
+* Extensible object types (#7771)
+* Require Java 17 for the build, prepare for Quarkus 3.7 (#7783)
+* Update issue templates (#7787)
+* CI: Add `concurrency` to CI-Mac/Win + newer-Java workflows (#7785)
+* GH WF: Remove no-longer existing images to remove (#7784)
+* Move ObjIdSerializer.java to test scope (#7782)
+* Add `LABEL`s to `Dockerfile-jvm` (#7775)
+* ClientSideGetMultipleNamespaces: push some predicates down to the server (#7758)
+
 ## 0.74.0 Release (November 21, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.74.0).

@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.74.0](https://img.shields.io/badge/Version-0.74.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.75.0](https://img.shields.io/badge/Version-0.75.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -58,7 +58,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | authentication.oidcClientId | string | `"nessie"` | Set the OIDC client ID when authentication.enabled=true. Each application has a client ID that is used to identify the application |
 | authorization.enabled | bool | `false` | Specifies whether authorization for the nessie server should be enabled. |
 | authorization.rules | object | `{}` | The authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules |
-| autoscaling.enabled | bool | `false` | Specifies whether automatic horizontal scaling should be enabled. Do not enable this when using ROCKS version store type. |
+| autoscaling.enabled | bool | `false` | Specifies whether automatic horizontal scaling should be enabled. Do not enable this when using ROCKSDB version store type. |
 | autoscaling.maxReplicas | int | `3` | The maximum number of replicas to maintain. |
 | autoscaling.minReplicas | int | `1` | The minimum number of replicas to maintain. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Optional; set to zero or empty to disable. |
@@ -97,7 +97,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | postgres.secret.name | string | `"postgres-creds"` | The secret name to pull Postgres credentials from. |
 | postgres.secret.password | string | `"postgres_password"` | The secret key storing the Postgres password. |
 | postgres.secret.username | string | `"postgres_username"` | The secret key storing the Postgres username. |
-| replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using INMEMORY or ROCKS version store types. |
+| replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using IN_MEMORY or ROCKSDB version store types. |
 | resources | object | `{}` | Configures the resources requests and limits for nessie pods. We usually recommend not to specify default resources and to leave this as a conscious choice for the user. This also increases chances charts run on environments with little resources, such as Minikube. If you do want to specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'resources:'. |
 | rocksdb.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |

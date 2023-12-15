@@ -10,6 +10,22 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.75.0] Release (2023-12-15)
+
+### Upgrade notes
+
 - Nessie Quarkus parts are now built against Java 17 and Java 17 is required to run Nessie Quarkus Server directly.
   If you use the Docker image, nothing needs to be done, because the image already contains a compatible Java runtime.
 - Due to the introduction of new object types in the storage layer, some storage backends
@@ -41,16 +57,6 @@ as necessary. Empty sections will not end in the release notes.
 
 - The deprecated version-store implementations based on "database datapter" have been removed from the
   code base.
-
-### New Features
-
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
 
 ## [0.74.0] Release (2023-11-21)
 
@@ -273,7 +279,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.75.0...HEAD
+[0.75.0]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...nessie-0.75.0
 [0.74.0]: https://github.com/projectnessie/nessie/compare/nessie-0.73.0...nessie-0.74.0
 [0.73.0]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...nessie-0.73.0
 [0.72.4]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...nessie-0.72.4
