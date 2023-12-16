@@ -66,6 +66,12 @@ public class DetachHistory extends RefreshContent {
 
   @Override
   public void execute() throws BaseNessieClientServerException {
+    // Overview:
+    // 1) Tag old source branch HEADs (in setup()).
+    // 2) Copy the latest content to temporary branches.
+    // 3) Reassign source branches to HEADs of corresponding temporary branches.
+    // The last step may fail if there are concurrent commits to source branch, in which case
+    // the whole process is re-tried.
     try (NessieApiV2 api = createNessieApiInstance()) {
       rootHash = api.getConfig().getNoAncestorHash();
       for (int attempt = 0; attempt < maxAttempts; attempt++) {
