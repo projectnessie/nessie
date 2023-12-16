@@ -106,8 +106,8 @@ class ITDetachHistory extends AbstractContentGeneratorTest {
   @Test
   void mainBatched() throws NessieNotFoundException, NessieConflictException {
     Branch main = api.getDefaultBranch();
-    int N = 200;
-    for (int i = 1; i < N; i++) {
+    int numTables = 200;
+    for (int i = 1; i < numTables; i++) {
       main = create(api, main, table1, ContentKey.of("test-" + i));
     }
 
@@ -118,7 +118,7 @@ class ITDetachHistory extends AbstractContentGeneratorTest {
     Reference mainCompleted = api.getReference().refName(main.getName() + "-completed").get();
     assertThat(mainCompleted.getHash()).isEqualTo(main.getHash());
 
-    for (int i = 1; i < N; i++) {
+    for (int i = 1; i < numTables; i++) {
       assertThat(contentWithoutId(main.getName(), ContentKey.of("test-" + i))).isEqualTo(table1);
     }
   }
