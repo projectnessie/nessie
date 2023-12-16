@@ -98,10 +98,12 @@ public class DetachHistory extends RefreshContent {
       throws BaseNessieClientServerException {
     Branch target = setup(api, source);
     if (target == null) {
-      return;
+      return; // already processed
     }
 
     Map<ContentKey, Content> detachedContents = new HashMap<>();
+    // Remove content IDs because these entries will be treated as new entities
+    // on the target branch due to empty commit history there.
     contentMap.forEach((k, v) -> detachedContents.put(k, v.withId(null)));
     super.commitSameContent(api, target, detachedContents);
   }
@@ -116,7 +118,7 @@ public class DetachHistory extends RefreshContent {
     try {
       api.getReference().refName(source.getName() + completedSuffix).get();
       spec.commandLine().getOut().printf("Ignoring previously migrated reference '%s'%n", source);
-      return null; // already processed
+      return null;
     } catch (NessieNotFoundException e) {
       // expected
     }
@@ -135,10 +137,12 @@ public class DetachHistory extends RefreshContent {
 
     return targets.computeIfAbsent(
         source.getName(),
-        name -> {
-          name = name + tmpSuffix;
+        sourceName -> {
+          String targetName = sourceName + tmpSuffix;
           try {
-            return (Branch) api.createReference().reference(Branch.of(name, rootHash)).create();
+            // create a target branch without any commit history
+            return (Branch)
+                api.createReference().reference(Branch.of(targetName, rootHash)).create();
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
