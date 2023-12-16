@@ -158,7 +158,6 @@ public class DetachHistory extends RefreshContent {
       api.assignReference().reference(source).assignTo(target).assign();
 
       api.createReference()
-          .sourceRefName(source.getName())
           .reference(Tag.of(source.getName() + completedSuffix, source.getHash()))
           .create();
 
