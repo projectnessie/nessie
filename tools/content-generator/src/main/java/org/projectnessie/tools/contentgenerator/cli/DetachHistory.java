@@ -68,8 +68,8 @@ public class DetachHistory extends RefreshContent {
   public void execute() throws BaseNessieClientServerException {
     try (NessieApiV2 api = createNessieApiInstance()) {
       rootHash = api.getConfig().getNoAncestorHash();
-      for (int attemt = 0; attemt < maxAttempts; attemt++) {
-        spec.commandLine().getOut().printf("Running attempt %d...%n", attemt);
+      for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        spec.commandLine().getOut().printf("Running attempt %d...%n", attempt);
 
         sources.clear();
         targets.clear();
@@ -80,15 +80,16 @@ public class DetachHistory extends RefreshContent {
         try {
           // reassign original branch names to HEADs of corresponding temporary branches
           reassign(api);
+
+          spec.commandLine().getOut().printf("Completed successfully%n");
           break;
         } catch (NessieReferenceConflictException e) {
           spec.commandLine()
               .getOut()
-              .printf("Unable to complete attempt %d, retrying...%n", attemt);
+              .printf("Unable to complete attempt %d, retrying...%n", attempt);
         }
       }
     }
-    spec.commandLine().getOut().printf("Completed successfully%n");
   }
 
   @Override
