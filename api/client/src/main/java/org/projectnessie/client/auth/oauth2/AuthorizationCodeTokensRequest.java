@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
- * the "password" grant type to obtain a new access token.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3">Token Request</a> using
+ * the "authorization_code" grant type to obtain a new access token.
  *
  * <p>Example:
  *
@@ -32,17 +32,18 @@ import org.immutables.value.Value;
  * Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
  * Content-Type: application/x-www-form-urlencoded
  *
- * grant_type=password&username=johndoe&password=A3ddj3w
+ * grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
+ * &redirect_uri=https%3A%2F%2Fclient%2Eexample%2Ecom%2Fcb
  * </pre>
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutablePasswordTokensRequest.class)
-@JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
-interface PasswordTokensRequest extends TokensRequestBase {
+@JsonSerialize(as = ImmutableAuthorizationCodeTokensRequest.class)
+@JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
+interface AuthorizationCodeTokensRequest extends TokensRequestBase {
 
-  GrantType GRANT_TYPE = GrantType.PASSWORD;
+  GrantType GRANT_TYPE = GrantType.AUTHORIZATION_CODE;
 
-  /** REQUIRED. Value MUST be set to "password". */
+  /** REQUIRED. Value MUST be set to "authorization_code". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
@@ -50,11 +51,15 @@ interface PasswordTokensRequest extends TokensRequestBase {
     return GRANT_TYPE;
   }
 
-  /** REQUIRED. The resource owner username. */
-  @JsonProperty("username")
-  String getUsername();
+  /** REQUIRED. The authorization code received from the authorization server. */
+  @JsonProperty("code")
+  String getCode();
 
-  /** REQUIRED. The resource owner password. */
-  @JsonProperty("password")
-  String getPassword();
+  /** REQUIRED. The redirect URI used in the initial request. */
+  @JsonProperty("redirect_uri")
+  String getRedirectUri();
+
+  /** REQUIRED. The client ID. */
+  @JsonProperty("client_id")
+  String getClientId();
 }

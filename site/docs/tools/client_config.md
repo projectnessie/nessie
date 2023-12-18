@@ -156,12 +156,21 @@ The following properties are available for the `OAUTH2` authentication type:
   `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token`. Required.
 
 * `authentication.oauth2.grant-type`: the grant type to use when authenticating against the OAuth2
-  server. Valid values are: `client_credentials` or `password`. Optional, defaults to
-  `client_credentials`. For both grant types, a client ID and secret must be provided and will be
-  used to authenticate the client against the OAuth2 server. When using the "password" grant type, a
-  username and password must also be provided, and are used to authenticate the user. Both client
-  and user must be properly configured with appropriate permissions in the OAuth2 server for the
-  authentication to succeed.
+  server. Valid values are: `client_credentials`, `password` or `authorization_code`. Optional,
+  defaults to `client_credentials`. Depending on the grant type, additional properties must be
+  provided:
+  * For the "client_credentials" grant type, the following properties must be provided:
+    * `authentication.oauth2.client-id`
+    * `authentication.oauth2.client-secret`
+  * For the "password" grant type, the following properties must be provided:
+    * `authentication.oauth2.client-id`
+    * `authentication.oauth2.client-secret`
+    * `authentication.oauth2.username`
+    * `authentication.oauth2.password`
+  * For the "authorization_code" grant type, the following properties must be provided:
+    * `authentication.oauth2.client-id`
+    * `authentication.oauth2.client-secret`
+    * `authentication.oauth2.auth-endpoint`
 
 * `authentication.oauth2.client-id`: the client ID to use when authenticating against the OAuth2
   server. Required.
@@ -174,6 +183,12 @@ The following properties are available for the `OAUTH2` authentication type:
 
 * `authentication.oauth2.password`: the password to use when authenticating against the OAuth2
   server. Required if using the "password" grant type.
+
+* `authentication.oauth2.auth-endpoint`: the URL of the OAuth2 auth endpoint; this should include
+  not only the OAuth2 server's address, but also the path to the authorization REST resource, if 
+  any. For Keycloak, this is typically
+  `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth`. Required if using
+  the "authorization_code" grant type.
 
 * `authentication.oauth2.default-access-token-lifespan`: the default access token lifespan; if the
   OAuth2 server returns an access token without specifying its expiration time, this value will be
@@ -210,6 +225,15 @@ The following properties are available for the `OAUTH2` authentication type:
   even if the client is not used anymore, potentially leaking thread and memory resources; 
   conversely, setting it too low could cause the background thread to be restarted too often.
   Optional, defaults to `PT30S` (30 seconds). Must be a valid [ISO-8601 duration].
+
+* `nessie.authentication.oauth2.auth-code-flow.web-port`: The port used for the embedded web server 
+  that listens for the authorization code callback. This is only used if the grant type to use is 
+  "authorization_code". Optional; if not present, a random port will be used.
+
+* `nessie.authentication.oauth2.auth-code-flow.timeout`: How long the client should wait for the
+  authorization code flow to complete. This is only used if the grant type to use is
+  "authorization_code". Optional, defaults to `PT5M` (5 minutes). Must be a valid 
+  [ISO-8601 duration].
 
 [ISO-8601 duration]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 [RFC 6749 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc6749#section-3.3

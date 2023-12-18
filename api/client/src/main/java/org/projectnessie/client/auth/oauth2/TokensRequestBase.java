@@ -26,7 +26,7 @@ interface TokensRequestBase {
 
   /** REQUIRED. The authorization grant type. */
   @JsonProperty("grant_type")
-  String getGrantType();
+  GrantType getGrantType();
 
   /**
    * OPTIONAL, if identical to the scope requested by the client; otherwise, REQUIRED. The scope of

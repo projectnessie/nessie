@@ -8,6 +8,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Nessie client now supports the Authorization Code flow when using OAuth 2 authentication. This 
+  allows the client to be used with identity providers that do not support others flows. To use this 
+  flow, the Nessie client must be configured to use the `authorization_code` grant type. See the 
+  Nessie client documentation for details.
+
 ### Upgrade notes
 
 ### Breaking changes

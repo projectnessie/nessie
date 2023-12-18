@@ -27,4 +27,5 @@
     <level value="${test.log.level:-INFO}"/>
     <appender-ref ref="console"/>
   </root>
+  <logger name="org.projectnessie.client.auth.oauth2" level="INFO"/>
 </configuration>

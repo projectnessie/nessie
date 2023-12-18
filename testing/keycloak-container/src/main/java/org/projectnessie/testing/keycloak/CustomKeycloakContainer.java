@@ -69,6 +69,11 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     client.setSecret(CLIENT_SECRET);
     client.setDirectAccessGrantsEnabled(true);
     client.setServiceAccountsEnabled(true);
+
+    // required for authorization code grant
+    client.setStandardFlowEnabled(true);
+    client.setRedirectUris(List.of("http://localhost:*"));
+
     client.setEnabled(true);
 
     return client;

@@ -17,6 +17,7 @@ package org.projectnessie.server;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static io.quarkus.test.oidc.server.OidcWiremockTestResource.getAccessToken;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,12 +34,17 @@ import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.oidc.server.OidcWireMock;
 import io.quarkus.test.oidc.server.OidcWiremockTestResource;
 import io.smallrye.jwt.build.Jwt;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.projectnessie.client.auth.NessieAuthentication;
+import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
+import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
@@ -50,6 +56,8 @@ import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
 
   private static final String VALID_TOKEN = getAccessToken("alice", ImmutableSet.of("user"));
+  private static final String TOKEN_ENDPOINT_PATH = "/auth/realms/quarkus/token";
+  private static final String AUTH_ENDPOINT_PATH = "/auth/realms/quarkus/auth";
 
   @OidcWireMock private WireMockServer wireMockServer;
 
@@ -87,13 +95,18 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
 
   @Override
   protected String tokenEndpoint() {
-    return wireMockServer.baseUrl() + "/auth/realms/quarkus/token";
+    return wireMockServer.baseUrl() + TOKEN_ENDPOINT_PATH;
+  }
+
+  @Override
+  protected String authEndpoint() {
+    return wireMockServer.baseUrl() + AUTH_ENDPOINT_PATH;
   }
 
   @BeforeAll
   void clientCredentialsStub() {
     wireMockServer.stubFor(
-        WireMock.post("/auth/realms/quarkus/token/")
+        WireMock.post(TOKEN_ENDPOINT_PATH)
             .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
             .withRequestBody(containing("client_credentials"))
             .willReturn(successfulResponse(VALID_TOKEN)));
@@ -102,7 +115,7 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   @BeforeAll
   void passwordStub() {
     wireMockServer.stubFor(
-        WireMock.post("/auth/realms/quarkus/token/")
+        WireMock.post(TOKEN_ENDPOINT_PATH)
             .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
             .withRequestBody(containing("password"))
             .withRequestBody(containing("username=alice"))
@@ -111,9 +124,20 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   }
 
   @BeforeAll
+  void authorizationCodeStub() {
+    wireMockServer.stubFor(
+        WireMock.post(TOKEN_ENDPOINT_PATH)
+            .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+            .withRequestBody(containing("authorization_code"))
+            .withRequestBody(containing("redirect_uri"))
+            .withRequestBody(containing("code=1234"))
+            .willReturn(successfulResponse(VALID_TOKEN)));
+  }
+
+  @BeforeAll
   void unauthorizedStub() {
     wireMockServer.stubFor(
-        WireMock.post("/auth/realms/quarkus/token/")
+        WireMock.post(TOKEN_ENDPOINT_PATH)
             .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
             .withRequestBody(containing("password"))
             .withRequestBody(containing("username=alice"))
@@ -136,7 +160,7 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
             .expiresAt(0)
             .sign();
     wireMockServer.stubFor(
-        WireMock.post("/auth/realms/quarkus/token/")
+        WireMock.post(TOKEN_ENDPOINT_PATH)
             .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpFWFBJUkVE"))
             .withRequestBody(containing("client_credentials"))
             .willReturn(successfulResponse(token)));
@@ -150,11 +174,28 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
             .issuer("https://WRONG.example.com")
             .sign();
     wireMockServer.stubFor(
-        WireMock.post("/auth/realms/quarkus/token/")
+        WireMock.post(TOKEN_ENDPOINT_PATH)
             .withHeader(
                 "Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpXUk9OR19JU1NVRVI="))
             .withRequestBody(containing("client_credentials"))
             .willReturn(successfulResponse(token)));
+  }
+
+  @Override
+  protected ResourceOwnerEmulator newResourceOwner() throws IOException {
+    ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator();
+    resourceOwner.setAuthUrlListener(
+        url -> {
+          String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
+          wireMockServer.stubFor(
+              WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
+                  .withQueryParam("response_type", equalTo("code"))
+                  .withQueryParam("client_id", equalTo("quarkus-service-app"))
+                  .withQueryParam("redirect_uri", containing("http"))
+                  .withQueryParam("state", equalTo(state))
+                  .willReturn(authorizationCodeResponse(state)));
+        });
+    return resourceOwner;
   }
 
   private static ResponseDefinitionBuilder successfulResponse(String accessToken) {
@@ -167,6 +208,17 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
                     + "\"token_type\":\"bearer\","
                     + "\"expires_in\":300}",
                 accessToken));
+  }
+
+  private static ResponseDefinitionBuilder authorizationCodeResponse(String state) {
+    return WireMock.aResponse()
+        .withHeader(
+            "Location",
+            "http://localhost:8989/nessie-client/auth?"
+                + "state="
+                + URLEncoder.encode(state, StandardCharsets.UTF_8)
+                + "&code=1234")
+        .withStatus(302);
   }
 
   public static class Profile implements QuarkusTestProfile {

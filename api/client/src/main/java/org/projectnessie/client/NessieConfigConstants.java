@@ -64,25 +64,66 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT =
       "nessie.authentication.oauth2.token-endpoint";
 
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTH_ENDPOINT}) for the OAuth2 authentication
+   * provider. The URL of the OAuth2 authorization endpoint; this should include not only the OAuth2
+   * server's address, but also the path to the authorization REST resource, if any. For Keycloak,
+   * this is typically {@code
+   * https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth}. Required if using
+   * OAuth2 authentication and the "authorization_code" grant type, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_AUTH_ENDPOINT =
+      "nessie.authentication.oauth2.auth-endpoint";
+
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS =
       "client_credentials";
 
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD = "password";
 
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE =
+      "authorization_code";
+
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_GRANT_TYPE}) for the OAuth2 authentication
    * provider. The grant type to use when authenticating against the OAuth2 server. Valid values
-   * are: {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS} or {@value
-   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}. Optional, defaults to {@value
-   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS}.
+   * are:
    *
-   * <p>For both grant types, a {@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID} and {@linkplain
-   * #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} must be provided; they are used to
-   * authenticate the client against the OAuth2 server.
+   * <ul>
+   *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS}
+   *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}
+   *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}
+   * </ul>
    *
-   * <p>Additionally, when using the "password" grant type, a {@linkplain
-   * #CONF_NESSIE_OAUTH2_USERNAME username} and {@linkplain #CONF_NESSIE_OAUTH2_PASSWORD password}
-   * must also be provided; they are used to authenticate the user.
+   * Optional, defaults to {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS}.
+   *
+   * <p>Depending on the grant type, different properties must be provided.
+   *
+   * <p>For the "client_credentials" grant type, the following properties must be provided:
+   *
+   * <ul>
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   * </ul>
+   *
+   * <p>For the "password" grant type, the following properties must be provided:
+   *
+   * <ul>
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_USERNAME username}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_PASSWORD password}
+   * </ul>
+   *
+   * <p>For the "authorization_code" grant type, the following properties must be provided:
+   *
+   * <ul>
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_AUTH_ENDPOINT authorization endpoint}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   * </ul>
    *
    * <p>Both client and user must be properly configured with appropriate permissions in the OAuth2
    * server for the authentication to succeed.
@@ -211,6 +252,28 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED =
       "nessie.authentication.oauth2.token-exchange-enabled";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT}) for the
+   * OAuth2 authentication provider. The port used for the internal web server that listens for the
+   * authorization code callback. This is only used if the grant type to use is {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}. Optional; if not present, a random port
+   * will be used.
+   */
+  public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT =
+      "nessie.authentication.oauth2.auth-code-flow.web-port";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT}) for the
+   * OAuth2 authentication provider. How long the client should wait for the authorization code flow
+   * to complete. This is only used if the grant type to use is {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}. Optional, defaults to {@value
+   * #DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT}.
+   */
+  public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT =
+      "nessie.authentication.oauth2.auth-code-flow.timeout";
+
+  public static final String DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT = "PT5M";
 
   /**
    * Config property name ({@value #CONF_NESSIE_AWS_REGION}) for the region used for AWS
