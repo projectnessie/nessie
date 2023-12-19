@@ -93,6 +93,16 @@ public class DetachHistory extends RefreshContent {
           spec.commandLine()
               .getOut()
               .printf("Unable to complete attempt %d, retrying...%n", attempt);
+
+          // Delete any remaining temporary references
+          for (Branch target : targets.values()) {
+            try {
+              Reference tmpRef = api.getReference().refName(target.getName()).get();
+              api.deleteReference().reference(tmpRef).delete();
+            } catch (NessieNotFoundException ex) {
+              // ignore, the target reference must have been reassigned and deleted
+            }
+          }
         }
       }
     }

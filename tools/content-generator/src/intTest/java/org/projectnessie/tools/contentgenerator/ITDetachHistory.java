@@ -34,6 +34,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Reference;
+import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
 class ITDetachHistory extends AbstractContentGeneratorTest {
 
@@ -55,19 +56,19 @@ class ITDetachHistory extends AbstractContentGeneratorTest {
     runMain(s -> {}, args);
   }
 
-  private void runMain(Consumer<String> stdoutWatcher, String... args) {
+  private ProcessResult runMain(Consumer<String> stdoutWatcher, String... args) {
     List<String> allArgs = new ArrayList<>();
     allArgs.add("detach-history");
     allArgs.add("--uri");
     allArgs.add(NESSIE_API_URI);
     allArgs.addAll(Arrays.asList(args));
 
-    RunContentGenerator.ProcessResult result =
-        runGeneratorCmd(stdoutWatcher, allArgs.toArray(new String[0]));
+    ProcessResult result = runGeneratorCmd(stdoutWatcher, allArgs.toArray(new String[0]));
     assertThat(result)
         .describedAs(result.toString())
-        .extracting(RunContentGenerator.ProcessResult::getExitCode)
+        .extracting(ProcessResult::getExitCode)
         .isEqualTo(0);
+    return result;
   }
 
   private Content contentWithoutId(String ref, ContentKey key) throws NessieNotFoundException {
@@ -152,7 +153,8 @@ class ITDetachHistory extends AbstractContentGeneratorTest {
             }
           }
         };
-    runMain(stdoutWatcher, "--all");
+
+    ProcessResult result = runMain(stdoutWatcher, "--all");
 
     assertThat(count.get()).isEqualTo(3); // 2 failed attempts + 1 successful
 
@@ -174,5 +176,9 @@ class ITDetachHistory extends AbstractContentGeneratorTest {
 
     assertThat(api.getReference().refName(test.getName()).get().getHash())
         .isNotEqualTo(test.getHash());
+
+    // Temporary references should not be migrated.
+    assertThat(result.getStdOutLines())
+        .noneSatisfy(l -> assertThat(l).matches("Completed migration.*-tmp-.*"));
   }
 }
