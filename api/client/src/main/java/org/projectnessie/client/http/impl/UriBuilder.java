@@ -86,11 +86,12 @@ public class UriBuilder {
     StringBuilder uriBuilder = new StringBuilder();
     uriBuilder.append(baseUri);
 
-    if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
-      uriBuilder.append('/');
-    }
-
     if (uri.length() > 0) {
+
+      if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
+        uriBuilder.append('/');
+      }
+
       Map<String, String> templates = new HashMap<>(templateValues);
 
       StringBuilder pathElement = new StringBuilder();

@@ -28,6 +28,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
@@ -42,6 +43,7 @@ import static org.projectnessie.client.NessieConfigConstants.DEFAULT_PREEMPTIVE_
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Clock;
@@ -53,6 +55,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLContext;
 import org.immutables.value.Value;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
@@ -67,7 +70,9 @@ interface OAuth2ClientParams {
   Duration MIN_IDLE_INTERVAL = Duration.ofSeconds(1);
   Duration MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT = Duration.ofSeconds(10);
 
-  URI getTokenEndpoint();
+  Optional<URI> getIssuerUrl();
+
+  Optional<URI> getTokenEndpoint();
 
   Optional<URI> getAuthEndpoint();
 
@@ -134,17 +139,53 @@ interface OAuth2ClientParams {
     return Duration.parse(DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT);
   }
 
-  @Value.Default
-  default HttpClient.Builder getHttpClient() {
-    // See https://www.rfc-editor.org/rfc/rfc6749#section-2.3.1: The
-    // authorization server MUST support the HTTP Basic authentication scheme
-    // for authenticating clients that were issued a client password.
-    HttpAuthentication authentication =
-        BasicAuthenticationProvider.create(getClientId(), getClientSecret());
+  @Value.Lazy
+  default JsonNode getOpenIdProviderMetadata() {
+    URI issuerUrl = getIssuerUrl().orElseThrow(IllegalStateException::new);
+    try (HttpClient client = newHttpClientBuilder().setBaseUri(issuerUrl).build()) {
+      return OAuth2Utils.fetchOpenIdProviderMetadata(client);
+    }
+  }
+
+  @Value.Lazy
+  default URI getResolvedTokenEndpoint() {
+    return getTokenEndpoint()
+        .orElseGet(
+            () -> {
+              JsonNode json = getOpenIdProviderMetadata();
+              if (json.has("token_endpoint")) {
+                return URI.create(json.get("token_endpoint").asText());
+              }
+              throw new IllegalStateException("Discovery data does not contain a token endpoint");
+            });
+  }
+
+  @Value.Lazy
+  default URI getResolvedAuthEndpoint() {
+    return getAuthEndpoint()
+        .orElseGet(
+            () -> {
+              JsonNode json = getOpenIdProviderMetadata();
+              if (json.has("authorization_endpoint")) {
+                return URI.create(json.get("authorization_endpoint").asText());
+              }
+              throw new IllegalStateException(
+                  "Discovery data does not contain an authorization endpoint");
+            });
+  }
+
+  Optional<SSLContext> getSslContext();
+
+  @Value.Derived
+  default HttpAuthentication getBasicAuthentication() {
+    return BasicAuthenticationProvider.create(getClientId(), getClientSecret());
+  }
+
+  @Value.NonAttribute
+  default HttpClient.Builder newHttpClientBuilder() {
     return HttpClient.builder()
-        .setBaseUri(getTokenEndpoint().resolve("/"))
         .setObjectMapper(getObjectMapper())
-        .setAuthentication(authentication)
+        .setSslContext(getSslContext().orElse(null))
         .setDisableCompression(true);
   }
 
@@ -163,9 +204,15 @@ interface OAuth2ClientParams {
   @Value.Check
   default void check() {
     checkArgument(
-        getTokenEndpoint().getQuery() == null, "Token endpoint must not have a query part");
-    checkArgument(
-        getTokenEndpoint().getFragment() == null, "Token endpoint must not have a fragment part");
+        getIssuerUrl().isPresent() || getTokenEndpoint().isPresent(),
+        "either issuer URL or token endpoint must be set");
+    if (getTokenEndpoint().isPresent()) {
+      checkArgument(
+          getTokenEndpoint().get().getQuery() == null, "Token endpoint must not have a query part");
+      checkArgument(
+          getTokenEndpoint().get().getFragment() == null,
+          "Token endpoint must not have a fragment part");
+    }
     if (getAuthEndpoint().isPresent()) {
       checkArgument(
           getAuthEndpoint().get().getQuery() == null,
@@ -197,8 +244,8 @@ interface OAuth2ClientParams {
     }
     if (grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)) {
       checkArgument(
-          getAuthEndpoint().isPresent(),
-          "authorization endpoint must be set if grant type is '%s'",
+          getIssuerUrl().isPresent() || getAuthEndpoint().isPresent(),
+          "either issuer URL or authorization endpoint must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
       if (getAuthorizationCodeFlowWebServerPort().isPresent()) {
         checkArgument(
@@ -235,11 +282,10 @@ interface OAuth2ClientParams {
   static OAuth2ClientParams fromConfig(Function<String, String> config) {
     Objects.requireNonNull(config, "config must not be null");
     return ImmutableOAuth2ClientParams.builder()
+        .issuerUrl(
+            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_ISSUER_URL)).map(URI::create))
         .tokenEndpoint(
-            URI.create(
-                Objects.requireNonNull(
-                    config.apply(CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT),
-                    "token endpoint must not be null")))
+            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT)).map(URI::create))
         .authEndpoint(
             Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_AUTH_ENDPOINT)).map(URI::create))
         .clientId(

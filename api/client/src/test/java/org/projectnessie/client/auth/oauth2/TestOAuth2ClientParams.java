@@ -59,6 +59,9 @@ class TestOAuth2ClientParams {
   static Stream<Arguments> testCheck() {
     return Stream.of(
         Arguments.of(
+            OAuth2ClientParams.builder().clientId("Alice").clientSecret("s3cr3t"),
+            new IllegalArgumentException("either issuer URL or token endpoint must be set")),
+        Arguments.of(
             OAuth2ClientParams.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
@@ -144,7 +147,7 @@ class TestOAuth2ClientParams {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.AUTHORIZATION_CODE),
             new IllegalArgumentException(
-                "authorization endpoint must be set if grant type is 'authorization_code'")),
+                "either issuer URL or authorization endpoint must be set if grant type is 'authorization_code'")),
         Arguments.of(
             OAuth2ClientParams.builder()
                 .clientId("Alice")
@@ -216,9 +219,15 @@ class TestOAuth2ClientParams {
       OAuth2ClientParams actual = OAuth2ClientParams.fromConfig(config::get);
       assertThat(actual)
           .usingRecursiveComparison()
-          .ignoringFields("objectMapper", "executor", "httpClient")
+          .ignoringFields(
+              "objectMapper",
+              "executor",
+              "httpClient",
+              "discoveryData",
+              "resolvedTokenEndpoint",
+              "resolvedAuthEndpoint")
           .isEqualTo(expected);
-      assertThat(actual.getHttpClient()).isNotNull();
+      assertThat(actual.newHttpClientBuilder()).isNotNull();
       assertThat(actual.getExecutor()).isNotNull();
       assertThat(actual.getObjectMapper()).isEqualTo(OAuth2ClientParams.OBJECT_MAPPER);
     } else {
@@ -233,15 +242,6 @@ class TestOAuth2ClientParams {
   static Stream<Arguments> testFromConfig() {
     return Stream.of(
         Arguments.of(null, null, new NullPointerException("config must not be null")),
-        Arguments.of(
-            ImmutableMap.of(
-                CONF_NESSIE_OAUTH2_CLIENT_ID, "Alice",
-                CONF_NESSIE_OAUTH2_CLIENT_SECRET, "s3cr3t",
-                CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW, "PT10S",
-                CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN, "PT30S",
-                CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "test"),
-            null,
-            new NullPointerException("token endpoint must not be null")),
         Arguments.of(
             ImmutableMap.of(
                 CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, "https://example.com/token",

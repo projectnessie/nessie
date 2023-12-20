@@ -28,8 +28,11 @@ import static org.projectnessie.client.auth.oauth2.OAuth2ClientParams.MIN_REFRES
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -49,6 +52,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.TestHttpClient;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.util.HttpTestServer;
@@ -79,8 +83,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      OAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      OAuth2ClientParams params = paramsBuilder(server, false).executor(executor).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
 
@@ -154,8 +157,7 @@ class TestOAuth2Client {
     // throws RejectedExecutionException immediately.
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
-      OAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      OAuth2ClientParams params = paramsBuilder(server, false).executor(executor).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
 
@@ -187,8 +189,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      OAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      OAuth2ClientParams params = paramsBuilder(server, false).executor(executor).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
 
@@ -244,8 +245,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler, true)) {
 
-      OAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      OAuth2ClientParams params = paramsBuilder(server, false).executor(executor).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
 
@@ -341,8 +341,22 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      ImmutableOAuth2ClientParams params = paramsBuilder(server, false).build();
+
+      try (OAuth2Client client = new OAuth2Client(params)) {
+        ClientCredentialsTokensResponse tokens =
+            ((ClientCredentialsTokensResponse) client.fetchNewTokens());
+        checkInitialResponse(tokens, false);
+      }
+    }
+  }
+
+  @Test
+  void testEndpointDiscovery() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      ImmutableOAuth2ClientParams params = paramsBuilder(server, true).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         ClientCredentialsTokensResponse tokens =
@@ -358,12 +372,11 @@ class TestOAuth2Client {
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
       ImmutableOAuth2ClientParams params =
-          paramsBuilder(server)
+          paramsBuilder(server, false)
               .grantType(GrantType.PASSWORD)
               .username("Bob")
               .password("s3cr3t")
               .build();
-      params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         PasswordTokensResponse tokens = ((PasswordTokensResponse) client.fetchNewTokens());
@@ -378,11 +391,18 @@ class TestOAuth2Client {
     try (HttpTestServer server = new HttpTestServer(handler(), false)) {
 
       ImmutableOAuth2ClientParams params =
-          paramsBuilder(server).grantType(GrantType.AUTHORIZATION_CODE).build();
+          paramsBuilder(server, false).grantType(GrantType.AUTHORIZATION_CODE).build();
 
       try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator();
+          HttpClient tokenEndpointClient =
+              params
+                  .newHttpClientBuilder()
+                  .setAuthentication(params.getBasicAuthentication())
+                  .setBaseUri(server.getUri().resolve("/token"))
+                  .build();
           AuthorizationCodeFlow flow =
-              new AuthorizationCodeFlow(params, resourceOwner.getConsoleOut())) {
+              new AuthorizationCodeFlow(
+                  params, tokenEndpointClient, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();
         checkInitialResponse((TokensResponseBase) tokens, false);
@@ -395,8 +415,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      ImmutableOAuth2ClientParams params = paramsBuilder(server, false).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         Tokens currentTokens = getPasswordTokensResponse();
@@ -412,8 +431,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      ImmutableOAuth2ClientParams params = paramsBuilder(server, false).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         Tokens currentTokens = getClientCredentialsTokensResponse();
@@ -429,7 +447,7 @@ class TestOAuth2Client {
     HttpTestServer.RequestHandler handler = (req, resp) -> {};
     try (HttpTestServer server = new HttpTestServer(handler, false)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
+      ImmutableOAuth2ClientParams params = paramsBuilder(server, false).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         Tokens currentTokens =
@@ -449,7 +467,7 @@ class TestOAuth2Client {
     try (HttpTestServer server = new HttpTestServer(handler, false)) {
 
       ImmutableOAuth2ClientParams params =
-          paramsBuilder(server).tokenExchangeEnabled(false).build();
+          paramsBuilder(server, false).tokenExchangeEnabled(false).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         Tokens currentTokens = getClientCredentialsTokensResponse();
@@ -466,8 +484,8 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params = paramsBuilder(server).scope("invalid-scope").build();
-      params.getHttpClient().setSslContext(server.getSslContext());
+      ImmutableOAuth2ClientParams params =
+          paramsBuilder(server, false).scope("invalid-scope").build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
 
@@ -594,12 +612,18 @@ class TestOAuth2Client {
   private HttpTestServer.RequestHandler handler() {
     return (req, resp) -> {
       String requestUri = req.getRequestURI();
-      if (requestUri.equals("/token")) {
-        handleTokenEndpoint(req, resp);
-      } else if (requestUri.equals("/auth")) {
-        handleAuthorizationEndpoint(req, resp);
-      } else {
-        throw new AssertionError("Unexpected request URI: " + requestUri);
+      switch (requestUri) {
+        case "/token":
+          handleTokenEndpoint(req, resp);
+          break;
+        case "/auth":
+          handleAuthorizationEndpoint(req, resp);
+          break;
+        case "/.well-known/openid-configuration":
+          handleOpenIdProviderMetadataEndpoint(req, resp);
+          break;
+        default:
+          throw new AssertionError("Unexpected request URI: " + requestUri);
       }
     };
   }
@@ -684,6 +708,16 @@ class TestOAuth2Client {
     String redirectUri = data.get("redirect_uri") + "?code=test-code&state=" + data.get("state");
     resp.addHeader("Location", redirectUri);
     resp.setStatus(302);
+  }
+
+  private static void handleOpenIdProviderMetadataEndpoint(
+      HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    URI uri = URI.create(req.getRequestURL().toString());
+    ObjectNode node = JsonNodeFactory.instance.objectNode();
+    node.put("issuer", uri.resolve("/").toString())
+        .put("token_endpoint", uri.resolve("/token").toString())
+        .put("authorization_endpoint", uri.resolve("/auth").toString());
+    writeResponseBody(resp, node, "application/json", 200);
   }
 
   private ImmutableClientCredentialsTokensResponse getClientCredentialsTokensResponse() {
@@ -781,14 +815,25 @@ class TestOAuth2Client {
     soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
   }
 
-  private ImmutableOAuth2ClientParams.Builder paramsBuilder(HttpTestServer server) {
-    return ImmutableOAuth2ClientParams.builder()
-        .tokenEndpoint(server.getUri().resolve("/token"))
-        .authEndpoint(server.getUri().resolve("/auth"))
-        .clientId("Alice")
-        .clientSecret("s3cr3t")
-        .scope("test")
-        .clock(() -> now);
+  private ImmutableOAuth2ClientParams.Builder paramsBuilder(
+      HttpTestServer server, boolean discovery) {
+    ImmutableOAuth2ClientParams.Builder builder =
+        ImmutableOAuth2ClientParams.builder()
+            .clientId("Alice")
+            .clientSecret("s3cr3t")
+            .scope("test")
+            .clock(() -> now);
+    if (server.getSslContext() != null) {
+      builder.sslContext(server.getSslContext());
+    }
+    if (discovery) {
+      builder.issuerUrl(server.getUri().resolve("/"));
+    } else {
+      builder
+          .tokenEndpoint(server.getUri().resolve("/token"))
+          .authEndpoint(server.getUri().resolve("/auth"));
+    }
+    return builder;
   }
 
   /** handle the call to fetchNewTokens() for the initial token fetch. */

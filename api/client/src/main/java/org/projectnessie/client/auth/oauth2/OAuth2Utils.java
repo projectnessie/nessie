@@ -15,8 +15,13 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.security.SecureRandom;
 import java.util.Random;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpResponse;
+import org.projectnessie.client.http.Status;
 
 class OAuth2Utils {
 
@@ -29,5 +34,20 @@ class OAuth2Utils {
         .limit(length)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();
+  }
+
+  public static JsonNode fetchOpenIdProviderMetadata(HttpClient issuerHttpClient) {
+    HttpResponse response =
+        issuerHttpClient.newRequest().path(".well-known/openid-configuration").get();
+    Status status = response.getStatus();
+    if (status != Status.OK) {
+      throw new HttpClientException(
+          "OpenID provider metadata request returned status code " + status.getCode());
+    }
+    JsonNode data = response.readEntity(JsonNode.class);
+    if (!data.has("issuer") || !data.has("authorization_endpoint")) {
+      throw new HttpClientException("Invalid OpenID provider metadata");
+    }
+    return data;
   }
 }

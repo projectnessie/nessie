@@ -64,7 +64,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final String username;
   private final byte[] password;
   private final String scope;
-  private final HttpClient httpClient;
+  private final HttpClient tokenEndpointClient;
   private final ScheduledExecutorService executor;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
   /* Visible for testing. */ final AtomicBoolean sleeping = new AtomicBoolean();
@@ -80,7 +80,13 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     username = params.getUsername().orElse(null);
     password = params.getPassword().map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null);
     scope = params.getScope().orElse(null);
-    httpClient = params.getHttpClient().addResponseFilter(this::checkErrorResponse).build();
+    tokenEndpointClient =
+        params
+            .newHttpClientBuilder()
+            .setBaseUri(params.getResolvedTokenEndpoint())
+            .setAuthentication(params.getBasicAuthentication())
+            .addResponseFilter(this::checkErrorResponse)
+            .build();
     executor = params.getExecutor();
     lastAccess = params.getClock().get();
     currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), executor);
@@ -245,8 +251,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     if (params.getGrantType() == GrantType.CLIENT_CREDENTIALS) {
       ClientCredentialsTokensRequest body =
           ImmutableClientCredentialsTokensRequest.builder().scope(scope).build();
-      HttpResponse httpResponse =
-          httpClient.newRequest().path(params.getTokenEndpoint().getPath()).postForm(body);
+      HttpResponse httpResponse = tokenEndpointClient.newRequest().postForm(body);
       return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
     } else if (params.getGrantType() == GrantType.PASSWORD) {
       PasswordTokensRequest body =
@@ -255,11 +260,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
               .password(new String(password, StandardCharsets.UTF_8))
               .scope(scope)
               .build();
-      HttpResponse httpResponse =
-          httpClient.newRequest().path(params.getTokenEndpoint().getPath()).postForm(body);
+      HttpResponse httpResponse = tokenEndpointClient.newRequest().postForm(body);
       return httpResponse.readEntity(PasswordTokensResponse.class);
     } else if (params.getGrantType() == GrantType.AUTHORIZATION_CODE) {
-      try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(params, httpClient)) {
+      try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(params, tokenEndpointClient)) {
         return flow.fetchNewTokens();
       }
     }
@@ -284,8 +288,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .refreshToken(currentTokens.getRefreshToken().getPayload())
             .scope(scope)
             .build();
-    HttpResponse httpResponse =
-        httpClient.newRequest().path(params.getTokenEndpoint().getPath()).postForm(body);
+    HttpResponse httpResponse = tokenEndpointClient.newRequest().postForm(body);
     return httpResponse.readEntity(RefreshTokensResponse.class);
   }
 
@@ -301,8 +304,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .requestedTokenType(REFRESH_TOKEN)
             .scope(scope)
             .build();
-    HttpResponse httpResponse =
-        httpClient.newRequest().path(params.getTokenEndpoint().getPath()).postForm(body);
+    HttpResponse httpResponse = tokenEndpointClient.newRequest().postForm(body);
     return httpResponse.readEntity(TokensExchangeResponse.class);
   }
 

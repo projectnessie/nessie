@@ -54,7 +54,7 @@ class TestUriBuilder {
   @Test
   void addMissingSlash() {
     assertEquals(
-        "http://localhost/", new UriBuilder(URI.create("http://localhost")).build().toString());
+        "http://localhost", new UriBuilder(URI.create("http://localhost")).build().toString());
     assertEquals(
         "http://localhost/foo/bar",
         new UriBuilder(URI.create("http://localhost")).path("foo").path("bar").build().toString());
