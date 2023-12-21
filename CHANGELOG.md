@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fix potential NPE when fetching commit log with fetch option `ALL` and access checks enabled.
+
 ### Commits
 
 ## [0.75.0] Release (2023-12-15)

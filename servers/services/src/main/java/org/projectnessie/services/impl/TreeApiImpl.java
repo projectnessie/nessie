@@ -513,12 +513,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
     Set<Check> checks = newHashSetWithExpectedSize(operations.size());
     for (Operation op : operations) {
-      if (op instanceof Operation.Put) {
-        checks.add(canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey())));
-      } else if (op instanceof Operation.Delete) {
-        checks.add(canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey())));
-      } else {
+      if (!(op instanceof Operation.Put) && !(op instanceof Operation.Delete)) {
         throw new IllegalStateException("Unknown operation " + op);
+      }
+      IdentifiedContentKey identifiedKey = identifiedKeys.get(op.getKey());
+      if (identifiedKey != null) {
+        checks.add(canReadContentKey(endRef.getValue(), identifiedKey));
+      } else {
+        checks.add(canReadContentKey(endRef.getValue(), op.getKey()));
       }
     }
 
@@ -533,13 +535,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     Map<Check, String> failures = anyCheck ? accessCheck.check() : emptyMap();
 
     for (Operation op : operations) {
-      Check check;
-      if (op instanceof Operation.Put) {
-        check = canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey()));
-      } else if (op instanceof Operation.Delete) {
-        check = canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey()));
-      } else {
+      if (!(op instanceof Operation.Put) && !(op instanceof Operation.Delete)) {
         throw new IllegalStateException("Unknown operation " + op);
+      }
+      IdentifiedContentKey identifiedKey = identifiedKeys.get(op.getKey());
+      Check check;
+      if (identifiedKey != null) {
+        check = canReadContentKey(endRef.getValue(), identifiedKey);
+      } else {
+        check = canReadContentKey(endRef.getValue(), op.getKey());
       }
       if (failures.containsKey(check)) {
         failedChecks.add(check);

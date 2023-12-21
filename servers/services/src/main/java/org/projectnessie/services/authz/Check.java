@@ -65,6 +65,10 @@ public interface Check {
     return ImmutableCheck.of(type, ref, null, null, null, null, null);
   }
 
+  static Check check(CheckType type, @Nullable NamedRef ref, @Nullable ContentKey key) {
+    return ImmutableCheck.of(type, ref, key, null, null, null, null);
+  }
+
   static Check check(
       CheckType type, @Nullable NamedRef ref, @Nullable IdentifiedContentKey identifiedKey) {
     if (identifiedKey != null) {
@@ -157,6 +161,10 @@ public interface Check {
 
   static Check canReadEntries(NamedRef ref) {
     return check(CheckType.READ_ENTRIES, ref);
+  }
+
+  static Check canReadContentKey(NamedRef ref, ContentKey key) {
+    return check(CheckType.READ_CONTENT_KEY, ref, key);
   }
 
   static Check canReadContentKey(NamedRef ref, IdentifiedContentKey identifiedKey) {
