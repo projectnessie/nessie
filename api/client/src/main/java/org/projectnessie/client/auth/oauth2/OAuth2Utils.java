@@ -25,7 +25,7 @@ class OAuth2Utils {
   static String randomAlphaNumString(int length) {
     return RANDOM
         .ints('0', 'z' + 1)
-        .filter(i -> (i <= '9' || i >= 'A') && (i <= 'Z' || i >= 'a'))
+        .filter(i -> (i <= '9') || (i >= 'A' && i <= 'Z') || (i >= 'a'))
         .limit(length)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();
