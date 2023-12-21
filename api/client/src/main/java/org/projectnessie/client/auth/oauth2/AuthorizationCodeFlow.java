@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.projectnessie.client.http.HttpClient;
@@ -66,9 +67,11 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private final Duration flowTimeout;
 
   private final CompletableFuture<HttpExchange> requestFuture = new CompletableFuture<>();
-  private final CompletableFuture<Void> responseFuture = new CompletableFuture<>();
-  private final CompletableFuture<Tokens> tokensFuture;
   private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+  private final CompletableFuture<String> authCodeFuture;
+  private final CompletableFuture<Tokens> tokensFuture;
+
+  private final Phaser inflightRequestsPhaser = new Phaser(1);
 
   AuthorizationCodeFlow(OAuth2ClientParams params, HttpClient httpClient) {
     this(params, httpClient, System.out);
@@ -85,11 +88,9 @@ class AuthorizationCodeFlow implements AutoCloseable {
     this.httpClient = httpClient;
     this.console = console;
     this.flowTimeout = params.getAuthorizationCodeFlowTimeout();
-    // Close the server when the close future completes, but wait for the response to be sent first,
-    // so that the browser does not show "Connection closed" to the user.
-    CompletableFuture.allOf(closeFuture, responseFuture).thenRun(this::doClose);
-    tokensFuture =
-        requestFuture.thenApply(this::extractAuthorizationCode).thenApply(this::fetchNewTokens);
+    authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
+    tokensFuture = authCodeFuture.thenApply(this::fetchNewTokens);
+    closeFuture.thenRun(this::doClose);
     server =
         createServer(params.getAuthorizationCodeFlowWebServerPort().orElse(-1), this::doRequest);
     state = OAuth2Utils.randomAlphaNumString(STATE_LENGTH);
@@ -113,16 +114,20 @@ class AuthorizationCodeFlow implements AutoCloseable {
     closeFuture.complete(null);
   }
 
-  private void abort() {
-    tokensFuture.cancel(true);
-    requestFuture.cancel(true);
-    responseFuture.cancel(true);
-  }
-
   private void doClose() {
+    LOGGER.debug("Waiting for in-flight requests to complete");
+    if (!tokensFuture.isCancelled()) {
+      inflightRequestsPhaser.arriveAndAwaitAdvance();
+    }
     LOGGER.debug("Authorization Code Flow: closing");
     server.stop(0);
     // don't close the console, it's not ours
+  }
+
+  private void abort() {
+    tokensFuture.cancel(true);
+    authCodeFuture.cancel(true);
+    requestFuture.cancel(true);
   }
 
   public Tokens fetchNewTokens() {
@@ -131,6 +136,11 @@ class AuthorizationCodeFlow implements AutoCloseable {
     console.flush();
     try {
       Tokens tokens = tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
       console.println(
           MSG_PREFIX + "Authentication successful: you can close the browser page now.");
       console.flush();
@@ -152,11 +162,12 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private void doRequest(HttpExchange exchange) {
     LOGGER.debug("Authorization Code Flow: received request");
+    inflightRequestsPhaser.register();
     requestFuture.complete(exchange);
     tokensFuture
         .whenComplete((tokens, error) -> doResponse(exchange, error))
         .thenRun(exchange::close)
-        .thenRun(() -> responseFuture.complete(null));
+        .thenRun(inflightRequestsPhaser::arriveAndDeregister);
   }
 
   private void doResponse(HttpExchange exchange, Throwable error) {
