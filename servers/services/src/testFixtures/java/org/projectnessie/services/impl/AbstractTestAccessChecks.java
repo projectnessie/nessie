@@ -460,13 +460,11 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         commit(
                 main,
                 CommitMeta.fromMessage("commit 1"),
-                Put.of(ContentKey.of("t1"), IcebergTable.of("m1", 1, 2, 3, 4)),
-                Put.of(ContentKey.of("t2"), IcebergTable.of("m2", 1, 2, 3, 4)))
+                Put.of(ContentKey.of("t1"), IcebergTable.of("m1", 1, 2, 3, 4)))
             .getTargetBranch();
-    String parentHash = main.getHash();
 
     main =
-        commit(main, CommitMeta.fromMessage("commit 1"), Delete.of(ContentKey.of("t2")))
+        commit(main, CommitMeta.fromMessage("commit 2"), Delete.of(ContentKey.of("t1")))
             .getTargetBranch();
 
     Set<Check> checks = recordAccessChecks();
@@ -477,30 +475,8 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
             check -> {
               assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
               assertThat(check.key()).isEqualTo(ContentKey.of("t1"));
+              assertThat(check.identifiedKey()).isNotNull();
               assertThat(check.contentId()).isNotNull();
-            })
-        .satisfiesOnlyOnce(
-            check -> {
-              assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
-              assertThat(check.key()).isEqualTo(ContentKey.of("t2"));
-              assertThat(check.contentId()).isNull(); // t2 doesn't exist
-            });
-
-    checks = recordAccessChecks();
-    commitLog(main.getName(), ALL, null, parentHash, null);
-
-    assertThat(checks)
-        .satisfiesOnlyOnce(
-            check -> {
-              assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
-              assertThat(check.key()).isEqualTo(ContentKey.of("t1"));
-              assertThat(check.contentId()).isNotNull();
-            })
-        .satisfiesOnlyOnce(
-            check -> {
-              assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
-              assertThat(check.key()).isEqualTo(ContentKey.of("t2"));
-              assertThat(check.contentId()).isNotNull(); // t2 still exists
             });
   }
 }

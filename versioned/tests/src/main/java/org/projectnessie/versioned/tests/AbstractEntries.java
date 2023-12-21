@@ -250,5 +250,21 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
                 .identifiedKey()
                 .elements()
                 .toArray(new IdentifiedContentKey.IdentifiedElement[0]));
+
+    commit = commit("Second Commit").delete(key2a).toBranch(branch);
+
+    try (PaginationIterator<KeyEntry> iter =
+        store.getKeys(commit, null, true, NO_KEY_RESTRICTIONS)) {
+      soft.assertThat(iter)
+          .toIterable()
+          .extracting(KeyEntry::getKey, KeyEntry::getContent)
+          .containsExactlyInAnyOrder(
+              tuple(content2.identifiedKey(), content2.content()),
+              tuple(content23.identifiedKey(), content23.content()),
+              tuple(content23a.identifiedKey(), content23a.content()));
+    }
+
+    soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2a)))
+        .containsOnly(content2a.identifiedKey());
   }
 }
