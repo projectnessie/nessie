@@ -15,19 +15,20 @@
  */
 package org.projectnessie.server.authz;
 
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.collect.ImmutableMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
+import org.projectnessie.versioned.NamedRef;
 
 /**
  * A reference implementation of the {@link BatchAccessChecker} that performs access checks using
@@ -62,7 +63,10 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   }
 
   private String getRoleName() {
-    return null != context.user() ? context.user().getName() : "";
+    if (context.user() != null && context.user().getName() != null) {
+      return context.user().getName();
+    }
+    return "";
   }
 
   private void canPerformOp(Check check, Map<Check, String> failed) {
@@ -77,65 +81,48 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   }
 
   private void canPerformOpOnReference(Check check, Map<Check, String> failed) {
-    String roleName = getRoleName();
-    String refName = check.ref().getName();
-    ImmutableMap<String, Object> arguments =
-        ImmutableMap.of(
-            "ref",
-            refName,
-            "role",
-            roleName,
-            "op",
-            check.type().name(),
-            "path",
-            "",
-            "contentType",
-            "");
+    String role = getRoleName();
+    String op = check.type().name();
+    String ref = Optional.ofNullable(check.ref()).map(NamedRef::getName).orElse("");
+    Map<String, Object> arguments =
+        ImmutableMap.of("ref", ref, "role", role, "op", op, "path", "", "contentType", "");
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
-                "'%s' is not allowed for role '%s' on reference '%s'",
-                check.type(), roleName, refName);
+                "'%s' is not allowed for role '%s' on reference '%s'", check.type(), role, ref);
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
   private void canPerformOpOnPath(Check check, Map<Check, String> failed) {
-    String roleName = getRoleName();
-    Content.Type contentType = check.contentType();
-    String contentKeyPathString = check.key().toPathString();
-    ImmutableMap<String, Object> arguments =
+    String role = getRoleName();
+    String op = check.type().name();
+    String contentType = Optional.ofNullable(check.contentType()).map(Type::name).orElse("");
+    String path = Optional.ofNullable(check.key()).map(ContentKey::toPathString).orElse("");
+    String ref = Optional.ofNullable(check.ref()).map(NamedRef::getName).orElse("");
+    Map<String, Object> arguments =
         ImmutableMap.of(
-            "ref",
-            check.ref().getName(),
-            "path",
-            contentKeyPathString,
-            "role",
-            roleName,
-            "op",
-            check.type().name(),
-            "contentType",
-            contentType != null ? contentType.name() : "");
+            "ref", ref, "path", path, "role", role, "op", op, "contentType", contentType);
 
     Supplier<String> errorMsgSupplier =
-        () ->
-            String.format(
-                "'%s' is not allowed for role '%s' on content '%s'",
-                check.type(), roleName, contentKeyPathString);
+        () -> String.format("'%s' is not allowed for role '%s' on content '%s'", op, role, path);
 
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
   private void canPerformRepositoryConfig(Check check, Map<Check, String> failed) {
-    RepositoryConfig.Type repositoryConfigType = requireNonNull(check.repositoryConfigType());
+    String op = check.type().name();
+    String type =
+        Optional.ofNullable(check.repositoryConfigType())
+            .map(RepositoryConfig.Type::name)
+            .orElse("");
 
-    ImmutableMap<String, Object> arguments = ImmutableMap.of("type", repositoryConfigType.name());
+    Map<String, Object> arguments = ImmutableMap.of("type", type, "op", op);
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
-                "'%s' is not allowed for repository config type '%s'",
-                check.type(), repositoryConfigType.name());
+                "'%s' is not allowed for repository config type '%s'", check.type(), type);
 
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }

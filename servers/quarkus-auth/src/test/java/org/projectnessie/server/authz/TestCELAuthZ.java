@@ -25,11 +25,15 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessCheckException;
+import org.projectnessie.services.authz.Check;
+import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.versioned.BranchName;
 
@@ -77,6 +81,23 @@ public class TestCELAuthZ {
             () -> batchAccessChecker.canCreateReference(BranchName.of("main")).checkAndThrow())
         .isInstanceOf(AccessCheckException.class)
         .hasMessage("'CREATE_REFERENCE' is not allowed for role 'some-user' on reference 'main'");
+  }
+
+  @ParameterizedTest
+  @EnumSource(CheckType.class)
+  void celBatchAccessCheckerEmptyChecks(CheckType type) {
+    QuarkusNessieAuthorizationConfig config = buildConfig(true);
+    CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
+    CelBatchAccessChecker batchAccessChecker =
+        new CelBatchAccessChecker(rules, ServerAccessContext.of("meep", () -> null));
+    Check check = Check.builder(type).build();
+    if (type == CheckType.VIEW_REFERENCE) {
+      soft.assertThatCode(() -> batchAccessChecker.can(check).checkAndThrow())
+          .doesNotThrowAnyException();
+    } else {
+      soft.assertThatThrownBy(() -> batchAccessChecker.can(check).checkAndThrow())
+          .isInstanceOf(AccessCheckException.class);
+    }
   }
 
   @Test

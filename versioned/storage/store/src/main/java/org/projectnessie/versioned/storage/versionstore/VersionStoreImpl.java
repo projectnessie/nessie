@@ -682,7 +682,7 @@ public class VersionStoreImpl implements VersionStore {
             key -> {
               StoreKey storeKey = keyToStoreKey(key);
               StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
-              if (indexElement == null || !indexElement.content().action().exists()) {
+              if (indexElement == null) {
                 return null;
               }
               CommitOp content = indexElement.content();

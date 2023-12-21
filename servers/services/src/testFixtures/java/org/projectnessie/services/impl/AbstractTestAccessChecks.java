@@ -451,4 +451,32 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
           .hasMessageContaining(VIEW_MSG);
     }
   }
+
+  @Test
+  public void testCheckReadContentKeyOnDeletedEntity() throws Exception {
+    Branch main = createBranch("testCheckReadContentKeyOnDeletedEntity");
+
+    main =
+        commit(
+                main,
+                CommitMeta.fromMessage("commit 1"),
+                Put.of(ContentKey.of("t1"), IcebergTable.of("m1", 1, 2, 3, 4)))
+            .getTargetBranch();
+
+    main =
+        commit(main, CommitMeta.fromMessage("commit 2"), Delete.of(ContentKey.of("t1")))
+            .getTargetBranch();
+
+    Set<Check> checks = recordAccessChecks();
+    commitLog(main.getName(), ALL, null);
+
+    assertThat(checks)
+        .satisfiesOnlyOnce(
+            check -> {
+              assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
+              assertThat(check.key()).isEqualTo(ContentKey.of("t1"));
+              assertThat(check.identifiedKey()).isNotNull();
+              assertThat(check.contentId()).isNotNull();
+            });
+  }
 }
