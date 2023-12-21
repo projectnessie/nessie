@@ -115,8 +115,9 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   private void doClose() {
-    LOGGER.debug("Waiting for in-flight requests to complete");
     if (!tokensFuture.isCancelled()) {
+      LOGGER.debug(
+          "Authorization Code Flow: waiting for in-flight requests to complete before closing");
       inflightRequestsPhaser.arriveAndAwaitAdvance();
     }
     LOGGER.debug("Authorization Code Flow: closing");
@@ -136,11 +137,6 @@ class AuthorizationCodeFlow implements AutoCloseable {
     console.flush();
     try {
       Tokens tokens = tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
       console.println(
           MSG_PREFIX + "Authentication successful: you can close the browser page now.");
       console.flush();
