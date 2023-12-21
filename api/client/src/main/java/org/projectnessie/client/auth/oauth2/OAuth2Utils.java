@@ -15,12 +15,15 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 class OAuth2Utils {
 
+  private static final Random RANDOM = new SecureRandom();
+
   static String randomAlphaNumString(int length) {
-    return new Random()
+    return RANDOM
         .ints('0', 'z' + 1)
         .filter(i -> (i <= '9' || i >= 'A') && (i <= 'Z' || i >= 'a'))
         .limit(length)
