@@ -21,7 +21,10 @@ import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
@@ -33,6 +36,9 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -60,7 +66,10 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private final OAuth2ClientParams params;
   private final HttpClient httpClient;
-  private final PrintStream console;
+  private final PrintStream consoleOut;
+  private final InputStream consoleIn;
+
+  private final ExecutorService executor;
   private final String state;
   private final HttpServer server;
   private final String redirectUri;
@@ -68,32 +77,36 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private final Duration flowTimeout;
 
   private final CompletableFuture<HttpExchange> requestFuture = new CompletableFuture<>();
-  private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
-  private final CompletableFuture<String> authCodeFuture;
+  private final CompletableFuture<String> authCodeFuture = new CompletableFuture<>();
   private final CompletableFuture<Tokens> tokensFuture;
+  private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+
+  private final Future<?> consoleFuture;
 
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
   AuthorizationCodeFlow(OAuth2ClientParams params, HttpClient httpClient) {
-    this(params, httpClient, System.out);
+    this(params, httpClient, System.out, System.in);
   }
 
   /** Constructor used for testing. */
-  AuthorizationCodeFlow(OAuth2ClientParams params, PrintStream console) {
-    this(params, params.getHttpClient().build(), console);
+  AuthorizationCodeFlow(OAuth2ClientParams params, PrintStream consoleOut, InputStream consoleIn) {
+    this(params, params.getHttpClient().build(), consoleOut, consoleIn);
   }
 
   private AuthorizationCodeFlow(
-      OAuth2ClientParams params, HttpClient httpClient, PrintStream console) {
+      OAuth2ClientParams params,
+      HttpClient httpClient,
+      PrintStream consoleOut,
+      InputStream consoleIn) {
     this.params = params;
     this.httpClient = httpClient;
-    this.console = console;
-    this.flowTimeout = params.getAuthorizationCodeFlowTimeout();
-    authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
-    tokensFuture = authCodeFuture.thenApply(this::fetchNewTokens);
-    closeFuture.thenRun(this::doClose);
-    server =
-        createServer(params.getAuthorizationCodeFlowWebServerPort().orElse(-1), this::doRequest);
+    this.consoleOut = consoleOut;
+    this.consoleIn = consoleIn;
+    flowTimeout = params.getAuthorizationCodeFlowTimeout();
+    executor = Executors.newFixedThreadPool(2);
+    int port = params.getAuthorizationCodeFlowWebServerPort().orElse(-1);
+    server = createServer(executor, port, this::doRequest);
     state = OAuth2Utils.randomAlphaNumString(STATE_LENGTH);
     redirectUri =
         String.format("http://localhost:%d%s", server.getAddress().getPort(), CONTEXT_PATH);
@@ -107,6 +120,10 @@ class AuthorizationCodeFlow implements AutoCloseable {
             .queryParam("redirect_uri", redirectUri)
             .queryParam("state", state)
             .build();
+    requestFuture.thenApply(this::extractAuthorizationCode);
+    consoleFuture = executor.submit(this::readAuthorizationCode);
+    tokensFuture = authCodeFuture.thenApply(this::fetchNewTokens);
+    closeFuture.thenRun(this::doClose);
     LOGGER.debug("Authorization Code Flow: started, redirect URI: {}", redirectUri);
   }
 
@@ -119,22 +136,25 @@ class AuthorizationCodeFlow implements AutoCloseable {
     inflightRequestsPhaser.arriveAndAwaitAdvance();
     LOGGER.debug("Authorization Code Flow: closing");
     server.stop(0);
-    // don't close the console, it's not ours
+    executor.shutdownNow();
+    // don't close consoleOut and consoleIn, they are not ours
   }
 
   private void abort() {
     tokensFuture.cancel(true);
     authCodeFuture.cancel(true);
     requestFuture.cancel(true);
+    consoleFuture.cancel(true);
   }
 
   public Tokens fetchNewTokens() {
-    console.println();
-    console.println(MSG_PREFIX + "======= Nessie authentication required =======");
-    console.println(MSG_PREFIX + "Browse to the following URL to continue:");
-    console.println(MSG_PREFIX + authorizationUri);
-    console.println();
-    console.flush();
+    consoleOut.println();
+    consoleOut.println(MSG_PREFIX + "======= Nessie authentication required =======");
+    consoleOut.println(MSG_PREFIX + "Browse to the following URL to continue:");
+    consoleOut.println(MSG_PREFIX + authorizationUri);
+    consoleOut.println(MSG_PREFIX + "If you were given an authorization code, type it now and press <enter> :");
+    consoleOut.println();
+    consoleOut.flush();
     try {
       return tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (TimeoutException e) {
@@ -189,6 +209,22 @@ class AuthorizationCodeFlow implements AutoCloseable {
     if (code == null || code.isEmpty()) {
       throw new IllegalArgumentException("Missing authorization code");
     }
+    LOGGER.debug("Authorization Code Flow: code received from HTTP request");
+    authCodeFuture.complete(code);
+    consoleFuture.cancel(true);
+    return code;
+  }
+
+  private String readAuthorizationCode() throws IOException {
+    // don't use try-with-resources here, we don't want to close the stream
+    BufferedReader br = new BufferedReader(new InputStreamReader(consoleIn));
+    String code;
+    do {
+      code = br.readLine();
+    } while ("".equals(code));
+    LOGGER.debug("Authorization Code Flow: code received from standard in");
+    authCodeFuture.complete(code);
+    requestFuture.cancel(true);
     return code;
   }
 
@@ -208,13 +244,14 @@ class AuthorizationCodeFlow implements AutoCloseable {
     return tokens;
   }
 
-  private static HttpServer createServer(int port, HttpHandler handler) {
+  private static HttpServer createServer(ExecutorService executor, int port, HttpHandler handler) {
     final HttpServer server;
     try {
       server = HttpServer.create();
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+    server.setExecutor(executor);
     server.createContext(CONTEXT_PATH, handler);
     bind(server, port);
     server.start();

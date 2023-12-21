@@ -49,6 +49,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator.CodeInputMethod;
 import org.projectnessie.client.http.TestHttpClient;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.util.HttpTestServer;
@@ -382,7 +383,27 @@ class TestOAuth2Client {
 
       try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator();
           AuthorizationCodeFlow flow =
-              new AuthorizationCodeFlow(params, resourceOwner.getConsoleOut())) {
+              new AuthorizationCodeFlow(
+                  params, resourceOwner.getConsoleOut(), resourceOwner.getConsoleIn())) {
+        resourceOwner.setErrorListener(e -> flow.close());
+        Tokens tokens = flow.fetchNewTokens();
+        checkInitialResponse((TokensResponseBase) tokens, false);
+      }
+    }
+  }
+
+  @Test
+  void testAuthorizationCodeManualInput() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), false)) {
+
+      ImmutableOAuth2ClientParams params =
+          paramsBuilder(server).grantType(GrantType.AUTHORIZATION_CODE).build();
+
+      try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(CodeInputMethod.MANUAL);
+          AuthorizationCodeFlow flow =
+              new AuthorizationCodeFlow(
+                  params, resourceOwner.getConsoleOut(), resourceOwner.getConsoleIn())) {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();
         checkInitialResponse((TokensResponseBase) tokens, false);

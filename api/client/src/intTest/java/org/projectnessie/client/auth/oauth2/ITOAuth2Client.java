@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
@@ -49,6 +48,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
+import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator.CodeInputMethod;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
@@ -160,15 +160,45 @@ public class ITOAuth2Client {
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
-      names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE"})
-  void testOAuth2ClientInitialRefreshToken(GrantType initialGrantType) throws Exception {
+      names = {"CLIENT_CREDENTIALS", "PASSWORD"})
+  void testOAuth2ClientInitialRefreshToken(GrantType initialGrantType) {
     OAuth2ClientParams params = clientParams("Client2").grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(params);
-        AutoCloseable ignored = newTestSetup(initialGrantType, client);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
+      // first request: client credentials or password grant
+      Tokens firstTokens = client.fetchNewTokens();
+      soft.assertThat(firstTokens)
+          .isInstanceOfAny(ClientCredentialsTokensResponse.class, PasswordTokensResponse.class);
+      soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
+      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
+      // second request: refresh token grant
+      Tokens refreshedTokens = client.refreshTokens(firstTokens);
+      soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
+      soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
+      tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
+      compareTokens(firstTokens, refreshedTokens, "Client2");
+    }
+  }
+
+  /**
+   * This test is equivalent to {@link #testOAuth2ClientInitialRefreshToken(GrantType)} but uses the
+   * authorization_code grant type for obtaining the initial access token, exercising different code
+   * input methods.
+   */
+  @ParameterizedTest
+  @EnumSource(ResourceOwnerEmulator.CodeInputMethod.class)
+  void testOAuth2ClientInitialRefreshTokenAuthorizationCodeFlow(CodeInputMethod codeInputMethod)
+      throws Exception {
+    OAuth2ClientParams params =
+        clientParams("Client2").grantType(GrantType.AUTHORIZATION_CODE).build();
+    try (OAuth2Client client = new OAuth2Client(params);
+        ResourceOwnerEmulator resourceOwner =
+            new ResourceOwnerEmulator("Alice", "s3cr3t", codeInputMethod);
+        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
+      resourceOwner.setErrorListener(e -> client.close());
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
+      soft.assertThat(firstTokens).isInstanceOf(AuthorizationCodeTokensResponse.class);
       soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: refresh token grant
@@ -283,12 +313,15 @@ public class ITOAuth2Client {
     try (OAuth2Client client = new OAuth2Client(params);
         ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t")) {
       resourceOwner.setErrorListener(e -> client.close());
-      resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
+      resourceOwner.overrideAuthorizationCode(
+          // Nessie client replies with 401
+          "BAD_CODE", Status.UNAUTHORIZED);
       client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
-          .isEqualTo(Status.BAD_REQUEST); // Keycloak replies with 400 instead of 401
+          // Keycloak replies with 400 instead of 401
+          .isEqualTo(Status.BAD_REQUEST);
     }
   }
 
@@ -424,33 +457,5 @@ public class ITOAuth2Client {
             .setDisableCompression(true);
     authentication.applyToHttpClient(builder);
     return builder;
-  }
-
-  private static Class<?> expectedResponseClass(GrantType initialGrantType) {
-    switch (initialGrantType) {
-      case CLIENT_CREDENTIALS:
-        return ClientCredentialsTokensResponse.class;
-      case PASSWORD:
-        return PasswordTokensResponse.class;
-      case AUTHORIZATION_CODE:
-        return AuthorizationCodeTokensResponse.class;
-      default:
-        throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
-    }
-  }
-
-  private AutoCloseable newTestSetup(GrantType initialGrantType, OAuth2Client client)
-      throws IOException {
-    switch (initialGrantType) {
-      case CLIENT_CREDENTIALS:
-      case PASSWORD:
-        return () -> {};
-      case AUTHORIZATION_CODE:
-        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
-        resourceOwner.setErrorListener(e -> client.close());
-        return resourceOwner;
-      default:
-        throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
-    }
   }
 }
