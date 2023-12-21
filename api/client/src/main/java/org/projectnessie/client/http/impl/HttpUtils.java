@@ -91,7 +91,7 @@ public final class HttpUtils {
         value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
       } catch (UnsupportedEncodingException e) {
         // cannot happen with UTF-8
-        throw new RuntimeException(e);
+        throw new IllegalStateException(e);
       }
       params.put(name, value);
     }
