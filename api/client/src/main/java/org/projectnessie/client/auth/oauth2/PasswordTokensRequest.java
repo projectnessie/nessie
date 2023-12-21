@@ -40,14 +40,12 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
 interface PasswordTokensRequest extends TokensRequestBase {
 
-  GrantType GRANT_TYPE = GrantType.PASSWORD;
-
   /** REQUIRED. Value MUST be set to "password". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
-    return GRANT_TYPE;
+    return GrantType.PASSWORD;
   }
 
   /** REQUIRED. The resource owner username. */

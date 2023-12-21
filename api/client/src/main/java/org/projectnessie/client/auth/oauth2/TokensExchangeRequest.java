@@ -45,8 +45,6 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableTokensExchangeRequest.class)
 interface TokensExchangeRequest extends TokensRequestBase {
 
-  GrantType GRANT_TYPE = GrantType.TOKEN_EXCHANGE;
-
   /**
    * REQUIRED. The value {@link GrantType#TOKEN_EXCHANGE} indicates that a token exchange is being
    * performed.
@@ -55,7 +53,7 @@ interface TokensExchangeRequest extends TokensRequestBase {
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
-    return GRANT_TYPE;
+    return GrantType.TOKEN_EXCHANGE;
   }
 
   /**

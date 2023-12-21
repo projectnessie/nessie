@@ -40,13 +40,11 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableClientCredentialsTokensRequest.class)
 interface ClientCredentialsTokensRequest extends TokensRequestBase {
 
-  GrantType GRANT_TYPE = GrantType.CLIENT_CREDENTIALS;
-
   /** REQUIRED. Value MUST be set to "client_credentials". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
-    return GRANT_TYPE;
+    return GrantType.CLIENT_CREDENTIALS;
   }
 }

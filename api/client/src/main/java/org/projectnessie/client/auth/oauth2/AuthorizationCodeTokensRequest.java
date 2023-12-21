@@ -41,14 +41,12 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
 interface AuthorizationCodeTokensRequest extends TokensRequestBase {
 
-  GrantType GRANT_TYPE = GrantType.AUTHORIZATION_CODE;
-
   /** REQUIRED. Value MUST be set to "authorization_code". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
-    return GRANT_TYPE;
+    return GrantType.AUTHORIZATION_CODE;
   }
 
   /** REQUIRED. The authorization code received from the authorization server. */

@@ -42,14 +42,12 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableRefreshTokensRequest.class)
 interface RefreshTokensRequest extends TokensRequestBase {
 
-  GrantType GRANT_TYPE = GrantType.REFRESH_TOKEN;
-
   /** REQUIRED. Value MUST be set to "refresh_token". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
-    return GRANT_TYPE;
+    return GrantType.REFRESH_TOKEN;
   }
 
   /** REQUIRED. The refresh token issued to the client. */
