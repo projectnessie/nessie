@@ -155,7 +155,7 @@ interface OAuth2ClientParams {
 
   @Value.Default
   default Duration getAuthorizationCodeFlowTimeout() {
-    return Duration.ofMinutes(5);
+    return Duration.parse(DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT);
   }
 
   OptionalInt getAuthorizationCodeFlowWebServerPort();
