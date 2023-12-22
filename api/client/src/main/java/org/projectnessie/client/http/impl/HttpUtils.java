@@ -16,7 +16,11 @@
 package org.projectnessie.client.http.impl;
 
 import com.google.errorprone.annotations.FormatMethod;
+import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 
@@ -63,5 +67,34 @@ public final class HttpUtils {
         con.addRequestProperty(header.getName(), value);
       }
     }
+  }
+
+  /**
+   * Parse query parameters from URI. This method cannot handle multiple values for the same
+   * parameter.
+   *
+   * @param query They query string to parse
+   * @return map of query parameters
+   */
+  public static Map<String, String> parseQueryString(String query) {
+    if (query == null) {
+      throw new IllegalArgumentException("Missing query string");
+    }
+    Map<String, String> params = new HashMap<>();
+    String[] pairs = query.split("&");
+    for (String pair : pairs) {
+      int idx = pair.indexOf("=");
+      String name;
+      String value;
+      try {
+        name = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
+        value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+      } catch (UnsupportedEncodingException e) {
+        // cannot happen with UTF-8
+        throw new IllegalStateException(e);
+      }
+      params.put(name, value);
+    }
+    return params;
   }
 }

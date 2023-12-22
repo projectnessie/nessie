@@ -15,6 +15,9 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES;
@@ -22,6 +25,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
@@ -30,11 +34,13 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAFETY_WINDOW;
+import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -43,6 +49,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -58,8 +65,11 @@ interface OAuth2ClientParams {
 
   Duration MIN_REFRESH_DELAY = Duration.ofSeconds(1);
   Duration MIN_IDLE_INTERVAL = Duration.ofSeconds(1);
+  Duration MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT = Duration.ofSeconds(10);
 
   URI getTokenEndpoint();
+
+  Optional<URI> getAuthEndpoint();
 
   String getClientId();
 
@@ -72,8 +82,8 @@ interface OAuth2ClientParams {
   Optional<String> getScope();
 
   @Value.Default
-  default String getGrantType() {
-    return CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
+  default GrantType getGrantType() {
+    return GrantType.CLIENT_CREDENTIALS;
   }
 
   @Value.Default
@@ -132,7 +142,7 @@ interface OAuth2ClientParams {
     HttpAuthentication authentication =
         BasicAuthenticationProvider.create(getClientId(), getClientSecret());
     return HttpClient.builder()
-        .setBaseUri(getTokenEndpoint())
+        .setBaseUri(getTokenEndpoint().resolve("/"))
         .setObjectMapper(getObjectMapper())
         .setAuthentication(authentication)
         .setDisableCompression(true);
@@ -143,56 +153,79 @@ interface OAuth2ClientParams {
     return Clock.systemUTC()::instant;
   }
 
+  @Value.Default
+  default Duration getAuthorizationCodeFlowTimeout() {
+    return Duration.parse(DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT);
+  }
+
+  OptionalInt getAuthorizationCodeFlowWebServerPort();
+
   @Value.Check
   default void check() {
-    if (getClientId().isEmpty()) {
-      throw new IllegalArgumentException("client ID must not be empty");
+    checkArgument(
+        getTokenEndpoint().getQuery() == null, "Token endpoint must not have a query part");
+    checkArgument(
+        getTokenEndpoint().getFragment() == null, "Token endpoint must not have a fragment part");
+    if (getAuthEndpoint().isPresent()) {
+      checkArgument(
+          getAuthEndpoint().get().getQuery() == null,
+          "Authorization endpoint must not have a query part");
+      checkArgument(
+          getAuthEndpoint().get().getFragment() == null,
+          "Authorization endpoint must not have a fragment part");
     }
-    if (getClientSecret().isEmpty()) {
-      throw new IllegalArgumentException("client secret must not be empty");
+    checkArgument(!getClientId().isEmpty(), "client ID must not be empty");
+    checkArgument(!getClientSecret().isEmpty(), "client secret must not be empty");
+    String grantType = getGrantType().canonicalName();
+    checkArgument(
+        grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS)
+            || grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)
+            || grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE),
+        "grant type must be either '%s', '%s' or '%s'",
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD,
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+    if (grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)) {
+      checkArgument(
+          getUsername().isPresent() && !getUsername().get().isEmpty(),
+          "username must be set if grant type is '%s'",
+          CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
+      checkArgument(
+          getPassword().isPresent() && !getPassword().get().isEmpty(),
+          "password must be set if grant type is '%s'",
+          CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
     }
-    if (!getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS)
-        && !getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "grant type must be either '%s' or '%s'",
-              CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
-              CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
-    }
-    if (getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)) {
-      if (!getUsername().isPresent() || getUsername().get().isEmpty()) {
-        throw new IllegalArgumentException(
-            String.format(
-                "username must be set if grant type is '%s'",
-                CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
+    if (grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)) {
+      checkArgument(
+          getAuthEndpoint().isPresent(),
+          "authorization endpoint must be set if grant type is '%s'",
+          CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+      if (getAuthorizationCodeFlowWebServerPort().isPresent()) {
+        checkArgument(
+            getAuthorizationCodeFlowWebServerPort().getAsInt() >= 0
+                && getAuthorizationCodeFlowWebServerPort().getAsInt() <= 65535,
+            "authorization code flow: web server port must be between 0 and 65535 (inclusive)");
       }
-      if (!getPassword().isPresent() || getPassword().get().isEmpty()) {
-        throw new IllegalArgumentException(
-            String.format(
-                "password must be set if grant type is '%s'",
-                CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
-      }
+      checkArgument(
+          getAuthorizationCodeFlowTimeout().compareTo(MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT) >= 0,
+          "authorization code flow: timeout must be greater than or equal to %s",
+          MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT);
     }
-    if (getDefaultAccessTokenLifespan().compareTo(MIN_REFRESH_DELAY) < 0) {
-      throw new IllegalArgumentException(
-          String.format(
-              "default token lifespan must be greater than or equal to %s", MIN_REFRESH_DELAY));
-    }
-    if (getRefreshSafetyWindow().compareTo(MIN_REFRESH_DELAY) < 0) {
-      throw new IllegalArgumentException(
-          String.format(
-              "refresh safety window must be greater than or equal to %s", MIN_REFRESH_DELAY));
-    }
-    if (getRefreshSafetyWindow().compareTo(getDefaultAccessTokenLifespan()) >= 0) {
-      throw new IllegalArgumentException(
-          "refresh safety window must be less than the default token lifespan");
-    }
-    if (getPreemptiveTokenRefreshIdleTimeout().compareTo(MIN_IDLE_INTERVAL) < 0) {
-      throw new IllegalArgumentException(
-          String.format(
-              "preemptive token refresh idle timeout must be greater than or equal to %s",
-              MIN_IDLE_INTERVAL));
-    }
+    checkArgument(
+        getDefaultAccessTokenLifespan().compareTo(MIN_REFRESH_DELAY) >= 0,
+        "default token lifespan must be greater than or equal to %s",
+        MIN_REFRESH_DELAY);
+    checkArgument(
+        getRefreshSafetyWindow().compareTo(MIN_REFRESH_DELAY) >= 0,
+        "refresh safety window must be greater than or equal to %s",
+        MIN_REFRESH_DELAY);
+    checkArgument(
+        getRefreshSafetyWindow().compareTo(getDefaultAccessTokenLifespan()) < 0,
+        "refresh safety window must be less than the default token lifespan");
+    checkArgument(
+        getPreemptiveTokenRefreshIdleTimeout().compareTo(MIN_IDLE_INTERVAL) >= 0,
+        "preemptive token refresh idle timeout must be greater than or equal to %s",
+        MIN_IDLE_INTERVAL);
   }
 
   static ImmutableOAuth2ClientParams.Builder builder() {
@@ -207,6 +240,8 @@ interface OAuth2ClientParams {
                 Objects.requireNonNull(
                     config.apply(CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT),
                     "token endpoint must not be null")))
+        .authEndpoint(
+            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_AUTH_ENDPOINT)).map(URI::create))
         .clientId(
             Objects.requireNonNull(
                 config.apply(CONF_NESSIE_OAUTH2_CLIENT_ID), "client ID must not be null"))
@@ -217,7 +252,8 @@ interface OAuth2ClientParams {
         .password(Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_PASSWORD)))
         .grantType(
             Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_GRANT_TYPE))
-                .orElse(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS))
+                .map(GrantType::fromCanonicalName)
+                .orElse(GrantType.CLIENT_CREDENTIALS))
         .scope(Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_CLIENT_SCOPES)))
         .defaultAccessTokenLifespan(
             Duration.parse(
@@ -244,6 +280,16 @@ interface OAuth2ClientParams {
             Duration.parse(
                 Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT))
                     .orElse(DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT)))
+        .authorizationCodeFlowWebServerPort(
+            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT))
+                .map(Integer::parseInt)
+                .map(OptionalInt::of)
+                .orElse(OptionalInt.empty()))
+        .authorizationCodeFlowTimeout(
+            Duration.parse(
+                Optional.ofNullable(
+                        config.apply(CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT))
+                    .orElse(DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT)))
         .build();
   }
 }

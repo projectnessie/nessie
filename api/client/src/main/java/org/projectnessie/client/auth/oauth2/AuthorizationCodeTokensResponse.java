@@ -15,36 +15,32 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
- * the "client_credentials" grant type to obtain a new access token.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.4">Token Response</a> in
+ * reply to a {@link AuthorizationCodeTokensRequest}.
  *
- * <p>Example:
+ * <p>Example of response:
  *
  * <pre>
- * POST /token HTTP/1.1
- * Host: server.example.com
- * Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
- * Content-Type: application/x-www-form-urlencoded
+ * HTTP/1.1 200 OK
+ * Content-Type: application/json;charset=UTF-8
+ * Cache-Control: no-store
+ * Pragma: no-cache
  *
- * grant_type=client_credentials
+ * {
+ *   "access_token":"2YotnFZFEjr1zCsicMWpAA",
+ *   "token_type":"example",
+ *   "expires_in":3600,
+ *   "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
+ *   "example_parameter":"example_value"
+ * }
  * </pre>
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableClientCredentialsTokensRequest.class)
-@JsonDeserialize(as = ImmutableClientCredentialsTokensRequest.class)
-interface ClientCredentialsTokensRequest extends TokensRequestBase {
-
-  /** REQUIRED. Value MUST be set to "client_credentials". */
-  @Value.Default
-  @JsonProperty("grant_type")
-  @Override
-  default GrantType getGrantType() {
-    return GrantType.CLIENT_CREDENTIALS;
-  }
-}
+@JsonSerialize(as = ImmutableAuthorizationCodeTokensResponse.class)
+@JsonDeserialize(as = ImmutableAuthorizationCodeTokensResponse.class)
+interface AuthorizationCodeTokensResponse extends TokensResponseBase {}

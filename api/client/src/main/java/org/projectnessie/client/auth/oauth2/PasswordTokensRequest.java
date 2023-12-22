@@ -22,7 +22,7 @@ import org.immutables.value.Value;
 
 /**
  * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
- * the {@value #GRANT_TYPE} grant type to obtain a new access token.
+ * the "password" grant type to obtain a new access token.
  *
  * <p>Example:
  *
@@ -40,14 +40,12 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
 interface PasswordTokensRequest extends TokensRequestBase {
 
-  String GRANT_TYPE = "password";
-
   /** REQUIRED. Value MUST be set to "password". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
-  default String getGrantType() {
-    return GRANT_TYPE;
+  default GrantType getGrantType() {
+    return GrantType.PASSWORD;
   }
 
   /** REQUIRED. The resource owner username. */

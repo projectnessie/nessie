@@ -29,6 +29,7 @@ import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -37,6 +38,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -47,6 +50,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.TestHttpClient;
+import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.client.util.HttpTestServer.RequestHandler;
 
@@ -354,12 +358,34 @@ class TestOAuth2Client {
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
       ImmutableOAuth2ClientParams params =
-          paramsBuilder(server).grantType("password").username("Bob").password("s3cr3t").build();
+          paramsBuilder(server)
+              .grantType(GrantType.PASSWORD)
+              .username("Bob")
+              .password("s3cr3t")
+              .build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         PasswordTokensResponse tokens = ((PasswordTokensResponse) client.fetchNewTokens());
         checkInitialResponse(tokens, true);
+      }
+    }
+  }
+
+  @Test
+  void testAuthorizationCode() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), false)) {
+
+      ImmutableOAuth2ClientParams params =
+          paramsBuilder(server).grantType(GrantType.AUTHORIZATION_CODE).build();
+
+      try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator();
+          AuthorizationCodeFlow flow =
+              new AuthorizationCodeFlow(params, resourceOwner.getConsoleOut())) {
+        resourceOwner.setErrorListener(e -> flow.close());
+        Tokens tokens = flow.fetchNewTokens();
+        checkInitialResponse((TokensResponseBase) tokens, false);
       }
     }
   }
@@ -567,67 +593,97 @@ class TestOAuth2Client {
 
   private HttpTestServer.RequestHandler handler() {
     return (req, resp) -> {
-      soft.assertThat(req.getMethod()).isEqualTo("POST");
-      soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-      if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
-        ErrorResponse response =
-            ImmutableErrorResponse.builder()
-                .errorCode("invalid_request")
-                .errorDescription("Unknown scope: invalid-scope")
-                .build();
-        writeResponseBody(resp, response, "application/json", 400);
-        return;
+      String requestUri = req.getRequestURI();
+      if (requestUri.equals("/token")) {
+        handleTokenEndpoint(req, resp);
+      } else if (requestUri.equals("/auth")) {
+        handleAuthorizationEndpoint(req, resp);
+      } else {
+        throw new AssertionError("Unexpected request URI: " + requestUri);
       }
-      TokensRequestBase request;
-      Object response;
-      int statusCode = 200;
-      switch (data.get("grant_type")) {
-        case ClientCredentialsTokensRequest.GRANT_TYPE:
-          request = MAPPER.convertValue(data, ClientCredentialsTokensRequest.class);
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          response = getClientCredentialsTokensResponse();
-          break;
-        case PasswordTokensRequest.GRANT_TYPE:
-          request = MAPPER.convertValue(data, PasswordTokensRequest.class);
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
-          soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
-          response = getPasswordTokensResponse();
-          break;
-        case RefreshTokensRequest.GRANT_TYPE:
-          request = MAPPER.convertValue(data, RefreshTokensRequest.class);
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
-              .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
-          response = getRefreshTokensResponse();
-          break;
-        case TokensExchangeRequest.GRANT_TYPE:
-          request = MAPPER.convertValue(data, TokensExchangeRequest.class);
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
-              .isEqualTo("access-initial");
-          soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
-              .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
-          soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
-          soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
-          soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
-              .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
-          response = getTokensExchangeResponse();
-          break;
-        case "mock_transient_error":
-          response =
-              ImmutableErrorResponse.builder()
-                  .errorCode("invalid_request")
-                  .errorDescription("Something went wrong (not really)")
-                  .build();
-          break;
-        default:
-          throw new AssertionError("Unexpected grant type: " + data.get("grant_type"));
-      }
-      writeResponseBody(resp, response, "application/json", statusCode);
     };
+  }
+
+  private void handleTokenEndpoint(HttpServletRequest req, HttpServletResponse resp)
+      throws IOException {
+    soft.assertThat(req.getMethod()).isEqualTo("POST");
+    soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
+    soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
+    Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+    if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
+      ErrorResponse response =
+          ImmutableErrorResponse.builder()
+              .errorCode("invalid_request")
+              .errorDescription("Unknown scope: invalid-scope")
+              .build();
+      writeResponseBody(resp, response, "application/json", 400);
+      return;
+    }
+    TokensRequestBase request;
+    Object response;
+    int statusCode = 200;
+    String grantType = data.get("grant_type");
+    if (grantType.equals(GrantType.CLIENT_CREDENTIALS.canonicalName())) {
+      request = MAPPER.convertValue(data, ClientCredentialsTokensRequest.class);
+      soft.assertThat(request.getScope()).isEqualTo("test");
+      response = getClientCredentialsTokensResponse();
+    } else if (grantType.equals(GrantType.PASSWORD.canonicalName())) {
+      request = MAPPER.convertValue(data, PasswordTokensRequest.class);
+      soft.assertThat(request.getScope()).isEqualTo("test");
+      soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
+      soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
+      response = getPasswordTokensResponse();
+    } else if (grantType.equals(GrantType.REFRESH_TOKEN.canonicalName())) {
+      request = MAPPER.convertValue(data, RefreshTokensRequest.class);
+      soft.assertThat(request.getScope()).isEqualTo("test");
+      soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
+          .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
+      response = getRefreshTokensResponse();
+    } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
+      request = MAPPER.convertValue(data, TokensExchangeRequest.class);
+      soft.assertThat(request.getScope()).isEqualTo("test");
+      soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
+          .isEqualTo("access-initial");
+      soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
+          .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
+      soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
+      soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
+      soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
+          .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
+      response = getTokensExchangeResponse();
+    } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
+      request = MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
+      soft.assertThat(request.getScope()).isEqualTo("test");
+      soft.assertThat(((AuthorizationCodeTokensRequest) request).getCode()).isEqualTo("test-code");
+      soft.assertThat(((AuthorizationCodeTokensRequest) request).getRedirectUri())
+          .contains("http://localhost:")
+          .contains("/nessie-client/auth");
+      soft.assertThat(((AuthorizationCodeTokensRequest) request).getClientId()).isEqualTo("Alice");
+      response = getClientCredentialsTokensResponse();
+    } else if (grantType.equals("mock_transient_error")) {
+      response =
+          ImmutableErrorResponse.builder()
+              .errorCode("invalid_request")
+              .errorDescription("Something went wrong (not really)")
+              .build();
+    } else {
+      throw new AssertionError("Unexpected grant type: " + data.get("grant_type"));
+    }
+    writeResponseBody(resp, response, "application/json", statusCode);
+  }
+
+  private void handleAuthorizationEndpoint(HttpServletRequest req, HttpServletResponse resp) {
+    soft.assertThat(req.getMethod()).isEqualTo("GET");
+    Map<String, String> data = HttpUtils.parseQueryString(req.getQueryString());
+    soft.assertThat(data)
+        .containsEntry("response_type", "code")
+        .containsEntry("client_id", "Alice")
+        .containsEntry("scope", "test")
+        .containsKey("redirect_uri")
+        .containsKey("state");
+    String redirectUri = data.get("redirect_uri") + "?code=test-code&state=" + data.get("state");
+    resp.addHeader("Location", redirectUri);
+    resp.setStatus(302);
   }
 
   private ImmutableClientCredentialsTokensResponse getClientCredentialsTokensResponse() {
@@ -727,7 +783,8 @@ class TestOAuth2Client {
 
   private ImmutableOAuth2ClientParams.Builder paramsBuilder(HttpTestServer server) {
     return ImmutableOAuth2ClientParams.builder()
-        .tokenEndpoint(server.getUri())
+        .tokenEndpoint(server.getUri().resolve("/token"))
+        .authEndpoint(server.getUri().resolve("/auth"))
         .clientId("Alice")
         .clientSecret("s3cr3t")
         .scope("test")

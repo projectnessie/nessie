@@ -21,7 +21,9 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.keycloak.client.KeycloakTestClient;
+import java.io.IOException;
 import java.util.Map;
+import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
@@ -37,6 +39,16 @@ public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
   @Override
   protected String tokenEndpoint() {
     return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/token";
+  }
+
+  @Override
+  protected String authEndpoint() {
+    return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/auth";
+  }
+
+  @Override
+  protected ResourceOwnerEmulator newResourceOwner() throws IOException {
+    return new ResourceOwnerEmulator("alice", "alice");
   }
 
   public static class Profile implements QuarkusTestProfile {

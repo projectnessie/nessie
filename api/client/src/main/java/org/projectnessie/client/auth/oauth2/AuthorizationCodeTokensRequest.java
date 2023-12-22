@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-6">Token Request</a> that uses
- * the "refresh_tokens" grant type to refresh an existing access token.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3">Token Request</a> using
+ * the "authorization_code" grant type to obtain a new access token.
  *
  * <p>Example:
  *
@@ -32,25 +32,32 @@ import org.immutables.value.Value;
  * Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
  * Content-Type: application/x-www-form-urlencoded
  *
- * grant_type=refresh_token&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA
+ * grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
+ * &redirect_uri=https%3A%2F%2Fclient%2Eexample%2Ecom%2Fcb
  * </pre>
- *
- * The response to this request is an {@link ClientCredentialsTokensResponse}.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableRefreshTokensRequest.class)
-@JsonDeserialize(as = ImmutableRefreshTokensRequest.class)
-interface RefreshTokensRequest extends TokensRequestBase {
+@JsonSerialize(as = ImmutableAuthorizationCodeTokensRequest.class)
+@JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
+interface AuthorizationCodeTokensRequest extends TokensRequestBase {
 
-  /** REQUIRED. Value MUST be set to "refresh_token". */
+  /** REQUIRED. Value MUST be set to "authorization_code". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
-    return GrantType.REFRESH_TOKEN;
+    return GrantType.AUTHORIZATION_CODE;
   }
 
-  /** REQUIRED. The refresh token issued to the client. */
-  @JsonProperty("refresh_token")
-  String getRefreshToken();
+  /** REQUIRED. The authorization code received from the authorization server. */
+  @JsonProperty("code")
+  String getCode();
+
+  /** REQUIRED. The redirect URI used in the initial request. */
+  @JsonProperty("redirect_uri")
+  String getRedirectUri();
+
+  /** REQUIRED. The client ID. */
+  @JsonProperty("client_id")
+  String getClientId();
 }

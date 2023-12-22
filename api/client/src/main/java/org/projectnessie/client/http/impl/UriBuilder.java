@@ -41,12 +41,12 @@ public class UriBuilder {
   }
 
   public UriBuilder path(String path) {
-    if (uri.length() > 0) {
-      uri.append('/');
-    }
     String trimmedPath = HttpUtils.checkNonNullTrim(path);
     HttpUtils.checkArgument(
         !trimmedPath.isEmpty(), "Path %s must be of length greater than 0", trimmedPath);
+    if (uri.length() > 0 && !trimmedPath.startsWith("/")) {
+      uri.append('/');
+    }
     uri.append(trimmedPath);
     return this;
   }
@@ -99,9 +99,13 @@ public class UriBuilder {
       for (int i = 0; i < l; i++) {
         char c = uri.charAt(i);
         if (c == '/') {
-          uriBuilder.append(encode(pathElement.toString()));
-          pathElement.setLength(0);
-          uriBuilder.append('/');
+          if (pathElement.length() > 0) {
+            uriBuilder.append(encode(pathElement.toString()));
+            pathElement.setLength(0);
+          }
+          if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
+            uriBuilder.append('/');
+          }
         } else if (c == '{') {
           for (i++; i < l; i++) {
             c = uri.charAt(i);

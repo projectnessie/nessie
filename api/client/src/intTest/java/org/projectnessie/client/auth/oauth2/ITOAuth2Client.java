@@ -22,8 +22,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,6 +38,8 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -64,6 +68,7 @@ public class ITOAuth2Client {
 
   private static RealmResource master;
   private static URI tokenEndpoint;
+  private static URI authEndpoint;
 
   @InjectSoftAssertions private SoftAssertions soft;
 
@@ -71,6 +76,8 @@ public class ITOAuth2Client {
   static void setUpKeycloak() {
     tokenEndpoint =
         URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
+    authEndpoint =
+        URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/auth");
     Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
     master = keycloakAdmin.realms().realm("master");
     updateMasterRealm(10, 15);
@@ -90,26 +97,33 @@ public class ITOAuth2Client {
    * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
    * meantime, another HTTP client will attempt to validate the obtained tokens.
    *
-   * <p>This should be enough to exercise the OAuth2 client's background refresh logic with the 4
+   * <p>This should be enough to exercise the OAuth2 client's background refresh logic with all
    * supported grant types / requests:
    *
    * <ul>
    *   <li><code>client_credentials</code>
    *   <li><code>password</code>
+   *   <li><code>authorization_code</code>
    *   <li><code>refresh_token</code>
    *   <li><code>urn:ietf:params:oauth2:grant-type:token-exchange</code> (token exchange)
    * </ul>
    */
   @Test
-  void testOAuth2ClientWithBackgroundRefresh() throws InterruptedException {
+  void testOAuth2ClientWithBackgroundRefresh() throws Exception {
     OAuth2ClientParams params1 = clientParams("Client1").build();
-    OAuth2ClientParams params2 = clientParams("Client2").grantType("password").build();
+    OAuth2ClientParams params2 = clientParams("Client2").grantType(GrantType.PASSWORD).build();
+    OAuth2ClientParams params3 =
+        clientParams("Client2").grantType(GrantType.AUTHORIZATION_CODE).build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     try (OAuth2Client client1 = new OAuth2Client(params1);
         OAuth2Client client2 = new OAuth2Client(params2);
+        OAuth2Client client3 = new OAuth2Client(params3);
+        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
+      resourceOwner.setErrorListener(e -> executor.shutdownNow());
       client1.start();
       client2.start();
+      client3.start();
       ScheduledFuture<?> future =
           executor.scheduleWithFixedDelay(
               () -> {
@@ -123,8 +137,8 @@ public class ITOAuth2Client {
         future.get(20, TimeUnit.SECONDS);
       } catch (TimeoutException e) {
         // ok, expected for a ScheduledFuture
-      } catch (ExecutionException e) {
-        soft.fail(e.getMessage());
+      } catch (CancellationException | ExecutionException e) {
+        soft.fail(e.getMessage(), e);
       }
     } finally {
       executor.shutdownNow();
@@ -137,19 +151,24 @@ public class ITOAuth2Client {
    * <p>This test exercises the OAuth2 client with the following steps:
    *
    * <ul>
-   *   <li>client_credentials grant type for obtaining the access token;
+   *   <li>client_credentials, password or authorization_code grant type for obtaining the initial
+   *       access token;
    *   <li>refresh token sent on the initial response;
    *   <li>refresh_token grant type for refreshing the access token.
    * </ul>
    */
-  @Test
-  void testOAuth2ClientInitialRefreshToken() {
-    OAuth2ClientParams params = clientParams("Client2").build();
+  @ParameterizedTest
+  @EnumSource(
+      value = GrantType.class,
+      names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE"})
+  void testOAuth2ClientInitialRefreshToken(GrantType initialGrantType) throws Exception {
+    OAuth2ClientParams params = clientParams("Client2").grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(params);
+        AutoCloseable ignored = newTestSetup(initialGrantType, client);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
+      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: refresh token grant
@@ -232,36 +251,6 @@ public class ITOAuth2Client {
     }
   }
 
-  /**
-   * Dummy sentence to make Checkstyle happy.
-   *
-   * <p>This test exercises the OAuth2 client with the following steps:
-   *
-   * <ul>
-   *   <li>password grant type for obtaining the access token;
-   *   <li>refresh token sent on the initial response;
-   *   <li>refresh_token grant type for refreshing the access token.
-   * </ul>
-   */
-  @Test
-  void testOAuth2ClientPasswordGrant() {
-    OAuth2ClientParams params = clientParams("Client2").grantType("password").build();
-    try (OAuth2Client client = new OAuth2Client(params);
-        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
-      // first request: password grant
-      Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(PasswordTokensResponse.class);
-      soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
-      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
-      // second request: refresh token grant
-      Tokens refreshedTokens = client.refreshTokens(firstTokens);
-      soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
-      soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
-      tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
-      compareTokens(firstTokens, refreshedTokens, "Client2");
-    }
-  }
-
   @Test
   void testOAuth2ClientUnauthorizedBadClientSecret() {
     OAuth2ClientParams params = clientParams("Client1").clientSecret("BAD SECRET").build();
@@ -277,13 +266,29 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientUnauthorizedBadPassword() {
     OAuth2ClientParams params =
-        clientParams("Client2").grantType("password").password("BAD PASSWORD").build();
+        clientParams("Client2").grantType(GrantType.PASSWORD).password("BAD PASSWORD").build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
           .isEqualTo(Status.UNAUTHORIZED);
+    }
+  }
+
+  @Test
+  void testOAuth2ClientUnauthorizedBadAuthorizationCode() throws Exception {
+    OAuth2ClientParams params =
+        clientParams("Client2").grantType(GrantType.AUTHORIZATION_CODE).build();
+    try (OAuth2Client client = new OAuth2Client(params);
+        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t")) {
+      resourceOwner.setErrorListener(e -> client.close());
+      resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
+      client.start();
+      soft.assertThatThrownBy(client::authenticate)
+          .asInstanceOf(type(OAuth2Exception.class))
+          .extracting(OAuth2Exception::getStatus)
+          .isEqualTo(Status.BAD_REQUEST); // Keycloak replies with 400 instead of 401
     }
   }
 
@@ -348,10 +353,13 @@ public class ITOAuth2Client {
   private static ImmutableOAuth2ClientParams.Builder clientParams(String clientId) {
     return ImmutableOAuth2ClientParams.builder()
         .tokenEndpoint(tokenEndpoint)
+        .authEndpoint(authEndpoint)
         .clientId(clientId)
         .clientSecret("s3cr3t")
         .username("Alice")
         .password("s3cr3t")
+        // Otherwise Keycloak complains about missing scope, but still issues tokens
+        .scope("openid")
         .defaultAccessTokenLifespan(Duration.ofSeconds(10))
         .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
         .refreshSafetyWindow(Duration.ofSeconds(5));
@@ -379,6 +387,8 @@ public class ITOAuth2Client {
     client.setSecret("s3cr3t");
     client.setServiceAccountsEnabled(true); // required for client credentials grant
     client.setDirectAccessGrantsEnabled(true); // required for password grant
+    client.setStandardFlowEnabled(true); // required for authorization code grant
+    client.setRedirectUris(ImmutableList.of("http://localhost:*"));
     client.setAuthorizationServicesEnabled(true); // required to request UMA tokens
     client.setPublicClient(false);
     client.setAttributes(
@@ -414,5 +424,33 @@ public class ITOAuth2Client {
             .setDisableCompression(true);
     authentication.applyToHttpClient(builder);
     return builder;
+  }
+
+  private static Class<?> expectedResponseClass(GrantType initialGrantType) {
+    switch (initialGrantType) {
+      case CLIENT_CREDENTIALS:
+        return ClientCredentialsTokensResponse.class;
+      case PASSWORD:
+        return PasswordTokensResponse.class;
+      case AUTHORIZATION_CODE:
+        return AuthorizationCodeTokensResponse.class;
+      default:
+        throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
+    }
+  }
+
+  private AutoCloseable newTestSetup(GrantType initialGrantType, OAuth2Client client)
+      throws IOException {
+    switch (initialGrantType) {
+      case CLIENT_CREDENTIALS:
+      case PASSWORD:
+        return () -> {};
+      case AUTHORIZATION_CODE:
+        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
+        resourceOwner.setErrorListener(e -> client.close());
+        return resourceOwner;
+      default:
+        throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
+    }
   }
 }

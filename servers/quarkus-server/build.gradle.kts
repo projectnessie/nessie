@@ -77,6 +77,7 @@ dependencies {
   openapiSource(project(":nessie-model", "openapiSource"))
 
   testFixturesApi(project(":nessie-client"))
+  testFixturesApi(testFixtures(project(":nessie-client")))
   testFixturesApi(project(":nessie-client-testextension"))
   testFixturesApi(project(":nessie-jaxrs-tests"))
   testFixturesApi(project(":nessie-quarkus-auth"))
