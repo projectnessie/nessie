@@ -115,11 +115,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   private void doClose() {
-    if (!tokensFuture.isCancelled()) {
-      LOGGER.debug(
-          "Authorization Code Flow: waiting for in-flight requests to complete before closing");
-      inflightRequestsPhaser.arriveAndAwaitAdvance();
-    }
+    inflightRequestsPhaser.arriveAndAwaitAdvance();
     LOGGER.debug("Authorization Code Flow: closing");
     server.stop(0);
     // don't close the console, it's not ours

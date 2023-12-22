@@ -48,6 +48,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private static final Pattern KC_AUTH_FORM_PATTERN =
       Pattern.compile("<form.*id=\"kc-form-login\".*action=\"([^\"]+)\".*>");
 
+  private final boolean replaceSystemOut;
   private final boolean expectLoginPage;
   private final byte[] loginData;
   private final ExecutorService executor;
@@ -73,6 +74,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
 
   public ResourceOwnerEmulator(String username, String password, boolean replaceSystemOut)
       throws IOException {
+    this.replaceSystemOut = replaceSystemOut;
     this.expectLoginPage = username != null && password != null;
     loginData =
         expectLoginPage
@@ -209,7 +211,9 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   @Override
   public void close() throws Exception {
     closing = true;
-    System.setOut(standardOut);
+    if (replaceSystemOut) {
+      System.setOut(standardOut);
+    }
     executor.shutdownNow();
     consoleIn.close();
     consoleOut.close();
