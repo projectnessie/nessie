@@ -129,15 +129,14 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   public Tokens fetchNewTokens() {
+    console.println();
+    console.println(MSG_PREFIX + "======= Nessie authentication required =======");
     console.println(MSG_PREFIX + "Browse to the following URL to continue:");
     console.println(MSG_PREFIX + authorizationUri);
+    console.println();
     console.flush();
     try {
-      Tokens tokens = tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
-      console.println(
-          MSG_PREFIX + "Authentication successful: you can close the browser page now.");
-      console.flush();
-      return tokens;
+      return tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (TimeoutException e) {
       console.println(MSG_PREFIX + "Timed out waiting for authorization code.");
       console.flush();
