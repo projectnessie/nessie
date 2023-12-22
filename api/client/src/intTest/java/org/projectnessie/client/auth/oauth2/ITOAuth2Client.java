@@ -277,6 +277,22 @@ public class ITOAuth2Client {
   }
 
   @Test
+  void testOAuth2ClientUnauthorizedBadAuthorizationCode() throws Exception {
+    OAuth2ClientParams params =
+        clientParams("Client2").grantType(GrantType.AUTHORIZATION_CODE).build();
+    try (OAuth2Client client = new OAuth2Client(params);
+        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t")) {
+      resourceOwner.setErrorListener(e -> client.close());
+      resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
+      client.start();
+      soft.assertThatThrownBy(client::authenticate)
+          .asInstanceOf(type(OAuth2Exception.class))
+          .extracting(OAuth2Exception::getStatus)
+          .isEqualTo(Status.BAD_REQUEST); // Keycloak replies with 400 instead of 401
+    }
+  }
+
+  @Test
   void testOAuth2ClientExpiredToken() {
     OAuth2ClientParams params = clientParams("Client1").build();
     try (OAuth2Client client = new OAuth2Client(params);

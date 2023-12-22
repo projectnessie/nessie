@@ -32,12 +32,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.projectnessie.client.http.Status;
+import org.projectnessie.client.http.impl.HttpUtils;
 
 /**
  * Emulates a resource owner (user) that "reads" the console (system out) and "uses" their browser
@@ -63,6 +66,8 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private volatile Throwable error;
   private volatile Consumer<URL> authUrlListener;
   private volatile Consumer<Throwable> errorListener;
+  private volatile String authorizationCode;
+  private volatile int expectedCallbackStatus = HTTP_OK;
 
   public ResourceOwnerEmulator() throws IOException {
     this(null, null, true);
@@ -96,6 +101,11 @@ public class ResourceOwnerEmulator implements AutoCloseable {
 
   public PrintStream getConsoleOut() {
     return consoleOut;
+  }
+
+  public void overrideAuthorizationCode(String code, Status expectedStatus) {
+    authorizationCode = code;
+    expectedCallbackStatus = expectedStatus.getCode();
   }
 
   public void setErrorListener(Consumer<Throwable> callback) {
@@ -187,10 +197,24 @@ public class ResourceOwnerEmulator implements AutoCloseable {
         .hasPath(AuthorizationCodeFlow.CONTEXT_PATH)
         .hasParameter("code")
         .hasParameter("state");
+    String code = authorizationCode;
+    if (code != null) {
+      Map<String, String> params = HttpUtils.parseQueryString(callbackUrl.getQuery());
+      callbackUrl =
+          new URL(
+              callbackUrl.getProtocol(),
+              callbackUrl.getHost(),
+              callbackUrl.getPort(),
+              callbackUrl.getPath()
+                  + "?code="
+                  + URLEncoder.encode(code, "UTF-8")
+                  + "&state="
+                  + params.get("state"));
+    }
     HttpURLConnection con = (HttpURLConnection) callbackUrl.openConnection();
     con.setRequestMethod("GET");
     int status = con.getResponseCode();
-    assertThat(status).isEqualTo(HTTP_OK);
+    assertThat(status).isEqualTo(expectedCallbackStatus);
   }
 
   private void recordFailure(Throwable t) {

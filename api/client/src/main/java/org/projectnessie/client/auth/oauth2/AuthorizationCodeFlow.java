@@ -37,6 +37,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.impl.HttpUtils;
@@ -148,7 +149,13 @@ class AuthorizationCodeFlow implements AutoCloseable {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
       abort();
-      throw new RuntimeException(e.getCause());
+      Throwable cause = e.getCause();
+      console.println(MSG_PREFIX + "Authentication failed: " + cause.getMessage());
+      console.flush();
+      if (cause instanceof HttpClientException) {
+        throw (HttpClientException) cause;
+      }
+      throw new RuntimeException(cause);
     }
   }
 
@@ -157,12 +164,12 @@ class AuthorizationCodeFlow implements AutoCloseable {
     inflightRequestsPhaser.register();
     requestFuture.complete(exchange);
     tokensFuture
-        .whenComplete((tokens, error) -> doResponse(exchange, error))
-        .thenRun(exchange::close)
+        .handle((tokens, error) -> doResponse(exchange, error))
+        .thenAccept(HttpExchange::close)
         .thenRun(inflightRequestsPhaser::arriveAndDeregister);
   }
 
-  private void doResponse(HttpExchange exchange, Throwable error) {
+  private HttpExchange doResponse(HttpExchange exchange, Throwable error) {
     LOGGER.debug("Authorization Code Flow: sending response");
     try {
       if (error == null) {
@@ -173,6 +180,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     } catch (IOException e) {
       LOGGER.debug("Authorization Code Flow: error writing response", e);
     }
+    return exchange;
   }
 
   private String extractAuthorizationCode(HttpExchange exchange) {
