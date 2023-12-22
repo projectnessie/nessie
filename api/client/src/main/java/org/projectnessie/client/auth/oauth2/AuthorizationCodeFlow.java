@@ -138,8 +138,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     try {
       return tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (TimeoutException e) {
-      console.println(MSG_PREFIX + "Timed out waiting for authorization code.");
-      console.flush();
+      LOGGER.error(MSG_PREFIX + "Timed out waiting for authorization code.");
       abort();
       throw new RuntimeException(e);
     } catch (InterruptedException e) {
@@ -149,8 +148,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     } catch (ExecutionException e) {
       abort();
       Throwable cause = e.getCause();
-      console.println(MSG_PREFIX + "Authentication failed: " + cause.getMessage());
-      console.flush();
+      LOGGER.error(MSG_PREFIX + "Authentication failed: " + cause.getMessage());
       if (cause instanceof HttpClientException) {
         throw (HttpClientException) cause;
       }
