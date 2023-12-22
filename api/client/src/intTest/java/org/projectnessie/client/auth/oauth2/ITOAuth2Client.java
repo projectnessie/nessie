@@ -444,7 +444,7 @@ public class ITOAuth2Client {
     switch (initialGrantType) {
       case CLIENT_CREDENTIALS:
       case PASSWORD:
-        return new NoopTestSetup();
+        return () -> {};
       case AUTHORIZATION_CODE:
         ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
         resourceOwner.setErrorListener(e -> client.close());
@@ -452,12 +452,5 @@ public class ITOAuth2Client {
       default:
         throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
     }
-  }
-
-  private static class NoopTestSetup implements AutoCloseable {
-    NoopTestSetup() {}
-
-    @Override
-    public void close() {}
   }
 }

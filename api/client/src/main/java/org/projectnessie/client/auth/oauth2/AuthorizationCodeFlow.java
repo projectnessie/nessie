@@ -165,8 +165,8 @@ class AuthorizationCodeFlow implements AutoCloseable {
     requestFuture.complete(exchange);
     tokensFuture
         .handle((tokens, error) -> doResponse(exchange, error))
-        .thenAccept(HttpExchange::close)
-        .thenRun(inflightRequestsPhaser::arriveAndDeregister);
+        .whenComplete((exc, error) -> exc.close())
+        .whenComplete((exc, error) -> inflightRequestsPhaser.arriveAndDeregister());
   }
 
   private HttpExchange doResponse(HttpExchange exchange, Throwable error) {
@@ -254,6 +254,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private static void writeResponse(
       HttpExchange exchange, int status, String htmlTemplate, Object... args) throws IOException {
     String html = String.format(htmlTemplate, args);
+    exchange.getResponseHeaders().add("Content-Type", "text/html");
     exchange.sendResponseHeaders(status, html.length());
     exchange.getResponseBody().write(html.getBytes(StandardCharsets.UTF_8));
   }
