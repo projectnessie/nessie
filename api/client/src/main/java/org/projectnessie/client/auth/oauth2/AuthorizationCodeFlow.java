@@ -162,11 +162,11 @@ class AuthorizationCodeFlow implements AutoCloseable {
     requestFuture.complete(exchange);
     tokensFuture
         .handle((tokens, error) -> doResponse(exchange, error))
-        .whenComplete((exc, error) -> exc.close())
-        .whenComplete((exc, error) -> inflightRequestsPhaser.arriveAndDeregister());
+        .whenComplete((v, error) -> exchange.close())
+        .whenComplete((v, error) -> inflightRequestsPhaser.arriveAndDeregister());
   }
 
-  private HttpExchange doResponse(HttpExchange exchange, Throwable error) {
+  private Void doResponse(HttpExchange exchange, Throwable error) {
     LOGGER.debug("Authorization Code Flow: sending response");
     try {
       if (error == null) {
@@ -177,7 +177,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     } catch (IOException e) {
       LOGGER.debug("Authorization Code Flow: error writing response", e);
     }
-    return exchange;
+    return null;
   }
 
   private String extractAuthorizationCode(HttpExchange exchange) {
