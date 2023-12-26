@@ -68,7 +68,7 @@ hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
 hadoop-azure = { module = "org.apache.hadoop:hadoop-azure", version.ref = "hadoop" }
 hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }
 hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
-hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "6.2.5.Final" }
+hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "8.0.1.Final" }
 iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
 iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceberg" }
 iceberg-azure = { module = "org.apache.iceberg:iceberg-azure", version.ref = "iceberg" }
