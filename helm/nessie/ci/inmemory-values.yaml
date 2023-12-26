@@ -1,4 +1,4 @@
 ---
-versionStoreType: INMEMORY
+versionStoreType: IN_MEMORY
 tracing:
   enabled: true

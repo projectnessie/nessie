@@ -36,7 +36,7 @@ public interface VersionStoreConfig {
   }
 
   @WithName("type")
-  @WithDefault("INMEMORY")
+  @WithDefault("IN_MEMORY")
   VersionStoreType getVersionStoreType();
 
   /**
