@@ -22,6 +22,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Nessie client: the OAUTH2 authentication provider now supports programmatic configuration. See the 
+  [Nessie documentation](https://projectnessie.org/develop/java/#authentication) for details.
+
 ### Changes
 
 ### Deprecations

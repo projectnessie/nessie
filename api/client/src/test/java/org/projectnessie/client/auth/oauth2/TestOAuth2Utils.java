@@ -17,9 +17,11 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAPPER;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,7 +66,7 @@ class TestOAuth2Utils {
     try (HttpTestServer server = new HttpTestServer(handler(wellKnownPath, DATA), true);
         HttpClient httpClient = newHttpClient(server, server.getUri().resolve(issuerPath))) {
       JsonNode actual = OAuth2Utils.fetchOpenIdProviderMetadata(httpClient);
-      assertThat(actual).isEqualTo(OAuth2ClientParams.OBJECT_MAPPER.readTree(DATA));
+      assertThat(actual).isEqualTo(OBJECT_MAPPER.readTree(DATA));
     }
   }
 
@@ -90,6 +92,17 @@ class TestOAuth2Utils {
     }
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"", "a", "abc", "abc123", "abc123!@#", "你好"})
+  void getArrayAndClear(String input) {
+    ByteBuffer bytes = ByteBuffer.wrap(input.getBytes(StandardCharsets.UTF_8));
+    assertThat(OAuth2Utils.getArrayAndClear(bytes))
+        .isEqualTo(input.getBytes(StandardCharsets.UTF_8));
+    assertThat(bytes.remaining()).isEqualTo(0);
+    assertThat(bytes.array())
+        .satisfiesAnyOf(c -> assertThat(c).isEmpty(), c -> assertThat(c).containsOnly('\0'));
+  }
+
   private RequestHandler handler(String wellKnownPath, String data) {
     return (req, resp) -> {
       if (req.getRequestURI().equals(wellKnownPath)) {
@@ -107,7 +120,7 @@ class TestOAuth2Utils {
     return HttpClient.builder()
         .setBaseUri(issuerUrl)
         .setSslContext(server.getSslContext())
-        .setObjectMapper(OAuth2ClientParams.OBJECT_MAPPER)
+        .setObjectMapper(OBJECT_MAPPER)
         .build();
   }
 }

@@ -34,12 +34,45 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
 
   @Override
   public HttpAuthentication build(Function<String, String> configSupplier) {
-    OAuth2ClientParams params = OAuth2ClientParams.fromConfig(configSupplier);
-    OAuth2Client client = new OAuth2Client(params);
-    client.start();
-    return create(client);
+    return create(newAuthenticator(configSupplier));
   }
 
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given config supplier.
+   *
+   * <p>The returned authenticator is not started yet.
+   */
+  public static OAuth2Authenticator newAuthenticator(Function<String, String> configSupplier) {
+    return newAuthenticator(OAuth2AuthenticatorConfig.fromConfigSupplier(configSupplier));
+  }
+
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given config.
+   *
+   * <p>The returned authenticator is not started yet.
+   */
+  public static OAuth2Authenticator newAuthenticator(OAuth2AuthenticatorConfig config) {
+    OAuth2ClientConfig clientConfig =
+        config instanceof OAuth2ClientConfig
+            ? (OAuth2ClientConfig) config
+            : OAuth2ClientConfig.builder().from(config).build();
+    return new OAuth2Client(clientConfig);
+  }
+
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given config.
+   *
+   * <p>The returned authentication is not started yet.
+   */
+  public static HttpAuthentication create(OAuth2AuthenticatorConfig config) {
+    return create(newAuthenticator(config));
+  }
+
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given authenticator.
+   *
+   * <p>The returned authentication is not started yet.
+   */
   public static HttpAuthentication create(OAuth2Authenticator authenticator) {
     return new OAuth2Authentication(authenticator);
   }
@@ -53,6 +86,11 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
           authenticator,
           "OAuth2Authenticator must not be null for authentication type " + AUTH_TYPE_VALUE);
       this.authenticator = authenticator;
+    }
+
+    @Override
+    public void start() {
+      authenticator.start();
     }
 
     @Override

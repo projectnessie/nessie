@@ -224,6 +224,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
 
     if (authentication != null) {
       authentication.applyToHttpClient(this);
+      authentication.start();
     }
 
     HttpRuntimeConfig config =

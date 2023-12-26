@@ -112,15 +112,15 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws Exception {
-    OAuth2ClientParams params1 = clientParams("Client1", false).build();
-    OAuth2ClientParams params2 =
-        clientParams("Client2", false).grantType(GrantType.PASSWORD).build();
-    OAuth2ClientParams params3 =
-        clientParams("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
+    OAuth2ClientConfig config1 = clientConfig("Client1", false).build();
+    OAuth2ClientConfig config2 =
+        clientConfig("Client2", false).grantType(GrantType.PASSWORD).build();
+    OAuth2ClientConfig config3 =
+        clientConfig("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    try (OAuth2Client client1 = new OAuth2Client(params1);
-        OAuth2Client client2 = new OAuth2Client(params2);
-        OAuth2Client client3 = new OAuth2Client(params3);
+    try (OAuth2Client client1 = new OAuth2Client(config1);
+        OAuth2Client client2 = new OAuth2Client(config2);
+        OAuth2Client client3 = new OAuth2Client(config3);
         ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       resourceOwner.setErrorListener(e -> executor.shutdownNow());
@@ -166,8 +166,8 @@ public class ITOAuth2Client {
       value = GrantType.class,
       names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE"})
   void testOAuth2ClientInitialRefreshToken(GrantType initialGrantType) throws Exception {
-    OAuth2ClientParams params = clientParams("Client2", true).grantType(initialGrantType).build();
-    try (OAuth2Client client = new OAuth2Client(params);
+    OAuth2ClientConfig config = clientConfig("Client2", true).grantType(initialGrantType).build();
+    try (OAuth2Client client = new OAuth2Client(config);
         AutoCloseable ignored = newTestSetup(initialGrantType, client);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
       // first request: client credentials grant
@@ -198,8 +198,8 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientTokenExchange() {
-    OAuth2ClientParams params = clientParams("Client1", false).build();
-    try (OAuth2Client client = new OAuth2Client(params);
+    OAuth2ClientConfig config = clientConfig("Client1", false).build();
+    try (OAuth2Client client = new OAuth2Client(config);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
@@ -235,8 +235,8 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientNoRefreshToken() {
-    OAuth2ClientParams params = clientParams("Client1", false).tokenExchangeEnabled(false).build();
-    try (OAuth2Client client = new OAuth2Client(params);
+    OAuth2ClientConfig config = clientConfig("Client1", false).tokenExchangeEnabled(false).build();
+    try (OAuth2Client client = new OAuth2Client(config);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
@@ -257,8 +257,8 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadClientSecret() {
-    OAuth2ClientParams params = clientParams("Client1", false).clientSecret("BAD SECRET").build();
-    try (OAuth2Client client = new OAuth2Client(params)) {
+    OAuth2ClientConfig config = clientConfig("Client1", false).clientSecret("BAD SECRET").build();
+    try (OAuth2Client client = new OAuth2Client(config)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
@@ -269,12 +269,12 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadPassword() {
-    OAuth2ClientParams params =
-        clientParams("Client2", false)
+    OAuth2ClientConfig config =
+        clientConfig("Client2", false)
             .grantType(GrantType.PASSWORD)
             .password("BAD PASSWORD")
             .build();
-    try (OAuth2Client client = new OAuth2Client(params)) {
+    try (OAuth2Client client = new OAuth2Client(config)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
@@ -285,9 +285,9 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadAuthorizationCode() throws Exception {
-    OAuth2ClientParams params =
-        clientParams("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
-    try (OAuth2Client client = new OAuth2Client(params);
+    OAuth2ClientConfig config =
+        clientConfig("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
+    try (OAuth2Client client = new OAuth2Client(config);
         ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t")) {
       resourceOwner.setErrorListener(e -> client.close());
       resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
@@ -301,8 +301,8 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientExpiredToken() {
-    OAuth2ClientParams params = clientParams("Client1", false).build();
-    try (OAuth2Client client = new OAuth2Client(params);
+    OAuth2ClientConfig config = clientConfig("Client1", false).build();
+    try (OAuth2Client client = new OAuth2Client(config);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       Tokens tokens = client.fetchNewTokens();
       // Emulate a token expiration; we don't want to wait 10 seconds just for the token to really
@@ -357,10 +357,9 @@ public class ITOAuth2Client {
         .isEqualTo(clientId);
   }
 
-  private static ImmutableOAuth2ClientParams.Builder clientParams(
-      String clientId, boolean discovery) {
-    ImmutableOAuth2ClientParams.Builder builder =
-        ImmutableOAuth2ClientParams.builder()
+  private static OAuth2ClientConfig.Builder clientConfig(String clientId, boolean discovery) {
+    OAuth2ClientConfig.Builder builder =
+        OAuth2ClientConfig.builder()
             .clientId(clientId)
             .clientSecret("s3cr3t")
             .username("Alice")

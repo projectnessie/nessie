@@ -20,23 +20,25 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.projectnessie.client.NessieConfigConstants;
-import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider.OAuth2Authentication;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
-import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.util.HttpTestServer;
 
 class TestOAuth2AuthenticationProvider {
@@ -48,54 +50,87 @@ class TestOAuth2AuthenticationProvider {
         .isInstanceOf(NullPointerException.class);
     assertThatThrownBy(() -> new OAuth2AuthenticationProvider().build(prop -> null))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> OAuth2AuthenticationProvider.create(null))
+    assertThatThrownBy(() -> OAuth2AuthenticationProvider.create((OAuth2AuthenticatorConfig) null))
+        .isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> OAuth2AuthenticationProvider.create((OAuth2Authenticator) null))
         .isInstanceOf(NullPointerException.class);
   }
 
   @Test
   void testFromConfig() throws Exception {
-
-    HttpTestServer.RequestHandler handler =
-        (req, resp) -> {
-          TokensResponseBase tokenResponse =
-              ImmutableClientCredentialsTokensResponse.builder()
-                  .accessTokenPayload("cafebabe")
-                  .tokenType("bearer")
-                  .build();
-          writeResponseBody(resp, tokenResponse, "application/json");
-        };
-
-    try (HttpTestServer server = new HttpTestServer(handler)) {
+    try (HttpTestServer authServer = new HttpTestServer(this::handleAuth, false);
+        HttpTestServer resourceServer = new HttpTestServer(this::handleResource, true)) {
       Map<String, String> authCfg =
           ImmutableMap.of(
-              NessieConfigConstants.CONF_NESSIE_AUTH_TYPE,
+              CONF_NESSIE_AUTH_TYPE,
               OAuth2AuthenticationProvider.AUTH_TYPE_VALUE,
               CONF_NESSIE_OAUTH2_CLIENT_ID,
               "Alice",
               CONF_NESSIE_OAUTH2_CLIENT_SECRET,
               "s3cr3t",
               CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
-              server.getUri().toString());
-      NessieAuthentication authentication = NessieAuthenticationProvider.fromConfig(authCfg::get);
-      assertThat(authentication).extracting("authenticator").isInstanceOf(OAuth2Client.class);
+              authServer.getUri().toString());
+      HttpAuthentication authentication =
+          (HttpAuthentication) NessieAuthenticationProvider.fromConfig(authCfg::get);
+      try (HttpClient httpClient =
+          HttpClient.builder()
+              .setAuthentication(authentication)
+              .setSslContext(resourceServer.getSslContext())
+              .setBaseUri(resourceServer.getUri())
+              .setObjectMapper(OAuth2ClientConfig.OBJECT_MAPPER)
+              .build()) {
+        JsonNode response = httpClient.newRequest().get().readEntity(JsonNode.class);
+        assertThat(response.get("success").asBoolean()).isTrue();
+      }
     }
   }
 
   @Test
-  void testStaticBuilder() {
-    OAuth2Authenticator authenticator = Mockito.mock(OAuth2Authenticator.class);
-    when(authenticator.authenticate())
-        .thenReturn(ImmutableAccessToken.builder().payload("cafebabe").tokenType("bearer").build());
-    HttpAuthentication authentication = OAuth2AuthenticationProvider.create(authenticator);
-    assertThat(authentication).isInstanceOf(OAuth2Authentication.class);
-    HttpClient.Builder client = Mockito.mock(HttpClient.Builder.class);
-    authentication.applyToHttpClient(client);
-    verify(client).addRequestFilter(Mockito.any(RequestFilter.class));
+  void testProgrammaticOAuth2AuthenticationConfig() throws Exception {
+    try (HttpTestServer authServer = new HttpTestServer(this::handleAuth, true);
+        HttpTestServer resourceServer = new HttpTestServer(this::handleResource, true)) {
+      OAuth2AuthenticatorConfig config =
+          OAuth2AuthenticatorConfig.builder()
+              .tokenEndpoint(authServer.getUri())
+              .clientId("Alice")
+              .clientSecret("s3cr3t")
+              .sslContext(authServer.getSslContext())
+              .build();
+      OAuth2Authenticator authenticator = OAuth2AuthenticationProvider.newAuthenticator(config);
+      HttpAuthentication authentication = OAuth2AuthenticationProvider.create(authenticator);
+      try (HttpClient httpClient =
+          HttpClient.builder()
+              .setAuthentication(authentication)
+              .setSslContext(resourceServer.getSslContext())
+              .setBaseUri(resourceServer.getUri())
+              .setObjectMapper(OAuth2ClientConfig.OBJECT_MAPPER)
+              .build()) {
+        JsonNode response = httpClient.newRequest().get().readEntity(JsonNode.class);
+        assertThat(response.get("success").asBoolean()).isTrue();
+      }
+    }
+  }
+
+  private void handleAuth(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    TokensResponseBase tokenResponse =
+        ImmutableClientCredentialsTokensResponse.builder()
+            .accessTokenPayload("cafebabe")
+            .tokenType("bearer")
+            .build();
+    writeResponseBody(response, tokenResponse, "application/json");
+  }
+
+  private void handleResource(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    String authorization = request.getHeader("Authorization");
+    boolean authSuccess = authorization.equalsIgnoreCase("Bearer cafebabe");
+    writeResponseBody(response, String.format("{ \"success\" : %s }", authSuccess));
   }
 
   @Test
   public void testAddAuthHeader() {
-    OAuth2Authenticator authenticator = Mockito.mock(OAuth2Authenticator.class);
+    OAuth2Authenticator authenticator = mock(OAuth2Authenticator.class);
     when(authenticator.authenticate())
         .thenReturn(ImmutableAccessToken.builder().payload("cafebabe").tokenType("BeArEr").build());
     OAuth2Authentication authentication = new OAuth2Authentication(authenticator);
@@ -107,7 +142,7 @@ class TestOAuth2AuthenticationProvider {
 
   @Test
   public void testTokenTypeInvalid() {
-    OAuth2Authenticator authenticator = Mockito.mock(OAuth2Authenticator.class);
+    OAuth2Authenticator authenticator = mock(OAuth2Authenticator.class);
     when(authenticator.authenticate())
         .thenReturn(
             ImmutableAccessToken.builder().payload("cafebabe").tokenType("INVALID").build());
