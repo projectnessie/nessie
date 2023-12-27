@@ -48,13 +48,15 @@ For more information on docker images, see [Docker image options](#docker-image-
 
 ### Version Store Settings
 
-| Property                             | Default values | Type               | Description                                                                                                                                                                                                                                                                                         |
-|--------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`          | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`, `BIGTABLE`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
-| `nessie.version.store.events.enable` | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                              |
+| Property                             | Default values | Type               | Description                                                                                                                                                                                                                                                                                                      |
+|--------------------------------------|----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.type`          | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`, `BIGTABLE`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` were removed in Nessie 0.75.0, please [migrate] to one of the above. |
+| `nessie.version.store.events.enable` | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                                           |
+
+[migrate]: ../tools/migration.md
 
 !!! info
-Starting with Nessie 0.66.0, tracing and metrics are always used, if OpenTelemetry is enabled via the Quarkus configuration.
+    Starting with Nessie 0.66.0, tracing and metrics are always used, if OpenTelemetry is enabled via the Quarkus configuration.
 
 ### Support for the database specific implementations
 
@@ -69,7 +71,7 @@ Starting with Nessie 0.66.0, tracing and metrics are always used, if OpenTelemet
 | CockroachDB      | experimental, known issues                       | `JDBC`                                                  | Known to raise user-facing "write too old" errors under contention.                                                                                                                                                             |
 | Apache Cassandra | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                     |
 | ScyllaDB         | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. |
-| (all legacy)     | out of support, code removed since Nessie 0.75.0 | `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` | no longer supported, migrate to one of the above.                                                                                                                                                                               |
+| (all legacy)     | out of support, code removed since Nessie 0.75.0 | `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` | no longer supported, [migrate] to one of the above.                                                                                                                                                                             |
 
 #### BigTable Version Store Settings
 
@@ -102,7 +104,7 @@ When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable 
 
 
 !!! info
-A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/).
+    A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/).
 
 #### JDBC Version Store Settings
 
@@ -134,7 +136,7 @@ When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandr
 | `nessie.version.store.cassandra.dml-timeout` | `PT3S`         | `String`  | DML statement timeout for DDL.                                                                                                       |
 
 !!! info
-A complete set of the Quarkus Cassandra extension configuration options can be found on [quarkus.io](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database)
+    A complete set of the Quarkus Cassandra extension configuration options can be found on [quarkus.io](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database)
 
 #### DynamoDB Version Store Settings
 
@@ -149,7 +151,7 @@ When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the 
 | `nessie.version.store.persist.dynamodb.table-prefix` | n/a            | `String` | Prefix for tables, default is no prefix.                                                                                                                                                                                                          |
 
 !!! info
-A complete set of DynamoDB configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference).
+    A complete set of DynamoDB configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference).
 
 #### MongoDB Version Store Settings
 
@@ -161,7 +163,7 @@ When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the ve
 | `quarkus.mongodb.connection-string` |                | `String` | Sets MongoDB connection string. |
 
 !!! info
-A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client).
+    A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client).
 
 #### In-Memory Version Store Settings
 
@@ -237,6 +239,9 @@ In order for the server to publish its traces, the
 valid collector endpoint URL, with either `http://` or `https://` scheme. The collector must talk
 the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317), e.g.
 "http://otlp-collector:4317".
+
+Alternatively, it's possible to disable opentelemetry completely at runtime by setting the following 
+property: `quarkus.otel.sdk.disabled=true`.
 
 #### Troubleshooting traces
 
