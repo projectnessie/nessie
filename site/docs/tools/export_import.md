@@ -27,6 +27,12 @@ settings as the Nessie Quarkus server. These settings should be passed to the CL
 system properties, environment variables or a configuration file. The most relevant settings are
 those related to the [database connection](../try/configuration.md#version-store-settings).
 
+A help command is available to list all available commands and options:
+
+```bash
+java -jar nessie-quarkus-cli-x.y.z-runner.jar help
+```
+
 ### Repository information
 
 The simplest command is `info`, which prints information about the Nessie repository.
@@ -56,12 +62,6 @@ From configuration:
 -------------------
 Version-store type:                MONGODB
 Default branch:                    main
-```
-
-A help command is available to list all available commands and options:
-
-```bash
-java -jar nessie-quarkus-cli-x.y.z-runner.jar help
 ```
 
 ### Exporting
