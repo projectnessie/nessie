@@ -47,7 +47,8 @@ public class NessieCli extends BaseCommand {
     PrintWriter out = spec.commandLine().getOut();
 
     out.println("Nessie repository information & maintenance tool.");
-    out.println("Use the 'help' command.%n");
+    out.println("Use the 'help' command.");
+    out.println();
     return 0;
   }
 }

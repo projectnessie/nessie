@@ -44,7 +44,6 @@ public class ImportRepository extends BaseCommand {
   static final String PATH = "--path";
 
   static final String ERASE_BEFORE_IMPORT = "--erase-before-import";
-  static final String NO_OPTIMIZE = "--no-optimize";
   static final String INPUT_BUFFER_SIZE = "--input-buffer-size";
   static final String COMMIT_BATCH_SIZE = "--commit-batch-size";
 
