@@ -3,7 +3,7 @@
 This page explains how to use the Nessie Quarkus CLI tool to perform repository maintenance tasks
 such as:
 
-* Obtaining [information](#information) about a Nessie repository;
+* Obtaining [information](#repository-information) about a Nessie repository;
 * [Exporting](#exporting) a Nessie repository to a ZIP file, e.g. to create a backup;
 * [Importing](#importing) a Nessie repository from a ZIP file, e.g. to restore a backup;
 * [Migrating](#migrating-from-a-legacy-version-store-type) from a legacy version store type.
@@ -27,7 +27,7 @@ settings as the Nessie Quarkus server. These settings should be passed to the CL
 system properties, environment variables or a configuration file. The most relevant settings are
 those related to the [database connection](../try/configuration.md#version-store-settings).
 
-## Information
+### Repository information
 
 The simplest command is `info`, which prints information about the Nessie repository.
 
@@ -102,7 +102,7 @@ want to overwrite an existing Nessie repository, then use the `--erase-before-im
     java -jar nessie-quarkus-cli-x.y.z-runner.jar help import
     ```
 
-## Migrating from a legacy version store type
+### Migrating from a legacy version store type
 
 The CLI tool can be used to fully migrate a Nessie repository from one version store type to 
 another, see [Migration](../tools/migration.md) for a detailed example.
