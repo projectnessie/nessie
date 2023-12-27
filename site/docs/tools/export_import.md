@@ -1,36 +1,44 @@
-# Nessie export/import
+# Nessie Repository Maintenance
 
-This page explains the functionality to export a Nessie repository and import into another Nessie 
-repository, allowing e.g. to create backups of a Nessie repository, or to migrate from one backend 
-database to another.
+This page explains how to use the Nessie Quarkus CLI tool to perform repository maintenance tasks
+such as:
+
+* Obtaining [information](#information) about a Nessie repository;
+* [Exporting](#exporting) a Nessie repository to a ZIP file, e.g. to create a backup;
+* [Importing](#importing) a Nessie repository from a ZIP file, e.g. to restore a backup;
+* [Migrating](#migrating-from-a-legacy-version-store-type) from a legacy version store type.
 
 ## Usage
 
-Nessie repository export + import requires direct access to the database used by Nessie. The
-necessary executable is the `nessie-quarkus-cli-x.y.z-runner.jar` can be downloaded from
-the [release page on GitHub](https://github.com/projectnessie/nessie/releases) and is available
+The Nessie Quarkus CLI too requires direct access to the database used by Nessie. The executable is
+named `nessie-quarkus-cli-x.y.z-runner.jar` and can be downloaded from the
+[release page on GitHub](https://github.com/projectnessie/nessie/releases) and is available
 for Nessie 0.43.0 or newer.
+
+!!! note
+    The Nessie Quarkus CLI tool is an executable jar that can be used to interact with a Nessie
+    database directly. It should not be confused with the [Nessie CLI tool], which is a Python
+    Nessie client that is used to interact with Nessie servers.
+
+[Nessie CLI tool]: ../tools/cli.md
 
 The Nessie Quarkus CLI tool `nessie-quarkus-cli-x.y.z-runner.jar` should use the same configuration
 settings as the Nessie Quarkus server. These settings should be passed to the CLI tool using
 system properties, environment variables or a configuration file. The most relevant settings are
 those related to the [database connection](../try/configuration.md#version-store-settings).
 
-!!! note
-    The Nessie Quarkus CLI tool is an executable jar that can be used to interact with a Nessie 
-    database directly. It should not be confused with the [Nessie CLI tool], which is a Python
-    Nessie client that is used to interact with Nessie servers.
+## Information
 
-[Nessie CLI tool]: ../tools/cli.md
+The simplest command is `info`, which prints information about the Nessie repository.
 
-For example, here is a command to print information about a Nessie repository hosted in a MongoDB
-database called `nessie` running on `localhost:27017`:
+For example, here is how to print information about a Nessie repository hosted in a MongoDB
+database called `nessie` running on `nessie.example.com:27017`:
 
 ```bash
 java \
   -Dnessie.version.store.type=MONGODB \
   -Dquarkus.mongodb.database=nessie \
-  -Dquarkus.mongodb.connection-string=mongodb://<user>:<password>@localhost:27017 \
+  -Dquarkus.mongodb.connection-string=mongodb://<user>:<password>@nessie.example.com:27017 \
   -jar nessie-quarkus-cli-runner.jar \
   info
 ```
