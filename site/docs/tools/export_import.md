@@ -1,7 +1,8 @@
 # Nessie export/import
 
-Functionality to export a Nessie repository and import into another Nessie repository, allowing to
-migration from one backend database to another.
+This page explains the functionality to export a Nessie repository and import into another Nessie 
+repository, allowing e.g. to create backups of a Nessie repository, or to migrate from one backend 
+database to another.
 
 ## Usage
 
@@ -11,7 +12,49 @@ the [release page on GitHub](https://github.com/projectnessie/nessie/releases) a
 for Nessie 0.43.0 or newer.
 
 The Nessie Quarkus CLI tool `nessie-quarkus-cli-x.y.z-runner.jar` should use the same configuration
-settings as the Nessie Quarkus server.
+settings as the Nessie Quarkus server. These settings should be passed to the CLI tool using
+system properties, environment variables or a configuration file. The most relevant settings are
+those related to the [database connection](../try/configuration.md#version-store-settings).
+
+!!! note
+    The Nessie Quarkus CLI tool is an executable jar that can be used to interact with a Nessie 
+    database directly. It should not be confused with the [Nessie CLI tool], which is a Python
+    Nessie client that is used to interact with Nessie servers.
+
+[Nessie CLI tool]: ../tools/cli.md
+
+For example, here is a command to print information about a Nessie repository hosted in a MongoDB
+database called `nessie` running on `localhost:27017`:
+
+```bash
+java \
+  -Dnessie.version.store.type=MONGODB \
+  -Dquarkus.mongodb.database=nessie \
+  -Dquarkus.mongodb.connection-string=mongodb://<user>:<password>@localhost:27017 \
+  -jar nessie-quarkus-cli-runner.jar \
+  info
+```
+
+The output should look similar to this:
+
+```text
+No-ancestor hash:                  2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+Default branch head commit ID:     11b5d0f393ad84da4ae9724654d35b96863eda02101f3ff1e633e0b25e0513db
+Default branch commit count:       100
+Repository description version:    0
+Repository description properties:
+
+From configuration:
+-------------------
+Version-store type:                MONGODB
+Default branch:                    main
+```
+
+A help command is available to list all available commands and options:
+
+```bash
+java -jar nessie-quarkus-cli-x.y.z-runner.jar help
+```
 
 ### Exporting
 
@@ -50,6 +93,11 @@ want to overwrite an existing Nessie repository, then use the `--erase-before-im
     ```bash
     java -jar nessie-quarkus-cli-x.y.z-runner.jar help import
     ```
+
+## Migrating from a legacy version store type
+
+The CLI tool can be used to fully migrate a Nessie repository from one version store type to 
+another, see [Migration](../tools/migration.md) for a detailed example.
 
 ## Building blocks
 
