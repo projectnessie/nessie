@@ -24,6 +24,9 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
@@ -36,6 +39,8 @@ import static org.projectnessie.client.NessieConfigConstants.DEFAULT_AUTHORIZATI
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEVICE_CODE_FLOW_POLL_INTERVAL;
+import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEVICE_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.applyConfigOption;
@@ -43,8 +48,6 @@ import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.applyConfi
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
@@ -85,7 +88,9 @@ public interface OAuth2AuthenticatorConfig {
         config, CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, builder::tokenEndpoint, URI::create);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_AUTH_ENDPOINT, builder::authEndpoint, URI::create);
     applyConfigOption(
-        config, CONF_NESSIE_OAUTH2_GRANT_TYPE, builder::grantType, GrantType::fromCanonicalName);
+        config, CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT, builder::deviceAuthEndpoint, URI::create);
+    applyConfigOption(
+        config, CONF_NESSIE_OAUTH2_GRANT_TYPE, builder::grantType, GrantType::fromConfigName);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_USERNAME, builder::username);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_PASSWORD, builder::password);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_CLIENT_SCOPES, builder::scope);
@@ -129,6 +134,16 @@ public interface OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT,
         builder::authorizationCodeFlowWebServerPort,
         Integer::parseInt);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT,
+        builder::deviceCodeFlowTimeout,
+        Duration::parse);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
+        builder::deviceCodeFlowPollInterval,
+        Duration::parse);
     return builder.build();
   }
 
@@ -160,6 +175,14 @@ public interface OAuth2AuthenticatorConfig {
   Optional<URI> getAuthEndpoint();
 
   /**
+   * The OAuth2 device authorization endpoint. Either this or {@link #getIssuerUrl()} must be set,
+   * if the grant type is {@link GrantType#DEVICE_CODE}.
+   *
+   * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT
+   */
+  Optional<URI> getDeviceAuthEndpoint();
+
+  /**
    * The OAuth2 grant type. Defaults to {@link GrantType#CLIENT_CREDENTIALS}.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_GRANT_TYPE
@@ -183,7 +206,7 @@ public interface OAuth2AuthenticatorConfig {
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SECRET
    */
-  ByteBuffer getClientSecret();
+  Secret getClientSecret();
 
   /**
    * The OAuth2 username. Only relevant for {@link GrantType#PASSWORD} grant type.
@@ -199,7 +222,7 @@ public interface OAuth2AuthenticatorConfig {
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_PASSWORD
    */
-  Optional<ByteBuffer> getPassword();
+  Optional<Secret> getPassword();
 
   /**
    * The OAuth2 scope. Optional.
@@ -298,6 +321,30 @@ public interface OAuth2AuthenticatorConfig {
   OptionalInt getAuthorizationCodeFlowWebServerPort();
 
   /**
+   * How long to wait for the device code flow to complete. Defaults to {@link
+   * NessieConfigConstants#DEFAULT_DEVICE_CODE_FLOW_TIMEOUT}. Only relevant when using the {@link
+   * GrantType#DEVICE_CODE} grant type.
+   *
+   * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT
+   */
+  @Value.Default
+  default Duration getDeviceCodeFlowTimeout() {
+    return Duration.parse(DEFAULT_DEVICE_CODE_FLOW_TIMEOUT);
+  }
+
+  /**
+   * How often to poll the token endpoint. Defaults to {@link
+   * NessieConfigConstants#DEFAULT_DEVICE_CODE_FLOW_POLL_INTERVAL}. Only relevant when using the
+   * {@link GrantType#DEVICE_CODE} grant type.
+   *
+   * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL
+   */
+  @Value.Default
+  default Duration getDeviceCodeFlowPollInterval() {
+    return Duration.parse(DEFAULT_DEVICE_CODE_FLOW_POLL_INTERVAL);
+  }
+
+  /**
    * The SSL context to use for HTTPS connections to the authentication provider, if the server uses
    * a self-signed certificate or a certificate signed by a CA that is not in the default trust
    * store of the JVM. Optional; if not set, the default SSL context is used.
@@ -343,28 +390,29 @@ public interface OAuth2AuthenticatorConfig {
     Builder authEndpoint(URI authEndpoint);
 
     @CanIgnoreReturnValue
+    Builder deviceAuthEndpoint(URI deviceAuthEndpoint);
+
+    @CanIgnoreReturnValue
     Builder grantType(GrantType grantType);
 
     @CanIgnoreReturnValue
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
-    Builder clientSecret(ByteBuffer clientSecret);
+    Builder clientSecret(Secret clientSecret);
 
-    @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
-      return clientSecret(ByteBuffer.wrap(clientSecret.getBytes(StandardCharsets.UTF_8)));
+      return clientSecret(new Secret(clientSecret));
     }
 
     @CanIgnoreReturnValue
     Builder username(String username);
 
     @CanIgnoreReturnValue
-    Builder password(ByteBuffer password);
+    Builder password(Secret password);
 
-    @CanIgnoreReturnValue
     default Builder password(String password) {
-      return password(ByteBuffer.wrap(password.getBytes(StandardCharsets.UTF_8)));
+      return password(new Secret(password));
     }
 
     @CanIgnoreReturnValue
@@ -393,6 +441,12 @@ public interface OAuth2AuthenticatorConfig {
 
     @CanIgnoreReturnValue
     Builder authorizationCodeFlowWebServerPort(int authorizationCodeFlowWebServerPort);
+
+    @CanIgnoreReturnValue
+    Builder deviceCodeFlowTimeout(Duration deviceCodeFlowTimeout);
+
+    @CanIgnoreReturnValue
+    Builder deviceCodeFlowPollInterval(Duration deviceCodeFlowPollInterval);
 
     @CanIgnoreReturnValue
     Builder sslContext(SSLContext sslContext);

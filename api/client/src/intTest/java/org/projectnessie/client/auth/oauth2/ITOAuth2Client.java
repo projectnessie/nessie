@@ -15,13 +15,18 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.client.auth.oauth2.GrantType.AUTHORIZATION_CODE;
+import static org.projectnessie.client.auth.oauth2.GrantType.DEVICE_CODE;
+import static org.projectnessie.client.auth.oauth2.GrantType.PASSWORD;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
@@ -70,16 +75,16 @@ public class ITOAuth2Client {
   private static URI issuerUrl;
   private static URI tokenEndpoint;
   private static URI authEndpoint;
+  private static URI deviceAuthEndpoint;
 
   @InjectSoftAssertions private SoftAssertions soft;
 
   @BeforeAll
   static void setUpKeycloak() {
-    issuerUrl = URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master");
-    tokenEndpoint =
-        URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
-    authEndpoint =
-        URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/auth");
+    issuerUrl = URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/");
+    tokenEndpoint = issuerUrl.resolve("protocol/openid-connect/token");
+    authEndpoint = issuerUrl.resolve("protocol/openid-connect/auth");
+    deviceAuthEndpoint = issuerUrl.resolve("protocol/openid-connect/auth/device");
     Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
     master = keycloakAdmin.realms().realm("master");
     updateMasterRealm(10, 15);
@@ -113,16 +118,18 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws Exception {
     OAuth2ClientConfig config1 = clientConfig("Client1", false).build();
-    OAuth2ClientConfig config2 =
-        clientConfig("Client2", false).grantType(GrantType.PASSWORD).build();
+    OAuth2ClientConfig config2 = clientConfig("Client2", false).grantType(PASSWORD).build();
     OAuth2ClientConfig config3 =
-        clientConfig("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
+        clientConfig("Client2", false).grantType(AUTHORIZATION_CODE).build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     try (OAuth2Client client1 = new OAuth2Client(config1);
         OAuth2Client client2 = new OAuth2Client(config2);
         OAuth2Client client3 = new OAuth2Client(config3);
-        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
+        ResourceOwnerEmulator resourceOwner =
+            new ResourceOwnerEmulator(AUTHORIZATION_CODE, "Alice", "s3cr3t");
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
+      resourceOwner.replaceSystemOut();
+      resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> executor.shutdownNow());
       client1.start();
       client2.start();
@@ -155,8 +162,8 @@ public class ITOAuth2Client {
    *
    * <ul>
    *   <li>endpoint discovery on;
-   *   <li>client_credentials, password or authorization_code grant type for obtaining the initial
-   *       access token;
+   *   <li>client_credentials, password, authorization_code or device_code grant type for obtaining
+   *       the initial access token;
    *   <li>refresh token sent on the initial response;
    *   <li>refresh_token grant type for refreshing the access token.
    * </ul>
@@ -164,7 +171,7 @@ public class ITOAuth2Client {
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
-      names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE"})
+      names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
   void testOAuth2ClientInitialRefreshToken(GrantType initialGrantType) throws Exception {
     OAuth2ClientConfig config = clientConfig("Client2", true).grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(config);
@@ -270,10 +277,7 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientUnauthorizedBadPassword() {
     OAuth2ClientConfig config =
-        clientConfig("Client2", false)
-            .grantType(GrantType.PASSWORD)
-            .password("BAD PASSWORD")
-            .build();
+        clientConfig("Client2", false).grantType(PASSWORD).password("BAD PASSWORD").build();
     try (OAuth2Client client = new OAuth2Client(config)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
@@ -286,9 +290,12 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientUnauthorizedBadAuthorizationCode() throws Exception {
     OAuth2ClientConfig config =
-        clientConfig("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
+        clientConfig("Client2", false).grantType(AUTHORIZATION_CODE).build();
     try (OAuth2Client client = new OAuth2Client(config);
-        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t")) {
+        ResourceOwnerEmulator resourceOwner =
+            new ResourceOwnerEmulator(AUTHORIZATION_CODE, "Alice", "s3cr3t")) {
+      resourceOwner.replaceSystemOut();
+      resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> client.close());
       resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
       client.start();
@@ -296,6 +303,25 @@ public class ITOAuth2Client {
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
           .isEqualTo(Status.BAD_REQUEST); // Keycloak replies with 400 instead of 401
+    }
+  }
+
+  @Test
+  void testOAuth2ClientDeviceCodeAccessDenied() throws Exception {
+    OAuth2ClientConfig config = clientConfig("Client2", false).grantType(DEVICE_CODE).build();
+    try (OAuth2Client client = new OAuth2Client(config);
+        ResourceOwnerEmulator resourceOwner =
+            new ResourceOwnerEmulator(DEVICE_CODE, "Alice", "s3cr3t")) {
+      resourceOwner.replaceSystemOut();
+      resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
+      resourceOwner.setErrorListener(e -> client.close());
+      resourceOwner.denyConsent();
+      client.start();
+      soft.assertThatThrownBy(client::authenticate)
+          .asInstanceOf(type(OAuth2Exception.class))
+          .extracting(OAuth2Exception::getStatus, OAuth2Exception::getErrorCode)
+          .containsExactly(
+              Status.BAD_REQUEST, "access_denied"); // Keycloak replies with 400 instead of 401
     }
   }
 
@@ -368,11 +394,18 @@ public class ITOAuth2Client {
             .scope("openid")
             .defaultAccessTokenLifespan(Duration.ofSeconds(10))
             .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
-            .refreshSafetyWindow(Duration.ofSeconds(5));
+            .refreshSafetyWindow(Duration.ofSeconds(5))
+            // Exercise the code path where Keycloak will request client to slow down
+            .ignoreDeviceCodeFlowServerPollInterval(true)
+            .minDeviceCodeFlowPollInterval(Duration.ofSeconds(1))
+            .deviceCodeFlowPollInterval(Duration.ofSeconds(1));
     if (discovery) {
       builder.issuerUrl(issuerUrl);
     } else {
-      builder.tokenEndpoint(tokenEndpoint).authEndpoint(authEndpoint);
+      builder
+          .tokenEndpoint(tokenEndpoint)
+          .authEndpoint(authEndpoint)
+          .deviceAuthEndpoint(deviceAuthEndpoint);
     }
     return builder;
   }
@@ -406,11 +439,14 @@ public class ITOAuth2Client {
     client.setAttributes(
         ImmutableMap.of(
             "client_credentials.use_refresh_token",
-            String.valueOf(sendRefreshTokenOnClientCredentialsRequest)));
+            String.valueOf(sendRefreshTokenOnClientCredentialsRequest),
+            "oauth2.device.authorization.grant.enabled",
+            "true"));
     ResourceServerRepresentation settings = new ResourceServerRepresentation();
     settings.setPolicyEnforcementMode(PolicyEnforcementMode.DISABLED);
     client.setAuthorizationSettings(settings);
-    master.clients().create(client);
+    Response response = master.clients().create(client);
+    assertThat(response.getStatus()).isEqualTo(201);
   }
 
   @SuppressWarnings("resource")
@@ -423,7 +459,8 @@ public class ITOAuth2Client {
     credential.setTemporary(false);
     user.setCredentials(ImmutableList.of(credential));
     user.setEnabled(true);
-    master.users().create(user);
+    Response response = master.users().create(user);
+    assertThat(response.getStatus()).isEqualTo(201);
   }
 
   private static HttpClient.Builder validatingHttpClient(String clientId) {
@@ -446,6 +483,8 @@ public class ITOAuth2Client {
         return PasswordTokensResponse.class;
       case AUTHORIZATION_CODE:
         return AuthorizationCodeTokensResponse.class;
+      case DEVICE_CODE:
+        return DeviceCodeTokensResponse.class;
       default:
         throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
     }
@@ -458,8 +497,12 @@ public class ITOAuth2Client {
       case PASSWORD:
         return () -> {};
       case AUTHORIZATION_CODE:
-        ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t");
+      case DEVICE_CODE:
+        ResourceOwnerEmulator resourceOwner =
+            new ResourceOwnerEmulator(initialGrantType, "Alice", "s3cr3t");
+        resourceOwner.replaceSystemOut();
         resourceOwner.setErrorListener(e -> client.close());
+        resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
         return resourceOwner;
       default:
         throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);

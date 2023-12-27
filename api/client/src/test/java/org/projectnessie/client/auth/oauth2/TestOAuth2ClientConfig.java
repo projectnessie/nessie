@@ -26,6 +26,9 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
@@ -34,8 +37,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.MIN_IDLE_INTERVAL;
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.MIN_REFRESH_DELAY;
 
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
@@ -106,7 +107,7 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.TOKEN_EXCHANGE),
             new IllegalArgumentException(
-                "grant type must be either 'client_credentials', 'password' or 'authorization_code'")),
+                "grant type must be either 'client_credentials', 'password', 'authorization_code' or 'device_code'")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -172,17 +173,45 @@ class TestOAuth2ClientConfig {
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
-                .defaultAccessTokenLifespan(MIN_REFRESH_DELAY.minusSeconds(1)),
+                .grantType(GrantType.DEVICE_CODE),
             new IllegalArgumentException(
-                "default token lifespan must be greater than or equal to " + MIN_REFRESH_DELAY)),
+                "either issuer URL or device authorization endpoint must be set if grant type is 'device_code'")),
+        Arguments.of(
+            OAuth2ClientConfig.builder()
+                .clientId("Alice")
+                .clientSecret("s3cr3t")
+                .grantType(GrantType.DEVICE_CODE)
+                .tokenEndpoint(URI.create("https://example.com/token"))
+                .deviceAuthEndpoint(URI.create("http://example.com"))
+                .deviceCodeFlowTimeout(Duration.ofSeconds(1)),
+            new IllegalArgumentException(
+                "device code flow: timeout must be greater than or equal to PT10S")),
+        Arguments.of(
+            OAuth2ClientConfig.builder()
+                .clientId("Alice")
+                .clientSecret("s3cr3t")
+                .grantType(GrantType.DEVICE_CODE)
+                .tokenEndpoint(URI.create("https://example.com/token"))
+                .deviceAuthEndpoint(URI.create("http://example.com"))
+                .deviceCodeFlowPollInterval(Duration.ofSeconds(1)),
+            new IllegalArgumentException(
+                "device code flow: poll interval must be greater than or equal to PT5S")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
-                .refreshSafetyWindow(MIN_REFRESH_DELAY.minusSeconds(1)),
+                .defaultAccessTokenLifespan(Duration.ofSeconds(2)),
             new IllegalArgumentException(
-                "refresh safety window must be greater than or equal to " + MIN_REFRESH_DELAY)),
+                "default token lifespan must be greater than or equal to PT10S")),
+        Arguments.of(
+            OAuth2ClientConfig.builder()
+                .clientId("Alice")
+                .clientSecret("s3cr3t")
+                .tokenEndpoint(URI.create("https://example.com/token"))
+                .refreshSafetyWindow(Duration.ofMillis(100)),
+            new IllegalArgumentException(
+                "refresh safety window must be greater than or equal to PT1S")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -197,10 +226,9 @@ class TestOAuth2ClientConfig {
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
-                .preemptiveTokenRefreshIdleTimeout(MIN_IDLE_INTERVAL.minusSeconds(1)),
+                .preemptiveTokenRefreshIdleTimeout(Duration.ofMillis(100)),
             new IllegalArgumentException(
-                "preemptive token refresh idle timeout must be greater than or equal to "
-                    + MIN_IDLE_INTERVAL)),
+                "preemptive token refresh idle timeout must be greater than or equal to PT1S")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -267,6 +295,7 @@ class TestOAuth2ClientConfig {
                 .put(CONF_NESSIE_OAUTH2_ISSUER_URL, "https://example.com/")
                 .put(CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, "https://example.com/token")
                 .put(CONF_NESSIE_OAUTH2_AUTH_ENDPOINT, "https://example.com/auth")
+                .put(CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT, "https://example.com/device")
                 .put(CONF_NESSIE_OAUTH2_GRANT_TYPE, "authorization_code")
                 .put(CONF_NESSIE_OAUTH2_CLIENT_ID, "Client")
                 .put(CONF_NESSIE_OAUTH2_CLIENT_SECRET, "w00t")
@@ -281,11 +310,14 @@ class TestOAuth2ClientConfig {
                 .put(CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT, "PT10S")
                 .put(CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT, "8080")
                 .put(CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT, "PT30S")
+                .put(CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL, "PT8S")
+                .put(CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT, "PT45S")
                 .build(),
             OAuth2ClientConfig.builder()
                 .issuerUrl(URI.create("https://example.com/"))
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .authEndpoint(URI.create("https://example.com/auth"))
+                .deviceAuthEndpoint(URI.create("https://example.com/device"))
                 .grantType(GrantType.AUTHORIZATION_CODE)
                 .clientId("Client")
                 .clientSecret("w00t")
@@ -300,6 +332,8 @@ class TestOAuth2ClientConfig {
                 .backgroundThreadIdleTimeout(Duration.ofSeconds(10))
                 .authorizationCodeFlowWebServerPort(8080)
                 .authorizationCodeFlowTimeout(Duration.ofSeconds(30))
+                .deviceCodeFlowPollInterval(Duration.ofSeconds(8))
+                .deviceCodeFlowTimeout(Duration.ofSeconds(45))
                 .build(),
             null));
   }

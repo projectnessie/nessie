@@ -15,13 +15,10 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.MIN_REFRESH_DELAY;
 import static org.projectnessie.client.auth.oauth2.TokenTypeIdentifiers.ACCESS_TOKEN;
 import static org.projectnessie.client.auth.oauth2.TokenTypeIdentifiers.REFRESH_TOKEN;
 
 import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,8 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpResponse;
-import org.projectnessie.client.http.ResponseContext;
-import org.projectnessie.client.http.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,14 +73,14 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   OAuth2Client(OAuth2ClientConfig config) {
     this.config = config;
     username = config.getUsername().orElse(null);
-    password = config.getAndClearPassword();
+    password =
+        config.getPassword().map(s -> s.getBytesAndClear(StandardCharsets.UTF_8)).orElse(null);
     scope = config.getScope().orElse(null);
     tokenEndpointClient =
         config
             .newHttpClientBuilder()
             .setBaseUri(config.getResolvedTokenEndpoint())
             .setAuthentication(config.getBasicAuthentication())
-            .addResponseFilter(this::checkErrorResponse)
             .build();
     executor = config.getExecutor();
     lastAccess = config.getClock().get();
@@ -173,7 +168,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     LOGGER.debug("Waking up...");
     Tokens currentTokens = getCurrentTokensIfAvailable();
     Duration delay = nextTokenRefresh(currentTokens, now, Duration.ZERO);
-    if (delay.compareTo(MIN_REFRESH_DELAY) < 0) {
+    if (delay.compareTo(config.getMinRefreshSafetyWindow()) < 0) {
       LOGGER.debug("Refreshing tokens immediately");
       renewTokens();
     } else {
@@ -189,7 +184,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       sleeping.set(true);
       LOGGER.debug("Sleeping...");
     } else {
-      Duration delay = nextTokenRefresh(currentTokens, now, MIN_REFRESH_DELAY);
+      Duration delay = nextTokenRefresh(currentTokens, now, config.getMinRefreshSafetyWindow());
       scheduleTokensRenewal(delay);
     }
   }
@@ -258,6 +253,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       return httpResponse.readEntity(PasswordTokensResponse.class);
     } else if (config.getGrantType() == GrantType.AUTHORIZATION_CODE) {
       try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config, tokenEndpointClient)) {
+        return flow.fetchNewTokens();
+      }
+    } else if (config.getGrantType() == GrantType.DEVICE_CODE) {
+      try (DeviceCodeFlow flow = new DeviceCodeFlow(config, tokenEndpointClient)) {
         return flow.fetchNewTokens();
       }
     }
@@ -366,31 +365,6 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     return expirationTime;
   }
 
-  private void checkErrorResponse(ResponseContext responseContext) {
-    try {
-      Status status = responseContext.getResponseCode();
-      if (status.getCode() >= 400) {
-        if (!responseContext.isJsonCompatibleResponse()) {
-          throw genericError(status);
-        }
-        InputStream is = responseContext.getErrorStream();
-        if (is != null) {
-          try {
-            ErrorResponse errorResponse =
-                config.getObjectMapper().readValue(is, ErrorResponse.class);
-            throw new OAuth2Exception(status, errorResponse);
-          } catch (IOException ignored) {
-            throw genericError(status);
-          }
-        }
-      }
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new HttpClientException(e);
-    }
-  }
-
   private void maybeWarn(String message, Throwable error) {
     Instant now = config.getClock().get();
     boolean shouldWarn =
@@ -405,11 +379,6 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     } else {
       LOGGER.debug(message, error);
     }
-  }
-
-  private static HttpClientException genericError(Status status) {
-    return new HttpClientException(
-        "OAuth2 server replied with HTTP status code: " + status.getCode());
   }
 
   static class MustFetchNewTokensException extends RuntimeException {

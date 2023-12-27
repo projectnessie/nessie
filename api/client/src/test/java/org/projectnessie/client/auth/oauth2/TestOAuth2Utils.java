@@ -21,7 +21,6 @@ import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAP
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -90,17 +89,6 @@ class TestOAuth2Utils {
           .isInstanceOfAny(HttpClientException.class)
           .hasMessage("Invalid OpenID provider metadata");
     }
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"", "a", "abc", "abc123", "abc123!@#", "你好"})
-  void getArrayAndClear(String input) {
-    ByteBuffer bytes = ByteBuffer.wrap(input.getBytes(StandardCharsets.UTF_8));
-    assertThat(OAuth2Utils.getArrayAndClear(bytes))
-        .isEqualTo(input.getBytes(StandardCharsets.UTF_8));
-    assertThat(bytes.remaining()).isEqualTo(0);
-    assertThat(bytes.array())
-        .satisfiesAnyOf(c -> assertThat(c).isEmpty(), c -> assertThat(c).containsOnly('\0'));
   }
 
   private RequestHandler handler(String wellKnownPath, String data) {

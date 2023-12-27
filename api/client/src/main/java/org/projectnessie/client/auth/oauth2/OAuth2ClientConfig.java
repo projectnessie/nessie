@@ -17,15 +17,16 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
 import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -37,10 +38,14 @@ import org.immutables.value.Value;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.ResponseContext;
+import org.projectnessie.client.http.Status;
 
 /**
  * Subtype of {@link OAuth2AuthenticatorConfig} that contains configuration options that are not
- * exposed to the user.
+ * exposed to the user. Most of the configuration options are defaults and/or guardrails, and their
+ * values can only be changed during tests.
  */
 @Value.Immutable
 @SuppressWarnings("immutables:subtype")
@@ -48,24 +53,43 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  static final Duration MIN_REFRESH_DELAY = Duration.ofSeconds(1);
-
-  static final Duration MIN_IDLE_INTERVAL = Duration.ofSeconds(1);
-
-  private static final Duration MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT = Duration.ofSeconds(10);
-
   static OAuth2ClientConfig.Builder builder() {
     return ImmutableOAuth2ClientConfig.builder();
   }
 
-  @Value.NonAttribute
-  byte[] getAndClearClientSecret() {
-    return OAuth2Utils.getArrayAndClear(getClientSecret());
+  @Value.Default
+  Duration getMinDefaultAccessTokenLifespan() {
+    return Duration.ofSeconds(10);
   }
 
-  @Value.NonAttribute
-  byte[] getAndClearPassword() {
-    return getPassword().map(OAuth2Utils::getArrayAndClear).orElse(null);
+  @Value.Default
+  Duration getMinRefreshSafetyWindow() {
+    return Duration.ofSeconds(1);
+  }
+
+  @Value.Default
+  Duration getMinPreemptiveTokenRefreshIdleTimeout() {
+    return Duration.ofSeconds(1);
+  }
+
+  @Value.Default
+  Duration getMinAuthorizationCodeFlowTimeout() {
+    return Duration.ofSeconds(30);
+  }
+
+  @Value.Default
+  Duration getMinDeviceCodeFlowTimeout() {
+    return Duration.ofSeconds(30);
+  }
+
+  @Value.Default
+  Duration getMinDeviceCodeFlowPollInterval() {
+    return Duration.ofSeconds(5); // mandated by the specs
+  }
+
+  @Value.Default
+  public boolean ignoreDeviceCodeFlowServerPollInterval() {
+    return false;
   }
 
   @Value.Default
@@ -90,7 +114,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     if (json.has("token_endpoint")) {
       return URI.create(json.get("token_endpoint").asText());
     }
-    throw new IllegalStateException("Discovery data does not contain a token endpoint");
+    throw new IllegalStateException("OpenID provider metadata does not contain a token endpoint");
   }
 
   @Value.Lazy
@@ -102,14 +126,26 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     if (json.has("authorization_endpoint")) {
       return URI.create(json.get("authorization_endpoint").asText());
     }
-    throw new IllegalStateException("Discovery data does not contain an authorization endpoint");
+    throw new IllegalStateException(
+        "OpenID provider metadata does not contain an authorization endpoint");
+  }
+
+  @Value.Lazy
+  URI getResolvedDeviceAuthEndpoint() {
+    if (getDeviceAuthEndpoint().isPresent()) {
+      return getDeviceAuthEndpoint().get();
+    }
+    JsonNode json = getOpenIdProviderMetadata();
+    if (json.has("device_authorization_endpoint")) {
+      return URI.create(json.get("device_authorization_endpoint").asText());
+    }
+    throw new IllegalStateException(
+        "OpenID provider metadata does not contain a device authorization endpoint");
   }
 
   @Value.Lazy // required because it will consume the client secret
   HttpAuthentication getBasicAuthentication() {
-    byte[] clientSecret = getAndClearClientSecret();
-    return BasicAuthenticationProvider.create(
-        getClientId(), new String(clientSecret, StandardCharsets.UTF_8));
+    return BasicAuthenticationProvider.create(getClientId(), getClientSecret().getStringAndClear());
   }
 
   @Value.NonAttribute
@@ -117,7 +153,37 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     return HttpClient.builder()
         .setObjectMapper(getObjectMapper())
         .setSslContext(getSslContext().orElse(null))
-        .setDisableCompression(true);
+        .setDisableCompression(true)
+        .addResponseFilter(this::checkErrorResponse);
+  }
+
+  private void checkErrorResponse(ResponseContext responseContext) {
+    try {
+      Status status = responseContext.getResponseCode();
+      if (status.getCode() >= 400) {
+        if (!responseContext.isJsonCompatibleResponse()) {
+          throw genericError(status);
+        }
+        InputStream is = responseContext.getErrorStream();
+        if (is != null) {
+          try {
+            ErrorResponse errorResponse = getObjectMapper().readValue(is, ErrorResponse.class);
+            throw new OAuth2Exception(status, errorResponse);
+          } catch (IOException ignored) {
+            throw genericError(status);
+          }
+        }
+      }
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new HttpClientException(e);
+    }
+  }
+
+  private static HttpClientException genericError(Status status) {
+    return new HttpClientException(
+        "OAuth2 server replied with HTTP status code: " + status.getCode());
   }
 
   @Value.Check
@@ -141,27 +207,29 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
           "Authorization endpoint must not have a fragment part");
     }
     checkArgument(!getClientId().isEmpty(), "client ID must not be empty");
-    checkArgument(getClientSecret().remaining() > 0, "client secret must not be empty");
-    String grantType = getGrantType().canonicalName();
+    checkArgument(getClientSecret().length() > 0, "client secret must not be empty");
+    GrantType grantType = getGrantType();
     checkArgument(
-        grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS)
-            || grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)
-            || grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE),
-        "grant type must be either '%s', '%s' or '%s'",
+        grantType == GrantType.CLIENT_CREDENTIALS
+            || grantType == GrantType.PASSWORD
+            || grantType == GrantType.AUTHORIZATION_CODE
+            || grantType == GrantType.DEVICE_CODE,
+        "grant type must be either '%s', '%s', '%s' or '%s'",
         CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
         CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD,
-        CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
-    if (grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)) {
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE,
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE);
+    if (grantType == GrantType.PASSWORD) {
       checkArgument(
           getUsername().isPresent() && !getUsername().get().isEmpty(),
           "username must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
       checkArgument(
-          getPassword().isPresent() && getPassword().get().remaining() > 0,
+          getPassword().isPresent() && getPassword().get().length() > 0,
           "password must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
     }
-    if (grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)) {
+    if (grantType == GrantType.AUTHORIZATION_CODE) {
       checkArgument(
           getIssuerUrl().isPresent() || getAuthEndpoint().isPresent(),
           "either issuer URL or authorization endpoint must be set if grant type is '%s'",
@@ -173,25 +241,40 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
             "authorization code flow: web server port must be between 0 and 65535 (inclusive)");
       }
       checkArgument(
-          getAuthorizationCodeFlowTimeout().compareTo(MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT) >= 0,
+          getAuthorizationCodeFlowTimeout().compareTo(getMinAuthorizationCodeFlowTimeout()) >= 0,
           "authorization code flow: timeout must be greater than or equal to %s",
-          MIN_AUTHORIZATION_CODE_FLOW_TIMEOUT);
+          Duration.ofSeconds(10));
+    }
+    if (grantType == GrantType.DEVICE_CODE) {
+      checkArgument(
+          getIssuerUrl().isPresent() || getDeviceAuthEndpoint().isPresent(),
+          "either issuer URL or device authorization endpoint must be set if grant type is '%s'",
+          CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE);
+      checkArgument(
+          getDeviceCodeFlowPollInterval().compareTo(getMinDeviceCodeFlowPollInterval()) >= 0,
+          "device code flow: poll interval must be greater than or equal to %s",
+          Duration.ofSeconds(5));
+      checkArgument(
+          getDeviceCodeFlowTimeout().compareTo(getMinDeviceCodeFlowTimeout()) >= 0,
+          "device code flow: timeout must be greater than or equal to %s",
+          Duration.ofSeconds(10));
     }
     checkArgument(
-        getDefaultAccessTokenLifespan().compareTo(MIN_REFRESH_DELAY) >= 0,
+        getDefaultAccessTokenLifespan().compareTo(getMinDefaultAccessTokenLifespan()) >= 0,
         "default token lifespan must be greater than or equal to %s",
-        MIN_REFRESH_DELAY);
+        getMinDefaultAccessTokenLifespan());
     checkArgument(
-        getRefreshSafetyWindow().compareTo(MIN_REFRESH_DELAY) >= 0,
+        getRefreshSafetyWindow().compareTo(getMinRefreshSafetyWindow()) >= 0,
         "refresh safety window must be greater than or equal to %s",
-        MIN_REFRESH_DELAY);
+        getMinRefreshSafetyWindow());
     checkArgument(
         getRefreshSafetyWindow().compareTo(getDefaultAccessTokenLifespan()) < 0,
         "refresh safety window must be less than the default token lifespan");
     checkArgument(
-        getPreemptiveTokenRefreshIdleTimeout().compareTo(MIN_IDLE_INTERVAL) >= 0,
+        getPreemptiveTokenRefreshIdleTimeout().compareTo(getMinPreemptiveTokenRefreshIdleTimeout())
+            >= 0,
         "preemptive token refresh idle timeout must be greater than or equal to %s",
-        MIN_IDLE_INTERVAL);
+        getMinPreemptiveTokenRefreshIdleTimeout());
   }
 
   static void applyConfigOption(
@@ -227,27 +310,29 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     Builder authEndpoint(URI authEndpoint);
 
     @Override
+    Builder deviceAuthEndpoint(URI deviceAuthEndpoint);
+
+    @Override
     Builder grantType(GrantType grantType);
 
     @Override
     Builder clientId(String clientId);
 
     @Override
-    Builder clientSecret(ByteBuffer clientSecret);
+    Builder clientSecret(Secret clientSecret);
 
-    @Override
     default Builder clientSecret(String clientSecret) {
-      return clientSecret(ByteBuffer.wrap(clientSecret.getBytes(StandardCharsets.UTF_8)));
+      return clientSecret(new Secret(clientSecret));
     }
 
     @Override
     Builder username(String username);
 
     @Override
-    Builder password(ByteBuffer password);
+    Builder password(Secret password);
 
     default Builder password(String password) {
-      return password(ByteBuffer.wrap(password.getBytes(StandardCharsets.UTF_8)));
+      return password(new Secret(password));
     }
 
     @Override
@@ -278,6 +363,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     Builder authorizationCodeFlowWebServerPort(int authorizationCodeFlowWebServerPort);
 
     @Override
+    Builder deviceCodeFlowTimeout(Duration deviceCodeFlowTimeout);
+
+    @Override
+    Builder deviceCodeFlowPollInterval(Duration deviceCodeFlowPollInterval);
+
+    @Override
     Builder sslContext(SSLContext sslContext);
 
     @Override
@@ -285,6 +376,27 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
     @Override
     Builder executor(ScheduledExecutorService executor);
+
+    @CanIgnoreReturnValue
+    Builder minDefaultAccessTokenLifespan(Duration minDefaultAccessTokenLifespan);
+
+    @CanIgnoreReturnValue
+    Builder minRefreshSafetyWindow(Duration minRefreshSafetyWindow);
+
+    @CanIgnoreReturnValue
+    Builder minPreemptiveTokenRefreshIdleTimeout(Duration minPreemptiveTokenRefreshIdleTimeout);
+
+    @CanIgnoreReturnValue
+    Builder minAuthorizationCodeFlowTimeout(Duration minAuthorizationCodeFlowTimeout);
+
+    @CanIgnoreReturnValue
+    Builder minDeviceCodeFlowTimeout(Duration minDeviceCodeFlowTimeout);
+
+    @CanIgnoreReturnValue
+    Builder minDeviceCodeFlowPollInterval(Duration minDeviceCodeFlowPollInterval);
+
+    @CanIgnoreReturnValue
+    Builder ignoreDeviceCodeFlowServerPollInterval(boolean ignoreDeviceCodeFlowServerPollInterval);
 
     @CanIgnoreReturnValue
     Builder clock(Supplier<Instant> clock);
