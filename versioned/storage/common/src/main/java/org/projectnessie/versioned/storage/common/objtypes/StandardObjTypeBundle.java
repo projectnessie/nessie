@@ -23,6 +23,7 @@ public class StandardObjTypeBundle implements ObjTypeBundle {
 
   @Override
   public void register(Consumer<ObjType> registrar) {
+    registrar.accept(JsonObj.TYPE);
     for (StandardObjType objType : StandardObjType.values()) {
       registrar.accept(objType);
     }

@@ -39,7 +39,6 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.nio.ByteBuffer;
@@ -61,7 +60,6 @@ import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -155,52 +153,17 @@ public class TestProtoSerialization {
             ByteString.copyFrom(new byte[1])),
         indexSegments(randomObjId(), emptyList()),
         index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()),
-        ImmutableJsonTestObj.builder()
-            .id(randomObjId())
-            .model(
-                ImmutableJsonTestModel.builder()
-                    .parent(randomObjId())
-                    .text("foo")
-                    .number(42)
-                    .map(Map.of("foo", "bar"))
-                    .list(List.of("foo", "bar"))
-                    .instant(Instant.now())
-                    .optional(Optional.of("foo"))
-                    .build())
-            .build());
-  }
-
-  @Value.Immutable
-  @JsonSerialize(as = ImmutableJsonTestObj.class)
-  @JsonDeserialize(as = ImmutableJsonTestObj.class)
-  public interface JsonTestObj extends JsonObj<JsonTestModel> {
-
-    ObjType TYPE =
-        new ObjType() {
-          @Override
-          public String name() {
-            return "json";
-          }
-
-          @Override
-          public String shortName() {
-            return "json";
-          }
-
-          @Override
-          public Class<? extends Obj> targetClass() {
-            return JsonTestObj.class;
-          }
-        };
-
-    @Override
-    default ObjType type() {
-      return TYPE;
-    }
-
-    @Override
-    @JsonUnwrapped
-    JsonTestModel model();
+        JsonObj.json(
+            randomObjId(),
+            ImmutableJsonTestModel.builder()
+                .parent(randomObjId())
+                .text("foo")
+                .number(42)
+                .map(Map.of("foo", "bar"))
+                .list(List.of("foo", "bar"))
+                .instant(Instant.now())
+                .optional(Optional.of("foo"))
+                .build()));
   }
 
   @Value.Immutable

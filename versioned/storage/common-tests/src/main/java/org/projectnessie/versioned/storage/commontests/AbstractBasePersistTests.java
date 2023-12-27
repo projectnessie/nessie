@@ -47,6 +47,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.ContentValueOb
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
+import static org.projectnessie.versioned.storage.common.objtypes.JsonObj.json;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
@@ -64,6 +65,8 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFrom
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -71,6 +74,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -100,6 +104,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
+import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
 import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
@@ -111,10 +116,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.commontests.objtypes.CustomObjType;
 import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestBean;
-import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestObj;
-import org.projectnessie.versioned.storage.commontests.objtypes.JsonTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.JsonTestBean;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
@@ -470,22 +473,69 @@ public class AbstractBasePersistTests {
             .build(),
         SimpleTestObj.builder().id(randomObjId()).build(),
         // JSON objects
-        ImmutableJsonTestObj.builder()
-            .id(randomObjId())
-            .model(
-                ImmutableJsonTestBean.builder()
-                    .parent(randomObjId())
-                    .text("foo".repeat(4000))
-                    .number(42.42d)
-                    .map(Map.of("k1", "v1".repeat(4000), "k2", "v2".repeat(4000)))
-                    .list(List.of("a", "b", "c"))
-                    .optional("optional")
-                    .instant(Instant.ofEpochMilli(1234567890L))
-                    .build())
-            .build(),
-        ImmutableJsonTestObj.builder()
-            .id(randomObjId())
-            .model(
+        // scalar types
+        json(randomObjId(), "text"),
+        json(randomObjId(), 123),
+        json(randomObjId(), 123.456d),
+        json(randomObjId(), true),
+        json(randomObjId(), String.class, "text"),
+        json(randomObjId(), Integer.class, 123),
+        json(randomObjId(), Number.class, 123),
+        json(randomObjId(), Double.class, 123.456d),
+        json(randomObjId(), Boolean.class, true),
+        // arrays / maps
+        json(randomObjId(), List.of("a", "b", "c")),
+        json(randomObjId(), List.class, List.of("a", "b", "c")),
+        json(randomObjId(), "java.util.List<java.lang.String>", List.of("a", "b", "c")),
+        json(randomObjId(), ImmutableList.class, List.of("a", "b", "c")),
+        json(randomObjId(), Map.of("k1", "v1", "k2", "v2")),
+        json(randomObjId(), Map.class, Map.of("k1", "v1", "k2", "v2")),
+        json(
+            randomObjId(),
+            "java.util.Map<java.lang.String,java.lang.String>",
+            Map.of("k1", "v1", "k2", "v2")),
+        json(randomObjId(), ImmutableMap.class, Map.of("k1", "v1", "k2", "v2")),
+        // objects
+        json(
+            randomObjId(),
+            ImmutableJsonTestBean.builder()
+                .parent(randomObjId())
+                .text("foo")
+                .number(42.42d)
+                .map(Map.of("k1", "v1", "k2", "v2"))
+                .list(List.of("a", "b", "c"))
+                .optional("optional")
+                .instant(Instant.ofEpochMilli(1234567890L))
+                .build()),
+        json(
+            randomObjId(),
+            JsonTestBean.class,
+            ImmutableJsonTestBean.builder()
+                .parent(randomObjId())
+                .text("foo")
+                .number(42.42d)
+                .map(Map.of("k1", "v1", "k2", "v2"))
+                .list(List.of("a", "b", "c"))
+                .optional("optional")
+                .instant(Instant.ofEpochMilli(1234567890L))
+                .build()),
+        // large objects
+        json(
+            randomObjId(),
+            ImmutableJsonTestBean.builder()
+                .parent(randomObjId())
+                .text("foo".repeat(4000))
+                .number(42.42d)
+                .map(Map.of("k1", "v1".repeat(4000), "k2", "v2".repeat(4000)))
+                .list(List.of("a", "b", "c"))
+                .optional("optional")
+                .instant(Instant.ofEpochMilli(1234567890L))
+                .build()),
+        // lists and maps of objects
+        json(
+            randomObjId(),
+            "java.util.List<org.projectnessie.versioned.storage.commontests.objtypes.JsonTestBean>",
+            List.of(
                 ImmutableJsonTestBean.builder()
                     .parent(randomObjId())
                     .text("foo")
@@ -494,12 +544,48 @@ public class AbstractBasePersistTests {
                     .list(List.of("a", "b", "c"))
                     .optional("optional")
                     .instant(Instant.ofEpochMilli(1234567890L))
-                    .build())
-            .build(),
-        ImmutableJsonTestObj.builder()
-            .id(randomObjId())
-            .model(ImmutableJsonTestBean.builder().build())
-            .build());
+                    .build(),
+                ImmutableJsonTestBean.builder()
+                    .parent(randomObjId())
+                    .text("bar")
+                    .number(43.43d)
+                    .map(Map.of("k2", "v2", "k3", "v3"))
+                    .list(List.of("d", "e", "f"))
+                    .optional(Optional.empty())
+                    .instant(null)
+                    .build())),
+        json(
+            randomObjId(),
+            "java.util.Map<java.lang.String,org.projectnessie.versioned.storage.commontests.objtypes.JsonTestBean>",
+            Map.of(
+                "foo",
+                ImmutableJsonTestBean.builder()
+                    .parent(randomObjId())
+                    .text("foo")
+                    .number(42.42d)
+                    .map(Map.of("k1", "v1", "k2", "v2"))
+                    .list(List.of("a", "b", "c"))
+                    .optional("optional")
+                    .instant(Instant.ofEpochMilli(1234567890L))
+                    .build(),
+                "bar",
+                ImmutableJsonTestBean.builder()
+                    .parent(randomObjId())
+                    .text("bar")
+                    .number(43.43d)
+                    .map(Map.of("k2", "v2", "k3", "v3"))
+                    .list(List.of("d", "e", "f"))
+                    .optional(Optional.empty())
+                    .instant(null)
+                    .build())),
+        // empty objects / null
+        json(randomObjId(), ImmutableJsonTestBean.builder().build()),
+        json(randomObjId(), JsonTestBean.class, ImmutableJsonTestBean.builder().build()),
+        json(randomObjId(), String.class, null),
+        json(randomObjId(), List.class, null),
+        json(randomObjId(), Map.class, null),
+        json(randomObjId(), JsonTestBean.class, null),
+        json(randomObjId(), "java.util.List<java.lang.String>", null));
   }
 
   static StandardObjType typeDifferentThan(ObjType type) {
@@ -525,7 +611,10 @@ public class AbstractBasePersistTests {
           // fall through
       }
     }
-    if (type instanceof CustomObjType) {
+    if (type.equals(SimpleTestObj.TYPE)) {
+      return StandardObjType.COMMIT;
+    }
+    if (type.equals(JsonObj.TYPE)) {
       return StandardObjType.COMMIT;
     }
     throw new IllegalArgumentException(type.name());
@@ -956,18 +1045,16 @@ public class AbstractBasePersistTests {
           .list(List.of("b", "c", "d"))
           .build();
     }
-    if (obj instanceof JsonTestObj) {
-      return ImmutableJsonTestObj.builder()
-          .id(obj.id())
-          .model(
-              ImmutableJsonTestBean.builder()
-                  .parent(randomObjId())
-                  .text("updated")
-                  .number(43.43d)
-                  .map(Map.of("k2", "v2", "k3", "v3"))
-                  .list(List.of("b", "c", "d"))
-                  .build())
-          .build();
+    if (obj instanceof JsonObj) {
+      return json(
+          obj.id(),
+          ImmutableJsonTestBean.builder()
+              .parent(randomObjId())
+              .text("updated")
+              .number(43.43d)
+              .map(Map.of("k2", "v2", "k3", "v3"))
+              .list(List.of("b", "c", "d"))
+              .build());
     }
     throw new UnsupportedOperationException("Unknown object type " + type);
   }
@@ -1051,8 +1138,9 @@ public class AbstractBasePersistTests {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
     Obj[] standardObjs =
         Arrays.stream(objs).filter(o -> o.type() instanceof StandardObjType).toArray(Obj[]::new);
+    Obj[] jsonObjs = Arrays.stream(objs).filter(o -> o instanceof JsonObj).toArray(Obj[]::new);
     Obj[] customObjs =
-        Arrays.stream(objs).filter(o -> o.type() instanceof CustomObjType).toArray(Obj[]::new);
+        Arrays.stream(objs).filter(o -> o instanceof SimpleTestObj).toArray(Obj[]::new);
 
     persist.erase();
 
@@ -1071,8 +1159,10 @@ public class AbstractBasePersistTests {
         persist.scanAllObjects(Set.copyOf(EnumSet.allOf(StandardObjType.class)))) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(standardObjs);
     }
-    try (CloseableIterator<Obj> scan =
-        persist.scanAllObjects(Set.copyOf(EnumSet.allOf(CustomObjType.class)))) {
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(JsonObj.TYPE))) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(jsonObjs);
+    }
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(SimpleTestObj.TYPE))) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(customObjs);
     }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
