@@ -157,6 +157,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             }
           }
         }
+        httpClient.close();
         if (password != null) {
           Arrays.fill(password, (byte) 0);
         }
