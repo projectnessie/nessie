@@ -16,9 +16,19 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestServer.RequestHandler;
 
 class TestOAuth2Utils {
 
@@ -27,5 +37,77 @@ class TestOAuth2Utils {
   void testRandomAlphaNumString(int length) {
     String actual = OAuth2Utils.randomAlphaNumString(length);
     assertThat(actual).hasSize(length).matches("^[a-zA-Z0-9]*$");
+  }
+
+  private static final String DATA =
+      "{"
+          + "\"issuer\":\"http://server.com/realms/master\","
+          + "\"authorization_endpoint\":\"http://server.com/realms/master/protocol/openid-connect/auth\","
+          + "\"token_endpoint\":\"http://server.com/realms/master/protocol/openid-connect/token\""
+          + "}";
+
+  private static final String WRONG_DATA =
+      "{"
+          + "\"authorization_endpoint\":\"http://server.com/realms/master/protocol/openid-connect/auth\","
+          + "\"token_endpoint\":\"http://server.com/realms/master/protocol/openid-connect/token\""
+          + "}";
+
+  @ParameterizedTest
+  @CsvSource({
+    "''              , /.well-known/openid-configuration",
+    "/               , /.well-known/openid-configuration",
+    "/realms/master  , /realms/master/.well-known/openid-configuration",
+    "/realms/master/ , /realms/master/.well-known/openid-configuration"
+  })
+  void fetchOpenIdProviderMetadataSuccess(String issuerPath, String wellKnownPath)
+      throws Exception {
+    try (HttpTestServer server = new HttpTestServer(handler(wellKnownPath, DATA), true);
+        HttpClient httpClient = newHttpClient(server, server.getUri().resolve(issuerPath))) {
+      JsonNode actual = OAuth2Utils.fetchOpenIdProviderMetadata(httpClient);
+      assertThat(actual).isEqualTo(OAuth2ClientParams.OBJECT_MAPPER.readTree(DATA));
+    }
+  }
+
+  @Test
+  void fetchOpenIdProviderMetadataWrongEndpoint() throws Exception {
+    try (HttpTestServer server = new HttpTestServer(handler("/wrong/path", DATA), true);
+        HttpClient httpClient = newHttpClient(server, server.getUri().resolve("/realms/master/"))) {
+      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient))
+          .isInstanceOf(HttpClientException.class)
+          .hasMessageContaining("404"); // messages differ between HttpClient impls
+    }
+  }
+
+  @Test
+  void fetchOpenIdProviderMetadataWrongData() throws Exception {
+    try (HttpTestServer server =
+            new HttpTestServer(
+                handler("/realms/master/.well-known/openid-configuration", WRONG_DATA), true);
+        HttpClient httpClient = newHttpClient(server, server.getUri().resolve("/realms/master/"))) {
+      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient))
+          .isInstanceOfAny(HttpClientException.class)
+          .hasMessage("Invalid OpenID provider metadata");
+    }
+  }
+
+  private RequestHandler handler(String wellKnownPath, String data) {
+    return (req, resp) -> {
+      if (req.getRequestURI().equals(wellKnownPath)) {
+        resp.setStatus(200);
+        resp.addHeader("Content-Type", "application/json;charset=UTF-8");
+        resp.addHeader("Content-Length", String.valueOf(data.length()));
+        resp.getOutputStream().write(data.getBytes(StandardCharsets.UTF_8));
+      } else {
+        resp.setStatus(404);
+      }
+    };
+  }
+
+  private static HttpClient newHttpClient(HttpTestServer server, URI issuerUrl) {
+    return HttpClient.builder()
+        .setBaseUri(issuerUrl)
+        .setSslContext(server.getSslContext())
+        .setObjectMapper(OAuth2ClientParams.OBJECT_MAPPER)
+        .build();
   }
 }

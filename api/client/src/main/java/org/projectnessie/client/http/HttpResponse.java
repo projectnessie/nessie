@@ -82,4 +82,12 @@ public class HttpResponse {
   public URI getRequestUri() {
     return responseContext.getRequestedUri();
   }
+
+  public Status getStatus() {
+    try {
+      return responseContext.getResponseCode();
+    } catch (IOException e) {
+      throw new HttpClientException(e);
+    }
+  }
 }

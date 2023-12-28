@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.http.impl.UriBuilder;
@@ -59,7 +58,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private static final int STATE_LENGTH = 16;
 
   private final OAuth2ClientParams params;
-  private final HttpClient httpClient;
+  private final HttpClient tokenEndpointClient;
   private final PrintStream console;
   private final String state;
   private final HttpServer server;
@@ -74,19 +73,14 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
-  AuthorizationCodeFlow(OAuth2ClientParams params, HttpClient httpClient) {
-    this(params, httpClient, System.out);
+  AuthorizationCodeFlow(OAuth2ClientParams params, HttpClient tokenEndpointClient) {
+    this(params, tokenEndpointClient, System.out);
   }
 
-  /** Constructor used for testing. */
-  AuthorizationCodeFlow(OAuth2ClientParams params, PrintStream console) {
-    this(params, params.getHttpClient().build(), console);
-  }
-
-  private AuthorizationCodeFlow(
-      OAuth2ClientParams params, HttpClient httpClient, PrintStream console) {
+  AuthorizationCodeFlow(
+      OAuth2ClientParams params, HttpClient tokenEndpointClient, PrintStream console) {
     this.params = params;
-    this.httpClient = httpClient;
+    this.tokenEndpointClient = tokenEndpointClient;
     this.console = console;
     this.flowTimeout = params.getAuthorizationCodeFlowTimeout();
     authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
@@ -97,7 +91,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     state = OAuth2Utils.randomAlphaNumString(STATE_LENGTH);
     redirectUri =
         String.format("http://localhost:%d%s", server.getAddress().getPort(), CONTEXT_PATH);
-    URI authEndpoint = params.getAuthEndpoint().orElseThrow(IllegalStateException::new);
+    URI authEndpoint = params.getResolvedAuthEndpoint();
     authorizationUri =
         new UriBuilder(authEndpoint.resolve("/"))
             .path(authEndpoint.getPath())
@@ -201,8 +195,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
             .clientId(params.getClientId())
             .scope(params.getScope().orElse(null))
             .build();
-    HttpRequest request = httpClient.newRequest().path(params.getTokenEndpoint().getPath());
-    HttpResponse response = request.postForm(body);
+    HttpResponse response = tokenEndpointClient.newRequest().postForm(body);
     Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;

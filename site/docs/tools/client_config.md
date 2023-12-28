@@ -150,27 +150,43 @@ quarkus.oidc.auth-server-url=https://<keycloak-server>/realms/<realm-name>
 
 The following properties are available for the `OAUTH2` authentication type:
 
-* `authentication.oauth2.token-endpoint`: the URL of the OAuth2 token endpoint; this should include
-  not only the OAuth2 server's address, but also the path to the token REST resource, if any. For
-  Keycloak, this is typically
-  `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token`. Required.
-
 * `authentication.oauth2.grant-type`: the grant type to use when authenticating against the OAuth2
   server. Valid values are: `client_credentials`, `password` or `authorization_code`. Optional,
   defaults to `client_credentials`. Depending on the grant type, additional properties must be
   provided:
   * For the "client_credentials" grant type, the following properties must be provided:
+    * `authentication.oauth2.issuer-url` or `authentication.oauth2.token-endpoint`
     * `authentication.oauth2.client-id`
     * `authentication.oauth2.client-secret`
   * For the "password" grant type, the following properties must be provided:
+    * `authentication.oauth2.issuer-url` or `authentication.oauth2.token-endpoint`
     * `authentication.oauth2.client-id`
     * `authentication.oauth2.client-secret`
     * `authentication.oauth2.username`
     * `authentication.oauth2.password`
   * For the "authorization_code" grant type, the following properties must be provided:
+    * `authentication.oauth2.issuer-url`, or both `authentication.oauth2.token-endpoint` 
+      and `authentication.oauth2.auth-endpoint`
     * `authentication.oauth2.client-id`
     * `authentication.oauth2.client-secret`
     * `authentication.oauth2.auth-endpoint`
+
+* `authentication.oauth2.issuer-url`: The root URL of the OpenID Connect identity issuer provider,
+  which will be used for discovering supported endpoints and their locations. For Keycloak, this is 
+  typically the realm URL: `https://<keycloak-server>/realms/<realm-name>`. Optional. Either this 
+  property or the `authentication.oauth2.token-endpoint` property must be provided. Endpoint 
+  discovery is performed using the OpenID Connect Discovery metadata published by the issuer. 
+  See [OpenID Connect Discovery 1.0] for more information.
+
+* `authentication.oauth2.token-endpoint`: the URL of the OAuth2 token endpoint. For Keycloak, this 
+  is typically `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token`. 
+  Optional. Either this property or the `authentication.oauth2.issuer-url` property must be 
+  provided.
+
+* `authentication.oauth2.auth-endpoint`: the URL of the OAuth2 auth endpoint. For Keycloak, this is 
+  typically `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth`. If using 
+  the "authorization_code" grant type, either this property or the 
+  `authentication.oauth2.issuer-url` property must be provided.
 
 * `authentication.oauth2.client-id`: the client ID to use when authenticating against the OAuth2
   server. Required.
@@ -183,12 +199,6 @@ The following properties are available for the `OAUTH2` authentication type:
 
 * `authentication.oauth2.password`: the password to use when authenticating against the OAuth2
   server. Required if using the "password" grant type.
-
-* `authentication.oauth2.auth-endpoint`: the URL of the OAuth2 auth endpoint; this should include
-  not only the OAuth2 server's address, but also the path to the authorization REST resource, if 
-  any. For Keycloak, this is typically
-  `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth`. Required if using
-  the "authorization_code" grant type.
 
 * `authentication.oauth2.default-access-token-lifespan`: the default access token lifespan; if the
   OAuth2 server returns an access token without specifying its expiration time, this value will be
@@ -212,25 +222,25 @@ The following properties are available for the `OAUTH2` authentication type:
   recent versions of Keycloak support token exchange, but it is disabled by default. See [Using
   token exchange] for more information and how to enable this feature.
 
-* `nessie.authentication.oauth2.preemptive-token-refresh-idle-timeout`: for how long the Nessie 
+* `authentication.oauth2.preemptive-token-refresh-idle-timeout`: for how long the Nessie 
   client should keep the tokens fresh, if the client is not being actively used. Setting this value 
   too high may cause an excessive usage of network I/O and thread resources; conversely, when 
   setting it too low, if the client is used again, the calling thread may block if the tokens are 
   expired and need to be renewed synchronously. Optional, defaults to `PT30S` (30 seconds). Must be 
   a valid [ISO-8601 duration].
 
-* `nessie.authentication.oauth2.background-thread-idle-timeout`: how long the Nessie client should 
+* `authentication.oauth2.background-thread-idle-timeout`: how long the Nessie client should 
   keep a background thread alive, if the client is not being actively used, or no token refreshes 
   are being executed. Setting this value too high will cause the background thread to keep running 
   even if the client is not used anymore, potentially leaking thread and memory resources; 
   conversely, setting it too low could cause the background thread to be restarted too often.
   Optional, defaults to `PT30S` (30 seconds). Must be a valid [ISO-8601 duration].
 
-* `nessie.authentication.oauth2.auth-code-flow.web-port`: The port used for the embedded web server 
+* `authentication.oauth2.auth-code-flow.web-port`: The port used for the embedded web server 
   that listens for the authorization code callback. This is only used if the grant type to use is 
   "authorization_code". Optional; if not present, a random port will be used.
 
-* `nessie.authentication.oauth2.auth-code-flow.timeout`: How long the client should wait for the
+* `authentication.oauth2.auth-code-flow.timeout`: How long the client should wait for the
   authorization code flow to complete. This is only used if the grant type to use is
   "authorization_code". Optional, defaults to `PT5M` (5 minutes). Must be a valid 
   [ISO-8601 duration].
@@ -238,6 +248,7 @@ The following properties are available for the `OAUTH2` authentication type:
 [ISO-8601 duration]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 [RFC 6749 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
 [Using token exchange]: https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange
+[OpenID Connect Discovery 1.0]: https://openid.net/specs/openid-connect-discovery-1_0.html
 
 ## Authentication Type `AWS`
 

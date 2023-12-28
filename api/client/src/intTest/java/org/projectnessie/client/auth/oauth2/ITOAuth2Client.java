@@ -67,6 +67,7 @@ public class ITOAuth2Client {
       new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange");
 
   private static RealmResource master;
+  private static URI issuerUrl;
   private static URI tokenEndpoint;
   private static URI authEndpoint;
 
@@ -74,6 +75,7 @@ public class ITOAuth2Client {
 
   @BeforeAll
   static void setUpKeycloak() {
+    issuerUrl = URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master");
     tokenEndpoint =
         URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
     authEndpoint =
@@ -110,10 +112,11 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws Exception {
-    OAuth2ClientParams params1 = clientParams("Client1").build();
-    OAuth2ClientParams params2 = clientParams("Client2").grantType(GrantType.PASSWORD).build();
+    OAuth2ClientParams params1 = clientParams("Client1", false).build();
+    OAuth2ClientParams params2 =
+        clientParams("Client2", false).grantType(GrantType.PASSWORD).build();
     OAuth2ClientParams params3 =
-        clientParams("Client2").grantType(GrantType.AUTHORIZATION_CODE).build();
+        clientParams("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     try (OAuth2Client client1 = new OAuth2Client(params1);
         OAuth2Client client2 = new OAuth2Client(params2);
@@ -151,6 +154,7 @@ public class ITOAuth2Client {
    * <p>This test exercises the OAuth2 client with the following steps:
    *
    * <ul>
+   *   <li>endpoint discovery on;
    *   <li>client_credentials, password or authorization_code grant type for obtaining the initial
    *       access token;
    *   <li>refresh token sent on the initial response;
@@ -162,7 +166,7 @@ public class ITOAuth2Client {
       value = GrantType.class,
       names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE"})
   void testOAuth2ClientInitialRefreshToken(GrantType initialGrantType) throws Exception {
-    OAuth2ClientParams params = clientParams("Client2").grantType(initialGrantType).build();
+    OAuth2ClientParams params = clientParams("Client2", true).grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(params);
         AutoCloseable ignored = newTestSetup(initialGrantType, client);
         HttpClient validatingClient = validatingHttpClient("Client2").build()) {
@@ -194,7 +198,7 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientTokenExchange() {
-    OAuth2ClientParams params = clientParams("Client1").build();
+    OAuth2ClientParams params = clientParams("Client1", false).build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       // first request: client credentials grant
@@ -231,7 +235,7 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientNoRefreshToken() {
-    OAuth2ClientParams params = clientParams("Client1").tokenExchangeEnabled(false).build();
+    OAuth2ClientParams params = clientParams("Client1", false).tokenExchangeEnabled(false).build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       // first request: client credentials grant
@@ -253,7 +257,7 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadClientSecret() {
-    OAuth2ClientParams params = clientParams("Client1").clientSecret("BAD SECRET").build();
+    OAuth2ClientParams params = clientParams("Client1", false).clientSecret("BAD SECRET").build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
@@ -266,7 +270,10 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientUnauthorizedBadPassword() {
     OAuth2ClientParams params =
-        clientParams("Client2").grantType(GrantType.PASSWORD).password("BAD PASSWORD").build();
+        clientParams("Client2", false)
+            .grantType(GrantType.PASSWORD)
+            .password("BAD PASSWORD")
+            .build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
@@ -279,7 +286,7 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientUnauthorizedBadAuthorizationCode() throws Exception {
     OAuth2ClientParams params =
-        clientParams("Client2").grantType(GrantType.AUTHORIZATION_CODE).build();
+        clientParams("Client2", false).grantType(GrantType.AUTHORIZATION_CODE).build();
     try (OAuth2Client client = new OAuth2Client(params);
         ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator("Alice", "s3cr3t")) {
       resourceOwner.setErrorListener(e -> client.close());
@@ -294,7 +301,7 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientExpiredToken() {
-    OAuth2ClientParams params = clientParams("Client1").build();
+    OAuth2ClientParams params = clientParams("Client1", false).build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       Tokens tokens = client.fetchNewTokens();
@@ -350,19 +357,25 @@ public class ITOAuth2Client {
         .isEqualTo(clientId);
   }
 
-  private static ImmutableOAuth2ClientParams.Builder clientParams(String clientId) {
-    return ImmutableOAuth2ClientParams.builder()
-        .tokenEndpoint(tokenEndpoint)
-        .authEndpoint(authEndpoint)
-        .clientId(clientId)
-        .clientSecret("s3cr3t")
-        .username("Alice")
-        .password("s3cr3t")
-        // Otherwise Keycloak complains about missing scope, but still issues tokens
-        .scope("openid")
-        .defaultAccessTokenLifespan(Duration.ofSeconds(10))
-        .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
-        .refreshSafetyWindow(Duration.ofSeconds(5));
+  private static ImmutableOAuth2ClientParams.Builder clientParams(
+      String clientId, boolean discovery) {
+    ImmutableOAuth2ClientParams.Builder builder =
+        ImmutableOAuth2ClientParams.builder()
+            .clientId(clientId)
+            .clientSecret("s3cr3t")
+            .username("Alice")
+            .password("s3cr3t")
+            // Otherwise Keycloak complains about missing scope, but still issues tokens
+            .scope("openid")
+            .defaultAccessTokenLifespan(Duration.ofSeconds(10))
+            .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
+            .refreshSafetyWindow(Duration.ofSeconds(5));
+    if (discovery) {
+      builder.issuerUrl(issuerUrl);
+    } else {
+      builder.tokenEndpoint(tokenEndpoint).authEndpoint(authEndpoint);
+    }
+    return builder;
   }
 
   @SuppressWarnings("SameParameterValue")

@@ -12,6 +12,9 @@ as necessary. Empty sections will not end in the release notes.
   allows the client to be used with identity providers that do not support others flows. To use this 
   flow, the Nessie client must be configured to use the `authorization_code` grant type. See the 
   Nessie client documentation for details.
+- Nessie client now supports endpoint discovery when using OAuth 2 authentication. If an identity 
+  provider supports the OpenID Connect Discovery mechanism, the Nessie client can be configured to 
+  use it to discover the OAuth 2 endpoints. See the Nessie client documentation for details.
 
 ### Upgrade notes
 
