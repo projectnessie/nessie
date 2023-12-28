@@ -242,6 +242,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .isHttp11Only(!http2Upgrade)
             .followRedirects(followRedirects)
             .forceUrlConnectionClient(forceUrlConnectionClient)
+            .authentication(authentication)
             .build();
 
     return ImplSwitch.FACTORY.apply(config);
