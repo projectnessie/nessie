@@ -183,7 +183,8 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
 
   @Override
   protected ResourceOwnerEmulator newResourceOwner() throws IOException {
-    ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator();
+    ResourceOwnerEmulator resourceOwner = ResourceOwnerEmulator.forAuthorizationCode();
+    resourceOwner.replaceSystemOut();
     resourceOwner.setAuthUrlListener(
         url -> {
           String state = HttpUtils.parseQueryString(url.getQuery()).get("state");

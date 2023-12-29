@@ -61,4 +61,37 @@ class JacksonSerializers {
       return null;
     }
   }
+
+  static class DurationToSecondsSerializer extends StdSerializer<Duration> {
+
+    public DurationToSecondsSerializer() {
+      super(Duration.class);
+    }
+
+    @Override
+    public void serialize(Duration value, JsonGenerator gen, SerializerProvider serializers)
+        throws IOException {
+      if (value == null) {
+        gen.writeNull();
+      } else {
+        gen.writeNumber(value.getSeconds());
+      }
+    }
+  }
+
+  static class SecondsToDurationDeserializer extends StdDeserializer<Duration> {
+
+    public SecondsToDurationDeserializer() {
+      super(Duration.class);
+    }
+
+    @Override
+    public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      if (p.currentToken().isNumeric()) {
+        int seconds = p.getValueAsInt();
+        return Duration.ofSeconds(seconds);
+      }
+      return null;
+    }
+  }
 }

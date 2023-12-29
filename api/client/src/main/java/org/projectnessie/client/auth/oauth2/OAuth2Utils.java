@@ -16,9 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Random;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
@@ -51,14 +49,5 @@ class OAuth2Utils {
       throw new HttpClientException("Invalid OpenID provider metadata");
     }
     return data;
-  }
-
-  public static byte[] getArrayAndClear(ByteBuffer bb) {
-    byte[] bytes = new byte[bb.remaining()];
-    bb.get(bytes);
-    if (bb.hasArray()) {
-      Arrays.fill(bb.array(), (byte) 0);
-    }
-    return bytes;
   }
 }

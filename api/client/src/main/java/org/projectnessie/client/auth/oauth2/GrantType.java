@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Locale;
 
 public enum GrantType {
 
@@ -23,6 +24,7 @@ public enum GrantType {
   CLIENT_CREDENTIALS("client_credentials"),
   PASSWORD("password"),
   AUTHORIZATION_CODE("authorization_code"),
+  DEVICE_CODE("urn:ietf:params:oauth:grant-type:device_code"),
 
   // grant types for refreshing tokens (cannot be used for initial token acquisition)
   REFRESH_TOKEN("refresh_token"),
@@ -40,12 +42,13 @@ public enum GrantType {
     return canonicalName;
   }
 
-  public static GrantType fromCanonicalName(String canonicalName) {
+  public static GrantType fromConfigName(String name) {
     for (GrantType grantType : values()) {
-      if (grantType.canonicalName.equals(canonicalName)) {
+      if (grantType.name().equals(name.toUpperCase(Locale.ROOT))
+          || grantType.canonicalName.equals(name)) {
         return grantType;
       }
     }
-    throw new IllegalArgumentException("Unknown grant type: " + canonicalName);
+    throw new IllegalArgumentException("Unknown grant type: " + name);
   }
 }

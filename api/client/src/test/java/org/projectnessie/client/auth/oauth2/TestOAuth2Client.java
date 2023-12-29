@@ -24,7 +24,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.MIN_REFRESH_DELAY;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAPPER;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
@@ -39,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
@@ -392,7 +392,8 @@ class TestOAuth2Client {
       OAuth2ClientConfig config =
           configBuilder(server, false).grantType(GrantType.AUTHORIZATION_CODE).build();
 
-      try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator();
+      try (ResourceOwnerEmulator resourceOwner =
+              new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE);
           HttpClient tokenEndpointClient =
               config
                   .newHttpClientBuilder()
@@ -405,6 +406,88 @@ class TestOAuth2Client {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();
         checkInitialResponse((TokensResponseBase) tokens, false);
+      }
+    }
+  }
+
+  @Test
+  void testAuthorizationCodeTimeout() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), false)) {
+
+      OAuth2ClientConfig config =
+          configBuilder(server, false)
+              .grantType(GrantType.AUTHORIZATION_CODE)
+              .minAuthorizationCodeFlowTimeout(Duration.ofMillis(100))
+              .authorizationCodeFlowTimeout(Duration.ofMillis(100))
+              .build();
+
+      try (HttpClient tokenEndpointClient =
+              config
+                  .newHttpClientBuilder()
+                  .setAuthentication(config.getBasicAuthentication())
+                  .setBaseUri(server.getUri().resolve("/token"))
+                  .build();
+          AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config, tokenEndpointClient)) {
+
+        soft.assertThatThrownBy(flow::fetchNewTokens)
+            .hasMessageContaining("Timed out waiting waiting for authorization code")
+            .hasCauseInstanceOf(TimeoutException.class);
+      }
+    }
+  }
+
+  @Test
+  void testDeviceCode() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), false)) {
+
+      OAuth2ClientConfig config =
+          configBuilder(server, false)
+              .grantType(GrantType.DEVICE_CODE)
+              .minDeviceCodeFlowPollInterval(Duration.ofMillis(100))
+              .deviceCodeFlowPollInterval(Duration.ofMillis(100))
+              .build();
+
+      try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
+          HttpClient tokenEndpointClient =
+              config
+                  .newHttpClientBuilder()
+                  .setAuthentication(config.getBasicAuthentication())
+                  .setBaseUri(server.getUri().resolve("/token"))
+                  .build();
+          DeviceCodeFlow flow =
+              new DeviceCodeFlow(config, tokenEndpointClient, resourceOwner.getConsoleOut())) {
+        resourceOwner.setErrorListener(e -> flow.close());
+        Tokens tokens = flow.fetchNewTokens();
+        checkInitialResponse((TokensResponseBase) tokens, false);
+      }
+    }
+  }
+
+  @Test
+  void testDeviceCodeTimeout() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), false)) {
+
+      OAuth2ClientConfig config =
+          configBuilder(server, false)
+              .grantType(GrantType.DEVICE_CODE)
+              .minDeviceCodeFlowTimeout(Duration.ofMillis(100))
+              .deviceCodeFlowTimeout(Duration.ofMillis(100))
+              .build();
+
+      try (HttpClient tokenEndpointClient =
+              config
+                  .newHttpClientBuilder()
+                  .setAuthentication(config.getBasicAuthentication())
+                  .setBaseUri(server.getUri().resolve("/token"))
+                  .build();
+          DeviceCodeFlow flow = new DeviceCodeFlow(config, tokenEndpointClient)) {
+
+        soft.assertThatThrownBy(flow::fetchNewTokens)
+            .hasMessageContaining("Timed out waiting for user to authorize device")
+            .hasCauseInstanceOf(TimeoutException.class);
       }
     }
   }
@@ -553,6 +636,7 @@ class TestOAuth2Client {
     Duration oneMinute = Duration.ofMinutes(1);
     Duration thirtySeconds = Duration.ofSeconds(30);
     Duration defaultWindow = Duration.ofSeconds(10);
+    Duration oneSecond = Duration.ofSeconds(1);
     return Stream.of(
         // refresh token < access token
         Arguments.of(
@@ -560,7 +644,7 @@ class TestOAuth2Client {
             now.plus(oneMinute),
             now.plus(thirtySeconds),
             defaultWindow,
-            MIN_REFRESH_DELAY,
+            oneSecond,
             thirtySeconds.minus(defaultWindow)),
         // refresh token > access token
         Arguments.of(
@@ -568,46 +652,30 @@ class TestOAuth2Client {
             now.plus(thirtySeconds),
             now.plus(oneMinute),
             defaultWindow,
-            MIN_REFRESH_DELAY,
+            oneSecond,
             thirtySeconds.minus(defaultWindow)),
         // access token already expired: MIN_REFRESH_DELAY
         Arguments.of(
-            now,
-            now.minus(oneMinute),
-            now.plus(oneMinute),
-            defaultWindow,
-            MIN_REFRESH_DELAY,
-            MIN_REFRESH_DELAY),
+            now, now.minus(oneMinute), now.plus(oneMinute), defaultWindow, oneSecond, oneSecond),
         // refresh token already expired: MIN_REFRESH_DELAY
         Arguments.of(
-            now,
-            now.plus(oneMinute),
-            now.minus(oneMinute),
-            defaultWindow,
-            MIN_REFRESH_DELAY,
-            MIN_REFRESH_DELAY),
+            now, now.plus(oneMinute), now.minus(oneMinute), defaultWindow, oneSecond, oneSecond),
         // expirationTime - safety window > MIN_REFRESH_DELAY
         Arguments.of(
-            now,
-            now.plus(oneMinute),
-            now.plus(oneMinute),
-            thirtySeconds,
-            MIN_REFRESH_DELAY,
-            thirtySeconds),
+            now, now.plus(oneMinute), now.plus(oneMinute), thirtySeconds, oneSecond, thirtySeconds),
         // expirationTime - safety window <= MIN_REFRESH_DELAY
         Arguments.of(
-            now,
-            now.plus(oneMinute),
-            now.plus(oneMinute),
-            oneMinute,
-            MIN_REFRESH_DELAY,
-            MIN_REFRESH_DELAY),
+            now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, oneSecond, oneSecond),
         // expirationTime - safety window <= ZERO (immediate refresh use case)
         Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, ZERO, ZERO));
   }
 
-  private HttpTestServer.RequestHandler handler() {
-    return (req, resp) -> {
+  private class TestRequestHandler implements HttpTestServer.RequestHandler {
+
+    private volatile boolean deviceAuthorized = false;
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp) throws IOException {
       String requestUri = req.getRequestURI();
       switch (requestUri) {
         case "/token":
@@ -616,105 +684,167 @@ class TestOAuth2Client {
         case "/auth":
           handleAuthorizationEndpoint(req, resp);
           break;
+        case "/device-auth":
+          handleDeviceAuthEndpoint(req, resp);
+          break;
+        case "/device":
+          handleDeviceEndpoint(req, resp);
+          break;
         case "/.well-known/openid-configuration":
           handleOpenIdProviderMetadataEndpoint(req, resp);
           break;
         default:
           throw new AssertionError("Unexpected request URI: " + requestUri);
       }
-    };
-  }
-
-  private void handleTokenEndpoint(HttpServletRequest req, HttpServletResponse resp)
-      throws IOException {
-    soft.assertThat(req.getMethod()).isEqualTo("POST");
-    soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-    soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-    Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-    if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
-      ErrorResponse response =
-          ImmutableErrorResponse.builder()
-              .errorCode("invalid_request")
-              .errorDescription("Unknown scope: invalid-scope")
-              .build();
-      writeResponseBody(resp, response, "application/json", 400);
-      return;
     }
-    TokensRequestBase request;
-    Object response;
-    int statusCode = 200;
-    String grantType = data.get("grant_type");
-    if (grantType.equals(GrantType.CLIENT_CREDENTIALS.canonicalName())) {
-      request = OBJECT_MAPPER.convertValue(data, ClientCredentialsTokensRequest.class);
-      soft.assertThat(request.getScope()).isEqualTo("test");
-      response = getClientCredentialsTokensResponse();
-    } else if (grantType.equals(GrantType.PASSWORD.canonicalName())) {
-      request = OBJECT_MAPPER.convertValue(data, PasswordTokensRequest.class);
-      soft.assertThat(request.getScope()).isEqualTo("test");
-      soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
-      soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
-      response = getPasswordTokensResponse();
-    } else if (grantType.equals(GrantType.REFRESH_TOKEN.canonicalName())) {
-      request = OBJECT_MAPPER.convertValue(data, RefreshTokensRequest.class);
-      soft.assertThat(request.getScope()).isEqualTo("test");
-      soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
-          .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
-      response = getRefreshTokensResponse();
-    } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
-      request = OBJECT_MAPPER.convertValue(data, TokensExchangeRequest.class);
-      soft.assertThat(request.getScope()).isEqualTo("test");
-      soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
-          .isEqualTo("access-initial");
-      soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
-          .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
-      soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
-      soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
-      soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
-          .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
-      response = getTokensExchangeResponse();
-    } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
-      request = OBJECT_MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
-      soft.assertThat(request.getScope()).isEqualTo("test");
-      soft.assertThat(((AuthorizationCodeTokensRequest) request).getCode()).isEqualTo("test-code");
-      soft.assertThat(((AuthorizationCodeTokensRequest) request).getRedirectUri())
-          .contains("http://localhost:")
-          .contains("/nessie-client/auth");
-      soft.assertThat(((AuthorizationCodeTokensRequest) request).getClientId()).isEqualTo("Alice");
-      response = getClientCredentialsTokensResponse();
-    } else if (grantType.equals("mock_transient_error")) {
-      response =
-          ImmutableErrorResponse.builder()
-              .errorCode("invalid_request")
-              .errorDescription("Something went wrong (not really)")
-              .build();
-    } else {
-      throw new AssertionError("Unexpected grant type: " + data.get("grant_type"));
+
+    private void handleTokenEndpoint(HttpServletRequest req, HttpServletResponse resp)
+        throws IOException {
+      soft.assertThat(req.getMethod()).isEqualTo("POST");
+      soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
+      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
+      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+      if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
+        ErrorResponse response =
+            ImmutableErrorResponse.builder()
+                .errorCode("invalid_request")
+                .errorDescription("Unknown scope: invalid-scope")
+                .build();
+        writeResponseBody(resp, response, "application/json", 400);
+        return;
+      }
+      TokensRequestBase request;
+      Object response;
+      int statusCode = 200;
+      String grantType = data.get("grant_type");
+      if (grantType.equals(GrantType.CLIENT_CREDENTIALS.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, ClientCredentialsTokensRequest.class);
+        soft.assertThat(request.getScope()).isEqualTo("test");
+        response = getClientCredentialsTokensResponse();
+      } else if (grantType.equals(GrantType.PASSWORD.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, PasswordTokensRequest.class);
+        soft.assertThat(request.getScope()).isEqualTo("test");
+        soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
+        soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
+        response = getPasswordTokensResponse();
+      } else if (grantType.equals(GrantType.REFRESH_TOKEN.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, RefreshTokensRequest.class);
+        soft.assertThat(request.getScope()).isEqualTo("test");
+        soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
+            .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
+        response = getRefreshTokensResponse();
+      } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, TokensExchangeRequest.class);
+        soft.assertThat(request.getScope()).isEqualTo("test");
+        soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
+            .isEqualTo("access-initial");
+        soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
+            .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
+        soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
+        soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
+        soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
+            .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
+        response = getTokensExchangeResponse();
+      } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
+        soft.assertThat(request.getScope()).isEqualTo("test");
+        soft.assertThat(((AuthorizationCodeTokensRequest) request).getCode())
+            .isEqualTo("test-code");
+        soft.assertThat(((AuthorizationCodeTokensRequest) request).getRedirectUri())
+            .contains("http://localhost:")
+            .contains("/nessie-client/auth");
+        soft.assertThat(((AuthorizationCodeTokensRequest) request).getClientId())
+            .isEqualTo("Alice");
+        response = getAuthorizationCodeTokensResponse();
+      } else if (grantType.equals(GrantType.DEVICE_CODE.canonicalName())) {
+        if (deviceAuthorized) {
+          request = OBJECT_MAPPER.convertValue(data, DeviceCodeTokensRequest.class);
+          soft.assertThat(request.getScope()).isEqualTo("test");
+          soft.assertThat(((DeviceCodeTokensRequest) request).getDeviceCode())
+              .isEqualTo("device-code");
+          response = getDeviceAuthorizationTokensResponse();
+        } else {
+          response =
+              ImmutableErrorResponse.builder()
+                  .errorCode("authorization_pending")
+                  .errorDescription("Authorization pending")
+                  .build();
+          statusCode = 401;
+        }
+      } else if (grantType.equals("mock_transient_error")) {
+        response =
+            ImmutableErrorResponse.builder()
+                .errorCode("invalid_request")
+                .errorDescription("Something went wrong (not really)")
+                .build();
+        statusCode = 400;
+      } else {
+        throw new AssertionError("Unexpected grant type: " + data.get("grant_type"));
+      }
+      writeResponseBody(resp, response, "application/json", statusCode);
     }
-    writeResponseBody(resp, response, "application/json", statusCode);
+
+    private void handleAuthorizationEndpoint(HttpServletRequest req, HttpServletResponse resp) {
+      soft.assertThat(req.getMethod()).isEqualTo("GET");
+      Map<String, String> data = HttpUtils.parseQueryString(req.getQueryString());
+      soft.assertThat(data)
+          .containsEntry("response_type", "code")
+          .containsEntry("client_id", "Alice")
+          .containsEntry("scope", "test")
+          .containsKey("redirect_uri")
+          .containsKey("state");
+      String redirectUri = data.get("redirect_uri") + "?code=test-code&state=" + data.get("state");
+      resp.addHeader("Location", redirectUri);
+      resp.setStatus(302);
+    }
+
+    private void handleDeviceAuthEndpoint(HttpServletRequest req, HttpServletResponse resp)
+        throws IOException {
+      soft.assertThat(req.getMethod()).isEqualTo("POST");
+      soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
+      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
+      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+      soft.assertThat(data).containsEntry("scope", "test");
+      URI uri = URI.create(req.getRequestURL().toString());
+      DeviceCodeResponse response =
+          ImmutableDeviceCodeResponse.builder()
+              .deviceCode("device-code")
+              .userCode("CAFE-BABE")
+              .verificationUri(uri.resolve("/device"))
+              .verificationUriComplete(uri.resolve("/device"))
+              .expiresIn(Duration.ofMinutes(5))
+              .interval(Duration.ofMillis(1))
+              .build();
+      writeResponseBody(resp, response, "application/json");
+    }
+
+    private void handleDeviceEndpoint(HttpServletRequest req, HttpServletResponse resp)
+        throws IOException {
+      soft.assertThat(req.getMethod()).isIn("GET", "POST");
+      if (req.getMethod().equals("GET")) {
+        writeResponseBody(resp, "<html><body>Enter device code:</body></html>");
+      } else {
+        Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+        soft.assertThat(data).containsEntry("device_user_code", "CAFE-BABE");
+        deviceAuthorized = true;
+        writeResponseBody(resp, "{\"success\":true}");
+      }
+    }
+
+    private void handleOpenIdProviderMetadataEndpoint(
+        HttpServletRequest req, HttpServletResponse resp) throws IOException {
+      URI uri = URI.create(req.getRequestURL().toString());
+      ObjectNode node = JsonNodeFactory.instance.objectNode();
+      node.put("issuer", uri.resolve("/").toString())
+          .put("token_endpoint", uri.resolve("/token").toString())
+          .put("authorization_endpoint", uri.resolve("/auth").toString())
+          .put("device_authorization_endpoint", uri.resolve("/device-auth").toString());
+      writeResponseBody(resp, node, "application/json", 200);
+    }
   }
 
-  private void handleAuthorizationEndpoint(HttpServletRequest req, HttpServletResponse resp) {
-    soft.assertThat(req.getMethod()).isEqualTo("GET");
-    Map<String, String> data = HttpUtils.parseQueryString(req.getQueryString());
-    soft.assertThat(data)
-        .containsEntry("response_type", "code")
-        .containsEntry("client_id", "Alice")
-        .containsEntry("scope", "test")
-        .containsKey("redirect_uri")
-        .containsKey("state");
-    String redirectUri = data.get("redirect_uri") + "?code=test-code&state=" + data.get("state");
-    resp.addHeader("Location", redirectUri);
-    resp.setStatus(302);
-  }
-
-  private static void handleOpenIdProviderMetadataEndpoint(
-      HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    URI uri = URI.create(req.getRequestURL().toString());
-    ObjectNode node = JsonNodeFactory.instance.objectNode();
-    node.put("issuer", uri.resolve("/").toString())
-        .put("token_endpoint", uri.resolve("/token").toString())
-        .put("authorization_endpoint", uri.resolve("/auth").toString());
-    writeResponseBody(resp, node, "application/json", 200);
+  private HttpTestServer.RequestHandler handler() {
+    return new TestRequestHandler();
   }
 
   private ImmutableClientCredentialsTokensResponse getClientCredentialsTokensResponse() {
@@ -725,6 +855,18 @@ class TestOAuth2Client {
         // no refresh token
         .scope("test")
         .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
+  private ImmutableAuthorizationCodeTokensResponse getAuthorizationCodeTokensResponse() {
+    return ImmutableAuthorizationCodeTokensResponse.builder()
+        .from(getClientCredentialsTokensResponse())
+        .build();
+  }
+
+  private ImmutableDeviceCodeTokensResponse getDeviceAuthorizationTokensResponse() {
+    return ImmutableDeviceCodeTokensResponse.builder()
+        .from(getClientCredentialsTokensResponse())
         .build();
   }
 
@@ -827,7 +969,8 @@ class TestOAuth2Client {
     } else {
       builder
           .tokenEndpoint(server.getUri().resolve("/token"))
-          .authEndpoint(server.getUri().resolve("/auth"));
+          .authEndpoint(server.getUri().resolve("/auth"))
+          .deviceAuthEndpoint(server.getUri().resolve("/device-auth"));
     }
     return builder;
   }

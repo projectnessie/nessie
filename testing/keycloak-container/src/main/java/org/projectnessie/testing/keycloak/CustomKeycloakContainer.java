@@ -74,6 +74,9 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     client.setStandardFlowEnabled(true);
     client.setRedirectUris(List.of("http://localhost:*"));
 
+    // required for device code grant
+    client.setAttributes(Map.of("oauth2.device.authorization.grant.enabled", "true"));
+
     client.setEnabled(true);
 
     return client;
