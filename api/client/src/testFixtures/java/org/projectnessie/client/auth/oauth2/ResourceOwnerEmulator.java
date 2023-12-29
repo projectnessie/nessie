@@ -62,6 +62,14 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     return new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE);
   }
 
+  /**
+   * Dummy factory method to circumvent class loading issues when instantiating this class from
+   * within a Quarkus test.
+   */
+  public static ResourceOwnerEmulator forDeviceCode() throws IOException {
+    return new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
+  }
+
   private static final Logger LOGGER = LoggerFactory.getLogger(ResourceOwnerEmulator.class);
 
   private static final Pattern FORM_ACTION_PATTERN =
@@ -87,6 +95,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private volatile URI baseUri;
   private volatile Consumer<URL> authUrlListener;
   private volatile Consumer<Throwable> errorListener;
+  private volatile Runnable flowCompletionListener;
   private volatile String authorizationCode;
   private volatile int expectedCallbackStatus = HTTP_OK;
   private volatile boolean denyConsent = false;
@@ -138,6 +147,10 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     this.authUrlListener = callback;
   }
 
+  public void setFlowCompletionListener(Runnable listener) {
+    this.flowCompletionListener = listener;
+  }
+
   private void readConsole() {
     try {
       String line;
@@ -183,6 +196,10 @@ public class ResourceOwnerEmulator implements AutoCloseable {
               : login(initialUrl, cookies);
       invokeCallbackUrl(callbackUrl);
       LOGGER.info("Authorization code flow completed.");
+      Runnable listener = flowCompletionListener;
+      if (listener != null) {
+        listener.run();
+      }
     } catch (Exception | AssertionError t) {
       recordFailure(t);
     }
@@ -203,6 +220,10 @@ public class ResourceOwnerEmulator implements AutoCloseable {
         authorizeDevice(consentPageUrl, cookies);
       }
       LOGGER.info("Device code flow completed.");
+      Runnable listener = flowCompletionListener;
+      if (listener != null) {
+        listener.run();
+      }
     } catch (Exception | AssertionError t) {
       recordFailure(t);
     }
@@ -324,7 +345,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     }
     consentActionConn.getOutputStream().write(data.getBytes(UTF_8));
     consentActionConn.getOutputStream().close();
-    assertThat(consentActionConn.getResponseCode()).isEqualTo(HTTP_OK);
+    readRedirectUrl(consentActionConn, cookies);
   }
 
   private void recordFailure(Throwable t) {
@@ -344,12 +365,8 @@ public class ResourceOwnerEmulator implements AutoCloseable {
 
   /**
    * Open a connection to the given URL, optionally replacing hostname and port with those actually
-   * accessible by the client; this is necessary because the auth server may be sending URLs with
-   * its configured frontend hostname + port, which, usually when using Docker, is something like
-   * keycloak:8080.
-   *
-   * <p>FIXME: unfortunately this is not enough when KC_HOSTNAME_URL is set to keycloak:8080 and the
-   * device flow is being used: the consent URL returns 404 when localhost is used instead :-(
+   * accessible by this client; this is necessary because the auth server may be sending URLs with a
+   * hostname + port address that is only accessible within a Docker network, e.g. keycloak:8080.
    */
   private HttpURLConnection openConnection(URL url) throws IOException {
     HttpURLConnection conn;
@@ -357,9 +374,8 @@ public class ResourceOwnerEmulator implements AutoCloseable {
       conn = (HttpURLConnection) url.openConnection();
     } else {
       URL transformed =
-          new URL(url.getProtocol(), baseUri.getHost(), baseUri.getPort(), url.getFile());
+          new URL(baseUri.getScheme(), baseUri.getHost(), baseUri.getPort(), url.getFile());
       conn = (HttpURLConnection) transformed.openConnection();
-      conn.setRequestProperty("Host", url.getHost() + ":" + url.getPort());
     }
     return conn;
   }

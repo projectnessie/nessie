@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.projectnessie.client.auth.NessieAuthentication;
+import org.projectnessie.client.auth.oauth2.GrantType;
 import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -58,8 +60,12 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   private static final String VALID_TOKEN = getAccessToken("alice", ImmutableSet.of("user"));
   private static final String TOKEN_ENDPOINT_PATH = "/auth/realms/quarkus/token";
   private static final String AUTH_ENDPOINT_PATH = "/auth/realms/quarkus/auth";
+  private static final String DEVICE_AUTH_ENDPOINT_PATH = "/auth/realms/quarkus/auth/device";
+  private static final String USER_DEVICE_AUTH_URL = "/auth/realms/quarkus/device";
 
   @OidcWireMock private WireMockServer wireMockServer;
+
+  private volatile StubMapping authPendingMapping;
 
   @Test
   void testExpired() {
@@ -81,6 +87,27 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));
   }
 
+  @Override
+  protected Properties clientCredentialsConfig() {
+    Properties config = super.clientCredentialsConfig();
+    config.setProperty("nessie.authentication.oauth2.token-endpoint", tokenEndpoint());
+    return config;
+  }
+
+  @Override
+  protected Properties authorizationCodeConfig() {
+    Properties config = super.authorizationCodeConfig();
+    config.setProperty("nessie.authentication.oauth2.auth-endpoint", authEndpoint());
+    return config;
+  }
+
+  @Override
+  protected Properties deviceCodeConfig() {
+    Properties config = super.deviceCodeConfig();
+    config.setProperty("nessie.authentication.oauth2.device-auth-endpoint", deviceAuthEndpoint());
+    return config;
+  }
+
   private Properties expiredConfig() {
     Properties config = clientCredentialsConfig();
     config.setProperty("nessie.authentication.oauth2.client-secret", "EXPIRED");
@@ -93,14 +120,20 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
     return config;
   }
 
-  @Override
-  protected String tokenEndpoint() {
+  private String tokenEndpoint() {
     return wireMockServer.baseUrl() + TOKEN_ENDPOINT_PATH;
   }
 
-  @Override
-  protected String authEndpoint() {
+  private String authEndpoint() {
     return wireMockServer.baseUrl() + AUTH_ENDPOINT_PATH;
+  }
+
+  private String deviceAuthEndpoint() {
+    return wireMockServer.baseUrl() + DEVICE_AUTH_ENDPOINT_PATH;
+  }
+
+  private String userDeviceAuthEndpoint() {
+    return wireMockServer.baseUrl() + USER_DEVICE_AUTH_URL;
   }
 
   @BeforeAll
@@ -132,6 +165,53 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
             .withRequestBody(containing("redirect_uri"))
             .withRequestBody(containing("code=1234"))
             .willReturn(successfulResponse(VALID_TOKEN)));
+  }
+
+  @BeforeAll
+  void deviceCodeStub() {
+    // Endpoint where the client requests a device code
+    wireMockServer.stubFor(
+        WireMock.post(DEVICE_AUTH_ENDPOINT_PATH)
+            .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+            .willReturn(
+                WireMock.aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        "{\"device_code\":\"1234\","
+                            + "\"user_code\":\"CAFE-BABE\","
+                            + "\"verification_uri\":\""
+                            + userDeviceAuthEndpoint()
+                            + "\","
+                            + "\"expires_in\":600}")));
+    // Endpoint where the user enters the device code
+    wireMockServer.stubFor(
+        WireMock.get(urlPathEqualTo(USER_DEVICE_AUTH_URL))
+            .willReturn(
+                WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "text/html")
+                    .withBody("<html><body>Enter device code:</body></html>")));
+    wireMockServer.stubFor(
+        WireMock.post(USER_DEVICE_AUTH_URL)
+            .withRequestBody(containing("device_user_code=CAFE-BABE"))
+            .willReturn(
+                WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "text/html")
+                    .withBody("<html><body>Device code received!</body></html>")));
+    // Tokens endpoint: initially configured to return "authorization pending"
+    authPendingMapping =
+        wireMockServer.stubFor(
+            WireMock.post(TOKEN_ENDPOINT_PATH)
+                .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+                .withRequestBody(containing("device_code"))
+                .willReturn(
+                    WireMock.aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(
+                            "{\"error\":\"authorization_pending\","
+                                + "\"error_description\":\"Authorization pending\"}")));
   }
 
   @BeforeAll
@@ -182,20 +262,37 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   }
 
   @Override
-  protected ResourceOwnerEmulator newResourceOwner() throws IOException {
-    ResourceOwnerEmulator resourceOwner = ResourceOwnerEmulator.forAuthorizationCode();
+  protected ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException {
+    ResourceOwnerEmulator resourceOwner =
+        grantType == GrantType.AUTHORIZATION_CODE
+            ? ResourceOwnerEmulator.forAuthorizationCode()
+            : ResourceOwnerEmulator.forDeviceCode();
     resourceOwner.replaceSystemOut();
-    resourceOwner.setAuthUrlListener(
-        url -> {
-          String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
-          wireMockServer.stubFor(
-              WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
-                  .withQueryParam("response_type", equalTo("code"))
-                  .withQueryParam("client_id", equalTo("quarkus-service-app"))
-                  .withQueryParam("redirect_uri", containing("http"))
-                  .withQueryParam("state", equalTo(state))
-                  .willReturn(authorizationCodeResponse(state)));
-        });
+    if (grantType == GrantType.AUTHORIZATION_CODE) {
+      resourceOwner.setAuthUrlListener(
+          url -> {
+            String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
+            wireMockServer.stubFor(
+                WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
+                    .withQueryParam("response_type", equalTo("code"))
+                    .withQueryParam("client_id", equalTo("quarkus-service-app"))
+                    .withQueryParam("redirect_uri", containing("http"))
+                    .withQueryParam("state", equalTo(state))
+                    .willReturn(authorizationCodeResponse(state)));
+          });
+    } else {
+      resourceOwner.setFlowCompletionListener(
+          () -> {
+            // Reconfigure token endpoint to send a valid token
+            wireMockServer.stubFor(
+                WireMock.post(TOKEN_ENDPOINT_PATH)
+                    .withHeader(
+                        "Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+                    .withRequestBody(containing("device_code"))
+                    .willReturn(successfulResponse(VALID_TOKEN)));
+            wireMockServer.removeStubMapping(authPendingMapping);
+          });
+    }
     return resourceOwner;
   }
 
