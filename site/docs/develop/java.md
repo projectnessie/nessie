@@ -240,6 +240,29 @@ token endpoint, which is then used as a Bearer token to authenticate against Nes
             .withAuthenticationFromConfig(authConfig::get)
             .build(NessieApiV2.class);
     ```
+    Since Nessie 0.75.1, the `Oauth2AuthenticationProvider` can also be configured programmatically;
+    this can be convenient if it's necessary to supply a custom SSL context, a custom executor or 
+    custom Jackson object mapper:
+    ```java
+    URI tokenEndpointUri = ...;
+    SSLContext sslContext = ...;
+    ExecutorService executor = ...;
+    ObjectMapper objectMapper = ...;
+    OAuth2AuthenticatorConfig authConfig =
+        OAuth2AuthenticatorConfig.builder()
+            .tokenEndpoint(tokenEndpointUri)
+            .clientId("my_client_id")
+            .clientSecret("very_secret")
+            .sslContext(sslContext)
+            .executor(executor) 
+            .objectMapper(objectMapper)
+            .build();
+    NessieApiV2 api =
+        NessieClientBuilder.createClientBuilder(null, null)
+            .withUri(URI.create("http://localhost:19120/api/v2"))
+            .withAuthentication(OAuth2AuthenticationProvider.create(authConfig))
+            .build(NessieApiV2.class);
+    ```
    
 The main advantage of the `Oauth2AuthenticationProvider` over `BearerAuthenticationProvider` is 
 that the token is automatically refreshed when it expires. It has more configuration options, 

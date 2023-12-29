@@ -28,6 +28,10 @@ import org.projectnessie.client.http.HttpAuthentication;
  */
 public interface NessieAuthentication extends AutoCloseable {
 
+  default void start() {
+    // no-op
+  }
+
   @Override
   default void close() {
     // no-op

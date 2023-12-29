@@ -26,7 +26,6 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -57,7 +56,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private static final int STATE_LENGTH = 16;
 
-  private final OAuth2ClientParams params;
+  private final OAuth2ClientConfig config;
   private final HttpClient tokenEndpointClient;
   private final PrintStream console;
   private final String state;
@@ -73,31 +72,31 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
-  AuthorizationCodeFlow(OAuth2ClientParams params, HttpClient tokenEndpointClient) {
-    this(params, tokenEndpointClient, System.out);
+  AuthorizationCodeFlow(OAuth2ClientConfig config, HttpClient tokenEndpointClient) {
+    this(config, tokenEndpointClient, System.out);
   }
 
   AuthorizationCodeFlow(
-      OAuth2ClientParams params, HttpClient tokenEndpointClient, PrintStream console) {
-    this.params = params;
+      OAuth2ClientConfig config, HttpClient tokenEndpointClient, PrintStream console) {
+    this.config = config;
     this.tokenEndpointClient = tokenEndpointClient;
     this.console = console;
-    this.flowTimeout = params.getAuthorizationCodeFlowTimeout();
+    this.flowTimeout = config.getAuthorizationCodeFlowTimeout();
     authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
     tokensFuture = authCodeFuture.thenApply(this::fetchNewTokens);
     closeFuture.thenRun(this::doClose);
     server =
-        createServer(params.getAuthorizationCodeFlowWebServerPort().orElse(-1), this::doRequest);
+        createServer(config.getAuthorizationCodeFlowWebServerPort().orElse(0), this::doRequest);
     state = OAuth2Utils.randomAlphaNumString(STATE_LENGTH);
     redirectUri =
         String.format("http://localhost:%d%s", server.getAddress().getPort(), CONTEXT_PATH);
-    URI authEndpoint = params.getResolvedAuthEndpoint();
+    URI authEndpoint = config.getResolvedAuthEndpoint();
     authorizationUri =
         new UriBuilder(authEndpoint.resolve("/"))
             .path(authEndpoint.getPath())
             .queryParam("response_type", "code")
-            .queryParam("client_id", params.getClientId())
-            .queryParam("scope", params.getScope().orElse(null))
+            .queryParam("client_id", config.getClientId())
+            .queryParam("scope", config.getScope().orElse(null))
             .queryParam("redirect_uri", redirectUri)
             .queryParam("state", state)
             .build();
@@ -192,8 +191,8 @@ class AuthorizationCodeFlow implements AutoCloseable {
         ImmutableAuthorizationCodeTokensRequest.builder()
             .code(code)
             .redirectUri(redirectUri)
-            .clientId(params.getClientId())
-            .scope(params.getScope().orElse(null))
+            .clientId(config.getClientId())
+            .scope(config.getScope().orElse(null))
             .build();
     HttpResponse response = tokenEndpointClient.newRequest().postForm(body);
     Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
@@ -209,36 +208,14 @@ class AuthorizationCodeFlow implements AutoCloseable {
       throw new UncheckedIOException(e);
     }
     server.createContext(CONTEXT_PATH, handler);
-    bind(server, port);
+    InetAddress local = InetAddress.getLoopbackAddress();
+    try {
+      server.bind(new InetSocketAddress(local, port), 0);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
     server.start();
     return server;
-  }
-
-  private static void bind(HttpServer server, int port) {
-    boolean useAnyPort = port == -1;
-    int maxAttempts = useAnyPort ? 3 : 1;
-    int attempt = 1;
-    IOException ioe = null;
-    while (attempt <= maxAttempts) {
-      try {
-        InetAddress local = InetAddress.getLoopbackAddress();
-        if (useAnyPort) {
-          try (ServerSocket s = new ServerSocket(0)) {
-            port = s.getLocalPort();
-          }
-        }
-        server.bind(new InetSocketAddress(local, port), 0);
-        return;
-      } catch (IOException e) {
-        if (ioe == null) {
-          ioe = e;
-        } else {
-          ioe.addSuppressed(e);
-        }
-      }
-      attempt++;
-    }
-    throw new UncheckedIOException(ioe);
   }
 
   private static void writeResponse(
