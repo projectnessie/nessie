@@ -24,6 +24,7 @@ import io.quarkus.test.keycloak.client.KeycloakTestClient;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+import java.util.Properties;
 import org.projectnessie.client.auth.oauth2.GrantType;
 import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
@@ -39,19 +40,31 @@ public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
   private final KeycloakTestClient keycloakClient = new KeycloakTestClient();
 
   @Override
-  protected String tokenEndpoint() {
-    return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/token";
+  protected Properties clientCredentialsConfig() {
+    Properties config = super.clientCredentialsConfig();
+    String issuerUrl = keycloakClient.getAuthServerUrl();
+    config.setProperty("nessie.authentication.oauth2.issuer-url", issuerUrl);
+    return config;
   }
 
   @Override
-  protected String authEndpoint() {
-    return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/auth";
+  protected Properties deviceCodeConfig() {
+    Properties config = super.deviceCodeConfig();
+    // Keycloak advertises the token endpoint using whichever hostname was provided in the request,
+    // but the authentication endpoints are always advertised at keycloak:8080, which is
+    // the configured KC_HOSTNAME_URL env var and corresponds to the Docker internal network
+    // address. This works for the authorization code flow because ResourceOwnerEmulator knows how
+    // to deal with this; but for the device flow we need to use a different hostname, so endpoint
+    // discovery is not an option here.
+    config.setProperty(
+        "nessie.authentication.oauth2.device-auth-endpoint",
+        keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/auth/device");
+    return config;
   }
 
   @Override
-  protected ResourceOwnerEmulator newResourceOwner() throws IOException {
-    ResourceOwnerEmulator resourceOwner =
-        new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE, "alice", "alice");
+  protected ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException {
+    ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(grantType, "alice", "alice");
     resourceOwner.replaceSystemOut();
     resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
     resourceOwner.setErrorListener(e -> api().close());
