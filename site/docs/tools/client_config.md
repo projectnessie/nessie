@@ -83,15 +83,6 @@ table_env.execute_sql(
         'authentication.type'='NONE')""")
 ```
 
-## Hive
-
-When Nessie is used in Hive with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured through Hive Shell (Replace `<catalog_name>` with the name of your catalog):
-
-```
-SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
-SET iceberg.catalog.<catalog_name>.authentication.type=NONE
-```
-
 ### Property Prefixes
 
 The `spark.sql.catalog.<catalog_name>` prefix identifies properties for the Nessie catalog. The `<catalog_name>` part is just
