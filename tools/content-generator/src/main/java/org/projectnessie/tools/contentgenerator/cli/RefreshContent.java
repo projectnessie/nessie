@@ -47,7 +47,7 @@ public class RefreshContent extends BulkCommittingCommand {
     }
   }
 
-  protected void commitSameContent(
+  private void commitSameContent(
       NessieApiV2 api, Branch branch, Map<ContentKey, Content> contentMap)
       throws BaseNessieClientServerException {
 

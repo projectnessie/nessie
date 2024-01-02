@@ -37,7 +37,6 @@ import picocli.CommandLine;
       ReadReferences.class,
       ReadContent.class,
       RefreshContent.class,
-      DetachHistory.class,
       DeleteContent.class,
       CreateMissingNamespaces.class,
       CommandLine.HelpCommand.class
