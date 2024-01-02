@@ -8,6 +8,24 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+### Upgrade notes
+
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.76.0] Release (2024-01-02)
+
+### Highlights
+
 - The Nessie client supports two new authentication flows when using OAuth 2 authentication:
   the Authorization Code flow and the Device Code flow. These flows are well suited for use within 
   a command line program, such as a Spark SQL shell, where a user is interacting with Nessie using a
@@ -19,31 +37,20 @@ as necessary. Empty sections will not end in the release notes.
     a local shell session running on the user's machine.
   - `device_code`: enables the Device Code flow; this flow can be used with either a local or a 
     remote shell session. 
-
 - The Nessie client now supports endpoint discovery when using OAuth 2 authentication. If an 
   identity provider supports the OpenID Connect Discovery mechanism, the Nessie client can be 
   configured to use it to discover the OAuth 2 endpoints. See the 
   [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
   for details.
 
-### Upgrade notes
-
-### Breaking changes
-
 ### New Features
 
 - Nessie client: the OAUTH2 authentication provider now supports programmatic configuration. See the 
   [Nessie documentation](https://projectnessie.org/develop/java/#authentication) for details.
 
-### Changes
-
-### Deprecations
-
 ### Fixes
 
 - Fix potential NPE when fetching commit log with fetch option `ALL` and access checks enabled.
-
-### Commits
 
 ## [0.75.0] Release (2023-12-15)
 
@@ -302,7 +309,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.75.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.76.0...HEAD
+[0.76.0]: https://github.com/projectnessie/nessie/compare/nessie-0.75.0...nessie-0.76.0
 [0.75.0]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...nessie-0.75.0
 [0.74.0]: https://github.com/projectnessie/nessie/compare/nessie-0.73.0...nessie-0.74.0
 [0.73.0]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...nessie-0.73.0

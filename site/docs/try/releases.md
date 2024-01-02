@@ -2,6 +2,53 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.76.0 Release (January 02, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.0).
+
+### Highlights
+
+- The Nessie client supports two new authentication flows when using OAuth 2 authentication:
+  the Authorization Code flow and the Device Code flow. These flows are well suited for use within 
+  a command line program, such as a Spark SQL shell, where a user is interacting with Nessie using a
+  terminal. In these flows, the user must use their web browser to authenticate with the identity
+  provider. See the 
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details. The two new flows are enabled by the following new grant types:
+  - `authorization_code`: enables the Authorization Code flow; this flow can only be used with
+    a local shell session running on the user's machine.
+  - `device_code`: enables the Device Code flow; this flow can be used with either a local or a 
+    remote shell session. 
+- The Nessie client now supports endpoint discovery when using OAuth 2 authentication. If an 
+  identity provider supports the OpenID Connect Discovery mechanism, the Nessie client can be 
+  configured to use it to discover the OAuth 2 endpoints. See the 
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
+### New Features
+
+- Nessie client: the OAUTH2 authentication provider now supports programmatic configuration. See the 
+  [Nessie documentation](https://projectnessie.org/develop/java/#authentication) for details.
+
+### Fixes
+
+- Fix potential NPE when fetching commit log with fetch option `ALL` and access checks enabled.
+
+### Commits
+* Revert "Add `detach-history` command to the ContentGenerator tool (#7867)" (#7907)
+* Add Quarkus tests for the OAuth2 Device Code flow (#7900)
+* OAuth2 client: support for Device Code Flow (#7899)
+* OAuth2 client: programmatic creation of OAuth2Authenticator (#7894)
+* OAuth2 client: support endpoint discovery (#7884)
+* HttpClient: properly close resources (#7898)
+* Persist: simplify JsonObj (#7866)
+* Add documentation page for repository migration (#7895)
+* Quarkus CLI: minor cleanup after #6890 (#7896)
+* Fix Helm CI tests (#7893)
+* Nessie Client: support for Authorization Code grant (#7872)
+* Fix NPE when fetching commit log with access checks enabled. (#7886)
+* Add `detach-history` command to the ContentGenerator tool (#7867)
+
 ## 0.75.0 Release (December 15, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.75.0).
