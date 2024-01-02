@@ -71,6 +71,14 @@ the Nessie authentication settings are configured via Spark session properties (
             .getOrCreate()
     ```
 
+### Property Prefixes
+
+The `spark.sql.catalog.<catalog_name>` prefix identifies properties for the Nessie catalog. The `<catalog_name>` part is just
+the name of the catalog in this case (not to be confused with the Nessie project name).
+
+Multiple Nessie catalogs can be configured in the same Spark environment, each with its own
+set of configuration properties and its own property name prefix.
+
 ## Flink
 
 When Nessie is used in Flink with [Iceberg](./iceberg/index.md), the Nessie authentication settings are configured when creating the Nessie catalog in Flink (Replace `<catalog_name>` with the name of your catalog):
@@ -83,20 +91,12 @@ table_env.execute_sql(
         'authentication.type'='NONE')""")
 ```
 
-### Property Prefixes
-
-The `spark.sql.catalog.<catalog_name>` prefix identifies properties for the Nessie catalog. The `<catalog_name>` part is just
-the name of the catalog in this case (not to be confused with the Nessie project name).
-
-Multiple Nessie catalogs can be configured in the same Spark environment, each with its own
-set of configuration properties and its own property name prefix.
-
-# Authentication Settings
+## Authentication Settings
 
 The sections below discuss specific authentication settings. The property names are shown without
 environment-specific prefixes for brevity. Nonetheless, in practice the property names should be
-given appropriate prefixes (as in the example above) for them to be recognized by the tools and Nessie
-code.
+given appropriate prefixes (as in the examples above) for them to be recognized by the tools and
+Nessie code.
 
 The value of the `authentication.type` property can be one of the following:
 
@@ -105,13 +105,13 @@ The value of the `authentication.type` property can be one of the following:
 * `OAUTH2`
 * `AWS`
 
-## Authentication Type `NONE`
+### Authentication Type `NONE`
 
 For the Authentication Type `NONE` only the `authentication.type` property needs to be set.
 
 This is also the default authentication type if nothing else is configured.
 
-## Authentication Type `BEARER`
+### Authentication Type `BEARER`
 
 For the `BEARER` Authentication Type the `authentication.token` property should be set to a valid
 [OpenID token](https://openid.net/specs/openid-connect-core-1_0.html).
@@ -122,7 +122,7 @@ Nessie client will not be able to refresh it and will have to be restarted, with
 If the token needs to be refreshed periodically, then the `OAUTH2` authentication type should be
 preferred to this one.
 
-## Authentication Type `OAUTH2`
+### Authentication Type `OAUTH2`
 
 The `OAUTH2` Authentication Type is able to authenticate against an OAuth2 server and obtain a valid
 access token. Only Bearer access tokens are currently supported. The access token is then used to
@@ -272,7 +272,7 @@ Here are the available properties for the `OAUTH2` authentication type:
 [Using token exchange]: https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange
 [OpenID Connect Discovery 1.0]: https://openid.net/specs/openid-connect-discovery-1_0.html
 
-### Which grant type to use?
+#### Which grant type to use?
 
 The "client_credentials" grant type is the simplest one, but it requires the client to be granted
 enough permissions to access the Nessie server on behalf of the user. This is not always possible,
@@ -295,7 +295,7 @@ but it does not require the browser and the terminal session to be running on th
 user will be prompted to authenticate in a local browser window, and the remote Nessie client will
 poll the OAuth2 server for the authentication status, until the authentication is complete.
 
-## Authentication Type `AWS`
+### Authentication Type `AWS`
 
 For the `AWS` Authentication Type the `authentication.aws.region` property should be set to the
 AWS region where the Nessie Server endpoint is located.
