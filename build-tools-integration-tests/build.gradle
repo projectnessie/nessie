@@ -40,7 +40,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-  testImplementation("org.assertj:assertj-core:3.25.0")
+  testImplementation("org.assertj:assertj-core:3.25.1")
 
   testImplementation("org.apache.maven:maven-resolver-provider:$versionMaven")
   testImplementation("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
