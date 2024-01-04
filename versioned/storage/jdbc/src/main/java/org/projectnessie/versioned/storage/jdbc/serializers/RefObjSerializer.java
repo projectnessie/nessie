@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -71,7 +72,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public RefObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     return ref(
         id,
         rs.getString(COL_REF_NAME),

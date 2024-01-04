@@ -27,6 +27,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
@@ -35,18 +36,13 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   public static final ObjSerializer<?> INSTANCE = new CustomObjSerializer();
 
-  private static final String COL_CUSTOM_CLASS = "x_class";
+  // Do not reuse 'x_class' column name
   private static final String COL_CUSTOM_DATA = "x_data";
   private static final String COL_CUSTOM_COMPRESSION = "x_compress";
 
   private static final Map<String, JdbcColumnType> COLS =
       ImmutableMap.of(
-          COL_CUSTOM_CLASS,
-          JdbcColumnType.NAME,
-          COL_CUSTOM_DATA,
-          JdbcColumnType.VARBINARY,
-          COL_CUSTOM_COMPRESSION,
-          JdbcColumnType.NAME);
+          COL_CUSTOM_DATA, JdbcColumnType.VARBINARY, COL_CUSTOM_COMPRESSION, JdbcColumnType.NAME);
 
   private CustomObjSerializer() {}
 
@@ -64,7 +60,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
       throws SQLException, ObjTooLargeException {
-    ps.setString(nameToIdx.apply(COL_CUSTOM_CLASS), obj.type().targetClass().getName());
     serializeBytes(
         ps,
         nameToIdx.apply(COL_CUSTOM_DATA),
@@ -84,11 +79,8 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public Obj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public Obj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     return SmileSerialization.deserializeObj(
-        id,
-        rs.getBytes(COL_CUSTOM_DATA),
-        rs.getString(COL_CUSTOM_CLASS),
-        rs.getString(COL_CUSTOM_COMPRESSION));
+        id, rs.getBytes(COL_CUSTOM_DATA), type.targetClass(), rs.getString(COL_CUSTOM_COMPRESSION));
   }
 }

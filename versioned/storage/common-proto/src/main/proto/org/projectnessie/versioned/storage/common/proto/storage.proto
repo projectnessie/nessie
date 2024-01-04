@@ -141,7 +141,7 @@ message ReferencePreviousProto {
 }
 
 message CustomProto {
-  string target_class = 1;
+  string obj_type = 1;
   bytes data = 2;
   CompressionProto compression = 3;
 }

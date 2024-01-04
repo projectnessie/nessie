@@ -42,6 +42,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class CommitObjSerializer implements ObjSerializer<CommitObj> {
@@ -112,7 +113,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public CommitObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     CommitObj.Builder b =
         commitBuilder()
             .id(id)

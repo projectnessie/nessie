@@ -35,6 +35,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 
@@ -93,7 +94,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj deserialize(Row row, ObjId id) {
+  public TagObj deserialize(Row row, ObjType type, ObjId id) {
     CommitHeaders tagHeaders = null;
     try {
       Headers headers = Headers.parseFrom(row.getByteBuffer(COL_TAG_HEADERS.name()));

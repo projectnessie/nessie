@@ -31,6 +31,7 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
 
@@ -76,7 +77,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj deserialize(Row row, ObjId id) {
+  public UniqueIdObj deserialize(Row row, ObjType type, ObjId id) {
     return uniqueId(
         id,
         row.getString(COL_UNIQUE_SPACE.name()),

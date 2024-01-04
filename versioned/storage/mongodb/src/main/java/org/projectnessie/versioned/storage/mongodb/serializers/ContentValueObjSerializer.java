@@ -23,6 +23,7 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj> {
 
@@ -50,7 +51,7 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   }
 
   @Override
-  public ContentValueObj docToObj(ObjId id, Document doc) {
+  public ContentValueObj docToObj(ObjId id, ObjType type, Document doc) {
     return contentValue(
         id,
         doc.getString(COL_VALUE_CONTENT_ID),

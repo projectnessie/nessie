@@ -27,6 +27,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class TagObjSerializer implements ObjSerializer<TagObj> {
 
@@ -71,7 +72,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj docToObj(ObjId id, Document doc) {
+  public TagObj docToObj(ObjId id, ObjType type, Document doc) {
     CommitHeaders tagHeaders = null;
     Document headerDoc = doc.get(COL_TAG_HEADERS, Document.class);
     if (headerDoc != null) {

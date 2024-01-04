@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
@@ -77,7 +78,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public IndexSegmentsObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     try {
       Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_SEGMENTS_STRIPES));
       List<IndexStripe> stripeList =

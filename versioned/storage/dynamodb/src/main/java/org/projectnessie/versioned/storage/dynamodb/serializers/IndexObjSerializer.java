@@ -25,6 +25,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class IndexObjSerializer implements ObjSerializer<IndexObj> {
@@ -56,7 +57,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public IndexObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     return index(id, requireNonNull(attributeToBytes(i, COL_INDEX_INDEX)));
   }
 }

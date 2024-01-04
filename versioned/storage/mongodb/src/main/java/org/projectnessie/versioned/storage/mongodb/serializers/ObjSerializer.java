@@ -32,5 +32,5 @@ public interface ObjSerializer<O extends Obj> {
   void objToDoc(O obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException;
 
-  O docToObj(ObjId id, Document doc);
+  O docToObj(ObjId id, ObjType type, Document doc);
 }

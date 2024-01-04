@@ -22,6 +22,7 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public interface ObjSerializer<O extends Obj> {
 
@@ -33,5 +34,5 @@ public interface ObjSerializer<O extends Obj> {
       O obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException;
 
-  O deserialize(Row row, ObjId id);
+  O deserialize(Row row, ObjType type, ObjId id);
 }

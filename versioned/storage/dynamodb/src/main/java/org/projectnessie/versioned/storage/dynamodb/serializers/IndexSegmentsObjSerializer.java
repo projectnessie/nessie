@@ -25,6 +25,7 @@ import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsObj> {
@@ -51,7 +52,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public IndexSegmentsObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     List<IndexStripe> stripes = new ArrayList<>();
     fromStripesAttrList(i.get(COL_SEGMENTS_STRIPES), stripes::add);
     return indexSegments(id, stripes);

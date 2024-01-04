@@ -25,6 +25,7 @@ import org.bson.Document;
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsObj> {
 
@@ -47,7 +48,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj docToObj(ObjId id, Document doc) {
+  public IndexSegmentsObj docToObj(ObjId id, ObjType type, Document doc) {
     List<IndexStripe> stripes = new ArrayList<>();
     fromStripesDocList(doc, COL_SEGMENTS_STRIPES, stripes::add);
     return indexSegments(id, stripes);

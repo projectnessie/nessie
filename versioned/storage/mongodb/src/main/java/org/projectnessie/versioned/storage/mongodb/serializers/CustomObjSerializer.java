@@ -20,6 +20,7 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
 
 public class CustomObjSerializer implements ObjSerializer<Obj> {
@@ -28,7 +29,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   private static final String COL_CUSTOM = "x";
 
-  private static final String COL_CUSTOM_CLASS = "xc";
   private static final String COL_CUSTOM_DATA = "xd";
   private static final String COL_CUSTOM_COMPRESSION = "xC";
 
@@ -42,7 +42,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   @Override
   public void objToDoc(Obj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException {
-    doc.put(COL_CUSTOM_CLASS, obj.type().targetClass().getName());
     doc.put(
         COL_CUSTOM_DATA,
         new Binary(
@@ -51,9 +50,9 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public Obj docToObj(ObjId id, Document doc) {
+  public Obj docToObj(ObjId id, ObjType type, Document doc) {
     byte[] data = doc.get(COL_CUSTOM_DATA, Binary.class).getData();
     return SmileSerialization.deserializeObj(
-        id, data, doc.getString(COL_CUSTOM_CLASS), doc.getString(COL_CUSTOM_COMPRESSION));
+        id, data, type.targetClass(), doc.getString(COL_CUSTOM_COMPRESSION));
   }
 }

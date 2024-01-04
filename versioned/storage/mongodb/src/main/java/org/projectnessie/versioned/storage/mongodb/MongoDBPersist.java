@@ -549,7 +549,7 @@ public class MongoDBPersist implements Persist {
     ObjType type = ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Document inner = doc.get(serializer.fieldName(), Document.class);
-    return serializer.docToObj(id, inner);
+    return serializer.docToObj(id, type, inner);
   }
 
   private Document objToDoc(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)

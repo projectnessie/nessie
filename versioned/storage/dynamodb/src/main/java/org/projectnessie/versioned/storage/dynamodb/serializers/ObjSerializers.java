@@ -51,7 +51,7 @@ public final class ObjSerializers {
 
   @Nonnull
   public static ObjSerializer<Obj> forType(@Nonnull ObjType type) {
-    ObjSerializer<?> serializer = CustomObjSerializer.INSTANCE;
+    ObjSerializer<?> serializer;
     if (type instanceof StandardObjType) {
       switch ((StandardObjType) type) {
         case COMMIT:
@@ -81,6 +81,8 @@ public final class ObjSerializers {
         default:
           throw new IllegalArgumentException("Unknown standard object type: " + type);
       }
+    } else {
+      serializer = CustomObjSerializer.INSTANCE;
     }
     @SuppressWarnings("unchecked")
     ObjSerializer<Obj> cast = (ObjSerializer<Obj>) serializer;

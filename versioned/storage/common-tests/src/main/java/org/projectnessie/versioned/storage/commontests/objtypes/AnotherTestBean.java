@@ -15,15 +15,32 @@
  */
 package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import java.util.function.Consumer;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
+import jakarta.annotation.Nullable;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 
-public class CustomObjTypeBundle implements ObjTypeBundle {
+public interface AnotherTestBean {
 
-  @Override
-  public void register(Consumer<ObjType> registrar) {
-    registrar.accept(SimpleTestObj.TYPE);
-    registrar.accept(AnotherTestObj.TYPE);
-  }
+  @Nullable
+  ObjId parent();
+
+  @Nullable
+  String text();
+
+  @Nullable
+  Number number();
+
+  @Nullable
+  Map<String, String> map();
+
+  @Nullable
+  List<String> list();
+
+  @Nullable
+  Instant instant();
+
+  Optional<String> optional();
 }

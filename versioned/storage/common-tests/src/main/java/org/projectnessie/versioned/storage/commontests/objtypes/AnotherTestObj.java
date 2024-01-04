@@ -15,15 +15,26 @@
  */
 package org.projectnessie.versioned.storage.commontests.objtypes;
 
-import java.util.function.Consumer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.immutables.value.Value;
+import org.projectnessie.versioned.storage.common.objtypes.SimpleObjType;
+import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
 
-public class CustomObjTypeBundle implements ObjTypeBundle {
+@Value.Immutable
+@JsonSerialize(as = ImmutableAnotherTestObj.class)
+@JsonDeserialize(as = ImmutableAnotherTestObj.class)
+public interface AnotherTestObj extends Obj, AnotherTestBean {
+
+  ObjType TYPE = new SimpleObjType<>("another", "oth", AnotherTestObj.class);
 
   @Override
-  public void register(Consumer<ObjType> registrar) {
-    registrar.accept(SimpleTestObj.TYPE);
-    registrar.accept(AnotherTestObj.TYPE);
+  default ObjType type() {
+    return TYPE;
+  }
+
+  static ImmutableAnotherTestObj.Builder builder() {
+    return ImmutableAnotherTestObj.builder();
   }
 }

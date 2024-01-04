@@ -24,6 +24,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
@@ -53,7 +54,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public UniqueIdObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     return uniqueId(
         id, attributeToString(i, COL_UNIQUE_SPACE), attributeToBytes(i, COL_UNIQUE_VALUE));
   }

@@ -36,6 +36,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class CommitObjSerializer implements ObjSerializer<CommitObj> {
 
@@ -101,7 +102,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj docToObj(ObjId id, Document doc) {
+  public CommitObj docToObj(ObjId id, ObjType type, Document doc) {
     CommitObj.Builder b =
         commitBuilder()
             .id(id)

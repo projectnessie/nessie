@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -67,7 +68,7 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   }
 
   @Override
-  public ContentValueObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public ContentValueObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     return contentValue(
         id,
         rs.getString(COL_VALUE_CONTENT_ID),

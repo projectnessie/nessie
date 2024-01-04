@@ -32,6 +32,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class StringObjSerializer implements ObjSerializer<StringObj> {
 
@@ -95,7 +96,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj deserialize(Row row, ObjId id) {
+  public StringObj deserialize(Row row, ObjType type, ObjId id) {
     return stringData(
         id,
         row.getString(COL_STRING_CONTENT_TYPE.name()),

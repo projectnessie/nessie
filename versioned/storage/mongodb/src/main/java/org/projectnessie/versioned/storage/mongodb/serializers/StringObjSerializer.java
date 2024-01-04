@@ -26,6 +26,7 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class StringObjSerializer implements ObjSerializer<StringObj> {
 
@@ -63,7 +64,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj docToObj(ObjId id, Document doc) {
+  public StringObj docToObj(ObjId id, ObjType type, Document doc) {
     return stringData(
         id,
         doc.getString(COL_STRING_CONTENT_TYPE),

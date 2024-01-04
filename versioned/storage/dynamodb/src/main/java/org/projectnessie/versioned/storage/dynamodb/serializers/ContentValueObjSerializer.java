@@ -25,6 +25,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj> {
@@ -56,7 +57,7 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   }
 
   @Override
-  public ContentValueObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public ContentValueObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     return contentValue(
         id,
         attributeToString(i, COL_VALUE_CONTENT_ID),
