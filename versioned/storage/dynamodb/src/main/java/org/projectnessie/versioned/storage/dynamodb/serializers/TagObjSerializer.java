@@ -31,6 +31,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class TagObjSerializer implements ObjSerializer<TagObj> {
@@ -84,7 +85,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public TagObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     CommitHeaders tagHeaders = null;
     AttributeValue headerMap = i.get(COL_TAG_HEADERS);
     if (headerMap != null) {

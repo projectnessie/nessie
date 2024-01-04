@@ -36,6 +36,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 
@@ -91,7 +92,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj deserialize(Row row, ObjId id) {
+  public IndexSegmentsObj deserialize(Row row, ObjType type, ObjId id) {
     try {
       Stripes stripes = Stripes.parseFrom(row.getByteBuffer(COL_SEGMENTS_STRIPES.name()));
       List<IndexStripe> stripeList =

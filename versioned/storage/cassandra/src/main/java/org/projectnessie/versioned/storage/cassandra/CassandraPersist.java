@@ -273,7 +273,7 @@ public class CassandraPersist implements Persist {
         row -> {
           ObjType objType = ObjTypes.forName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
           ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
-          return ObjSerializers.forType(objType).deserialize(row, id);
+          return ObjSerializers.forType(objType).deserialize(row, objType, id);
         };
 
     Obj[] r;
@@ -464,7 +464,7 @@ public class CassandraPersist implements Persist {
         }
 
         ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
-        return ObjSerializers.forType(type).deserialize(row, id);
+        return ObjSerializers.forType(type).deserialize(row, type, id);
       }
     }
   }

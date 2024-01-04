@@ -29,6 +29,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -65,7 +66,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public IndexObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     ByteString index = deserializeBytes(rs, COL_INDEX_INDEX);
     if (index != null) {
       return index(id, index);

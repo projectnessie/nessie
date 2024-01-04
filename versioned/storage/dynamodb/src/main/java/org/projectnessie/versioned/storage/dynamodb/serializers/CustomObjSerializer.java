@@ -27,6 +27,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -36,7 +37,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   private static final String COL_CUSTOM = "x";
 
-  private static final String COL_CUSTOM_CLASS = "xc";
   private static final String COL_CUSTOM_DATA = "xd";
   private static final String COL_CUSTOM_COMPRESSION = "xC";
 
@@ -51,7 +51,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   public void toMap(
       Obj obj, Map<String, AttributeValue> i, int incrementalIndexSize, int maxSerializedIndexSize)
       throws ObjTooLargeException {
-    i.put(COL_CUSTOM_CLASS, fromS(obj.type().targetClass().getName()));
     bytesAttribute(
         i,
         COL_CUSTOM_DATA,
@@ -63,12 +62,9 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public Obj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public Obj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     ByteBuffer buffer = requireNonNull(attributeToBytes(i, COL_CUSTOM_DATA)).asReadOnlyByteBuffer();
     return SmileSerialization.deserializeObj(
-        id,
-        buffer,
-        attributeToString(i, COL_CUSTOM_CLASS),
-        attributeToString(i, COL_CUSTOM_COMPRESSION));
+        id, buffer, type.targetClass(), attributeToString(i, COL_CUSTOM_COMPRESSION));
   }
 }

@@ -23,6 +23,7 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class RefObjSerializer implements ObjSerializer<RefObj> {
 
@@ -55,7 +56,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj docToObj(ObjId id, Document doc) {
+  public RefObj docToObj(ObjId id, ObjType type, Document doc) {
     return ref(
         id,
         doc.getString(COL_REF_NAME),

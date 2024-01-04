@@ -25,6 +25,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
@@ -52,7 +53,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj docToObj(ObjId id, Document doc) {
+  public IndexObj docToObj(ObjId id, ObjType type, Document doc) {
     return index(id, binaryToBytes(doc.get(COL_INDEX_INDEX, Binary.class)));
   }
 }

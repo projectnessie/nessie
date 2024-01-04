@@ -116,6 +116,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.commontests.objtypes.AnotherTestObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestBean;
 import org.projectnessie.versioned.storage.commontests.objtypes.JsonTestBean;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
@@ -472,6 +473,27 @@ public class AbstractBasePersistTests {
             .instant(Instant.ofEpochMilli(1234567890L))
             .build(),
         SimpleTestObj.builder().id(randomObjId()).build(),
+        AnotherTestObj.builder()
+            .id(randomObjId())
+            .parent(randomObjId())
+            .text("foo".repeat(4000))
+            .number(42.42d)
+            .map(Map.of("k1", "v1".repeat(4000), "k2", "v2".repeat(4000)))
+            .list(List.of("a", "b", "c"))
+            .optional("optional")
+            .instant(Instant.ofEpochMilli(1234567890L))
+            .build(),
+        AnotherTestObj.builder()
+            .id(randomObjId())
+            .parent(randomObjId())
+            .text("foo")
+            .number(42.42d)
+            .map(Map.of("k1", "v1", "k2", "v2"))
+            .list(List.of("a", "b", "c"))
+            .optional("optional")
+            .instant(Instant.ofEpochMilli(1234567890L))
+            .build(),
+        AnotherTestObj.builder().id(randomObjId()).build(),
         // JSON objects
         // scalar types
         json(randomObjId(), "text"),
@@ -612,10 +634,13 @@ public class AbstractBasePersistTests {
       }
     }
     if (type.equals(SimpleTestObj.TYPE)) {
-      return StandardObjType.COMMIT;
+      return COMMIT;
+    }
+    if (type.equals(AnotherTestObj.TYPE)) {
+      return VALUE;
     }
     if (type.equals(JsonObj.TYPE)) {
-      return StandardObjType.COMMIT;
+      return INDEX;
     }
     throw new IllegalArgumentException(type.name());
   }
@@ -1045,6 +1070,16 @@ public class AbstractBasePersistTests {
           .list(List.of("b", "c", "d"))
           .build();
     }
+    if (obj instanceof AnotherTestObj) {
+      return AnotherTestObj.builder()
+          .id(obj.id())
+          .parent(randomObjId())
+          .text("updated")
+          .number(43.43d)
+          .map(Map.of("k2", "v2", "k3", "v3"))
+          .list(List.of("b", "c", "d"))
+          .build();
+    }
     if (obj instanceof JsonObj) {
       return json(
           obj.id(),
@@ -1140,7 +1175,9 @@ public class AbstractBasePersistTests {
         Arrays.stream(objs).filter(o -> o.type() instanceof StandardObjType).toArray(Obj[]::new);
     Obj[] jsonObjs = Arrays.stream(objs).filter(o -> o instanceof JsonObj).toArray(Obj[]::new);
     Obj[] customObjs =
-        Arrays.stream(objs).filter(o -> o instanceof SimpleTestObj).toArray(Obj[]::new);
+        Arrays.stream(objs)
+            .filter(o -> o instanceof SimpleTestObj || o instanceof AnotherTestObj)
+            .toArray(Obj[]::new);
 
     persist.erase();
 
@@ -1162,8 +1199,16 @@ public class AbstractBasePersistTests {
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(JsonObj.TYPE))) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(jsonObjs);
     }
-    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(SimpleTestObj.TYPE))) {
+    try (CloseableIterator<Obj> scan =
+        persist.scanAllObjects(Set.of(SimpleTestObj.TYPE, AnotherTestObj.TYPE))) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(customObjs);
+    }
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(SimpleTestObj.TYPE))) {
+      soft.assertThat(Lists.newArrayList(scan))
+          .containsExactlyInAnyOrderElementsOf(
+              stream(customObjs)
+                  .filter(o -> o.type() == SimpleTestObj.TYPE)
+                  .collect(Collectors.toList()));
     }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
       Obj[] expected = stream(objs).filter(c -> c.type() == COMMIT).toArray(Obj[]::new);

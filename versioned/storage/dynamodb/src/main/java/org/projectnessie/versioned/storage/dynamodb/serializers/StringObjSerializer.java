@@ -29,6 +29,7 @@ import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class StringObjSerializer implements ObjSerializer<StringObj> {
@@ -70,7 +71,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public StringObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     List<ObjId> predecessors = new ArrayList<>();
     attributeToObjIds(i, COL_STRING_PREDECESSORS, predecessors::add);
     return stringData(

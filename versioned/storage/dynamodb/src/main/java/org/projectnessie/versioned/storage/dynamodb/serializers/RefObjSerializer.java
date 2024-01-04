@@ -24,6 +24,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.util.Map;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class RefObjSerializer implements ObjSerializer<RefObj> {
@@ -60,7 +61,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj fromMap(ObjId id, Map<String, AttributeValue> i) {
+  public RefObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
     String createdAtStr = attributeToString(i, COL_REF_CREATED_AT);
     long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
     return ref(

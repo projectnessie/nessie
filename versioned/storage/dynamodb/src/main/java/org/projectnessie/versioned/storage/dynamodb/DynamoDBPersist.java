@@ -514,7 +514,7 @@ public class DynamoDBPersist implements Persist {
     ObjType type = ObjTypes.forShortName(attributeValue.s());
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Map<String, AttributeValue> inner = item.get(serializer.attributeName()).m();
-    return serializer.fromMap(id, inner);
+    return serializer.fromMap(id, type, inner);
   }
 
   @Nonnull

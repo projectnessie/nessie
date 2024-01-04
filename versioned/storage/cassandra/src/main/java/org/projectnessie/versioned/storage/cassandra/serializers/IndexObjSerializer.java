@@ -32,6 +32,7 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
@@ -78,7 +79,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj deserialize(Row row, ObjId id) {
+  public IndexObj deserialize(Row row, ObjType type, ObjId id) {
     ByteString indexValue = CassandraSerde.deserializeBytes(row, COL_INDEX_INDEX.name());
     if (indexValue != null) {
       return index(id, indexValue);

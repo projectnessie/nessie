@@ -31,19 +31,20 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
 
 public class CustomObjSerializer implements ObjSerializer<Obj> {
 
   public static final ObjSerializer<?> INSTANCE = new CustomObjSerializer();
 
-  private static final CqlColumn COL_CUSTOM_CLASS = new CqlColumn("x_class", CqlColumnType.NAME);
+  // Do not reuse 'x_class' column name
   private static final CqlColumn COL_CUSTOM_DATA = new CqlColumn("x_data", CqlColumnType.VARBINARY);
   private static final CqlColumn COL_CUSTOM_COMPRESSION =
       new CqlColumn("x_compress", CqlColumnType.NAME);
 
   private static final Set<CqlColumn> COLS =
-      ImmutableSet.of(COL_CUSTOM_CLASS, COL_CUSTOM_DATA, COL_CUSTOM_COMPRESSION);
+      ImmutableSet.of(COL_CUSTOM_DATA, COL_CUSTOM_COMPRESSION);
 
   private static final String INSERT_CQL =
       INSERT_OBJ_PREFIX
@@ -71,7 +72,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   public void serialize(
       Obj obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException {
-    stmt.setString(COL_CUSTOM_CLASS.name(), obj.type().targetClass().getName());
     stmt.setByteBuffer(
         COL_CUSTOM_DATA.name(),
         ByteBuffer.wrap(
@@ -83,12 +83,9 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public Obj deserialize(Row row, ObjId id) {
+  public Obj deserialize(Row row, ObjType type, ObjId id) {
     ByteBuffer buffer = Objects.requireNonNull(row.getByteBuffer(COL_CUSTOM_DATA.name()));
     return SmileSerialization.deserializeObj(
-        id,
-        buffer,
-        row.getString(COL_CUSTOM_CLASS.name()),
-        row.getString(COL_CUSTOM_COMPRESSION.name()));
+        id, buffer, type.targetClass(), row.getString(COL_CUSTOM_COMPRESSION.name()));
   }
 }

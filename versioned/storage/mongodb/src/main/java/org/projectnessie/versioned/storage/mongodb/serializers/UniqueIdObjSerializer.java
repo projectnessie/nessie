@@ -23,6 +23,7 @@ import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
 
@@ -48,7 +49,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj docToObj(ObjId id, Document doc) {
+  public UniqueIdObj docToObj(ObjId id, ObjType type, Document doc) {
     return uniqueId(
         id,
         doc.getString(COL_UNIQUE_SPACE),

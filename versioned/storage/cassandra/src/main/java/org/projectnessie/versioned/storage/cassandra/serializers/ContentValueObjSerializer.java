@@ -32,6 +32,7 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj> {
 
@@ -80,7 +81,7 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   }
 
   @Override
-  public ContentValueObj deserialize(Row row, ObjId id) {
+  public ContentValueObj deserialize(Row row, ObjType type, ObjId id) {
     ByteString value = CassandraSerde.deserializeBytes(row, COL_VALUE_DATA.name());
     if (value != null) {
       return contentValue(

@@ -31,6 +31,7 @@ import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public class RefObjSerializer implements ObjSerializer<RefObj> {
 
@@ -83,7 +84,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj deserialize(Row row, ObjId id) {
+  public RefObj deserialize(Row row, ObjType type, ObjId id) {
     return ref(
         id,
         row.getString(COL_REF_NAME.name()),

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -63,7 +64,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public UniqueIdObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     return uniqueId(id, rs.getString(COL_UNIQUE_SPACE), deserializeBytes(rs, COL_UNIQUE_VALUE));
   }
 }

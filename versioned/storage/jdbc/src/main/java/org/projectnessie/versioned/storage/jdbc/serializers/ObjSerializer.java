@@ -24,6 +24,7 @@ import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -40,7 +41,7 @@ public interface ObjSerializer<O extends Obj> {
       DatabaseSpecific databaseSpecific)
       throws SQLException, ObjTooLargeException;
 
-  O deserialize(ResultSet rs, ObjId id) throws SQLException;
+  O deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException;
 
   default void setNull(
       PreparedStatement ps, Function<String, Integer> nameToIdx, DatabaseSpecific databaseSpecific)

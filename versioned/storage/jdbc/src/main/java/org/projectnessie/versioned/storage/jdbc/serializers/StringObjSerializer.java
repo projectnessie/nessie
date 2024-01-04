@@ -30,6 +30,7 @@ import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
 import org.projectnessie.versioned.storage.jdbc.JdbcColumnType;
 
@@ -76,7 +77,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public StringObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     return stringData(
         id,
         rs.getString(COL_STRING_CONTENT_TYPE),

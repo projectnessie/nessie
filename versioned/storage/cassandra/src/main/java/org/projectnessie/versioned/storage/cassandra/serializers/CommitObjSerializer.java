@@ -38,6 +38,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
@@ -155,7 +156,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj deserialize(Row row, ObjId id) {
+  public CommitObj deserialize(Row row, ObjType type, ObjId id) {
     CommitObj.Builder b =
         CommitObj.commitBuilder()
             .id(id)

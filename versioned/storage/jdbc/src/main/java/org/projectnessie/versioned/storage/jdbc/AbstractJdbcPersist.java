@@ -425,7 +425,7 @@ abstract class AbstractJdbcPersist implements Persist {
     String objType = rs.getString(COL_OBJ_TYPE);
     ObjType type = ObjTypes.forName(objType);
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
-    return serializer.deserialize(rs, id);
+    return serializer.deserialize(rs, type, id);
   }
 
   protected final boolean storeObj(

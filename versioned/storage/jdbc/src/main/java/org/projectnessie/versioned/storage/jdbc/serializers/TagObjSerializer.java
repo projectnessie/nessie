@@ -29,6 +29,7 @@ import java.util.function.Function;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 import org.projectnessie.versioned.storage.jdbc.DatabaseSpecific;
@@ -77,7 +78,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj deserialize(ResultSet rs, ObjId id) throws SQLException {
+  public TagObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
     CommitHeaders tagHeaders = null;
     try {
       Headers headers = Headers.parseFrom(deserializeBytes(rs, COL_TAG_HEADERS));
