@@ -15,16 +15,17 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
+import java.util.function.LongSupplier;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public final class SimpleObjType<T extends Obj> implements ObjType {
+public final class NonCachingObjType<T extends Obj> implements ObjType {
 
   private final String name;
   private final String shortName;
   private final Class<T> targetClass;
 
-  public SimpleObjType(String name, String shortName, Class<T> targetClass) {
+  public NonCachingObjType(String name, String shortName, Class<T> targetClass) {
     this.name = name;
     this.shortName = shortName;
     this.targetClass = targetClass;
@@ -43,5 +44,10 @@ public final class SimpleObjType<T extends Obj> implements ObjType {
   @Override
   public Class<T> targetClass() {
     return targetClass;
+  }
+
+  @Override
+  public long cachedObjectExpiresAtMicros(Obj obj, LongSupplier clock) {
+    return 0L;
   }
 }

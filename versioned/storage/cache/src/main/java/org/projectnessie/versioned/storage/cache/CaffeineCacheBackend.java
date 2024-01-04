@@ -25,6 +25,7 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import java.util.function.LongSupplier;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -49,8 +50,8 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   abstract MeterRegistry meterRegistry();
 
   @Value.Derived
-  Cache<CacheKey, byte[]> cache() {
-    Caffeine<CacheKey, byte[]> cacheBuilder =
+  Cache<CacheKeyValue, CacheKeyValue> cache() {
+    Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder().maximumWeight(capacity() * 1024L * 1024L).weigher(this::weigher);
     MeterRegistry meterRegistry = meterRegistry();
     if (meterRegistry != null) {
@@ -63,26 +64,40 @@ abstract class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public Persist wrap(@Nonnull Persist persist) {
-    ObjCacheImpl cache = new ObjCacheImpl(this, persist.config().repositoryId());
+    ObjCacheImpl cache = new ObjCacheImpl(this, persist.config());
     return new CachingPersistImpl(persist, cache);
   }
 
-  private int weigher(CacheKey key, byte[] data) {
-    return key.heapSize() + JAVA_OBJ_HEADER + data.length;
+  private int weigher(CacheKeyValue key, CacheKeyValue data) {
+    return key.heapSize();
   }
 
   @Override
-  public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
-    CacheKey key = cacheKey(repositoryId, id);
-    byte[] bytes = cache().getIfPresent(key);
-    return bytes != null ? ProtoSerialization.deserializeObj(id, bytes) : null;
+  public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id, LongSupplier clock) {
+    CacheKeyValue key = cacheKey(repositoryId, id);
+    CacheKeyValue value = cache().getIfPresent(key);
+    if (value == null) {
+      return null;
+    }
+    long expire = value.expiresAt;
+    if (expire != -1L && expire - clock.getAsLong() <= 0L) {
+      cache().invalidate(key);
+      return null;
+    }
+    return ProtoSerialization.deserializeObj(id, value.value);
   }
 
   @Override
-  public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {
-    CacheKey key = cacheKey(repositoryId, obj.id());
+  public void put(@Nonnull String repositoryId, @Nonnull Obj obj, LongSupplier clock) {
+    long expiresAt = obj.type().cachedObjectExpiresAtMicros(obj, clock);
+    if (expiresAt == 0L) {
+      return;
+    }
+
     try {
-      cache().put(key, serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE));
+      byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
+      CacheKeyValue keyValue = cacheKeyValue(repositoryId, obj.id(), serialized, expiresAt);
+      cache().put(keyValue, keyValue);
     } catch (ObjTooLargeException e) {
       // this should never happen
       throw new RuntimeException(e);
@@ -91,7 +106,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public void remove(@Nonnull String repositoryId, @Nonnull ObjId id) {
-    CacheKey key = cacheKey(repositoryId, id);
+    CacheKeyValue key = cacheKey(repositoryId, id);
     cache().invalidate(key);
   }
 
@@ -100,23 +115,47 @@ abstract class CaffeineCacheBackend implements CacheBackend {
     cache().asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
   }
 
-  private CacheKey cacheKey(String repositoryId, ObjId id) {
-    return new CacheKey(repositoryId, id);
+  static CacheKeyValue cacheKey(String repositoryId, ObjId id) {
+    return new CacheKeyValue(repositoryId, id);
   }
 
-  static final class CacheKey {
+  private static CacheKeyValue cacheKeyValue(
+      String repositoryId, ObjId id, byte[] value, long expiresAt) {
+    return new CacheKeyValue(repositoryId, id, value, expiresAt);
+  }
 
-    static final int HEAP_OVERHEAD = 3 * JAVA_OBJ_HEADER;
+  /**
+   * Class used for both the cache key and cache value including the expiration timestamp. This is
+   * (should be) more efficient (think: mono-morphic vs bi-morphic call sizes) and more GC/heap
+   * friendly (less object instances) than having different object types.
+   */
+  static final class CacheKeyValue {
+
+    static final int HEAP_OVERHEAD = 16 + 3 * JAVA_OBJ_HEADER;
     final String repositoryId;
     final ObjId id;
 
-    CacheKey(String repositoryId, ObjId id) {
+    final byte[] value;
+    final long expiresAt;
+
+    CacheKeyValue(String repositoryId, ObjId id) {
+      this(repositoryId, id, null, 0L);
+    }
+
+    CacheKeyValue(String repositoryId, ObjId id, final byte[] value, long expiresAt) {
       this.repositoryId = repositoryId;
       this.id = id;
+      this.value = value;
+      this.expiresAt = expiresAt;
     }
 
     int heapSize() {
-      return HEAP_OVERHEAD + id.size() + repositoryId.length();
+      int size = HEAP_OVERHEAD + id.size() + repositoryId.length();
+      byte[] v = value;
+      if (v != null) {
+        size += JAVA_OBJ_HEADER + v.length;
+      }
+      return size;
     }
 
     @Override
@@ -124,10 +163,10 @@ abstract class CaffeineCacheBackend implements CacheBackend {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof CacheKey)) {
+      if (!(o instanceof CacheKeyValue)) {
         return false;
       }
-      CacheKey cacheKey = (CacheKey) o;
+      CacheKeyValue cacheKey = (CacheKeyValue) o;
       return repositoryId.equals(cacheKey.repositoryId) && id.equals(cacheKey.id);
     }
 
@@ -138,7 +177,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
 
     @Override
     public String toString() {
-      return "CacheKey{" + repositoryId + ", " + id + '}';
+      return "{" + repositoryId + ", " + id + '}';
     }
   }
 }

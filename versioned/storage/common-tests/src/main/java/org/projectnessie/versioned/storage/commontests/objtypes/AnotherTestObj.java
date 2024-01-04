@@ -18,7 +18,7 @@ package org.projectnessie.versioned.storage.commontests.objtypes;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.common.objtypes.SimpleObjType;
+import org.projectnessie.versioned.storage.common.objtypes.CustomObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
@@ -27,7 +27,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 @JsonDeserialize(as = ImmutableAnotherTestObj.class)
 public interface AnotherTestObj extends Obj, AnotherTestBean {
 
-  ObjType TYPE = new SimpleObjType<>("another", "oth", AnotherTestObj.class);
+  ObjType TYPE = CustomObjType.customObjType("another", "oth", AnotherTestObj.class);
 
   @Override
   default ObjType type() {

@@ -44,6 +44,14 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
 
+  testCompileOnly(libs.immutables.builder)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
+
+  testImplementation(platform(libs.jackson.bom))
+  testImplementation("com.fasterxml.jackson.core:jackson-annotations")
+  testImplementation("com.fasterxml.jackson.core:jackson-databind")
+
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.logback.classic)
