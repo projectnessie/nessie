@@ -113,7 +113,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
+  public CommitObj fromMap(
+      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
     CommitObj.Builder b =
         commitBuilder()
             .id(id)

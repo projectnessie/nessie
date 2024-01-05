@@ -144,4 +144,5 @@ message CustomProto {
   string obj_type = 1;
   bytes data = 2;
   CompressionProto compression = 3;
+  optional string version_token = 4;
 }

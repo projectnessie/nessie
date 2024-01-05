@@ -15,9 +15,6 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
@@ -28,7 +25,6 @@ import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
@@ -44,9 +40,7 @@ import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 
-public class CommitObjSerializer implements ObjSerializer<CommitObj> {
-
-  public static final ObjSerializer<CommitObj> INSTANCE = new CommitObjSerializer();
+public class CommitObjSerializer extends ObjSerializer<CommitObj> {
 
   private static final CqlColumn COL_COMMIT_CREATED =
       new CqlColumn("c_created", CqlColumnType.BIGINT);
@@ -85,25 +79,10 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
           .add(COL_COMMIT_TYPE)
           .build();
 
-  private static final String INSERT_CQL =
-      INSERT_OBJ_PREFIX
-          + COLS.stream().map(CqlColumn::name).collect(Collectors.joining(","))
-          + INSERT_OBJ_VALUES
-          + COLS.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
-          + ")";
+  public static final ObjSerializer<CommitObj> INSTANCE = new CommitObjSerializer();
 
-  private static final String STORE_CQL = INSERT_CQL + STORE_OBJ_SUFFIX;
-
-  private CommitObjSerializer() {}
-
-  @Override
-  public Set<CqlColumn> columns() {
-    return COLS;
-  }
-
-  @Override
-  public String insertCql(boolean upsert) {
-    return upsert ? INSERT_CQL : STORE_CQL;
+  private CommitObjSerializer() {
+    super(COLS);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -156,7 +135,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj deserialize(Row row, ObjType type, ObjId id) {
+  public CommitObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
     CommitObj.Builder b =
         CommitObj.commitBuilder()
             .id(id)

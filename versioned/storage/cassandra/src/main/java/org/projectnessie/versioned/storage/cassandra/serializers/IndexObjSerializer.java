@@ -15,16 +15,12 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
@@ -34,34 +30,17 @@ import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public class IndexObjSerializer implements ObjSerializer<IndexObj> {
-
-  public static final ObjSerializer<IndexObj> INSTANCE = new IndexObjSerializer();
+public class IndexObjSerializer extends ObjSerializer<IndexObj> {
 
   private static final CqlColumn COL_INDEX_INDEX =
       new CqlColumn("i_index", CqlColumnType.VARBINARY);
 
   private static final Set<CqlColumn> COLS = ImmutableSet.of(COL_INDEX_INDEX);
 
-  private static final String INSERT_CQL =
-      INSERT_OBJ_PREFIX
-          + COLS.stream().map(CqlColumn::name).collect(Collectors.joining(","))
-          + INSERT_OBJ_VALUES
-          + COLS.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
-          + ")";
+  public static final ObjSerializer<IndexObj> INSTANCE = new IndexObjSerializer();
 
-  private static final String STORE_CQL = INSERT_CQL + STORE_OBJ_SUFFIX;
-
-  private IndexObjSerializer() {}
-
-  @Override
-  public Set<CqlColumn> columns() {
-    return COLS;
-  }
-
-  @Override
-  public String insertCql(boolean upsert) {
-    return upsert ? INSERT_CQL : STORE_CQL;
+  private IndexObjSerializer() {
+    super(COLS);
   }
 
   @Override
@@ -79,7 +58,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj deserialize(Row row, ObjType type, ObjId id) {
+  public IndexObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
     ByteString indexValue = CassandraSerde.deserializeBytes(row, COL_INDEX_INDEX.name());
     if (indexValue != null) {
       return index(id, indexValue);

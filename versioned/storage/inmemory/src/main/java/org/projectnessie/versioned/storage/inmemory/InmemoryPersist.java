@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -37,6 +38,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 
 class InmemoryPersist implements ValidatingPersist {
@@ -289,6 +291,50 @@ class InmemoryPersist implements ValidatingPersist {
         upsertObj(obj);
       }
     }
+  }
+
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    return updateDeleteConditional(obj, null);
+  }
+
+  @Override
+  public boolean updateConditional(
+      @Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue) {
+    ObjId id = expected.id();
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    return updateDeleteConditional(expected, newValue);
+  }
+
+  private boolean updateDeleteConditional(UpdateableObj expected, UpdateableObj newValue) {
+    AtomicBoolean result = new AtomicBoolean();
+    inmemory.objects.compute(
+        compositeKey(expected.id()),
+        (k, v) -> {
+          if (v == null) {
+            // not present
+            return null;
+          } else {
+            if (!v.type().equals(expected.type())) {
+              // another object type - don't touch
+              return v;
+            }
+
+            UpdateableObj uv = (UpdateableObj) v;
+            if (!uv.versionToken().equals(expected.versionToken())) {
+              // different version - don't touch
+              return v;
+            }
+
+            // same version-token --> remove
+            result.set(true);
+            return newValue;
+          }
+        });
+    return result.get();
   }
 
   @Override

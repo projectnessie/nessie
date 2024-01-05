@@ -15,16 +15,12 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
@@ -33,9 +29,7 @@ import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public class RefObjSerializer implements ObjSerializer<RefObj> {
-
-  public static final ObjSerializer<RefObj> INSTANCE = new RefObjSerializer();
+public class RefObjSerializer extends ObjSerializer<RefObj> {
 
   private static final CqlColumn COL_REF_NAME = new CqlColumn("r_name", CqlColumnType.NAME);
   private static final CqlColumn COL_REF_INITIAL_POINTER =
@@ -49,25 +43,10 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
       ImmutableSet.of(
           COL_REF_NAME, COL_REF_INITIAL_POINTER, COL_REF_CREATED_AT, COL_REF_EXTENDED_INFO);
 
-  private static final String INSERT_CQL =
-      INSERT_OBJ_PREFIX
-          + COLS.stream().map(CqlColumn::name).collect(Collectors.joining(","))
-          + INSERT_OBJ_VALUES
-          + COLS.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
-          + ")";
+  public static final ObjSerializer<RefObj> INSTANCE = new RefObjSerializer();
 
-  private static final String STORE_CQL = INSERT_CQL + STORE_OBJ_SUFFIX;
-
-  private RefObjSerializer() {}
-
-  @Override
-  public Set<CqlColumn> columns() {
-    return COLS;
-  }
-
-  @Override
-  public String insertCql(boolean upsert) {
-    return upsert ? INSERT_CQL : STORE_CQL;
+  private RefObjSerializer() {
+    super(COLS);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -84,7 +63,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj deserialize(Row row, ObjType type, ObjId id) {
+  public RefObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
     return ref(
         id,
         row.getString(COL_REF_NAME.name()),

@@ -57,6 +57,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitProto;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitTypeProto;
@@ -514,11 +515,18 @@ public final class ProtoSerialization {
   private static Obj deserializeCustom(ObjId id, CustomProto custom) {
     ObjType type = ObjTypes.forShortName(custom.getObjType());
     return SmileSerialization.deserializeObj(
-        id, custom.getData().toByteArray(), type.targetClass(), custom.getCompression().name());
+        id,
+        custom.getVersionToken(),
+        custom.getData().toByteArray(),
+        type.targetClass(),
+        custom.getCompression().name());
   }
 
   private static CustomProto.Builder serializeCustom(Obj obj) {
     CustomProto.Builder builder = CustomProto.newBuilder().setObjType(obj.type().shortName());
+    if (obj instanceof UpdateableObj) {
+      builder.setVersionToken(((UpdateableObj) obj).versionToken());
+    }
     byte[] bytes =
         SmileSerialization.serializeObj(
             obj,

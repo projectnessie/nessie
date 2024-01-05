@@ -15,9 +15,6 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
@@ -40,34 +37,17 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripe;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Stripes;
 
-public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsObj> {
-
-  public static final ObjSerializer<IndexSegmentsObj> INSTANCE = new IndexSegmentsObjSerializer();
+public class IndexSegmentsObjSerializer extends ObjSerializer<IndexSegmentsObj> {
 
   private static final CqlColumn COL_SEGMENTS_STRIPES =
       new CqlColumn("i_stripes", CqlColumnType.VARBINARY);
 
   private static final Set<CqlColumn> COLS = ImmutableSet.of(COL_SEGMENTS_STRIPES);
 
-  private static final String INSERT_CQL =
-      INSERT_OBJ_PREFIX
-          + COLS.stream().map(CqlColumn::name).collect(Collectors.joining(","))
-          + INSERT_OBJ_VALUES
-          + COLS.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
-          + ")";
+  public static final ObjSerializer<IndexSegmentsObj> INSTANCE = new IndexSegmentsObjSerializer();
 
-  private static final String STORE_CQL = INSERT_CQL + STORE_OBJ_SUFFIX;
-
-  private IndexSegmentsObjSerializer() {}
-
-  @Override
-  public Set<CqlColumn> columns() {
-    return COLS;
-  }
-
-  @Override
-  public String insertCql(boolean upsert) {
-    return upsert ? INSERT_CQL : STORE_CQL;
+  private IndexSegmentsObjSerializer() {
+    super(COLS);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -92,7 +72,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj deserialize(Row row, ObjType type, ObjId id) {
+  public IndexSegmentsObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
     try {
       Stripes stripes = Stripes.parseFrom(row.getByteBuffer(COL_SEGMENTS_STRIPES.name()));
       List<IndexStripe> stripeList =

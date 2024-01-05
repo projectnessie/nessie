@@ -27,6 +27,7 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAM
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_PARALLEL_READS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_VERS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_REFS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.READ_TIMEOUT_MILLIS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
@@ -76,6 +77,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 public class BigTablePersist implements Persist {
 
@@ -358,7 +360,7 @@ public class BigTablePersist implements Persist {
 
     try {
       ConditionalRowMutation conditionalRowMutation =
-          mutationForStoreObj(obj, ignoreSoftSizeRestrictions);
+          conditionalForStoreObj(obj, ignoreSoftSizeRestrictions);
 
       boolean success = backend.client().checkAndMutateRow(conditionalRowMutation);
       return !success;
@@ -374,24 +376,13 @@ public class BigTablePersist implements Persist {
                   Function.identity(), (ObjType type) -> ByteString.copyFromUtf8(type.name())));
 
   @NotNull
-  private ConditionalRowMutation mutationForStoreObj(
+  private ConditionalRowMutation conditionalForStoreObj(
       @NotNull Obj obj, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
 
-    int incrementalIndexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
-    int indexSizeLimit =
-        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit);
+    Mutation mutation = objectWriteMutation(obj, ignoreSoftSizeRestrictions);
 
-    ByteString ref = unsafeWrap(serialized);
-
-    Mutation mutation =
-        Mutation.create()
-            .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, ref)
-            .setCell(
-                FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, OBJ_TYPE_VALUES.get(obj.type()));
     Filter condition =
         FILTERS
             .chain()
@@ -421,7 +412,7 @@ public class BigTablePersist implements Persist {
     for (int i = 0; i < objs.length; i++) {
       Obj obj = objs[i];
       if (obj != null) {
-        ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
+        ConditionalRowMutation conditionalRowMutation = conditionalForStoreObj(obj, false);
         futures[i] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
       }
     }
@@ -538,6 +529,81 @@ public class BigTablePersist implements Persist {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    ConditionalRowMutation conditionalRowMutation =
+        mutationForConditional(obj, Mutation.create().deleteRow());
+    return backend.client().checkAndMutateRow(conditionalRowMutation);
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    Mutation mutation = objectWriteMutation(newValue, false);
+
+    ConditionalRowMutation conditionalRowMutation = mutationForConditional(expected, mutation);
+    return backend.client().checkAndMutateRow(conditionalRowMutation);
+  }
+
+  @NotNull
+  private ConditionalRowMutation mutationForConditional(
+      @NotNull UpdateableObj obj, Mutation mutation) {
+    checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
+    ByteString key = dbKey(obj.id());
+
+    Filter condition =
+        FILTERS
+            .chain()
+            .filter(
+                FILTERS
+                    .chain()
+                    .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_VERS))
+                    .filter(FILTERS.value().exactMatch(obj.versionToken())))
+        // TODO adding this safety net doesn't work :(
+        // .filter(
+        //    FILTERS
+        //        .chain()
+        //        .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
+        //        .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES.get(obj.type()))))
+        //
+        ;
+
+    return ConditionalRowMutation.create(backend.tableObjs, key)
+        .condition(condition)
+        .then(mutation);
+  }
+
+  @NotNull
+  private Mutation objectWriteMutation(@NotNull Obj obj, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
+    int incrementalIndexSizeLimit =
+        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
+    int indexSizeLimit =
+        ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
+    byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit);
+
+    ByteString ref = unsafeWrap(serialized);
+
+    Mutation mutation =
+        Mutation.create()
+            .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, ref)
+            .setCell(
+                FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, OBJ_TYPE_VALUES.get(obj.type()));
+    if (obj instanceof UpdateableObj) {
+      mutation.setCell(
+          FAMILY_OBJS,
+          QUALIFIER_OBJ_VERS,
+          CELL_TIMESTAMP,
+          ByteString.copyFromUtf8(((UpdateableObj) obj).versionToken()));
+    }
+    return mutation;
   }
 
   @Override

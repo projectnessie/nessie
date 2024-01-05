@@ -25,5 +25,7 @@ public class CustomObjTypeBundle implements ObjTypeBundle {
   public void register(Consumer<ObjType> registrar) {
     registrar.accept(SimpleTestObj.TYPE);
     registrar.accept(AnotherTestObj.TYPE);
+    registrar.accept(VersionedTestObj.TYPE);
+    registrar.accept(VersionedTestObj2.TYPE);
   }
 }

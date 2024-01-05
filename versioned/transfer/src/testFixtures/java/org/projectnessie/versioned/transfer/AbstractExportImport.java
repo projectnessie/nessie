@@ -68,6 +68,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackend;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackendName;
@@ -396,6 +397,17 @@ public abstract class AbstractExportImport {
 
           @Override
           public void upsertObjs(@Nonnull Obj[] objs) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          public boolean updateConditional(
+              @Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue) {
             throw new UnsupportedOperationException();
           }
 

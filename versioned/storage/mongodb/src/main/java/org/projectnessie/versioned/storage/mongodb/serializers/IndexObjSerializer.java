@@ -53,7 +53,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj docToObj(ObjId id, ObjType type, Document doc) {
+  public IndexObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
     return index(id, binaryToBytes(doc.get(COL_INDEX_INDEX, Binary.class)));
   }
 }

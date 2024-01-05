@@ -140,7 +140,8 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
+  public CommitObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+      throws SQLException {
     CommitObj.Builder b =
         CommitObj.commitBuilder()
             .id(id)

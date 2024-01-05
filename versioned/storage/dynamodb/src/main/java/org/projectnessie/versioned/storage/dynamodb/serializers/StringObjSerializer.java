@@ -71,7 +71,8 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
+  public StringObj fromMap(
+      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
     List<ObjId> predecessors = new ArrayList<>();
     attributeToObjIds(i, COL_STRING_PREDECESSORS, predecessors::add);
     return stringData(

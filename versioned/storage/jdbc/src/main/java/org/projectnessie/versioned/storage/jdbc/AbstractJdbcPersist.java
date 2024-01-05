@@ -26,8 +26,10 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENC
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ_CONDITIONAL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS_TYPED;
@@ -61,6 +63,7 @@ import java.util.function.Consumer;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Object2IntHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -74,6 +77,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializers;
 
@@ -423,9 +427,10 @@ abstract class AbstractJdbcPersist implements Persist {
   private Obj deserializeObj(ResultSet rs) throws SQLException {
     ObjId id = deserializeObjId(rs, COL_OBJ_ID);
     String objType = rs.getString(COL_OBJ_TYPE);
+    String versionToken = rs.getString(COL_OBJ_VERS);
     ObjType type = ObjTypes.forName(objType);
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
-    return serializer.deserialize(rs, type, id);
+    return serializer.deserialize(rs, type, id, versionToken);
   }
 
   protected final boolean storeObj(
@@ -450,6 +455,31 @@ abstract class AbstractJdbcPersist implements Persist {
       throws ObjTooLargeException {
     upsertObjs(conn, objs, false, false);
     return null;
+  }
+
+  protected final boolean deleteConditional(@Nonnull Connection conn, @NotNull UpdateableObj obj) {
+    try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ_CONDITIONAL)) {
+      ps.setString(1, config.repositoryId());
+      serializeObjId(ps, 2, obj.id(), databaseSpecific);
+      ps.setString(3, obj.type().name());
+      ps.setString(4, obj.versionToken());
+      return ps.executeUpdate() == 1;
+    } catch (SQLException e) {
+      throw unhandledSQLException(e);
+    }
+  }
+
+  protected final boolean updateConditional(
+      @Nonnull Connection conn, @NotNull UpdateableObj expected, @NotNull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    // See comment in upsertObjs() why this is implemented this way.
+    return deleteConditional(conn, expected)
+        && upsertObjs(conn, new Obj[] {newValue}, false, true)[0];
   }
 
   @Nonnull
@@ -502,6 +532,11 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
         serializeObjId(ps, storeObjSqlParams.get(COL_OBJ_ID), id, databaseSpecific);
         ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
+        if (obj instanceof UpdateableObj) {
+          ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), ((UpdateableObj) obj).versionToken());
+        } else {
+          ps.setNull(storeObjSqlParams.get(COL_OBJ_VERS), Types.VARCHAR);
+        }
 
         ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
         serializer.serialize(
@@ -582,10 +617,6 @@ abstract class AbstractJdbcPersist implements Persist {
 
     } catch (SQLException e) {
       throw unhandledSQLException(e);
-    }
-
-    for (ObjId id : ids) {
-      deleteObj(conn, id);
     }
   }
 

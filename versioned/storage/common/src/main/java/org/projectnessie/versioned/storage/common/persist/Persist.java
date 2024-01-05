@@ -273,6 +273,23 @@ public interface Persist {
   void deleteObjs(@Nonnull ObjId[] ids);
 
   /**
+   * Deletes the object, if the current state in the database is equal to the given state, comparing
+   * the {@link UpdateableObj#versionToken()}.
+   *
+   * @return {@code true}, if the conditional delete succeeded.
+   */
+  boolean deleteConditional(@Nonnull UpdateableObj obj);
+
+  /**
+   * Updates the object, if the current state in the database is equal to the {@code expected}
+   * state, comparing the {@link UpdateableObj#versionToken()}.
+   *
+   * @return {@code true}, if the conditional update succeeded.
+   */
+  boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException;
+
+  /**
    * Updates an existing object or inserts it as a new object, used only for maintenance operations,
    * never for production code. The "user facing semantics" of an object <em>must not</em> change.
    *

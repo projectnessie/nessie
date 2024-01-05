@@ -46,6 +46,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
@@ -439,6 +440,80 @@ class RocksDBPersist implements Persist {
       if (obj != null) {
         upsertObj(obj);
       }
+    }
+  }
+
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    ObjId id = obj.id();
+    Lock l = repo.objLock(id);
+    try {
+      RocksDBBackend b = backend;
+      TransactionDB db = b.db();
+      ColumnFamilyHandle cf = b.objs();
+      byte[] key = dbKey(id);
+
+      byte[] bytes = db.get(cf, key);
+      if (bytes == null) {
+        return false;
+      }
+      Obj existing = deserializeObj(id, bytes);
+      if (!existing.type().equals(existing.type())) {
+        return false;
+      }
+      UpdateableObj ex = (UpdateableObj) existing;
+      if (!ex.versionToken().equals(obj.versionToken())) {
+        return false;
+      }
+
+      db.delete(cf, key);
+      return true;
+    } catch (RocksDBException e) {
+      throw rocksDbException(e);
+    } finally {
+      l.unlock();
+    }
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    Lock l = repo.objLock(id);
+    try {
+      RocksDBBackend b = backend;
+      TransactionDB db = b.db();
+      ColumnFamilyHandle cf = b.objs();
+      byte[] key = dbKey(id);
+
+      byte[] obj = db.get(cf, key);
+      if (obj == null) {
+        return false;
+      }
+      Obj existing = deserializeObj(id, obj);
+      if (!existing.type().equals(existing.type())) {
+        return false;
+      }
+      UpdateableObj ex = (UpdateableObj) existing;
+      if (!ex.versionToken().equals(expected.versionToken())) {
+        return false;
+      }
+
+      byte[] serialized =
+          serializeObj(
+              newValue, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
+
+      db.put(cf, key, serialized);
+
+      return true;
+    } catch (RocksDBException e) {
+      throw rocksDbException(e);
+    } finally {
+      l.unlock();
     }
   }
 

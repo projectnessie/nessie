@@ -35,5 +35,5 @@ public interface ObjSerializer<O extends Obj> {
       O obj, Map<String, AttributeValue> i, int incrementalIndexSize, int maxSerializedIndexSize)
       throws ObjTooLargeException;
 
-  O fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i);
+  O fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken);
 }

@@ -78,7 +78,8 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
+  public TagObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+      throws SQLException {
     CommitHeaders tagHeaders = null;
     try {
       Headers headers = Headers.parseFrom(deserializeBytes(rs, COL_TAG_HEADERS));

@@ -52,7 +52,8 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
+  public IndexSegmentsObj fromMap(
+      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
     List<IndexStripe> stripes = new ArrayList<>();
     fromStripesAttrList(i.get(COL_SEGMENTS_STRIPES), stripes::add);
     return indexSegments(id, stripes);

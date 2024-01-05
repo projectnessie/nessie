@@ -29,6 +29,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 class CachingPersistImpl implements Persist {
 
@@ -191,6 +192,27 @@ class CachingPersistImpl implements Persist {
           cache.remove(id);
         }
       }
+    }
+  }
+
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    try {
+      return persist.deleteConditional(obj);
+    } finally {
+      cache.remove(obj.id());
+    }
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    if (persist.updateConditional(expected, newValue)) {
+      cache.put(newValue);
+      return true;
+    } else {
+      cache.remove(expected.id());
+      return false;
     }
   }
 

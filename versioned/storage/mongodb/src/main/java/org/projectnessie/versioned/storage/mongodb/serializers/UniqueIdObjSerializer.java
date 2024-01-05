@@ -49,7 +49,7 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj docToObj(ObjId id, ObjType type, Document doc) {
+  public UniqueIdObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
     return uniqueId(
         id,
         doc.getString(COL_UNIQUE_SPACE),

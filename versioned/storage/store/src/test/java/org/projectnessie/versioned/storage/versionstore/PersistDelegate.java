@@ -29,6 +29,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 public class PersistDelegate implements Persist {
   final Persist delegate;
@@ -161,6 +162,17 @@ public class PersistDelegate implements Persist {
   @Override
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     delegate.upsertObjs(objs);
+  }
+
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    return delegate.deleteConditional(obj);
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    return delegate.updateConditional(expected, newValue);
   }
 
   @Override

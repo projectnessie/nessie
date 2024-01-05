@@ -78,7 +78,8 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
+  public IndexSegmentsObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+      throws SQLException {
     try {
       Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_SEGMENTS_STRIPES));
       List<IndexStripe> stripeList =

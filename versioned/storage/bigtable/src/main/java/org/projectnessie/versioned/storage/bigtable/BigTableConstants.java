@@ -26,6 +26,7 @@ final class BigTableConstants {
   static final String FAMILY_OBJS = "o";
 
   static final ByteString QUALIFIER_OBJ_TYPE = ByteString.copyFromUtf8("t");
+  static final ByteString QUALIFIER_OBJ_VERS = ByteString.copyFromUtf8("V");
   static final ByteString QUALIFIER_OBJS = ByteString.copyFromUtf8("o");
   static final ByteString QUALIFIER_REFS = ByteString.copyFromUtf8("r");
 

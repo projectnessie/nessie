@@ -102,7 +102,7 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj docToObj(ObjId id, ObjType type, Document doc) {
+  public CommitObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
     CommitObj.Builder b =
         commitBuilder()
             .id(id)

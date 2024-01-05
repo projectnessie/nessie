@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toList;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_DELETED;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_EXTENDED_INFO;
@@ -54,6 +55,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
@@ -82,6 +84,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializers;
 
@@ -529,6 +532,53 @@ public class MongoDBPersist implements Persist {
     }
   }
 
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    ObjId id = obj.id();
+    ObjType type = obj.type();
+
+    return backend
+            .objs()
+            .findOneAndDelete(
+                and(
+                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                    eq(COL_OBJ_TYPE, type.shortName()),
+                    eq(COL_OBJ_VERS, obj.versionToken())))
+        != null;
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    ObjType type = expected.type();
+    String expectedVersion = expected.versionToken();
+
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    Document doc = objToDoc(newValue, false);
+
+    List<Bson> updates =
+        doc.entrySet().stream()
+            .filter(e -> !ID_PROPERTY_NAME.equals(e.getKey()))
+            .map(e -> set(e.getKey(), e.getValue()))
+            .collect(toList());
+
+    Bson update = Updates.combine(updates);
+
+    return backend
+            .objs()
+            .findOneAndUpdate(
+                and(
+                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                    eq(COL_OBJ_TYPE, type.shortName()),
+                    eq(COL_OBJ_VERS, expectedVersion)),
+                update)
+        != null;
+  }
+
   @Nonnull
   @Override
   public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
@@ -549,7 +599,8 @@ public class MongoDBPersist implements Persist {
     ObjType type = ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Document inner = doc.get(serializer.fieldName(), Document.class);
-    return serializer.docToObj(id, type, inner);
+    String versionToken = doc.getString(COL_OBJ_VERS);
+    return serializer.docToObj(id, type, inner, versionToken);
   }
 
   private Document objToDoc(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
@@ -564,6 +615,9 @@ public class MongoDBPersist implements Persist {
     Document inner = new Document();
     doc.put(ID_PROPERTY_NAME, idObjDoc(id));
     doc.put(COL_OBJ_TYPE, type.shortName());
+    if (obj instanceof UpdateableObj) {
+      doc.put(COL_OBJ_VERS, ((UpdateableObj) obj).versionToken());
+    }
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =
