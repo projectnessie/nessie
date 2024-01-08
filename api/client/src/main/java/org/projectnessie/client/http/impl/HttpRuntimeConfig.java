@@ -39,7 +39,7 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   default void check() {
     URI baseUri = getBaseUri();
     if (baseUri != null) {
-      if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
+      if (!HttpUtils.isHttpUri(baseUri)) {
         throw new IllegalArgumentException(
             String.format(
                 "Cannot start http client. %s must be a valid http or https address", baseUri));
