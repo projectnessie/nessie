@@ -32,15 +32,16 @@ runs:
       uses: gradle/gradle-build-action@v2
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
+        cache-overwrite-existing: true
         arguments: -h
 
-    - name: Download existing workflow artifacts
-      uses: actions/download-artifact@v4
-      # Just in case, don't know the exact inner workings of Gradle's build cache and whether
-      # the download-action complains about duplicate files.
-      continue-on-error: true
-      with:
-        path: ~/downloaded-artifacts/
+#    - name: Download existing workflow artifacts
+#      uses: actions/download-artifact@v4
+#      # Just in case, don't know the exact inner workings of Gradle's build cache and whether
+#      # the download-action complains about duplicate files.
+#      continue-on-error: true
+#      with:
+#        path: ~/downloaded-artifacts/
 
     - name: Extract caches
       shell: bash
