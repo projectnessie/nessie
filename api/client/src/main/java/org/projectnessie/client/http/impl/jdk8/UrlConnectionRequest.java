@@ -44,6 +44,10 @@ final class UrlConnectionRequest extends BaseHttpRequest {
     super(config);
   }
 
+  UrlConnectionRequest(HttpRuntimeConfig config, URI baseUri) {
+    super(config, baseUri);
+  }
+
   @Override
   public HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
     URI uri = uriBuilder.build();

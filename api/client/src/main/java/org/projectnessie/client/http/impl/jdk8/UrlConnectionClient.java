@@ -51,8 +51,8 @@ public final class UrlConnectionClient implements HttpClient {
   }
 
   @Override
-  public URI getBaseUri() {
-    return config.getBaseUri();
+  public HttpRequest newRequest(URI baseUri) {
+    return new UrlConnectionRequest(config, baseUri);
   }
 
   @Override

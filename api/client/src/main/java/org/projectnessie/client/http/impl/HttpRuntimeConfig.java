@@ -38,13 +38,17 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   @Value.Check
   default void check() {
     URI baseUri = getBaseUri();
-    if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Cannot start http client. %s must be a valid http or https address", baseUri));
+    if (baseUri != null) {
+      if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Cannot start http client. %s must be a valid http or https address", baseUri));
+      }
     }
   }
 
+  @Nullable
+  @jakarta.annotation.Nullable
   URI getBaseUri();
 
   ObjectMapper getMapper();

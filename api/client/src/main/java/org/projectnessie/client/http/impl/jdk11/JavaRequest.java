@@ -81,6 +81,11 @@ final class JavaRequest extends BaseHttpRequest {
     this.exchange = exchange;
   }
 
+  JavaRequest(HttpRuntimeConfig config, URI baseUri, HttpExchange<InputStream> exchange) {
+    super(config, baseUri);
+    this.exchange = exchange;
+  }
+
   @Override
   public org.projectnessie.client.http.HttpResponse executeRequest(Method method, Object body)
       throws HttpClientException {

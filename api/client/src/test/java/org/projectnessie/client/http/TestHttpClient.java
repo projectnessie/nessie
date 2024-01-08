@@ -274,6 +274,41 @@ public class TestHttpClient {
   }
 
   @Test
+  void testPerRequestBaseUri() throws Exception {
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          soft.assertThat(req.getMethod()).isEqualTo("GET");
+          String response = MAPPER.writeValueAsString(inputBean);
+          writeResponseBody(resp, response);
+        };
+    try (HttpTestServer server = new HttpTestServer(handler)) {
+      try (HttpClient client = createClient(null, b -> {})) {
+        ExampleBean bean = client.newRequest(server.getUri()).get().readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+      }
+    }
+  }
+
+  @Test
+  void testNullPerRequestBaseUri() {
+    try (HttpClient client = createClient(null, b -> {})) {
+      assertThatThrownBy(() -> client.newRequest(null))
+          .isInstanceOf(NullPointerException.class)
+          .hasMessage("Base URI cannot be null");
+    }
+  }
+
+  @Test
+  void testInvalidPerRequestBaseUri() {
+    try (HttpClient client = createClient(null, b -> {})) {
+      assertThatThrownBy(() -> client.newRequest(URI.create("file:///foo/bar/baz")))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Base URI must be a valid http or https address");
+    }
+  }
+
+  @Test
   void testPut() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =

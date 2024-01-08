@@ -38,11 +38,11 @@ public interface HttpClient extends AutoCloseable {
 
   HttpRequest newRequest();
 
+  HttpRequest newRequest(URI baseUri);
+
   static Builder builder() {
     return new HttpClientBuilderImpl();
   }
-
-  URI getBaseUri();
 
   @Override
   void close();

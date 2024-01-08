@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -45,6 +46,10 @@ public abstract class BaseHttpRequest extends HttpRequest {
 
   protected BaseHttpRequest(HttpRuntimeConfig config) {
     super(config);
+  }
+
+  protected BaseHttpRequest(HttpRuntimeConfig config, URI baseUri) {
+    super(config, baseUri);
   }
 
   protected boolean prepareRequest(RequestContext context) {

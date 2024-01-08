@@ -15,6 +15,10 @@
  */
 package org.projectnessie.client.http;
 
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
+
+import java.net.URI;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.impl.HttpHeaders;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
@@ -31,7 +35,16 @@ public abstract class HttpRequest
   protected String accept = "application/json; charset=utf-8";
 
   protected HttpRequest(HttpRuntimeConfig config) {
-    this.uriBuilder = new UriBuilder(config.getBaseUri());
+    this(config, config.getBaseUri());
+  }
+
+  protected HttpRequest(HttpRuntimeConfig config, URI baseUri) {
+    requireNonNull(baseUri, "Base URI cannot be null");
+    checkArgument(
+        "http".equals(baseUri.getScheme()) || "https".equals(baseUri.getScheme()),
+        "Base URI must be a valid http or https address: %s",
+        baseUri);
+    this.uriBuilder = new UriBuilder(baseUri);
     this.config = config;
 
     int clientSpec = config.getClientSpec();
