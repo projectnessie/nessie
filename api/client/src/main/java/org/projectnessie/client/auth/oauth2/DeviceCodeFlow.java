@@ -194,19 +194,11 @@ class DeviceCodeFlow implements AutoCloseable {
                   TimeUnit.MILLISECONDS);
           return;
         case "access_denied":
-          LOGGER.error(MSG_PREFIX + "Authorization denied by user");
-          tokensFuture.completeExceptionally(e);
-          return;
         case "expired_token":
-          LOGGER.error(MSG_PREFIX + "Authorization expired");
-          tokensFuture.completeExceptionally(e);
-          return;
         default:
-          LOGGER.error(MSG_PREFIX + "Failed to fetch new tokens: " + e.getMessage());
           tokensFuture.completeExceptionally(e);
       }
     } catch (Exception e) {
-      LOGGER.error(MSG_PREFIX + "Failed to fetch new tokens: " + e.getMessage());
       tokensFuture.completeExceptionally(e);
     }
   }

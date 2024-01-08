@@ -69,7 +69,12 @@ public class ITOAuth2Client {
 
   @Container
   private static final KeycloakContainer KEYCLOAK =
-      new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange");
+      new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange")
+      // Useful when debugging Keycloak REST endpoints:
+      // .withEnv("QUARKUS_HTTP_ACCESS_LOG_ENABLED", "true")
+      // .withEnv("QUARKUS_HTTP_ACCESS_LOG_PATTERN", "long")
+      // .withEnv("KC_LOG_LEVEL", "INFO,org.keycloak:DEBUG")
+      ;
 
   private static RealmResource master;
   private static URI issuerUrl;
