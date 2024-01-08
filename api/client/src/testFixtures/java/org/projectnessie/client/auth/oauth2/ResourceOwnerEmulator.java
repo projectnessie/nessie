@@ -193,10 +193,14 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     try {
       LOGGER.info("Starting authorization code flow.");
       Set<String> cookies = new HashSet<>();
-      URL callbackUrl =
-          username == null || password == null
-              ? readRedirectUrl((HttpURLConnection) initialUrl.openConnection(), cookies)
-              : login(initialUrl, cookies);
+      URL callbackUrl;
+      if (username == null || password == null) {
+        HttpURLConnection conn = (HttpURLConnection) initialUrl.openConnection();
+        callbackUrl = readRedirectUrl(conn, cookies);
+        conn.disconnect();
+      } else {
+        callbackUrl = login(initialUrl, cookies);
+      }
       invokeCallbackUrl(callbackUrl);
       LOGGER.info("Authorization code flow completed.");
       Runnable listener = flowCompletionListener;
@@ -216,13 +220,10 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     try {
       LOGGER.info("Starting device code flow.");
       Set<String> cookies = new HashSet<>();
-      HttpURLConnection codeActionConn = enterUserCode(initialUrl, userCode, cookies);
-      if (username != null && password != null) {
-        URL loginPageUrl = readRedirectUrl(codeActionConn, cookies);
+      URL loginPageUrl = enterUserCode(initialUrl, userCode, cookies);
+      if (loginPageUrl != null) {
         URL consentPageUrl = login(loginPageUrl, cookies);
         authorizeDevice(consentPageUrl, cookies);
-      } else {
-        assertThat(codeActionConn.getResponseCode()).isEqualTo(HTTP_OK);
       }
       LOGGER.info("Device code flow completed.");
       Runnable listener = flowCompletionListener;
@@ -243,6 +244,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     String loginHtml = readHtml(loginPageConn);
     assertThat(loginPageConn.getResponseCode()).isEqualTo(HTTP_OK);
     readCookies(loginPageConn, cookies);
+    loginPageConn.disconnect();
     Matcher matcher = FORM_ACTION_PATTERN.matcher(loginHtml);
     assertThat(matcher.find()).isTrue();
     URL loginActionUrl = new URL(matcher.group(1));
@@ -254,7 +256,9 @@ public class ResourceOwnerEmulator implements AutoCloseable {
             "password", password,
             "credentialId", "");
     postForm(loginActionConn, data, cookies);
-    return readRedirectUrl(loginActionConn, cookies);
+    URL redirectUrl = readRedirectUrl(loginActionConn, cookies);
+    loginActionConn.disconnect();
+    return redirectUrl;
   }
 
   /** Emulate browser being redirected to callback URL. */
@@ -277,14 +281,15 @@ public class ResourceOwnerEmulator implements AutoCloseable {
                   + "&state="
                   + params.get("state"));
     }
-    HttpURLConnection con = (HttpURLConnection) callbackUrl.openConnection();
-    con.setRequestMethod("GET");
-    int status = con.getResponseCode();
+    HttpURLConnection conn = (HttpURLConnection) callbackUrl.openConnection();
+    conn.setRequestMethod("GET");
+    int status = conn.getResponseCode();
+    conn.disconnect();
     assertThat(status).isEqualTo(expectedCallbackStatus);
   }
 
   /** Emulate user entering provided user code on the authorization server. */
-  private HttpURLConnection enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
+  private URL enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
       throws IOException {
     // receive device code page
     HttpURLConnection codePageConn = openConnection(codePageUrl);
@@ -292,11 +297,22 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     writeCookies(codePageConn, cookies);
     assertThat(codePageConn.getResponseCode()).isEqualTo(HTTP_OK);
     readCookies(codePageConn, cookies);
+    codePageConn.disconnect();
     // send device code form to same URL but with POST
     HttpURLConnection codeActionConn = openConnection(codePageUrl);
     Map<String, String> data = ImmutableMap.of("device_user_code", userCode);
     postForm(codeActionConn, data, cookies);
-    return codeActionConn;
+    URL loginUrl;
+    if (username != null && password != null) {
+      // Expect a redirect to the login page
+      loginUrl = readRedirectUrl(codeActionConn, cookies);
+    } else {
+      // Unit tests: expect just a 200 OK
+      assertThat(codeActionConn.getResponseCode()).isEqualTo(HTTP_OK);
+      loginUrl = null;
+    }
+    codeActionConn.disconnect();
+    return loginUrl;
   }
 
   /** Emulate user consenting to authorize device on the authorization server. */
@@ -308,6 +324,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     String consentHtml = readHtml(consentPageConn);
     assertThat(consentPageConn.getResponseCode()).isEqualTo(HTTP_OK);
     readCookies(consentPageConn, cookies);
+    consentPageConn.disconnect();
     Matcher matcher = FORM_ACTION_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
     String formAction = matcher.group(1);
@@ -327,7 +344,9 @@ public class ResourceOwnerEmulator implements AutoCloseable {
             ? ImmutableMap.of("code", deviceCode, "cancel", "No")
             : ImmutableMap.of("code", deviceCode, "accept", "Yes");
     postForm(consentActionConn, data, cookies);
+    // Read the response but discard it, as it points to a static success HTML page
     readRedirectUrl(consentActionConn, cookies);
+    consentActionConn.disconnect();
   }
 
   private void recordFailure(Throwable t) {
