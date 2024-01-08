@@ -37,7 +37,6 @@ class DeviceCodeFlow implements AutoCloseable {
 
   private final OAuth2ClientConfig config;
   private final HttpClient tokenEndpointClient;
-  private final HttpClient deviceAuthEndpointClient;
   private final PrintStream console;
   private final Duration flowTimeout;
 
@@ -56,12 +55,6 @@ class DeviceCodeFlow implements AutoCloseable {
     this.config = config;
     this.tokenEndpointClient = tokenEndpointClient;
     this.console = console;
-    deviceAuthEndpointClient =
-        config
-            .newHttpClientBuilder()
-            .setBaseUri(config.getResolvedDeviceAuthEndpoint())
-            .setAuthentication(config.getBasicAuthentication())
-            .build();
     flowTimeout = config.getDeviceCodeFlowTimeout();
     pollInterval = config.getDeviceCodeFlowPollInterval();
     closeFuture.thenRun(this::doClose);
@@ -127,10 +120,17 @@ class DeviceCodeFlow implements AutoCloseable {
             // don't include client id, it's in the basic auth header
             .scope(config.getScope().orElse(null))
             .build();
-    return deviceAuthEndpointClient
-        .newRequest()
-        .postForm(body)
-        .readEntity(DeviceCodeResponse.class);
+    try (HttpClient deviceAuthEndpointClient =
+        config
+            .newHttpClientBuilder()
+            .setBaseUri(config.getResolvedDeviceAuthEndpoint())
+            .setAuthentication(config.getBasicAuthentication())
+            .build()) {
+      return deviceAuthEndpointClient
+          .newRequest()
+          .postForm(body)
+          .readEntity(DeviceCodeResponse.class);
+    }
   }
 
   private void checkPollInterval(Duration serverPollInterval) {
