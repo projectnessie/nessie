@@ -69,6 +69,8 @@ class DeviceCodeFlow implements AutoCloseable {
 
   private void doClose() {
     LOGGER.debug("Device Code Flow: closing");
+    executor.shutdownNow();
+    pollFuture = null;
     // don't close the console, it's not ours
   }
 
