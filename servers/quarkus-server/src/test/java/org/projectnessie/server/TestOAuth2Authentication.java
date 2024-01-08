@@ -61,7 +61,8 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   private static final String TOKEN_ENDPOINT_PATH = "/auth/realms/quarkus/token";
   private static final String AUTH_ENDPOINT_PATH = "/auth/realms/quarkus/auth";
   private static final String DEVICE_AUTH_ENDPOINT_PATH = "/auth/realms/quarkus/auth/device";
-  private static final String USER_DEVICE_AUTH_URL = "/auth/realms/quarkus/device";
+  private static final String DEVICE_USER_CODE_PAGE_URL = "/auth/realms/quarkus/device";
+  private static final String DEVICE_USER_CODE_ACTION_URL = "/auth/realms/quarkus/device/";
 
   @OidcWireMock private WireMockServer wireMockServer;
 
@@ -133,7 +134,7 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   }
 
   private String userDeviceAuthEndpoint() {
-    return wireMockServer.baseUrl() + USER_DEVICE_AUTH_URL;
+    return wireMockServer.baseUrl() + DEVICE_USER_CODE_PAGE_URL;
   }
 
   @BeforeAll
@@ -185,14 +186,14 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
                             + "\"expires_in\":600}")));
     // Endpoint where the user enters the device code
     wireMockServer.stubFor(
-        WireMock.get(urlPathEqualTo(USER_DEVICE_AUTH_URL))
+        WireMock.get(urlPathEqualTo(DEVICE_USER_CODE_PAGE_URL))
             .willReturn(
                 WireMock.aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "text/html")
                     .withBody("<html><body>Enter device code:</body></html>")));
     wireMockServer.stubFor(
-        WireMock.post(USER_DEVICE_AUTH_URL)
+        WireMock.post(DEVICE_USER_CODE_ACTION_URL)
             .withRequestBody(containing("device_user_code=CAFE-BABE"))
             .willReturn(
                 WireMock.aResponse()
