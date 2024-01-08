@@ -32,7 +32,6 @@ runs:
       uses: gradle/gradle-build-action@v2
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
-        cache-overwrite-existing: true
         arguments: -h
 
     - name: Download existing workflow artifacts

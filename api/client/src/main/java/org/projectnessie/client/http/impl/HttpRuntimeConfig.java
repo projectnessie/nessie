@@ -38,12 +38,10 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   @Value.Check
   default void check() {
     URI baseUri = getBaseUri();
-    if (baseUri != null) {
-      if (!HttpUtils.isHttpUri(baseUri)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Cannot start http client. %s must be a valid http or https address", baseUri));
-      }
+    if (baseUri != null && !HttpUtils.isHttpUri(baseUri)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Cannot start http client. %s must be a valid http or https address", baseUri));
     }
   }
 
