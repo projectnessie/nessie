@@ -57,7 +57,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private static final int STATE_LENGTH = 16;
 
   private final OAuth2ClientConfig config;
-  private final HttpClient tokenEndpointClient;
+  private final HttpClient httpClient;
   private final PrintStream console;
   private final String state;
   private final HttpServer server;
@@ -72,14 +72,13 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
-  AuthorizationCodeFlow(OAuth2ClientConfig config, HttpClient tokenEndpointClient) {
-    this(config, tokenEndpointClient, System.out);
+  AuthorizationCodeFlow(OAuth2ClientConfig config, HttpClient httpClient) {
+    this(config, httpClient, System.out);
   }
 
-  AuthorizationCodeFlow(
-      OAuth2ClientConfig config, HttpClient tokenEndpointClient, PrintStream console) {
+  AuthorizationCodeFlow(OAuth2ClientConfig config, HttpClient httpClient, PrintStream console) {
     this.config = config;
-    this.tokenEndpointClient = tokenEndpointClient;
+    this.httpClient = httpClient;
     this.console = console;
     this.flowTimeout = config.getAuthorizationCodeFlowTimeout();
     authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
@@ -112,7 +111,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     inflightRequestsPhaser.arriveAndAwaitAdvance();
     LOGGER.debug("Authorization Code Flow: closing");
     server.stop(0);
-    // don't close the console, it's not ours
+    // don't close the HTTP client nor the console, they are not ours
   }
 
   private void abort() {
@@ -194,7 +193,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
             .clientId(config.getClientId())
             .scope(config.getScope().orElse(null))
             .build();
-    HttpResponse response = tokenEndpointClient.newRequest().postForm(body);
+    HttpResponse response = httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
     Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
