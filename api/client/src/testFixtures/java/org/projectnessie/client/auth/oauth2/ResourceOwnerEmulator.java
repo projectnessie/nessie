@@ -21,6 +21,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +35,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,20 +248,12 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     URL loginActionUrl = new URL(matcher.group(1));
     // send login form
     HttpURLConnection loginActionConn = openConnection(loginActionUrl);
-    loginActionConn.setRequestMethod("POST");
-    loginActionConn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-    writeCookies(loginActionConn, cookies);
-    loginActionConn.setDoOutput(true);
-    String data =
-        "username="
-            + URLEncoder.encode(username, "UTF-8")
-            + "&"
-            + "password="
-            + URLEncoder.encode(password, "UTF-8")
-            + "&credentialId=";
-    try (OutputStream out = loginActionConn.getOutputStream()) {
-      out.write(data.getBytes(UTF_8));
-    }
+    Map<String, String> data =
+        ImmutableMap.of(
+            "username", username,
+            "password", password,
+            "credentialId", "");
+    postForm(loginActionConn, data, cookies);
     return readRedirectUrl(loginActionConn, cookies);
   }
 
@@ -300,16 +294,8 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     readCookies(codePageConn, cookies);
     // send device code form to same URL but with POST
     HttpURLConnection codeActionConn = openConnection(codePageUrl);
-    // See https://github.com/projectnessie/nessie/issues/7918
-    codeActionConn.addRequestProperty("Accept", "text/html, *; q=.2, */*; q=.2");
-    codeActionConn.setRequestMethod("POST");
-    codeActionConn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-    writeCookies(codeActionConn, cookies);
-    codeActionConn.setDoOutput(true);
-    String data = "device_user_code=" + URLEncoder.encode(userCode, "UTF-8");
-    try (OutputStream out = codeActionConn.getOutputStream()) {
-      out.write(data.getBytes(UTF_8));
-    }
+    Map<String, String> data = ImmutableMap.of("device_user_code", userCode);
+    postForm(codeActionConn, data, cookies);
     return codeActionConn;
   }
 
@@ -336,19 +322,11 @@ public class ResourceOwnerEmulator implements AutoCloseable {
             consentPageUrl.getPort(),
             formAction);
     HttpURLConnection consentActionConn = openConnection(consentActionUrl);
-    consentActionConn.setRequestMethod("POST");
-    consentActionConn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-    writeCookies(consentActionConn, cookies);
-    consentActionConn.setDoOutput(true);
-    String data = "code=" + URLEncoder.encode(deviceCode, "UTF-8");
-    if (denyConsent) {
-      data += "&cancel=No";
-    } else {
-      data += "&accept=Yes";
-    }
-    try (OutputStream out = consentActionConn.getOutputStream()) {
-      out.write(data.getBytes(UTF_8));
-    }
+    Map<String, String> data =
+        denyConsent
+            ? ImmutableMap.of("code", deviceCode, "cancel", "No")
+            : ImmutableMap.of("code", deviceCode, "accept", "Yes");
+    postForm(consentActionConn, data, cookies);
     readRedirectUrl(consentActionConn, cookies);
   }
 
@@ -381,6 +359,8 @@ public class ResourceOwnerEmulator implements AutoCloseable {
           new URL(baseUri.getScheme(), baseUri.getHost(), baseUri.getPort(), url.getFile());
       conn = (HttpURLConnection) transformed.openConnection();
     }
+    // See https://github.com/projectnessie/nessie/issues/7918
+    conn.addRequestProperty("Accept", "text/html, *; q=.2, */*; q=.2");
     return conn;
   }
 
@@ -401,6 +381,26 @@ public class ResourceOwnerEmulator implements AutoCloseable {
         throw (Error) t;
       } else {
         throw new RuntimeException(t);
+      }
+    }
+  }
+
+  private static void postForm(
+      HttpURLConnection conn, Map<String, String> data, Set<String> cookies) throws IOException {
+    conn.setRequestMethod("POST");
+    conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+    writeCookies(conn, cookies);
+    conn.setDoOutput(true);
+    try (OutputStream out = conn.getOutputStream()) {
+      for (Iterator<String> iterator = data.keySet().iterator(); iterator.hasNext(); ) {
+        String name = iterator.next();
+        String value = data.get(name);
+        out.write(URLEncoder.encode(name, "UTF-8").getBytes(UTF_8));
+        out.write('=');
+        out.write(URLEncoder.encode(value, "UTF-8").getBytes(UTF_8));
+        if (iterator.hasNext()) {
+          out.write('&');
+        }
       }
     }
   }
