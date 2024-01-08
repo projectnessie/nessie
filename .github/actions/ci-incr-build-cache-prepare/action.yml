@@ -31,7 +31,8 @@ runs:
     - name: Gradle / Init
       uses: gradle/gradle-build-action@v2
       with:
-        cache-read-only: ${{ inputs.cache-read-only }}
+#        cache-read-only: ${{ inputs.cache-read-only }}
+        cache-write-only: true
         cache-overwrite-existing: true
         arguments: -h
 
