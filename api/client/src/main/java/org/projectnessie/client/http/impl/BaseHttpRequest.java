@@ -44,10 +44,6 @@ public abstract class BaseHttpRequest extends HttpRequest {
   private static final TypeReference<Map<String, Object>> MAP_TYPE =
       new TypeReference<Map<String, Object>>() {};
 
-  protected BaseHttpRequest(HttpRuntimeConfig config) {
-    super(config);
-  }
-
   protected BaseHttpRequest(HttpRuntimeConfig config, URI baseUri) {
     super(config, baseUri);
   }

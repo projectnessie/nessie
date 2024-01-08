@@ -36,13 +36,17 @@ public interface HttpClient extends AutoCloseable {
     DELETE;
   }
 
-  HttpRequest newRequest();
+  default HttpRequest newRequest() {
+    return newRequest(getBaseUri());
+  }
 
   HttpRequest newRequest(URI baseUri);
 
   static Builder builder() {
     return new HttpClientBuilderImpl();
   }
+
+  URI getBaseUri();
 
   @Override
   void close();

@@ -35,10 +35,6 @@ public abstract class HttpRequest
   protected String contentsType = "application/json; charset=utf-8";
   protected String accept = "application/json; charset=utf-8";
 
-  protected HttpRequest(HttpRuntimeConfig config) {
-    this(config, config.getBaseUri());
-  }
-
   protected HttpRequest(HttpRuntimeConfig config, URI baseUri) {
     requireNonNull(baseUri, "Base URI cannot be null");
     checkArgument(
