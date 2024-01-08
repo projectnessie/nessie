@@ -298,9 +298,8 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     writeCookies(codePageConn, cookies);
     assertThat(codePageConn.getResponseCode()).isEqualTo(HTTP_OK);
     readCookies(codePageConn, cookies);
-    // send device code form to same URL but with POST, and a trailing slash
-    URL codeActionUrl = new URL(codePageUrl.toExternalForm() + "/");
-    HttpURLConnection codeActionConn = openConnection(codeActionUrl);
+    // send device code form to same URL but with POST
+    HttpURLConnection codeActionConn = openConnection(codePageUrl);
     // See https://github.com/projectnessie/nessie/issues/7918
     codeActionConn.addRequestProperty("Accept", "text/html, *; q=.2, */*; q=.2");
     codeActionConn.setRequestMethod("POST");

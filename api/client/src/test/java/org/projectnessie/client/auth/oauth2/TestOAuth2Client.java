@@ -688,10 +688,7 @@ class TestOAuth2Client {
           handleDeviceAuthEndpoint(req, resp);
           break;
         case "/device":
-          handleDeviceUserCodePageEndpoint(req, resp);
-          break;
-        case "/device/":
-          handleDeviceUserCodeActionEndpoint(req, resp);
+          handleDeviceEndpoint(req, resp);
           break;
         case "/.well-known/openid-configuration":
           handleOpenIdProviderMetadataEndpoint(req, resp);
@@ -821,19 +818,17 @@ class TestOAuth2Client {
       writeResponseBody(resp, response, "application/json");
     }
 
-    private void handleDeviceUserCodePageEndpoint(HttpServletRequest req, HttpServletResponse resp)
+    private void handleDeviceEndpoint(HttpServletRequest req, HttpServletResponse resp)
         throws IOException {
-      soft.assertThat(req.getMethod()).isEqualTo("GET");
-      writeResponseBody(resp, "<html><body>Enter device code:</body></html>");
-    }
-
-    private void handleDeviceUserCodeActionEndpoint(
-        HttpServletRequest req, HttpServletResponse resp) throws IOException {
-      soft.assertThat(req.getMethod()).isEqualTo("POST");
-      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-      soft.assertThat(data).containsEntry("device_user_code", "CAFE-BABE");
-      deviceAuthorized = true;
-      writeResponseBody(resp, "{\"success\":true}");
+      soft.assertThat(req.getMethod()).isIn("GET", "POST");
+      if (req.getMethod().equals("GET")) {
+        writeResponseBody(resp, "<html><body>Enter device code:</body></html>");
+      } else {
+        Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+        soft.assertThat(data).containsEntry("device_user_code", "CAFE-BABE");
+        deviceAuthorized = true;
+        writeResponseBody(resp, "{\"success\":true}");
+      }
     }
 
     private void handleOpenIdProviderMetadataEndpoint(
