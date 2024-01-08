@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
@@ -213,11 +214,13 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     try {
       LOGGER.info("Starting device code flow.");
       Set<String> cookies = new HashSet<>();
-      URL loginPageUrl = enterUserCode(initialUrl, userCode, cookies);
+      HttpURLConnection codeActionConn = enterUserCode(initialUrl, userCode, cookies);
       if (username != null && password != null) {
-        assertThat(loginPageUrl).isNotNull();
+        URL loginPageUrl = readRedirectUrl(codeActionConn, cookies);
         URL consentPageUrl = login(loginPageUrl, cookies);
         authorizeDevice(consentPageUrl, cookies);
+      } else {
+        assertThat(codeActionConn.getResponseCode()).isEqualTo(HTTP_OK);
       }
       LOGGER.info("Device code flow completed.");
       Runnable listener = flowCompletionListener;
@@ -254,8 +257,9 @@ public class ResourceOwnerEmulator implements AutoCloseable {
             + "password="
             + URLEncoder.encode(password, "UTF-8")
             + "&credentialId=";
-    loginActionConn.getOutputStream().write(data.getBytes(UTF_8));
-    loginActionConn.getOutputStream().close();
+    try (OutputStream out = loginActionConn.getOutputStream()) {
+      out.write(data.getBytes(UTF_8));
+    }
     return readRedirectUrl(loginActionConn, cookies);
   }
 
@@ -286,28 +290,28 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   }
 
   /** Emulate user entering provided user code on the authorization server. */
-  private URL enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
+  private HttpURLConnection enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
       throws IOException {
     // receive device code page
-    HttpURLConnection codeUrlConn = openConnection(codePageUrl);
-    codeUrlConn.setRequestMethod("GET");
-    writeCookies(codeUrlConn, cookies);
-    assertThat(codeUrlConn.getResponseCode()).isEqualTo(HTTP_OK);
-    readCookies(codeUrlConn, cookies);
-    // send device code form to same URL but with POST
-    HttpURLConnection codeActionConn = openConnection(codePageUrl);
+    HttpURLConnection codePageConn = openConnection(codePageUrl);
+    codePageConn.setRequestMethod("GET");
+    writeCookies(codePageConn, cookies);
+    assertThat(codePageConn.getResponseCode()).isEqualTo(HTTP_OK);
+    readCookies(codePageConn, cookies);
+    // send device code form to same URL but with POST, and a trailing slash
+    URL codeActionUrl = new URL(codePageUrl.toExternalForm() + "/");
+    HttpURLConnection codeActionConn = openConnection(codeActionUrl);
+    // See https://github.com/projectnessie/nessie/issues/7918
+    codeActionConn.addRequestProperty("Accept", "text/html, *; q=.2, */*; q=.2");
     codeActionConn.setRequestMethod("POST");
     codeActionConn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+    writeCookies(codeActionConn, cookies);
     codeActionConn.setDoOutput(true);
     String data = "device_user_code=" + URLEncoder.encode(userCode, "UTF-8");
-    codeActionConn.getOutputStream().write(data.getBytes(UTF_8));
-    codeActionConn.getOutputStream().close();
-    if (username != null && password != null) {
-      return readRedirectUrl(codeActionConn, cookies);
-    } else {
-      assertThat(codeActionConn.getResponseCode()).isEqualTo(HTTP_OK);
-      return null;
+    try (OutputStream out = codeActionConn.getOutputStream()) {
+      out.write(data.getBytes(UTF_8));
     }
+    return codeActionConn;
   }
 
   /** Emulate user consenting to authorize device on the authorization server. */
@@ -343,8 +347,9 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     } else {
       data += "&accept=Yes";
     }
-    consentActionConn.getOutputStream().write(data.getBytes(UTF_8));
-    consentActionConn.getOutputStream().close();
+    try (OutputStream out = consentActionConn.getOutputStream()) {
+      out.write(data.getBytes(UTF_8));
+    }
     readRedirectUrl(consentActionConn, cookies);
   }
 
