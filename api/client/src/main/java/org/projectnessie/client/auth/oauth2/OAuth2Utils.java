@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
 import java.security.SecureRandom;
 import java.util.Random;
 import org.projectnessie.client.http.HttpClient;
@@ -36,9 +37,9 @@ class OAuth2Utils {
         .toString();
   }
 
-  public static JsonNode fetchOpenIdProviderMetadata(HttpClient issuerHttpClient) {
+  public static JsonNode fetchOpenIdProviderMetadata(HttpClient httpClient, URI issuerUrl) {
     HttpResponse response =
-        issuerHttpClient.newRequest().path(".well-known/openid-configuration").get();
+        httpClient.newRequest(issuerUrl).path(".well-known/openid-configuration").get();
     Status status = response.getStatus();
     if (status != Status.OK) {
       throw new HttpClientException(

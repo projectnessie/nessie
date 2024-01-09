@@ -63,8 +63,9 @@ class TestOAuth2Utils {
   void fetchOpenIdProviderMetadataSuccess(String issuerPath, String wellKnownPath)
       throws Exception {
     try (HttpTestServer server = new HttpTestServer(handler(wellKnownPath, DATA), true);
-        HttpClient httpClient = newHttpClient(server, server.getUri().resolve(issuerPath))) {
-      JsonNode actual = OAuth2Utils.fetchOpenIdProviderMetadata(httpClient);
+        HttpClient httpClient = newHttpClient(server)) {
+      URI issuerUrl = server.getUri().resolve(issuerPath);
+      JsonNode actual = OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl);
       assertThat(actual).isEqualTo(OBJECT_MAPPER.readTree(DATA));
     }
   }
@@ -72,8 +73,9 @@ class TestOAuth2Utils {
   @Test
   void fetchOpenIdProviderMetadataWrongEndpoint() throws Exception {
     try (HttpTestServer server = new HttpTestServer(handler("/wrong/path", DATA), true);
-        HttpClient httpClient = newHttpClient(server, server.getUri().resolve("/realms/master/"))) {
-      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient))
+        HttpClient httpClient = newHttpClient(server)) {
+      URI issuerUrl = server.getUri().resolve("/realms/master/");
+      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl))
           .isInstanceOf(HttpClientException.class)
           .hasMessageContaining("404"); // messages differ between HttpClient impls
     }
@@ -84,8 +86,9 @@ class TestOAuth2Utils {
     try (HttpTestServer server =
             new HttpTestServer(
                 handler("/realms/master/.well-known/openid-configuration", WRONG_DATA), true);
-        HttpClient httpClient = newHttpClient(server, server.getUri().resolve("/realms/master/"))) {
-      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient))
+        HttpClient httpClient = newHttpClient(server)) {
+      URI issuerUrl = server.getUri().resolve("/realms/master/");
+      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl))
           .isInstanceOfAny(HttpClientException.class)
           .hasMessage("Invalid OpenID provider metadata");
     }
@@ -104,9 +107,8 @@ class TestOAuth2Utils {
     };
   }
 
-  private static HttpClient newHttpClient(HttpTestServer server, URI issuerUrl) {
+  private static HttpClient newHttpClient(HttpTestServer server) {
     return HttpClient.builder()
-        .setBaseUri(issuerUrl)
         .setSslContext(server.getSslContext())
         .setObjectMapper(OBJECT_MAPPER)
         .build();

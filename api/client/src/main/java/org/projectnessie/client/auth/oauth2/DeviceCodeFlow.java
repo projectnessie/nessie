@@ -36,8 +36,7 @@ class DeviceCodeFlow implements AutoCloseable {
       org.slf4j.LoggerFactory.getLogger(DeviceCodeFlow.class);
 
   private final OAuth2ClientConfig config;
-  private final HttpClient tokenEndpointClient;
-  private final HttpClient deviceAuthEndpointClient;
+  private final HttpClient httpClient;
   private final PrintStream console;
   private final Duration flowTimeout;
 
@@ -48,20 +47,14 @@ class DeviceCodeFlow implements AutoCloseable {
   private volatile Duration pollInterval;
   private volatile Future<?> pollFuture;
 
-  DeviceCodeFlow(OAuth2ClientConfig config, HttpClient tokenEndpointClient) {
-    this(config, tokenEndpointClient, System.out);
+  DeviceCodeFlow(OAuth2ClientConfig config, HttpClient httpClient) {
+    this(config, httpClient, System.out);
   }
 
-  DeviceCodeFlow(OAuth2ClientConfig config, HttpClient tokenEndpointClient, PrintStream console) {
+  DeviceCodeFlow(OAuth2ClientConfig config, HttpClient httpClient, PrintStream console) {
     this.config = config;
-    this.tokenEndpointClient = tokenEndpointClient;
+    this.httpClient = httpClient;
     this.console = console;
-    deviceAuthEndpointClient =
-        config
-            .newHttpClientBuilder()
-            .setBaseUri(config.getResolvedDeviceAuthEndpoint())
-            .setAuthentication(config.getBasicAuthentication())
-            .build();
     flowTimeout = config.getDeviceCodeFlowTimeout();
     pollInterval = config.getDeviceCodeFlowPollInterval();
     closeFuture.thenRun(this::doClose);
@@ -76,7 +69,9 @@ class DeviceCodeFlow implements AutoCloseable {
 
   private void doClose() {
     LOGGER.debug("Device Code Flow: closing");
-    // don't close the console, it's not ours
+    executor.shutdownNow();
+    pollFuture = null;
+    // don't close the HTTP client nor the console, they are not ours
   }
 
   private void abort() {
@@ -127,8 +122,8 @@ class DeviceCodeFlow implements AutoCloseable {
             // don't include client id, it's in the basic auth header
             .scope(config.getScope().orElse(null))
             .build();
-    return deviceAuthEndpointClient
-        .newRequest()
+    return httpClient
+        .newRequest(config.getResolvedDeviceAuthEndpoint())
         .postForm(body)
         .readEntity(DeviceCodeResponse.class);
   }
@@ -166,7 +161,8 @@ class DeviceCodeFlow implements AutoCloseable {
               .scope(config.getScope().orElse(null))
               // don't include client id, it's in the basic auth header
               .build();
-      HttpResponse response = tokenEndpointClient.newRequest().postForm(body);
+      HttpResponse response =
+          httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
       Tokens tokens = response.readEntity(DeviceCodeTokensResponse.class);
       LOGGER.debug("Device Code Flow: new tokens received");
       tokensFuture.complete(tokens);
