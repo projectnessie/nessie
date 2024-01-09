@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server8") }
+// Java project, non-client facing, server component, Java 8 (11 for tests)
 
-extra["maven.name"] = "Nessie - Services Config"
+plugins {
+  `java-library`
+  `maven-publish`
+  signing
+  id("nessie-common-base")
+  id("nessie-common-src")
+  id("nessie-java")
+  id("nessie-testing")
+}
+
+tasks.withType<JavaCompile>().configureEach {
+  options.release.set(if (this.name == "compileJava") 8 else 11)
+}
