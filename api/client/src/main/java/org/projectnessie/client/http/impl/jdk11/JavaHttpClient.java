@@ -61,6 +61,10 @@ public final class JavaHttpClient implements org.projectnessie.client.http.HttpC
     }
 
     client = clientBuilder.build();
+
+    if (config.getAuthentication() != null) {
+      config.getAuthentication().start();
+    }
   }
 
   @Override

@@ -220,10 +220,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
       }
     }
 
-    if (authentication != null) {
-      authentication.applyToHttpClient(this);
-      authentication.start();
-    }
+    applyDeprecatedAuthenticationOptions();
 
     HttpRuntimeConfig config =
         HttpRuntimeConfig.builder()
@@ -245,6 +242,13 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .build();
 
     return ImplSwitch.FACTORY.apply(config);
+  }
+
+  @SuppressWarnings("deprecation")
+  private void applyDeprecatedAuthenticationOptions() {
+    if (authentication != null) {
+      authentication.applyToHttpClient(this);
+    }
   }
 
   static class ImplSwitch {

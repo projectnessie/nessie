@@ -28,7 +28,6 @@ import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
-import org.projectnessie.client.http.RequestFilter;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.signer.Aws4Signer;
@@ -85,6 +84,8 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
   private static class AwsAuthentication implements HttpAuthentication {
     private final Region region;
     private final AwsCredentialsProvider awsCredentialsProvider;
+    private final ObjectMapper objectMapper;
+    private final Aws4Signer signer;
 
     private AwsAuthentication(Region region, String profile) {
       this.region = region;
@@ -95,29 +96,16 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
       }
 
       this.awsCredentialsProvider = provider.build();
-    }
-
-    @Override
-    public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(new AwsHttpAuthenticationFilter(region, awsCredentialsProvider));
-    }
-  }
-
-  private static class AwsHttpAuthenticationFilter implements RequestFilter {
-    private final ObjectMapper objectMapper;
-    private final Aws4Signer signer;
-    private final AwsCredentialsProvider awsCredentialsProvider;
-    private final Region region;
-
-    private AwsHttpAuthenticationFilter(Region region, AwsCredentialsProvider credentialsProvider) {
-      this.awsCredentialsProvider = credentialsProvider;
       this.objectMapper =
           new ObjectMapper()
               .disable(SerializationFeature.INDENT_OUTPUT)
               .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-      this.region = region;
       this.signer = Aws4Signer.create();
     }
+
+    @Override
+    @Deprecated
+    public void applyToHttpClient(HttpClient.Builder client) {}
 
     private SdkHttpFullRequest prepareRequest(
         URI uri, HttpClient.Method method, Optional<Object> entity) {

@@ -34,6 +34,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpRequest;
@@ -67,6 +68,14 @@ public abstract class BaseHttpRequest extends HttpRequest {
       }
     }
     config.getRequestFilters().forEach(a -> a.filter(context));
+
+    HttpAuthentication auth = this.auth;
+    if (auth != null) {
+      auth.start();
+      auth.filter(context);
+    } else if (config.getAuthentication() != null) {
+      config.getAuthentication().filter(context);
+    }
 
     return doesOutput;
   }

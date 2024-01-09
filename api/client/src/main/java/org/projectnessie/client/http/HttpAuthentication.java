@@ -18,15 +18,31 @@ package org.projectnessie.client.http;
 import org.projectnessie.client.auth.NessieAuthentication;
 
 /**
- * Implementations of {@link NessieAuthentication} with this interface are able to produce {@link
- * RequestFilter} instance to be used with {@link HttpClient}.
+ * A special {@link RequestFilter} that applies authentication to the HTTP request,
+ * typically in the form of HTTP headers.
+ *
+ * @see HttpClient.Builder#setAuthentication(HttpAuthentication)
  */
-public interface HttpAuthentication extends NessieAuthentication {
+public interface HttpAuthentication extends NessieAuthentication, RequestFilter {
 
   /**
-   * Configure the given {@link HttpClient} to use this instance..
+   * Unused, but kept around unimplemented for backward compatibility reasons.
    *
-   * @param client client to configure
+   * @implNote Implementors <em>must</em> provide an empty implementation of this method.
+   * @deprecated Will be removed in a future release.
    */
-  void applyToHttpClient(HttpClient.Builder client);
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
+  void applyToHttpClient(HttpClient.Builder ignored);
+
+  /**
+   * Apply authentication to the HTTP request.
+   *
+   * @implNote Implementors must override this method and implement the authentication logic here.
+   * @param context The request context.
+   */
+  @Override
+  default void filter(RequestContext context) {
+    // no-op for backward compatibility, subclasses must override this method
+  }
 }

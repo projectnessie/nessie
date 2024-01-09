@@ -94,11 +94,11 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
     }
 
     @Override
-    public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(this::addAuthHeader);
-    }
+    @Deprecated
+    public void applyToHttpClient(HttpClient.Builder client) {}
 
-    void addAuthHeader(RequestContext ctx) {
+    @Override
+    public void filter(RequestContext ctx) {
       AccessToken token = authenticator.authenticate();
       if (!token.getTokenType().toLowerCase(Locale.ROOT).equals("bearer")) {
         throw new IllegalArgumentException(

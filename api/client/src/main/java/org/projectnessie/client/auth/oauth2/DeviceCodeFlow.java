@@ -24,7 +24,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpResponse;
 
@@ -36,7 +35,6 @@ class DeviceCodeFlow implements AutoCloseable {
       org.slf4j.LoggerFactory.getLogger(DeviceCodeFlow.class);
 
   private final OAuth2ClientConfig config;
-  private final HttpClient httpClient;
   private final PrintStream console;
   private final Duration flowTimeout;
 
@@ -47,13 +45,12 @@ class DeviceCodeFlow implements AutoCloseable {
   private volatile Duration pollInterval;
   private volatile Future<?> pollFuture;
 
-  DeviceCodeFlow(OAuth2ClientConfig config, HttpClient httpClient) {
-    this(config, httpClient, System.out);
+  DeviceCodeFlow(OAuth2ClientConfig config) {
+    this(config, System.out);
   }
 
-  DeviceCodeFlow(OAuth2ClientConfig config, HttpClient httpClient, PrintStream console) {
+  DeviceCodeFlow(OAuth2ClientConfig config, PrintStream console) {
     this.config = config;
-    this.httpClient = httpClient;
     this.console = console;
     flowTimeout = config.getDeviceCodeFlowTimeout();
     pollInterval = config.getDeviceCodeFlowPollInterval();
@@ -122,8 +119,10 @@ class DeviceCodeFlow implements AutoCloseable {
             // don't include client id, it's in the basic auth header
             .scope(config.getScope().orElse(null))
             .build();
-    return httpClient
+    return config
+        .getHttpClient()
         .newRequest(config.getResolvedDeviceAuthEndpoint())
+        .authentication(config.getBasicAuthentication())
         .postForm(body)
         .readEntity(DeviceCodeResponse.class);
   }
@@ -162,7 +161,11 @@ class DeviceCodeFlow implements AutoCloseable {
               // don't include client id, it's in the basic auth header
               .build();
       HttpResponse response =
-          httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
+          config
+              .getHttpClient()
+              .newRequest(config.getResolvedTokenEndpoint())
+              .authentication(config.getBasicAuthentication())
+              .postForm(body);
       Tokens tokens = response.readEntity(DeviceCodeTokensResponse.class);
       LOGGER.debug("Device Code Flow: new tokens received");
       tokensFuture.complete(tokens);
