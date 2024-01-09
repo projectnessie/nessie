@@ -109,6 +109,11 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
+  public Obj getIfCached(@Nonnull ObjId id) {
+    return delegate.getIfCached(id);
+  }
+
+  @Override
   @Nonnull
   public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
