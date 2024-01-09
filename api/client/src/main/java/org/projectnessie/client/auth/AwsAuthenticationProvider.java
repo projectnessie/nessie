@@ -104,8 +104,28 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     }
 
     @Override
-    @Deprecated
-    public void applyToHttpClient(HttpClient.Builder client) {}
+    public void applyToHttpClient(HttpClient.Builder client) {
+      client.addRequestFilter(this::applyToHttpRequest);
+    }
+
+    @Override
+    public void applyToHttpRequest(RequestContext context) {
+      SdkHttpFullRequest modifiedRequest =
+          signer.sign(
+              prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
+              Aws4SignerParams.builder()
+                  .signingName("execute-api")
+                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
+                  .signingRegion(region)
+                  .build());
+      for (Map.Entry<String, List<String>> entry :
+          modifiedRequest.toBuilder().headers().entrySet()) {
+        if (context.containsHeader(entry.getKey())) {
+          continue;
+        }
+        entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
+      }
+    }
 
     private SdkHttpFullRequest prepareRequest(
         URI uri, HttpClient.Method method, Optional<Object> entity) {
@@ -131,25 +151,6 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
         return builder.build();
       } catch (Throwable t) {
         throw new RuntimeException(t);
-      }
-    }
-
-    @Override
-    public void filter(RequestContext context) {
-      SdkHttpFullRequest modifiedRequest =
-          signer.sign(
-              prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
-              Aws4SignerParams.builder()
-                  .signingName("execute-api")
-                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                  .signingRegion(region)
-                  .build());
-      for (Map.Entry<String, List<String>> entry :
-          modifiedRequest.toBuilder().headers().entrySet()) {
-        if (context.containsHeader(entry.getKey())) {
-          continue;
-        }
-        entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
       }
     }
   }

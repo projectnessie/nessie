@@ -31,10 +31,13 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.RequestContext;
+import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.impl.HttpHeaders;
 import org.projectnessie.client.http.impl.RequestContextImpl;
 import software.amazon.awssdk.core.SdkSystemSetting;
@@ -159,10 +162,30 @@ class TestAwsAuthProvider {
     assertThat(authentication).isInstanceOf(HttpAuthentication.class);
     HttpAuthentication httpAuthentication = (HttpAuthentication) authentication;
 
+    // Intercept the call to HttpClient.register(RequestFilter) and extract the RequestFilter for
+    // our test
+    RequestFilter[] authFilter = new RequestFilter[1];
+    HttpClient.Builder client = Mockito.mock(HttpClient.Builder.class);
+    Mockito.doAnswer(
+            invocationOnMock -> {
+              Object[] args = invocationOnMock.getArguments();
+              if (args.length == 1 && args[0] instanceof RequestFilter) {
+                authFilter[0] = (RequestFilter) args[0];
+              }
+              return null;
+            })
+        .when(client)
+        .addRequestFilter(Mockito.any());
+    httpAuthentication.applyToHttpClient(client);
+
+    // Check that the registered RequestFilter works as expected (sets the right HTTP headers)
+
+    assertThat(authFilter[0]).isInstanceOf(RequestFilter.class);
+
     HttpHeaders headers = new HttpHeaders();
     RequestContext context =
         new RequestContextImpl(headers, URI.create("http://localhost/"), Method.GET, null);
-    httpAuthentication.filter(context);
+    authFilter[0].filter(context);
 
     assertThat(headers.asMap())
         .containsKey("Authorization")

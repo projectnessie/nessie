@@ -43,9 +43,6 @@ public final class UrlConnectionClient implements HttpClient {
     if (config.getSslParameters() != null) {
       throw new IllegalArgumentException(UNSUPPORTED_CONFIG_MESSAGE);
     }
-    if (config.getAuthentication() != null) {
-      config.getAuthentication().start();
-    }
   }
 
   @Override

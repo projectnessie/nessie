@@ -18,31 +18,29 @@ package org.projectnessie.client.http;
 import org.projectnessie.client.auth.NessieAuthentication;
 
 /**
- * A special {@link RequestFilter} that applies authentication to the HTTP request,
- * typically in the form of HTTP headers.
- *
- * @see HttpClient.Builder#setAuthentication(HttpAuthentication)
+ * A special {@link RequestFilter} that applies authentication to the HTTP request, typically in the
+ * form of HTTP headers.
  */
-public interface HttpAuthentication extends NessieAuthentication, RequestFilter {
+public interface HttpAuthentication extends NessieAuthentication {
 
   /**
-   * Unused, but kept around unimplemented for backward compatibility reasons.
+   * Configure the given {@link HttpClient} to use this authentication. Called when authentication
+   * is set on the {@link HttpClient} level only.
    *
-   * @implNote Implementors <em>must</em> provide an empty implementation of this method.
-   * @deprecated Will be removed in a future release.
+   * @see HttpClient.Builder#setAuthentication(HttpAuthentication)
+   * @param client client to configure
    */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  void applyToHttpClient(HttpClient.Builder ignored);
+  void applyToHttpClient(HttpClient.Builder client);
 
   /**
-   * Apply authentication to the HTTP request.
+   * Apply authentication to the HTTP request. Called when authentication is set on the {@link
+   * HttpRequest} level only.
    *
-   * @implNote Implementors must override this method and implement the authentication logic here.
-   * @param context The request context.
+   * @see HttpRequest#authentication(HttpAuthentication)
+   * @param context The request context
    */
-  @Override
-  default void filter(RequestContext context) {
-    // no-op for backward compatibility, subclasses must override this method
+  default void applyToHttpRequest(RequestContext context) {
+    throw new UnsupportedOperationException(
+        "This authentication method does not support per-request authentication");
   }
 }

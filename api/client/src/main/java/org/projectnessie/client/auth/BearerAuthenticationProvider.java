@@ -52,11 +52,12 @@ public class BearerAuthenticationProvider implements NessieAuthenticationProvide
     }
 
     @Override
-    @Deprecated
-    public void applyToHttpClient(HttpClient.Builder client) {}
+    public void applyToHttpClient(HttpClient.Builder client) {
+      client.addRequestFilter(this::applyToHttpRequest);
+    }
 
     @Override
-    public void filter(RequestContext context) {
+    public void applyToHttpRequest(RequestContext context) {
       context.putHeader("Authorization", authHeaderValue);
     }
   }
