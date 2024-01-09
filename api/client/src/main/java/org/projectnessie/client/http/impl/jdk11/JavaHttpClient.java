@@ -64,8 +64,8 @@ public final class JavaHttpClient implements org.projectnessie.client.http.HttpC
   }
 
   @Override
-  public HttpRequest newRequest() {
-    return new JavaRequest(this.config, (req, handler) -> client.send(req, handler));
+  public HttpRequest newRequest(URI baseUri) {
+    return new JavaRequest(this.config, baseUri, client::send);
   }
 
   @Override

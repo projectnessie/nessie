@@ -76,8 +76,8 @@ final class JavaRequest extends BaseHttpRequest {
 
   private final HttpExchange<InputStream> exchange;
 
-  JavaRequest(HttpRuntimeConfig config, HttpExchange<InputStream> exchange) {
-    super(config);
+  JavaRequest(HttpRuntimeConfig config, URI baseUri, HttpExchange<InputStream> exchange) {
+    super(config, baseUri);
     this.exchange = exchange;
   }
 

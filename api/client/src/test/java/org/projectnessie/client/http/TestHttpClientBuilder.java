@@ -70,24 +70,6 @@ public class TestHttpClientBuilder {
   }
 
   @Test
-  void testNullUri() {
-    assertThatThrownBy(
-            () ->
-                createClientBuilderFromSystemSettings()
-                    .withUri((URI) null)
-                    .build(NessieApiV1.class))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot construct Http client. Must have a non-null uri");
-  }
-
-  @Test
-  void testNoUri() {
-    assertThatThrownBy(() -> createClientBuilderFromSystemSettings().build(NessieApiV1.class))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot construct Http client. Must have a non-null uri");
-  }
-
-  @Test
   void testInvalidUriScheme() {
     assertThatThrownBy(
             () ->

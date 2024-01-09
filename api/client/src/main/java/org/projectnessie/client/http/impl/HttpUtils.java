@@ -17,6 +17,7 @@ package org.projectnessie.client.http.impl;
 
 import com.google.errorprone.annotations.FormatMethod;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -96,5 +97,9 @@ public final class HttpUtils {
       params.put(name, value);
     }
     return params;
+  }
+
+  public static boolean isHttpUri(URI uri) {
+    return "http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme());
   }
 }

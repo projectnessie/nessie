@@ -210,8 +210,6 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   @Override
   public HttpClient build() {
     HttpUtils.checkArgument(
-        baseUri != null, "Cannot construct Http client. Must have a non-null uri");
-    HttpUtils.checkArgument(
         mapper != null, "Cannot construct Http client. Must have a non-null object mapper");
     if (sslContext == null) {
       try {
