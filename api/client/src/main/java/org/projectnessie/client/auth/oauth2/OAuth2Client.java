@@ -29,9 +29,11 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpResponse;
 import org.slf4j.Logger;
@@ -57,6 +59,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final String username;
   private final byte[] password;
   private final String scope;
+  private final HttpClient httpClient;
+  private final ScheduledExecutorService executor;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
   /* Visible for testing. */ final AtomicBoolean sleeping = new AtomicBoolean();
   private final AtomicBoolean closing = new AtomicBoolean();
@@ -72,6 +76,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     password =
         config.getPassword().map(s -> s.getBytesAndClear(StandardCharsets.UTF_8)).orElse(null);
     scope = config.getScope().orElse(null);
+    httpClient = config.getHttpClient();
+    executor = config.getExecutor();
     lastAccess = config.getClock().get();
     currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), config.getExecutor());
     currentTokensStage
@@ -131,7 +137,12 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         if (tokenRefreshFuture != null) {
           tokenRefreshFuture.cancel(true);
         }
-        config.close();
+        // Only close the executor if it's the default one (not shared).
+        if (executor instanceof OAuth2TokenRefreshExecutor) {
+          ((OAuth2TokenRefreshExecutor) executor).close();
+        }
+        // Always close the HTTP client (can't be shared).
+        httpClient.close();
         if (password != null) {
           Arrays.fill(password, (byte) 0);
         }
@@ -174,7 +185,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     LOGGER.debug("Scheduling token refresh in {}", delay);
     try {
       tokenRefreshFuture =
-          config.getExecutor().schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
+          executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
     } catch (RejectedExecutionException e) {
       if (closing.get()) {
         // We raced with close(), ignore
@@ -221,13 +232,13 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
           ClientCredentialsTokensRequest body =
               ImmutableClientCredentialsTokensRequest.builder().scope(scope).build();
           HttpResponse httpResponse =
-              config
-              .getHttpClient()
-              .newRequest(config.getResolvedTokenEndpoint())
-              .authentication(config.getBasicAuthentication())
-              .postForm(body);
-      return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
-    } case PASSWORD:
+              httpClient
+                  .newRequest(config.getResolvedTokenEndpoint())
+                  .authentication(config.getBasicAuthentication())
+                  .postForm(body);
+          return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
+        }
+      case PASSWORD:
         {
           PasswordTokensRequest body =
               ImmutablePasswordTokensRequest.builder()
@@ -236,13 +247,13 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
                   .scope(scope)
                   .build();
           HttpResponse httpResponse =
-              config
-              .getHttpClient()
-              .newRequest(config.getResolvedTokenEndpoint())
-              .authentication(config.getBasicAuthentication())
-              .postForm(body);
-      return httpResponse.readEntity(PasswordTokensResponse.class);
-    } case AUTHORIZATION_CODE:
+              httpClient
+                  .newRequest(config.getResolvedTokenEndpoint())
+                  .authentication(config.getBasicAuthentication())
+                  .postForm(body);
+          return httpResponse.readEntity(PasswordTokensResponse.class);
+        }
+      case AUTHORIZATION_CODE:
         try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config)) {
           return flow.fetchNewTokens();
         }
@@ -274,8 +285,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .scope(scope)
             .build();
     HttpResponse httpResponse =
-        config
-            .getHttpClient()
+        httpClient
             .newRequest(config.getResolvedTokenEndpoint())
             .authentication(config.getBasicAuthentication())
             .postForm(body);
@@ -295,8 +305,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .scope(scope)
             .build();
     HttpResponse httpResponse =
-        config
-            .getHttpClient()
+        httpClient
             .newRequest(config.getResolvedTokenEndpoint())
             .authentication(config.getBasicAuthentication())
             .postForm(body);

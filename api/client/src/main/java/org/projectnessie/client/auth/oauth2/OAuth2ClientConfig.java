@@ -49,7 +49,7 @@ import org.projectnessie.client.http.Status;
  */
 @Value.Immutable
 @SuppressWarnings("immutables:subtype")
-abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig, AutoCloseable {
+abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -169,16 +169,6 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig, AutoClos
         .setDisableCompression(true)
         .addResponseFilter(this::checkErrorResponse)
         .build();
-  }
-
-  @Override
-  public void close() {
-    getHttpClient().close();
-    ScheduledExecutorService executor = getExecutor();
-    if (executor instanceof OAuth2TokenRefreshExecutor) {
-      ((OAuth2TokenRefreshExecutor) executor).close();
-      // Don't close other executors, since they were not created by us.
-    }
   }
 
   private void checkErrorResponse(ResponseContext responseContext) {
