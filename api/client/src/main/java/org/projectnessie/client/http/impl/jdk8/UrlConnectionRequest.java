@@ -26,7 +26,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.function.BiConsumer;
 import javax.net.ssl.HttpsURLConnection;
-import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
@@ -104,10 +103,7 @@ final class UrlConnectionRequest extends BaseHttpRequest {
       throw new HttpClientException(
           String.format("Failed to execute %s request against '%s'.", method, uri), e);
     } finally {
-      HttpAuthentication auth = this.auth;
-      if (auth != null) {
-        auth.close();
-      }
+      cleanUp();
     }
   }
 

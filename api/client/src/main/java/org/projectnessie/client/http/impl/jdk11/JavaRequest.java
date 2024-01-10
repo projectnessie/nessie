@@ -38,7 +38,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
-import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
@@ -163,10 +162,7 @@ final class JavaRequest extends BaseHttpRequest {
           // ignore
         }
       }
-      HttpAuthentication auth = this.auth;
-      if (auth != null) {
-        auth.close();
-      }
+      cleanUp();
     }
   }
 

@@ -78,6 +78,13 @@ public abstract class BaseHttpRequest extends HttpRequest {
     return doesOutput;
   }
 
+  protected void cleanUp() {
+    HttpAuthentication auth = this.auth;
+    if (auth != null) {
+      auth.close();
+    }
+  }
+
   protected void writeToOutputStream(RequestContext context, OutputStream outputStream)
       throws IOException {
     Object body = context.getBody().orElseThrow(NullPointerException::new);
