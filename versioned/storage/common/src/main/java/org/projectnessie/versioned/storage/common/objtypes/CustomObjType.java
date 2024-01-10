@@ -84,4 +84,19 @@ public abstract class CustomObjType<T extends Obj> implements ObjType {
       }
     };
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    CustomObjType<?> that = (CustomObjType<?>) o;
+
+    return name.equals(that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return name.hashCode();
+  }
 }
