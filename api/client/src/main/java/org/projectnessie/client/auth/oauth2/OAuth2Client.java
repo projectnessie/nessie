@@ -233,32 +233,38 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   Tokens fetchNewTokens() {
     LOGGER.debug("Fetching new tokens");
-    if (config.getGrantType() == GrantType.CLIENT_CREDENTIALS) {
-      ClientCredentialsTokensRequest body =
-          ImmutableClientCredentialsTokensRequest.builder().scope(scope).build();
-      HttpResponse httpResponse =
-          httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
-      return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
-    } else if (config.getGrantType() == GrantType.PASSWORD) {
-      PasswordTokensRequest body =
-          ImmutablePasswordTokensRequest.builder()
-              .username(username)
-              .password(new String(password, StandardCharsets.UTF_8))
-              .scope(scope)
-              .build();
-      HttpResponse httpResponse =
-          httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
-      return httpResponse.readEntity(PasswordTokensResponse.class);
-    } else if (config.getGrantType() == GrantType.AUTHORIZATION_CODE) {
-      try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config, httpClient)) {
-        return flow.fetchNewTokens();
-      }
-    } else if (config.getGrantType() == GrantType.DEVICE_CODE) {
-      try (DeviceCodeFlow flow = new DeviceCodeFlow(config, httpClient)) {
-        return flow.fetchNewTokens();
-      }
+    switch (config.getGrantType()) {
+      case CLIENT_CREDENTIALS:
+        {
+          ClientCredentialsTokensRequest body =
+              ImmutableClientCredentialsTokensRequest.builder().scope(scope).build();
+          HttpResponse httpResponse =
+              httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
+          return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
+        }
+      case PASSWORD:
+        {
+          PasswordTokensRequest body =
+              ImmutablePasswordTokensRequest.builder()
+                  .username(username)
+                  .password(new String(password, StandardCharsets.UTF_8))
+                  .scope(scope)
+                  .build();
+          HttpResponse httpResponse =
+              httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
+          return httpResponse.readEntity(PasswordTokensResponse.class);
+        }
+      case AUTHORIZATION_CODE:
+        try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config, httpClient)) {
+          return flow.fetchNewTokens();
+        }
+      case DEVICE_CODE:
+        try (DeviceCodeFlow flow = new DeviceCodeFlow(config, httpClient)) {
+          return flow.fetchNewTokens();
+        }
+      default:
+        throw new IllegalStateException("Unsupported grant type: " + config.getGrantType());
     }
-    throw new IllegalStateException("Unsupported grant type: " + config.getGrantType());
   }
 
   Tokens refreshTokens(Tokens currentTokens) {
