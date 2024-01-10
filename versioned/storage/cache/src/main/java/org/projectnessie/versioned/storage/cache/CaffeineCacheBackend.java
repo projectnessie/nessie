@@ -36,7 +36,6 @@ import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 @Value.Immutable
 abstract class CaffeineCacheBackend implements CacheBackend {
 
-  public static final int JAVA_OBJ_HEADER = 32;
   public static final String CACHE_NAME = "nessie-objects";
 
   static ImmutableCaffeineCacheBackend.Builder builder() {
@@ -131,8 +130,39 @@ abstract class CaffeineCacheBackend implements CacheBackend {
    */
   static final class CacheKeyValue {
 
-    static final int HEAP_OVERHEAD = 16 + 3 * JAVA_OBJ_HEADER;
+    /*
+    org.projectnessie.versioned.storage.cache.CaffeineCacheBackend$CacheKeyValue object internals:
+    OFF  SZ                                                       TYPE DESCRIPTION                  VALUE
+      0   8                                                            (object header: mark)        0x0000000000000001 (non-biasable; age: 0)
+      8   4                                                            (object header: class)       0x010c4800
+     12   4                                           java.lang.String CacheKeyValue.repositoryId   null
+     16   8                                                       long CacheKeyValue.expiresAt      0
+     24   4   org.projectnessie.versioned.storage.common.persist.ObjId CacheKeyValue.id             null
+     28   4                                                     byte[] CacheKeyValue.value          null
+    Instance size: 32 bytes
+    Space losses: 0 bytes internal + 0 bytes external = 0 bytes total
+    */
+    static final int OBJ_SIZE = 32;
+    /*
+    Array overhead: 16 bytes
+    */
+    static final int ARRAY_OVERHEAD = 16;
+    /*
+    java.lang.String object internals:
+    OFF  SZ      TYPE DESCRIPTION               VALUE
+      0   8           (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
+      8   4           (object header: class)    0x0000e8d8
+     12   4       int String.hash               0
+     16   1      byte String.coder              0
+     17   1   boolean String.hashIsZero         false
+     18   2           (alignment/padding gap)
+     20   4    byte[] String.value              []
+    Instance size: 24 bytes
+    Space losses: 2 bytes internal + 0 bytes external = 2 bytes total
+    */
+    static final int STRING_OBJ_OVERHEAD = 24 + ARRAY_OVERHEAD;
     final String repositoryId;
+    // ObjId256 heap size: 40 bytes (assumed, jol)
     final ObjId id;
 
     final byte[] value;
@@ -150,10 +180,12 @@ abstract class CaffeineCacheBackend implements CacheBackend {
     }
 
     int heapSize() {
-      int size = HEAP_OVERHEAD + id.size() + repositoryId.length();
+      int size = OBJ_SIZE;
+      size += STRING_OBJ_OVERHEAD + repositoryId.length();
+      size += id.heapSize();
       byte[] v = value;
       if (v != null) {
-        size += JAVA_OBJ_HEADER + v.length;
+        size += ARRAY_OVERHEAD + v.length;
       }
       return size;
     }
