@@ -85,7 +85,6 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     private final Region region;
     private final AwsCredentialsProvider awsCredentialsProvider;
     private final ObjectMapper objectMapper;
-    private final Aws4Signer signer;
 
     private AwsAuthentication(Region region, String profile) {
       this.region = region;
@@ -100,7 +99,6 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
           new ObjectMapper()
               .disable(SerializationFeature.INDENT_OUTPUT)
               .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-      this.signer = Aws4Signer.create();
     }
 
     @Override
@@ -111,13 +109,14 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     @Override
     public void applyToHttpRequest(RequestContext context) {
       SdkHttpFullRequest modifiedRequest =
-          signer.sign(
-              prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
-              Aws4SignerParams.builder()
-                  .signingName("execute-api")
-                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                  .signingRegion(region)
-                  .build());
+          Aws4Signer.create()
+              .sign(
+                  prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
+                  Aws4SignerParams.builder()
+                      .signingName("execute-api")
+                      .awsCredentials(awsCredentialsProvider.resolveCredentials())
+                      .signingRegion(region)
+                      .build());
       for (Map.Entry<String, List<String>> entry :
           modifiedRequest.toBuilder().headers().entrySet()) {
         if (context.containsHeader(entry.getKey())) {
