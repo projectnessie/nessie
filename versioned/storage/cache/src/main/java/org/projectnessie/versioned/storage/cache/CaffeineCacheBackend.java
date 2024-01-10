@@ -16,6 +16,8 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static java.util.Collections.singletonList;
+import static org.projectnessie.versioned.storage.common.persist.ObjType.CACHE_UNLIMITED;
+import static org.projectnessie.versioned.storage.common.persist.ObjType.NOT_CACHED;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -79,7 +81,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
       return null;
     }
     long expire = value.expiresAt;
-    if (expire != -1L && expire - clock.getAsLong() <= 0L) {
+    if (expire != CACHE_UNLIMITED && expire - clock.getAsLong() <= 0L) {
       cache().invalidate(key);
       return null;
     }
@@ -89,7 +91,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   @Override
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj, LongSupplier clock) {
     long expiresAt = obj.type().cachedObjectExpiresAtMicros(obj, clock);
-    if (expiresAt == 0L) {
+    if (expiresAt == NOT_CACHED) {
       return;
     }
 

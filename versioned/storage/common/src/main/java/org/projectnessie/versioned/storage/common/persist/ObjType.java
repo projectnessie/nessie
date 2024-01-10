@@ -31,14 +31,17 @@ public interface ObjType {
   /**
    * Allows an object type to define how long a particular object instance can be cached.
    *
-   * <p>{@code -1}, which is the default implementation, defines that an object instance can be
-   * cached forever.
+   * <p>{@value #CACHE_UNLIMITED}, which is the default implementation, defines that an object
+   * instance can be cached forever.
    *
-   * <p>{@code 0} defines that an object instance must never be cached.
+   * <p>{@value #NOT_CACHED} defines that an object instance must never be cached.
    *
    * <p>A positive value defines the maximum age of an object
    */
   default long cachedObjectExpiresAtMicros(Obj obj, LongSupplier clock) {
-    return -1L;
+    return CACHE_UNLIMITED;
   }
+
+  long CACHE_UNLIMITED = -1L;
+  long NOT_CACHED = 0L;
 }
