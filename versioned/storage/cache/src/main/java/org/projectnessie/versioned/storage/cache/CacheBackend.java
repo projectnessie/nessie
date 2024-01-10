@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.cache;
 
 import jakarta.annotation.Nonnull;
-import java.util.function.LongSupplier;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -27,9 +26,9 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
  * repositories. It is adviseable to have one {@link CacheBackend} per {@link Backend}.
  */
 public interface CacheBackend {
-  Obj get(@Nonnull String repositoryId, @Nonnull ObjId id, LongSupplier clock);
+  Obj get(@Nonnull String repositoryId, @Nonnull ObjId id);
 
-  void put(@Nonnull String repositoryId, @Nonnull Obj obj, LongSupplier clock);
+  void put(@Nonnull String repositoryId, @Nonnull Obj obj);
 
   void remove(@Nonnull String repositoryId, @Nonnull ObjId id);
 

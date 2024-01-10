@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.cache;
 
 import jakarta.annotation.Nonnull;
-import java.util.function.LongSupplier;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -24,22 +23,20 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 final class ObjCacheImpl implements ObjCache {
   private final CacheBackend backend;
   private final String repositoryId;
-  private final LongSupplier clock;
 
   ObjCacheImpl(CacheBackend backend, StoreConfig config) {
     this.backend = backend;
     this.repositoryId = config.repositoryId();
-    this.clock = config::currentTimeMicros;
   }
 
   @Override
   public Obj get(@Nonnull ObjId id) {
-    return backend.get(repositoryId, id, clock);
+    return backend.get(repositoryId, id);
   }
 
   @Override
   public void put(@Nonnull Obj obj) {
-    backend.put(repositoryId, obj, clock);
+    backend.put(repositoryId, obj);
   }
 
   @Override
