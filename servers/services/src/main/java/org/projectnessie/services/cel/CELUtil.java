@@ -15,10 +15,10 @@
  */
 package org.projectnessie.services.cel;
 
-import com.google.api.expr.v1alpha1.Decl;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.projectnessie.cel.checker.Decls;
+import org.projectnessie.cel.relocated.com.google.api.expr.v1alpha1.Decl;
 import org.projectnessie.cel.tools.ScriptHost;
 import org.projectnessie.cel.types.jackson.JacksonRegistry;
 import org.projectnessie.model.CommitMeta;
