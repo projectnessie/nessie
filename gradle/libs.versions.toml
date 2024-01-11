@@ -77,16 +77,12 @@ iceberg-gcp = { module = "org.apache.iceberg:iceberg-gcp", version.ref = "iceber
 iceberg-hive-metastore = { module = "org.apache.iceberg:iceberg-hive-metastore", version.ref = "iceberg" }
 iceberg-nessie = { module = "org.apache.iceberg:iceberg-nessie", version.ref = "iceberg" }
 iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg" }
-iceberg-spark-extensions32-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.2_2.12", version.ref = "iceberg" }
-iceberg-spark-extensions32-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.2_2.13", version.ref = "iceberg" }
 iceberg-spark-extensions33-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.12", version.ref = "iceberg" }
 iceberg-spark-extensions33-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.13", version.ref = "iceberg" }
 iceberg-spark-extensions34-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.4_2.12", version.ref = "iceberg" }
 iceberg-spark-extensions34-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.4_2.13", version.ref = "iceberg" }
 iceberg-spark-extensions35-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.5_2.12", version.ref = "iceberg" }
 iceberg-spark-extensions35-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.5_2.13", version.ref = "iceberg" }
-iceberg-spark32-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.2_2.12", version.ref = "iceberg" }
-iceberg-spark32-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.2_2.13", version.ref = "iceberg" }
 iceberg-spark33-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.12", version.ref = "iceberg" }
 iceberg-spark33-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.13", version.ref = "iceberg" }
 iceberg-spark34-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.4_2.12", version.ref = "iceberg" }
@@ -155,8 +151,6 @@ slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
 slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
 snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.5" }
-spark-sql-v32-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.2, 3.3[", prefer = "3.2.4"}}
-spark-sql-v32-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.2, 3.3[", prefer = "3.2.4"}}
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
 spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.4, 3.5[", prefer = "3.4.2"}}
