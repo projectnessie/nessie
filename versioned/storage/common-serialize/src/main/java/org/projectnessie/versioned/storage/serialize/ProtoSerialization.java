@@ -341,7 +341,7 @@ public final class ProtoSerialization {
             .setCreated(obj.created())
             .setSeq(obj.seq())
             .setMessage(obj.message())
-            .setIncrementalIndex(verifyStoreIndexSize(obj.incrementalIndex(), indexSizeLimit))
+            .setIncrementalIndex(verifySize(obj.incrementalIndex(), indexSizeLimit))
             .setIncompleteIndex(obj.incompleteIndex())
             .setCommitType(CommitTypeProto.valueOf(obj.commitType().name()));
     serializeObjIds(obj.tail(), b::addTail);
@@ -361,15 +361,6 @@ public final class ProtoSerialization {
               .setSegment(serializeObjId(indexStripe.segment())));
     }
     return b;
-  }
-
-  private static ByteString verifyStoreIndexSize(ByteString storeIndex, int indexSizeLimit)
-      throws ObjTooLargeException {
-    int serializedSize = storeIndex.size();
-    if (serializedSize > indexSizeLimit) {
-      throw new ObjTooLargeException(serializedSize, indexSizeLimit);
-    }
-    return storeIndex;
   }
 
   private static ByteString verifySize(ByteString index, int indexSizeLimit)

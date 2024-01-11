@@ -19,23 +19,30 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.emptyImmutableIndex;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
+import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
+import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.Reference.PreviousPointer.previousPointer;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObjId;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObjIds;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObjId;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObjIds;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
@@ -43,26 +50,34 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.immutables.value.Value;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
+import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes;
+import org.projectnessie.versioned.storage.commontests.objtypes.AnotherTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.VersionedTestObj;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestProtoSerialization {
@@ -99,6 +114,8 @@ public class TestProtoSerialization {
     Obj deserializedByteBuffer = deserializeObj(obj.id(), ByteBuffer.wrap(serialized), null);
     byte[] reserialized = serializeObj(deserialized, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
     soft.assertThat(deserialized).isEqualTo(obj).isEqualTo(deserializedByteBuffer);
+    Obj deserialized2 = deserializeObj(obj.id(), reserialized, null);
+    soft.assertThat(deserialized2).isEqualTo(obj);
     soft.assertThat(serialized).isEqualTo(reserialized);
 
     if (obj instanceof UpdateableObj) {
@@ -112,7 +129,7 @@ public class TestProtoSerialization {
               StorageTypes.ObjProto.parseFrom(serializedWithoutVersionToken)
                   .getCustom()
                   .getVersionToken())
-          .isNull();
+          .isEmpty();
 
       UpdateableObj deserializedWithoutVersionToken =
           (UpdateableObj) deserializeObj(obj.id(), serializedWithoutVersionToken, "my-foo-bar-baz");
@@ -120,6 +137,30 @@ public class TestProtoSerialization {
           .isEqualTo("my-foo-bar-baz")
           .isNotEqualTo(((UpdateableObj) obj).versionToken());
     }
+
+    if (obj instanceof IndexObj || obj instanceof CommitObj) {
+      soft.assertThatThrownBy(() -> serializeObj(obj, 0, 0, true))
+          .isInstanceOf(ObjTooLargeException.class);
+    }
+  }
+
+  @Test
+  public void nullInputs() throws Exception {
+    soft.assertThat(serializeReference(null)).isNull();
+    soft.assertThat(deserializeReference(null)).isNull();
+
+    soft.assertThat(serializeObjId(null)).isNull();
+    soft.assertThat(deserializeObjId(null)).isNull();
+
+    soft.assertThatCode(() -> serializeObjIds(null, id -> {})).doesNotThrowAnyException();
+    soft.assertThatCode(() -> deserializeObjIds(null, id -> {})).doesNotThrowAnyException();
+
+    soft.assertThat(deserializePreviousPointers(null)).isNotNull().isEmpty();
+    soft.assertThat(serializePreviousPointers(null)).isNull();
+
+    soft.assertThat(serializeObj(null, Integer.MAX_VALUE, Integer.MAX_VALUE, true)).isNull();
+    soft.assertThat(deserializeObj(randomObjId(), (byte[]) null, null)).isNull();
+    soft.assertThat(deserializeObj(randomObjId(), (ByteBuffer) null, null)).isNull();
   }
 
   static Stream<List<Reference.PreviousPointer>> previousPointers() {
@@ -160,6 +201,22 @@ public class TestProtoSerialization {
             .headers(EMPTY_COMMIT_HEADERS)
             .incrementalIndex(emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize())
             .build(),
+        CommitObj.commitBuilder()
+            .id(randomObjId())
+            .seq(2L)
+            .created(43L)
+            .message("with headers and more")
+            // Note: can only use one header name here, because commit-headers rely on HashMap,
+            // which has a non-deterministic iteration order.
+            .headers(newCommitHeaders().add("foo", "bar").add("foo", OffsetDateTime.now()).build())
+            .addTail(randomObjId())
+            .addTail(randomObjId())
+            .addSecondaryParents(randomObjId())
+            .addReferenceIndexStripes(indexStripe(key("a"), key("b"), randomObjId()))
+            .addReferenceIndexStripes(indexStripe(key("c"), key("d"), randomObjId()))
+            .referenceIndex(randomObjId())
+            .incrementalIndex(emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize())
+            .build(),
         tag(
             randomObjId(),
             "tab-msg",
@@ -174,6 +231,11 @@ public class TestProtoSerialization {
             emptyList(),
             ByteString.copyFrom(new byte[1])),
         indexSegments(randomObjId(), emptyList()),
+        indexSegments(
+            randomObjId(),
+            asList(
+                indexStripe(key("a"), key("b"), randomObjId()),
+                indexStripe(key("c"), key("d"), randomObjId()))),
         index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()),
         JsonObj.json(
             randomObjId(),
@@ -185,7 +247,20 @@ public class TestProtoSerialization {
                 .list(List.of("foo", "bar"))
                 .instant(Instant.now())
                 .optional(Optional.of("foo"))
-                .build()));
+                .build()),
+        uniqueId("space", UUID.randomUUID()),
+        SimpleTestObj.builder().id(randomObjId()).build(),
+        AnotherTestObj.builder()
+            .id(randomObjId())
+            .parent(randomObjId())
+            .text("foo".repeat(4000))
+            .number(42.42d)
+            .map(Map.of("k1", "v1".repeat(4000), "k2", "v2".repeat(4000)))
+            .list(List.of("a", "b", "c"))
+            .optional("optional")
+            .instant(Instant.ofEpochMilli(1234567890L))
+            .build(),
+        VersionedTestObj.builder().id(randomObjId()).someValue("foo").versionToken("1").build());
   }
 
   @Value.Immutable

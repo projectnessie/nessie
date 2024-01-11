@@ -35,6 +35,8 @@ dependencies {
   testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
   testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
+  testImplementation(project(":nessie-versioned-storage-common-tests"))
+
   testCompileOnly(libs.immutables.builder)
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)
