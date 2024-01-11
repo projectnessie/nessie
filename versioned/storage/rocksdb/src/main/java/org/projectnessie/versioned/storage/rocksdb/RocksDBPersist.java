@@ -496,9 +496,6 @@ class RocksDBPersist implements Persist {
         return false;
       }
       Obj existing = deserializeObj(id, obj, null);
-      if (!existing.type().equals(existing.type())) {
-        return false;
-      }
       if (!existing.type().equals(expected.type())) {
         return false;
       }
