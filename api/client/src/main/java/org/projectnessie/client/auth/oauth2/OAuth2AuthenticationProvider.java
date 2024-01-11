@@ -95,17 +95,18 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
 
     @Override
     public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(this::addAuthHeader);
+      client.addRequestFilter(this::applyToHttpRequest);
     }
 
-    void addAuthHeader(RequestContext ctx) {
+    @Override
+    public void applyToHttpRequest(RequestContext context) {
       AccessToken token = authenticator.authenticate();
       if (!token.getTokenType().toLowerCase(Locale.ROOT).equals("bearer")) {
         throw new IllegalArgumentException(
             "OAuth2 token type returned from the authenticating server must be 'Bearer', but was: "
                 + token.getTokenType());
       }
-      ctx.putHeader("Authorization", "Bearer " + token.getPayload());
+      context.putHeader("Authorization", "Bearer " + token.getPayload());
     }
 
     @Override

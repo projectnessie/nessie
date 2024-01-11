@@ -23,7 +23,8 @@ import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
+final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
+    implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2TokenRefreshExecutor.class);
 
@@ -31,6 +32,22 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor {
     super(1, new OAuth2TokenRefreshThreadFactory());
     setKeepAliveTime(keepAlive.toNanos(), TimeUnit.NANOSECONDS);
     allowCoreThreadTimeOut(true);
+  }
+
+  @Override
+  public void close() {
+    if (!isShutdown()) {
+      shutdown();
+      try {
+        if (!awaitTermination(10, TimeUnit.SECONDS)) {
+          LOGGER.warn("OAuth2 token refresh executor did not terminate within 10 seconds");
+          shutdownNow();
+        }
+      } catch (InterruptedException e) {
+        LOGGER.warn("OAuth2 token refresh executor termination interrupted", e);
+        Thread.currentThread().interrupt();
+      }
+    }
   }
 
   private static final class OAuth2TokenRefreshThreadFactory implements ThreadFactory {

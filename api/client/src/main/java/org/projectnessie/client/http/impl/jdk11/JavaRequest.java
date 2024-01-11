@@ -92,76 +92,82 @@ final class JavaRequest extends BaseHttpRequest {
 
     RequestContext context = new RequestContextImpl(headers, uri, method, body);
 
-    boolean doesOutput = prepareRequest(context);
-
-    for (HttpHeader header : headers.allHeaders()) {
-      for (String value : header.getValues()) {
-        request = request.header(header.getName(), value);
-      }
-    }
-
-    BodyPublisher bodyPublisher = doesOutput ? bodyPublisher(context) : BodyPublishers.noBody();
-    request = request.method(method.name(), bodyPublisher);
-
-    HttpResponse<InputStream> response = null;
     try {
-      try {
-        LOGGER.debug("Sending {} request to {} ...", method, uri);
-        response = exchange.send(request.build(), BodyHandlers.ofInputStream());
-      } catch (HttpConnectTimeoutException e) {
-        throw new HttpClientException(
-            String.format(
-                "Timeout connecting to '%s' after %ds",
-                uri, config.getConnectionTimeoutMillis() / 1000),
-            e);
-      } catch (HttpTimeoutException e) {
-        throw new HttpClientReadTimeoutException(
-            String.format(
-                "Cannot finish %s request against '%s'. Timeout while waiting for response with a timeout of %ds",
-                method, uri, config.getReadTimeoutMillis() / 1000),
-            e);
-      } catch (MalformedURLException e) {
-        throw new HttpClientException(
-            String.format("Cannot perform %s request. Malformed Url for %s", method, uri), e);
-      } catch (IOException e) {
-        throw new HttpClientException(
-            String.format("Failed to execute %s request against '%s'.", method, uri), e);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
+      boolean doesOutput = prepareRequest(context);
 
-      JavaResponseContext responseContext = new JavaResponseContext(response);
-
-      List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
-      if (callbacks != null) {
-        callbacks.forEach(callback -> callback.accept(responseContext, null));
-      }
-
-      config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
-
-      if (response.statusCode() >= 400) {
-        // This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that
-        // throws an IOException for these status codes.
-        throw new HttpClientException(
-            String.format(
-                "%s request to %s failed with HTTP/%d", method, uri, response.statusCode()));
-      }
-
-      response = null;
-      return config.responseFactory().make(responseContext, config.getMapper());
-    } finally {
-      if (response != null) {
-        try {
-          LOGGER.debug(
-              "Closing unprocessed input stream for {} request to {} delegating to {} ...",
-              method,
-              uri,
-              response.body());
-          response.body().close();
-        } catch (IOException e) {
-          // ignore
+      for (HttpHeader header : headers.allHeaders()) {
+        for (String value : header.getValues()) {
+          request = request.header(header.getName(), value);
         }
       }
+
+      BodyPublisher bodyPublisher = doesOutput ? bodyPublisher(context) : BodyPublishers.noBody();
+      request = request.method(method.name(), bodyPublisher);
+
+      HttpResponse<InputStream> response = null;
+      try {
+        try {
+          LOGGER.debug("Sending {} request to {} ...", method, uri);
+          response = exchange.send(request.build(), BodyHandlers.ofInputStream());
+        } catch (HttpConnectTimeoutException e) {
+          throw new HttpClientException(
+              String.format(
+                  "Timeout connecting to '%s' after %ds",
+                  uri, config.getConnectionTimeoutMillis() / 1000),
+              e);
+        } catch (HttpTimeoutException e) {
+          throw new HttpClientReadTimeoutException(
+              String.format(
+                  "Cannot finish %s request against '%s'. Timeout while waiting for response with a timeout of %ds",
+                  method, uri, config.getReadTimeoutMillis() / 1000),
+              e);
+        } catch (MalformedURLException e) {
+          throw new HttpClientException(
+              String.format("Cannot perform %s request. Malformed Url for %s", method, uri), e);
+        } catch (IOException e) {
+          throw new HttpClientException(
+              String.format("Failed to execute %s request against '%s'.", method, uri), e);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+
+        JavaResponseContext responseContext = new JavaResponseContext(response);
+
+        List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
+        if (callbacks != null) {
+          callbacks.forEach(callback -> callback.accept(responseContext, null));
+        }
+
+        config
+            .getResponseFilters()
+            .forEach(responseFilter -> responseFilter.filter(responseContext));
+
+        if (response.statusCode() >= 400) {
+          // This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that
+          // throws an IOException for these status codes.
+          throw new HttpClientException(
+              String.format(
+                  "%s request to %s failed with HTTP/%d", method, uri, response.statusCode()));
+        }
+
+        response = null;
+        return config.responseFactory().make(responseContext, config.getMapper());
+      } finally {
+        if (response != null) {
+          try {
+            LOGGER.debug(
+                "Closing unprocessed input stream for {} request to {} delegating to {} ...",
+                method,
+                uri,
+                response.body());
+            response.body().close();
+          } catch (IOException e) {
+            // ignore
+          }
+        }
+      }
+    } finally {
+      cleanUp();
     }
   }
 

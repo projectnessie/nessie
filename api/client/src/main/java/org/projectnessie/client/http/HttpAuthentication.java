@@ -18,15 +18,29 @@ package org.projectnessie.client.http;
 import org.projectnessie.client.auth.NessieAuthentication;
 
 /**
- * Implementations of {@link NessieAuthentication} with this interface are able to produce {@link
- * RequestFilter} instance to be used with {@link HttpClient}.
+ * A special {@link RequestFilter} that applies authentication to the HTTP request, typically in the
+ * form of HTTP headers.
  */
 public interface HttpAuthentication extends NessieAuthentication {
 
   /**
-   * Configure the given {@link HttpClient} to use this instance..
+   * Configure the given {@link HttpClient} to use this authentication. Called when authentication
+   * is set on the {@link HttpClient} level only.
    *
+   * @see HttpClient.Builder#setAuthentication(HttpAuthentication)
    * @param client client to configure
    */
   void applyToHttpClient(HttpClient.Builder client);
+
+  /**
+   * Apply authentication to the HTTP request. Called when authentication is set on the {@link
+   * HttpRequest} level only.
+   *
+   * @see HttpRequest#authentication(HttpAuthentication)
+   * @param context The request context
+   */
+  default void applyToHttpRequest(RequestContext context) {
+    throw new UnsupportedOperationException(
+        "This authentication method does not support per-request authentication");
+  }
 }

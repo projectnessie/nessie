@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.RequestContext;
 
 public class BearerAuthenticationProvider implements NessieAuthenticationProvider {
 
@@ -52,7 +53,12 @@ public class BearerAuthenticationProvider implements NessieAuthenticationProvide
 
     @Override
     public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(ctx -> ctx.putHeader("Authorization", authHeaderValue));
+      client.addRequestFilter(this::applyToHttpRequest);
+    }
+
+    @Override
+    public void applyToHttpRequest(RequestContext context) {
+      context.putHeader("Authorization", authHeaderValue);
     }
   }
 }

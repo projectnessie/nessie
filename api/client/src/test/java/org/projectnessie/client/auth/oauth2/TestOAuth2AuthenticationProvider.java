@@ -135,7 +135,7 @@ class TestOAuth2AuthenticationProvider {
         .thenReturn(ImmutableAccessToken.builder().payload("cafebabe").tokenType("BeArEr").build());
     OAuth2Authentication authentication = new OAuth2Authentication(authenticator);
     RequestContext context = mock(RequestContext.class);
-    authentication.addAuthHeader(context);
+    authentication.applyToHttpRequest(context);
     verify(authenticator).authenticate();
     verify(context).putHeader("Authorization", "Bearer cafebabe");
   }
@@ -148,7 +148,7 @@ class TestOAuth2AuthenticationProvider {
             ImmutableAccessToken.builder().payload("cafebabe").tokenType("INVALID").build());
     OAuth2Authentication authentication = new OAuth2Authentication(authenticator);
     RequestContext context = mock(RequestContext.class);
-    assertThatThrownBy(() -> authentication.addAuthHeader(context))
+    assertThatThrownBy(() -> authentication.applyToHttpRequest(context))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "OAuth2 token type returned from the authenticating server must be 'Bearer', but was: INVALID");

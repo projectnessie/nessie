@@ -169,12 +169,7 @@ class TestAwsAuthProvider {
     Mockito.doAnswer(
             invocationOnMock -> {
               Object[] args = invocationOnMock.getArguments();
-              if (args.length == 1
-                  && args[0] instanceof RequestFilter
-                  && args[0]
-                      .getClass()
-                      .getSimpleName()
-                      .equalsIgnoreCase("AwsHttpAuthenticationFilter")) {
+              if (args.length == 1 && args[0] instanceof RequestFilter) {
                 authFilter[0] = (RequestFilter) args[0];
               }
               return null;

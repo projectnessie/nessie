@@ -52,7 +52,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.TestHttpClient;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.util.HttpTestServer;
@@ -394,15 +393,8 @@ class TestOAuth2Client {
 
       try (ResourceOwnerEmulator resourceOwner =
               new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE);
-          HttpClient tokenEndpointClient =
-              config
-                  .newHttpClientBuilder()
-                  .setAuthentication(config.getBasicAuthentication())
-                  .setBaseUri(server.getUri().resolve("/token"))
-                  .build();
           AuthorizationCodeFlow flow =
-              new AuthorizationCodeFlow(
-                  config, tokenEndpointClient, resourceOwner.getConsoleOut())) {
+              new AuthorizationCodeFlow(config, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();
         checkInitialResponse((TokensResponseBase) tokens, false);
@@ -422,13 +414,7 @@ class TestOAuth2Client {
               .authorizationCodeFlowTimeout(Duration.ofMillis(100))
               .build();
 
-      try (HttpClient tokenEndpointClient =
-              config
-                  .newHttpClientBuilder()
-                  .setAuthentication(config.getBasicAuthentication())
-                  .setBaseUri(server.getUri().resolve("/token"))
-                  .build();
-          AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config, tokenEndpointClient)) {
+      try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config)) {
 
         soft.assertThatThrownBy(flow::fetchNewTokens)
             .hasMessageContaining("Timed out waiting waiting for authorization code")
@@ -450,14 +436,7 @@ class TestOAuth2Client {
               .build();
 
       try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
-          HttpClient tokenEndpointClient =
-              config
-                  .newHttpClientBuilder()
-                  .setAuthentication(config.getBasicAuthentication())
-                  .setBaseUri(server.getUri().resolve("/token"))
-                  .build();
-          DeviceCodeFlow flow =
-              new DeviceCodeFlow(config, tokenEndpointClient, resourceOwner.getConsoleOut())) {
+          DeviceCodeFlow flow = new DeviceCodeFlow(config, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();
         checkInitialResponse((TokensResponseBase) tokens, false);
@@ -477,13 +456,7 @@ class TestOAuth2Client {
               .deviceCodeFlowTimeout(Duration.ofMillis(100))
               .build();
 
-      try (HttpClient tokenEndpointClient =
-              config
-                  .newHttpClientBuilder()
-                  .setAuthentication(config.getBasicAuthentication())
-                  .setBaseUri(server.getUri().resolve("/token"))
-                  .build();
-          DeviceCodeFlow flow = new DeviceCodeFlow(config, tokenEndpointClient)) {
+      try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
 
         soft.assertThatThrownBy(flow::fetchNewTokens)
             .hasMessageContaining("Timed out waiting for user to authorize device")

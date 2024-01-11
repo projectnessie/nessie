@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,11 +75,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     password =
         config.getPassword().map(s -> s.getBytesAndClear(StandardCharsets.UTF_8)).orElse(null);
     scope = config.getScope().orElse(null);
-    httpClient =
-        config.newHttpClientBuilder().setAuthentication(config.getBasicAuthentication()).build();
+    httpClient = config.getHttpClient();
     executor = config.getExecutor();
     lastAccess = config.getClock().get();
-    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), executor);
+    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), config.getExecutor());
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
@@ -138,21 +136,15 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         if (tokenRefreshFuture != null) {
           tokenRefreshFuture.cancel(true);
         }
-        boolean shouldClose = executor instanceof OAuth2TokenRefreshExecutor;
-        if (shouldClose) {
-          if (!executor.isShutdown()) {
-            executor.shutdown();
-            if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-              executor.shutdownNow();
-            }
-          }
+        // Only close the executor if it's the default one (not shared).
+        if (executor instanceof OAuth2TokenRefreshExecutor) {
+          ((OAuth2TokenRefreshExecutor) executor).close();
         }
+        // Always close the HTTP client (can't be shared).
         httpClient.close();
         if (password != null) {
           Arrays.fill(password, (byte) 0);
         }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
       } finally {
         tokenRefreshFuture = null;
       }
@@ -236,30 +228,26 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     switch (config.getGrantType()) {
       case CLIENT_CREDENTIALS:
         {
-          ClientCredentialsTokensRequest body =
+          ClientCredentialsTokensRequest request =
               ImmutableClientCredentialsTokensRequest.builder().scope(scope).build();
-          HttpResponse httpResponse =
-              httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
-          return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
+          return invokeTokensEndpoint(request, ClientCredentialsTokensResponse.class);
         }
       case PASSWORD:
         {
-          PasswordTokensRequest body =
+          PasswordTokensRequest request =
               ImmutablePasswordTokensRequest.builder()
                   .username(username)
                   .password(new String(password, StandardCharsets.UTF_8))
                   .scope(scope)
                   .build();
-          HttpResponse httpResponse =
-              httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
-          return httpResponse.readEntity(PasswordTokensResponse.class);
+          return invokeTokensEndpoint(request, PasswordTokensResponse.class);
         }
       case AUTHORIZATION_CODE:
-        try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config, httpClient)) {
+        try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config)) {
           return flow.fetchNewTokens();
         }
       case DEVICE_CODE:
-        try (DeviceCodeFlow flow = new DeviceCodeFlow(config, httpClient)) {
+        try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
           return flow.fetchNewTokens();
         }
       default:
@@ -280,14 +268,12 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       throw new MustFetchNewTokensException("Refresh token is about to expire");
     }
     LOGGER.debug("Refreshing tokens");
-    RefreshTokensRequest body =
+    RefreshTokensRequest request =
         ImmutableRefreshTokensRequest.builder()
             .refreshToken(currentTokens.getRefreshToken().getPayload())
             .scope(scope)
             .build();
-    HttpResponse httpResponse =
-        httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
-    return httpResponse.readEntity(RefreshTokensResponse.class);
+    return invokeTokensEndpoint(request, RefreshTokensResponse.class);
   }
 
   Tokens exchangeTokens(Tokens currentToken) {
@@ -295,16 +281,22 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       throw new MustFetchNewTokensException("Token exchange is disabled");
     }
     LOGGER.debug("Exchanging tokens");
-    ImmutableTokensExchangeRequest body =
+    ImmutableTokensExchangeRequest request =
         ImmutableTokensExchangeRequest.builder()
             .subjectToken(currentToken.getAccessToken().getPayload())
             .subjectTokenType(ACCESS_TOKEN)
             .requestedTokenType(REFRESH_TOKEN)
             .scope(scope)
             .build();
-    HttpResponse httpResponse =
-        httpClient.newRequest(config.getResolvedTokenEndpoint()).postForm(body);
-    return httpResponse.readEntity(TokensExchangeResponse.class);
+    return invokeTokensEndpoint(request, TokensExchangeResponse.class);
+  }
+
+  private <T> T invokeTokensEndpoint(Object request, Class<T> responseClass) {
+    return httpClient
+        .newRequest(config.getResolvedTokenEndpoint())
+        .authentication(config.getBasicAuthentication())
+        .postForm(request)
+        .readEntity(responseClass);
   }
 
   private boolean isAboutToExpire(Token token) {

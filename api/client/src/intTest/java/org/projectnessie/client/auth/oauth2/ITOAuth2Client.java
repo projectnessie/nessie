@@ -469,15 +469,12 @@ public class ITOAuth2Client {
   }
 
   private static HttpClient.Builder validatingHttpClient(String clientId) {
-    @SuppressWarnings("resource")
     HttpAuthentication authentication = BasicAuthenticationProvider.create(clientId, "s3cr3t");
-    HttpClient.Builder builder =
-        HttpClient.builder()
-            .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
-            .setObjectMapper(new ObjectMapper())
-            .setDisableCompression(true);
-    authentication.applyToHttpClient(builder);
-    return builder;
+    return HttpClient.builder()
+        .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
+        .setObjectMapper(new ObjectMapper())
+        .setDisableCompression(true)
+        .setAuthentication(authentication);
   }
 
   private static Class<?> expectedResponseClass(GrantType initialGrantType) {

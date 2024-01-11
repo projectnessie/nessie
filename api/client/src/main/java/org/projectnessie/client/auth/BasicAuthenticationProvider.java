@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.function.Function;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.RequestContext;
 
 /**
  * HTTP BASIC authentication provider.
@@ -76,7 +77,12 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
 
     @Override
     public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(ctx -> ctx.putHeader("Authorization", authHeaderValue));
+      client.addRequestFilter(this::applyToHttpRequest);
+    }
+
+    @Override
+    public void applyToHttpRequest(RequestContext context) {
+      context.putHeader("Authorization", authHeaderValue);
     }
   }
 }

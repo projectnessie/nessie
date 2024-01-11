@@ -102,6 +102,8 @@ final class UrlConnectionRequest extends BaseHttpRequest {
     } catch (IOException e) {
       throw new HttpClientException(
           String.format("Failed to execute %s request against '%s'.", method, uri), e);
+    } finally {
+      cleanUp();
     }
   }
 

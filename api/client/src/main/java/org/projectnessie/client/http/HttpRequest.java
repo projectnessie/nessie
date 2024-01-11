@@ -34,6 +34,7 @@ public abstract class HttpRequest
   protected final HttpHeaders headers = new HttpHeaders();
   protected String contentsType = "application/json; charset=utf-8";
   protected String accept = "application/json; charset=utf-8";
+  protected HttpAuthentication auth;
 
   protected HttpRequest(HttpRuntimeConfig config, URI baseUri) {
     requireNonNull(baseUri, "Base URI cannot be null");
@@ -46,6 +47,23 @@ public abstract class HttpRequest
     if (clientSpec > 0) {
       headers.put("Nessie-Client-Spec", Integer.toString(clientSpec));
     }
+  }
+
+  /**
+   * Sets the authentication to use for this request. A non-null value will override the
+   * authentication object set on the {@link HttpClient} level, if any.
+   *
+   * <p>The passed authentication object will be {@linkplain HttpAuthentication#start() started}
+   * when this request is prepared, and will be {@linkplain HttpAuthentication#close() closed}
+   * immediately after this request is {@linkplain HttpRequest#executeRequest(Method, Object)
+   * executed}.
+   *
+   * @param auth the authentication to use
+   * @return this request
+   */
+  public HttpRequest authentication(HttpAuthentication auth) {
+    this.auth = auth;
+    return this;
   }
 
   public HttpRequest contentsType(String contentType) {

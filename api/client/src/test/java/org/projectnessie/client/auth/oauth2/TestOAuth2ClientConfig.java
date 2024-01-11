@@ -257,7 +257,7 @@ class TestOAuth2ClientConfig {
               "resolvedTokenEndpoint",
               "resolvedAuthEndpoint")
           .isEqualTo(expected);
-      assertThat(actual.newHttpClientBuilder()).isNotNull();
+      assertThat(actual.getHttpClient()).isNotNull();
       assertThat(actual.getExecutor()).isNotNull();
       assertThat(actual.getObjectMapper()).isNotNull();
     } else {

@@ -100,9 +100,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   @Value.Lazy
   JsonNode getOpenIdProviderMetadata() {
     URI issuerUrl = getIssuerUrl().orElseThrow(IllegalStateException::new);
-    try (HttpClient client = newHttpClientBuilder().build()) {
-      return OAuth2Utils.fetchOpenIdProviderMetadata(client, issuerUrl);
-    }
+    return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
   }
 
   @Value.Lazy
@@ -143,18 +141,34 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         "OpenID provider metadata does not contain a device authorization endpoint");
   }
 
-  @Value.Lazy // required because it will consume the client secret
+  /**
+   * Returns the BASIC {@link HttpAuthentication} that will be used to authenticate with the OAuth2
+   * server, for all endpoints that require such authentication.
+   *
+   * <p>The value is lazily computed then memoized; this is required because creating the {@link
+   * HttpAuthentication} object will consume the client secret. It can be safely reused for all
+   * requests since it's immutable and its close method is a no-op.
+   */
+  @Value.Lazy
   HttpAuthentication getBasicAuthentication() {
     return BasicAuthenticationProvider.create(getClientId(), getClientSecret().getStringAndClear());
   }
 
-  @Value.NonAttribute
-  HttpClient.Builder newHttpClientBuilder() {
+  /**
+   * Returns the {@link HttpClient} that will be used to communicate with the OAuth2 server.
+   *
+   * <p>Note that it does not have any authentication configured, so each request must be
+   * authenticated explicitly. The appropriate authentication object can be obtained from {@link
+   * #getBasicAuthentication()}.
+   */
+  @Value.Lazy
+  HttpClient getHttpClient() {
     return HttpClient.builder()
         .setObjectMapper(getObjectMapper())
         .setSslContext(getSslContext().orElse(null))
         .setDisableCompression(true)
-        .addResponseFilter(this::checkErrorResponse);
+        .addResponseFilter(this::checkErrorResponse)
+        .build();
   }
 
   private void checkErrorResponse(ResponseContext responseContext) {
