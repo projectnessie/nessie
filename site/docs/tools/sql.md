@@ -7,7 +7,6 @@ Spark SQL extensions provide an easy way to execute common Nessie commands via S
   '3.5',
   '3.4',
   '3.3',
-  '3.2',
 ] %}
 
 ### Spark {{sparkver}}

@@ -289,7 +289,7 @@ fun Project.useBuildSubDirectory(buildSubDir: String) {
 fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkScala = project.name.split("-").last().split("_")
 
-  val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.2"
+  val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.3"
   val scalaMajorVersion = sparkScala[1]
 
   useBuildSubDirectory(scalaMajorVersion)
@@ -350,7 +350,6 @@ fun Project.useSparkScalaVersionsForProject(
 fun javaVersionForSpark(sparkMajorVersion: String): Int {
   val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
   return when (sparkMajorVersion) {
-    "3.2" -> 11
     "3.3",
     "3.4",
     "3.5" ->
