@@ -31,6 +31,7 @@ import com.google.common.hash.Hashing;
 import jakarta.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
@@ -416,7 +417,7 @@ public abstract class ObjId {
 
   @VisibleForTesting
   static final class ObjIdGeneric extends ObjId {
-    private final ByteBuffer bytes;
+    private final byte[] bytes;
 
     private ObjIdGeneric(String hash) {
       int len = hash.length();
@@ -427,11 +428,13 @@ public abstract class ObjId {
         bytes[i] = value;
       }
       checkArgument(bytes.length <= 256, "Hashes longer than 256 bytes are not supported");
-      this.bytes = ByteBuffer.wrap(bytes);
+      this.bytes = bytes;
     }
 
     private ObjIdGeneric(ByteBuffer bytes) {
-      this.bytes = bytes;
+      int length = bytes.remaining();
+      this.bytes = new byte[length];
+      bytes.duplicate().get(this.bytes, 0, length);
     }
 
     private ObjIdGeneric(ByteString bytes) {
@@ -440,7 +443,7 @@ public abstract class ObjId {
 
     @Override
     public int nibbleAt(int nibbleIndex) {
-      byte b = bytes.get(bytes.position() + (nibbleIndex >> 1));
+      byte b = bytes[nibbleIndex >> 1];
       if ((nibbleIndex & 1) == 0) {
         b >>= 4;
       }
@@ -449,7 +452,7 @@ public abstract class ObjId {
 
     @Override
     public int size() {
-      return bytes.remaining();
+      return bytes.length;
     }
 
     @Override
@@ -462,43 +465,24 @@ public abstract class ObjId {
     public int heapSize() {
       /*
       org.projectnessie.versioned.storage.common.persist.ObjId$ObjIdGeneric object internals:
-      OFF  SZ                  TYPE DESCRIPTION               VALUE
-        0   8                       (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
-        8   4                       (object header: class)    0x010cb238
-       12   4   java.nio.ByteBuffer ObjIdGeneric.bytes        null
+      OFF  SZ     TYPE DESCRIPTION               VALUE
+        0   8          (object header: mark)     N/A
+        8   4          (object header: class)    N/A
+       12   4   byte[] ObjIdGeneric.bytes        N/A
       Instance size: 16 bytes
       Space losses: 0 bytes internal + 0 bytes external = 0 bytes total
 
-      java.nio.HeapByteBuffer object internals:
-      OFF  SZ                              TYPE DESCRIPTION                  VALUE
-        0   8                                   (object header: mark)        N/A
-        8   4                                   (object header: class)       N/A
-       12   4                               int Buffer.mark                  N/A
-       16   8                              long Buffer.address               N/A
-       24   4                               int Buffer.position              N/A
-       28   4                               int Buffer.limit                 N/A
-       32   4                               int Buffer.capacity              N/A
-       36   4   java.lang.foreign.MemorySegment Buffer.segment               N/A
-       40   4                               int ByteBuffer.offset            N/A
-       44   1                           boolean ByteBuffer.isReadOnly        N/A
-       45   1                           boolean ByteBuffer.bigEndian         N/A
-       46   1                           boolean ByteBuffer.nativeByteOrder   N/A
-       47   1                                   (alignment/padding gap)
-       48   4                            byte[] ByteBuffer.hb                N/A
-       52   4                                   (object alignment gap)
-      Instance size: 56 bytes
-
       Array overhead: 16 bytes
       */
-      return 16 + 56 + 16 + size();
+      return 16 + 16 + size();
     }
 
     @Override
     public String toString() {
-      int len = bytes.remaining();
+      int len = bytes.length;
       StringBuilder sb = new StringBuilder(2 * len);
-      for (int p = bytes.position(), i = 0; i < len; i++, p++) {
-        byte b = bytes.get(p);
+      for (int p = 0, i = 0; i < len; i++, p++) {
+        byte b = bytes[p];
         sb.append(hexChar((byte) (b >> 4)));
         sb.append(hexChar(b));
       }
@@ -507,41 +491,39 @@ public abstract class ObjId {
 
     @Override
     public ByteBuffer asByteBuffer() {
-      return bytes.duplicate();
+      return ByteBuffer.wrap(bytes);
     }
 
     @Override
     public byte[] asByteArray() {
-      byte[] r = new byte[bytes.remaining()];
-      ByteBuffer.wrap(r).put(bytes.duplicate());
-      return r;
+      return Arrays.copyOf(bytes, bytes.length);
     }
 
     @Override
     public ByteBuffer serializeTo(ByteBuffer target) {
-      return putVarInt(target, bytes.remaining()).put(bytes.duplicate());
+      return putVarInt(target, bytes.length).put(bytes, 0, bytes.length);
     }
 
     @Override
     public int hashCode() {
-      int r = bytes.remaining();
-      int p = bytes.position();
+      int r = bytes.length;
 
+      int p = 0;
       int h = 0;
       if (r > 0) {
-        h |= (bytes.get(p++) & 0xff) << 24;
+        h |= (bytes[p++] & 0xff) << 24;
         r--;
       }
       if (r > 0) {
-        h |= ((bytes.get(p++) & 0xff) << 16);
+        h |= ((bytes[p++] & 0xff) << 16);
         r--;
       }
       if (r > 0) {
-        h |= ((bytes.get(p++) & 0xff) << 8);
+        h |= ((bytes[p++] & 0xff) << 8);
         r--;
       }
       if (r > 0) {
-        h |= (bytes.get(p) & 0xff);
+        h |= (bytes[p] & 0xff);
       }
       return h;
     }
@@ -552,7 +534,7 @@ public abstract class ObjId {
         return false;
       }
       ObjIdGeneric that = (ObjIdGeneric) obj;
-      return this.bytes.equals(that.bytes);
+      return Arrays.equals(this.bytes, that.bytes);
     }
   }
 }
