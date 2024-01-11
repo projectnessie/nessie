@@ -73,6 +73,9 @@ public abstract class ObjId {
   /** Return the size of the hash in bytes. */
   public abstract int size();
 
+  /** Estimated object size on heap. */
+  public abstract int heapSize();
+
   public abstract int serializedSize();
 
   /**
@@ -232,6 +235,20 @@ public abstract class ObjId {
     }
 
     @Override
+    public int heapSize() {
+      /*
+      org.projectnessie.versioned.storage.common.persist.ObjId$ObjIdEmpty object internals:
+      OFF  SZ   TYPE DESCRIPTION               VALUE
+        0   8        (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
+        8   4        (object header: class)    0x010cd918
+       12   4        (object alignment gap)
+      Instance size: 16 bytes
+      Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
+      */
+      return 16;
+    }
+
+    @Override
     public int hashCode() {
       return 0;
     }
@@ -306,6 +323,24 @@ public abstract class ObjId {
     @Override
     public int serializedSize() {
       return 33;
+    }
+
+    @Override
+    public int heapSize() {
+      /*
+      org.projectnessie.versioned.storage.common.persist.ObjId$ObjId256 object internals:
+      OFF  SZ   TYPE DESCRIPTION               VALUE
+        0   8        (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
+        8   4        (object header: class)    0x010cb000
+       12   4        (alignment/padding gap)
+       16   8   long ObjId256.l0               0
+       24   8   long ObjId256.l1               0
+       32   8   long ObjId256.l2               0
+       40   8   long ObjId256.l3               0
+      Instance size: 48 bytes
+      Space losses: 4 bytes internal + 0 bytes external = 4 bytes total
+      */
+      return 48;
     }
 
     @Override
@@ -421,6 +456,41 @@ public abstract class ObjId {
     public int serializedSize() {
       int sz = size();
       return sz + varIntLen(sz);
+    }
+
+    @Override
+    public int heapSize() {
+      /*
+      org.projectnessie.versioned.storage.common.persist.ObjId$ObjIdGeneric object internals:
+      OFF  SZ                  TYPE DESCRIPTION               VALUE
+        0   8                       (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
+        8   4                       (object header: class)    0x010cb238
+       12   4   java.nio.ByteBuffer ObjIdGeneric.bytes        null
+      Instance size: 16 bytes
+      Space losses: 0 bytes internal + 0 bytes external = 0 bytes total
+
+      java.nio.HeapByteBuffer object internals:
+      OFF  SZ                              TYPE DESCRIPTION                  VALUE
+        0   8                                   (object header: mark)        N/A
+        8   4                                   (object header: class)       N/A
+       12   4                               int Buffer.mark                  N/A
+       16   8                              long Buffer.address               N/A
+       24   4                               int Buffer.position              N/A
+       28   4                               int Buffer.limit                 N/A
+       32   4                               int Buffer.capacity              N/A
+       36   4   java.lang.foreign.MemorySegment Buffer.segment               N/A
+       40   4                               int ByteBuffer.offset            N/A
+       44   1                           boolean ByteBuffer.isReadOnly        N/A
+       45   1                           boolean ByteBuffer.bigEndian         N/A
+       46   1                           boolean ByteBuffer.nativeByteOrder   N/A
+       47   1                                   (alignment/padding gap)
+       48   4                            byte[] ByteBuffer.hb                N/A
+       52   4                                   (object alignment gap)
+      Instance size: 56 bytes
+
+      Array overhead: 16 bytes
+      */
+      return 16 + 56 + 16 + size();
     }
 
     @Override

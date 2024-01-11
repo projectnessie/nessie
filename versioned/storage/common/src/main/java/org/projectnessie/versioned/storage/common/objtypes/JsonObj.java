@@ -36,7 +36,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 @JsonDeserialize(as = ImmutableJsonObj.class)
 public interface JsonObj extends Obj {
 
-  ObjType TYPE = new SimpleObjType<>("json", "j", JsonObj.class);
+  ObjType TYPE = CustomObjType.customObjType("json", "j", JsonObj.class);
 
   @Override
   @JsonIgnore

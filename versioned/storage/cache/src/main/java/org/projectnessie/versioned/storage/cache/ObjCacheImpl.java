@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.cache;
 
 import jakarta.annotation.Nonnull;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -23,9 +24,9 @@ final class ObjCacheImpl implements ObjCache {
   private final CacheBackend backend;
   private final String repositoryId;
 
-  ObjCacheImpl(CacheBackend backend, String repositoryId) {
+  ObjCacheImpl(CacheBackend backend, StoreConfig config) {
     this.backend = backend;
-    this.repositoryId = repositoryId;
+    this.repositoryId = config.repositoryId();
   }
 
   @Override
