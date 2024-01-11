@@ -360,7 +360,7 @@ public class BigTablePersist implements Persist {
 
     try {
       ConditionalRowMutation conditionalRowMutation =
-          conditionalForStoreObj(obj, ignoreSoftSizeRestrictions);
+          mutationForStoreObj(obj, ignoreSoftSizeRestrictions);
 
       boolean success = backend.client().checkAndMutateRow(conditionalRowMutation);
       return !success;
@@ -376,7 +376,7 @@ public class BigTablePersist implements Persist {
                   Function.identity(), (ObjType type) -> ByteString.copyFromUtf8(type.name())));
 
   @NotNull
-  private ConditionalRowMutation conditionalForStoreObj(
+  private ConditionalRowMutation mutationForStoreObj(
       @NotNull Obj obj, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
@@ -412,7 +412,7 @@ public class BigTablePersist implements Persist {
     for (int i = 0; i < objs.length; i++) {
       Obj obj = objs[i];
       if (obj != null) {
-        ConditionalRowMutation conditionalRowMutation = conditionalForStoreObj(obj, false);
+        ConditionalRowMutation conditionalRowMutation = mutationForStoreObj(obj, false);
         futures[i] = backend.client().checkAndMutateRowAsync(conditionalRowMutation);
       }
     }
