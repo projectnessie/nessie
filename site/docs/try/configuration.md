@@ -116,9 +116,9 @@ A complete set of JDBC configuration options can be found on [quarkus.io](https:
 
 When setting `nessie.version.store.type=ROCKSDB` which enables RocksDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-| Property                             | Default values        | Type     | Description                                          |
-|--------------------------------------|-----------------------|----------|------------------------------------------------------|
-| `nessie.version.store.rocks.db-path` | `/tmp/nessie-rocksdb` | `String` | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
+| Property                                           | Default values        | Type     | Description                                          |
+|----------------------------------------------------|-----------------------|----------|------------------------------------------------------|
+| `nessie.version.store.persist.rocks.database-path` | `/tmp/nessie-rocksdb` | `String` | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
 
 #### Cassandra Version Store Settings
 
