@@ -498,6 +498,9 @@ class RocksDBPersist implements Persist {
       if (!existing.type().equals(existing.type())) {
         return false;
       }
+      if (!existing.type().equals(expected.type())) {
+        return false;
+      }
       UpdateableObj ex = (UpdateableObj) existing;
       if (!ex.versionToken().equals(expected.versionToken())) {
         return false;

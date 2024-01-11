@@ -1334,6 +1334,12 @@ public class AbstractBasePersistTests {
     // exists, expected version - update must succeed
     soft.assertThat(persist.updateConditional(v2, v3)).isTrue();
     soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v3);
+
+    // Test conditional-update against the "wrong" object type (must not succeed)
+    persist.deleteObj(v1.id());
+    VersionedTestObj2 wrong = VersionedTestObj2.builder().from(v1).otherValue("blah").build();
+    persist.storeObj(wrong);
+    soft.assertThat(persist.updateConditional(v1, v2)).isFalse();
   }
 
   private void cassandraDeleteTombstoneSleep(long t) throws InterruptedException {
