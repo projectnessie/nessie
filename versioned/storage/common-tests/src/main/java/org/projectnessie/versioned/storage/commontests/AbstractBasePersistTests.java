@@ -692,14 +692,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
 
-    if ("Cassandra".equals(persist.name())) {
-      // MUST sleep here, otherwise the tombstone's timestamp might be equal to the INSERT's
-      // timestamp of the storeObj() below, which would wrongly shadow the write's timestamp.
-      long sleepMillis = t + 2 - System.currentTimeMillis();
-      if (sleepMillis > 0) {
-        Thread.sleep(sleepMillis);
-      }
-    }
+    cassandraDeleteTombstoneSleep(t);
 
     soft.assertThat(persist.storeObj(obj)).isTrue();
     soft.assertThat(persist.storeObj(obj)).isFalse();
@@ -1287,14 +1280,7 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(() -> persist.fetchObj(v1.id()))
         .isInstanceOf(ObjNotFoundException.class);
 
-    if ("Cassandra".equals(persist.name())) {
-      // MUST sleep here, otherwise the tombstone's timestamp might be equal to the INSERT's
-      // timestamp of the storeObj() below, which would wrongly shadow the write's timestamp.
-      long sleepMillis = t + 2 - System.currentTimeMillis();
-      if (sleepMillis > 0) {
-        Thread.sleep(sleepMillis);
-      }
-    }
+    cassandraDeleteTombstoneSleep(t);
 
     // can store again
     soft.assertThat(persist.storeObj(v1)).isTrue();
@@ -1348,5 +1334,16 @@ public class AbstractBasePersistTests {
     // exists, expected version - update must succeed
     soft.assertThat(persist.updateConditional(v2, v3)).isTrue();
     soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v3);
+  }
+
+  private void cassandraDeleteTombstoneSleep(long t) throws InterruptedException {
+    if ("Cassandra".equals(persist.name())) {
+      // MUST sleep here, otherwise the tombstone's timestamp might be equal to the INSERT's
+      // timestamp of the storeObj() below, which would wrongly shadow the write's timestamp.
+      long sleepMillis = t + 2 - System.currentTimeMillis();
+      if (sleepMillis > 0) {
+        Thread.sleep(sleepMillis);
+      }
+    }
   }
 }
