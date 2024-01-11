@@ -47,12 +47,4 @@ public interface VersionStoreConfig {
   @WithName("events.enable")
   @WithDefault("true")
   boolean isEventsEnabled();
-
-  @StaticInitSafe
-  @ConfigMapping(prefix = "nessie.version.store.rocks")
-  interface RocksVersionStoreConfig {
-    @WithName("db-path")
-    @WithDefault("/tmp/nessie-rocksdb")
-    String getDbPath();
-  }
 }
