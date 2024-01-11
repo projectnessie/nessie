@@ -558,22 +558,18 @@ public class BigTablePersist implements Persist {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
 
-    Filter condition =
+    Filters.ChainFilter objTypeFilter =
         FILTERS
             .chain()
-            .filter(
-                FILTERS
-                    .chain()
-                    .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_VERS))
-                    .filter(FILTERS.value().exactMatch(obj.versionToken())))
-        // TODO adding this safety net doesn't work :(
-        // .filter(
-        //    FILTERS
-        //        .chain()
-        //        .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
-        //        .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES.get(obj.type()))))
-        //
-        ;
+            .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
+            .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES.get(obj.type())));
+    Filters.ChainFilter objVersionFilter =
+        FILTERS
+            .chain()
+            .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_VERS))
+            .filter(FILTERS.value().exactMatch(obj.versionToken()));
+    Filter condition =
+        FILTERS.condition(objTypeFilter).then(objVersionFilter).otherwise(FILTERS.block());
 
     return ConditionalRowMutation.create(backend.tableObjs, key)
         .condition(condition)
