@@ -125,7 +125,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKeyValue key = cacheKey(repositoryId, id);
     byte[] value = cache().getIfPresent(key);
-    return value != null ? ProtoSerialization.deserializeObj(id, value) : null;
+    return value != null ? ProtoSerialization.deserializeObj(id, value, null) : null;
   }
 
   @Override
@@ -138,7 +138,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
     }
 
     try {
-      byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
+      byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
       CacheKeyValue keyValue =
           cacheKeyValue(repositoryId, obj.id(), MICROSECONDS.toNanos(expiresAt));
       cache().put(keyValue, serialized);

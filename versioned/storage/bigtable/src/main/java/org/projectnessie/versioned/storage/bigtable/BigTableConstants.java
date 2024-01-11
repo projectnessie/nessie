@@ -29,6 +29,8 @@ final class BigTableConstants {
   static final ByteString QUALIFIER_OBJ_VERS = ByteString.copyFromUtf8("V");
   static final ByteString QUALIFIER_OBJS = ByteString.copyFromUtf8("o");
   static final ByteString QUALIFIER_REFS = ByteString.copyFromUtf8("r");
+  // regex for scan
+  static final ByteString QUALIFIER_OBJS_OR_VERS = ByteString.copyFromUtf8("o|V");
 
   // Tue Apr 7 08:14:21 2020 +0200
   static final long CELL_TIMESTAMP = 1586232861000L;
