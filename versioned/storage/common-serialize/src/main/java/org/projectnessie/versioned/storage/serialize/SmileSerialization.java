@@ -57,7 +57,7 @@ public final class SmileSerialization {
       String compression) {
     try {
       ObjectReader reader =
-          ObjIdHelper.readerWithObjId(SMILE_MAPPER, targetClass, id, versionToken);
+          ObjIdHelper.readerWithObjIdAndVersionToken(SMILE_MAPPER, targetClass, id, versionToken);
       data = Compressions.uncompress(Compression.fromValue(compression), data);
       return reader.readValue(data, targetClass);
     } catch (IOException e) {
