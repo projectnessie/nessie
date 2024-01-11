@@ -15,9 +15,13 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import jakarta.annotation.Nonnull;
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_VERS_KEY;
+
+import com.fasterxml.jackson.annotation.JacksonInject;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface UpdateableObj extends Obj {
-  @Nonnull
+  @JsonIgnore
+  @JacksonInject(OBJ_VERS_KEY)
   String versionToken();
 }
