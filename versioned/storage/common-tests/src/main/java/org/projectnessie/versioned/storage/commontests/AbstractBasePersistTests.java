@@ -1285,6 +1285,13 @@ public class AbstractBasePersistTests {
     // can store again
     soft.assertThat(persist.storeObj(v1)).isTrue();
     soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);
+
+    // Test conditional-update against the "wrong" object type (must not succeed)
+    VersionedTestObj2 wrong = VersionedTestObj2.builder().from(v1).otherValue("blah").build();
+    soft.assertThat(persist.deleteConditional(wrong)).isFalse();
+    persist.deleteObj(v1.id());
+    persist.storeObj(wrong);
+    soft.assertThat(persist.deleteConditional(v1)).isFalse();
   }
 
   @Test
