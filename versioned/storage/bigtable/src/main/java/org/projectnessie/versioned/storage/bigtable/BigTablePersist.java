@@ -44,6 +44,7 @@ import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
 import com.google.cloud.bigtable.data.v2.models.Mutation;
+import com.google.cloud.bigtable.data.v2.models.MutationApi;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
@@ -291,12 +292,7 @@ public class BigTablePersist implements Persist {
 
       Row row = backend.client().readRow(backend.tableObjs, key);
       if (row != null) {
-        ByteBuffer obj =
-            row.getCells(FAMILY_OBJS, QUALIFIER_OBJS).get(0).getValue().asReadOnlyByteBuffer();
-        List<RowCell> objVersionCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_VERS);
-        String versionToken =
-            objVersionCells.isEmpty() ? null : objVersionCells.get(0).getValue().toStringUtf8();
-        return deserializeObj(id, obj, versionToken);
+        return objFromRow(row);
       }
       throw new ObjNotFoundException(id);
     } catch (ApiException e) {
@@ -329,22 +325,7 @@ public class BigTablePersist implements Persist {
     try {
       Obj[] r = new Obj[ids.length];
       List<ObjId> notFound = new ArrayList<>();
-      bulkFetch(
-          backend.tableObjs,
-          ids,
-          r,
-          this::dbKey,
-          row -> {
-            ByteString key = row.getKey().substring(keyPrefix.size());
-            ObjId id = deserializeObjId(key);
-            ByteBuffer data =
-                row.getCells(FAMILY_OBJS, QUALIFIER_OBJS).get(0).getValue().asReadOnlyByteBuffer();
-            List<RowCell> objVersionCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_VERS);
-            String versionToken =
-                objVersionCells.isEmpty() ? null : objVersionCells.get(0).getValue().toStringUtf8();
-            return deserializeObj(id, data, versionToken);
-          },
-          notFound::add);
+      bulkFetch(backend.tableObjs, ids, r, this::dbKey, this::objFromRow, notFound::add);
 
       if (!notFound.isEmpty()) {
         throw new ObjNotFoundException(notFound);
@@ -483,9 +464,9 @@ public class BigTablePersist implements Persist {
           serializeObj(
               obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit(), false);
 
-      RowMutation mutation = RowMutation.create(backend.tableObjs, key);
-      objToMutation(obj, mutation::setCell, serialized);
-      backend.client().mutateRow(mutation);
+      backend
+          .client()
+          .mutateRow(objToMutation(obj, RowMutation.create(backend.tableObjs, key), serialized));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -512,9 +493,7 @@ public class BigTablePersist implements Persist {
             serializeObj(
                 obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit(), false);
 
-        RowMutationEntry mutation = RowMutationEntry.create(key);
-        objToMutation(obj, mutation::setCell, serialized);
-        batcher.add(mutation);
+        batcher.add(objToMutation(obj, RowMutationEntry.create(key), serialized));
       }
     } catch (ApiException e) {
       throw apiException(e);
@@ -578,15 +557,13 @@ public class BigTablePersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
     byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit, false);
 
-    Mutation mutation = Mutation.create();
-    objToMutation(obj, mutation::setCell, serialized);
-    return mutation;
+    return objToMutation(obj, Mutation.create(), serialized);
   }
 
-  static void objToMutation(Obj obj, ToMutation mutation, byte[] serialized) {
-    mutation.setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, unsafeWrap(serialized));
-    mutation.setCell(
-        FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, OBJ_TYPE_VALUES.get(obj.type()));
+  static <M extends MutationApi<M>> M objToMutation(Obj obj, M mutation, byte[] serialized) {
+    mutation
+        .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, unsafeWrap(serialized))
+        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, OBJ_TYPE_VALUES.get(obj.type()));
     if (obj instanceof UpdateableObj) {
       mutation.setCell(
           FAMILY_OBJS,
@@ -594,11 +571,7 @@ public class BigTablePersist implements Persist {
           CELL_TIMESTAMP,
           ByteString.copyFromUtf8(((UpdateableObj) obj).versionToken()));
     }
-  }
-
-  @FunctionalInterface
-  interface ToMutation {
-    void setCell(String familyName, ByteString qualifier, long timestamp, ByteString value);
+    return mutation;
   }
 
   @Override
@@ -678,27 +651,21 @@ public class BigTablePersist implements Persist {
         }
 
         Row row = iter.next();
-
-        ByteString key = row.getKey();
-        lastKey = key;
-
-        ObjId id = deserializeObjId(key.substring(keyPrefix.size()));
-
-        List<RowCell> objCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJS);
-        ByteBuffer obj = objCells.get(0).getValue().asReadOnlyByteBuffer();
-        List<RowCell> objVersionCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_VERS);
-        String versionToken =
-            objVersionCells.isEmpty() ? null : objVersionCells.get(0).getValue().toStringUtf8();
-        return deserializeObj(id, obj, versionToken);
+        lastKey = row.getKey();
+        return objFromRow(row);
       }
     }
   }
 
-  private static ObjId deserializeObjId(ByteString bytes) {
-    if (bytes == null) {
-      return null;
-    }
-    return objIdFromByteBuffer(bytes.asReadOnlyByteBuffer());
+  private Obj objFromRow(Row row) {
+    ByteString key = row.getKey().substring(keyPrefix.size());
+    ObjId id = objIdFromByteBuffer(key.asReadOnlyByteBuffer());
+    List<RowCell> objCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJS);
+    ByteBuffer obj = objCells.get(0).getValue().asReadOnlyByteBuffer();
+    List<RowCell> objVersionCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_VERS);
+    String versionToken =
+        objVersionCells.isEmpty() ? null : objVersionCells.get(0).getValue().toStringUtf8();
+    return deserializeObj(id, obj, versionToken);
   }
 
   private <ID, R> void bulkFetch(
