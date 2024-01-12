@@ -48,11 +48,6 @@ dependencies {
   api("org.glassfish.jersey.test-framework:jersey-test-framework-core")
   api("org.glassfish.jersey.test-framework:jersey-test-framework-util")
   api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-external")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jdk-http")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-simple")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty")
 
   api("org.jboss.weld.se:weld-se-core")
 
