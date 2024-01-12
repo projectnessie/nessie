@@ -55,21 +55,6 @@ dependencies {
   implementation(
     "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2"
   )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-external"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jdk-http"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-simple"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty"
-  )
 
   implementation("org.jboss.weld.se:weld-se-core")
 }
