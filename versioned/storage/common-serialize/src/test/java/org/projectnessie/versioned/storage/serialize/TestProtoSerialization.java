@@ -61,6 +61,8 @@ import org.projectnessie.versioned.storage.common.objtypes.JsonObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
+import org.projectnessie.versioned.storage.common.proto.StorageTypes;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestProtoSerialization {
@@ -92,12 +94,32 @@ public class TestProtoSerialization {
   @ParameterizedTest
   @MethodSource("objs")
   void objs(Obj obj) throws Exception {
-    byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
-    Obj deserialized = deserializeObj(obj.id(), serialized);
-    Obj deserializedByteBuffer = deserializeObj(obj.id(), ByteBuffer.wrap(serialized));
-    byte[] reserialized = serializeObj(deserialized, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
+    Obj deserialized = deserializeObj(obj.id(), serialized, null);
+    Obj deserializedByteBuffer = deserializeObj(obj.id(), ByteBuffer.wrap(serialized), null);
+    byte[] reserialized = serializeObj(deserialized, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
     soft.assertThat(deserialized).isEqualTo(obj).isEqualTo(deserializedByteBuffer);
     soft.assertThat(serialized).isEqualTo(reserialized);
+
+    if (obj instanceof UpdateableObj) {
+      soft.assertThat(StorageTypes.ObjProto.parseFrom(serialized).getCustom().getVersionToken())
+          .isNotNull();
+
+      byte[] serializedWithoutVersionToken =
+          serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE, false);
+
+      soft.assertThat(
+              StorageTypes.ObjProto.parseFrom(serializedWithoutVersionToken)
+                  .getCustom()
+                  .getVersionToken())
+          .isNull();
+
+      UpdateableObj deserializedWithoutVersionToken =
+          (UpdateableObj) deserializeObj(obj.id(), serializedWithoutVersionToken, "my-foo-bar-baz");
+      soft.assertThat(deserializedWithoutVersionToken.versionToken())
+          .isEqualTo("my-foo-bar-baz")
+          .isNotEqualTo(((UpdateableObj) obj).versionToken());
+    }
   }
 
   static Stream<List<Reference.PreviousPointer>> previousPointers() {

@@ -22,8 +22,11 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ_CONDITIONAL;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.EXPECTED_SUFFIX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_REFERENCES;
@@ -53,6 +56,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackend.BatchedQuery;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializers;
@@ -69,6 +73,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 public class CassandraPersist implements Persist {
 
@@ -273,7 +278,8 @@ public class CassandraPersist implements Persist {
         row -> {
           ObjType objType = ObjTypes.forName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
           ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
-          return ObjSerializers.forType(objType).deserialize(row, objType, id);
+          String versionToken = row.getString(COL_OBJ_VERS.name());
+          return ObjSerializers.forType(objType).deserialize(row, objType, id, versionToken);
         };
 
     Obj[] r;
@@ -327,6 +333,47 @@ public class CassandraPersist implements Persist {
   @Override
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     persistObjs(objs, true);
+  }
+
+  @Override
+  public boolean deleteConditional(@NotNull UpdateableObj obj) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            DELETE_OBJ_CONDITIONAL,
+            config.repositoryId(),
+            serializeObjId(obj.id()),
+            obj.type().name(),
+            obj.versionToken());
+    return backend.executeCas(stmt);
+  }
+
+  @Override
+  public boolean updateConditional(@NotNull UpdateableObj expected, @NotNull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    ObjType type = expected.type();
+    String expectedVersion = expected.versionToken();
+    String newVersion = newValue.versionToken();
+
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(type.equals(newValue.type()));
+    checkArgument(!expectedVersion.equals(newVersion));
+
+    ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
+
+    BoundStatementBuilder stmt =
+        backend
+            .newBoundStatementBuilder(serializer.updateConditionalCql())
+            .setString(COL_REPO_ID.name(), config.repositoryId())
+            .setString(COL_OBJ_ID.name(), serializeObjId(id))
+            .setString(COL_OBJ_TYPE.name() + EXPECTED_SUFFIX, type.name())
+            .setString(COL_OBJ_VERS.name() + EXPECTED_SUFFIX, expectedVersion)
+            .setString(COL_OBJ_VERS.name(), newVersion);
+
+    serializer.serialize(
+        newValue, stmt, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
+
+    return backend.executeCas(stmt.build());
   }
 
   @Nonnull
@@ -383,6 +430,8 @@ public class CassandraPersist implements Persist {
       throws ObjTooLargeException {
     ObjId id = obj.id();
     ObjType type = obj.type();
+    String versionToken =
+        (obj instanceof UpdateableObj) ? ((UpdateableObj) obj).versionToken() : null;
 
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
@@ -391,7 +440,8 @@ public class CassandraPersist implements Persist {
             .newBoundStatementBuilder(serializer.insertCql(upsert))
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
-            .setString(COL_OBJ_TYPE.name(), type.name());
+            .setString(COL_OBJ_TYPE.name(), type.name())
+            .setString(COL_OBJ_VERS.name(), versionToken);
 
     serializer.serialize(
         obj,
@@ -464,7 +514,8 @@ public class CassandraPersist implements Persist {
         }
 
         ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
-        return ObjSerializers.forType(type).deserialize(row, type, id);
+        String versionToken = row.getString(COL_OBJ_VERS.name());
+        return ObjSerializers.forType(type).deserialize(row, type, id, versionToken);
       }
     }
   }

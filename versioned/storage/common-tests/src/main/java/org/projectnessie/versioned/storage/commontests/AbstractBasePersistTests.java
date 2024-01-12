@@ -120,6 +120,8 @@ import org.projectnessie.versioned.storage.commontests.objtypes.AnotherTestObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestBean;
 import org.projectnessie.versioned.storage.commontests.objtypes.JsonTestBean;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.VersionedTestObj;
+import org.projectnessie.versioned.storage.commontests.objtypes.VersionedTestObj2;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
@@ -494,6 +496,7 @@ public class AbstractBasePersistTests {
             .instant(Instant.ofEpochMilli(1234567890L))
             .build(),
         AnotherTestObj.builder().id(randomObjId()).build(),
+        VersionedTestObj.builder().id(randomObjId()).someValue("foo").versionToken("1").build(),
         // JSON objects
         // scalar types
         json(randomObjId(), "text"),
@@ -639,6 +642,9 @@ public class AbstractBasePersistTests {
     if (type.equals(AnotherTestObj.TYPE)) {
       return VALUE;
     }
+    if (type.equals(VersionedTestObj.TYPE)) {
+      return STRING;
+    }
     if (type.equals(JsonObj.TYPE)) {
       return INDEX;
     }
@@ -659,6 +665,7 @@ public class AbstractBasePersistTests {
         .isInstanceOf(ObjNotFoundException.class);
 
     soft.assertThat(persist.storeObj(obj)).isTrue();
+    soft.assertThat(persist.storeObj(obj)).isFalse();
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
     soft.assertThat(persist.fetchObjType(obj.id())).isEqualTo(obj.type());
@@ -671,6 +678,7 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
 
     soft.assertThatCode(() -> persist.deleteObj(obj.id())).doesNotThrowAnyException();
+    long t = System.currentTimeMillis();
     soft.assertThatCode(() -> persist.deleteObjs(new ObjId[] {obj.id()}))
         .doesNotThrowAnyException();
 
@@ -683,6 +691,12 @@ public class AbstractBasePersistTests {
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {obj.id()}))
         .isInstanceOf(ObjNotFoundException.class);
+
+    cassandraDeleteTombstoneSleep(t);
+
+    soft.assertThat(persist.storeObj(obj)).isTrue();
+    soft.assertThat(persist.storeObj(obj)).isFalse();
+    soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
   }
 
   @ParameterizedTest
@@ -1080,6 +1094,13 @@ public class AbstractBasePersistTests {
           .list(List.of("b", "c", "d"))
           .build();
     }
+    if (obj instanceof VersionedTestObj) {
+      return VersionedTestObj.builder()
+          .id(obj.id())
+          .someValue("oiiwejfoiewjf")
+          .versionToken("999")
+          .build();
+    }
     if (obj instanceof JsonObj) {
       return json(
           obj.id(),
@@ -1232,5 +1253,110 @@ public class AbstractBasePersistTests {
 
   public static String randomContentId() {
     return randomUUID().toString();
+  }
+
+  @Test
+  public void conditionalDelete() throws Exception {
+    VersionedTestObj v1 =
+        VersionedTestObj.builder().id(randomObjId()).someValue("initial").versionToken("1").build();
+    VersionedTestObj v2 =
+        VersionedTestObj.builder().from(v1).someValue("version 2").versionToken("2").build();
+
+    // non-existing - delete must not succeed
+    soft.assertThat(persist.deleteConditional(v1)).isFalse();
+
+    soft.assertThatThrownBy(() -> persist.fetchObj(v1.id()))
+        .isInstanceOf(ObjNotFoundException.class);
+    soft.assertThat(persist.storeObj(v1)).isTrue();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);
+
+    // exists, but different version - delete must not succeed
+    soft.assertThat(persist.deleteConditional(v2)).isFalse();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);
+    // exists, same version - delete must succeed
+    soft.assertThat(persist.deleteConditional(v1)).isTrue();
+    long t = System.currentTimeMillis();
+
+    soft.assertThatThrownBy(() -> persist.fetchObj(v1.id()))
+        .isInstanceOf(ObjNotFoundException.class);
+
+    cassandraDeleteTombstoneSleep(t);
+
+    // can store again
+    soft.assertThat(persist.storeObj(v1)).isTrue();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);
+
+    // Test conditional-update against the "wrong" object type (must not succeed)
+    VersionedTestObj2 wrong = VersionedTestObj2.builder().from(v1).otherValue("blah").build();
+    soft.assertThat(persist.deleteConditional(wrong)).isFalse();
+    persist.deleteObj(v1.id());
+    persist.storeObj(wrong);
+    soft.assertThat(persist.deleteConditional(v1)).isFalse();
+  }
+
+  @Test
+  public void conditionalUpdate() throws Exception {
+    VersionedTestObj v1 =
+        VersionedTestObj.builder().id(randomObjId()).someValue("initial").versionToken("1").build();
+    VersionedTestObj v2 =
+        VersionedTestObj.builder().from(v1).someValue("version 2").versionToken("2").build();
+    VersionedTestObj v3 =
+        VersionedTestObj.builder().from(v1).someValue("version 3").versionToken("3").build();
+
+    // same version - must throw IAE
+    soft.assertThatIllegalArgumentException().isThrownBy(() -> persist.updateConditional(v1, v1));
+    // different IDs - must throw IAE
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                persist.updateConditional(
+                    v1, VersionedTestObj.builder().from(v1).id(randomObjId()).build()));
+    // different types - must throw IAE
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                persist.updateConditional(
+                    v1,
+                    VersionedTestObj2.builder()
+                        .id(v1.id())
+                        .versionToken("x")
+                        .otherValue("blah")
+                        .build()));
+
+    soft.assertThat(persist.storeObj(v1)).isTrue();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);
+
+    // exists, but different version - update must not succeed
+    soft.assertThat(persist.updateConditional(v3, v2)).isFalse();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);
+
+    // exists, expected version - update must succeed
+    soft.assertThat(persist.updateConditional(v1, v2)).isTrue();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v2);
+
+    // exists, previous expected version - update must not succeed
+    soft.assertThat(persist.updateConditional(v1, v2)).isFalse();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v2);
+
+    // exists, expected version - update must succeed
+    soft.assertThat(persist.updateConditional(v2, v3)).isTrue();
+    soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v3);
+
+    // Test conditional-update against the "wrong" object type (must not succeed)
+    persist.deleteObj(v1.id());
+    VersionedTestObj2 wrong = VersionedTestObj2.builder().from(v1).otherValue("blah").build();
+    persist.storeObj(wrong);
+    soft.assertThat(persist.updateConditional(v1, v2)).isFalse();
+  }
+
+  private void cassandraDeleteTombstoneSleep(long t) throws InterruptedException {
+    if ("Cassandra".equals(persist.name())) {
+      // MUST sleep here, otherwise the tombstone's timestamp might be equal to the INSERT's
+      // timestamp of the storeObj() below, which would wrongly shadow the write's timestamp.
+      long sleepMillis = t + 2 - System.currentTimeMillis();
+      if (sleepMillis > 0) {
+        Thread.sleep(sleepMillis);
+      }
+    }
   }
 }

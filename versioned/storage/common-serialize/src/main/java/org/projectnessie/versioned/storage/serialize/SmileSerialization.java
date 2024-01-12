@@ -27,8 +27,6 @@ import org.projectnessie.versioned.storage.common.json.ObjIdHelper;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.util.Compressions;
 
 public final class SmileSerialization {
@@ -37,20 +35,15 @@ public final class SmileSerialization {
 
   private SmileSerialization() {}
 
-  public static Obj deserializeObj(ObjId id, byte[] data, String typeName, String compression) {
-    ObjType type = ObjTypes.forName(typeName);
-    return deserializeObj(id, data, type.targetClass(), compression);
-  }
-
-  public static Obj deserializeObj(ObjId id, ByteBuffer data, String typeName, String compression) {
-    ObjType type = ObjTypes.forName(typeName);
-    return deserializeObj(id, data, type.targetClass(), compression);
-  }
-
   public static Obj deserializeObj(
-      ObjId id, byte[] data, Class<? extends Obj> targetClass, String compression) {
+      ObjId id,
+      String versionToken,
+      byte[] data,
+      Class<? extends Obj> targetClass,
+      String compression) {
     try {
-      ObjectReader reader = ObjIdHelper.readerWithObjId(SMILE_MAPPER, targetClass, id);
+      ObjectReader reader =
+          ObjIdHelper.readerWithObjIdAndVersionToken(SMILE_MAPPER, targetClass, id, versionToken);
       data = Compressions.uncompress(Compression.fromValue(compression), data);
       return reader.readValue(data, targetClass);
     } catch (IOException e) {
@@ -59,10 +52,14 @@ public final class SmileSerialization {
   }
 
   public static Obj deserializeObj(
-      ObjId id, ByteBuffer data, Class<? extends Obj> targetClass, String compression) {
+      ObjId id,
+      String versionToken,
+      ByteBuffer data,
+      Class<? extends Obj> targetClass,
+      String compression) {
     byte[] bytes = new byte[data.remaining()];
     data.get(bytes);
-    return deserializeObj(id, bytes, targetClass, compression);
+    return deserializeObj(id, versionToken, bytes, targetClass, compression);
   }
 
   public static byte[] serializeObj(Obj obj, Consumer<Compression> compression) {

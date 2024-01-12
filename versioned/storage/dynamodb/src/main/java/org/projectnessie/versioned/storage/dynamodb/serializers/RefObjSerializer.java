@@ -61,7 +61,8 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
+  public RefObj fromMap(
+      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
     String createdAtStr = attributeToString(i, COL_REF_CREATED_AT);
     long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
     return ref(

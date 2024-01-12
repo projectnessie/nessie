@@ -15,9 +15,6 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
@@ -26,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
@@ -39,9 +35,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.HeaderEntry;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.Headers;
 
-public class TagObjSerializer implements ObjSerializer<TagObj> {
-
-  public static final ObjSerializer<TagObj> INSTANCE = new TagObjSerializer();
+public class TagObjSerializer extends ObjSerializer<TagObj> {
 
   private static final CqlColumn COL_TAG_MESSAGE =
       new CqlColumn("t_message", CqlColumnType.VARCHAR);
@@ -53,25 +47,10 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   private static final Set<CqlColumn> COLS =
       ImmutableSet.of(COL_TAG_MESSAGE, COL_TAG_HEADERS, COL_TAG_SIGNATURE);
 
-  private static final String INSERT_CQL =
-      INSERT_OBJ_PREFIX
-          + COLS.stream().map(CqlColumn::name).collect(Collectors.joining(","))
-          + INSERT_OBJ_VALUES
-          + COLS.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
-          + ")";
+  public static final ObjSerializer<TagObj> INSTANCE = new TagObjSerializer();
 
-  private static final String STORE_CQL = INSERT_CQL + STORE_OBJ_SUFFIX;
-
-  private TagObjSerializer() {}
-
-  @Override
-  public Set<CqlColumn> columns() {
-    return COLS;
-  }
-
-  @Override
-  public String insertCql(boolean upsert) {
-    return upsert ? INSERT_CQL : STORE_CQL;
+  private TagObjSerializer() {
+    super(COLS);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -94,7 +73,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj deserialize(Row row, ObjType type, ObjId id) {
+  public TagObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
     CommitHeaders tagHeaders = null;
     try {
       Headers headers = Headers.parseFrom(row.getByteBuffer(COL_TAG_HEADERS.name()));

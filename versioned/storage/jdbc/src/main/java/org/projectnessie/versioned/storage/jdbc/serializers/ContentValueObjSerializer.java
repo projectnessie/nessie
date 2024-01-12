@@ -68,7 +68,8 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   }
 
   @Override
-  public ContentValueObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
+  public ContentValueObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+      throws SQLException {
     return contentValue(
         id,
         rs.getString(COL_VALUE_CONTENT_ID),

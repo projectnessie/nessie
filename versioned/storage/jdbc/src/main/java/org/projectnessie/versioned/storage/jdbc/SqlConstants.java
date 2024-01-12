@@ -28,15 +28,30 @@ final class SqlConstants {
 
   static final String TABLE_REFS = "refs";
   static final String TABLE_OBJS = "objs";
+
   static final String COL_REPO_ID = "repo";
+  static final String COL_OBJ_TYPE = "obj_type";
+  static final String COL_OBJ_ID = "obj_id";
+  static final String COL_OBJ_VERS = "obj_vers";
+
   static final String ERASE_OBJS =
       "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + " IN (?)";
   static final String ERASE_REFS =
       "DELETE FROM " + TABLE_REFS + " WHERE " + COL_REPO_ID + " IN (?)";
-  static final String COL_OBJ_ID = "obj_id";
   static final String DELETE_OBJ =
       "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + "=? AND " + COL_OBJ_ID + "=?";
-  static final String COL_OBJ_TYPE = "obj_type";
+  static final String DELETE_OBJ_CONDITIONAL =
+      "DELETE FROM "
+          + TABLE_OBJS
+          + " WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
+          + "=? AND "
+          + COL_OBJ_TYPE
+          + "=? AND "
+          + COL_OBJ_VERS
+          + "=?";
 
   static final String COL_REFS_NAME = "ref_name";
   static final String COL_REFS_POINTER = "pointer";
@@ -146,7 +161,8 @@ final class SqlConstants {
       Stream.concat(
               Stream.of(
                   entry(COL_OBJ_ID, JdbcColumnType.OBJ_ID),
-                  entry(COL_OBJ_TYPE, JdbcColumnType.NAME)),
+                  entry(COL_OBJ_TYPE, JdbcColumnType.NAME),
+                  entry(COL_OBJ_VERS, JdbcColumnType.VARCHAR)),
               ObjSerializers.ALL_SERIALIZERS.stream()
                   .flatMap(serializer -> serializer.columns().entrySet().stream())
                   .sorted(Map.Entry.comparingByKey()))

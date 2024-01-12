@@ -77,7 +77,8 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
+  public StringObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+      throws SQLException {
     return stringData(
         id,
         rs.getString(COL_STRING_CONTENT_TYPE),

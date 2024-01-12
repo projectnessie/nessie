@@ -37,6 +37,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 
 final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
@@ -310,6 +311,17 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     } finally {
       writeUnlock();
     }
+  }
+
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean updateConditional(
+      @Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

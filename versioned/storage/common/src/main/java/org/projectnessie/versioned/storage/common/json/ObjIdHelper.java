@@ -31,13 +31,17 @@ public final class ObjIdHelper {
    */
   public static final String OBJ_ID_KEY = "nessie.storage.ObjId";
 
+  public static final String OBJ_VERS_KEY = "nessie.storage.ObjVersion";
+
   /**
-   * Returns an {@link ObjectReader} for the given target {@link Obj} class and with the given
-   * {@link ObjId} injectable under the key {@link #OBJ_ID_KEY}.
+   * Returns an {@link ObjectReader} for the given target {@link Obj} class, with the given {@link
+   * ObjId} injectable under the key {@value #OBJ_ID_KEY} and version token using the key {@value
+   * #OBJ_VERS_KEY}.
    */
-  public static ObjectReader readerWithObjId(
-      ObjectMapper mapper, Class<? extends Obj> targetClass, ObjId id) {
-    InjectableValues values = new InjectableValues.Std().addValue(OBJ_ID_KEY, id);
+  public static ObjectReader readerWithObjIdAndVersionToken(
+      ObjectMapper mapper, Class<? extends Obj> targetClass, ObjId id, String objVersionToken) {
+    InjectableValues values =
+        new InjectableValues.Std().addValue(OBJ_ID_KEY, id).addValue(OBJ_VERS_KEY, objVersionToken);
     return mapper.reader(values).forType(targetClass);
   }
 

@@ -54,7 +54,8 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
+  public UniqueIdObj fromMap(
+      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
     return uniqueId(
         id, attributeToString(i, COL_UNIQUE_SPACE), attributeToBytes(i, COL_UNIQUE_VALUE));
   }

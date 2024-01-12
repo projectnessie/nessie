@@ -31,12 +31,44 @@ public final class CassandraConstants {
 
   static final String TABLE_REFS = "refs";
   static final String TABLE_OBJS = "objs";
-  static final CqlColumn COL_REPO_ID = new CqlColumn("repo", CqlColumnType.NAME);
 
+  static final CqlColumn COL_REPO_ID = new CqlColumn("repo", CqlColumnType.NAME);
   static final CqlColumn COL_OBJ_ID = new CqlColumn("obj_id", CqlColumnType.OBJ_ID);
+  static final CqlColumn COL_OBJ_TYPE = new CqlColumn("obj_type", CqlColumnType.NAME);
+  static final CqlColumn COL_OBJ_VERS = new CqlColumn("obj_vers", CqlColumnType.VARCHAR);
+
   static final String DELETE_OBJ =
       "DELETE FROM %s." + TABLE_OBJS + " WHERE " + COL_REPO_ID + "=? AND " + COL_OBJ_ID + "=?";
-  static final CqlColumn COL_OBJ_TYPE = new CqlColumn("obj_type", CqlColumnType.NAME);
+
+  public static final String UPDATE_COND_PREFIX =
+      "UPDATE %s." + TABLE_OBJS + " SET " + COL_OBJ_VERS + "=:" + COL_OBJ_VERS + ", ";
+  public static final String UPDATE_COND_WHERE =
+      COL_REPO_ID + "=:" + COL_REPO_ID + " AND " + COL_OBJ_ID + "=:" + COL_OBJ_ID;
+  public static final String EXPECTED_SUFFIX = "_expected";
+  public static final String UPDATE_COND_IF =
+      "IF "
+          + COL_OBJ_TYPE
+          + "=:"
+          + COL_OBJ_TYPE
+          + EXPECTED_SUFFIX
+          + " AND "
+          + COL_OBJ_VERS
+          + "=:"
+          + COL_OBJ_VERS
+          + EXPECTED_SUFFIX;
+
+  static final String DELETE_OBJ_CONDITIONAL =
+      "DELETE FROM %s."
+          + TABLE_OBJS
+          + " WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
+          + "=? IF "
+          + COL_OBJ_TYPE
+          + "=? AND "
+          + COL_OBJ_VERS
+          + "=?";
 
   public static final String INSERT_OBJ_PREFIX =
       "INSERT INTO %s."
@@ -47,15 +79,25 @@ public final class CassandraConstants {
           + COL_OBJ_ID
           + ", "
           + COL_OBJ_TYPE
+          + ", "
+          + COL_OBJ_VERS
           + ", ";
 
   public static final String INSERT_OBJ_VALUES =
-      ") VALUES (:" + COL_REPO_ID + ", :" + COL_OBJ_ID + ", :" + COL_OBJ_TYPE + ", ";
+      ") VALUES (:"
+          + COL_REPO_ID
+          + ", :"
+          + COL_OBJ_ID
+          + ", :"
+          + COL_OBJ_TYPE
+          + ", :"
+          + COL_OBJ_VERS
+          + ", ";
   public static final String STORE_OBJ_SUFFIX = " IF NOT EXISTS";
 
   static final Set<CqlColumn> COLS_OBJS_ALL =
       Stream.concat(
-              Stream.of(COL_OBJ_ID, COL_OBJ_TYPE),
+              Stream.of(COL_OBJ_ID, COL_OBJ_TYPE, COL_OBJ_VERS),
               ObjSerializers.ALL_SERIALIZERS.stream()
                   .flatMap(serializer -> serializer.columns().stream())
                   .sorted(Comparator.comparing(CqlColumn::name)))

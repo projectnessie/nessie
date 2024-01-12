@@ -66,7 +66,8 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
   }
 
   @Override
-  public IndexObj deserialize(ResultSet rs, ObjType type, ObjId id) throws SQLException {
+  public IndexObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+      throws SQLException {
     ByteString index = deserializeBytes(rs, COL_INDEX_INDEX);
     if (index != null) {
       return index(id, index);

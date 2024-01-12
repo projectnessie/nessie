@@ -15,24 +15,68 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_COND_IF;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_COND_PREFIX;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_COND_WHERE;
+
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.Row;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public interface ObjSerializer<O extends Obj> {
+public abstract class ObjSerializer<O extends Obj> {
 
-  Set<CqlColumn> columns();
+  private final Set<CqlColumn> columns;
+  private final String insertCql;
+  private final String storeCql;
+  private final String updateConditionalCql;
 
-  String insertCql(boolean upsert);
+  protected ObjSerializer(Set<CqlColumn> columns) {
+    this.columns = columns;
 
-  void serialize(
+    this.insertCql =
+        INSERT_OBJ_PREFIX
+            + columns.stream().map(CqlColumn::name).collect(Collectors.joining(","))
+            + INSERT_OBJ_VALUES
+            + columns.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
+            + ")";
+
+    this.storeCql = this.insertCql + STORE_OBJ_SUFFIX;
+
+    this.updateConditionalCql =
+        UPDATE_COND_PREFIX
+            + columns.stream()
+                .map(c -> c.name() + " = :" + c.name())
+                .collect(Collectors.joining(","))
+            + " WHERE "
+            + UPDATE_COND_WHERE
+            + " "
+            + UPDATE_COND_IF;
+  }
+
+  public final Set<CqlColumn> columns() {
+    return columns;
+  }
+
+  public final String insertCql(boolean upsert) {
+    return upsert ? insertCql : storeCql;
+  }
+
+  public final String updateConditionalCql() {
+    return updateConditionalCql;
+  }
+
+  public abstract void serialize(
       O obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException;
 
-  O deserialize(Row row, ObjType type, ObjId id);
+  public abstract O deserialize(Row row, ObjType type, ObjId id, String versionToken);
 }

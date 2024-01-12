@@ -72,7 +72,7 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj docToObj(ObjId id, ObjType type, Document doc) {
+  public TagObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
     CommitHeaders tagHeaders = null;
     Document headerDoc = doc.get(COL_TAG_HEADERS, Document.class);
     if (headerDoc != null) {

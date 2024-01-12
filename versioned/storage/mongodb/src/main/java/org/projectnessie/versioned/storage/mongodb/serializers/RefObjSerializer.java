@@ -56,7 +56,7 @@ public class RefObjSerializer implements ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj docToObj(ObjId id, ObjType type, Document doc) {
+  public RefObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
     return ref(
         id,
         doc.getString(COL_REF_NAME),

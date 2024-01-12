@@ -22,6 +22,7 @@ import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -33,6 +34,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 class JdbcPersist extends AbstractJdbcPersist {
 
@@ -240,6 +242,18 @@ class JdbcPersist extends AbstractJdbcPersist {
   @Override
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     withConnectionException(false, conn -> super.updateObjs(conn, objs));
+  }
+
+  @Override
+  public boolean deleteConditional(@NotNull UpdateableObj obj) {
+    return withConnectionException(false, conn -> super.deleteConditional(conn, obj));
+  }
+
+  @Override
+  public boolean updateConditional(@NotNull UpdateableObj expected, @NotNull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    return withConnectionException(
+        false, conn -> super.updateConditional(conn, expected, newValue));
   }
 
   @Override

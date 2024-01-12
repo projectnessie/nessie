@@ -85,7 +85,8 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj fromMap(ObjId id, ObjType type, Map<String, AttributeValue> i) {
+  public TagObj fromMap(
+      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
     CommitHeaders tagHeaders = null;
     AttributeValue headerMap = i.get(COL_TAG_HEADERS);
     if (headerMap != null) {

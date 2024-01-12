@@ -48,7 +48,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj docToObj(ObjId id, ObjType type, Document doc) {
+  public IndexSegmentsObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
     List<IndexStripe> stripes = new ArrayList<>();
     fromStripesDocList(doc, COL_SEGMENTS_STRIPES, stripes::add);
     return indexSegments(id, stripes);

@@ -15,16 +15,12 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUES;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
@@ -34,9 +30,7 @@ import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public class StringObjSerializer implements ObjSerializer<StringObj> {
-
-  public static final ObjSerializer<StringObj> INSTANCE = new StringObjSerializer();
+public class StringObjSerializer extends ObjSerializer<StringObj> {
 
   private static final CqlColumn COL_STRING_CONTENT_TYPE =
       new CqlColumn("s_content_type", CqlColumnType.NAME);
@@ -56,25 +50,10 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
           COL_STRING_PREDECESSORS,
           COL_STRING_TEXT);
 
-  private static final String INSERT_CQL =
-      INSERT_OBJ_PREFIX
-          + COLS.stream().map(CqlColumn::name).collect(Collectors.joining(","))
-          + INSERT_OBJ_VALUES
-          + COLS.stream().map(c -> ":" + c.name()).collect(Collectors.joining(","))
-          + ")";
+  public static final ObjSerializer<StringObj> INSTANCE = new StringObjSerializer();
 
-  private static final String STORE_CQL = INSERT_CQL + STORE_OBJ_SUFFIX;
-
-  private StringObjSerializer() {}
-
-  @Override
-  public Set<CqlColumn> columns() {
-    return COLS;
-  }
-
-  @Override
-  public String insertCql(boolean upsert) {
-    return upsert ? INSERT_CQL : STORE_CQL;
+  private StringObjSerializer() {
+    super(COLS);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -96,7 +75,7 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj deserialize(Row row, ObjType type, ObjId id) {
+  public StringObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
     return stringData(
         id,
         row.getString(COL_STRING_CONTENT_TYPE.name()),

@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.condi
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.keyPrefix;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.BATCH_GET_LIMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CONDITION_COMMON;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_DELETED;
@@ -36,6 +37,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CON
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CONDITION_STORE_REF;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.ITEM_SIZE_LIMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.KEY_NAME;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBSerde.attributeToString;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 import static software.amazon.awssdk.core.SdkBytes.fromByteArray;
@@ -56,6 +58,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -71,14 +74,17 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializers;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.ExpectedAttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
@@ -204,7 +210,7 @@ public class DynamoDBPersist implements Persist {
 
     Map<String, AttributeValue> i = item.item();
 
-    String createdAtStr = DynamoDBSerde.attributeToString(i, COL_REFERENCES_CREATED_AT);
+    String createdAtStr = attributeToString(i, COL_REFERENCES_CREATED_AT);
     long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
     return reference(
         name,
@@ -260,8 +266,7 @@ public class DynamoDBPersist implements Persist {
         .forEach(
             item -> {
               String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
-              String createdAtStr =
-                  DynamoDBSerde.attributeToString(item, COL_REFERENCES_CREATED_AT);
+              String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
               long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
               Reference reference =
                   reference(
@@ -497,6 +502,72 @@ public class DynamoDBPersist implements Persist {
     }
   }
 
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    ObjId id = obj.id();
+
+    Map<String, ExpectedAttributeValue> expectedValues = conditionalUpdateExpectedValues(obj);
+
+    try {
+      backend
+          .client()
+          .deleteItem(
+              b -> b.tableName(backend.tableObjs).key(objKeyMap(id)).expected(expectedValues));
+      return true;
+    } catch (ConditionalCheckFailedException checkFailedException) {
+      return false;
+    }
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    Map<String, ExpectedAttributeValue> expectedValues = conditionalUpdateExpectedValues(expected);
+
+    Map<String, AttributeValueUpdate> updates =
+        objToItem(newValue, id, false).entrySet().stream()
+            .filter(e -> !COL_OBJ_TYPE.equals(e.getKey()) && !KEY_NAME.equals(e.getKey()))
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> AttributeValueUpdate.builder().value(e.getValue()).build()));
+
+    try {
+      // Although '.attributeUpdates()' + '.expected()' are deprecated those functionalities do
+      // work, unlike the recommended expression(s) approach, which fails with HTTP/550 for our
+      // 'updateConditional()'.
+      backend
+          .client()
+          .updateItem(
+              b ->
+                  b.tableName(backend.tableObjs)
+                      .key(objKeyMap(id))
+                      .attributeUpdates(updates)
+                      .expected(expectedValues));
+      return true;
+    } catch (ConditionalCheckFailedException checkFailedException) {
+      return false;
+    }
+  }
+
+  private static Map<String, ExpectedAttributeValue> conditionalUpdateExpectedValues(
+      UpdateableObj expected) {
+    Map<String, ExpectedAttributeValue> expectedValues = new HashMap<>();
+    expectedValues.put(
+        COL_OBJ_TYPE,
+        ExpectedAttributeValue.builder().value(fromS(expected.type().shortName())).build());
+    expectedValues.put(
+        COL_OBJ_VERS,
+        ExpectedAttributeValue.builder().value(fromS(expected.versionToken())).build());
+    return expectedValues;
+  }
+
   @Nonnull
   @Override
   public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
@@ -514,7 +585,8 @@ public class DynamoDBPersist implements Persist {
     ObjType type = ObjTypes.forShortName(attributeValue.s());
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Map<String, AttributeValue> inner = item.get(serializer.attributeName()).m();
-    return serializer.fromMap(id, type, inner);
+    String versionToken = attributeToString(item, COL_OBJ_VERS);
+    return serializer.fromMap(id, type, inner, versionToken);
   }
 
   @Nonnull
@@ -527,6 +599,9 @@ public class DynamoDBPersist implements Persist {
     Map<String, AttributeValue> inner = new HashMap<>();
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
+    if (obj instanceof UpdateableObj) {
+      item.put(COL_OBJ_VERS, fromS(((UpdateableObj) obj).versionToken()));
+    }
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =
