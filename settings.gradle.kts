@@ -64,7 +64,7 @@ plugins {
     // If in doubt, install the required Java toolchain manually, preferably using a "proper"
     // package manager. The downside of letting Gradle automatically download toolchains is that
     // these will only get downloaded once, but not automatically updated.
-    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.7.0")
+    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0")
   }
 }
 
