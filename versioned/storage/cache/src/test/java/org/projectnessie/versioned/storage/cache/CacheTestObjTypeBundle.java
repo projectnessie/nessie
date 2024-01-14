@@ -28,8 +28,23 @@ public class CacheTestObjTypeBundle implements ObjTypeBundle {
 
   @Override
   public void register(Consumer<ObjType> registrar) {
+    registrar.accept(DefaultCachingObj.TYPE);
     registrar.accept(NonCachingObj.TYPE);
     registrar.accept(DynamicCachingObj.TYPE);
+  }
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableDefaultCachingObj.class)
+  @JsonDeserialize(as = ImmutableDefaultCachingObj.class)
+  interface DefaultCachingObj extends Obj {
+    ObjType TYPE = CustomObjType.customObjType("default-caching", "cd", DefaultCachingObj.class);
+
+    @Override
+    default ObjType type() {
+      return TYPE;
+    }
+
+    String value();
   }
 
   @Value.Immutable
