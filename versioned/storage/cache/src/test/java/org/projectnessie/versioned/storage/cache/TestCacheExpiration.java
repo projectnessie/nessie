@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
 import java.util.concurrent.ConcurrentMap;
@@ -25,6 +26,8 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestCacheExpiration {
@@ -40,28 +43,39 @@ public class TestCacheExpiration {
             .clockNanos(() -> MICROSECONDS.toNanos(currentTime.get()))
             .build();
 
+    CacheTestObjTypeBundle.DefaultCachingObj defaultCachingObj =
+        ImmutableDefaultCachingObj.builder().id(randomObjId()).value("def").build();
     CacheTestObjTypeBundle.NonCachingObj nonCachingObj =
         ImmutableNonCachingObj.builder().id(randomObjId()).value("foo").build();
     CacheTestObjTypeBundle.DynamicCachingObj dynamicCachingObj =
         ImmutableDynamicCachingObj.builder().id(randomObjId()).thatExpireTimestamp(2L).build();
+    ContentValueObj stdObj = contentValue("cid", 42, ByteString.EMPTY);
 
+    backend.put("repo", defaultCachingObj);
     backend.put("repo", nonCachingObj);
     backend.put("repo", dynamicCachingObj);
+    backend.put("repo", stdObj);
 
     ConcurrentMap<CaffeineCacheBackend.CacheKeyValue, byte[]> cacheMap = backend.cache().asMap();
 
     soft.assertThat(cacheMap)
         .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", nonCachingObj.id()))
         .containsKey(CaffeineCacheBackend.cacheKey("repo", dynamicCachingObj.id()))
-        .hasSize(1);
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", defaultCachingObj.id()))
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", stdObj.id()))
+        .hasSize(3);
 
     soft.assertThat(backend.get("repo", nonCachingObj.id())).isNull();
     soft.assertThat(backend.get("repo", dynamicCachingObj.id())).isEqualTo(dynamicCachingObj);
+    soft.assertThat(backend.get("repo", defaultCachingObj.id())).isEqualTo(defaultCachingObj);
+    soft.assertThat(backend.get("repo", stdObj.id())).isEqualTo(stdObj);
 
     soft.assertThat(cacheMap)
         .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", nonCachingObj.id()))
         .containsKey(CaffeineCacheBackend.cacheKey("repo", dynamicCachingObj.id()))
-        .hasSize(1);
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", defaultCachingObj.id()))
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", stdObj.id()))
+        .hasSize(3);
 
     // increment clock by one - "dynamic" object should still be present
 
@@ -69,11 +83,15 @@ public class TestCacheExpiration {
 
     soft.assertThat(backend.get("repo", nonCachingObj.id())).isNull();
     soft.assertThat(backend.get("repo", dynamicCachingObj.id())).isEqualTo(dynamicCachingObj);
+    soft.assertThat(backend.get("repo", defaultCachingObj.id())).isEqualTo(defaultCachingObj);
+    soft.assertThat(backend.get("repo", stdObj.id())).isEqualTo(stdObj);
 
     soft.assertThat(cacheMap)
         .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", nonCachingObj.id()))
         .containsKey(CaffeineCacheBackend.cacheKey("repo", dynamicCachingObj.id()))
-        .hasSize(1);
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", defaultCachingObj.id()))
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", stdObj.id()))
+        .hasSize(3);
 
     // increment clock by one again - "dynamic" object should go away
 
@@ -81,9 +99,15 @@ public class TestCacheExpiration {
 
     soft.assertThat(backend.get("repo", nonCachingObj.id())).isNull();
     soft.assertThat(backend.get("repo", dynamicCachingObj.id())).isNull();
+    soft.assertThat(backend.get("repo", defaultCachingObj.id())).isEqualTo(defaultCachingObj);
+    soft.assertThat(backend.get("repo", stdObj.id())).isEqualTo(stdObj);
 
     soft.assertThat(cacheMap)
         .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", nonCachingObj.id()))
-        .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", dynamicCachingObj.id()));
+        .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", dynamicCachingObj.id()))
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", defaultCachingObj.id()))
+        .containsKey(CaffeineCacheBackend.cacheKey("repo", stdObj.id()));
+    // note: Caffeine's cache-map incorrectly reports a size of 3 here, although the map itself only
+    // returns the only left object
   }
 }

@@ -139,8 +139,9 @@ abstract class CaffeineCacheBackend implements CacheBackend {
 
     try {
       byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
-      CacheKeyValue keyValue =
-          cacheKeyValue(repositoryId, obj.id(), MICROSECONDS.toNanos(expiresAt));
+      long expiresAtNanos =
+          expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
+      CacheKeyValue keyValue = cacheKeyValue(repositoryId, obj.id(), expiresAtNanos);
       cache().put(keyValue, serialized);
     } catch (ObjTooLargeException e) {
       // this should never happen
