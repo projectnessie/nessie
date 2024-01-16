@@ -33,6 +33,9 @@ public class Version implements Comparable<Version> {
   /** See <a href="https://github.com/projectnessie/nessie/pull/6894">PR #6894</a>. */
   public static final Version MERGE_KEY_BEHAVIOR_FIX = Version.parseVersion("0.59.1");
 
+  /** see <a href="https://github.com/projectnessie/nessie/pull/7854">PR #7854</a>. */
+  public static final Version INJECTED_NESSIE_API_URL_CHANGE = Version.parseVersion("0.75.0");
+
   public static final String CURRENT_STRING = "current";
   public static final String NOT_CURRENT_STRING = "not-current";
   private final int[] tuple;
