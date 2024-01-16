@@ -161,16 +161,12 @@ class TestNessieCompatibilityExtensions {
         EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
             .configurationParameter(
                 "nessie.versions",
-                versionBeforeApiUrlChange
-                    + ","
-                    + Version.INJECTED_NESSIE_API_URL_CHANGE
-                    + ",current")
+                versionBeforeApiUrlChange + "," + Version.NESSIE_URL_API_SUFFIX + ",current")
             .selectors(selectClass(ApiEndpointServerSample.class))
             .execute();
 
     soft.assertThat(ApiEndpointServerSample.allVersions)
-        .containsExactly(
-            versionBeforeApiUrlChange, Version.INJECTED_NESSIE_API_URL_CHANGE, Version.CURRENT);
+        .containsExactly(versionBeforeApiUrlChange, Version.NESSIE_URL_API_SUFFIX, Version.CURRENT);
 
     assertNoFailedTestEvents(result);
   }

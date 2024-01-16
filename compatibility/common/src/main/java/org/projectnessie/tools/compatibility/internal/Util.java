@@ -74,7 +74,7 @@ final class Util {
 
   static URI resolveNessieUri(URI base, Version version, Class<? extends NessieApi> apiType) {
     String suffix = NessieApiV2.class.isAssignableFrom(apiType) ? "v2" : "v1";
-    if (version.isGreaterThanOrEqual(Version.INJECTED_NESSIE_API_URL_CHANGE)) {
+    if (version.isGreaterThanOrEqual(Version.NESSIE_URL_API_SUFFIX)) {
       suffix = "api/" + suffix;
     }
     return base.resolve(suffix);
