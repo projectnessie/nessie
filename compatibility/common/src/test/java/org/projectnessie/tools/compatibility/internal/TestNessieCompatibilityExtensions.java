@@ -156,9 +156,6 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void injectedNessieApiUrlChanged() {
-    // apiUrl 0.74.0: host:port/v2 (via OldNessieServer)
-    // apiUrl 0.75.0: host:port/v2 (via OldNessieServer) should be /api/v2 as well
-    // apiUrl current: host:port/api/v2 (via CurrentNessieServer)
     final Version versionBeforeApiUrlChange = Version.parseVersion("0.74.0");
     EngineExecutionResults result =
         EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
