@@ -2,6 +2,51 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.76.3 Release (January 16, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.3).
+
+### Highlights
+
+- The Nessie client supports two new authentication flows when using OAuth 2 authentication:
+  the Authorization Code flow and the Device Code flow. These flows are well suited for use within 
+  a command line program, such as a Spark SQL shell, where a user is interacting with Nessie using a
+  terminal. In these flows, the user must use their web browser to authenticate with the identity
+  provider. See the 
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details. The two new flows are enabled by the following new grant types:
+  - `authorization_code`: enables the Authorization Code flow; this flow can only be used with
+    a local shell session running on the user's machine.
+  - `device_code`: enables the Device Code flow; this flow can be used with either a local or a 
+    remote shell session. 
+- The Nessie client now supports endpoint discovery when using OAuth 2 authentication. If an 
+  identity provider supports the OpenID Connect Discovery mechanism, the Nessie client can be 
+  configured to use it to discover the OAuth 2 endpoints. See the 
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
+### New Features
+
+- Nessie client: the OAUTH2 authentication provider now supports programmatic configuration. See the 
+  [Nessie documentation](https://projectnessie.org/develop/java/#authentication) for details.
+
+### Fixes
+
+- Fix potential NPE when fetching commit log with fetch option `ALL` and access checks enabled.
+
+### Commits
+* Fix URL endpoint for injected `NessieApi` from `OldNessieServer` (#7958)
+* Improve test coverage in ProtoSerialization (#7943)
+* Use fluent `ObjIdHasher` (#7957)
+* Mention JAVA_TOOL_OPTIONS in the docs (#7952)
+* Fix "unlimited" behavior flexible cache (#7949)
+* remove unused jersey-test-framework-provider dependencies (#7946)
+* Persist: Conditional deletes + updates (#7932)
+* Fix RockDB config properties (#7942)
+* Shrink heap footprint of `ObjIdGeneric` (#7934)
+* Caching behavior per object type (#7931)
+* HttpClient: ability to define per-request authentication (#7928)
+
 ## 0.76.2 Release (January 11, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.2).
