@@ -385,24 +385,22 @@ public class AbstractBasePersistTests {
 
     return Stream.of(
         // 1
-        contentValue(randomObjId(), randomContentId(), 1, fooBar),
-        contentValue(randomObjId(), randomContentId(), 127, fooBar),
-        contentValue(randomObjId(), randomContentId(), 11, fooBar),
-        contentValue(randomObjId(), randomContentId(), 33, fooBar),
+        contentValue(randomContentId(), 1, fooBar),
+        contentValue(randomContentId(), 127, fooBar),
+        contentValue(randomContentId(), 11, fooBar),
+        contentValue(randomContentId(), 33, fooBar),
         // 5
-        contentValue(randomObjId(), randomContentId(), 42, fooBar),
+        contentValue(randomContentId(), 42, fooBar),
+        indexSegments(singletonList(indexStripe(key("xyy"), key("xzz"), randomObjId()))),
         indexSegments(
-            randomObjId(), singletonList(indexStripe(key("xyy"), key("xzz"), randomObjId()))),
-        indexSegments(
-            randomObjId(),
             asList(
                 indexStripe(key(nonAscii), key(nonAscii), randomObjId()),
                 indexStripe(key("moo", "woof"), key("zoo", "woof"), randomObjId()))),
-        index(randomObjId(), emptyIndex.serialize()),
-        index(randomObjId(), index.serialize()),
+        index(emptyIndex.serialize()),
+        index(index.serialize()),
         // 10
-        tag(randomObjId(), "tag-message", newCommitHeaders().add("Foo", "Bar").build(), fooBar),
-        tag(randomObjId(), null, null, ByteString.EMPTY),
+        tag("tag-message", newCommitHeaders().add("Foo", "Bar").build(), fooBar),
+        tag(null, null, ByteString.EMPTY),
         commitBuilder()
             .id(randomObjId())
             .created(123L)
@@ -436,10 +434,9 @@ public class AbstractBasePersistTests {
             .incompleteIndex(true)
             .seq(42L)
             .build(),
-        stringData(randomObjId(), "text/plain", NONE, null, emptyList(), ByteString.EMPTY),
+        stringData("text/plain", NONE, null, emptyList(), ByteString.EMPTY),
         // 15
         stringData(
-            randomObjId(),
             "text/markdown",
             Compression.GZIP,
             "filename",
@@ -450,9 +447,9 @@ public class AbstractBasePersistTests {
                 objIdFromString("deadbeefcafebabe"),
                 objIdFromString("0000000000000000")),
             copyFromUtf8("This is not a markdown")),
-        ref(randomObjId(), "foo", randomObjId(), 123L, null),
-        ref(randomObjId(), "bar", randomObjId(), 456L, randomObjId()),
-        uniqueId(randomObjId(), "space", uuidToBytes(UUID.randomUUID())),
+        ref("foo", randomObjId(), 123L, null),
+        ref("bar", randomObjId(), 456L, randomObjId()),
+        uniqueId("space", uuidToBytes(UUID.randomUUID())),
         // custom object types
         SimpleTestObj.builder()
             .id(randomObjId())

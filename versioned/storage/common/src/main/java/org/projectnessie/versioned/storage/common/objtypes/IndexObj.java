@@ -15,7 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.indexHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -30,7 +31,7 @@ public interface IndexObj extends Obj {
 
   @Override
   default ObjType type() {
-    return StandardObjType.INDEX;
+    return INDEX;
   }
 
   @Override
@@ -48,6 +49,6 @@ public interface IndexObj extends Obj {
 
   @Nonnull
   static IndexObj index(@Nonnull ByteString index) {
-    return index(indexHash(index), index);
+    return index(objIdHasher(INDEX).hash(index.asReadOnlyByteBuffer()).generate(), index);
   }
 }

@@ -15,13 +15,15 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.tagHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.TAG;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
@@ -56,6 +58,17 @@ public interface TagObj extends Obj {
   }
 
   static TagObj tag(String message, CommitHeaders headers, ByteString signature) {
-    return tag(tagHash(message, headers, signature), message, headers, signature);
+    ObjIdHasher hasher = objIdHasher(TAG);
+    if (message != null) {
+      hasher.hash(message);
+    }
+    if (headers != null) {
+      hasher.hash(headers);
+    }
+    if (signature != null) {
+      hasher.hash(signature.asReadOnlyByteBuffer());
+    }
+
+    return tag(hasher.generate(), message, headers, signature);
   }
 }

@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -48,14 +47,11 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Actio
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.REMOVE;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.hashAsObjId;
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.hashCommitHeaders;
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.newHasher;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import com.google.common.collect.AbstractIterator;
-import com.google.common.hash.Hasher;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.ArrayList;
@@ -92,6 +88,7 @@ import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.slf4j.Logger;
@@ -539,12 +536,11 @@ final class CommitLogicImpl implements CommitLogic {
             .headers(createCommit.headers())
             .commitType(createCommit.commitType());
 
-    Hasher hasher =
-        newHasher()
-            .putString(COMMIT.name(), UTF_8)
-            .putBytes(parentCommitId.asByteBuffer())
-            .putString(createCommit.message(), UTF_8);
-    hashCommitHeaders(hasher, createCommit.headers());
+    ObjIdHasher hasher =
+        objIdHasher(COMMIT)
+            .hash(parentCommitId)
+            .hash(createCommit.message())
+            .hash(createCommit.headers());
 
     CommitObj parent = fetchCommit(parentCommitId);
     StoreIndex<CommitOp> index;
@@ -613,12 +609,7 @@ final class CommitLogicImpl implements CommitLogic {
       }
 
       // No conflict, add "remove action" to index
-      hasher.putInt(2).putInt(payload).putString(key.rawString(), UTF_8);
-      if (contentId != null) {
-        hasher
-            .putLong(contentId.getMostSignificantBits())
-            .putLong(contentId.getLeastSignificantBits());
-      }
+      hasher.hash(2).hash(payload).hash(key.rawString()).hash(contentId);
       index.add(indexElement(key, op));
     }
 
@@ -684,15 +675,11 @@ final class CommitLogicImpl implements CommitLogic {
 
       // No conflict, add "add action" to index
       hasher
-          .putInt(1)
-          .putString(key.rawString(), UTF_8)
-          .putInt(payload)
-          .putBytes(add.value().asByteBuffer());
-      if (contentId != null) {
-        hasher
-            .putLong(contentId.getMostSignificantBits())
-            .putLong(contentId.getLeastSignificantBits());
-      }
+          .hash(1)
+          .hash(key.rawString())
+          .hash(payload)
+          .hash(add.value().asByteBuffer())
+          .hash(contentId);
       index.add(indexElement(key, op));
     }
 
@@ -700,7 +687,7 @@ final class CommitLogicImpl implements CommitLogic {
       throw new CommitConflictException(conflicts);
     }
 
-    return c.incrementalIndex(index.serialize()).id(hashAsObjId(hasher)).build();
+    return c.incrementalIndex(index.serialize()).id(hasher.generate()).build();
   }
 
   private static void preprocessCommitActions(

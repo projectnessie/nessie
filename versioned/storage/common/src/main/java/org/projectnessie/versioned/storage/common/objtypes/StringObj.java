@@ -15,7 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.stringDataHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nullable;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
@@ -83,12 +85,11 @@ public interface StringObj extends Obj {
       @Nullable String filename,
       List<ObjId> predecessors,
       ByteString text) {
-    return stringData(
-        stringDataHash(contentType, compression, filename, predecessors, text),
-        contentType,
-        compression,
-        filename,
-        predecessors,
-        text);
+    ObjIdHasher hasher =
+        objIdHasher(STRING).hash(contentType).hash(compression.value()).hash(filename);
+    predecessors.forEach(id -> hasher.hash(id.asByteArray()));
+    hasher.hash(text.asReadOnlyByteBuffer());
+
+    return stringData(hasher.generate(), contentType, compression, filename, predecessors, text);
   }
 }
