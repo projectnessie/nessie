@@ -127,7 +127,7 @@ final class OldNessieServer implements NessieServer {
       tryStart();
     }
 
-    return Util.resolveNessieUri(uri, apiType);
+    return Util.resolveNessieUri(uri, serverKey.getVersion(), apiType);
   }
 
   private void tryStart() {
