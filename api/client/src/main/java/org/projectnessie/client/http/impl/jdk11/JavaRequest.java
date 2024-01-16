@@ -131,7 +131,7 @@ final class JavaRequest extends BaseHttpRequest {
           throw new RuntimeException(e);
         }
 
-        JavaResponseContext responseContext = new JavaResponseContext(response);
+        JavaResponseContext responseContext = new JavaResponseContext(response, method);
 
         List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
         if (callbacks != null) {

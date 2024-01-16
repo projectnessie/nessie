@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
@@ -40,19 +43,18 @@ public class ResponseCheckFilter {
    * @throws IOException Throws IOException for certain error types.
    */
   public static void checkResponse(ResponseContext con) throws Exception {
-    final Status status;
-    final NessieError error;
     // this could IOException, in which case the error will be passed up to the client as an
     // HttpClientException
-    status = con.getResponseCode();
+    final Status status = con.getResponseCode();
     if (status.getCode() > 199 && status.getCode() < 300) {
       return;
     }
 
     // this could IOException, in which case the error will be passed up to the client as an
     // HttpClientException
+    final NessieError error;
     try (InputStream is = con.getErrorStream()) {
-      error = decodeErrorObject(status, is, MAPPER.reader());
+      error = decodeErrorObject(status, con, is, MAPPER.reader());
     }
 
     Optional<Exception> modelException = ErrorCode.asException(error);
@@ -84,52 +86,74 @@ public class ResponseCheckFilter {
         exception = new NessieServiceException(error);
     }
 
-    if (error.getClientProcessingException() != null) {
-      exception.addSuppressed(error.getClientProcessingException()); // for trouble-shooting
-    }
-
     throw exception;
   }
 
   private static NessieError decodeErrorObject(
-      Status status, InputStream inputStream, ObjectReader reader) {
-    NessieError error;
+      Status status, ResponseContext requestCtx, InputStream inputStream, ObjectReader reader) {
+    ImmutableNessieError.Builder error =
+        ImmutableNessieError.builder()
+            .status(status.getCode())
+            .reason(status.getReason())
+            .message(
+                requestCtx.getRequestedMethod() + " " + requestCtx.getRequestedUri() + " failed");
+
     if (inputStream == null) {
-      error =
-          ImmutableNessieError.builder()
-              .errorCode(ErrorCode.UNKNOWN)
-              .status(status.getCode())
-              .reason(status.getReason())
-              .message("Could not parse error object in response.")
-              .clientProcessingException(
-                  new RuntimeException("Could not parse error object in response."))
-              .build();
-    } else {
-      try {
-        JsonNode errorData = reader.readTree(inputStream);
-        try {
-          error = reader.treeToValue(errorData, NessieError.class);
-        } catch (JsonProcessingException e) {
-          // If the error payload is valid JSON, but does not represent a NessieError, it is likely
-          // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
-          // text to the caller for trouble-shooting.
-          error =
-              ImmutableNessieError.builder()
-                  .message(errorData.toString())
-                  .status(status.getCode())
-                  .reason(status.getReason())
-                  .clientProcessingException(e)
-                  .build();
-        }
-      } catch (IOException e) {
-        error =
-            ImmutableNessieError.builder()
-                .status(status.getCode())
-                .reason(status.getReason())
-                .clientProcessingException(e)
-                .build();
-      }
+      // jdk8.UrlConnectionRequest seems to have a null InputStream for empty responses
+      return error
+          .clientProcessingException(
+              new IOException("HTTP response was empty (inputStream was null)"))
+          .build();
     }
-    return error;
+
+    final String inputString;
+    try {
+      inputString = readToString(inputStream);
+    } catch (IOException e) {
+      IOException readException = new IOException("Unable to read response body");
+      readException.addSuppressed(e);
+      return error.clientProcessingException(readException).build();
+    }
+
+    final JsonNode errorData;
+    try {
+      errorData = reader.readTree(inputString);
+    } catch (IOException e) {
+      IOException parseException =
+          new IOException("Unable to parse response body as JSON:\n" + inputString);
+      parseException.addSuppressed(e);
+      return error.clientProcessingException(parseException).build();
+    }
+
+    if (errorData.isMissingNode()) {
+      // empty server response
+      if (!Status.NOT_FOUND.equals(status)) {
+        error.clientProcessingException(new IOException("HTTP response was empty"));
+      }
+      return error.build();
+    }
+
+    try {
+      return reader.treeToValue(errorData, NessieError.class);
+    } catch (JsonProcessingException e) {
+      // If the error payload is valid JSON, but does not represent a NessieError, it is likely
+      // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
+      // text to the caller for trouble-shooting.
+      IOException mapperException =
+          new IOException("JSON response has unknown error format:\n" + inputString);
+      mapperException.addSuppressed(e);
+      return error.clientProcessingException(mapperException).build();
+    }
+  }
+
+  private static String readToString(InputStream inputStream) throws IOException {
+    StringBuilder out = new StringBuilder();
+    int bufferSize = 1024;
+    char[] buffer = new char[bufferSize];
+    Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+    for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
+      out.append(buffer, 0, numRead);
+    }
+    return out.toString();
   }
 }

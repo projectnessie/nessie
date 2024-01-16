@@ -39,9 +39,12 @@ final class JavaResponseContext implements ResponseContext {
 
   private final HttpResponse<InputStream> response;
   private final InputStream inputStream;
+  private final org.projectnessie.client.http.HttpClient.Method method;
 
-  JavaResponseContext(HttpResponse<InputStream> response) {
+  JavaResponseContext(
+      HttpResponse<InputStream> response, org.projectnessie.client.http.HttpClient.Method method) {
     this.response = response;
+    this.method = method;
 
     try {
       this.inputStream = maybeDecompress();
@@ -73,6 +76,11 @@ final class JavaResponseContext implements ResponseContext {
   @Override
   public URI getRequestedUri() {
     return response.uri();
+  }
+
+  @Override
+  public org.projectnessie.client.http.HttpClient.Method getRequestedMethod() {
+    return method;
   }
 
   private InputStream maybeDecompress() throws IOException {

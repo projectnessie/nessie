@@ -18,6 +18,7 @@ package org.projectnessie.client.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import org.projectnessie.client.http.HttpClient.Method;
 
 /** Interface for the important parts of a response. This is created after executing the request. */
 public interface ResponseContext {
@@ -43,4 +44,6 @@ public interface ResponseContext {
   String getContentType();
 
   URI getRequestedUri();
+
+  Method getRequestedMethod();
 }

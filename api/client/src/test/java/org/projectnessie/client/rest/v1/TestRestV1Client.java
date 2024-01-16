@@ -16,6 +16,7 @@
 package org.projectnessie.client.rest.v1;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
@@ -44,10 +45,12 @@ import org.projectnessie.client.http.NessieApiCompatibilityException;
 import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.client.rest.NessieServiceException;
 import org.projectnessie.client.rest.v2.HttpApiV2;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.client.util.HttpTestUtil;
 import org.projectnessie.client.util.JaegerTestTracer;
+import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Branch;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -156,9 +159,17 @@ class TestRestV1Client {
   }
 
   private HttpTestServer errorServer(int status) throws Exception {
+    return errorServer(status, null);
+  }
+
+  private HttpTestServer errorServer(int status, String message) throws Exception {
     return new HttpTestServer(
         (req, resp) -> {
-          resp.setStatus(status);
+          if (message == null) {
+            resp.setStatus(status);
+          } else {
+            resp.sendError(status, message);
+          }
           resp.getOutputStream().close();
         });
   }
@@ -172,8 +183,32 @@ class TestRestV1Client {
                 .withApiCompatibilityCheck(false)
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
-          .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Not Found");
+          .isInstanceOf(NessieServiceException.class)
+          .hasMessageContaining("Not Found (HTTP/404)")
+          .hasMessageContaining("/unknownPath/config")
+          .hasNoSuppressedExceptions();
+    }
+  }
+
+  @Test
+  void testNotFoundWithHtmlResponse() throws Exception {
+    try (HttpTestServer server = errorServer(404, "the requested URL does not exist");
+        NessieApiV1 api =
+            createClientBuilderFromSystemSettings()
+                .withUri(server.getUri().resolve("/unknownPath"))
+                .withApiCompatibilityCheck(false)
+                .build(NessieApiV1.class)) {
+      assertThatThrownBy(api::getConfig)
+          .isInstanceOf(NessieServiceException.class)
+          .hasMessageContaining("Not Found (HTTP/404)")
+          .hasMessageContaining("/unknownPath/config")
+          .hasMessageContaining(
+              "Unable to parse response body as JSON:\n<html><head><title>Error</title></head><body>the requested URL does not exist</body></html>")
+          .hasNoSuppressedExceptions()
+          .extracting("error")
+          .asInstanceOf(type(NessieError.class))
+          .extracting(NessieError::getClientProcessingException)
+          .isNotNull();
     }
   }
 
@@ -187,7 +222,10 @@ class TestRestV1Client {
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(NessieInternalServerException.class)
-          .hasMessageContaining("Internal Server Error");
+          .hasMessageContaining("Internal Server Error (HTTP/500)")
+          .hasMessageContaining("/broken/config")
+          .hasMessageContaining("HTTP response was empty")
+          .hasNoSuppressedExceptions();
     }
   }
 
@@ -201,7 +239,10 @@ class TestRestV1Client {
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(NessieNotAuthorizedException.class)
-          .hasMessageContaining("Unauthorized");
+          .hasMessageContaining("Unauthorized (HTTP/401)")
+          .hasMessageContaining("/unauthorized/config")
+          .hasMessageContaining("HTTP response was empty")
+          .hasNoSuppressedExceptions();
     }
   }
 

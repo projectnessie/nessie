@@ -55,7 +55,7 @@ final class UrlConnectionRequest extends BaseHttpRequest {
         ((HttpsURLConnection) con).setSSLSocketFactory(config.getSslContext().getSocketFactory());
       }
       RequestContext context = new RequestContextImpl(headers, uri, method, body);
-      ResponseContext responseContext = new UrlConnectionResponseContext(con, uri);
+      ResponseContext responseContext = new UrlConnectionResponseContext(con, uri, method);
       try {
 
         boolean doesOutput = prepareRequest(context);

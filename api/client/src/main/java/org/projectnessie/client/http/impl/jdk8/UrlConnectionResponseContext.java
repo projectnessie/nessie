@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 
@@ -33,10 +34,12 @@ final class UrlConnectionResponseContext implements ResponseContext {
 
   private final HttpURLConnection connection;
   private final URI uri;
+  private final HttpClient.Method method;
 
-  UrlConnectionResponseContext(HttpURLConnection connection, URI uri) {
+  UrlConnectionResponseContext(HttpURLConnection connection, URI uri, HttpClient.Method method) {
     this.connection = connection;
     this.uri = uri;
+    this.method = method;
   }
 
   @Override
@@ -62,6 +65,11 @@ final class UrlConnectionResponseContext implements ResponseContext {
   @Override
   public URI getRequestedUri() {
     return uri;
+  }
+
+  @Override
+  public HttpClient.Method getRequestedMethod() {
+    return method;
   }
 
   private InputStream maybeDecompress(InputStream inputStream) throws IOException {

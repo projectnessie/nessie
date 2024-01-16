@@ -44,6 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -261,6 +262,11 @@ public class TestResponseFilter {
                       public URI getRequestedUri() {
                         return null;
                       }
+
+                      @Override
+                      public HttpClient.Method getRequestedMethod() {
+                        return null;
+                      }
                     }))
         .isInstanceOf(NessieNotAuthorizedException.class)
         .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
@@ -306,6 +312,11 @@ public class TestResponseFilter {
                       public URI getRequestedUri() {
                         return null;
                       }
+
+                      @Override
+                      public HttpClient.Method getRequestedMethod() {
+                        return null;
+                      }
                     }))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("" + Status.NOT_IMPLEMENTED.getCode())
@@ -321,7 +332,7 @@ public class TestResponseFilter {
         .isInstanceOf(NessieNotAuthorizedException.class)
         .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
         .hasMessageContaining(Status.UNAUTHORIZED.getReason())
-        .hasMessageContaining("Could not parse error object in response");
+        .hasMessageContaining("HTTP response was empty");
   }
 
   @Test
@@ -403,7 +414,7 @@ public class TestResponseFilter {
     @Override
     public InputStream getErrorStream() throws IOException {
       if (error == null) {
-        return null;
+        return new StringInputStream("");
       }
       String value = MAPPER.writeValueAsString(error);
       return new StringInputStream(value);
@@ -421,6 +432,11 @@ public class TestResponseFilter {
 
     @Override
     public URI getRequestedUri() {
+      return null;
+    }
+
+    @Override
+    public HttpClient.Method getRequestedMethod() {
       return null;
     }
   }
