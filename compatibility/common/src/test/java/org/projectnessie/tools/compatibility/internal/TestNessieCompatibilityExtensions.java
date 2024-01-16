@@ -34,6 +34,7 @@ import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
+import org.junit.platform.testkit.engine.Event;
 import org.junit.platform.testkit.engine.Events;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.junit.engine.MultiEnvTestEngine;
@@ -61,7 +62,7 @@ class TestNessieCompatibilityExtensions {
         .withFailMessage(
             () ->
                 "The following test events have failed:\n:"
-                    + failedEvents.stream().map(e -> e.toString()).collect(Collectors.joining()))
+                    + failedEvents.stream().map(Event::toString).collect(Collectors.joining()))
         .isEqualTo(0);
   }
 
@@ -157,29 +158,31 @@ class TestNessieCompatibilityExtensions {
   @Test
   void injectedNessieApiUrlChanged() {
     final Version versionBeforeApiUrlChange = Version.parseVersion("0.74.0");
-    EngineExecutionResults result =
+    EngineExecutionResults results =
         EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
             .configurationParameter(
                 "nessie.versions",
                 versionBeforeApiUrlChange + "," + Version.NESSIE_URL_API_SUFFIX + ",current")
             .selectors(selectClass(ApiEndpointServerSample.class))
             .execute();
+    assertNoFailedTestEvents(results);
 
     soft.assertThat(ApiEndpointServerSample.allVersions)
         .containsExactly(versionBeforeApiUrlChange, Version.NESSIE_URL_API_SUFFIX, Version.CURRENT);
-
-    assertNoFailedTestEvents(result);
   }
 
   @Test
   void nestedTests() {
-    EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter(
-            "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
-        .selectors(selectClass(OuterSample.class))
-        .selectors(selectClass(OuterSample.Inner.class))
-        .filters(new MultiEnvTestFilter())
-        .execute();
+    EngineExecutionResults results =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .configurationParameter(
+                "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
+            .selectors(selectClass(OuterSample.class))
+            .selectors(selectClass(OuterSample.Inner.class))
+            .filters(new MultiEnvTestFilter())
+            .execute();
+    assertNoFailedTestEvents(results);
+
     soft.assertThat(OuterSample.outerVersions)
         .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, Version.CURRENT);
     soft.assertThat(OuterSample.innerVersions).containsExactlyElementsOf(OuterSample.outerVersions);
@@ -190,11 +193,14 @@ class TestNessieCompatibilityExtensions {
       value = OS.MAC,
       disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
   void upgrade() {
-    EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter(
-            "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
-        .selectors(selectClass(UpgradeSample.class))
-        .execute();
+    EngineExecutionResults results =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .configurationParameter(
+                "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
+            .selectors(selectClass(UpgradeSample.class))
+            .execute();
+    assertNoFailedTestEvents(results);
+
     soft.assertThat(UpgradeSample.allVersions)
         .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, Version.CURRENT);
     soft.assertThat(UpgradeSample.minVersionHigh).containsExactly(Version.CURRENT);
