@@ -61,7 +61,7 @@ final class CurrentNessieServer implements NessieServer {
 
   @Override
   public URI getUri(Class<? extends NessieApi> apiType) {
-    return Util.resolveNessieUri(jersey.getUri().resolve("api/"), apiType);
+    return Util.resolveNessieUri(jersey.getUri(), serverKey.getVersion(), apiType);
   }
 
   @Override
