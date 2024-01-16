@@ -19,6 +19,7 @@ import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RE
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +38,6 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.paging.PaginationIterator;
-import org.projectnessie.versioned.storage.common.objtypes.Hashes;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
@@ -108,7 +108,7 @@ final class ExportContents extends ExportCommon {
                         ref.getNamedRef().getName(), seq + 1)));
         long micros = TimeUnit.MILLISECONDS.toMicros(currentTimestampMillis());
 
-        Hasher hasher = Hashes.newHasher();
+        Hasher hasher = Hashing.sha256().newHasher();
         hasher.putBytes(meta.asReadOnlyByteBuffer());
         hasher.putBytes(lastCommitId.asReadOnlyByteBuffer());
         hasher.putLong(seq);

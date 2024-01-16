@@ -15,7 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.uniqueIdHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -36,7 +37,7 @@ public interface UniqueIdObj extends Obj {
 
   @Override
   default ObjType type() {
-    return StandardObjType.UNIQUE;
+    return UNIQUE;
   }
 
   @Override
@@ -65,7 +66,10 @@ public interface UniqueIdObj extends Obj {
   }
 
   static UniqueIdObj uniqueId(String space, ByteString value) {
-    return uniqueId(uniqueIdHash(space, value), space, value);
+    return uniqueId(
+        objIdHasher(UNIQUE).hash(space).hash(value.asReadOnlyByteBuffer()).generate(),
+        space,
+        value);
   }
 
   static UniqueIdObj uniqueId(String space, UUID value) {

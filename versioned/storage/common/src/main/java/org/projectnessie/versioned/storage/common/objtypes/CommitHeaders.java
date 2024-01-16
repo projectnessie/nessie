@@ -19,8 +19,10 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import org.projectnessie.versioned.storage.common.persist.Hashable;
+import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 
-public interface CommitHeaders {
+public interface CommitHeaders extends Hashable {
 
   CommitHeaders EMPTY_COMMIT_HEADERS = newCommitHeaders().build();
 
@@ -76,5 +78,16 @@ public interface CommitHeaders {
     }
 
     CommitHeaders build();
+  }
+
+  @Override
+  default void hash(ObjIdHasher hasher) {
+    for (String header : keySet()) {
+      hasher.hash(header);
+      List<String> values = getAll(header);
+      for (String value : values) {
+        hasher.hash(value);
+      }
+    }
   }
 }

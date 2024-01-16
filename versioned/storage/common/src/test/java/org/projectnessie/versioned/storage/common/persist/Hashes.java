@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.common.objtypes;
+package org.projectnessie.versioned.storage.common.persist;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX;
@@ -28,10 +28,17 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import java.util.List;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
+import org.projectnessie.versioned.storage.common.objtypes.Compression;
+import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
 
+/**
+ * Contains the code that generated {@link ObjId}s before {@link ObjIdHasher} was introduced, used
+ * to validate compatibility with the old code. This class and (parts of) the corresponding test may
+ * eventually go away.
+ */
 @SuppressWarnings("UnstableApiUsage")
-public final class Hashes {
+final class Hashes {
   private Hashes() {}
 
   public static Hasher newHasher() {

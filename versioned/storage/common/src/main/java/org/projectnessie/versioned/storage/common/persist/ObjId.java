@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.common.persist;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 import static org.projectnessie.versioned.storage.common.util.Hex.hexChar;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibble;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibbleFromLong;
@@ -27,10 +28,8 @@ import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.varIntLen;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.hash.Hashing;
 import jakarta.annotation.Nonnull;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -39,10 +38,7 @@ public abstract class ObjId {
   // TODO Should this class actually be merged with the existing `Hash` class,
   //  need to move `Hash` to somewhere else though (project dependency issue ATM).
 
-  @SuppressWarnings("UnstableApiUsage")
-  public static final ObjId EMPTY_OBJ_ID =
-      ObjId.objIdFromByteArray(
-          Hashing.sha256().newHasher().putString("empty", StandardCharsets.UTF_8).hash().asBytes());
+  public static final ObjId EMPTY_OBJ_ID = objIdHasher("empty").generate();
 
   public static ObjId zeroLengthObjId() {
     return ObjIdEmpty.INSTANCE;

@@ -15,7 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.refHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
@@ -70,7 +71,11 @@ public interface RefObj extends Obj {
   static RefObj ref(
       String name, ObjId initialPointer, long createdAtMicros, ObjId extendedInfoObj) {
     return ref(
-        refHash(name, initialPointer, createdAtMicros),
+        objIdHasher(REF)
+            .hash(name)
+            .hash(initialPointer.asByteArray())
+            .hash(createdAtMicros)
+            .generate(),
         name,
         initialPointer,
         createdAtMicros,
