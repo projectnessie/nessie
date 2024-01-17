@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
-  alias(libs.plugins.jmh)
 }
 
 extra["maven.name"] = "Nessie - Tasks - Service"
@@ -66,14 +65,4 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testRuntimeOnly(libs.logback.classic)
-
-  jmhImplementation(libs.jmh.core)
-  jmhImplementation(project(":nessie-versioned-storage-common-tests"))
-  jmhAnnotationProcessor(libs.jmh.generator.annprocess)
 }
-
-tasks.named("processJmhJandexIndex").configure { enabled = false }
-
-tasks.named("processTestJandexIndex").configure { enabled = false }
-
-jmh { jmhVersion.set(libs.versions.jmh.get()) }

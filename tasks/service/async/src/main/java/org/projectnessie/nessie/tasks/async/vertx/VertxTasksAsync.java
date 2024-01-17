@@ -111,6 +111,7 @@ public class VertxTasksAsync implements TasksAsync {
     @Override
     public void cancel() {
       vertx.cancelTimer(timerId);
+      stage.toCompletableFuture().cancel(true);
     }
   }
 }
