@@ -15,11 +15,9 @@
  */
 package org.projectnessie.nessie.tasks.api;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.CACHE_UNLIMITED;
+import static org.projectnessie.nessie.tasks.api.TaskObjUtil.TASK_DEFAULT_CACHE_EXPIRE;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.time.Instant;
 import org.projectnessie.versioned.storage.common.objtypes.CustomObjType.CacheExpireCalculation;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -50,23 +48,8 @@ public interface TaskObj extends UpdateableObj {
     TaskObj build();
   }
 
-  CacheExpireCalculation<? extends TaskObj> _TASK_DEFAULT_CACHE_EXPIRE =
-      (obj, currentTimeMicros) -> {
-        TaskState state = obj.taskState();
-        if (state.status().isFinal()) {
-          return CACHE_UNLIMITED;
-        }
-
-        Instant retryNotBefore = state.retryNotBefore();
-        if (retryNotBefore != null) {
-          return MILLISECONDS.toMicros(retryNotBefore.toEpochMilli());
-        }
-
-        return CACHE_UNLIMITED;
-      };
-
   @SuppressWarnings("unchecked")
   static <T extends TaskObj> CacheExpireCalculation<T> taskDefaultCacheExpire() {
-    return (CacheExpireCalculation<T>) _TASK_DEFAULT_CACHE_EXPIRE;
+    return (CacheExpireCalculation<T>) TASK_DEFAULT_CACHE_EXPIRE;
   }
 }
