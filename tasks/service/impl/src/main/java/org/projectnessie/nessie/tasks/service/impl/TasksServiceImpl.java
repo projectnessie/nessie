@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.tasks.service.impl;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.concurrent.CompletableFuture.failedStage;
 import static org.projectnessie.nessie.tasks.service.impl.TypeControllerRegistry.controllerForTaskType;
@@ -218,7 +219,7 @@ public class TasksServiceImpl implements TasksService {
   private void checkRunningTask(ExecParams params, TaskState state, TaskObj obj)
       throws ObjTooLargeException {
     Instant now = async.clock().instant();
-    if (now.compareTo(state.lostNotBefore()) >= 0) {
+    if (now.compareTo(requireNonNull(state.lostNotBefore())) >= 0) {
       metrics.taskLossDetected();
       LOGGER.warn("{}: Detected lost task for {}", name, params);
       TaskObj retryState =
@@ -243,7 +244,7 @@ public class TasksServiceImpl implements TasksService {
   private void maybeAttemptErrorRetry(ExecParams params, TaskState state, TaskObj obj)
       throws ObjTooLargeException {
     Instant now = async.clock().instant();
-    if (now.compareTo(state.retryNotBefore()) >= 0) {
+    if (now.compareTo(requireNonNull(state.retryNotBefore())) >= 0) {
       TaskObj retryState =
           withNewVersionToken(
               params
