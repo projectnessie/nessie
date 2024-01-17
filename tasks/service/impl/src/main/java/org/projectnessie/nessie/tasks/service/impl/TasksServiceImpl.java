@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskRequest;
 import org.projectnessie.nessie.tasks.api.TaskState;
@@ -105,7 +106,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     // Ensure that only one "base" completable future exists for each obj-id.
-    TaskKey taskKey = new TaskKey(persist.config().repositoryId(), objId);
+    TaskKey taskKey = TaskKey.taskKey(persist.config().repositoryId(), objId);
     return currentTasks.computeIfAbsent(
         taskKey,
         id -> {
@@ -134,7 +135,7 @@ public class TasksServiceImpl implements TasksService {
   }
 
   private void removeFromCurrentTasks(ExecParams params) {
-    TaskKey taskKey = new TaskKey(params.persist.config().repositoryId(), params.objId());
+    TaskKey taskKey = TaskKey.taskKey(params.persist.config().repositoryId(), params.objId());
     currentTasks.remove(taskKey);
   }
 
@@ -482,31 +483,16 @@ public class TasksServiceImpl implements TasksService {
     }
   }
 
-  static final class TaskKey {
-    final String repositoryId;
-    final ObjId objId;
+  @Value.Immutable
+  interface TaskKey {
+    @Value.Parameter(order = 1)
+    String repositoryId();
 
-    TaskKey(String repositoryId, ObjId objId) {
-      this.repositoryId = repositoryId;
-      this.objId = objId;
-    }
+    @Value.Parameter(order = 2)
+    ObjId objId();
 
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      TaskKey taskKey = (TaskKey) o;
-
-      if (!repositoryId.equals(taskKey.repositoryId)) return false;
-      return objId.equals(taskKey.objId);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = repositoryId.hashCode();
-      result = 31 * result + objId.hashCode();
-      return result;
+    static TaskKey taskKey(String repositoryId, ObjId objId) {
+      return ImmutableTaskKey.of(repositoryId, objId);
     }
   }
 }
