@@ -74,8 +74,6 @@ public class TasksServiceImpl implements TasksService {
   }
 
   CompletionStage<TaskObj> submit(Persist persist, TaskRequest taskRequest) {
-    TaskBehavior behavior = taskRequest.behavior();
-
     ObjId objId = taskRequest.objId();
 
     // Try to get the object and immediately return if it has a final state. We expect to hit final
@@ -94,7 +92,7 @@ public class TasksServiceImpl implements TasksService {
       switch (status) {
         case FAILURE:
           metrics.taskHasFinalFailure();
-          return failedStage(behavior.stateAsException(taskObj));
+          return failedStage(taskRequest.behavior().stateAsException(taskObj));
         case SUCCESS:
           metrics.taskHasFinalSuccess();
           return completedStage(taskObj);
