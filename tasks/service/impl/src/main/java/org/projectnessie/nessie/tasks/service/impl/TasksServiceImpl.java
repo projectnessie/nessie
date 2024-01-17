@@ -15,6 +15,7 @@
  */
 package org.projectnessie.nessie.tasks.service.impl;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.concurrent.CompletableFuture.failedStage;
 import static org.projectnessie.nessie.tasks.service.impl.TypeControllerRegistry.controllerForTaskType;
@@ -88,7 +89,8 @@ public class TasksServiceImpl implements TasksService {
     Obj obj = persist.getIfCached(taskRequest.objId());
     if (obj != null) {
       TaskObj taskObj = (TaskObj) obj;
-      switch (taskObj.taskState().status()) {
+      TaskStatus status = taskObj.taskState().status();
+      switch (status) {
         case FAILURE:
           metrics.taskHasFinalFailure();
           return failedStage(taskDefinition.stateAsException(taskObj));
@@ -97,6 +99,7 @@ public class TasksServiceImpl implements TasksService {
           return completedStage(taskObj);
         default:
           // task object exists but has a non-final state, handle it asynchronously
+          checkState(!status.isFinal(), "Expect non-final task status");
           break;
       }
     }
