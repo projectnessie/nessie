@@ -46,14 +46,14 @@ public class TestCachingInmemoryPersist extends AbstractPersistTests {
     @Test
     public void getIfCached() throws Exception {
       Obj obj = contentValue(randomObjId(), randomContentId(), 1, ByteString.copyFromUtf8("hello"));
-      soft.assertThat(persist.getIfCached(obj.id())).isNull();
+      soft.assertThat(persist.getImmediate(obj.id())).isNull();
       persist.storeObj(obj);
-      soft.assertThat(persist.getIfCached(obj.id())).isEqualTo(obj);
+      soft.assertThat(persist.getImmediate(obj.id())).isEqualTo(obj);
       persist.deleteObj(obj.id());
-      soft.assertThat(persist.getIfCached(obj.id())).isNull();
+      soft.assertThat(persist.getImmediate(obj.id())).isNull();
       persist.storeObj(obj);
       persist.fetchObj(obj.id());
-      soft.assertThat(persist.getIfCached(obj.id())).isEqualTo(obj);
+      soft.assertThat(persist.getImmediate(obj.id())).isEqualTo(obj);
     }
   }
 }

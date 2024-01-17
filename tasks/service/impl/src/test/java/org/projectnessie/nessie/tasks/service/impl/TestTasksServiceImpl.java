@@ -41,7 +41,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.nessie.tasks.api.Tasks;
-import org.projectnessie.nessie.tasks.async.testing.TestingTasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
 import org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskObj;
 import org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskRequest;
@@ -212,7 +211,7 @@ public class TestTasksServiceImpl {
 
     // Validate the optimization for the cached-object in TaskServiceImpl.execute()
     BasicTaskRequest req = basicTaskRequest("hello", () -> null);
-    if (persist.getIfCached(req.objId()) != null) {
+    if (persist.getImmediate(req.objId()) != null) {
       CompletableFuture<BasicTaskObj> followUp = tasks.submit(req).toCompletableFuture();
       soft.assertThat(async.doWork()).isEqualTo(0);
       soft.assertThat(followUp).isCompleted();
@@ -280,7 +279,7 @@ public class TestTasksServiceImpl {
 
     // Validate the optimization for the cached-object in TaskServiceImpl.execute()
     BasicTaskRequest req = basicTaskRequest("hello", () -> null);
-    if (persist.getIfCached(req.objId()) != null) {
+    if (persist.getImmediate(req.objId()) != null) {
       CompletableFuture<BasicTaskObj> followUp = tasks.submit(req).toCompletableFuture();
       soft.assertThat(async.doWork()).isEqualTo(0);
       soft.assertThat(followUp).isCompletedExceptionally();

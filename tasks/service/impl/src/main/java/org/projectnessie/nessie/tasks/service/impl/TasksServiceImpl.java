@@ -97,7 +97,7 @@ public class TasksServiceImpl implements TasksService {
     //  b) add a `getObjIfCached(ObjId)` --> chosen for now
     //  c) add a `fetchObjAsync()`, but adding async variants to all database implementations will
     //     be tricky
-    Obj obj = persist.getIfCached(taskRequest.objId());
+    Obj obj = persist.getImmediate(taskRequest.objId());
     if (obj != null) {
       TaskObj taskObj = (TaskObj) obj;
       TaskStatus status = taskObj.taskState().status();

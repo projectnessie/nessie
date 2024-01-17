@@ -133,8 +133,8 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
-  public Obj getIfCached(@Nonnull ObjId id) {
-    return delegate.getIfCached(id);
+  public Obj getImmediate(@Nonnull ObjId id) {
+    return delegate.getImmediate(id);
   }
 
   @WithSpan

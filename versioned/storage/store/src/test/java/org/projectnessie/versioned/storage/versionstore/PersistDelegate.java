@@ -109,8 +109,8 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
-  public Obj getIfCached(@Nonnull ObjId id) {
-    return delegate.getIfCached(id);
+  public Obj getImmediate(@Nonnull ObjId id) {
+    return delegate.getImmediate(id);
   }
 
   @Override

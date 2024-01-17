@@ -155,7 +155,7 @@ public interface Persist {
   @Nonnull
   Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException;
 
-  default Obj getIfCached(@Nonnull ObjId id) {
+  default Obj getImmediate(@Nonnull ObjId id) {
     return null;
   }
 

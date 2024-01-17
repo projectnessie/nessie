@@ -63,7 +63,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public Obj getIfCached(@Nonnull ObjId id) {
+  public Obj getImmediate(@Nonnull ObjId id) {
     return cache.get(id);
   }
 

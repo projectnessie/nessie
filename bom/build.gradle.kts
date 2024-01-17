@@ -55,7 +55,6 @@ dependencies {
     api(project(":nessie-content-generator"))
     api(project(":nessie-protobuf-relocated"))
     api(project(":nessie-tasks-api"))
-    api(project(":nessie-tasks-service"))
     api(project(":nessie-tasks-service-async"))
     api(project(":nessie-tasks-service-impl"))
     api(project(":nessie-versioned-spi"))
