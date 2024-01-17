@@ -17,8 +17,8 @@ package org.projectnessie.nessie.tasks.async.testing;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.NoSuchElementException;
-import java.util.TreeSet;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,7 +33,7 @@ import org.projectnessie.nessie.tasks.async.TasksAsync;
  */
 public class TestingTasksAsync implements TasksAsync {
 
-  private final TreeSet<ScheduledTask> scheduledTasks = new TreeSet<>();
+  private final Queue<ScheduledTask> scheduledTasks = new PriorityQueue<>();
 
   private final Clock clock;
 
@@ -46,15 +46,11 @@ public class TestingTasksAsync implements TasksAsync {
     Instant now = clock.instant();
     while (true) {
       ScheduledTask t;
-      try {
-        t = scheduledTasks.first();
-      } catch (NoSuchElementException empty) {
-        break;
-      }
+      t = scheduledTasks.peek();
       if (t == null || t.runAt.compareTo(now) > 0) {
         break;
       }
-      scheduledTasks.pollFirst();
+      scheduledTasks.remove(t);
       if (t.cancelled) {
         continue;
       }
