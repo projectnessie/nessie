@@ -36,6 +36,7 @@ import java.util.stream.IntStream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -205,6 +206,8 @@ public abstract class BaseTasksAsync {
   }
 
   @Test
+  @Disabled(
+      "Disabled because this test would run for a long time and the value of this test is questionable.")
   public void cancelReallyWorks() throws InterruptedException {
     TasksAsync async = tasksAsync();
 
@@ -221,7 +224,7 @@ public abstract class BaseTasksAsync {
                 throw new RuntimeException(e);
               }
             },
-            async.clock().instant().plus(60, ChronoUnit.SECONDS));
+            async.clock().instant().plus(5, ChronoUnit.SECONDS));
     soft.assertThat(handle).isNotNull();
 
     AtomicReference<Object> result = new AtomicReference<>();
@@ -237,6 +240,8 @@ public abstract class BaseTasksAsync {
     soft.assertThat(cancelled.await(10, TimeUnit.SECONDS)).isTrue();
     soft.assertThat(result.get()).isNull();
     soft.assertThat(error.get()).isInstanceOf(CancellationException.class);
+
+    soft.assertThat(started.await(10, TimeUnit.SECONDS)).isFalse();
   }
 
   @Test

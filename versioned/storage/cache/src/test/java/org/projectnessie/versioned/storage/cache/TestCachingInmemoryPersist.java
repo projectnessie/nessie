@@ -44,7 +44,7 @@ public class TestCachingInmemoryPersist extends AbstractPersistTests {
     @NessiePersist protected Persist persist;
 
     @Test
-    public void getIfCached() throws Exception {
+    public void getImmediate() throws Exception {
       Obj obj = contentValue(randomObjId(), randomContentId(), 1, ByteString.copyFromUtf8("hello"));
       soft.assertThat(persist.getImmediate(obj.id())).isNull();
       persist.storeObj(obj);
