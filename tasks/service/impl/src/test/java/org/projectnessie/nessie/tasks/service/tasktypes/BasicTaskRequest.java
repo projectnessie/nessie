@@ -21,14 +21,13 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
-import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskRequest;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
-public interface BasicTaskRequest extends TaskRequest {
+public interface BasicTaskRequest extends TaskRequest<BasicTaskObj, BasicTaskObj.Builder> {
   @Override
   @Value.NonAttribute
   default ObjType objType() {
@@ -42,7 +41,7 @@ public interface BasicTaskRequest extends TaskRequest {
   ObjId objId();
 
   @Value.Parameter(order = 3)
-  Supplier<CompletionStage<TaskObj.Builder>> taskCompletionStageSupplier();
+  Supplier<CompletionStage<BasicTaskObj.Builder>> taskCompletionStageSupplier();
 
   @Override
   @Value.Parameter(order = 4)
@@ -50,13 +49,13 @@ public interface BasicTaskRequest extends TaskRequest {
 
   @Override
   @Value.NonAttribute
-  default CompletionStage<TaskObj.Builder> submitExecution() {
+  default CompletionStage<BasicTaskObj.Builder> submitExecution() {
     return taskCompletionStageSupplier().get();
   }
 
   static BasicTaskRequest basicTaskRequest(
       String taskParameter,
-      Supplier<CompletionStage<TaskObj.Builder>> taskCompletionStageSupplier) {
+      Supplier<CompletionStage<BasicTaskObj.Builder>> taskCompletionStageSupplier) {
     ObjId objId = ObjIdHasher.objIdHasher(TYPE.name()).hash(taskParameter).generate();
     return ImmutableBasicTaskRequest.of(
         taskParameter, objId, taskCompletionStageSupplier, BasicTaskBehavior.INSTANCE);

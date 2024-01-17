@@ -28,5 +28,6 @@ public interface Tasks {
    * {@linkplain TaskStatus#isFinal() final status} ({@linkplain TaskStatus#SUCCESS SUCCESS} or
    * {@linkplain TaskStatus#FAILURE FAILURE}).
    */
-  CompletionStage<TaskObj> submit(TaskRequest taskRequest);
+  <T extends TaskObj, B extends TaskObj.Builder> CompletionStage<T> submit(
+      TaskRequest<T, B> taskRequest);
 }

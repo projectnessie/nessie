@@ -20,7 +20,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 /** Base interface for value objects that identify a task's input parameters. */
-public interface TaskRequest {
+public interface TaskRequest<T extends TaskObj, B extends TaskObj.Builder> {
   /** Declares the {@linkplain ObjType object type} for this request. */
   ObjType objType();
 
@@ -37,5 +37,5 @@ public interface TaskRequest {
    * Start execution of the task, this function must not block and/or wait for the task execution to
    * finish.
    */
-  CompletionStage<TaskObj.Builder> submitExecution();
+  CompletionStage<B> submitExecution();
 }

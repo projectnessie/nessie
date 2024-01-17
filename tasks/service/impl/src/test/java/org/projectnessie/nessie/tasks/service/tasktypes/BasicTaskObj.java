@@ -23,6 +23,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.tasks.api.TaskObj;
+import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
@@ -54,6 +55,10 @@ public interface BasicTaskObj extends TaskObj {
 
     @CanIgnoreReturnValue
     Builder taskResult(String taskResult);
+
+    @Override
+    @CanIgnoreReturnValue
+    Builder taskState(TaskState taskState);
 
     BasicTaskObj build();
   }

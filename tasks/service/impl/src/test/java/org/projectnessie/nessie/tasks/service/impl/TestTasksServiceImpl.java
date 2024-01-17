@@ -39,7 +39,6 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.nessie.tasks.api.Tasks;
 import org.projectnessie.nessie.tasks.async.testing.TestingTasksAsync;
@@ -73,8 +72,8 @@ public class TestTasksServiceImpl {
     Tasks tasks1 = service.forPersist(persist);
     Tasks tasks2 = service.forPersist(otherRepo);
 
-    CompletableFuture<TaskObj.Builder> taskCompletionStage1 = new CompletableFuture<>();
-    CompletableFuture<TaskObj.Builder> taskCompletionStage2 = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage1 = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage2 = new CompletableFuture<>();
 
     BasicTaskRequest taskRequest1 = basicTaskRequest("hello", () -> taskCompletionStage1);
     BasicTaskRequest taskRequest2 = basicTaskRequest("hello", () -> taskCompletionStage2);
@@ -83,26 +82,26 @@ public class TestTasksServiceImpl {
     soft.assertThat(taskRequest1.objId()).isEqualTo(taskRequest2.objId());
 
     // Submit task request for repo 1
-    CompletableFuture<TaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
     verify(metrics).startNewTaskController();
     verifyNoMoreInteractions(metrics);
     reset(metrics);
 
     // Submit task request for repo 2
-    CompletableFuture<TaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
     soft.assertThat(taskFuture2).isNotSameAs(taskFuture1);
     verify(metrics).startNewTaskController();
     verifyNoMoreInteractions(metrics);
     reset(metrics);
 
     // 2nd request for the same task 1
-    CompletableFuture<TaskObj> taskFuture1b =
+    CompletableFuture<BasicTaskObj> taskFuture1b =
         tasks1.submit(basicTaskRequest("hello", () -> null)).toCompletableFuture();
     soft.assertThat(taskFuture1b).isSameAs(taskFuture1).isNotSameAs(taskFuture2);
     verifyNoMoreInteractions(metrics);
 
     // 2nd request for the same task 2
-    CompletableFuture<TaskObj> taskFuture2b =
+    CompletableFuture<BasicTaskObj> taskFuture2b =
         tasks2.submit(basicTaskRequest("hello", () -> null)).toCompletableFuture();
     soft.assertThat(taskFuture2b).isSameAs(taskFuture2).isNotSameAs(taskFuture1);
     verifyNoMoreInteractions(metrics);
@@ -151,20 +150,20 @@ public class TestTasksServiceImpl {
     MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
     TestingTasksAsync async = new TestingTasksAsync(clock);
 
-    CompletableFuture<TaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
 
     TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
     TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
     Tasks tasks = service.forPersist(persist);
     BasicTaskRequest taskRequest = basicTaskRequest("hello", () -> taskCompletionStage);
 
-    CompletableFuture<TaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
     verify(metrics).startNewTaskController();
     verifyNoMoreInteractions(metrics);
     reset(metrics);
 
     // 2nd request for the same task (would fail w/ the `null` completion-stage)
-    CompletableFuture<TaskObj> taskFuture2 =
+    CompletableFuture<BasicTaskObj> taskFuture2 =
         tasks.submit(basicTaskRequest("hello", () -> null)).toCompletableFuture();
     soft.assertThat(taskFuture2).isSameAs(taskFuture);
     verifyNoMoreInteractions(metrics);
@@ -214,7 +213,7 @@ public class TestTasksServiceImpl {
     // Validate the optimization for the cached-object in TaskServiceImpl.execute()
     BasicTaskRequest req = basicTaskRequest("hello", () -> null);
     if (persist.getIfCached(req.objId()) != null) {
-      CompletableFuture<TaskObj> followUp = tasks.submit(req).toCompletableFuture();
+      CompletableFuture<BasicTaskObj> followUp = tasks.submit(req).toCompletableFuture();
       soft.assertThat(async.doWork()).isEqualTo(0);
       soft.assertThat(followUp).isCompleted();
       verify(metrics).taskHasFinalSuccess();
@@ -228,20 +227,20 @@ public class TestTasksServiceImpl {
     MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
     TestingTasksAsync async = new TestingTasksAsync(clock);
 
-    CompletableFuture<TaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
 
     TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
     TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
     Tasks tasks = service.forPersist(persist);
     BasicTaskRequest taskRequest = basicTaskRequest("hello", () -> taskCompletionStage);
 
-    CompletableFuture<TaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
     verify(metrics).startNewTaskController();
     verifyNoMoreInteractions(metrics);
     reset(metrics);
 
     // 2nd request for the same task (would fail w/ the `null` completion-stage)
-    CompletableFuture<TaskObj> taskFuture2 =
+    CompletableFuture<BasicTaskObj> taskFuture2 =
         tasks.submit(basicTaskRequest("hello", () -> null)).toCompletableFuture();
     soft.assertThat(taskFuture2).isSameAs(taskFuture);
     verifyNoMoreInteractions(metrics);
@@ -282,7 +281,7 @@ public class TestTasksServiceImpl {
     // Validate the optimization for the cached-object in TaskServiceImpl.execute()
     BasicTaskRequest req = basicTaskRequest("hello", () -> null);
     if (persist.getIfCached(req.objId()) != null) {
-      CompletableFuture<TaskObj> followUp = tasks.submit(req).toCompletableFuture();
+      CompletableFuture<BasicTaskObj> followUp = tasks.submit(req).toCompletableFuture();
       soft.assertThat(async.doWork()).isEqualTo(0);
       soft.assertThat(followUp).isCompletedExceptionally();
       verify(metrics).taskHasFinalFailure();
@@ -296,7 +295,7 @@ public class TestTasksServiceImpl {
     MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
     TestingTasksAsync async = new TestingTasksAsync(clock);
 
-    CompletableFuture<TaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
 
     TaskServiceMetrics metrics1 = mock(TaskServiceMetrics.class);
     TaskServiceMetrics metrics2 = mock(TaskServiceMetrics.class);
@@ -307,7 +306,7 @@ public class TestTasksServiceImpl {
     Tasks tasks2 = service2.forPersist(persist);
 
     BasicTaskRequest taskRequest1 = basicTaskRequest("hello", () -> taskCompletionStage);
-    CompletableFuture<TaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
     verify(metrics1).startNewTaskController();
     verifyNoMoreInteractions(metrics1);
     reset(metrics1);
@@ -323,7 +322,7 @@ public class TestTasksServiceImpl {
 
     clock.add(250, ChronoUnit.MILLIS);
     BasicTaskRequest taskRequest2 = basicTaskRequest("hello", () -> taskCompletionStage);
-    CompletableFuture<TaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
     verify(metrics2).startNewTaskController();
     verify(metrics2).startNewTaskController();
     verifyNoMoreInteractions(metrics2);
@@ -415,7 +414,7 @@ public class TestTasksServiceImpl {
     MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
     TestingTasksAsync async = new TestingTasksAsync(clock);
 
-    AtomicReference<CompletableFuture<TaskObj.Builder>> taskCompletionStage =
+    AtomicReference<CompletableFuture<BasicTaskObj.Builder>> taskCompletionStage =
         new AtomicReference<>(new CompletableFuture<>());
 
     TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
@@ -423,13 +422,13 @@ public class TestTasksServiceImpl {
     Tasks tasks = service.forPersist(persist);
     BasicTaskRequest taskRequest = basicTaskRequest("hello", taskCompletionStage::get);
 
-    CompletableFuture<TaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
     verify(metrics).startNewTaskController();
     verifyNoMoreInteractions(metrics);
     reset(metrics);
 
     // 2nd request for the same task (would fail w/ the `null` completion-stage)
-    CompletableFuture<TaskObj> taskFuture2 =
+    CompletableFuture<BasicTaskObj> taskFuture2 =
         tasks.submit(basicTaskRequest("hello", () -> null)).toCompletableFuture();
     soft.assertThat(taskFuture2).isSameAs(taskFuture);
 
@@ -514,7 +513,7 @@ public class TestTasksServiceImpl {
     TestingTasksAsync async1 = new TestingTasksAsync(clock);
     TestingTasksAsync async2 = new TestingTasksAsync(clock);
 
-    CompletableFuture<TaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
 
     TaskServiceMetrics metrics1 = mock(TaskServiceMetrics.class);
     TaskServiceMetrics metrics2 = mock(TaskServiceMetrics.class);
@@ -525,7 +524,7 @@ public class TestTasksServiceImpl {
     Tasks tasks2 = service2.forPersist(persist);
 
     BasicTaskRequest taskRequest1 = basicTaskRequest("hello", () -> taskCompletionStage);
-    CompletableFuture<TaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
     verify(metrics1).startNewTaskController();
     verifyNoMoreInteractions(metrics1);
     reset(metrics1);
@@ -543,7 +542,7 @@ public class TestTasksServiceImpl {
 
     clock.add(250, ChronoUnit.MILLIS);
     BasicTaskRequest taskRequest2 = basicTaskRequest("hello", () -> taskCompletionStage);
-    CompletableFuture<TaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
     verify(metrics2).startNewTaskController();
     verifyNoMoreInteractions(metrics2);
     reset(metrics2);
@@ -630,8 +629,8 @@ public class TestTasksServiceImpl {
     TestingTasksAsync async1 = new TestingTasksAsync(clock);
     TestingTasksAsync async2 = new TestingTasksAsync(clock);
 
-    CompletableFuture<TaskObj.Builder> taskCompletionStage1 = new CompletableFuture<>();
-    CompletableFuture<TaskObj.Builder> taskCompletionStage2 = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage1 = new CompletableFuture<>();
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage2 = new CompletableFuture<>();
 
     TaskServiceMetrics metrics1 = mock(TaskServiceMetrics.class);
     TaskServiceMetrics metrics2 = mock(TaskServiceMetrics.class);
@@ -642,7 +641,7 @@ public class TestTasksServiceImpl {
     Tasks tasks2 = service2.forPersist(persist);
 
     BasicTaskRequest taskRequest1 = basicTaskRequest("hello", () -> taskCompletionStage1);
-    CompletableFuture<TaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture1 = tasks1.submit(taskRequest1).toCompletableFuture();
     verify(metrics1).startNewTaskController();
     verifyNoMoreInteractions(metrics1);
     reset(metrics1);
@@ -659,7 +658,7 @@ public class TestTasksServiceImpl {
 
     clock.add(250, ChronoUnit.MILLIS);
     BasicTaskRequest taskRequest2 = basicTaskRequest("hello", () -> taskCompletionStage2);
-    CompletableFuture<TaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
+    CompletableFuture<BasicTaskObj> taskFuture2 = tasks2.submit(taskRequest2).toCompletableFuture();
     verify(metrics2).startNewTaskController();
     verifyNoMoreInteractions(metrics2);
     reset(metrics2);

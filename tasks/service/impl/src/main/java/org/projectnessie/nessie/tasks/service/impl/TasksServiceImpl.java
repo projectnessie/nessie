@@ -85,7 +85,7 @@ public class TasksServiceImpl implements TasksService {
     return new TasksImpl(persist);
   }
 
-  CompletionStage<TaskObj> submit(Persist persist, TaskRequest taskRequest) {
+  CompletionStage<TaskObj> submit(Persist persist, TaskRequest<?, ?> taskRequest) {
     ObjId objId = taskRequest.objId();
 
     // Try to get the object and immediately return if it has a final state. We expect to hit final
@@ -457,12 +457,12 @@ public class TasksServiceImpl implements TasksService {
   private static final class ExecParams {
     final Persist persist;
     final CompletableFuture<TaskObj> localResultFuture;
-    final TaskRequest taskRequest;
+    final TaskRequest<?, ?> taskRequest;
 
     final AtomicReference<TaskObj> runningObj = new AtomicReference<>();
     final AtomicReference<ScheduledHandle> runningUpdateScheduled = new AtomicReference<>();
 
-    ExecParams(Persist persist, TaskRequest taskRequest) {
+    ExecParams(Persist persist, TaskRequest<?, ?> taskRequest) {
       this.persist = persist;
       this.localResultFuture = new CompletableFuture<>();
       this.taskRequest = taskRequest;
@@ -490,8 +490,12 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
-    public CompletionStage<TaskObj> submit(TaskRequest taskRequest) {
-      return TasksServiceImpl.this.submit(persist, taskRequest);
+    public <T extends TaskObj, B extends TaskObj.Builder> CompletionStage<T> submit(
+        TaskRequest<T, B> taskRequest) {
+      @SuppressWarnings("unchecked")
+      CompletionStage<T> r =
+          (CompletionStage<T>) TasksServiceImpl.this.submit(persist, taskRequest);
+      return r;
     }
   }
 
