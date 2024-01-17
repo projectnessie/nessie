@@ -20,9 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import java.util.concurrent.Callable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,17 +57,15 @@ public class TestBlockingEventDelivery extends TestStandardEventDelivery {
     super.testDeliveryFailureWithRetry();
   }
 
+  @SuppressWarnings("unchecked")
   void setUpVertxExecuteBlocking() {
     doAnswer(
             invocation -> {
-              Handler<Promise<Object>> blockingHandler = invocation.getArgument(0);
-              Promise<Object> promise = Promise.promise();
-              blockingHandler.handle(promise);
-              Handler<AsyncResult<Object>> resultHandler = invocation.getArgument(2);
-              resultHandler.handle(promise.future());
+              Callable<Void> task = invocation.getArgument(0);
+              task.call();
               return null;
             })
         .when(vertx)
-        .executeBlocking(any(), eq(false), any());
+        .executeBlocking(any(Callable.class), eq(false));
   }
 }

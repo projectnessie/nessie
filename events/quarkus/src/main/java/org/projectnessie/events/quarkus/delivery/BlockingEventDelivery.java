@@ -38,23 +38,16 @@ class BlockingEventDelivery extends StandardEventDelivery {
   @Override
   void startAttempt(int currentAttempt, Duration nextDelay, Throwable previousError) {
     vertx.<Void>executeBlocking(
-        promise -> {
+        () -> {
           try {
             getSelf().tryDeliver(currentAttempt);
-            promise.complete(null);
-          } catch (Throwable t) {
-            promise.fail(t);
-          }
-        },
-        false, // accept concurrent executions (ordering is not guaranteed)
-        result -> {
-          if (result.succeeded()) {
             getSelf().deliverySuccessful(currentAttempt);
-          } else {
-            getSelf()
-                .attemptFailed(
-                    currentAttempt, nextDelay, addSuppressed(result.cause(), previousError));
+          } catch (Exception e) {
+            getSelf().attemptFailed(currentAttempt, nextDelay, addSuppressed(e, previousError));
           }
-        });
+          return null;
+        },
+        false // accept concurrent executions (ordering is not guaranteed)
+        );
   }
 }
