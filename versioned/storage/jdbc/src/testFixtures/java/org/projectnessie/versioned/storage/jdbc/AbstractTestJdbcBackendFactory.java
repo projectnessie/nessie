@@ -225,10 +225,13 @@ public abstract class AbstractTestJdbcBackendFactory {
           soft.assertThat(backend).isNotNull().isInstanceOf(JdbcBackend.class);
           soft.assertThatIllegalStateException()
               .isThrownBy(backend::setupSchema)
-              .withMessageStartingWith("Expected columns [")
-              .withMessageContaining("] do not match the existing columns [")
-              .withMessageContaining(
-                  "] for table '" + TABLE_REFS + "'. DDL template:\nCREATE TABLE " + TABLE_REFS);
+              .withMessageStartingWith(
+                  "The database table "
+                      + TABLE_REFS
+                      + " is missing mandatory columns created_at,deleted,ext_info,pointer,prev_ptr.\n"
+                      + "Found columns : boo,meep,ref_name,repo\n"
+                      + "Expected columns : ")
+              .withMessageContaining("DDL template:\nCREATE TABLE " + TABLE_REFS);
         }
       } finally {
         ((AutoCloseable) dataSource).close();

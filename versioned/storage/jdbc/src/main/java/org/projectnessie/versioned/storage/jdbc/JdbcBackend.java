@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.lang.String.format;
 import static org.projectnessie.versioned.storage.jdbc.AbstractJdbcPersist.sqlSelectMultiple;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.BIGINT;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.BOOL;
@@ -43,6 +44,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -247,13 +250,18 @@ final class JdbcBackend implements Backend {
               primaryKey.keySet(),
               tableName,
               createTable);
-          checkState(
-              columns.keySet().containsAll(expectedColumns),
-              "Expected columns %s do not match the existing columns %s for table '%s'. DDL template:\n%s",
-              expectedColumns,
-              columns.keySet(),
-              tableName,
-              createTable);
+          Set<String> missingColumns = new HashSet<>(expectedColumns);
+          missingColumns.removeAll(columns.keySet());
+          if (!missingColumns.isEmpty()) {
+            throw new IllegalStateException(
+                format(
+                    "The database table %s is missing mandatory columns %s.%nFound columns : %s%nExpected columns : %s%nDDL template:\n%s",
+                    tableName,
+                    sortedColumnNames(missingColumns),
+                    sortedColumnNames(columns.keySet()),
+                    sortedColumnNames(expectedColumns),
+                    createTable));
+          }
 
           // Existing table looks compatible
           return;
@@ -262,6 +270,10 @@ final class JdbcBackend implements Backend {
 
       st.executeUpdate(createTable);
     }
+  }
+
+  private static String sortedColumnNames(Collection<?> input) {
+    return input.stream().map(Object::toString).sorted().collect(Collectors.joining(","));
   }
 
   @Override
