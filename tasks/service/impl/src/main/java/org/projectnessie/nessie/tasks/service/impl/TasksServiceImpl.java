@@ -60,12 +60,24 @@ public class TasksServiceImpl implements TasksService {
   private final ConcurrentMap<TaskKey, CompletionStage<TaskObj>> currentTasks =
       new ConcurrentHashMap<>();
 
+  private volatile boolean shutdown;
+
   public TasksServiceImpl(TasksAsync async, TaskServiceMetrics metrics, TasksServiceConfig config) {
     this.async = async;
     this.metrics = metrics;
     this.name = config.name();
     this.raceWaitMillisMin = config.raceWaitMillisMin();
     this.raceWaitMillisMax = config.raceWaitMillisMax();
+  }
+
+  @Override
+  public CompletionStage<Void> shutdown() {
+    shutdown = true;
+    return CompletableFuture.allOf(
+            currentTasks.values().stream()
+                .map(CompletionStage::toCompletableFuture)
+                .toArray(CompletableFuture[]::new))
+        .thenApply(x -> null);
   }
 
   @Override
@@ -105,6 +117,15 @@ public class TasksServiceImpl implements TasksService {
 
     // Ensure that only one "base" completable future exists for each obj-id.
     TaskKey taskKey = TaskKey.taskKey(persist.config().repositoryId(), objId);
+
+    // The shutdown-check can be racy, if shutdown() is called after the `if` but before the access
+    // to `currentTasks`. But since `shutdown()` is usually only relevant for tests, that trade-off
+    // is acceptable.
+    if (shutdown) {
+      return CompletableFuture.failedStage(
+          new IllegalStateException("Tasks service already shutdown"));
+    }
+
     return currentTasks.computeIfAbsent(
         taskKey,
         id -> {

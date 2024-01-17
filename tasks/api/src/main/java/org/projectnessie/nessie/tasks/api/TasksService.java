@@ -15,6 +15,7 @@
  */
 package org.projectnessie.nessie.tasks.api;
 
+import java.util.concurrent.CompletionStage;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
@@ -24,4 +25,6 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 public interface TasksService {
   /** Retrieve the {@link Tasks} instance for a given {@link Persist}. */
   Tasks forPersist(Persist persist);
+
+  CompletionStage<Void> shutdown();
 }
