@@ -15,8 +15,8 @@
  */
 package org.projectnessie.events.quarkus.collector;
 
-import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.ENDUSER_ID;
-import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.PEER_SERVICE;
+import static io.opentelemetry.semconv.SemanticAttributes.ENDUSER_ID;
+import static io.opentelemetry.semconv.SemanticAttributes.PEER_SERVICE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
