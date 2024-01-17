@@ -24,15 +24,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
-import java.util.concurrent.CompletionStage;
+import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskRequest;
 import org.projectnessie.nessie.tasks.api.TaskState;
-import org.projectnessie.nessie.tasks.api.TaskType;
-import org.projectnessie.nessie.tasks.async.TasksAsync;
-import org.projectnessie.nessie.tasks.service.spi.TaskTypeController;
 
-public class BasicTaskTypeController implements TaskTypeController {
+public class BasicTaskBehavior implements TaskBehavior {
 
   public static final TemporalAmount FRESH_RUNNING_RETRY_NOT_BEFORE =
       Duration.of(2, ChronoUnit.SECONDS);
@@ -42,18 +39,9 @@ public class BasicTaskTypeController implements TaskTypeController {
       Duration.of(5, ChronoUnit.SECONDS);
   public static final TemporalAmount RUNNING_UPDATE_INTERVAL = Duration.of(250, ChronoUnit.MILLIS);
 
-  public BasicTaskTypeController() {}
+  public static final BasicTaskBehavior INSTANCE = new BasicTaskBehavior();
 
-  @Override
-  public TaskType taskType() {
-    return BasicTaskRequest.TASK_TYPE;
-  }
-
-  @Override
-  public CompletionStage<TaskObj.Builder> submitExecution(
-      TasksAsync tasksAsync, TaskRequest taskRequest) {
-    return ((BasicTaskRequest) taskRequest).taskCompletionStageSupplier().get();
-  }
+  public BasicTaskBehavior() {}
 
   @Override
   public Throwable stateAsException(TaskObj obj) {

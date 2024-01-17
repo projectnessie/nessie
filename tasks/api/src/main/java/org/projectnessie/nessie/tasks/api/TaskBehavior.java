@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.nessie.tasks.service.spi;
+package org.projectnessie.nessie.tasks.api;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.concurrent.CompletionStage;
-import org.projectnessie.nessie.tasks.api.TaskObj;
-import org.projectnessie.nessie.tasks.api.TaskRequest;
-import org.projectnessie.nessie.tasks.api.TaskState;
-import org.projectnessie.nessie.tasks.api.TaskStatus;
-import org.projectnessie.nessie.tasks.api.TaskType;
-import org.projectnessie.nessie.tasks.async.TasksAsync;
 
 /**
- * Implements the logic required for each {@linkplain TaskType task type}.
+ * Defines the behavior of tasks.
  *
- * <p>This included the asynchronous execution, calculation or retry timestamps and lost-task
- * timeouts and mapping between exceptions and task state.
+ * <p>This included the calculation or retry timestamps and lost-task timeouts and mapping between
+ * exceptions and task state.
  */
-public interface TaskTypeController {
-  /** The task-type for which this definition is responsible. */
-  TaskType taskType();
+public interface TaskBehavior {
 
   /**
    * Convert the task state as an exception, if the state represents an error or failure state. This
@@ -63,19 +54,13 @@ public interface TaskTypeController {
 
   /**
    * Check whether the given exception, which has been thrown from a {@linkplain
-   * #submitExecution(TasksAsync, TaskRequest) task execution}, can be retried. Retryable exception
-   * result in a {@linkplain TaskStatus#ERROR_RETRY error-retry} state, non-retryable in a final
+   * TaskRequest#submitExecution() task execution}, can be retried. A retryable exception results in
+   * the {@linkplain TaskStatus#ERROR_RETRY error-retry} state, non-retryable in the final
    * {@linkplain TaskStatus#FAILURE failure} state
    */
   default boolean isRetryableError(Throwable t) {
     return false;
   }
-
-  /**
-   * Start execution of the task, this function must not block and/or wait for the task execution to
-   * finish.
-   */
-  CompletionStage<TaskObj.Builder> submitExecution(TasksAsync tasksAsync, TaskRequest taskRequest);
 
   /**
    * Create a new task-object builder for a <em>new</em> task object using the given task-request.

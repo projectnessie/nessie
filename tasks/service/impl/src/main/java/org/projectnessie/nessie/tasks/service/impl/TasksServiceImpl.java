@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.concurrent.CompletableFuture.failedStage;
-import static org.projectnessie.nessie.tasks.service.impl.TypeControllerRegistry.controllerForTaskType;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskRequest;
 import org.projectnessie.nessie.tasks.api.TaskState;
@@ -39,7 +39,6 @@ import org.projectnessie.nessie.tasks.api.TasksService;
 import org.projectnessie.nessie.tasks.async.ScheduledHandle;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
-import org.projectnessie.nessie.tasks.service.spi.TaskTypeController;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -75,7 +74,7 @@ public class TasksServiceImpl implements TasksService {
   }
 
   CompletionStage<TaskObj> submit(Persist persist, TaskRequest taskRequest) {
-    TaskTypeController taskDefinition = controllerForTaskType(taskRequest.taskType());
+    TaskBehavior behavior = taskRequest.behavior();
 
     ObjId objId = taskRequest.objId();
 
@@ -95,7 +94,7 @@ public class TasksServiceImpl implements TasksService {
       switch (status) {
         case FAILURE:
           metrics.taskHasFinalFailure();
-          return failedStage(taskDefinition.stateAsException(taskObj));
+          return failedStage(behavior.stateAsException(taskObj));
         case SUCCESS:
           metrics.taskHasFinalSuccess();
           return completedStage(taskObj);
@@ -112,7 +111,7 @@ public class TasksServiceImpl implements TasksService {
         taskKey,
         id -> {
           metrics.startNewTaskController();
-          ExecParams execParams = new ExecParams(persist, taskRequest, taskDefinition);
+          ExecParams execParams = new ExecParams(persist, taskRequest);
           LOGGER.trace("{}: Starting new local task controller for {}", name, execParams);
           async.call(() -> tryLocal(execParams));
           return execParams.localResultFuture;
@@ -159,7 +158,7 @@ public class TasksServiceImpl implements TasksService {
           break;
         case FAILURE:
           metrics.taskAttemptFinalFailure();
-          finalFailure(params, params.controller.stateAsException(obj));
+          finalFailure(params, params.taskRequest.behavior().stateAsException(obj));
           break;
         case RUNNING:
           metrics.taskAttemptRunning();
@@ -178,14 +177,14 @@ public class TasksServiceImpl implements TasksService {
 
       try {
         metrics.taskCreation();
+        TaskBehavior behavior = params.taskRequest.behavior();
         TaskObj obj =
             withNewVersionToken(
-                params
-                    .controller
+                behavior
                     .newObjBuilder(params.taskRequest)
                     .id(params.taskRequest.objId())
-                    .type(params.controller.taskType().objType())
-                    .taskState(params.controller.runningTaskState(async.clock(), null)));
+                    .type(params.taskRequest.objType())
+                    .taskState(behavior.runningTaskState(async.clock(), null)));
 
         if (params.persist.storeObj(obj)) {
           LOGGER.trace("{}: Task creation for {} succeeded", name, params);
@@ -222,12 +221,10 @@ public class TasksServiceImpl implements TasksService {
     if (now.compareTo(requireNonNull(state.lostNotBefore())) >= 0) {
       metrics.taskLossDetected();
       LOGGER.warn("{}: Detected lost task for {}", name, params);
+      TaskBehavior behavior = params.taskRequest.behavior();
       TaskObj retryState =
           withNewVersionToken(
-              params
-                  .controller
-                  .newObjBuilder(obj)
-                  .taskState(params.controller.runningTaskState(async.clock(), obj)));
+              behavior.newObjBuilder(obj).taskState(behavior.runningTaskState(async.clock(), obj)));
 
       if (params.persist.updateConditional(obj, retryState)) {
         metrics.taskLostReassigned();
@@ -245,12 +242,10 @@ public class TasksServiceImpl implements TasksService {
       throws ObjTooLargeException {
     Instant now = async.clock().instant();
     if (now.compareTo(requireNonNull(state.retryNotBefore())) >= 0) {
+      TaskBehavior behavior = params.taskRequest.behavior();
       TaskObj retryState =
           withNewVersionToken(
-              params
-                  .controller
-                  .newObjBuilder(obj)
-                  .taskState(params.controller.runningTaskState(async.clock(), obj)));
+              behavior.newObjBuilder(obj).taskState(behavior.runningTaskState(async.clock(), obj)));
 
       if (params.persist.updateConditional(obj, retryState)) {
         metrics.taskRetryStateChangeSucceeded();
@@ -272,8 +267,8 @@ public class TasksServiceImpl implements TasksService {
     scheduleTaskRunningUpdate(params, obj);
 
     params
-        .controller
-        .submitExecution(async, params.taskRequest)
+        .taskRequest
+        .submitExecution()
         .handle(
             (resultBuilder, failure) -> {
               try {
@@ -308,15 +303,14 @@ public class TasksServiceImpl implements TasksService {
                 } else /* failure != null */ {
                   LOGGER.trace("{}: Task execution for {} failed, updating database", name, params);
 
-                  boolean retryable = params.controller.isRetryableError(failure);
+                  TaskBehavior behavior = params.taskRequest.behavior();
+                  boolean retryable = behavior.isRetryableError(failure);
                   TaskState newState =
                       retryable
-                          ? params.controller.retryableErrorTaskState(
-                              async.clock(), expected, failure)
-                          : params.controller.failureTaskState(failure);
+                          ? behavior.retryableErrorTaskState(async.clock(), expected, failure)
+                          : behavior.failureTaskState(failure);
                   TaskObj updatedObj =
-                      withNewVersionToken(
-                          params.controller.newObjBuilder(expected).taskState(newState));
+                      withNewVersionToken(behavior.newObjBuilder(expected).taskState(newState));
                   if (params.persist.updateConditional(expected, updatedObj)) {
                     // Database updated with final result
                     if (retryable) {
@@ -362,7 +356,7 @@ public class TasksServiceImpl implements TasksService {
 
   private void scheduleTaskRunningUpdate(ExecParams params, TaskObj current) {
     Instant scheduleNotBefore =
-        params.controller.performRunningStateUpdateAt(async.clock(), current);
+        params.taskRequest.behavior().performRunningStateUpdateAt(async.clock(), current);
     params.runningUpdateScheduled.set(
         async.schedule(() -> updateRunningState(params), scheduleNotBefore));
   }
@@ -390,12 +384,12 @@ public class TasksServiceImpl implements TasksService {
     metrics.taskUpdateRunningState();
     TaskState state = current.taskState();
     if (state.status() == TaskStatus.RUNNING) {
+      TaskBehavior behavior = params.taskRequest.behavior();
       TaskObj updated =
           withNewVersionToken(
-              params
-                  .controller
+              behavior
                   .newObjBuilder(current)
-                  .taskState(params.controller.runningTaskState(async.clock(), null)));
+                  .taskState(behavior.runningTaskState(async.clock(), null)));
       if (params.runningObj.compareAndSet(current, updated)) {
         try {
           if (params.persist.updateConditional(current, updated)) {
@@ -445,16 +439,14 @@ public class TasksServiceImpl implements TasksService {
     final Persist persist;
     final CompletableFuture<TaskObj> localResultFuture;
     final TaskRequest taskRequest;
-    final TaskTypeController controller;
 
     final AtomicReference<TaskObj> runningObj = new AtomicReference<>();
     final AtomicReference<ScheduledHandle> runningUpdateScheduled = new AtomicReference<>();
 
-    ExecParams(Persist persist, TaskRequest taskRequest, TaskTypeController controller) {
+    ExecParams(Persist persist, TaskRequest taskRequest) {
       this.persist = persist;
       this.localResultFuture = new CompletableFuture<>();
       this.taskRequest = taskRequest;
-      this.controller = controller;
     }
 
     ObjId objId() {
@@ -463,7 +455,7 @@ public class TasksServiceImpl implements TasksService {
 
     @Override
     public String toString() {
-      return taskRequest.taskType().name() + ':' + taskRequest.objId();
+      return taskRequest.objType().name() + ':' + taskRequest.objId();
     }
   }
 

@@ -15,23 +15,24 @@
  */
 package org.projectnessie.nessie.tasks.service.tasktypes;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskObj.TYPE;
 
-import com.google.common.hash.Hashing;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskRequest;
-import org.projectnessie.nessie.tasks.api.TaskType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
 public interface BasicTaskRequest extends TaskRequest {
   @Override
   @Value.NonAttribute
-  default TaskType taskType() {
-    return TASK_TYPE;
+  default ObjType objType() {
+    return TYPE;
   }
 
   @Value.Parameter(order = 1)
@@ -43,19 +44,21 @@ public interface BasicTaskRequest extends TaskRequest {
   @Value.Parameter(order = 3)
   Supplier<CompletionStage<TaskObj.Builder>> taskCompletionStageSupplier();
 
-  TaskType TASK_TYPE = () -> BasicTaskObj.TYPE;
+  @Override
+  @Value.Parameter(order = 4)
+  TaskBehavior behavior();
+
+  @Override
+  @Value.NonAttribute
+  default CompletionStage<TaskObj.Builder> submitExecution() {
+    return taskCompletionStageSupplier().get();
+  }
 
   static BasicTaskRequest basicTaskRequest(
       String taskParameter,
       Supplier<CompletionStage<TaskObj.Builder>> taskCompletionStageSupplier) {
-    ObjId objId =
-        ObjId.objIdFromByteArray(
-            Hashing.sha256()
-                .newHasher()
-                .putString(TASK_TYPE.name(), UTF_8)
-                .putString(taskParameter, UTF_8)
-                .hash()
-                .asBytes());
-    return ImmutableBasicTaskRequest.of(taskParameter, objId, taskCompletionStageSupplier);
+    ObjId objId = ObjIdHasher.objIdHasher(TYPE.name()).hash(taskParameter).generate();
+    return ImmutableBasicTaskRequest.of(
+        taskParameter, objId, taskCompletionStageSupplier, BasicTaskBehavior.INSTANCE);
   }
 }

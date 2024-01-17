@@ -15,19 +15,27 @@
  */
 package org.projectnessie.nessie.tasks.api;
 
+import java.util.concurrent.CompletionStage;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 /** Base interface for value objects that identify a task's input parameters. */
 public interface TaskRequest {
-  /** Defines the {@linkplain TaskType task-type} for this request. */
-  TaskType taskType();
+  /** Declares the {@linkplain ObjType object type} for this request. */
+  ObjType objType();
 
   /**
-   * Globally identifies the task request across all {@linkplain TaskType task-types} (and
-   * {@linkplain ObjType object types}).
+   * Globally identifies the task request across all {@linkplain ObjType object types}).
    *
    * <p>Implementations must derive the ID from the task type and the task parameters.
    */
   ObjId objId();
+
+  TaskBehavior behavior();
+
+  /**
+   * Start execution of the task, this function must not block and/or wait for the task execution to
+   * finish.
+   */
+  CompletionStage<TaskObj.Builder> submitExecution();
 }

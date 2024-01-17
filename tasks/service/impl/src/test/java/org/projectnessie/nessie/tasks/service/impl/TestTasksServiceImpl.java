@@ -23,10 +23,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.projectnessie.nessie.tasks.service.TasksServiceConfig.DEFAULT_RACE_WAIT_MILLIS_MAX;
 import static org.projectnessie.nessie.tasks.service.TasksServiceConfig.DEFAULT_RACE_WAIT_MILLIS_MIN;
+import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.FRESH_LOST_RETRY_NOT_BEFORE;
+import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.FRESH_RUNNING_RETRY_NOT_BEFORE;
+import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.RETRYABLE_ERROR_NOT_BEFORE;
 import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskRequest.basicTaskRequest;
-import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskTypeController.FRESH_LOST_RETRY_NOT_BEFORE;
-import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskTypeController.FRESH_RUNNING_RETRY_NOT_BEFORE;
-import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskTypeController.RETRYABLE_ERROR_NOT_BEFORE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
 
 import java.time.Instant;

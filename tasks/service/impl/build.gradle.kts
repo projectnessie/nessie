@@ -24,7 +24,6 @@ extra["maven.name"] = "Nessie - Tasks - Service"
 
 dependencies {
   implementation(project(":nessie-tasks-api"))
-  implementation(project(":nessie-tasks-service-spi"))
   implementation(project(":nessie-tasks-service-async"))
   implementation(project(":nessie-versioned-storage-common"))
 
