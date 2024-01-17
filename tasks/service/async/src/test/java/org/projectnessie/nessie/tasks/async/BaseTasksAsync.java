@@ -22,17 +22,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -159,13 +162,11 @@ public abstract class BaseTasksAsync {
     TasksAsync async = tasksAsync();
 
     CompletionStage<Void> stage =
-        async
-            .schedule(
-                () -> {
-                  throw new RuntimeException("hello");
-                },
-                Instant.now())
-            .toCompletionStage();
+        async.schedule(
+            () -> {
+              throw new RuntimeException("hello");
+            },
+            Instant.now());
 
     Throwable mappedFailure =
         stage.handle((result, failure) -> failure).toCompletableFuture().get();
@@ -196,25 +197,46 @@ public abstract class BaseTasksAsync {
   public void cancelDoesNotError() {
     // See below
     TasksAsync async = tasksAsync();
-    ScheduledHandle handle =
-        async.schedule(() -> {}, async.clock().instant().plus(1500, ChronoUnit.MILLIS));
-    soft.assertThatCode(handle::cancel).doesNotThrowAnyException();
+    AtomicBoolean mark = new AtomicBoolean();
+    CompletionStage<Void> handle =
+        async.schedule(() -> mark.set(true), async.clock().instant().plus(1500, ChronoUnit.MILLIS));
+    handle.toCompletableFuture().cancel(true);
+    soft.assertThat(mark).isFalse();
   }
 
   @Test
-  @Disabled(
-      "Testing scheduled/timer cancellation requires either tweaking the inner workings of Vert.X / ScheduledExecutorService or results in extremely long test durations.")
   public void cancelReallyWorks() throws InterruptedException {
     TasksAsync async = tasksAsync();
 
-    Semaphore sem = new Semaphore(0);
+    CountDownLatch started = new CountDownLatch(1);
+    CountDownLatch cancelled = new CountDownLatch(1);
 
-    ScheduledHandle handle =
-        async.schedule(sem::release, async.clock().instant().plus(1500, ChronoUnit.MILLIS));
+    CompletionStage<Void> handle =
+        async.schedule(
+            () -> {
+              try {
+                started.countDown();
+                new Semaphore(0).acquire();
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+            },
+            async.clock().instant().plus(60, ChronoUnit.SECONDS));
     soft.assertThat(handle).isNotNull();
 
-    handle.cancel();
-    soft.assertThat(sem.tryAcquire(1, 4500, TimeUnit.MILLISECONDS)).isFalse();
+    AtomicReference<Object> result = new AtomicReference<>();
+    AtomicReference<Throwable> error = new AtomicReference<>();
+    handle.whenComplete(
+        (r, t) -> {
+          cancelled.countDown();
+          result.set(r);
+          error.set(t);
+        });
+
+    handle.toCompletableFuture().cancel(true);
+    soft.assertThat(cancelled.await(10, TimeUnit.SECONDS)).isTrue();
+    soft.assertThat(result.get()).isNull();
+    soft.assertThat(error.get()).isInstanceOf(CancellationException.class);
   }
 
   @Test

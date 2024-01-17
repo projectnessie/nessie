@@ -19,13 +19,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Supplier;
-import org.projectnessie.nessie.tasks.async.ScheduledHandle;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 
 public class JavaPoolTasksAsync implements TasksAsync {
@@ -41,17 +41,12 @@ public class JavaPoolTasksAsync implements TasksAsync {
   }
 
   @Override
-  public CompletionStage<Void> call(Runnable runnable) {
-    return CompletableFuture.runAsync(runnable, executorService);
-  }
-
-  @Override
   public <R> CompletionStage<R> supply(Supplier<R> supplier) {
     return CompletableFuture.supplyAsync(supplier, executorService);
   }
 
   @Override
-  public ScheduledHandle schedule(Runnable runnable, Instant scheduleNotBefore) {
+  public CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore) {
     long realDelay = calculateDelay(clock, minimumDelayMillis, scheduleNotBefore);
 
     CompletableFuture<Void> completable = new CompletableFuture<>();
@@ -69,33 +64,18 @@ public class JavaPoolTasksAsync implements TasksAsync {
             realDelay,
             MILLISECONDS);
 
-    return new JavaScheduledHandle(future, completable);
+    completable.whenComplete(
+        (v, t) -> {
+          if (t instanceof CancellationException) {
+            future.cancel(true); // allow interruption of blocking tasks
+          }
+        });
+
+    return completable;
   }
 
   @Override
   public Clock clock() {
     return clock;
-  }
-
-  private static final class JavaScheduledHandle implements ScheduledHandle {
-
-    final ScheduledFuture<?> future;
-    final CompletableFuture<Void> completable;
-
-    JavaScheduledHandle(ScheduledFuture<?> future, CompletableFuture<Void> completable) {
-      this.future = future;
-      this.completable = completable;
-    }
-
-    @Override
-    public CompletionStage<Void> toCompletionStage() {
-      return completable;
-    }
-
-    @Override
-    public void cancel() {
-      future.cancel(false);
-      completable.cancel(false);
-    }
   }
 }

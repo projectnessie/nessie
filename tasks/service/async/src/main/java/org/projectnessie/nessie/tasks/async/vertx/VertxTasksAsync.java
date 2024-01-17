@@ -18,11 +18,11 @@ package org.projectnessie.nessie.tasks.async.vertx;
 import io.vertx.core.Vertx;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
-import org.projectnessie.nessie.tasks.async.ScheduledHandle;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 
 public class VertxTasksAsync implements TasksAsync {
@@ -61,7 +61,7 @@ public class VertxTasksAsync implements TasksAsync {
   }
 
   @Override
-  public ScheduledHandle schedule(Runnable runnable, Instant scheduleNotBefore) {
+  public CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore) {
     long realDelay = calculateDelay(clock, minimumDelayMillis, scheduleNotBefore);
 
     // Cannot use Vertx.timer(), because current Quarkus 3.6.5 has a Vertx version that does not
@@ -74,44 +74,32 @@ public class VertxTasksAsync implements TasksAsync {
     long timerId =
         vertx.setTimer(
             realDelay,
-            id -> {
-              try {
-                runnable.run();
-                completableFuture.complete(null);
-              } catch (Throwable t) {
-                completableFuture.completeExceptionally(new CompletionException(t));
-              }
-            });
+            id ->
+                // scheduling the runnable as a blocking task, a timer handlers must not block
+                vertx.executeBlocking(
+                    () -> {
+                      try {
+                        runnable.run();
+                        completableFuture.complete(null);
+                        return null;
+                      } catch (Throwable t) {
+                        completableFuture.completeExceptionally(new CompletionException(t));
+                        return null;
+                      }
+                    }));
 
-    return new VertxScheduledHandle(vertx, timerId, completableFuture);
+    completableFuture.whenComplete(
+        (v, t) -> {
+          if (t instanceof CancellationException) {
+            vertx.cancelTimer(timerId); // won't interrupt blocking tasks!
+          }
+        });
+
+    return completableFuture;
   }
 
   @Override
   public Clock clock() {
     return clock;
-  }
-
-  private static final class VertxScheduledHandle implements ScheduledHandle {
-
-    private final Vertx vertx;
-    private final long timerId;
-    private final CompletionStage<Void> stage;
-
-    VertxScheduledHandle(Vertx vertx, long timerId, CompletionStage<Void> stage) {
-      this.vertx = vertx;
-      this.timerId = timerId;
-      this.stage = stage;
-    }
-
-    @Override
-    public CompletionStage<Void> toCompletionStage() {
-      return stage;
-    }
-
-    @Override
-    public void cancel() {
-      vertx.cancelTimer(timerId);
-      stage.toCompletableFuture().cancel(true);
-    }
   }
 }

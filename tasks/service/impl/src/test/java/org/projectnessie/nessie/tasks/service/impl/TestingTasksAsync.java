@@ -19,11 +19,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
-import org.projectnessie.nessie.tasks.async.ScheduledHandle;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 
 /**
@@ -50,6 +50,8 @@ public class TestingTasksAsync implements TasksAsync {
       if (t == null || t.runAt.compareTo(now) > 0) {
         break;
       }
+      System.out.println("doWork   " + now);
+      System.out.println("         " + t.runAt);
       scheduledTasks.remove(t);
       if (t.cancelled) {
         continue;
@@ -69,21 +71,17 @@ public class TestingTasksAsync implements TasksAsync {
     return clock;
   }
 
-  @Override
-  public CompletionStage<Void> call(Runnable runnable) {
-    return schedule(runnable, Instant.EPOCH).toCompletionStage();
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public <R> CompletionStage<R> supply(Supplier<R> supplier) {
     ScheduledTask task = new ScheduledTask(Instant.EPOCH, (Supplier<Object>) supplier);
     scheduledTasks.add(task);
+    System.out.println("supply");
     return (CompletionStage<R>) task.completable;
   }
 
   @Override
-  public ScheduledHandle schedule(Runnable runnable, Instant scheduleNotBefore) {
+  public CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore) {
     ScheduledTask task =
         new ScheduledTask(
             scheduleNotBefore,
@@ -91,11 +89,19 @@ public class TestingTasksAsync implements TasksAsync {
               runnable.run();
               return null;
             });
+    System.out.println("schedule " + scheduleNotBefore);
+    new Exception().printStackTrace(System.out);
     scheduledTasks.add(task);
-    return task;
+    task.completable.whenComplete(
+        (v, t) -> {
+          if (t instanceof CancellationException) {
+            task.cancelled = true;
+          }
+        });
+    return task.completionStage();
   }
 
-  static final class ScheduledTask implements ScheduledHandle, Comparable<ScheduledTask> {
+  static final class ScheduledTask implements Comparable<ScheduledTask> {
     private final Instant runAt;
     private final Supplier<Object> runnable;
     private final long random;
@@ -119,14 +125,8 @@ public class TestingTasksAsync implements TasksAsync {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    @Override
-    public CompletionStage<Void> toCompletionStage() {
+    CompletionStage<Void> completionStage() {
       return (CompletionStage) completable;
-    }
-
-    @Override
-    public void cancel() {
-      cancelled = true;
     }
   }
 }

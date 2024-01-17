@@ -18,11 +18,15 @@ package org.projectnessie.nessie.tasks.async.pool;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.projectnessie.nessie.tasks.async.BaseTasksAsync;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 
@@ -36,12 +40,37 @@ public class TestJavaPoolTasksAsync extends BaseTasksAsync {
 
   @AfterAll
   public static void tearDown() throws InterruptedException {
-    executorService.shutdown();
+    executorService.shutdownNow();
     assertTrue(executorService.awaitTermination(30, TimeUnit.SECONDS));
   }
 
   @Override
   protected TasksAsync tasksAsync() {
     return new JavaPoolTasksAsync(executorService, Clock.systemUTC(), 1L);
+  }
+
+  @Test
+  public void cancelRunningWithInterrupt() throws InterruptedException {
+    TasksAsync async = tasksAsync();
+
+    CountDownLatch started = new CountDownLatch(1);
+    CountDownLatch finished = new CountDownLatch(1);
+
+    CompletionStage<Void> handle =
+        async.schedule(
+            () -> {
+              try {
+                started.countDown();
+                new Semaphore(0).acquire();
+              } catch (InterruptedException ignored) {
+                finished.countDown();
+              }
+            },
+            async.clock().instant());
+    soft.assertThat(handle).isNotNull();
+
+    soft.assertThat(started.await(10, TimeUnit.SECONDS)).isTrue();
+    handle.toCompletableFuture().cancel(true);
+    soft.assertThat(finished.await(10, TimeUnit.SECONDS)).isTrue();
   }
 }

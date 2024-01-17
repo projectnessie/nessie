@@ -36,7 +36,6 @@ import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.nessie.tasks.api.TaskStatus;
 import org.projectnessie.nessie.tasks.api.Tasks;
 import org.projectnessie.nessie.tasks.api.TasksService;
-import org.projectnessie.nessie.tasks.async.ScheduledHandle;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -382,9 +381,11 @@ public class TasksServiceImpl implements TasksService {
 
   private TaskObj stopTaskRunningUpdate(ExecParams params) {
     TaskObj current = params.runningObj.getAndSet(null);
-    ScheduledHandle handle = params.runningUpdateScheduled.getAndSet(null);
+    CompletionStage<Void> handle = params.runningUpdateScheduled.getAndSet(null);
     if (handle != null) {
-      handle.cancel();
+      // Don't interrupt, not all implementations support that (Vert.X won't, see
+      // https://github.com/eclipse-vertx/vert.x/issues/3334)
+      handle.toCompletableFuture().cancel(false);
     }
     return current;
   }
@@ -460,7 +461,7 @@ public class TasksServiceImpl implements TasksService {
     final TaskRequest<?, ?> taskRequest;
 
     final AtomicReference<TaskObj> runningObj = new AtomicReference<>();
-    final AtomicReference<ScheduledHandle> runningUpdateScheduled = new AtomicReference<>();
+    final AtomicReference<CompletionStage<Void>> runningUpdateScheduled = new AtomicReference<>();
 
     ExecParams(Persist persist, TaskRequest<?, ?> taskRequest) {
       this.persist = persist;

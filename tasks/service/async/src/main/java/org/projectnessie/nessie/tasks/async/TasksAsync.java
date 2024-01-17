@@ -23,11 +23,17 @@ import java.util.function.Supplier;
 public interface TasksAsync {
   Clock clock();
 
-  CompletionStage<Void> call(Runnable runnable);
+  default CompletionStage<Void> call(Runnable runnable) {
+    return supply(
+        () -> {
+          runnable.run();
+          return null;
+        });
+  }
 
   <R> CompletionStage<R> supply(Supplier<R> runnable);
 
-  ScheduledHandle schedule(Runnable runnable, Instant scheduleNotBefore);
+  CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore);
 
   default long calculateDelay(Clock clock, long minimumDelayMillis, Instant scheduleNotBefore) {
     long retryEarliestEpochMillis = scheduleNotBefore.toEpochMilli();
