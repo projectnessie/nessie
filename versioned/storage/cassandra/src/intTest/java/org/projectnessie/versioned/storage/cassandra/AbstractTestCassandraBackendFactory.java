@@ -191,13 +191,13 @@ public abstract class AbstractTestCassandraBackendFactory {
         soft.assertThat(backend).isNotNull().isInstanceOf(CassandraBackend.class);
         soft.assertThatIllegalStateException()
             .isThrownBy(backend::setupSchema)
-            .withMessageStartingWith("Expected columns [")
-            .withMessageContaining("] do not contain all columns [")
-            .withMessageContaining(
-                "] for table '"
+            .withMessageStartingWith(
+                "The database table "
                     + TABLE_REFS
-                    + "'. DDL template:\nCREATE TABLE nessie."
-                    + TABLE_REFS);
+                    + " is missing mandatory columns created_at,deleted,ext_info,pointer,prev_ptr.\n"
+                    + "Found columns : boo,meep,ref_name,repo\n"
+                    + "Expected columns : ")
+            .withMessageContaining("DDL template:\nCREATE TABLE nessie." + TABLE_REFS);
       }
 
       executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_REFS);
