@@ -29,8 +29,6 @@ public interface TasksAsync {
 
   ScheduledHandle schedule(Runnable runnable, Instant scheduleNotBefore);
 
-  void cancel(ScheduledHandle handle);
-
   default long calculateDelay(Clock clock, long minimumDelayMillis, Instant scheduleNotBefore) {
     long retryEarliestEpochMillis = scheduleNotBefore.toEpochMilli();
     long delayMillis = retryEarliestEpochMillis - clock.millis();

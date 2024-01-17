@@ -19,4 +19,6 @@ import java.util.concurrent.CompletionStage;
 
 public interface ScheduledHandle {
   CompletionStage<Void> toCompletionStage();
+
+  void cancel();
 }

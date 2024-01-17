@@ -73,11 +73,6 @@ public class JavaPoolTasksAsync implements TasksAsync {
   }
 
   @Override
-  public void cancel(ScheduledHandle handle) {
-    ((JavaScheduledHandle) handle).cancel();
-  }
-
-  @Override
   public Clock clock() {
     return clock;
   }
@@ -97,7 +92,8 @@ public class JavaPoolTasksAsync implements TasksAsync {
       return completable;
     }
 
-    void cancel() {
+    @Override
+    public void cancel() {
       future.cancel(false);
       completable.cancel(false);
     }

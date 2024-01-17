@@ -99,11 +99,6 @@ public class TestingTasksAsync implements TasksAsync {
     return task;
   }
 
-  @Override
-  public void cancel(ScheduledHandle handle) {
-    ((ScheduledTask) handle).cancelled = true;
-  }
-
   static final class ScheduledTask implements ScheduledHandle, Comparable<ScheduledTask> {
     private final Instant runAt;
     private final Supplier<Object> runnable;
@@ -131,6 +126,11 @@ public class TestingTasksAsync implements TasksAsync {
     @Override
     public CompletionStage<Void> toCompletionStage() {
       return (CompletionStage) completable;
+    }
+
+    @Override
+    public void cancel() {
+      cancelled = true;
     }
   }
 }

@@ -371,7 +371,7 @@ public class TasksServiceImpl implements TasksService {
     TaskObj current = params.runningObj.getAndSet(null);
     ScheduledHandle handle = params.runningUpdateScheduled.getAndSet(null);
     if (handle != null) {
-      async.cancel(handle);
+      handle.cancel();
     }
     return current;
   }

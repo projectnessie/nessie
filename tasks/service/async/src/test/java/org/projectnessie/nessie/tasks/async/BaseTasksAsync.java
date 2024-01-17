@@ -198,7 +198,7 @@ public abstract class BaseTasksAsync {
     TasksAsync async = tasksAsync();
     ScheduledHandle handle =
         async.schedule(() -> {}, async.clock().instant().plus(1500, ChronoUnit.MILLIS));
-    soft.assertThatCode(() -> async.cancel(handle)).doesNotThrowAnyException();
+    soft.assertThatCode(handle::cancel).doesNotThrowAnyException();
   }
 
   @Test
@@ -213,7 +213,7 @@ public abstract class BaseTasksAsync {
         async.schedule(sem::release, async.clock().instant().plus(1500, ChronoUnit.MILLIS));
     soft.assertThat(handle).isNotNull();
 
-    async.cancel(handle);
+    handle.cancel();
     soft.assertThat(sem.tryAcquire(1, 4500, TimeUnit.MILLISECONDS)).isFalse();
   }
 

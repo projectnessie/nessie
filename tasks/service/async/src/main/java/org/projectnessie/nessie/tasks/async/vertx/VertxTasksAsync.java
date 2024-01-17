@@ -83,12 +83,7 @@ public class VertxTasksAsync implements TasksAsync {
               }
             });
 
-    return new VertxScheduledHandle(timerId, completableFuture);
-  }
-
-  @Override
-  public void cancel(ScheduledHandle handle) {
-    vertx.cancelTimer(((VertxScheduledHandle) handle).timerId);
+    return new VertxScheduledHandle(vertx, timerId, completableFuture);
   }
 
   @Override
@@ -98,10 +93,12 @@ public class VertxTasksAsync implements TasksAsync {
 
   private static final class VertxScheduledHandle implements ScheduledHandle {
 
-    final long timerId;
-    final CompletionStage<Void> stage;
+    private final Vertx vertx;
+    private final long timerId;
+    private final CompletionStage<Void> stage;
 
-    VertxScheduledHandle(long timerId, CompletionStage<Void> stage) {
+    VertxScheduledHandle(Vertx vertx, long timerId, CompletionStage<Void> stage) {
+      this.vertx = vertx;
       this.timerId = timerId;
       this.stage = stage;
     }
@@ -109,6 +106,11 @@ public class VertxTasksAsync implements TasksAsync {
     @Override
     public CompletionStage<Void> toCompletionStage() {
       return stage;
+    }
+
+    @Override
+    public void cancel() {
+      vertx.cancelTimer(timerId);
     }
   }
 }
