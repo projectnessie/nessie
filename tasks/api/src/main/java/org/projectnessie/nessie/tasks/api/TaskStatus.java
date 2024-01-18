@@ -17,19 +17,23 @@ package org.projectnessie.nessie.tasks.api;
 
 public enum TaskStatus {
   /** The task is currently running. */
-  RUNNING(false),
+  RUNNING(false, false, true),
   /** The task has finished successfully. */
-  SUCCESS(true),
+  SUCCESS(true, false, false),
   /** The task has failed and can be retried. */
-  ERROR_RETRY(false),
+  ERROR_RETRY(false, true, true),
   /** The task has failed without a way to recover. */
-  FAILURE(true),
+  FAILURE(true, true, false),
   ;
 
   private final boolean finalState;
+  private final boolean error;
+  private final boolean retryable;
 
-  TaskStatus(boolean finalState) {
+  TaskStatus(boolean finalState, boolean error, boolean retryable) {
     this.finalState = finalState;
+    this.error = error;
+    this.retryable = retryable;
   }
 
   /**
@@ -39,5 +43,14 @@ public enum TaskStatus {
    */
   public boolean isFinal() {
     return finalState;
+  }
+
+  /** Whether the status represents an error. */
+  public boolean isError() {
+    return error;
+  }
+
+  public boolean isRetryable() {
+    return retryable;
   }
 }

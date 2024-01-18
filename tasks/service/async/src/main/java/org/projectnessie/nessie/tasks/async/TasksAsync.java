@@ -33,6 +33,16 @@ public interface TasksAsync {
 
   <R> CompletionStage<R> supply(Supplier<R> runnable);
 
+  /**
+   * Schedule a {@link Runnable} to run at the given timestamp.
+   *
+   * <p>The scheduled task can always be cancelled as long as it is not running via <code>
+   * {@link CompletionStage#toCompletableFuture() CompletionStage.toCompletableFuture()}.{@link java.util.concurrent.CompletableFuture#cancel(boolean) cancel(false)};
+   * </code>.
+   *
+   * <p>Whether an already running task can be interrupted is not guaranteed and depends on the
+   * implementation. It is highly recommended to not assume that a running task can be interrupted.
+   */
   CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore);
 
   default long calculateDelay(Clock clock, long minimumDelayMillis, Instant scheduleNotBefore) {

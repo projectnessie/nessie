@@ -25,11 +25,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
-import org.projectnessie.nessie.tasks.api.TaskObj;
-import org.projectnessie.nessie.tasks.api.TaskRequest;
 import org.projectnessie.nessie.tasks.api.TaskState;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public class BasicTaskBehavior implements TaskBehavior {
+public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskObj.Builder> {
 
   public static final TemporalAmount FRESH_RUNNING_RETRY_NOT_BEFORE =
       Duration.of(2, ChronoUnit.SECONDS);
@@ -44,44 +43,36 @@ public class BasicTaskBehavior implements TaskBehavior {
   public BasicTaskBehavior() {}
 
   @Override
-  public Throwable stateAsException(TaskObj obj) {
+  public Throwable stateAsException(BasicTaskObj obj) {
     return new Exception(obj.taskState().message());
   }
 
   @Override
-  public Instant performRunningStateUpdateAt(Clock clock, TaskObj running) {
+  public Instant performRunningStateUpdateAt(Clock clock, BasicTaskObj running) {
     return clock.instant().plus(RUNNING_UPDATE_INTERVAL);
   }
 
   @Override
-  public boolean isRetryableError(Throwable t) {
-    return t instanceof RetryableException;
-  }
-
-  @Override
-  public TaskObj.Builder newObjBuilder(TaskObj base) {
-    return ImmutableBasicTaskObj.builder().from(base);
-  }
-
-  @Override
-  public TaskObj.Builder newObjBuilder(TaskRequest taskRequest) {
-    BasicTaskRequest basicTaskRequest = (BasicTaskRequest) taskRequest;
-    return ImmutableBasicTaskObj.builder().taskParameter(basicTaskRequest.taskParameter());
-  }
-
-  @Override
-  public TaskState runningTaskState(Clock clock, TaskObj running) {
-    return runningState(freshRunningRetryNotBefore(clock), freshLostRetryNotBefore(clock));
-  }
-
-  @Override
-  public TaskState failureTaskState(Throwable t) {
+  public TaskState asErrorTaskState(Clock clock, BasicTaskObj base, Throwable t) {
+    if (t instanceof RetryableException) {
+      return retryableErrorState(retryableErrorNotBefore(clock), t.getMessage());
+    }
     return failureState(t.getMessage());
   }
 
   @Override
-  public TaskState retryableErrorTaskState(Clock clock, TaskObj base, Throwable t) {
-    return retryableErrorState(retryableErrorNotBefore(clock), t.getMessage());
+  public BasicTaskObj.Builder newObjBuilder() {
+    return ImmutableBasicTaskObj.builder();
+  }
+
+  @Override
+  public TaskState runningTaskState(Clock clock, BasicTaskObj running) {
+    return runningState(freshRunningRetryNotBefore(clock), freshLostRetryNotBefore(clock));
+  }
+
+  @Override
+  public ObjType objType() {
+    return BasicTaskObj.TYPE;
   }
 
   private Instant freshRunningRetryNotBefore(Clock clock) {

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.nessie.tasks.api;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -88,5 +90,31 @@ public interface TaskState {
   static TaskState taskState(
       TaskStatus taskStatus, Instant retryNotBefore, Instant lostNotBefore, String message) {
     return ImmutableTaskState.of(taskStatus, retryNotBefore, lostNotBefore, message);
+  }
+
+  @Value.Check
+  default void check() {
+    switch (status()) {
+      case SUCCESS:
+        checkState(retryNotBefore() == null, "retryNotBefore must be null for SUCCESS");
+        checkState(lostNotBefore() == null, "retryNotBefore must be null for SUCCESS");
+        break;
+      case FAILURE:
+        checkState(retryNotBefore() == null, "retryNotBefore must be null for FAILURE");
+        checkState(lostNotBefore() == null, "lostNotBefore must be null for FAILURE");
+        checkState(message() != null, "message must not be null for FAILURE");
+        break;
+      case RUNNING:
+        checkState(retryNotBefore() != null, "retryNotBefore must not be null for RUNNING");
+        checkState(lostNotBefore() != null, "lostNotBefore must not be null for RUNNING");
+        break;
+      case ERROR_RETRY:
+        checkState(retryNotBefore() != null, "retryNotBefore must not be null for ERROR_RETRY");
+        checkState(lostNotBefore() == null, "lostNotBefore must be null for ERROR_RETRY");
+        checkState(message() != null, "message must not be null for ERROR_RETRY");
+        break;
+      default:
+        throw new IllegalStateException("Unknown task status " + status());
+    }
   }
 }

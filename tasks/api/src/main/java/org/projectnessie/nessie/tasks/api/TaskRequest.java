@@ -31,11 +31,21 @@ public interface TaskRequest<T extends TaskObj, B extends TaskObj.Builder> {
    */
   ObjId objId();
 
-  TaskBehavior behavior();
+  TaskBehavior<T, B> behavior();
 
   /**
    * Start execution of the task, this function must not block and/or wait for the task execution to
    * finish.
+   *
+   * <p>The implementation is responsible to choose the right scheduling implementation. For
+   * example: tasks that are supposed to run very long, like 5 seconds or more, must not use a <a
+   * href="https://javadoc.io/static/io.vertx/vertx-core/4.5.1/io/vertx/core/Vertx.html#executeBlocking-java.util.concurrent.Callable-boolean-">Vert.X's
+   * {@code executeBlocking()}</a>.
    */
   CompletionStage<B> submitExecution();
+
+  /** Applies parameters from this request to the object builder. */
+  default B applyRequestToObjBuilder(B builder) {
+    return builder;
+  }
 }

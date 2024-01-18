@@ -37,15 +37,6 @@ public class VertxTasksAsync implements TasksAsync {
   }
 
   @Override
-  public CompletionStage<Void> call(Runnable runnable) {
-    return supply(
-        () -> {
-          runnable.run();
-          return null;
-        });
-  }
-
-  @Override
   public <R> CompletionStage<R> supply(Supplier<R> supplier) {
     return vertx
         .executeBlocking(

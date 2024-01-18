@@ -50,8 +50,6 @@ public class TestingTasksAsync implements TasksAsync {
       if (t == null || t.runAt.compareTo(now) > 0) {
         break;
       }
-      System.out.println("doWork   " + now);
-      System.out.println("         " + t.runAt);
       scheduledTasks.remove(t);
       if (t.cancelled) {
         continue;
@@ -76,7 +74,6 @@ public class TestingTasksAsync implements TasksAsync {
   public <R> CompletionStage<R> supply(Supplier<R> supplier) {
     ScheduledTask task = new ScheduledTask(Instant.EPOCH, (Supplier<Object>) supplier);
     scheduledTasks.add(task);
-    System.out.println("supply");
     return (CompletionStage<R>) task.completable;
   }
 
@@ -89,8 +86,6 @@ public class TestingTasksAsync implements TasksAsync {
               runnable.run();
               return null;
             });
-    System.out.println("schedule " + scheduleNotBefore);
-    new Exception().printStackTrace(System.out);
     scheduledTasks.add(task);
     task.completable.whenComplete(
         (v, t) -> {

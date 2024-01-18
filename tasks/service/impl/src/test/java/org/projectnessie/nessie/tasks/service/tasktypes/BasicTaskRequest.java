@@ -45,12 +45,17 @@ public interface BasicTaskRequest extends TaskRequest<BasicTaskObj, BasicTaskObj
 
   @Override
   @Value.Parameter(order = 4)
-  TaskBehavior behavior();
+  TaskBehavior<BasicTaskObj, BasicTaskObj.Builder> behavior();
 
   @Override
   @Value.NonAttribute
   default CompletionStage<BasicTaskObj.Builder> submitExecution() {
     return taskCompletionStageSupplier().get();
+  }
+
+  @Override
+  default BasicTaskObj.Builder applyRequestToObjBuilder(BasicTaskObj.Builder builder) {
+    return builder.taskParameter(taskParameter());
   }
 
   static BasicTaskRequest basicTaskRequest(
