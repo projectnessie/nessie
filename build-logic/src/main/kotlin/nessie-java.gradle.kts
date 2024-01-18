@@ -31,6 +31,21 @@ tasks.withType<JavaCompile>().configureEach {
   // https://github.com/immutables/immutables/pull/858 and
   // https://github.com/immutables/immutables/issues/804#issuecomment-487366544
   options.compilerArgs.add("-Aimmutables.gradle.incremental")
+
+  // Warn on deprecated-for-removal
+  options.compilerArgs.add("-Xlint:removal")
+  // Warn on preview features being used
+  options.compilerArgs.add("-Xlint:preview")
+
+  doFirst {
+    if (javaCompiler.get().metadata.languageVersion.asInt() >= 21) {
+      // Warns when a single output class file is written more than once, e.g.
+      // with a case-insensitive file system. See JDK-8296656.
+      options.compilerArgs.add("-Xlint:output-file-clash")
+      // Warns on ambiguous overloads, see JDK-8026369
+      options.compilerArgs.add("-Xlint:overloads")
+    }
+  }
 }
 
 tasks.withType<Javadoc>().configureEach {
