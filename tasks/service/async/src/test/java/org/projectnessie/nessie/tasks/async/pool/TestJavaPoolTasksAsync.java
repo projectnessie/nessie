@@ -26,6 +26,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.nessie.tasks.async.BaseTasksAsync;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
@@ -50,7 +51,7 @@ public class TestJavaPoolTasksAsync extends BaseTasksAsync {
   }
 
   @Test
-  public void cancelRunningWithInterrupt() throws InterruptedException {
+  public void cancelScheduledWithInterrupt() throws InterruptedException {
     TasksAsync async = tasksAsync();
 
     CountDownLatch started = new CountDownLatch(1);
@@ -67,6 +68,36 @@ public class TestJavaPoolTasksAsync extends BaseTasksAsync {
               }
             },
             async.clock().instant());
+    soft.assertThat(handle).isNotNull();
+
+    soft.assertThat(started.await(10, TimeUnit.SECONDS)).isTrue();
+    handle.toCompletableFuture().cancel(true);
+    soft.assertThat(finished.await(10, TimeUnit.SECONDS)).isTrue();
+  }
+
+  @Test
+  @Disabled(
+      "Interrupt does not work, although the CompletableFuture is properly cancelled and yields a CompletionException as its result")
+  public void cancelSubmittedWithInterrupt() throws InterruptedException {
+    TasksAsync async = tasksAsync();
+
+    CountDownLatch started = new CountDownLatch(1);
+    CountDownLatch finished = new CountDownLatch(1);
+
+    CompletionStage<String> handle =
+        async.supply(
+            () -> {
+              try {
+                started.countDown();
+                new Semaphore(0).acquire();
+                return "foo";
+              } catch (InterruptedException ignored) {
+                finished.countDown();
+                throw new RuntimeException();
+              } catch (Throwable e) {
+                throw new RuntimeException(e);
+              }
+            });
     soft.assertThat(handle).isNotNull();
 
     soft.assertThat(started.await(10, TimeUnit.SECONDS)).isTrue();
