@@ -40,6 +40,8 @@ import java.util.concurrent.ConcurrentMap;
 import org.projectnessie.operator.exception.NessieOperatorException;
 import org.projectnessie.operator.reconciler.nessie.NessieReconciler;
 import org.projectnessie.operator.reconciler.nessie.resource.Nessie;
+import org.projectnessie.operator.reconciler.nessiegc.NessieGcReconciler;
+import org.projectnessie.operator.reconciler.nessiegc.resource.NessieGc;
 import org.projectnessie.operator.utils.EventUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,7 +128,13 @@ public class EventService {
           && kce.getCode() == HttpURLConnection.HTTP_CONFLICT
           && attempt < 3) {
         LOGGER.debug("Event was updated concurrently, retrying");
-        current = client.v1().events().resource(current).require();
+        current =
+            client
+                .v1()
+                .events()
+                .inNamespace(primary.getMetadata().getNamespace())
+                .withName(EventUtils.eventName(primary, reason))
+                .require();
         return createOrUpdateEvent(attempt + 1, primary, reason, current, message, args);
       }
       LOGGER.warn("Failed to create or update event", e);
@@ -239,6 +247,7 @@ public class EventService {
   private static String getComponent(HasMetadata primary) {
     return switch (primary.getKind()) {
       case Nessie.KIND -> NessieReconciler.NAME;
+      case NessieGc.KIND -> NessieGcReconciler.NAME;
       default -> throw new IllegalArgumentException("Unknown kind " + primary.getKind());
     };
   }

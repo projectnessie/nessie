@@ -14,4 +14,11 @@ resources:
   group: nessie
   kind: Nessie
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: projectnessie.org
+  group: nessie
+  kind: NessieGc
+  version: v1alpha1
 version: "3"

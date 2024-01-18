@@ -39,6 +39,7 @@ import org.projectnessie.operator.reconciler.nessie.dependent.IngressV1Beta1Depe
 import org.projectnessie.operator.reconciler.nessie.dependent.IngressV1Dependent;
 import org.projectnessie.operator.reconciler.nessie.dependent.MainServiceDependent;
 import org.projectnessie.operator.reconciler.nessie.dependent.ManagementServiceDependent;
+import org.projectnessie.operator.reconciler.nessie.dependent.NessieGcDependent;
 import org.projectnessie.operator.reconciler.nessie.dependent.PersistentVolumeClaimDependent;
 import org.projectnessie.operator.reconciler.nessie.dependent.ServiceAccountDependent;
 import org.projectnessie.operator.reconciler.nessie.dependent.ServiceMonitorDependent;
@@ -108,6 +109,11 @@ import org.slf4j.LoggerFactory;
           type = ServiceMonitorDependent.class,
           dependsOn = "service-mgmt",
           activationCondition = ServiceMonitorDependent.ActivationCondition.class),
+      @Dependent(
+          name = "gc",
+          type = NessieGcDependent.class,
+          dependsOn = "service",
+          activationCondition = NessieGcDependent.ActivationCondition.class),
     })
 @RBACRule(apiGroups = "", resources = "events", verbs = RBACRule.ALL)
 public class NessieReconciler extends AbstractReconciler<Nessie>

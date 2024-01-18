@@ -36,6 +36,7 @@ import org.projectnessie.operator.exception.InvalidSpecException;
 import org.projectnessie.operator.reconciler.nessie.resource.options.AuthenticationOptions;
 import org.projectnessie.operator.reconciler.nessie.resource.options.AuthorizationOptions;
 import org.projectnessie.operator.reconciler.nessie.resource.options.AutoscalingOptions;
+import org.projectnessie.operator.reconciler.nessie.resource.options.GcOptions;
 import org.projectnessie.operator.reconciler.nessie.resource.options.IngressOptions;
 import org.projectnessie.operator.reconciler.nessie.resource.options.MonitoringOptions;
 import org.projectnessie.operator.reconciler.nessie.resource.options.RemoteDebugOptions;
@@ -84,6 +85,7 @@ public record NessieSpec(
     @JsonPropertyDescription("Nessie remote debugging options.") //
         @Default("{}")
         RemoteDebugOptions remoteDebug,
+    @JsonPropertyDescription("Nessie GC options.") @Default("{}") GcOptions gc,
     @JsonPropertyDescription(
             """
             Extra (advanced) configuration. \
@@ -134,7 +136,9 @@ public record NessieSpec(
   }
 
   public NessieSpec() {
-    this(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    this(
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null);
   }
 
   /**
@@ -158,6 +162,7 @@ public record NessieSpec(
     monitoring = monitoring != null ? monitoring : new MonitoringOptions();
     autoscaling = autoscaling != null ? autoscaling : new AutoscalingOptions();
     remoteDebug = remoteDebug != null ? remoteDebug : new RemoteDebugOptions();
+    gc = gc != null ? gc : new GcOptions();
     advancedConfig =
         advancedConfig != null ? advancedConfig : JsonNodeFactory.instance.objectNode();
     extraEnv = extraEnv != null ? List.copyOf(extraEnv) : List.of();

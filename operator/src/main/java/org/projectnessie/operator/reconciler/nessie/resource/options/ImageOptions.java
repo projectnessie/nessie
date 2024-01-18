@@ -55,6 +55,7 @@ public record ImageOptions(
         LocalObjectReference pullSecretRef) {
 
   public static final String DEFAULT_NESSIE_REPOSITORY = "ghcr.io/projectnessie/nessie";
+  public static final String DEFAULT_NESSIE_GC_REPOSITORY = "ghcr.io/projectnessie/nessie-gc";
 
   public ImageOptions() {
     this(null, null, null, null);

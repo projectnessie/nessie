@@ -190,6 +190,8 @@ public class K3sContainerLifecycleManager extends AbstractContainerLifecycleMana
       TOOL="$(which docker > /dev/null && echo docker || echo podman)"
       ${TOOL} image save projectnessie/nessie-test-server:$NESSIE_VERSION | \
         ${TOOL} exec --interactive $CONTAINER_NAME ctr images import --no-unpack -
+      ${TOOL} image save projectnessie/nessie-test-gc:$NESSIE_VERSION | \
+        ${TOOL} exec --interactive $CONTAINER_NAME ctr images import --no-unpack -
       """;
 
   @Target(ElementType.FIELD)

@@ -113,6 +113,7 @@ tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexInde
 
 tasks.named<Test>("intTest").configure {
   dependsOn(buildNessieServerTestImage)
+  dependsOn(buildNessieGcTestImage)
   // Required to install the CRDs during integration tests
   val crdsDir = project.layout.buildDirectory.dir("kubernetes").get().asFile.toString()
   systemProperty("nessie.crds.dir", crdsDir)
@@ -127,15 +128,6 @@ val buildNessieServerTestImage by
   tasks.registering(Exec::class) {
     dependsOn(":nessie-quarkus:quarkusBuild")
     workingDir = project.layout.projectDirectory.asFile.parentFile
-    fun which(command: String): String? {
-      val stdout = ByteArrayOutputStream()
-      val result = exec {
-        isIgnoreExitValue = true
-        standardOutput = stdout
-        commandLine("which", command)
-      }
-      return if (result.exitValue == 0) "$stdout".trim() else null
-    }
     executable =
       which("docker")
         ?: which("podman")
@@ -149,3 +141,34 @@ val buildNessieServerTestImage by
       "servers/quarkus-server"
     )
   }
+
+// Builds the Nessie GC image to use in integration tests.
+// The image will then be loaded into the running K3S cluster,
+// see K3sContainerLifecycleManager.
+val buildNessieGcTestImage by
+  tasks.registering(Exec::class) {
+    dependsOn(":nessie-gc-tool:shadowJar")
+    workingDir = project.layout.projectDirectory.asFile.parentFile
+    executable =
+      which("docker")
+        ?: which("podman")
+        ?: throw IllegalStateException("Neither docker nor podman found on the system")
+    args(
+      "build",
+      "--file",
+      "tools/dockerbuild/docker/Dockerfile-gctool",
+      "--tag",
+      "projectnessie/nessie-test-gc:" + project.version,
+      "gc/gc-tool"
+    )
+  }
+
+private fun which(command: String): String? {
+  val stdout = ByteArrayOutputStream()
+  val result = exec {
+    isIgnoreExitValue = true
+    standardOutput = stdout
+    commandLine("which", command)
+  }
+  return if (result.exitValue == 0) "$stdout".trim() else null
+}

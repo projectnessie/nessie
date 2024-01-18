@@ -43,3 +43,8 @@ spec:
       log:
         console.format: "%d{HH:mm:ss} %s%e%n"
         category."org.projectnessie".level: "DEBUG"
+  gc:
+    enabled: true
+    schedule:
+      cron: "* * * * *"
+      timeZone: UTC

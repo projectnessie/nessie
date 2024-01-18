@@ -28,6 +28,8 @@ import java.util.Map;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.operator.reconciler.nessie.NessieReconciler;
 import org.projectnessie.operator.reconciler.nessie.resource.Nessie;
+import org.projectnessie.operator.reconciler.nessiegc.NessieGcReconciler;
+import org.projectnessie.operator.reconciler.nessiegc.resource.NessieGc;
 import org.projectnessie.operator.utils.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +119,7 @@ public final class KubernetesHelper {
   public static String managedBy(HasMetadata primary) {
     return switch (primary.getKind()) {
       case Nessie.KIND -> NessieReconciler.NAME;
+      case NessieGc.KIND -> NessieGcReconciler.NAME;
       default ->
           throw new IllegalArgumentException("Unsupported primary resource: " + primary.getKind());
     };

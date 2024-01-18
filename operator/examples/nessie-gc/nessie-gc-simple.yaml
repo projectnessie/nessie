@@ -1,0 +1,8 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: NessieGc
+metadata:
+  name: nessie-simple-gc
+  namespace: nessie-ns
+spec:
+  nessieRef:
+    name: nessie-simple

@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.operator.exception.InvalidSpecException;
 import org.projectnessie.operator.reconciler.nessie.resource.NessieBuilder;
+import org.projectnessie.operator.reconciler.nessiegc.resource.NessieGcBuilder;
 
 class TestEventUtils {
 
@@ -58,6 +59,11 @@ class TestEventUtils {
                 new NessieBuilder().withNewMetadata().withUid("1234").endMetadata().build(),
                 ReconcileSuccess))
         .isEqualTo("nessie-1234-ReconcileSuccess");
+    assertThat(
+            EventUtils.eventName(
+                new NessieGcBuilder().withNewMetadata().withUid("1234").endMetadata().build(),
+                ReconcileSuccess))
+        .isEqualTo("nessiegc-1234-ReconcileSuccess");
   }
 
   @Test

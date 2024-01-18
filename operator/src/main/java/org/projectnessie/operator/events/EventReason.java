@@ -24,10 +24,13 @@ public enum EventReason {
   CreatingDeployment(EventType.Normal),
   CreatingService(EventType.Normal),
   CreatingMgmtService(EventType.Normal),
+  CreatingNessieGc(EventType.Normal),
   CreatingServiceMonitor(EventType.Normal),
   CreatingIngress(EventType.Normal),
   CreatingHPA(EventType.Normal),
   ReconcileSuccess(EventType.Normal),
+  GcCronJobActive(EventType.Normal),
+  GcJobComplete(EventType.Normal),
 
   // Warning events
   InvalidName(EventType.Warning),
@@ -42,7 +45,12 @@ public enum EventReason {
   MultipleReplicasNotAllowed(EventType.Warning),
   AutoscalingNotAllowed(EventType.Warning),
   ServiceMonitorNotSupported(EventType.Warning),
+  InvalidGcConfig(EventType.Warning),
+  InMemoryGcNotRecommended(EventType.Warning),
+  NessieNotFound(EventType.Warning),
   ReconcileError(EventType.Warning),
+  GcJobFailed(EventType.Warning),
+  GcCronJobSuspended(EventType.Warning),
   ;
 
   private final EventType type;

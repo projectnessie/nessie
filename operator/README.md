@@ -11,6 +11,7 @@ This project was bootstrapped using [Operator SDK]:
 ```bash
 operator-sdk init --plugins=quarkus --domain=projectnessie.org --project-name=nessie-operator
 operator-sdk create api --plugins=quarkus --group nessie --version=v1alpha1 --kind=Nessie
+operator-sdk create api --plugins=quarkus --group nessie --version=v1alpha1 --kind=NessieGc
 ```
 
 [Operator SDK]:https://sdk.operatorframework.io/docs/cli/operator-sdk/
