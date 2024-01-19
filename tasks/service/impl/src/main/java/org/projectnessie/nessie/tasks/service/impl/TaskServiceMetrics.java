@@ -108,9 +108,6 @@ public interface TaskServiceMetrics {
   /** Running-state update with fresh values ran into race with another instance. */
   void taskRunningStateUpdateRace();
 
-  /** Running-state update with fresh values ran into race locally. */
-  void taskRunningStateUpdateLocalRace();
-
   /** Running-state update cancelled, because task is no longer in running-state. */
   void taskRunningStateUpdateNoLongerRunning();
 

@@ -57,7 +57,7 @@ public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskOb
     if (t instanceof RetryableException) {
       return retryableErrorState(retryableErrorNotBefore(clock), t.getMessage());
     }
-    return failureState(t.getMessage());
+    return failureState(t.toString());
   }
 
   @Override

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.nessie.tasks.service.impl;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -32,13 +33,17 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ConcurrentModificationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.nessie.tasks.api.Tasks;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
@@ -287,6 +292,269 @@ public class TestTasksServiceImpl {
       verifyNoMoreInteractions(metrics);
       reset(metrics);
     }
+  }
+
+  @Test
+  public void taskReturnsIllegalNullResult() {
+    MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
+    TestingTasksAsync async = new TestingTasksAsync(clock);
+
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+
+    TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
+    TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
+    Tasks tasks = service.forPersist(persist);
+    BasicTaskRequest taskRequest = basicTaskRequest("hello", () -> taskCompletionStage);
+
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    verify(metrics).startNewTaskController();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskCreation();
+    verify(metrics).taskExecution();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskUpdateRunningState();
+    verify(metrics).taskRunningStateUpdated();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    taskCompletionStage.complete(null);
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionFailure();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThatThrownBy(taskFuture::get)
+        .isInstanceOf(ExecutionException.class)
+        .cause()
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Local task execution return a null object, which is illegal");
+  }
+
+  @Test
+  public void runningTaskUpdateRace() {
+    MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
+    TestingTasksAsync async = new TestingTasksAsync(clock);
+
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+
+    TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
+    TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
+    Tasks tasks = service.forPersist(persist);
+    BasicTaskRequest taskRequest = basicTaskRequest("hello", () -> taskCompletionStage);
+
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    verify(metrics).startNewTaskController();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskCreation();
+    verify(metrics).taskExecution();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    Mockito.doAnswer(
+            invocation -> {
+              BasicTaskObj obj =
+                  persist.fetchTypedObj(taskRequest.objId(), BasicTaskObj.TYPE, BasicTaskObj.class);
+              TaskObj updated =
+                  BasicTaskObj.builder()
+                      .from(obj)
+                      .versionToken(obj.versionToken() + "_concurrent_update")
+                      .build();
+              checkState(persist.updateConditional(obj, updated));
+              return null;
+            })
+        .when(metrics)
+        .taskUpdateRunningState();
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskUpdateRunningState();
+    verify(metrics).taskRunningStateUpdateRace();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    taskCompletionStage.complete(
+        BasicTaskObj.builder()
+            .id(taskRequest.objId())
+            .taskParameter(taskRequest.taskParameter())
+            .taskResult(taskRequest.taskParameter() + " finished")
+            .taskState(TaskState.successState()));
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionResultRace();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThatThrownBy(taskFuture::get)
+        .cause()
+        .isInstanceOf(ConcurrentModificationException.class)
+        .hasMessageMatching(
+            "Failed to update successful task execution result for basic:[0-9a-f]+ in database \\(race condition\\), exposing as a failure");
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
+  }
+
+  @Test
+  public void successfulTaskUpdateRace() {
+    MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
+    TestingTasksAsync async = new TestingTasksAsync(clock);
+
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+
+    TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
+    TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
+    Tasks tasks = service.forPersist(persist);
+    BasicTaskRequest taskRequest = basicTaskRequest("hello", () -> taskCompletionStage);
+
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    verify(metrics).startNewTaskController();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskCreation();
+    verify(metrics).taskExecution();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskUpdateRunningState();
+    verify(metrics).taskRunningStateUpdated();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    Mockito.doAnswer(
+            invocation -> {
+              BasicTaskObj obj =
+                  persist.fetchTypedObj(taskRequest.objId(), BasicTaskObj.TYPE, BasicTaskObj.class);
+              TaskObj updated =
+                  BasicTaskObj.builder()
+                      .from(obj)
+                      .versionToken(obj.versionToken() + "_concurrent_update")
+                      .build();
+              checkState(persist.updateConditional(obj, updated));
+              return null;
+            })
+        .when(metrics)
+        .taskExecutionFinished();
+
+    clock.add(250, ChronoUnit.MILLIS);
+    taskCompletionStage.complete(
+        BasicTaskObj.builder()
+            .id(taskRequest.objId())
+            .taskParameter(taskRequest.taskParameter())
+            .taskResult(taskRequest.taskParameter() + " finished")
+            .taskState(TaskState.successState()));
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionResultRace();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThatThrownBy(taskFuture::get)
+        .cause()
+        .isInstanceOf(ConcurrentModificationException.class)
+        .hasMessageMatching(
+            "Failed to update successful task execution result for basic:[0-9a-f]+ in database \\(race condition\\), exposing as a failure");
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
+  }
+
+  @Test
+  public void failedTaskUpdateRace() {
+    MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
+    TestingTasksAsync async = new TestingTasksAsync(clock);
+
+    CompletableFuture<BasicTaskObj.Builder> taskCompletionStage = new CompletableFuture<>();
+
+    TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
+    TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
+    Tasks tasks = service.forPersist(persist);
+    BasicTaskRequest taskRequest = basicTaskRequest("hello", () -> taskCompletionStage);
+
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    verify(metrics).startNewTaskController();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskCreation();
+    verify(metrics).taskExecution();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskUpdateRunningState();
+    verify(metrics).taskRunningStateUpdated();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    Mockito.doAnswer(
+            invocation -> {
+              BasicTaskObj obj =
+                  persist.fetchTypedObj(taskRequest.objId(), BasicTaskObj.TYPE, BasicTaskObj.class);
+              TaskObj updated =
+                  BasicTaskObj.builder()
+                      .from(obj)
+                      .versionToken(obj.versionToken() + "_concurrent_update")
+                      .build();
+              checkState(persist.updateConditional(obj, updated));
+              return null;
+            })
+        .when(metrics)
+        .taskExecutionFinished();
+
+    clock.add(250, ChronoUnit.MILLIS);
+    taskCompletionStage.completeExceptionally(new RuntimeException("foo bar"));
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionFailureRace();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    soft.assertThatThrownBy(taskFuture::get)
+        .cause()
+        .isInstanceOf(ConcurrentModificationException.class)
+        .hasMessageMatching(
+            "Failed to update failure task execution result for basic:[0-9a-f]+ in database \\(race condition\\)");
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
   }
 
   @Test
@@ -619,7 +887,12 @@ public class TestTasksServiceImpl {
     verifyNoMoreInteractions(metrics1);
     verifyNoMoreInteractions(metrics2);
 
-    soft.assertThatThrownBy(taskFuture2::get).hasMessageEndingWith("failed task");
+    soft.assertThatThrownBy(taskFuture2::get)
+        .isInstanceOf(ExecutionException.class)
+        .cause()
+        // This exception is generated via TaskBehavior.stateAsException()
+        .isInstanceOf(Exception.class)
+        .hasMessage("java.lang.RuntimeException: failed task");
   }
 
   @Test

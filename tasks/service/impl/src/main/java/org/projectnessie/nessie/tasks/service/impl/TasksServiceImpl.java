@@ -16,18 +16,21 @@
 package org.projectnessie.nessie.tasks.service.impl;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.concurrent.CompletableFuture.failedStage;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ConcurrentModificationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskObj;
@@ -136,14 +139,14 @@ public class TasksServiceImpl implements TasksService {
                   ExecParams execParams = new ExecParams(persist, taskRequest);
                   LOGGER.trace("{}: Starting new local task controller for {}", name, execParams);
                   async.call(() -> tryLocal(execParams));
-                  return execParams.localResultFuture;
+                  return execParams.resultFuture;
                 });
     return r;
   }
 
   private void finalResult(ExecParams params, TaskObj result) {
     try {
-      params.localResultFuture.complete(result);
+      params.resultFuture.complete(result);
     } finally {
       removeFromCurrentTasks(params);
     }
@@ -151,7 +154,7 @@ public class TasksServiceImpl implements TasksService {
 
   private void finalFailure(ExecParams params, Throwable t) {
     try {
-      params.localResultFuture.completeExceptionally(t);
+      params.resultFuture.completeExceptionally(t);
     } finally {
       removeFromCurrentTasks(params);
     }
@@ -163,6 +166,8 @@ public class TasksServiceImpl implements TasksService {
   }
 
   private void tryLocal(ExecParams params) {
+    // Called from a thread pool, need to lock.
+    params.lock.lock();
     try {
       metrics.taskAttempt();
       LOGGER.trace("{}: Task evaluation attempt for {}", name, params);
@@ -236,9 +241,12 @@ public class TasksServiceImpl implements TasksService {
       LOGGER.error("{}: Unhandled state during local task attempt for {}", name, params, t);
       metrics.taskAttemptUnhandled();
       finalFailure(params, t);
+    } finally {
+      params.lock.unlock();
     }
   }
 
+  // Called while ExecParams is locked from tryLocal()
   private void checkRunningTask(ExecParams params, TaskState state, TaskObj obj)
       throws ObjTooLargeException {
     Instant now = async.clock().instant();
@@ -265,6 +273,7 @@ public class TasksServiceImpl implements TasksService {
     }
   }
 
+  // Called while ExecParams is locked from tryLocal()
   private void maybeAttemptErrorRetry(ExecParams params, TaskState state, TaskObj obj)
       throws ObjTooLargeException {
     Instant now = async.clock().instant();
@@ -289,176 +298,6 @@ public class TasksServiceImpl implements TasksService {
     }
   }
 
-  private void issueLocalTaskExecution(ExecParams params, TaskObj obj) {
-    LOGGER.debug("{}: Starting local task execution for {}", name, params);
-    metrics.taskExecution();
-
-    params.runningObj.set(obj);
-    scheduleTaskRunningUpdate(params, obj);
-
-    params
-        .taskRequest
-        .submitExecution()
-        .handle(
-            (resultBuilder, failure) -> {
-              try {
-                TaskObj expected = stopTaskRunningUpdate(params);
-
-                metrics.taskExecutionFinished();
-
-                if (resultBuilder != null) {
-                  TaskObj r = withNewVersionToken(resultBuilder);
-
-                  LOGGER.trace(
-                      "{}, Task execution for {} succeeded, updating database", name, params);
-
-                  // Task execution succeeded with a final result
-                  if (params.persist.updateConditional(expected, r)) {
-                    metrics.taskExecutionResult();
-                    // Database updated with final result
-                    LOGGER.debug(
-                        "{}: Task execution success result for {} updated in database, returning final result",
-                        name,
-                        params);
-                    finalResult(params, r);
-                  } else {
-                    metrics.taskExecutionResultRace();
-                    // Another process updated the database state in the meantime.
-                    LOGGER.debug(
-                        "{}: Failed to update successful task execution result for {} in database (race condition)",
-                        name,
-                        params);
-                    reattemptAfterRace(params);
-                  }
-                } else /* failure != null */ {
-                  LOGGER.trace("{}: Task execution for {} failed, updating database", name, params);
-
-                  TaskBehavior<TaskObj, TaskObj.Builder> behavior = params.taskRequest.behavior();
-                  TaskState newState = behavior.asErrorTaskState(async.clock(), expected, failure);
-                  checkState(newState.status().isError());
-                  TaskObj updatedObj =
-                      withNewVersionToken(
-                          behavior.newObjBuilder().from(expected).taskState(newState));
-                  if (params.persist.updateConditional(expected, updatedObj)) {
-                    // Database updated with final result
-                    if (newState.status().isRetryable()) {
-                      metrics.taskExecutionRetryableError();
-                      LOGGER.debug(
-                          "{}: Task execution raised retryable error for {} updated in database, retrying",
-                          name,
-                          params);
-                      reattemptAfterRetryableError(params, newState.retryNotBefore());
-                    } else {
-                      metrics.taskExecutionFailure();
-                      LOGGER.debug(
-                          "{}: Task execution ended in final failure for {} updated in database, returning final result",
-                          name,
-                          params);
-                      finalFailure(params, failure);
-                    }
-                  } else {
-                    metrics.taskExecutionFailureRace();
-                    LOGGER.trace(
-                        "{}: Failed to update failure task execution result for {} in database (race condition), retrying",
-                        name,
-                        params);
-                    reattemptAfterRace(params);
-                  }
-                }
-
-              } catch (Throwable t2) {
-                // Unhandled failure
-                LOGGER.error(
-                    "{}: Unhandled state while evaluating task execution result for {}",
-                    name,
-                    params,
-                    t2);
-                metrics.taskExecutionUnhandled();
-                finalFailure(params, t2);
-              }
-
-              // Return something (we're done with the execution / completion-stage)
-              return null;
-            });
-  }
-
-  private void scheduleTaskRunningUpdate(ExecParams params, TaskObj current) {
-    Instant scheduleNotBefore =
-        params.taskRequest.behavior().performRunningStateUpdateAt(async.clock(), current);
-    params.runningUpdateScheduled.set(
-        async.schedule(() -> updateRunningState(params), scheduleNotBefore));
-  }
-
-  private TaskObj stopTaskRunningUpdate(ExecParams params) {
-    TaskObj current = params.runningObj.getAndSet(null);
-    CompletionStage<Void> handle = params.runningUpdateScheduled.getAndSet(null);
-    if (handle != null) {
-      // Don't interrupt, not all implementations support that (Vert.X won't, see
-      // https://github.com/eclipse-vertx/vert.x/issues/3334)
-      handle.toCompletableFuture().cancel(false);
-    }
-    return current;
-  }
-
-  private void updateRunningState(ExecParams params) {
-    TaskObj current = params.runningObj.get();
-    if (current == null) {
-      // Local task execution finished, do nothing.
-      LOGGER.trace(
-          "{}: Local task execution has finished, no need to update running state for {}",
-          name,
-          params);
-      return;
-    }
-
-    metrics.taskUpdateRunningState();
-    TaskState state = current.taskState();
-    if (state.status() == TaskStatus.RUNNING) {
-      TaskBehavior<TaskObj, TaskObj.Builder> behavior = params.taskRequest.behavior();
-      TaskObj updated =
-          withNewVersionToken(
-              behavior
-                  .newObjBuilder()
-                  .from(current)
-                  .taskState(behavior.runningTaskState(async.clock(), null)));
-      if (params.runningObj.compareAndSet(current, updated)) {
-        try {
-          if (params.persist.updateConditional(current, updated)) {
-            metrics.taskRunningStateUpdated();
-            // Current state successfully updated in database, reschedule running task update
-            LOGGER.trace(
-                "{}: Successfully updated state for locally running task for {}", name, params);
-          } else {
-            metrics.taskRunningStateUpdateRace();
-            // Ran into a (remote) race, retry running-update
-            LOGGER.trace(
-                "{}: Race on database update while updating running state for {}", name, params);
-          }
-        } catch (Throwable t) {
-          LOGGER.error("{}: Unexpected exception updating task state for {}", name, params, t);
-          // re-schedule ... and pray
-        }
-      } else {
-        metrics.taskRunningStateUpdateLocalRace();
-        // Ran into a (local) race, retry running-update
-        LOGGER.trace(
-            "{}: Local race on in-JVM object while updating running state for {}", name, params);
-      }
-
-      scheduleTaskRunningUpdate(params, updated);
-    } else {
-      metrics.taskRunningStateUpdateNoLongerRunning();
-      LOGGER.trace(
-          "{}: Task for {} no longer running, skipping further local running state updates",
-          name,
-          params);
-    }
-  }
-
-  private void reattemptAfterRetryableError(ExecParams params, Instant retryNotBefore) {
-    async.schedule(() -> tryLocal(params), retryNotBefore);
-  }
-
   private void reattemptAfterRace(ExecParams params) {
     long raceWaitMillis =
         ThreadLocalRandom.current().nextLong(raceWaitMillisMin, raceWaitMillisMax);
@@ -466,23 +305,250 @@ public class TasksServiceImpl implements TasksService {
         () -> tryLocal(params), async.clock().instant().plus(raceWaitMillis, ChronoUnit.MILLIS));
   }
 
+  // Called while ExecParams is locked from tryLocal()
+  private void issueLocalTaskExecution(ExecParams params, TaskObj obj) {
+    LOGGER.debug("{}: Starting local task execution for {}", name, params);
+    metrics.taskExecution();
+
+    params.runningObj = obj;
+    scheduleTaskRunningUpdate(params, obj);
+
+    params
+        .taskRequest
+        .submitExecution()
+        .handle(
+            (resultBuilder, failure) -> {
+              localTaskFinished(params, resultBuilder, failure);
+              // Return something (we're done with the execution / completion-stage)
+              return null;
+            });
+  }
+
+  private void localTaskFinished(
+      ExecParams params, TaskObj.Builder resultBuilder, Throwable failure) {
+    // Called from a thread pool, need to lock.
+    params.lock.lock();
+    try {
+      TaskObj expected = params.runningObj;
+
+      params.cancelRunningStateUpdate();
+
+      metrics.taskExecutionFinished();
+
+      if (expected == null) {
+        unexpectedNullExpectedState(params, resultBuilder, failure);
+        return;
+      }
+
+      if (resultBuilder != null) {
+        TaskObj r = withNewVersionToken(resultBuilder);
+
+        LOGGER.trace("{}, Task execution for {} succeeded, updating database", name, params);
+
+        // Task execution succeeded with a final result
+        if (params.persist.updateConditional(expected, r)) {
+          metrics.taskExecutionResult();
+          // Database updated with final result
+          LOGGER.debug(
+              "{}: Task execution success result for {} updated in database, returning final result",
+              name,
+              params);
+          finalResult(params, r);
+        } else {
+          metrics.taskExecutionResultRace();
+          // Another process updated the database state in the meantime.
+          String msg =
+              format(
+                  "Failed to update successful task execution result for %s in database (race condition), exposing as a failure",
+                  params);
+          LOGGER.trace("{}: {}", name, msg);
+          finalFailure(params, new ConcurrentModificationException(msg, failure));
+        }
+      } else if (failure == null) {
+        failure =
+            new NullPointerException("Local task execution return a null object, which is illegal");
+      }
+      if (failure != null) {
+        LOGGER.trace("{}: Task execution for {} failed, updating database", name, params);
+
+        TaskBehavior<TaskObj, TaskObj.Builder> behavior = params.taskRequest.behavior();
+        TaskState newState = behavior.asErrorTaskState(async.clock(), expected, failure);
+        checkState(newState.status().isError());
+        TaskObj updatedObj =
+            withNewVersionToken(behavior.newObjBuilder().from(expected).taskState(newState));
+        if (params.persist.updateConditional(expected, updatedObj)) {
+          // Database updated with final result
+          if (newState.status().isRetryable()) {
+            metrics.taskExecutionRetryableError();
+            LOGGER.debug(
+                "{}: Task execution raised retryable error for {} updated in database, retrying",
+                name,
+                params);
+            reattemptAfterRetryableError(params, newState.retryNotBefore());
+          } else {
+            metrics.taskExecutionFailure();
+            LOGGER.debug(
+                "{}: Task execution ended in final failure for {} updated in database, returning final result",
+                name,
+                params);
+            finalFailure(params, failure);
+          }
+        } else {
+          metrics.taskExecutionFailureRace();
+          String msg =
+              format(
+                  "Failed to update failure task execution result for %s in database (race condition)",
+                  params);
+          LOGGER.trace("{}: {}", name, msg);
+          finalFailure(params, new ConcurrentModificationException(msg, failure));
+        }
+      }
+
+    } catch (Throwable t2) {
+      // Unhandled failure
+      LOGGER.error(
+          "{}: Unhandled state while evaluating task execution result for {}", name, params, t2);
+      metrics.taskExecutionUnhandled();
+      finalFailure(params, t2);
+    } finally {
+      params.lock.unlock();
+    }
+  }
+
+  private void unexpectedNullExpectedState(
+      ExecParams params, TaskObj.Builder resultBuilder, Throwable failure) {
+    // Oops ... no clue how that might have happened, but handle it just in case.
+    String res;
+    if (failure != null) {
+      res = "exceptionally";
+    } else if (resultBuilder != null) {
+      res = "successfully";
+    } else {
+      res = "with an illegal null result";
+    }
+    String msg =
+        format(
+            "Task execution for %s finished %s, but the expected task obj state is null. Cannot persist the task execution result.",
+            params, res);
+    LOGGER.error("{}, {}", name, msg);
+    Exception ex = new IllegalStateException(msg);
+    if (failure != null) {
+      ex.addSuppressed(failure);
+    }
+    finalFailure(params, ex);
+  }
+
+  private void scheduleTaskRunningUpdate(ExecParams params, TaskObj current) {
+    // Called while holding the ExecParams.lock
+    Instant scheduleNotBefore =
+        params.taskRequest.behavior().performRunningStateUpdateAt(async.clock(), current);
+    params.runningUpdateScheduled =
+        async.schedule(() -> updateRunningState(params), scheduleNotBefore);
+  }
+
+  private void updateRunningState(ExecParams params) {
+    // Called from a thread pool, need to lock.
+    params.lock.lock();
+    try {
+
+      TaskObj current = params.runningObj;
+      if (current == null) {
+        // Local task execution finished, do nothing.
+        LOGGER.trace(
+            "{}: Local task execution has finished, no need to update running state for {}",
+            name,
+            params);
+        return;
+      }
+
+      metrics.taskUpdateRunningState();
+      TaskState state = current.taskState();
+      if (state.status() == TaskStatus.RUNNING) {
+        TaskBehavior<TaskObj, TaskObj.Builder> behavior = params.taskRequest.behavior();
+        TaskObj updated =
+            withNewVersionToken(
+                behavior
+                    .newObjBuilder()
+                    .from(current)
+                    .taskState(behavior.runningTaskState(async.clock(), null)));
+        if (updated.taskState().status() != TaskStatus.RUNNING) {
+          throw new IllegalStateException(
+              format(
+                  "TaskBehavior.runningTaskState() implementation %s returned illegal status %s, must return RUNNING",
+                  behavior.getClass().getName(), updated.taskState().status()));
+        }
+
+        try {
+          if (params.persist.updateConditional(current, updated)) {
+            params.runningObj = updated;
+            metrics.taskRunningStateUpdated();
+            // Current state successfully updated in database, reschedule running task update
+            LOGGER.trace(
+                "{}: Successfully updated state for locally running task for {}", name, params);
+            scheduleTaskRunningUpdate(params, updated);
+          } else {
+            metrics.taskRunningStateUpdateRace();
+            // Ran into a (remote) race, retry running-update
+            LOGGER.error(
+                "{}: Race on database update while updating running state for {}. The result of the local task "
+                    + "execution might be lost. When the local task execution finishes, it may also run into an "
+                    + "update-race, indicating that the task-result is lost.",
+                name,
+                params);
+            return; // don't re-schedule, there's no chance that another update will succeed.
+          }
+        } catch (Throwable t) {
+          LOGGER.error("{}: Unexpected exception updating task state for {}", name, params, t);
+          // re-schedule ... and pray
+          scheduleTaskRunningUpdate(params, current);
+        }
+      } else {
+        metrics.taskRunningStateUpdateNoLongerRunning();
+        LOGGER.trace(
+            "{}: Task for {} no longer running, skipping further local running state updates",
+            name,
+            params);
+      }
+    } finally {
+      params.lock.unlock();
+    }
+  }
+
+  private void reattemptAfterRetryableError(ExecParams params, Instant retryNotBefore) {
+    async.schedule(() -> tryLocal(params), retryNotBefore);
+  }
+
   private static final class ExecParams {
     final Persist persist;
-    final CompletableFuture<TaskObj> localResultFuture;
+    final CompletableFuture<TaskObj> resultFuture;
     final TaskRequest<TaskObj, TaskObj.Builder> taskRequest;
 
-    final AtomicReference<TaskObj> runningObj = new AtomicReference<>();
-    final AtomicReference<CompletionStage<Void>> runningUpdateScheduled = new AtomicReference<>();
+    final Lock lock = new ReentrantLock();
+
+    TaskObj runningObj;
+    CompletionStage<Void> runningUpdateScheduled;
 
     @SuppressWarnings("unchecked")
     ExecParams(Persist persist, TaskRequest<?, ?> taskRequest) {
       this.persist = persist;
-      this.localResultFuture = new CompletableFuture<>();
+      this.resultFuture = new CompletableFuture<>();
       this.taskRequest = (TaskRequest<TaskObj, TaskObj.Builder>) taskRequest;
     }
 
     ObjId objId() {
       return taskRequest.objId();
+    }
+
+    void cancelRunningStateUpdate() {
+      // Cancel scheduled running-state update
+      CompletionStage<Void> handle = runningUpdateScheduled;
+      if (handle != null) {
+        runningObj = null;
+        runningUpdateScheduled = null;
+        // Don't interrupt, not all implementations support that (Vert.X won't, see
+        // https://github.com/eclipse-vertx/vert.x/issues/3334)
+        handle.toCompletableFuture().cancel(false);
+      }
     }
 
     @Override
