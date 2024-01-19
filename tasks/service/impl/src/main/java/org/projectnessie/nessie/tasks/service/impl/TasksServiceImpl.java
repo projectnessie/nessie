@@ -361,7 +361,7 @@ public class TasksServiceImpl implements TasksService {
               format(
                   "Failed to update successful task execution result for %s in database (race condition), exposing as a failure",
                   params);
-          LOGGER.trace("{}: {}", name, msg);
+          LOGGER.warn("{}: {}", name, msg);
           finalFailure(params, new ConcurrentModificationException(msg, failure));
         }
       } else if (failure == null) {
@@ -399,7 +399,7 @@ public class TasksServiceImpl implements TasksService {
               format(
                   "Failed to update failure task execution result for %s in database (race condition)",
                   params);
-          LOGGER.trace("{}: {}", name, msg);
+          LOGGER.warn("{}: {}", name, msg);
           finalFailure(params, new ConcurrentModificationException(msg, failure));
         }
       }
@@ -489,7 +489,7 @@ public class TasksServiceImpl implements TasksService {
           } else {
             metrics.taskRunningStateUpdateRace();
             // Ran into a (remote) race, retry running-update
-            LOGGER.error(
+            LOGGER.warn(
                 "{}: Race on database update while updating running state for {}. The result of the local task "
                     + "execution might be lost. When the local task execution finishes, it may also run into an "
                     + "update-race, indicating that the task-result is lost.",
