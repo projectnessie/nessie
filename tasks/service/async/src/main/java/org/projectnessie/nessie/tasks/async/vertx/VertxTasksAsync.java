@@ -55,7 +55,7 @@ public class VertxTasksAsync implements TasksAsync {
   public CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore) {
     long realDelay = calculateDelay(clock, minimumDelayMillis, scheduleNotBefore);
 
-    // Cannot use Vertx.timer(), because current Quarkus 3.6.5 has a Vertx version that does not
+    // Cannot use Vertx.timer(), because current Quarkus 3.6.6 has a Vertx version that does not
     // have Vertx.timer(). We can use this once Quarkus uses a Vertx version >= 4.5.1:
     //    Timer timer = vertx.timer(realDelay, TimeUnit.MILLISECONDS);
     //    CompletionStage<Void> stage = timer.toCompletionStage().thenRun(runnable);

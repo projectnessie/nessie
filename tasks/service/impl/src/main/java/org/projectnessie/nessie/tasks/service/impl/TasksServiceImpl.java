@@ -316,12 +316,8 @@ public class TasksServiceImpl implements TasksService {
     params
         .taskRequest
         .submitExecution()
-        .handle(
-            (resultBuilder, failure) -> {
-              localTaskFinished(params, resultBuilder, failure);
-              // Return something (we're done with the execution / completion-stage)
-              return null;
-            });
+        .whenComplete(
+            (resultBuilder, failure) -> localTaskFinished(params, resultBuilder, failure));
   }
 
   private void localTaskFinished(
