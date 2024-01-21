@@ -23,6 +23,7 @@ extra["maven.name"] = "Nessie - Tasks - Async"
 
 dependencies {
   compileOnly(libs.vertx.core)
+  compileOnly(libs.microprofile.contextpropagation.api)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
@@ -32,4 +33,5 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
 
   testImplementation(libs.vertx.core)
+  testImplementation(libs.microprofile.contextpropagation.api)
 }
