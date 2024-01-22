@@ -155,6 +155,10 @@ public interface Persist {
   @Nonnull
   Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException;
 
+  default Obj getImmediate(@Nonnull ObjId id) {
+    return null;
+  }
+
   /**
    * Retrieves the object with ID {@code id}, having the same {@link ObjType type}.
    *
