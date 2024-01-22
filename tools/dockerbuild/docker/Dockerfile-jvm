@@ -20,7 +20,7 @@
 # (See site/docs/try/configuration.md)
 #
 ###
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.18-2
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.18-2.1705573234
 # NOTE: Do **NOT** bump ubi8 to ubi9 - that will break all the options above!
 
 LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
