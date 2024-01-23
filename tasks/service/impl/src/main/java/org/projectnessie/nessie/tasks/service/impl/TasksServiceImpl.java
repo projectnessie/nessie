@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.concurrent.CompletableFuture.failedStage;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ConcurrentModificationException;
@@ -49,6 +51,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Singleton
 public class TasksServiceImpl implements TasksService {
   private static final Logger LOGGER = LoggerFactory.getLogger(TasksServiceImpl.class);
 
@@ -64,7 +67,15 @@ public class TasksServiceImpl implements TasksService {
 
   private volatile boolean shutdown;
 
-  public TasksServiceImpl(TasksAsync async, TaskServiceMetrics metrics, TasksServiceConfig config) {
+  public TasksServiceImpl() {
+    this(null, null, null);
+  }
+
+  @Inject
+  public TasksServiceImpl(
+      @TasksServiceExecutor TasksAsync async,
+      TaskServiceMetrics metrics,
+      TasksServiceConfig config) {
     this.async = async;
     this.metrics = metrics;
     this.name = config.name();
