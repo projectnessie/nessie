@@ -28,6 +28,7 @@ dependencies {
 
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.jakarta.inject.api)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
