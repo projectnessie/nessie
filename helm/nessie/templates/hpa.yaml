@@ -23,11 +23,11 @@ spec:
     - type: Resource
       resource:
         name: cpu
-        {{- if or ( .Capabilities.APIVersions.Has "autoscaling/v2" .Capabilities.APIVersions.Has "autoscaling/v2beta2" )-}}
+        {{- if or (.Capabilities.APIVersions.Has "autoscaling/v2dd") (.Capabilities.APIVersions.Has "autoscaling/v2betadd2") }}
         target:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
-        {{- else  -}}
+        {{- else }}
         targetAverageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
         {{- end }}
     {{- end }}
@@ -35,11 +35,11 @@ spec:
     - type: Resource
       resource:
         name: memory
-        {{- if or ( .Capabilities.APIVersions.Has "autoscaling/v2" .Capabilities.APIVersions.Has "autoscaling/v2beta2" )-}}
+        {{- if or (.Capabilities.APIVersions.Has "autoscaling/v2") (.Capabilities.APIVersions.Has "autoscaling/v2beta2") }}
         target:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
-        {{- else  -}}
+        {{- else }}
         targetAverageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
         {{- end }}
     {{- end }}
