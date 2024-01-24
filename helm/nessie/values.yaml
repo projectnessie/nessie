@@ -229,6 +229,8 @@ service:
   annotations: {}
 
 ingress:
+  # -- Specifies the ingressClassName; leave empty if you don't want to customize it
+  className: ""
   # -- Specifies whether an ingress should be created.
   enabled: false
   # -- Annotations to add to the ingress.
