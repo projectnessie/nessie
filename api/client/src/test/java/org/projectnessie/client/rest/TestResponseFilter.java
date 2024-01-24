@@ -44,7 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -264,7 +264,7 @@ public class TestResponseFilter {
                       }
 
                       @Override
-                      public HttpClient.Method getRequestedMethod() {
+                      public Method getRequestedMethod() {
                         return null;
                       }
                     }))
@@ -314,13 +314,14 @@ public class TestResponseFilter {
                       }
 
                       @Override
-                      public HttpClient.Method getRequestedMethod() {
+                      public Method getRequestedMethod() {
                         return null;
                       }
                     }))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("" + Status.NOT_IMPLEMENTED.getCode())
         .hasMessageContaining(Status.NOT_IMPLEMENTED.getReason())
+        .hasMessageContaining("JSON response has unknown error format")
         .hasMessageContaining("ee7f7293-67ad-42bd-8973-179801e7120e-1")
         .hasMessageContaining("Cannot build NessieError"); // jackson parse error
   }
@@ -436,7 +437,7 @@ public class TestResponseFilter {
     }
 
     @Override
-    public HttpClient.Method getRequestedMethod() {
+    public Method getRequestedMethod() {
       return null;
     }
   }

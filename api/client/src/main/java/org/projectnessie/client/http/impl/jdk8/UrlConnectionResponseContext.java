@@ -26,7 +26,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
-import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 
@@ -34,9 +34,9 @@ final class UrlConnectionResponseContext implements ResponseContext {
 
   private final HttpURLConnection connection;
   private final URI uri;
-  private final HttpClient.Method method;
+  private final Method method;
 
-  UrlConnectionResponseContext(HttpURLConnection connection, URI uri, HttpClient.Method method) {
+  UrlConnectionResponseContext(HttpURLConnection connection, URI uri, Method method) {
     this.connection = connection;
     this.uri = uri;
     this.method = method;
@@ -68,7 +68,7 @@ final class UrlConnectionResponseContext implements ResponseContext {
   }
 
   @Override
-  public HttpClient.Method getRequestedMethod() {
+  public Method getRequestedMethod() {
     return method;
   }
 

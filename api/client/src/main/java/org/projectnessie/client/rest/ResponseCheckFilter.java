@@ -19,10 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.projectnessie.client.http.ResponseContext;
@@ -106,23 +103,22 @@ public class ResponseCheckFilter {
           .build();
     }
 
-    final String inputString;
-    try {
-      inputString = readToString(inputStream);
-    } catch (IOException e) {
-      IOException readException = new IOException("Unable to read response body");
-      readException.addSuppressed(e);
-      return error.clientProcessingException(readException).build();
+    if (!requestCtx.isJsonCompatibleResponse()) {
+      final String inputString = tryReadToString(inputStream);
+      return error
+          .clientProcessingException(
+              new IOException(
+                  "Response content type was not json. The response body was:\n" + inputString))
+          .build();
     }
 
     final JsonNode errorData;
     try {
-      errorData = reader.readTree(inputString);
+      errorData = reader.readTree(inputStream);
     } catch (IOException e) {
-      IOException parseException =
-          new IOException("Unable to parse response body as JSON:\n" + inputString);
-      parseException.addSuppressed(e);
-      return error.clientProcessingException(parseException).build();
+      return error
+          .clientProcessingException(new IOException("Unable to parse response body as JSON", e))
+          .build();
     }
 
     if (errorData.isMissingNode()) {
@@ -139,21 +135,33 @@ public class ResponseCheckFilter {
       // If the error payload is valid JSON, but does not represent a NessieError, it is likely
       // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
       // text to the caller for trouble-shooting.
-      IOException mapperException =
-          new IOException("JSON response has unknown error format:\n" + inputString);
-      mapperException.addSuppressed(e);
-      return error.clientProcessingException(mapperException).build();
+      return error
+          .clientProcessingException(
+              new IOException("JSON response has unknown error format:\n" + errorData, e))
+          .build();
     }
   }
 
-  private static String readToString(InputStream inputStream) throws IOException {
-    StringBuilder out = new StringBuilder();
-    int bufferSize = 1024;
-    char[] buffer = new char[bufferSize];
-    Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-    for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
-      out.append(buffer, 0, numRead);
+  private static String tryReadToString(InputStream inputStream) {
+    try {
+      StringBuilder out = new StringBuilder();
+      int bufferSize = 1024;
+      char[] buffer = new char[bufferSize];
+      Reader in = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+      for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
+        out.append(buffer, 0, numRead);
+        if (out.length() > 3000) {
+          out.append("... (truncated)");
+          break;
+        }
+      }
+      String res = out.toString();
+      if (res.isEmpty()) {
+        return "<empty>";
+      }
+      return res;
+    } catch (Exception e) {
+      return "<unreadable inputstream>";
     }
-    return out.toString();
   }
 }

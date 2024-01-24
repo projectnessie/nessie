@@ -167,6 +167,7 @@ class TestRestV1Client {
         (req, resp) -> {
           if (message == null) {
             resp.setStatus(status);
+            resp.setContentType("application/json");
           } else {
             resp.sendError(status, message);
           }
@@ -203,7 +204,7 @@ class TestRestV1Client {
           .hasMessageContaining("Not Found (HTTP/404)")
           .hasMessageContaining("/unknownPath/config")
           .hasMessageContaining(
-              "Unable to parse response body as JSON:\n<html><head><title>Error</title></head><body>the requested URL does not exist</body></html>")
+              "Response content type was not json. The response body was:\n<html><head><title>Error</title></head><body>the requested URL does not exist</body></html>")
           .hasNoSuppressedExceptions()
           .extracting("error")
           .asInstanceOf(type(NessieError.class))

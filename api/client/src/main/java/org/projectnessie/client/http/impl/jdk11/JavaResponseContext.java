@@ -27,6 +27,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 
@@ -39,10 +40,9 @@ final class JavaResponseContext implements ResponseContext {
 
   private final HttpResponse<InputStream> response;
   private final InputStream inputStream;
-  private final org.projectnessie.client.http.HttpClient.Method method;
+  private final Method method;
 
-  JavaResponseContext(
-      HttpResponse<InputStream> response, org.projectnessie.client.http.HttpClient.Method method) {
+  JavaResponseContext(HttpResponse<InputStream> response, Method method) {
     this.response = response;
     this.method = method;
 
@@ -79,7 +79,7 @@ final class JavaResponseContext implements ResponseContext {
   }
 
   @Override
-  public org.projectnessie.client.http.HttpClient.Method getRequestedMethod() {
+  public Method getRequestedMethod() {
     return method;
   }
 
