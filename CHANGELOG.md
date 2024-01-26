@@ -16,6 +16,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+* Nessie Docker images now contain Java 21
+* Helm: Make ingressClassName configurable
+* Helm: Use auto scaling
+* Improve error message when JDBC/C* columns are missing
+
 ### Deprecations
 
 ### Fixes
