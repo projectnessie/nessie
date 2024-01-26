@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.76.5 Release (January 26, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.5).
+
+### Changes
+
+- Nessie Docker images now contain Java 21
+- Helm: Make ingressClassName configurable
+- Helm: Use auto scaling
+- Improve error message when JDBC/C* columns are missing
+
+### Commits
+
 ## 0.76.4 Release (January 26, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.4).
