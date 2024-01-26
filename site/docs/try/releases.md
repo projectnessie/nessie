@@ -2,6 +2,31 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.76.6 Release (January 26, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.6).
+
+### Changes
+
+- Nessie Docker images now contain Java 21
+- Helm: Make ingressClassName configurable
+- Helm: Use auto scaling
+- Improve error message when JDBC/C* columns are missing
+
+### Commits
+* Bump Spark 3.3 from 3.3.3 to 3.3.4 (#7990)
+* Ninja: update CHANGELOG
+* Helm chart: use autoscaling/v2 (#7982)
+* Make ingressClassName configurable (#7979)
+* Coordinated Tasks: make service-impl CDI-friendly (#7974)
+* Use Java 21 in published Docker images (#7973)
+* Coordinated Tasks (#7947)
+* Build: add some more javac linting (#7965)
+* nessie-events-quarkus: remove deprecation warnings (#7964)
+* Bump Spark 3.4 from 3.4.1 to 3.4.2 (#7963)
+* Improve error message when JDBC/C* columns are missing (#7961)
+* Bump logback-classic from 1.2.12 to 1.2.13 (#7962)
+
 ## 0.76.5 Release (January 26, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.5).
