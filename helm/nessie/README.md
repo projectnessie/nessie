@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.76.3](https://img.shields.io/badge/Version-0.76.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.76.4](https://img.shields.io/badge/Version-0.76.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -80,6 +80,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart version. |
 | ingress.annotations | object | `{}` | Annotations to add to the ingress. |
+| ingress.className | string | `""` | Specifies the ingressClassName; leave empty if you don't want to customize it |
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
