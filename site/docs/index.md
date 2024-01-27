@@ -8,7 +8,8 @@ template: "home.html"
 * Cross-table transactions and visibility
 * Open data lake approach, supporting Hive, Spark, Dremio, AWS Athena, etc.
 * Works with Apache Iceberg tables
-* Run as a docker image or fork it on GitHub
+* Run as a Docker image or on Kubernetes
+* Fork it on GitHub
 
 Get in touch via our [Google Group](https://groups.google.com/g/projectnessie) and our
 [Zulip Chat](https://project-nessie.zulipchat.com/) and follow us on
