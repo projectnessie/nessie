@@ -172,8 +172,8 @@ spec:
               value: {{ .Values.authentication.oidcClientId }}
             {{- end }}
             {{- else }}
-            - name: QUARKUS_LOG_CATEGORY__IO_QUARKUS_OIDC__LEVEL
-              value: "ERROR"
+            - name: QUARKUS_OIDC_TENANT_ENABLED
+              value: "false"
             {{- end }}
 
             {{- if .Values.authorization.enabled }}
