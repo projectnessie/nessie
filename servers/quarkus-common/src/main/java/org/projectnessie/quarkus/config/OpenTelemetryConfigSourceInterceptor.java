@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.config;
 
+import io.quarkus.opentelemetry.runtime.config.runtime.exporter.OtlpExporterRuntimeConfig;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -33,27 +34,49 @@ public class OpenTelemetryConfigSourceInterceptor implements ConfigSourceInterce
     if (configValue == null || configValue.getValue() == null) {
       return null;
     }
-    if (name.equals("quarkus.otel.sdk.disabled")
-        && configValue.getConfigSourceOrdinal() <= APPLICATION_PROPERTIES_CLASSPATH_ORDINAL
-        && configValue.getValue().equals("false")) {
-      // Check for a user-configured endpoint URL. If none is found, disable OpenTelemetry.
-      ConfigValue tracesEndpoint = context.proceed("quarkus.otel.exporter.otlp.traces.endpoint");
-      if (tracesEndpoint.getConfigSourceOrdinal() <= APPLICATION_PROPERTIES_CLASSPATH_ORDINAL) {
-        tracesEndpoint = context.proceed("quarkus.otel.exporter.otlp.endpoint");
-      }
-      if (tracesEndpoint.getConfigSourceOrdinal() <= APPLICATION_PROPERTIES_CLASSPATH_ORDINAL) {
-        LOGGER.info("No OpenTelemetry endpoint configured, disabling OpenTelemetry");
-        LOGGER.info(
-            "To enable OpenTelemetry, define a collector endpoint URL "
-                + "using the property: quarkus.otel.exporter.otlp.traces.endpoint");
+    if (name.equals("quarkus.otel.sdk.disabled") && configValue.getValue().equals("false")) {
+      if (shouldForciblyDisableOpenTelemetry(context, configValue)) {
         configValue = configValue.withValue("true");
-      } else {
-        LOGGER.info(
-            "Found OpenTelemetry collector endpoint URL: {} (from property: {}); enabling OpenTelemetry",
-            tracesEndpoint.getValue(),
-            tracesEndpoint.getName());
       }
     }
     return configValue;
+  }
+
+  private boolean shouldForciblyDisableOpenTelemetry(
+      ConfigSourceInterceptorContext context, ConfigValue sdkDisabled) {
+    if (isUserDefined(sdkDisabled)) {
+      return false;
+    }
+    // Check for a user-configured endpoint URL. If none is found, disable OpenTelemetry.
+    ConfigValue tracesEndpoint = context.proceed("quarkus.otel.exporter.otlp.traces.endpoint");
+    if (isUserDefined(tracesEndpoint)) {
+      logUserDefinedEndpoint(tracesEndpoint);
+      return false;
+    }
+    // See io.quarkus.opentelemetry.runtime.exporter.otlp.OTelExporterRecorder.resolveEndpoint()
+    // If *.traces.endpoint has its default value, *.endpoint is used instead.
+    if (tracesEndpoint.getValue().equals(OtlpExporterRuntimeConfig.DEFAULT_GRPC_BASE_URI)) {
+      tracesEndpoint = context.proceed("quarkus.otel.exporter.otlp.endpoint");
+    }
+    if (isUserDefined(tracesEndpoint)) {
+      logUserDefinedEndpoint(tracesEndpoint);
+      return false;
+    }
+    LOGGER.info("No OpenTelemetry endpoint configured, disabling OpenTelemetry");
+    LOGGER.info(
+        "To enable OpenTelemetry, define a traces collector endpoint URL "
+            + "using the property: quarkus.otel.exporter.otlp.traces.endpoint");
+    return true;
+  }
+
+  private static void logUserDefinedEndpoint(ConfigValue tracesEndpoint) {
+    LOGGER.info(
+        "Found OpenTelemetry collector endpoint URL: {} (from property: {}); enabling OpenTelemetry",
+        tracesEndpoint.getValue(),
+        tracesEndpoint.getName());
+  }
+
+  private static boolean isUserDefined(ConfigValue configValue) {
+    return configValue.getConfigSourceOrdinal() > APPLICATION_PROPERTIES_CLASSPATH_ORDINAL;
   }
 }
