@@ -49,8 +49,9 @@ public class OpenTelemetryConfigSourceInterceptor implements ConfigSourceInterce
         configValue = configValue.withValue("true");
       } else {
         LOGGER.info(
-            "Found OpenTelemetry collector endpoint URL: {}; enabling OpenTelemetry",
-            tracesEndpoint.getValue());
+            "Found OpenTelemetry collector endpoint URL: {} (from property: {}); enabling OpenTelemetry",
+            tracesEndpoint.getValue(),
+            tracesEndpoint.getName());
       }
     }
     return configValue;
