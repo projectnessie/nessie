@@ -62,6 +62,8 @@ class TestBasicAuthentication extends BaseClientAuthTest {
       return ImmutableMap.<String, String>builder()
           .putAll(super.getConfigOverrides())
           .put("quarkus.http.auth.basic", "true")
+          // Need a dummy URL to satisfy the Quarkus OIDC extension.
+          .put("quarkus.oidc.auth-server-url", "http://127.255.0.0:0/auth/realms/unset/")
           .build();
     }
   }

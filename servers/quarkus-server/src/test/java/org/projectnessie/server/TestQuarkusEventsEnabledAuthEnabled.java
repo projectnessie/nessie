@@ -45,6 +45,8 @@ public class TestQuarkusEventsEnabledAuthEnabled extends AbstractQuarkusEvents {
           .putAll(super.getConfigOverrides())
           .put("nessie.version.store.type", IN_MEMORY.name())
           .put("quarkus.http.auth.basic", "true")
+          // Need a dummy URL to satisfy the Quarkus OIDC extension.
+          .put("quarkus.oidc.auth-server-url", "http://127.255.0.0:0/auth/realms/unset/")
           .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
           .putAll(AuthenticationEnabledProfile.SECURITY_CONFIG)
           .build();
