@@ -1,9 +1,9 @@
-# Setting Up Nessie¶
+# Setting Up Nessie
 
 <iframe width="780" height="500" src="https://www.youtube.com/embed/QUmOU8ea_i4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-As part of each release, Nessie is made available as a fast-start docker image. This is the easiest
-and fastest way to try out nessie locally and test all its capabilities.
+As part of each release, Nessie is made available as a Docker image. This is the easiest
+and fastest way to try out Nessie locally and test all its capabilities.
 
 The primary repository for Nessie images is [GitHub Container Registry]. Images are also mirrored
 to [Docker Hub] and [Quay.io].
@@ -61,9 +61,9 @@ INFO running in /deployments
 ```
 
 !!! note
-    if you see a warning about `OIDC Server is not available` in the logs, you can safely ignore it 
-    for now. This happens because Nessie is configured to use OIDC by default to authenticate users,
-    but no OIDC server is configured out of the box.
+    If you see a warning about `OIDC Server is not available` in the logs, you can safely ignore it 
+    for now. This happens in older Nessie versions because Nessie was configured to use OIDC by 
+    default to authenticate users, but no OIDC server was configured out of the box.
 
 If you need to configure Nessie, you can do so by passing in environment variables. For example, you
 can change the port Nessie listens on by passing in the `QUARKUS_HTTP_PORT` environment variable:
