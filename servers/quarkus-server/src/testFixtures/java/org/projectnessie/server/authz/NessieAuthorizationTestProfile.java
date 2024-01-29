@@ -78,6 +78,8 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
         .putAll(super.getConfigOverrides())
         .putAll(AUTHZ_RULES)
         .put("nessie.server.authorization.enabled", "true")
+        // Need a dummy URL to satisfy the Quarkus OIDC extension.
+        .put("quarkus.oidc.auth-server-url", "http://127.255.0.0:0/auth/realms/unset/")
         .build();
   }
 }
