@@ -29,7 +29,7 @@ runs:
         fi
 
     - name: Gradle / Init
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
         arguments: -h

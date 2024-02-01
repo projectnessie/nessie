@@ -49,7 +49,7 @@ jobs:
         java-version: ${{ matrix.java-version }}
 
     - name: Gradle / compile
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: |
           spotlessCheck
@@ -60,7 +60,7 @@ jobs:
           --scan
 
     - name: Gradle / Compile Quarkus
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: |
           :nessie-quarkus:compileAll
@@ -69,22 +69,22 @@ jobs:
           --scan
 
     - name: Gradle / unit test
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: test --scan
 
     - name: Gradle / check incl. integ-test
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: check --scan
 
     - name: Gradle / assemble + publish local
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: buildToolsIntegrationTest
 

@@ -62,7 +62,7 @@ jobs:
       uses: ./.github/actions/dev-tool-java
 
     - name: Gradle / compile
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       env:
         # Same as for ci.yml
         GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17

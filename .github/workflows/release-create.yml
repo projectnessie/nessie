@@ -69,7 +69,7 @@ jobs:
     ### END runner setup
 
     - name: Bump to release version
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         cache-disabled: true
         arguments: :bumpVersion --bumpType ${{ env.BUMP_TYPE }} --bumpToRelease
@@ -130,7 +130,7 @@ jobs:
         bump-site-version: 'true'
 
     - name: Patch changelog
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         cache-disabled: true
         arguments: :patchChangelog
@@ -195,7 +195,7 @@ jobs:
 
     # Bump to the next patch version as a SNAPSHOT
     - name: Bump to next patch version
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/actions/setup-gradle@v3
       with:
         arguments: :bumpVersion --bumpType patch
 
