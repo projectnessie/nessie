@@ -28,7 +28,10 @@ import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +40,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -69,7 +74,7 @@ public class ITOAuth2Client {
 
   @Container
   private static final KeycloakContainer KEYCLOAK =
-      new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange")
+      new KeycloakContainer().useTls().withFeaturesEnabled("preview", "token-exchange")
       // Useful when debugging Keycloak REST endpoints:
       // .withEnv("QUARKUS_HTTP_ACCESS_LOG_ENABLED", "true")
       // .withEnv("QUARKUS_HTTP_ACCESS_LOG_PATTERN", "long")
@@ -81,11 +86,12 @@ public class ITOAuth2Client {
   private static URI tokenEndpoint;
   private static URI authEndpoint;
   private static URI deviceAuthEndpoint;
+  private static SSLContext sslContext;
 
   @InjectSoftAssertions private SoftAssertions soft;
 
   @BeforeAll
-  static void setUpKeycloak() {
+  static void setUpKeycloak() throws Exception {
     issuerUrl = URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/");
     tokenEndpoint = issuerUrl.resolve("protocol/openid-connect/token");
     authEndpoint = issuerUrl.resolve("protocol/openid-connect/auth");
@@ -100,6 +106,18 @@ public class ITOAuth2Client {
     createClient("ResourceServer", false);
     // Create a user that will be used to obtain access tokens via password grant
     createUser();
+
+    // Use the KeycloakContainer's built-in certificates
+    try (InputStream is = KEYCLOAK.getClass().getClassLoader().getResourceAsStream("tls.jks")) {
+      char[] password = "changeit".toCharArray();
+      KeyStore kcStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      kcStore.load(is, password);
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init(kcStore);
+      sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+    }
   }
 
   /**
@@ -131,7 +149,7 @@ public class ITOAuth2Client {
         OAuth2Client client2 = new OAuth2Client(config2);
         OAuth2Client client3 = new OAuth2Client(config3);
         ResourceOwnerEmulator resourceOwner =
-            new ResourceOwnerEmulator(AUTHORIZATION_CODE, "Alice", "s3cr3t");
+            new ResourceOwnerEmulator(AUTHORIZATION_CODE, "Alice", "s3cr3t", sslContext);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       resourceOwner.replaceSystemOut();
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
@@ -298,7 +316,7 @@ public class ITOAuth2Client {
         clientConfig("Client2", false).grantType(AUTHORIZATION_CODE).build();
     try (OAuth2Client client = new OAuth2Client(config);
         ResourceOwnerEmulator resourceOwner =
-            new ResourceOwnerEmulator(AUTHORIZATION_CODE, "Alice", "s3cr3t")) {
+            new ResourceOwnerEmulator(AUTHORIZATION_CODE, "Alice", "s3cr3t", sslContext)) {
       resourceOwner.replaceSystemOut();
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> client.close());
@@ -316,7 +334,7 @@ public class ITOAuth2Client {
     OAuth2ClientConfig config = clientConfig("Client2", false).grantType(DEVICE_CODE).build();
     try (OAuth2Client client = new OAuth2Client(config);
         ResourceOwnerEmulator resourceOwner =
-            new ResourceOwnerEmulator(DEVICE_CODE, "Alice", "s3cr3t")) {
+            new ResourceOwnerEmulator(DEVICE_CODE, "Alice", "s3cr3t", sslContext)) {
       resourceOwner.replaceSystemOut();
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> client.close());
@@ -391,6 +409,7 @@ public class ITOAuth2Client {
   private static OAuth2ClientConfig.Builder clientConfig(String clientId, boolean discovery) {
     OAuth2ClientConfig.Builder builder =
         OAuth2ClientConfig.builder()
+            .sslContext(sslContext)
             .clientId(clientId)
             .clientSecret("s3cr3t")
             .username("Alice")
@@ -471,6 +490,7 @@ public class ITOAuth2Client {
   private static HttpClient.Builder validatingHttpClient(String clientId) {
     HttpAuthentication authentication = BasicAuthenticationProvider.create(clientId, "s3cr3t");
     return HttpClient.builder()
+        .setSslContext(sslContext)
         .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
         .setObjectMapper(new ObjectMapper())
         .setDisableCompression(true)
@@ -501,7 +521,7 @@ public class ITOAuth2Client {
       case AUTHORIZATION_CODE:
       case DEVICE_CODE:
         ResourceOwnerEmulator resourceOwner =
-            new ResourceOwnerEmulator(initialGrantType, "Alice", "s3cr3t");
+            new ResourceOwnerEmulator(initialGrantType, "Alice", "s3cr3t", sslContext);
         resourceOwner.replaceSystemOut();
         resourceOwner.setErrorListener(e -> client.close());
         resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));

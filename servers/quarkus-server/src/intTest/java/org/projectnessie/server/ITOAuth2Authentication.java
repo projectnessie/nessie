@@ -64,7 +64,8 @@ public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
 
   @Override
   protected ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException {
-    ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(grantType, "alice", "alice");
+    ResourceOwnerEmulator resourceOwner =
+        new ResourceOwnerEmulator(grantType, "alice", "alice", null);
     resourceOwner.replaceSystemOut();
     resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
     resourceOwner.setErrorListener(e -> api().close());

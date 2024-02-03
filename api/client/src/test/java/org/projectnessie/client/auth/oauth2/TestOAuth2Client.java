@@ -391,8 +391,7 @@ class TestOAuth2Client {
       OAuth2ClientConfig config =
           configBuilder(server, false).grantType(GrantType.AUTHORIZATION_CODE).build();
 
-      try (ResourceOwnerEmulator resourceOwner =
-              new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE);
+      try (ResourceOwnerEmulator resourceOwner = ResourceOwnerEmulator.forAuthorizationCode();
           AuthorizationCodeFlow flow =
               new AuthorizationCodeFlow(config, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
@@ -435,7 +434,7 @@ class TestOAuth2Client {
               .deviceCodeFlowPollInterval(Duration.ofMillis(100))
               .build();
 
-      try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
+      try (ResourceOwnerEmulator resourceOwner = ResourceOwnerEmulator.forDeviceCode();
           DeviceCodeFlow flow = new DeviceCodeFlow(config, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();

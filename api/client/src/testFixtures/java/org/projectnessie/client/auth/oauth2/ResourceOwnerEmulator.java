@@ -46,6 +46,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.slf4j.Logger;
@@ -62,7 +64,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
    * within a Quarkus test.
    */
   public static ResourceOwnerEmulator forAuthorizationCode() throws IOException {
-    return new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE);
+    return new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE, null, null, null);
   }
 
   /**
@@ -70,7 +72,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
    * within a Quarkus test.
    */
   public static ResourceOwnerEmulator forDeviceCode() throws IOException {
-    return new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
+    return new ResourceOwnerEmulator(GrantType.DEVICE_CODE, null);
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ResourceOwnerEmulator.class);
@@ -85,6 +87,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private final String username;
   private final String password;
   private final ExecutorService executor;
+  private final SSLContext sslContext;
 
   private final PipedOutputStream pipeOut = new PipedOutputStream();
   private final PipedInputStream pipeIn = new PipedInputStream(pipeOut);
@@ -103,12 +106,14 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private volatile int expectedCallbackStatus = HTTP_OK;
   private volatile boolean denyConsent = false;
 
-  public ResourceOwnerEmulator(GrantType grantType) throws IOException {
-    this(grantType, null, null);
+  public ResourceOwnerEmulator(GrantType grantType, SSLContext sslContext) throws IOException {
+    this(grantType, null, null, sslContext);
   }
 
-  public ResourceOwnerEmulator(GrantType grantType, String username, String password)
+  public ResourceOwnerEmulator(
+      GrantType grantType, String username, String password, SSLContext sslContext)
       throws IOException {
+    this.sslContext = sslContext;
     this.grantType = grantType;
     this.username = username;
     this.password = password;
@@ -195,7 +200,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
       Set<String> cookies = new HashSet<>();
       URL callbackUrl;
       if (username == null || password == null) {
-        HttpURLConnection conn = (HttpURLConnection) initialUrl.openConnection();
+        HttpURLConnection conn = openConnection(initialUrl);
         callbackUrl = readRedirectUrl(conn, cookies);
         conn.disconnect();
       } else {
@@ -281,7 +286,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
                   + "&state="
                   + params.get("state"));
     }
-    HttpURLConnection conn = (HttpURLConnection) callbackUrl.openConnection();
+    HttpURLConnection conn = openConnection(callbackUrl);
     conn.setRequestMethod("GET");
     int status = conn.getResponseCode();
     conn.disconnect();
@@ -378,6 +383,11 @@ public class ResourceOwnerEmulator implements AutoCloseable {
           new URL(baseUri.getScheme(), baseUri.getHost(), baseUri.getPort(), url.getFile());
       conn = (HttpURLConnection) transformed.openConnection();
     }
+
+    if (conn instanceof HttpsURLConnection) {
+      ((HttpsURLConnection) conn).setSSLSocketFactory(sslContext.getSocketFactory());
+    }
+
     // See https://github.com/projectnessie/nessie/issues/7918
     conn.addRequestProperty("Accept", "text/html, *; q=.2, */*; q=.2");
     return conn;
