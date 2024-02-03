@@ -19,7 +19,7 @@ import jakarta.annotation.Nonnull;
 import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
-public class CockroachBackendTestFactory extends PostgreSQLBackendTestFactory {
+public class CockroachBackendTestFactory extends ContainerBackendTestFactory {
 
   @Override
   public String getName() {
@@ -29,7 +29,6 @@ public class CockroachBackendTestFactory extends PostgreSQLBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String version = System.getProperty("it.nessie.container.cockroach.tag", "latest");
-    return new CockroachContainer("cockroachdb/cockroach:" + version);
+    return new CockroachContainer(dockerImage("cockroach"));
   }
 }

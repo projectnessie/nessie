@@ -15,11 +15,15 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -38,14 +42,8 @@ public class PostgresTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    String version = System.getProperty("it.nessie.container.postgres.tag");
-    if (version == null) {
-      throw new RuntimeException(
-          "postgres container version is not specified. Please configure it using the system property it.nessie.container.postgres.tag");
-    }
-
     container =
-        new PostgreSQLContainer<>("postgres:" + version)
+        new PostgreSQLContainer<>(dockerImage("postgres"))
             .withLogConsumer(outputFrame -> {})
             .withStartupAttempts(5);
     containerNetworkId.ifPresent(container::withNetworkMode);
@@ -87,6 +85,25 @@ public class PostgresTestResourceLifecycleManager
       } finally {
         container = null;
       }
+    }
+  }
+
+  protected static String dockerImage(String dbName) {
+    URL resource =
+        PostgresTestResourceLifecycleManager.class.getResource("Dockerfile-" + dbName + "-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      String image = imageTag[0];
+      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
+      return image + ':' + version;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
     }
   }
 }

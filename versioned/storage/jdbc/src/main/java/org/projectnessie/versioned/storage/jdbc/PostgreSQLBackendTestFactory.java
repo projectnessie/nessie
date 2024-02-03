@@ -29,7 +29,7 @@ public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String version = System.getProperty("it.nessie.container.postgres.tag", "latest");
-    return new PostgreSQLContainer<>("postgres:" + version);
+    String dockerImage = dockerImage("postgres");
+    return new PostgreSQLContainer<>(dockerImage);
   }
 }

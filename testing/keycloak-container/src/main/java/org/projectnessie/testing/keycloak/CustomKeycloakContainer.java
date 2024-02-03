@@ -15,12 +15,16 @@
  */
 package org.projectnessie.testing.keycloak;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -116,14 +120,35 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
   @Value.Immutable
   public abstract static class KeycloakConfig {
+
+    public static final String DEFAULT_IMAGE;
+    public static final String DEFAULT_TAG;
+
+    static {
+      URL resource = KeycloakConfig.class.getResource("Dockerfile-keycloak-version");
+      try (InputStream in = resource.openConnection().getInputStream()) {
+        String[] imageTag =
+            Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+                .map(String::trim)
+                .filter(l -> l.startsWith("FROM "))
+                .map(l -> l.substring(5).trim().split(":"))
+                .findFirst()
+                .orElseThrow();
+        DEFAULT_IMAGE = imageTag[0];
+        DEFAULT_TAG = imageTag[1];
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to extract tag from " + resource, e);
+      }
+    }
+
     @Value.Default
     public String dockerImage() {
-      return "quay.io/keycloak/keycloak";
+      return DEFAULT_IMAGE;
     }
 
     @Value.Default
     public String dockerTag() {
-      return "latest";
+      return DEFAULT_TAG;
     }
 
     @Value.Default

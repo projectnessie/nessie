@@ -16,13 +16,17 @@
 package org.projectnessie.versioned.storage.cassandra;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.CassandraContainer.CQL_PORT;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,18 +44,15 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
       LoggerFactory.getLogger(AbstractCassandraBackendTestFactory.class);
   static final String KEYSPACE_FOR_TEST = "nessie";
 
-  private final String systemPropertyPart;
-  private final String imageName;
+  private final String dbName;
   private final List<String> args;
 
   private CassandraContainer<?> container;
   private InetSocketAddress hostAndPort;
   private String localDc;
 
-  AbstractCassandraBackendTestFactory(
-      String imageName, String systemPropertyPart, List<String> args) {
-    this.systemPropertyPart = systemPropertyPart;
-    this.imageName = imageName;
+  AbstractCassandraBackendTestFactory(String dbName, List<String> args) {
+    this.dbName = dbName;
     this.args = args;
   }
 
@@ -103,11 +104,10 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
       throw new IllegalStateException("Already started");
     }
 
-    String version =
-        System.getProperty("it.nessie.container." + systemPropertyPart + "-local.tag", "latest");
+    String image = dockerImage(dbName);
 
     DockerImageName dockerImageName =
-        DockerImageName.parse(imageName).withTag(version).asCompatibleSubstituteFor("cassandra");
+        DockerImageName.parse(image).asCompatibleSubstituteFor("cassandra");
     for (int retry = 0; ; retry++) {
       CassandraContainer<?> c =
           new CassandraContainer<>(dockerImageName)
@@ -139,6 +139,26 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
     localDc = container.getLocalDatacenter();
 
     hostAndPort = InetSocketAddress.createUnresolved(host, port);
+  }
+
+  protected static String dockerImage(String dbName) {
+    URL resource =
+        AbstractCassandraBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      String imageName = imageTag[0];
+      String version =
+          System.getProperty("it.nessie.container." + dbName + "-local.tag", imageTag[1]);
+      return imageName + ':' + version;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
   }
 
   public String getKeyspace() {

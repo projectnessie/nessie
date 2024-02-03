@@ -15,8 +15,13 @@
  */
 package org.projectnessie.versioned.storage.mongodb;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.mongodb.client.MongoClient;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +45,24 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
     return MongoDBBackendFactory.NAME;
   }
 
+  protected static String dockerImage(String dbName) {
+    URL resource = MongoDBBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      String image = imageTag[0];
+      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
+      return image + ':' + version;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
+  }
+
   /**
    * Starts MongoDB with an optional Docker network ID and a flag to turn off all output to stdout
    * and stderr.
@@ -49,11 +72,10 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
       throw new IllegalStateException("Already started");
     }
 
-    String version = System.getProperty("it.nessie.container.mongodb.tag", "latest");
-
     for (int retry = 0; ; retry++) {
       MongoDBContainer c =
-          new MongoDBContainer("mongo:" + version).withLogConsumer(new Slf4jLogConsumer(LOGGER));
+          new MongoDBContainer(dockerImage("mongodb"))
+              .withLogConsumer(new Slf4jLogConsumer(LOGGER));
       containerNetworkId.ifPresent(c::withNetworkMode);
       try {
         c.start();
