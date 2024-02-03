@@ -64,20 +64,18 @@ dependencies {
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
-  scanDependenciesDisable.set(false)
-  infoVersion.set(project.version.toString())
-  infoDescription.set(
+  scanDependenciesDisable = false
+  infoVersion = project.version.toString()
+  infoDescription =
     "Transactional Catalog for Data Lakes\n" +
       "\n" +
       "* Git-inspired data version control\n" +
       "* Cross-table transactions and visibility\n" +
       "* Works with Apache Iceberg tables"
-  )
-  schemaFilename.set("META-INF/openapi/openapi")
-  operationIdStrategy.set(OperationIdStrategy.METHOD)
-  scanPackages.set(
+  schemaFilename = "META-INF/openapi/openapi"
+  operationIdStrategy = OperationIdStrategy.METHOD
+  scanPackages =
     listOf("org.projectnessie.api", "org.projectnessie.api.http", "org.projectnessie.model")
-  )
 }
 
 tasks.named<ProcessResources>("processResources").configure {
@@ -103,7 +101,7 @@ artifacts { add(openapiSource.name, file("src/main/resources/META-INF")) }
 annotationStripper {
   registerDefault().configure {
     annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
+    unmodifiedClassesForJavaVersion = 11
   }
 }
 

@@ -24,4 +24,4 @@ plugins {
   id("nessie-testing")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release.set(11) }
+tasks.withType<JavaCompile>().configureEach { options.release = 11 }
