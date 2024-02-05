@@ -20,18 +20,22 @@ import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AnonymousAuthenticationRequest;
+import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
+import io.quarkus.security.spi.runtime.AuthenticationSuccessEvent;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticator;
-import io.quarkus.vertx.http.runtime.security.PathMatchingHttpSecurityPolicy;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.event.Event;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.function.Supplier;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 
 /**
@@ -56,10 +60,20 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
   public NessieHttpAuthenticator(
       QuarkusNessieAuthenticationConfig config,
       IdentityProviderManager identityProviderManager,
-      Instance<PathMatchingHttpSecurityPolicy> pathMatchingPolicy,
+      Event<AuthenticationFailureEvent> authFailureEvent,
+      Event<AuthenticationSuccessEvent> authSuccessEvent,
+      BeanManager beanManager,
       Instance<HttpAuthenticationMechanism> httpAuthenticationMechanism,
-      Instance<IdentityProvider<?>> providers) {
-    super(identityProviderManager, pathMatchingPolicy, httpAuthenticationMechanism, providers);
+      Instance<IdentityProvider<?>> providers,
+      @ConfigProperty(name = "quarkus.security.events.enabled") boolean securityEventsEnabled) {
+    super(
+        identityProviderManager,
+        authFailureEvent,
+        authSuccessEvent,
+        beanManager,
+        httpAuthenticationMechanism,
+        providers,
+        securityEventsEnabled);
     this.base =
         new BaseNessieHttpAuthenticator(
             config,

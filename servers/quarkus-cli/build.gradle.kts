@@ -51,8 +51,6 @@ dependencies {
   implementation("io.quarkus:quarkus-picocli")
 
   compileOnly(libs.jakarta.annotation.api)
-
-  compileOnly(libs.errorprone.annotations)
   compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
