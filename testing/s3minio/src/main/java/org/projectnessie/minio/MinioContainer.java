@@ -15,11 +15,16 @@
  */
 package org.projectnessie.minio;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Preconditions;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -43,16 +48,33 @@ final class MinioContainer extends GenericContainer<MinioContainer>
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MinioContainer.class);
 
-  private static final int DEFAULT_PORT = 9000;
-  private static final String DEFAULT_IMAGE =
-      System.getProperty(
-          "nessie.testing.minio.image",
-          Optional.ofNullable(System.getenv("MINIO_DOCKER_IMAGE")).orElse("quay.io/minio/minio"));
+  private static final String DEFAULT_IMAGE;
+  private static final String DEFAULT_TAG;
 
-  private static final String DEFAULT_TAG =
-      System.getProperty(
-          "nessie.testing.minio.tag",
-          Optional.ofNullable(System.getenv("MINIO_DOCKER_TAG")).orElse("latest"));
+  static {
+    URL resource = MinioContainer.class.getResource("Dockerfile-minio-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      DEFAULT_IMAGE =
+          System.getProperty(
+              "nessie.testing.minio.image",
+              Optional.ofNullable(System.getenv("MINIO_DOCKER_IMAGE")).orElse(imageTag[0]));
+      DEFAULT_TAG =
+          System.getProperty(
+              "nessie.testing.minio.tag",
+              Optional.ofNullable(System.getenv("MINIO_DOCKER_TAG")).orElse(imageTag[1]));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
+  }
+
+  private static final int DEFAULT_PORT = 9000;
 
   private static final String MINIO_ACCESS_KEY = "MINIO_ROOT_USER";
   private static final String MINIO_SECRET_KEY = "MINIO_ROOT_PASSWORD";

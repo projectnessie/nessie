@@ -27,7 +27,7 @@ public class CassandraBackendTestFactory extends AbstractCassandraBackendTestFac
           + "-Dcassandra.initial_token=0";
 
   public CassandraBackendTestFactory() {
-    super("cassandra", "cassandra", emptyList());
+    super("cassandra", emptyList());
   }
 
   @Override

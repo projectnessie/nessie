@@ -16,8 +16,12 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import jakarta.annotation.Nonnull;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +33,25 @@ public abstract class ContainerBackendTestFactory extends AbstractJdbcBackendTes
   private static final Logger LOGGER = LoggerFactory.getLogger(ContainerBackendTestFactory.class);
 
   private JdbcDatabaseContainer<?> container;
+
+  protected static String dockerImage(String dbName) {
+    URL resource =
+        ContainerBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      String image = imageTag[0];
+      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
+      return image + ':' + version;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
+  }
 
   @Override
   protected String jdbcUrl() {

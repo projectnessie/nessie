@@ -15,9 +15,14 @@
  */
 package org.projectnessie.testing.nessie;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -46,14 +51,35 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
 
   @Value.Immutable
   public abstract static class NessieConfig {
+
+    public static final String DEFAULT_IMAGE;
+    public static final String DEFAULT_TAG;
+
+    static {
+      URL resource = NessieConfig.class.getResource("Dockerfile-nessie-version");
+      try (InputStream in = resource.openConnection().getInputStream()) {
+        String[] imageTag =
+            Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+                .map(String::trim)
+                .filter(l -> l.startsWith("FROM "))
+                .map(l -> l.substring(5).trim().split(":"))
+                .findFirst()
+                .orElseThrow();
+        DEFAULT_IMAGE = imageTag[0];
+        DEFAULT_TAG = imageTag[1];
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to extract tag from " + resource, e);
+      }
+    }
+
     @Value.Default
     public String dockerImage() {
-      return "ghcr.io/projectnessie/nessie";
+      return DEFAULT_IMAGE;
     }
 
     @Value.Default
     public String dockerTag() {
-      return "latest";
+      return DEFAULT_TAG;
     }
 
     @Nullable

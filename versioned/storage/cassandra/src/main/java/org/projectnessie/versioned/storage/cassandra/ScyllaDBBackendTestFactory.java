@@ -27,7 +27,6 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
 
   public ScyllaDBBackendTestFactory() {
     super(
-        "scylladb/scylla",
         "scylladb",
         asList(
             "--smp",

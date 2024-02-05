@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.client.auth.oauth2.GrantType.AUTHORIZATION_CODE;
@@ -28,7 +29,9 @@ import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -67,9 +71,27 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ExtendWith(SoftAssertionsExtension.class)
 public class ITOAuth2Client {
 
+  public static final String IMAGE_TAG;
+
+  static {
+    URL resource = ITOAuth2Client.class.getResource("Dockerfile-keycloak-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          IOUtils.readLines(in, UTF_8).stream()
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow(IllegalArgumentException::new);
+      IMAGE_TAG = imageTag[0] + ':' + imageTag[1];
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
+  }
+
   @Container
   private static final KeycloakContainer KEYCLOAK =
-      new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange")
+      new KeycloakContainer(IMAGE_TAG).withFeaturesEnabled("preview", "token-exchange")
       // Useful when debugging Keycloak REST endpoints:
       // .withEnv("QUARKUS_HTTP_ACCESS_LOG_ENABLED", "true")
       // .withEnv("QUARKUS_HTTP_ACCESS_LOG_PATTERN", "long")

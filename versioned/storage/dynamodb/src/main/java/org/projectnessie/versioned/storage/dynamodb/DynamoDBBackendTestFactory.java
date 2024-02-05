@@ -15,7 +15,12 @@
  */
 package org.projectnessie.versioned.storage.dynamodb;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
@@ -67,18 +72,37 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
         .createClient();
   }
 
+  protected static String dockerImage(String dbName) {
+    URL resource =
+        DynamoDBBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      String imageName = imageTag[0];
+      String version =
+          System.getProperty("it.nessie.container." + dbName + "-local.tag", imageTag[1]);
+      return imageName + ':' + version;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
+  }
+
   @SuppressWarnings("resource")
   public void startDynamo(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
 
-    String version = System.getProperty("it.nessie.container.dynamodb-local.tag", "latest");
-    String imageName = "amazon/dynamodb-local:" + version;
+    String image = dockerImage("dynamodb-local");
 
     for (int retry = 0; ; retry++) {
       GenericContainer<?> c =
-          new GenericContainer<>(imageName)
+          new GenericContainer<>(image)
               .withLogConsumer(new Slf4jLogConsumer(LOGGER))
               .withExposedPorts(DYNAMODB_PORT)
               .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb");
