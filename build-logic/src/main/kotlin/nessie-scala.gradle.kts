@@ -15,7 +15,7 @@
  */
 
 tasks.withType<ScalaCompile>().configureEach {
-  scalaCompileOptions.keepAliveMode.set(KeepAliveMode.DAEMON)
+  scalaCompileOptions.keepAliveMode = KeepAliveMode.DAEMON
   scalaCompileOptions.encoding = "UTF-8"
 }
 
@@ -31,8 +31,8 @@ scaladocJar.configure {
   dependsOn(scaladoc)
   val baseJar = tasks.getByName<Jar>("jar")
   from(scaladoc.get().destinationDir)
-  destinationDirectory.set(baseJar.destinationDirectory)
-  archiveClassifier.set("scaladoc")
+  destinationDirectory = baseJar.destinationDirectory
+  archiveClassifier = "scaladoc"
 }
 
 tasks.named("assemble").configure { dependsOn(scaladocJar) }

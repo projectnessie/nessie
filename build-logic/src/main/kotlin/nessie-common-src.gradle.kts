@@ -104,9 +104,9 @@ private class MemoizedCheckstyleConfig {
 
 tasks.withType<JavaCompile>().configureEach {
   if (!project.extra.has("duplicated-project-sources")) {
-    options.errorprone.disableAllChecks.set(true)
+    options.errorprone.disableAllChecks = true
   } else {
-    options.errorprone.disableWarningsInGeneratedCode.set(true)
+    options.errorprone.disableWarningsInGeneratedCode = true
 
     val errorproneRules = rootProject.projectDir.resolve("codestyle/errorprone-rules.properties")
     inputs.file(errorproneRules).withPathSensitivity(PathSensitivity.RELATIVE)
@@ -117,7 +117,7 @@ tasks.withType<JavaCompile>().configureEach {
         .convention(provider { MemoizedErrorproneRules.rules(rootProject, errorproneRules) })
 
     options.errorprone.checks.putAll(checksMapProperty)
-    options.errorprone.excludedPaths.set(".*/build/[generated|tmp].*")
+    options.errorprone.excludedPaths = ".*/build/[generated|tmp].*"
   }
 }
 

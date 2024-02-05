@@ -27,6 +27,6 @@ plugins {
   id("nessie-testing")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release.set(8) }
+tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
-tasks.withType<ScalaCompile>().configureEach { options.release.set(8) }
+tasks.withType<ScalaCompile>().configureEach { options.release = 8 }

@@ -63,9 +63,9 @@ tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.Distribut
 nexusPublishing {
   transitionCheckOptions {
     // default==60 (10 minutes), wait up to 60 minutes
-    maxRetries.set(360)
+    maxRetries = 360
     // default 10s
-    delayBetween.set(java.time.Duration.ofSeconds(10))
+    delayBetween = java.time.Duration.ofSeconds(10)
   }
   repositories { sonatype() }
 }
@@ -104,8 +104,8 @@ buildToolsIntegrationTest.configure {
 }
 
 publishingHelper {
-  nessieRepoName.set("nessie")
-  inceptionYear.set("2020")
+  nessieRepoName = "nessie"
+  inceptionYear = "2020"
 }
 
 spotless {
@@ -116,11 +116,11 @@ spotless {
 }
 
 changelog {
-  repositoryUrl.set("https://github.com/projectnessie/nessie")
-  title.set("Nessie Changelog")
-  versionPrefix.set("nessie-")
-  header.set(provider { "${version.get()} Release (${date()})" })
-  groups.set(
+  repositoryUrl = "https://github.com/projectnessie/nessie"
+  title = "Nessie Changelog"
+  versionPrefix = "nessie-"
+  header = provider { "${version.get()} Release (${date()})" }
+  groups =
     listOf(
       "Highlights",
       "Upgrade notes",
@@ -131,8 +131,7 @@ changelog {
       "Fixes",
       "Commits"
     )
-  )
-  version.set(provider { project.version.toString() })
+  version = provider { project.version.toString() }
 }
 
 idea.project.settings {

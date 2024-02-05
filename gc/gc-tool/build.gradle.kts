@@ -125,7 +125,7 @@ val generateAutoComplete by
 
     doFirst { mkdir(completionScriptsDir) }
 
-    mainClass.set("picocli.AutoComplete")
+    mainClass = "picocli.AutoComplete"
     classpath(configurations.named("runtimeClasspath"), compileJava)
     args(
       "--force",
@@ -156,9 +156,9 @@ unixExecutable.configure {
   description = "Generates the Unix executable"
 
   dependsOn(shadowJar)
-  executable.set(nessieGcExecutable)
-  template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
-  sourceJar.set(shadowJar.get().archiveFile)
+  executable = nessieGcExecutable
+  template = projectDir.resolve("src/exec/exec-preamble.sh")
+  sourceJar = shadowJar.get().archiveFile
 }
 
 shadowJar.configure {

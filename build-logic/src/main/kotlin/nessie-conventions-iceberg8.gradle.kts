@@ -27,5 +27,5 @@ plugins {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-  options.release.set(if (this.name == "compileJava") 8 else 11)
+  options.release = if (this.name == "compileJava") 8 else 11
 }

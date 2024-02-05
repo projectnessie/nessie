@@ -36,7 +36,7 @@ gradle.sharedServices.registerIfAbsent(
       "nessie.intTestParallelism",
       (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1)
     )
-  maxParallelUsages.set(intTestParallelism)
+  maxParallelUsages = intTestParallelism
 }
 
 gradle.sharedServices.registerIfAbsent(
@@ -48,7 +48,7 @@ gradle.sharedServices.registerIfAbsent(
       "nessie.testParallelism",
       (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     )
-  maxParallelUsages.set(intTestParallelism)
+  maxParallelUsages = intTestParallelism
 }
 
 // Do not publish test fixtures via Maven. Shared, reusable test code should be published as
@@ -127,7 +127,7 @@ testing {
     register<JvmTestSuite>("intTest") {
       useJUnitJupiter(libsRequiredVersion("junit"))
 
-      testType.set(TestSuiteType.INTEGRATION_TEST)
+      testType = TestSuiteType.INTEGRATION_TEST
 
       dependencies { implementation.add(project()) }
 

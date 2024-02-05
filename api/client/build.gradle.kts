@@ -122,9 +122,7 @@ fun JvmTestSuite.useJava8() {
     all {
       testTask.configure {
         val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-        javaLauncher.set(
-          javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
-        )
+        javaLauncher = javaToolchains!!.launcherFor { languageVersion = JavaLanguageVersion.of(8) }
       }
     }
   }
@@ -175,7 +173,7 @@ testing {
 annotationStripper {
   registerDefault().configure {
     annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
+    unmodifiedClassesForJavaVersion = 11
   }
 }
 

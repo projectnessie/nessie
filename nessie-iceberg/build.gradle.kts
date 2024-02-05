@@ -40,6 +40,6 @@ mapOf(
   .forEach { (k, v) -> extra[k.toString()] = v }
 
 publishingHelper {
-  nessieRepoName.set("nessie")
-  inceptionYear.set("2020")
+  nessieRepoName = "nessie"
+  inceptionYear = "2020"
 }

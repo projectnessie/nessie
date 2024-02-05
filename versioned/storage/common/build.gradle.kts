@@ -74,4 +74,4 @@ tasks.named("processJmhJandexIndex").configure { enabled = false }
 
 tasks.named("processTestJandexIndex").configure { enabled = false }
 
-jmh { jmhVersion.set(libs.versions.jmh.get()) }
+jmh { jmhVersion = libs.versions.jmh.get() }
