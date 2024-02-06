@@ -1,3 +1,3 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM docker.io/google/cloud-sdk:462.0.1
+FROM docker.io/google/cloud-sdk:463.0.0
