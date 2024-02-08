@@ -30,7 +30,7 @@ import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.NotObserved;
-import org.projectnessie.quarkus.providers.WIthInitializedRepository;
+import org.projectnessie.quarkus.providers.WithInitializedRepository;
 import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
@@ -91,7 +91,7 @@ public class PersistProvider {
 
   @Produces
   @Singleton
-  @WIthInitializedRepository
+  @WithInitializedRepository
   public Persist produceWithInitializedRepository(@Default Persist persist) {
     repositoryLogic(persist).initialize(serverConfig.getDefaultBranch());
     return persist;

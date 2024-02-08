@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.NotObserved;
-import org.projectnessie.quarkus.providers.WIthInitializedRepository;
+import org.projectnessie.quarkus.providers.WithInitializedRepository;
 import org.projectnessie.versioned.EventsVersionStore;
 import org.projectnessie.versioned.Result;
 import org.projectnessie.versioned.VersionStore;
@@ -86,7 +86,7 @@ public class ConfigurableVersionStoreFactory {
 
   private VersionStore persistVersionStore() {
     try {
-      Persist p = persist.select(WIthInitializedRepository.Literal.INSTANCE).get();
+      Persist p = persist.select(WithInitializedRepository.Literal.INSTANCE).get();
 
       return new VersionStoreImpl(p);
     } catch (RuntimeException | IOError e) {
