@@ -43,9 +43,7 @@ public class ConfigChecks {
   public ConfigCheck configCheck() {
     if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.IN_MEMORY) {
       LOGGER.warn(
-          "Non-production IN_MEMORY version-store warning: "
-              + "The configured version store type IN_MEMORY is only for testing purposes and experimentation. "
-              + "IN_MEMORY is NOT for production use! "
+          "Configured version store type IN_MEMORY is only for testing purposes and experimentation, not for production use. "
               + "Data will be lost when the process is shut down. "
               + "Recommended action: Use a supported database, see https://projectnessie.org/try/configuration/");
     }
@@ -53,21 +51,18 @@ public class ConfigChecks {
     // AuthZ + AuthN warnings
     if (!authorizationConfig.enabled() && !authenticationConfig.enabled()) {
       LOGGER.warn(
-          "No authorization & no authorization warning: "
-              + "Both authentication (AuthN) and authorization (AuthZ) are disabled, "
+          "Both authentication (AuthN) and authorization (AuthZ) are disabled, "
               + "all requests to Nessie will be permitted. "
               + "This means: everybody with access to Nessie can read, write and change everything. "
               + "Recommended action: Enable AuthN & AuthZ, see https://projectnessie.org/try/configuration/");
     } else if (!authenticationConfig.enabled()) {
       LOGGER.warn(
-          "No authentication warning: "
-              + "Authentication (AuthN) is disabled and all requests to Nessie will be permitted. "
+          "Authentication (AuthN) is disabled and all requests to Nessie will be permitted. "
               + "This means: everybody with access to Nessie can read, write and change everything. "
               + "Recommended action: Enable authentication, see https://projectnessie.org/try/configuration/");
     } else if (!authorizationConfig.enabled()) {
       LOGGER.warn(
-          "No authorization warning: "
-              + "Authorization (AuthZ) is disabled and all authenticated requests to Nessie will be permitted. "
+          "Authorization (AuthZ) is disabled and all authenticated requests to Nessie will be permitted. "
               + "This means: everybody with access to Nessie can read, write and change everything. "
               + "If you really intent to give every authenticated user access and get rid of this warning, "
               + "explicitly add an allow-all authorization rule (ex: nessie.server.authorization.rules.allow_all=true). "
@@ -76,9 +71,9 @@ public class ConfigChecks {
 
     if (serverConfig.sendStacktraceToClient()) {
       LOGGER.warn(
-          "Java stack traces are sent back in HTTP error responses: "
-              + "It is not advisable, not good practice to send Java stack traces to clients. "
-              + "Stack traces might be considered a security risk. "
+          "Java stack traces are sent back in HTTP error responses. "
+              + "It is not good practice to send Java stack traces to clients, because "
+              + "stack traces might be considered a security risk. "
               + "Recommended action: disable the option, see https://projectnessie.org/try/configuration/");
     }
 
