@@ -1935,14 +1935,14 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"hashonreference\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"hashOnReference\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"hashonreference\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"hashOnReference\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
