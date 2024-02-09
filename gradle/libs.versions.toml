@@ -33,7 +33,7 @@ undertow = "2.2.28.Final"
 junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params"]
 
 [libraries]
-agroal-pool = { module = "io.agroal:agroal-pool", version = "2.2" }
+agroal-pool = { module = "io.agroal:agroal-pool", version = "2.3" }
 agrona = { module = "org.agrona:agrona", version = "1.20.0" }
 antlr-antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
 antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
