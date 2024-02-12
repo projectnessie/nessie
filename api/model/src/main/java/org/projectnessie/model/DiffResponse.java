@@ -37,12 +37,20 @@ public interface DiffResponse extends PaginatedResponse {
 
   List<DiffEntry> getDiffs();
 
-  @Nullable
+  /**
+   * The effective "from" reference (for example a branch or tag) including the commit ID from which
+   * the diffs were fetched. Never null when using REST API v2.
+   */
+  @Nullable // Only nullable in V1
   @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveFromReference();
 
-  @Nullable
+  /**
+   * The effective "to" reference (for example a branch or tag) including the commit ID from which
+   * the diffs were fetched. Never null when using REST API v2.
+   */
+  @Nullable // Only nullable in V1
   @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveToReference();
