@@ -1,3 +1,5 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM docker.io/google/cloud-sdk:463.0.0
+# See https://cloud.google.com/sdk/docs/downloads-docker#docker_image_options
+# Use debian_component_based because it supports linux/arm
+FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:463.0.0-debian_component_based
