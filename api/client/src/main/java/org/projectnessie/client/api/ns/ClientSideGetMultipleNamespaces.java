@@ -17,19 +17,15 @@ package org.projectnessie.client.api.ns;
 
 import static java.lang.String.format;
 
-import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseGetMultipleNamespacesBuilder;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.ImmutableGetNamespacesResponse;
 import org.projectnessie.model.Namespace;
@@ -56,9 +52,12 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
 
   @Override
   public GetNamespacesResponse get() throws NessieReferenceNotFoundException {
-    List<ContentKey> entries;
+
+    ImmutableGetNamespacesResponse.Builder builder = GetNamespacesResponse.builder();
+
     try {
-      GetEntriesBuilder getEntries = api.getEntries().refName(refName).hashOnRef(hashOnRef);
+      GetEntriesBuilder getEntries =
+          api.getEntries().maxRecords(100).refName(refName).hashOnRef(hashOnRef).withContent(true);
 
       String filter = "entry.contentType == 'NAMESPACE'";
       if (namespace != null && !namespace.isEmpty()) {
@@ -76,32 +75,23 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
       }
       getEntries.filter(filter);
 
-      entries =
-          getEntries.stream().map(EntriesResponse.Entry::getName).collect(Collectors.toList());
+      EntriesResponse response;
+      do {
+        response = getEntries.get();
+        builder.effectiveReference(response.getEffectiveReference());
+        response.getEntries().stream()
+            .map(EntriesResponse.Entry::getContent)
+            .filter(Objects::nonNull) // always true in V2
+            .map(v -> v.unwrap(Namespace.class))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .forEach(builder::addNamespaces);
+        getEntries = getEntries.pageToken(response.getToken());
+      } while (response.isHasMore());
+
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
-
-    if (entries.isEmpty()) {
-      return GetNamespacesResponse.builder().build();
-    }
-
-    GetMultipleContentsResponse content;
-    try {
-      GetContentBuilder getContent = api.getContent().refName(refName).hashOnRef(hashOnRef);
-      entries.forEach(getContent::key);
-      content = getContent.getWithResponse();
-    } catch (NessieNotFoundException e) {
-      throw new NessieReferenceNotFoundException(e.getMessage(), e);
-    }
-
-    ImmutableGetNamespacesResponse.Builder builder =
-        GetNamespacesResponse.builder().effectiveReference(content.getEffectiveReference());
-    content.toContentsMap().values().stream()
-        .map(v -> v.unwrap(Namespace.class))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .forEach(builder::addNamespaces);
 
     return builder.build();
   }

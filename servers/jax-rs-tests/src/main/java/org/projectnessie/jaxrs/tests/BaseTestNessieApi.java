@@ -1587,6 +1587,50 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void clientSideGetNamespaces() throws BaseNessieClientServerException {
+    Branch main = api().getDefaultBranch();
+    String mainName = main.getName();
+
+    Namespace parent = Namespace.of("parent");
+    parent =
+        api()
+            .createNamespace()
+            .refName(mainName)
+            .namespace(parent)
+            .createWithResponse()
+            .getNamespace();
+
+    // Test that effective reference is present, even if there are no child namespaces returned
+    GetNamespacesResponse getMultiple =
+        api().getMultipleNamespaces().refName(mainName).namespace(parent).get();
+    main = (Branch) api().getReference().refName(mainName).get();
+    soft.assertThat(getMultiple.getNamespaces()).containsOnly(parent);
+    soft.assertThat(getMultiple.getEffectiveReference()).isEqualTo(main);
+
+    // Test that effective reference is present, even if there are no namespaces at all returned
+    getMultiple =
+        api()
+            .getMultipleNamespaces()
+            .refName(mainName)
+            .namespace(Namespace.of("nonexistent"))
+            .get();
+    main = (Branch) api().getReference().refName(mainName).get();
+    soft.assertThat(getMultiple.getNamespaces()).isEmpty();
+    soft.assertThat(getMultiple.getEffectiveReference()).isEqualTo(main);
+
+    // Test pagination in ClientSideGetMultipleNamespaces
+    for (int i = 0; i < 200; i++) {
+      Namespace ns = Namespace.of("parent", "child" + i);
+      api().createNamespace().refName(mainName).namespace(ns).createWithResponse();
+    }
+    main = (Branch) api().getReference().refName(mainName).get();
+    getMultiple = api().getMultipleNamespaces().refName(mainName).namespace(parent).get();
+    soft.assertThat(getMultiple.getEffectiveReference()).isEqualTo(main);
+    soft.assertThat(getMultiple.getNamespaces()).hasSize(201);
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
   public void commitLogForNamelessReference() throws BaseNessieClientServerException {
     Branch main = api().getDefaultBranch();
     Branch branch =
