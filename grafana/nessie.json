@@ -38,14 +38,14 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 14370,
   "graphTooltip": 1,
-  "id": 27,
-  "iteration": 1646296965388,
+  "id": 249,
+  "iteration": 1707730009460,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -58,7 +58,7 @@
       "type": "row"
     },
     {
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -114,6 +114,7 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
       "pluginVersion": "8.3.6",
@@ -132,7 +133,7 @@
       "type": "stat"
     },
     {
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -187,6 +188,7 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
       "pluginVersion": "8.3.6",
@@ -205,7 +207,7 @@
       "type": "stat"
     },
     {
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -265,6 +267,7 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
       "pluginVersion": "8.3.6",
@@ -282,7 +285,7 @@
       "type": "stat"
     },
     {
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -352,6 +355,7 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
       "pluginVersion": "8.3.6",
@@ -370,6 +374,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -382,6 +387,7 @@
       "type": "row"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -395,6 +401,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -406,14 +413,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -448,21 +448,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getnamedrefs\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getNamedRefs\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getnamedrefs\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getNamedRefs\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -473,6 +474,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -486,6 +488,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -497,14 +500,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -539,31 +535,33 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getnamedref\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getNamedRef\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getnamedref\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getNamedRef\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "getNamedref",
+      "title": "getNamedRef",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -577,6 +575,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -588,14 +587,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -630,21 +622,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getcommits\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getCommits\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getcommits\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getCommits\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -655,6 +648,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -668,6 +662,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -679,14 +674,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -721,21 +709,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"commit\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"commit\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"commit\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"commit\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -746,6 +735,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -759,6 +749,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -770,14 +761,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -812,21 +796,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getvalues\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getValues\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getvalues\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getValues\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -837,6 +822,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -850,6 +836,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -861,14 +848,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -892,6 +872,93 @@
         "h": 8,
         "w": 6,
         "x": 6,
+        "y": 13
+      },
+      "id": 187,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getValue\", service=\"$service\"}[5m])*1000) by (le))",
+          "interval": "",
+          "legendFormat": "95th Percentile",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getValue\", service=\"$service\"}[5m])*1000) by (le))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "99th Percentile",
+          "refId": "B"
+        }
+      ],
+      "title": "getValue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
         "y": 13
       },
       "id": 175,
@@ -903,122 +970,33 @@
         },
         "tooltip": {
           "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          
-          "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getvalues\", service=\"$service\"}[5m])*1000) by (le))",
-          "interval": "",
-          "legendFormat": "95th Percentile",
-          "refId": "A"
         },
-        {
-          
-          "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getvalues\", service=\"$service\"}[5m])*1000) by (le))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "99th Percentile",
-          "refId": "B"
-        }
-      ],
-      "title": "getValues",
-      "type": "timeseries"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 13
-      },
-      "id": 173,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
+        "tooltipOptions": {
           "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"create\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getKeys\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"create\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getKeys\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "createRef",
+      "title": "getKeys",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1032,6 +1010,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1043,14 +1022,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1075,6 +1047,354 @@
         "w": 6,
         "x": 18,
         "y": 13
+      },
+      "id": 188,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getIdentifiedKeys\", service=\"$service\"}[5m])*1000) by (le))",
+          "interval": "",
+          "legendFormat": "95th Percentile",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getIdentifiedKeys\", service=\"$service\"}[5m])*1000) by (le))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "99th Percentile",
+          "refId": "B"
+        }
+      ],
+      "title": "getIdentifiedKeys",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 21
+      },
+      "id": 189,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getDiffs\", service=\"$service\"}[5m])*1000) by (le))",
+          "interval": "",
+          "legendFormat": "95th Percentile",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getDiffs\", service=\"$service\"}[5m])*1000) by (le))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "99th Percentile",
+          "refId": "B"
+        }
+      ],
+      "title": "getDiffs",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 21
+      },
+      "id": 190,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getRepositoryConfig\", service=\"$service\"}[5m])*1000) by (le))",
+          "interval": "",
+          "legendFormat": "95th Percentile",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getRepositoryConfig\", service=\"$service\"}[5m])*1000) by (le))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "99th Percentile",
+          "refId": "B"
+        }
+      ],
+      "title": "getRepositoryConfig",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 21
+      },
+      "id": 191,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"updateRepositoryConfig\", service=\"$service\"}[5m])*1000) by (le))",
+          "interval": "",
+          "legendFormat": "95th Percentile",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"updateRepositoryConfig\", service=\"$service\"}[5m])*1000) by (le))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "99th Percentile",
+          "refId": "B"
+        }
+      ],
+      "title": "updateRepositoryConfig",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 21
       },
       "id": 174,
       "options": {
@@ -1085,31 +1405,33 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"delete\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"delete\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"delete\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"delete\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "deleteRef",
+      "title": "delete",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1123,6 +1445,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1134,14 +1457,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1165,7 +1481,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 21
+        "y": 29
       },
       "id": 172,
       "options": {
@@ -1176,31 +1492,33 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getreflog\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getReferenceHistory\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getreflog\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getReferenceHistory\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "getRefLog",
+      "title": "getReferenceHistory",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1214,6 +1532,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1225,14 +1544,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1256,7 +1568,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 21
+        "y": 29
       },
       "id": 180,
       "options": {
@@ -1267,31 +1579,33 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getreflog\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getRepositoryInformation\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"getreflog\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"getRepositoryInformation\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "getRefLog",
+      "title": "getRepositoryInformation",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1305,6 +1619,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1316,14 +1631,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1347,9 +1655,9 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 21
+        "y": 29
       },
-      "id": 177,
+      "id": 173,
       "options": {
         "legend": {
           "calcs": [],
@@ -1358,31 +1666,33 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"merge\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"create\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"merge\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"create\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "merge",
+      "title": "create",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1396,6 +1706,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1407,14 +1718,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1438,7 +1742,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 21
+        "y": 29
       },
       "id": 176,
       "options": {
@@ -1449,21 +1753,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"transplant\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"transplant\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"transplant\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"transplant\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -1474,6 +1779,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1487,6 +1793,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1498,14 +1805,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1529,7 +1829,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 29
+        "y": 37
       },
       "id": 179,
       "options": {
@@ -1540,21 +1840,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"assign\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"assign\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"assign\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"assign\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -1565,6 +1866,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1578,6 +1880,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1589,14 +1892,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1620,7 +1916,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 29
+        "y": 37
       },
       "id": 178,
       "options": {
@@ -1631,21 +1927,22 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"hashonreference\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"hashOnReference\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{request=\"hashonreference\", service=\"$service\"}[5m])*1000) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"hashOnReference\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
           "legendFormat": "99th Percentile",
@@ -1656,6 +1953,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1669,6 +1967,7 @@
             "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1680,14 +1979,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "thresholds": {
@@ -1711,9 +2003,9 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 29
+        "y": 37
       },
-      "id": 182,
+      "id": 177,
       "options": {
         "legend": {
           "calcs": [],
@@ -1722,120 +2014,39 @@
         },
         "tooltip": {
           "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          
-          "exemplar": true,
-          "expr": "sum by (service) (nessie_databaseadapter_tryloop_duration_seconds_max{service=\"$service\"}*1000)",
-          "interval": "",
-          "legendFormat": "try-loo duration",
-          "refId": "A"
-        }
-      ],
-      "title": "DB try-loop  duration",
-      "type": "timeseries"
-    },
-    {
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "none"
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 29
-      },
-      "id": 181,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
+        "tooltipOptions": {
           "mode": "single"
         }
       },
       "targets": [
         {
-          
           "exemplar": true,
-          "expr": "sum by (service, result) (rate(nessie_databaseadapter_tryloop_retries_total{service=\"$service\"}[2m]))",
+          "expr": "histogram_quantile(0.95, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"merge\", service=\"$service\"}[5m])*1000) by (le))",
           "interval": "",
-          "legendFormat": "try-loop retries - {{result}}",
+          "legendFormat": "95th Percentile",
           "refId": "A"
         },
         {
-          
           "exemplar": true,
-          "expr": "sum by (service, result) (rate(nessie_databaseadapter_tryloop_count_total{service=\"$service\"}[2m]))",
+          "expr": "histogram_quantile(0.99, sum(rate(nessie_versionstore_request_seconds_bucket{method=\"merge\", service=\"$service\"}[5m])*1000) by (le))",
           "hide": false,
           "interval": "",
-          "legendFormat": "try-loop total - {{result}}",
+          "legendFormat": "99th Percentile",
           "refId": "B"
         }
       ],
-      "title": "DB try-loop #retries & #total",
+      "title": "merge",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 45
       },
       "id": 126,
       "panels": [],
@@ -1847,7 +2058,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1860,7 +2071,7 @@
         "h": 7,
         "w": 9,
         "x": 0,
-        "y": 38
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 111,
@@ -1900,7 +2111,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Rate",
       "tooltip": {
         "shared": true,
@@ -1909,7 +2122,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -1937,7 +2152,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1950,7 +2165,7 @@
         "h": 7,
         "w": 9,
         "x": 9,
-        "y": 38
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 113,
@@ -2000,7 +2215,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Duration",
       "tooltip": {
         "shared": true,
@@ -2009,7 +2226,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2040,7 +2259,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -2053,7 +2272,7 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 38
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 112,
@@ -2084,6 +2303,7 @@
       "steppedLine": false,
       "targets": [
         {
+          "exemplar": true,
           "expr": "sum(rate(http_server_requests_seconds_count{service=\"$service\", instance=\"$instance\", status=~\"5..\"}[5m]))",
           "format": "time_series",
           "interval": "",
@@ -2093,7 +2313,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Errors",
       "tooltip": {
         "shared": true,
@@ -2102,7 +2324,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2125,12 +2349,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 53
       },
       "id": 127,
       "panels": [],
@@ -2142,7 +2366,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2159,9 +2383,9 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 6,
+        "w": 8,
         "x": 0,
-        "y": 46
+        "y": 54
       },
       "hiddenSeries": false,
       "id": 24,
@@ -2218,7 +2442,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "JVM Heap",
       "tooltip": {
         "msResolution": false,
@@ -2229,7 +2455,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2260,7 +2488,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2277,9 +2505,9 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 6,
-        "x": 6,
-        "y": 46
+        "w": 8,
+        "x": 8,
+        "y": 54
       },
       "hiddenSeries": false,
       "id": 25,
@@ -2337,7 +2565,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "JVM Non-Heap",
       "tooltip": {
         "msResolution": false,
@@ -2348,7 +2578,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2379,7 +2611,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2396,9 +2628,9 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 6,
-        "x": 12,
-        "y": 46
+        "w": 8,
+        "x": 16,
+        "y": 54
       },
       "hiddenSeries": false,
       "id": 26,
@@ -2456,7 +2688,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "JVM Total",
       "tooltip": {
         "msResolution": false,
@@ -2467,7 +2701,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2495,141 +2731,13 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {
-        "leftLogBase": 1,
-        "rightLogBase": 1
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 18,
-        "y": 46
-      },
-      "hiddenSeries": false,
-      "id": 86,
-      "legend": {
-        "avg": false,
-        "current": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "8.3.6",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "process_memory_vss_bytes{service=\"$service\", instance=\"$instance\"}",
-          "format": "time_series",
-          "hide": true,
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "vss",
-          "metric": "",
-          "refId": "A",
-          "step": 2400
-        },
-        {
-          "expr": "process_memory_rss_bytes{service=\"$service\", instance=\"$instance\"}",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "rss",
-          "refId": "B"
-        },
-        {
-          "expr": "process_memory_swap_bytes{service=\"$service\", instance=\"$instance\"}",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "swap",
-          "refId": "C"
-        },
-        {
-          "expr": "process_memory_rss_bytes{service=\"$service\", instance=\"$instance\"} + process_memory_swap_bytes{service=\"$service\", instance=\"$instance\"}",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "total",
-          "refId": "D"
-        }
-      ],
-      "thresholds": [],
-      "timeRegions": [],
-      "title": "JVM Process Memory",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "x-axis": true,
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "y-axis": true,
-      "y_formats": [
-        "mbytes",
-        "short"
-      ],
-      "yaxes": [
-        {
-          "format": "bytes",
-          "label": "",
-          "logBase": 1,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false
-      }
-    },
-    {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 61
       },
       "id": 128,
       "panels": [],
@@ -2641,7 +2749,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2660,7 +2768,7 @@
         "h": 7,
         "w": 11,
         "x": 0,
-        "y": 54
+        "y": 62
       },
       "hiddenSeries": false,
       "id": 106,
@@ -2718,7 +2826,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
         "msResolution": false,
@@ -2729,7 +2839,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2763,7 +2875,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2782,7 +2894,7 @@
         "h": 7,
         "w": 13,
         "x": 11,
-        "y": 54
+        "y": 62
       },
       "hiddenSeries": false,
       "id": 93,
@@ -2830,7 +2942,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Load",
       "tooltip": {
         "msResolution": false,
@@ -2841,7 +2955,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2881,7 +2997,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -2894,7 +3010,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 61
+        "y": 69
       },
       "hiddenSeries": false,
       "id": 124,
@@ -2936,7 +3052,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Thread States",
       "tooltip": {
         "shared": true,
@@ -2945,7 +3063,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -2970,7 +3090,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -2989,7 +3109,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 61
+        "y": 69
       },
       "hiddenSeries": false,
       "id": 32,
@@ -3056,7 +3176,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Threads",
       "tooltip": {
         "msResolution": false,
@@ -3067,7 +3189,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3099,7 +3223,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -3118,7 +3242,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 61
+        "y": 69
       },
       "hiddenSeries": false,
       "id": 61,
@@ -3170,7 +3294,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "File Descriptors",
       "tooltip": {
         "msResolution": false,
@@ -3181,7 +3307,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3210,12 +3338,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 68
+        "y": 76
       },
       "id": 129,
       "panels": [],
@@ -3228,7 +3356,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -3247,7 +3375,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 69
+        "y": 77
       },
       "hiddenSeries": false,
       "id": 3,
@@ -3276,6 +3404,13 @@
       "points": false,
       "renderer": "flot",
       "repeat": "jvm_memory_pool_heap",
+      "scopedVars": {
+        "jvm_memory_pool_heap": {
+          "selected": false,
+          "text": "G1 Eden Space",
+          "value": "G1 Eden Space"
+        }
+      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
@@ -3316,7 +3451,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "$jvm_memory_pool_heap",
       "tooltip": {
         "msResolution": false,
@@ -3327,7 +3464,293 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "y-axis": true,
+      "y_formats": [
+        "mbytes",
+        "short"
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "logBase": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {
+        "leftLogBase": 1,
+        "rightLogBase": 1
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 77
+      },
+      "hiddenSeries": false,
+      "id": 192,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.6",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1707730009460,
+      "repeatPanelId": 3,
+      "scopedVars": {
+        "jvm_memory_pool_heap": {
+          "selected": false,
+          "text": "G1 Old Gen",
+          "value": "G1 Old Gen"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_heap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "used",
+          "metric": "",
+          "refId": "A",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_committed_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_heap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "commited",
+          "metric": "",
+          "refId": "B",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_heap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "max",
+          "metric": "",
+          "refId": "C",
+          "step": 1800
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$jvm_memory_pool_heap",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "x-axis": true,
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "y-axis": true,
+      "y_formats": [
+        "mbytes",
+        "short"
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "logBase": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {
+        "leftLogBase": 1,
+        "rightLogBase": 1
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 77
+      },
+      "hiddenSeries": false,
+      "id": 193,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.6",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1707730009460,
+      "repeatPanelId": 3,
+      "scopedVars": {
+        "jvm_memory_pool_heap": {
+          "selected": false,
+          "text": "G1 Survivor Space",
+          "value": "G1 Survivor Space"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_heap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "used",
+          "metric": "",
+          "refId": "A",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_committed_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_heap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "commited",
+          "metric": "",
+          "refId": "B",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_heap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "max",
+          "metric": "",
+          "refId": "C",
+          "step": 1800
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$jvm_memory_pool_heap",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "x-axis": true,
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3355,12 +3778,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 76
+        "y": 84
       },
       "id": 130,
       "panels": [],
@@ -3372,7 +3795,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -3391,7 +3814,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 77
+        "y": 85
       },
       "hiddenSeries": false,
       "id": 78,
@@ -3420,6 +3843,13 @@
       "points": false,
       "renderer": "flot",
       "repeat": "jvm_memory_pool_nonheap",
+      "scopedVars": {
+        "jvm_memory_pool_nonheap": {
+          "selected": false,
+          "text": "Metaspace",
+          "value": "Metaspace"
+        }
+      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
@@ -3460,7 +3890,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "$jvm_memory_pool_nonheap",
       "tooltip": {
         "msResolution": false,
@@ -3471,7 +3903,577 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "y-axis": true,
+      "y_formats": [
+        "mbytes",
+        "short"
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "logBase": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {
+        "leftLogBase": 1,
+        "rightLogBase": 1
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 85
+      },
+      "hiddenSeries": false,
+      "id": 194,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.6",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1707730009460,
+      "repeatPanelId": 78,
+      "scopedVars": {
+        "jvm_memory_pool_nonheap": {
+          "selected": false,
+          "text": "Compressed Class Space",
+          "value": "Compressed Class Space"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "used",
+          "metric": "",
+          "refId": "A",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_committed_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "commited",
+          "metric": "",
+          "refId": "B",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "max",
+          "metric": "",
+          "refId": "C",
+          "step": 1800
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$jvm_memory_pool_nonheap",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "x-axis": true,
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "y-axis": true,
+      "y_formats": [
+        "mbytes",
+        "short"
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "logBase": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {
+        "leftLogBase": 1,
+        "rightLogBase": 1
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 85
+      },
+      "hiddenSeries": false,
+      "id": 195,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.6",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1707730009460,
+      "repeatPanelId": 78,
+      "scopedVars": {
+        "jvm_memory_pool_nonheap": {
+          "selected": false,
+          "text": "CodeHeap 'profiled nmethods'",
+          "value": "CodeHeap 'profiled nmethods'"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "used",
+          "metric": "",
+          "refId": "A",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_committed_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "commited",
+          "metric": "",
+          "refId": "B",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "max",
+          "metric": "",
+          "refId": "C",
+          "step": 1800
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$jvm_memory_pool_nonheap",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "x-axis": true,
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "y-axis": true,
+      "y_formats": [
+        "mbytes",
+        "short"
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "logBase": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {
+        "leftLogBase": 1,
+        "rightLogBase": 1
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 92
+      },
+      "hiddenSeries": false,
+      "id": 196,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.6",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1707730009460,
+      "repeatPanelId": 78,
+      "scopedVars": {
+        "jvm_memory_pool_nonheap": {
+          "selected": false,
+          "text": "CodeHeap 'non-profiled nmethods'",
+          "value": "CodeHeap 'non-profiled nmethods'"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "used",
+          "metric": "",
+          "refId": "A",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_committed_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "commited",
+          "metric": "",
+          "refId": "B",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "max",
+          "metric": "",
+          "refId": "C",
+          "step": 1800
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$jvm_memory_pool_nonheap",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "x-axis": true,
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "y-axis": true,
+      "y_formats": [
+        "mbytes",
+        "short"
+      ],
+      "yaxes": [
+        {
+          "format": "bytes",
+          "logBase": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "grid": {
+        "leftLogBase": 1,
+        "rightLogBase": 1
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 92
+      },
+      "hiddenSeries": false,
+      "id": 197,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "maxPerRow": 3,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.3.6",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1707730009460,
+      "repeatPanelId": 78,
+      "scopedVars": {
+        "jvm_memory_pool_nonheap": {
+          "selected": false,
+          "text": "CodeHeap 'non-nmethods'",
+          "value": "CodeHeap 'non-nmethods'"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "used",
+          "metric": "",
+          "refId": "A",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_committed_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "commited",
+          "metric": "",
+          "refId": "B",
+          "step": 1800
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"$service\", instance=\"$instance\", id=~\"$jvm_memory_pool_nonheap\"}",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "max",
+          "metric": "",
+          "refId": "C",
+          "step": 1800
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$jvm_memory_pool_nonheap",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "type": "graph",
+      "x-axis": true,
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3499,12 +4501,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 84
+        "y": 99
       },
       "id": 131,
       "panels": [],
@@ -3516,7 +4518,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -3529,7 +4531,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 85
+        "y": 100
       },
       "hiddenSeries": false,
       "id": 98,
@@ -3570,7 +4572,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Collections",
       "tooltip": {
         "shared": true,
@@ -3579,7 +4583,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3606,7 +4612,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -3619,7 +4625,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 85
+        "y": 100
       },
       "hiddenSeries": false,
       "id": 101,
@@ -3669,7 +4675,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Pause Durations",
       "tooltip": {
         "shared": true,
@@ -3678,7 +4686,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3705,7 +4715,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -3718,7 +4728,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 85
+        "y": 100
       },
       "hiddenSeries": false,
       "id": 99,
@@ -3766,7 +4776,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Allocated/Promoted",
       "tooltip": {
         "shared": true,
@@ -3775,7 +4787,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3798,12 +4812,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 92
+        "y": 107
       },
       "id": 132,
       "panels": [],
@@ -3815,7 +4829,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -3834,7 +4848,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 93
+        "y": 108
       },
       "hiddenSeries": false,
       "id": 37,
@@ -3875,7 +4889,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Classes loaded",
       "tooltip": {
         "msResolution": false,
@@ -3886,7 +4902,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -3917,7 +4935,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -3936,7 +4954,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 93
+        "y": 108
       },
       "hiddenSeries": false,
       "id": 38,
@@ -3979,7 +4997,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Class delta",
       "tooltip": {
         "msResolution": false,
@@ -3990,7 +5010,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4018,12 +5040,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 100
+        "y": 115
       },
       "id": 133,
       "panels": [],
@@ -4035,7 +5057,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -4054,7 +5076,7 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 101
+        "y": 116
       },
       "hiddenSeries": false,
       "id": 33,
@@ -4104,7 +5126,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Direct Buffers",
       "tooltip": {
         "msResolution": false,
@@ -4115,7 +5139,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4146,7 +5172,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -4165,7 +5191,7 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 101
+        "y": 116
       },
       "hiddenSeries": false,
       "id": 83,
@@ -4206,7 +5232,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Direct Buffers",
       "tooltip": {
         "msResolution": false,
@@ -4217,7 +5245,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4249,7 +5279,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -4268,7 +5298,7 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 101
+        "y": 116
       },
       "hiddenSeries": false,
       "id": 85,
@@ -4318,7 +5348,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Mapped Buffers",
       "tooltip": {
         "msResolution": false,
@@ -4329,7 +5361,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4360,7 +5394,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -4379,7 +5413,7 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 101
+        "y": 116
       },
       "hiddenSeries": false,
       "id": 84,
@@ -4420,7 +5454,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Mapped Buffers",
       "tooltip": {
         "msResolution": false,
@@ -4431,7 +5467,9 @@
       "type": "graph",
       "x-axis": true,
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4460,12 +5498,12 @@
     },
     {
       "collapsed": false,
-      
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 108
+        "y": 123
       },
       "id": 163,
       "panels": [],
@@ -4477,7 +5515,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -4490,7 +5528,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 109
+        "y": 124
       },
       "hiddenSeries": false,
       "id": 143,
@@ -4527,7 +5565,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Total number of requests",
       "tooltip": {
         "shared": true,
@@ -4536,7 +5576,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4563,7 +5605,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -4576,7 +5618,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 109
+        "y": 124
       },
       "hiddenSeries": false,
       "id": 155,
@@ -4613,7 +5655,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Average inbound request duration",
       "tooltip": {
         "shared": true,
@@ -4622,7 +5666,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4649,7 +5695,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -4662,7 +5708,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 117
+        "y": 132
       },
       "hiddenSeries": false,
       "id": 153,
@@ -4699,7 +5745,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Maximum inbound request duration",
       "tooltip": {
         "shared": true,
@@ -4708,7 +5756,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4735,7 +5785,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -4748,7 +5798,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 117
+        "y": 132
       },
       "hiddenSeries": false,
       "id": 151,
@@ -4785,7 +5835,9 @@
         }
       ],
       "thresholds": [],
+      "timeFrom": null,
       "timeRegions": [],
+      "timeShift": null,
       "title": "Sum of the duration of every request",
       "tooltip": {
         "shared": true,
@@ -4794,7 +5846,9 @@
       },
       "type": "graph",
       "xaxis": {
+        "buckets": null,
         "mode": "time",
+        "name": null,
         "show": true,
         "values": []
       },
@@ -4818,19 +5872,22 @@
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 34,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
+        "allValue": null,
         "current": {
           "selected": false,
           "text": "nessie",
           "value": "nessie"
         },
-
+        "datasource": null,
         "definition": "label_values(service)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Service",
@@ -4846,14 +5903,18 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
         "allFormat": "glob",
-
+        "allValue": null,
+        "datasource": null,
         "definition": "label_values(process_uptime_seconds{service=\"$service\"}, instance)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Instance",
@@ -4870,19 +5931,23 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
         "allFormat": "glob",
+        "allValue": null,
         "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
-
+        "datasource": null,
         "definition": "",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "JVM Memory Pools Heap",
@@ -4899,19 +5964,23 @@
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
         "allFormat": "glob",
+        "allValue": null,
         "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
-
+        "datasource": null,
         "definition": "",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "JVM Memory Pools Non-Heap",
@@ -4928,6 +5997,7 @@
         "skipUrlSync": false,
         "sort": 2,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -4966,6 +6036,7 @@
   },
   "timezone": "browser",
   "title": "Nessie Server Metrics",
-  "version": 4,
+  "uid": "iHyYvG2Iz",
+  "version": 8,
   "weekStart": ""
 }
