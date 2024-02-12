@@ -41,24 +41,16 @@ dependencies {
   implementation(platform(libs.cassandra.driver.bom))
   implementation("com.datastax.oss:java-driver-core")
 
-  compileOnly(platform(libs.testcontainers.bom))
-  compileOnly("org.testcontainers:cassandra") {
-    exclude("com.datastax.cassandra", "cassandra-driver-core")
-  }
-  compileOnly(libs.docker.java.api)
-
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:cassandra")
-  intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

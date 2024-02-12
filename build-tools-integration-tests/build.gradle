@@ -30,9 +30,9 @@ dependencies {
   implementation("org.projectnessie.nessie:nessie-jaxrs-testextension")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-cache")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-common-serialize")
-  implementation("org.projectnessie.nessie:nessie-versioned-storage-inmemory")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-inmemory-tests")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-mongodb")
-  implementation("org.projectnessie.nessie:nessie-versioned-storage-rocksdb")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-rocksdb-tests")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-store")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-testextension")
 

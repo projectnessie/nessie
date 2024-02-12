@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
+import org.projectnessie.versioned.storage.jdbctests.H2BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(H2BackendTestFactory.class)

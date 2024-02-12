@@ -40,15 +40,11 @@ dependencies {
 
   implementation(libs.mongodb.driver.sync)
 
-  compileOnly(platform(libs.testcontainers.bom))
-  compileOnly("org.testcontainers:mongodb")
-
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  intTestImplementation(project(":nessie-versioned-storage-mongodb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))

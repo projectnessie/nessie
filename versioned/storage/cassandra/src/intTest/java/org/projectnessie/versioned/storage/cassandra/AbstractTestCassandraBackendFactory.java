@@ -16,11 +16,11 @@
 package org.projectnessie.versioned.storage.cassandra;
 
 import static java.lang.String.format;
-import static org.projectnessie.versioned.storage.cassandra.AbstractCassandraBackendTestFactory.KEYSPACE_FOR_TEST;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_NAME;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_REFS;
+import static org.projectnessie.versioned.storage.cassandratests.AbstractCassandraBackendTestFactory.KEYSPACE_FOR_TEST;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -33,6 +33,7 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.versioned.storage.cassandratests.AbstractCassandraBackendTestFactory;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;

@@ -56,7 +56,7 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   testCompileOnly(libs.microprofile.openapi)
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
   testImplementation(project(":nessie-versioned-storage-testextension"))
 
   testImplementation(platform(libs.junit.bom))

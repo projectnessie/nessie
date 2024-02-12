@@ -40,8 +40,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
-  testImplementation(project(":nessie-versioned-storage-jdbc"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
+  testImplementation(project(":nessie-versioned-storage-jdbc-tests"))
   testRuntimeOnly(libs.agroal.pool)
 
   testImplementation(project(":nessie-jaxrs-testextension"))

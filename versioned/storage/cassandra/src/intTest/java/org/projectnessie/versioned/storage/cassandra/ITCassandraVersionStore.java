@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 

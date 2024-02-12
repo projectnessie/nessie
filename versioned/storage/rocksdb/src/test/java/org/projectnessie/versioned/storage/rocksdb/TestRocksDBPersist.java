@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.rocksdb;
 
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
+import org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(RocksDBBackendTestFactory.class)

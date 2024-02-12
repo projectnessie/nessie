@@ -21,7 +21,7 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.cassandra.CassandraBackendTestFactory;
+import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
 
 public class CassandraTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {

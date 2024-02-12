@@ -38,6 +38,8 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.projectnessie.versioned.storage.common.persist.PersistLoader;
+import org.projectnessie.versioned.storage.jdbctests.AbstractJdbcBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbctests.DataSourceProducer;
 
 @SuppressWarnings("SqlDialectInspection")
 @ExtendWith(SoftAssertionsExtension.class)

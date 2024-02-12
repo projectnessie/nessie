@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import org.projectnessie.versioned.storage.cassandratests.AbstractCassandraBackendTestFactory;
+import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
+
 public class ITCassandraBackendFactory extends AbstractTestCassandraBackendFactory {
   @Override
   protected AbstractCassandraBackendTestFactory testFactory() {

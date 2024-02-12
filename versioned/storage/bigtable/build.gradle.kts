@@ -35,25 +35,19 @@ dependencies {
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
 
-  compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
-
-  compileOnly(platform(libs.testcontainers.bom))
-  compileOnly("org.testcontainers:testcontainers")
-  compileOnly(libs.docker.java.api)
+  implementation(libs.slf4j.api)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  intTestImplementation(project(":nessie-versioned-storage-bigtable-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:testcontainers")
-  intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

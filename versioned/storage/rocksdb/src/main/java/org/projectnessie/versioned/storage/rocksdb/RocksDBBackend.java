@@ -45,7 +45,7 @@ import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 
-final class RocksDBBackend implements Backend {
+public final class RocksDBBackend implements Backend {
   public static final String CF_REFERENCES = "nessie_refs";
   public static final String CF_OBJECTS = "nessie_objects";
 
@@ -59,7 +59,7 @@ final class RocksDBBackend implements Backend {
 
   private final Map<String, RocksDBRepo> repositories = new ConcurrentHashMap<>();
 
-  RocksDBBackend(RocksDBBackendConfig config) {
+  public RocksDBBackend(RocksDBBackendConfig config) {
     RocksDB.loadLibrary();
     this.config = config;
   }

@@ -65,7 +65,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-storage-inmemory</artifactId>
+      <artifactId>nessie-versioned-storage-inmemory-tests</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
@@ -73,7 +73,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-storage-rocksdb</artifactId>
+      <artifactId>nessie-versioned-storage-rocksdb-tests</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>

@@ -22,7 +22,6 @@ import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -245,12 +244,12 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public boolean deleteConditional(@NotNull UpdateableObj obj) {
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     return withConnectionException(false, conn -> super.deleteConditional(conn, obj));
   }
 
   @Override
-  public boolean updateConditional(@NotNull UpdateableObj expected, @NotNull UpdateableObj newValue)
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
       throws ObjTooLargeException {
     return withConnectionException(
         false, conn -> super.updateConditional(conn, expected, newValue));

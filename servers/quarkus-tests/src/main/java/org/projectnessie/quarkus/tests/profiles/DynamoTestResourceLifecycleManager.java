@@ -20,7 +20,7 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
 
 public class DynamoTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
@@ -42,7 +42,6 @@ public class DynamoTestResourceLifecycleManager
       // Only start the Docker container (local Dynamo-compatible).
       dynamo.startDynamo(containerNetworkId);
     } catch (Exception e) {
-      e.printStackTrace();
       throw new RuntimeException(e);
     }
 

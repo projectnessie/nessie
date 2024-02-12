@@ -43,7 +43,7 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   testImplementation(nessieProject("nessie-versioned-storage-testextension"))
-  testImplementation(nessieProject("nessie-versioned-storage-inmemory"))
+  testImplementation(nessieProject("nessie-versioned-storage-inmemory-tests"))
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
   testImplementation(libs.slf4j.log4j.over.slf4j)
   testCompileOnly(libs.microprofile.openapi)

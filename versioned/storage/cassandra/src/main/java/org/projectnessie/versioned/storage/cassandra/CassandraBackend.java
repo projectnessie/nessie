@@ -80,13 +80,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class CassandraBackend implements Backend {
+public final class CassandraBackend implements Backend {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CassandraBackend.class);
 
@@ -96,7 +95,7 @@ final class CassandraBackend implements Backend {
   private final Map<String, PreparedStatement> statements = new ConcurrentHashMap<>();
   private final CqlSession session;
 
-  CassandraBackend(CassandraBackendConfig config, boolean closeClient) {
+  public CassandraBackend(CassandraBackendConfig config, boolean closeClient) {
     this.config = config;
     this.session = requireNonNull(config.client());
     this.closeClient = closeClient;
@@ -300,7 +299,7 @@ final class CassandraBackend implements Backend {
     }
   }
 
-  @NotNull
+  @Nonnull
   BoundStatement buildStatement(String cql, Object... values) {
     PreparedStatement prepared =
         statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));
@@ -312,7 +311,7 @@ final class CassandraBackend implements Backend {
         .build();
   }
 
-  @NotNull
+  @Nonnull
   BoundStatementBuilder newBoundStatementBuilder(String cql) {
     PreparedStatement prepared =
         statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));

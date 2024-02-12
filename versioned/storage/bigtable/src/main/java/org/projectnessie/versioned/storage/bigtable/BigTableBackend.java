@@ -51,7 +51,7 @@ import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class BigTableBackend implements Backend {
+public final class BigTableBackend implements Backend {
   private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackend.class);
   static final ByteString REPO_REGEX_SUFFIX = copyFromUtf8("\\C*");
 
@@ -62,7 +62,7 @@ final class BigTableBackend implements Backend {
   final String tableRefs;
   final String tableObjs;
 
-  BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
+  public BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
     this.dataClient = config.dataClient();
     this.tableAdminClient = config.tableAdminClient();
     this.tableRefs =

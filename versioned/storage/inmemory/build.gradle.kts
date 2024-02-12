@@ -33,12 +33,11 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

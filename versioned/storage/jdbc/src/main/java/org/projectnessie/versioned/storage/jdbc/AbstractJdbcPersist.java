@@ -63,7 +63,6 @@ import java.util.function.Consumer;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Object2IntHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -457,7 +456,7 @@ abstract class AbstractJdbcPersist implements Persist {
     return null;
   }
 
-  protected final boolean deleteConditional(@Nonnull Connection conn, @NotNull UpdateableObj obj) {
+  protected final boolean deleteConditional(@Nonnull Connection conn, @Nonnull UpdateableObj obj) {
     try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ_CONDITIONAL)) {
       ps.setString(1, config.repositoryId());
       serializeObjId(ps, 2, obj.id(), databaseSpecific);
@@ -470,7 +469,7 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   protected final boolean updateConditional(
-      @Nonnull Connection conn, @NotNull UpdateableObj expected, @NotNull UpdateableObj newValue)
+      @Nonnull Connection conn, @Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
       throws ObjTooLargeException {
     ObjId id = expected.id();
     checkArgument(id != null && id.equals(newValue.id()));

@@ -19,7 +19,7 @@ import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.mongodb.MongoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
 
 public class MongoTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {

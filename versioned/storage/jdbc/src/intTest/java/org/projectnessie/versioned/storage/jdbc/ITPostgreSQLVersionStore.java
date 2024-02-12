@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
+import org.projectnessie.versioned.storage.jdbctests.PostgreSQLBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(PostgreSQLBackendTestFactory.class)
