@@ -39,6 +39,7 @@ dependencies {
   implementation(project(":nessie-quarkus-auth"))
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-events-quarkus"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
