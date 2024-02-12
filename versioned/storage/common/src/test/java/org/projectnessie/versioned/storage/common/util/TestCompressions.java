@@ -50,13 +50,13 @@ public class TestCompressions {
     AtomicReference<Compression> compression = new AtomicReference<>();
     byte[] compressed = Compressions.compressDefault(data, compression::set);
     soft.assertThat(compressed.length).isLessThan(data.length);
-    soft.assertThat(compression.get()).isSameAs(Compression.SNAPPY);
+    soft.assertThat(compression.get()).isSameAs(Compression.GZIP);
   }
 
   @ParameterizedTest
   @EnumSource(
       value = Compression.class,
-      names = {"NONE", "SNAPPY", "DEFLATE"})
+      names = {"NONE", "SNAPPY", "DEFLATE", "GZIP"})
   public void supportedCompression(Compression compression) {
     byte[] data = ("x".repeat(10)).getBytes(UTF_8);
     byte[] compressed = Compressions.compress(compression, data);
@@ -67,7 +67,8 @@ public class TestCompressions {
   @ParameterizedTest
   @EnumSource(value = Compression.class)
   public void unsupportedCompression(Compression compression) {
-    assumeThat(compression).isNotIn(Compression.NONE, Compression.SNAPPY, Compression.DEFLATE);
+    assumeThat(compression)
+        .isNotIn(Compression.NONE, Compression.SNAPPY, Compression.DEFLATE, Compression.GZIP);
     byte[] data = ("x".repeat(10)).getBytes(UTF_8);
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Compressions.compress(compression, data))
