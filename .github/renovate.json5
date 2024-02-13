@@ -12,17 +12,19 @@
   },
 
   packageRules: [
+    // do not add any labels, because that conflicts with CI job restarts, causing the wrong CI run
+    // to be cancelled in GitHub actions when the `labeled` type is used in e.g. `on.pull_request.types`.
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper"],
-      "labels": ["dependencies"],
+      labels: [],
     },
     {
       matchManagers: ["pip_requirements", "pip_setup"],
-      "labels": ["dependencies"],
+      labels: [],
     },
     {
       matchManagers: ["dockerfile"],
-      "labels": ["dependencies"],
+      labels: [],
     },
 
     // Check for updates, merge automatically
@@ -72,7 +74,7 @@
       ],
       "labels": ["pr-native", "pr-docker"]
     },
-    
+
     // Reduce awssdk update frequency (which has daily releases)
     {
       matchManagers: ["maven", "gradle"],
