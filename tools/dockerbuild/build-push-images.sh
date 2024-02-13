@@ -30,6 +30,7 @@ GITHUB=0
 ARTIFACTS=""
 GRADLE_PROJECT=""
 PROJECT_DIR=""
+DOCKERFILE="Dockerfile-server"
 
 if [[ -n ${GITHUB_ENV} ]]; then
   GITHUB=1
@@ -40,13 +41,16 @@ function usage() {
   Usage: $0 [options] <docker-image-base-name>
 
       -g | --gradle-project <project>   Gradle project name, for example :nessie-quarkus
-      -p | --project-dir <dir>          Directory of the Gradle project
+      -p | --project-dir <dir>          Directory of the Gradle project, relative to the root of the repository
+      -d | --dockerfile <file>          Dockerfile to use (default: Dockerfile-server)
       -gh | --github                    GitHub actions mode
       -a | --artifacts-dir <dir>        Directory to place uber-jars in
 
   GitHub mode is automatically enabled, when GITHUB_ENV is present. -a is mandatory in GitHub mode.
 
-  Example: $0 -g :nessie-quarkus -p servers/quarkus-server nessie-unstable
+  Examples:
+  $0 -d Dockerfile-server -g :nessie-quarkus -p servers/quarkus-server nessie-unstable
+  $0 -d Dockerfile-gctool -g :nessie-gc-tool -p gc/gc-tool nessie-gc-unstable
 !
 }
 
@@ -71,6 +75,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   -p | --project-dir)
     PROJECT_DIR="$2"
+    shift
+    ;;
+  -d | --dockerfile)
+    DOCKERFILE="$2"
     shift
     ;;
   -a | --artifacts-dir)
@@ -147,14 +155,14 @@ gh_endgroup
 #
 
 gh_group "Build Java linux/amd64"
-./gradlew "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:quarkusBuild"
+./gradlew "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:build" -x "${GRADLE_PROJECT}:check"
 gh_endgroup
 
 gh_group "Docker buildx build"
 # All the platforms that are available
 PLATFORMS="linux/amd64,linux/arm64/v8,linux/ppc64le,linux/s390x"
 docker buildx build \
-  -f "${BASE_DIR}/tools/dockerbuild/docker/Dockerfile-jvm" \
+  -f "${BASE_DIR}/tools/dockerbuild/docker/${DOCKERFILE}" \
   --platform "${PLATFORMS}" \
   -t "${IMAGE_NAME}:latest" \
   -t "${IMAGE_NAME}:latest-java" \

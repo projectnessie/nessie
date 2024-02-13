@@ -8,6 +8,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+* The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
+  page](https://projectnessie.org/features/gc) for more.
+
 ### Upgrade notes
 
 ### Breaking changes

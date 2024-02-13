@@ -1,9 +1,99 @@
+# Nessie GC
+
+Nessie GC is a tool to clean up orphaned files in a Nessie repository. It is designed to be run
+periodically to keep the repository clean and to avoid unnecessary storage costs.
+
+## Running with Docker
+
+Although the GC tool can run in standalone mode, it is recommended to use a persistent database for
+production use. Any JDBC compliant database can be used, but it must be created and the schema
+initialized before running the Nessie GC tool.
+
+For testing purposes, let's assume we have a running JDBC datastore as follows:
+
+```shell
+docker run --rm -e POSTGRES_USER=pguser -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=nessie_gc -p 5432:5432 postgres:16.2
+```
+
+Create the database schema if required:
+
+```shell
+docker run --rm ghcr.io/projectnessie/nessie-gc:latest create-sql-schema \
+  --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
+```
+
+Now we can run the Nessie GC tool:
+
+```shell
+docker run --rm ghcr.io/projectnessie/nessie-gc:latest gc \
+  --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
+```
+
+The GC tool has a great number of options, which can be seen by running `docker run --rm
+ghcr.io/projectnessie/nessie-gc:latest --help`. The main command is `gc`, which is followed by
+subcommands and options. Check the available subcommands and options by running `docker run --rm
+ghcr.io/projectnessie/nessie-gc:latest gc --help`.
+
+## Running with Kubernetes
+
+The Nessie GC tool can be executed as a Job or a CronJob in a Kubernetes cluster. 
+
+The following example assumes that you have a Nessie deployment and a PostgreSQL instance, all
+running in the same cluster and in the same namespace.
+
+Create a secret for the database credentials:
+
+```shell
+kubectl create secret generic nessie-gc-credentials \
+  --from-literal=JDBC_URL=jdbc:postgresql://postgresql:5432/nessie_gc \
+  --from-literal=JDBC_USER=pguser \
+  --from-literal=JDBC_PASSWORD=mysecretpassword
+```
+
+Assuming that the Nessie service is reachable at `nessie:19120`, create the following Kubernetes job
+to run the GC tool:
+
+```shell
+kubectl apply -f - <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nessie-gc-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: nessie-gc
+        image: ghcr.io/projectnessie/nessie-gc
+        args: 
+          - gc
+          - --uri
+          - http://nessie:19120/api/v2
+          - --jdbc
+          - --jdbc-url
+          - "\$(JDBC_URL)"
+          - --jdbc-user
+          - "\$(JDBC_USER)"
+          - --jdbc-password
+          - "\$(JDBC_PASSWORD)"
+        envFrom:
+        - secretRef:
+            name: nessie-gc-credentials
+      restartPolicy: Never
+EOF
+```
+
 # Nessie GC Internals
 
-_aka Nessie-aware delete-orphan-files_
+The rest of this document describes the internals of the Nessie GC tool and is intended for
+developers who want to understand how the tool works.
 
-Consists of a `gc-base` module, which contains the general base functionality to access a
-repository to identify the live contents, to identify the live files, to list the existing files
+The GC tool consists of a `gc-base` module, which contains the general base functionality to access
+a repository to identify the live contents, to identify the live files, to list the existing files
 and to purge orphan files.
 
 Modules that supplement the `gc-base` module:

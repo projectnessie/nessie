@@ -5,6 +5,6 @@ arrange:
   - best-practices.md
   - transactions.md
   - management.md
-  - gc-internals.md
+  - gc.md
   - security.md
   - metadata_authorization.md

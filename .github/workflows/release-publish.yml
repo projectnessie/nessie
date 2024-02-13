@@ -134,12 +134,19 @@ jobs:
           -a "${ARTIFACTS}" \
           -g ":nessie-quarkus" \
           -p "servers/quarkus-server" \
+          -d "Dockerfile-server" \
           ghcr.io/projectnessie/nessie
 
         # Add version to the openapi file name
         cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
         cp gc/gc-tool/build/executable/nessie-gc gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}
+        tools/dockerbuild/build-push-images.sh \
+          -a "${ARTIFACTS}" \
+          -g ":nessie-gc-tool" \
+          -p "gc/gc-tool" \
+          -d "Dockerfile-gctool" \
+          ghcr.io/projectnessie/nessie-gc
 
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}

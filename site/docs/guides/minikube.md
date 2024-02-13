@@ -139,7 +139,7 @@ Then, build the Docker image and install it in your Minikube node as follows:
 
 ```bash
 eval $(minikube docker-env)
-docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-test:latest ./servers/quarkus-server
+docker build -f ./tools/dockerbuild/docker/Dockerfile-server -t nessie-test:latest ./servers/quarkus-server
 ```
 
 By running `eval $(minikube docker-env)`, you are setting the Docker environment variables to point

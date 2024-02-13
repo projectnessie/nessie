@@ -63,4 +63,11 @@ jobs:
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
             ghcr.io/projectnessie/nessie-unstable
+          tools/dockerbuild/build-push-images.sh \
+            -a "${ARTIFACTS}" \
+            -g ":nessie-gc-tool" \
+            -p "gc/gc-tool" \
+            -d "Dockerfile-gctool" \
+            ghcr.io/projectnessie/nessie-gc-unstable
+
           rm -rf "${ARTIFACTS}"

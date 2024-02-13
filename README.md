@@ -127,7 +127,7 @@ build a docker image for testing purposes, simply run the following command:
 
 ```shell
 ./gradlew :nessie-quarkus:clean :nessie-quarkus:quarkusBuild
-docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-unstable:latest ./servers/quarkus-server 
+docker build -f ./tools/dockerbuild/docker/Dockerfile-server -t nessie-unstable:latest ./servers/quarkus-server 
 ```
 
 Check that your image is available locally:
