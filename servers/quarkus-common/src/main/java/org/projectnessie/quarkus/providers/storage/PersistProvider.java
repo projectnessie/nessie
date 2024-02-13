@@ -18,8 +18,9 @@ package org.projectnessie.quarkus.providers.storage;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkus.runtime.Startup;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Disposes;
@@ -98,10 +99,21 @@ public class PersistProvider {
     return persist;
   }
 
+  /**
+   * Eagerly initialize the not-observed {@link Persist} instance.
+   *
+   * <p>{@link io.quarkus.runtime.Startup @Startup} mustn't be used with {@link Produces @Produces},
+   * instead an event-observer for {@link StartupEvent} shall be used, taking the produced bean as
+   * an argument.
+   */
+  public void eagerPersistInitialization(
+      @Observes StartupEvent event, @NotObserved Persist persist) {
+    LOGGER.debug("Eager initialization of persist implementation '{}'", persist.name());
+  }
+
   @Produces
   @Singleton
   @NotObserved
-  @Startup
   public Persist producePersist(MeterRegistry meterRegistry) {
     VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
 
