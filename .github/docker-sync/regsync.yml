@@ -15,6 +15,7 @@ defaults:
     retry: 15m
   parallel: 2
 sync:
+  # Server
   - source: ghcr.io/projectnessie/nessie-unstable
     target: quay.io/projectnessie/nessie-unstable
     type: repository
@@ -34,4 +35,25 @@ sync:
     type: repository
   - source: ghcr.io/projectnessie/nessie
     target: docker.io/projectnessie/nessie
+    type: repository
+  # GC Tool
+  - source: ghcr.io/projectnessie/nessie-gc-unstable
+    target: quay.io/projectnessie/nessie-gc-unstable
+    type: repository
+    tags:
+      allow:
+      - "latest.*"
+      - "0[.][567]\\d+[.].*"
+  - source: ghcr.io/projectnessie/nessie-gc-unstable
+    target: docker.io/projectnessie/nessie-gc-unstable
+    type: repository
+    tags:
+      allow:
+      - "latest.*"
+      - "0[.][567]\\d+[.].*"
+  - source: ghcr.io/projectnessie/nessie-gc
+    target: quay.io/projectnessie/nessie-gc
+    type: repository
+  - source: ghcr.io/projectnessie/nessie-gc
+    target: docker.io/projectnessie/nessie-gc
     type: repository
