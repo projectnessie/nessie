@@ -226,6 +226,8 @@ jobs:
         (\`chmod 744 nessie-gc-${RELEASE_VERSION}\` after download.)
         Can also be run using \`java -jar nessie-gc-${RELEASE_VERSION}\`, because it is actually a Java archive.
         Shell completion can be generated from the \`nessie-gc\` tool.
+        Nessie GC tool is also available as Docker image: 
+        \`docker run --rm ghcr.io/projectnessie/nessie-gc:${RELEASE_VERSION} --help\`.
 
         The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
         There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
