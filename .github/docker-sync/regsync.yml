@@ -22,14 +22,14 @@ sync:
     tags:
       allow:
       - "latest.*"
-      - "0[.][567]\\d+[.].*"
+      - "0[.][789]\\d[.].*|[123][.].*"
   - source: ghcr.io/projectnessie/nessie-unstable
     target: docker.io/projectnessie/nessie-unstable
     type: repository
     tags:
       allow:
       - "latest.*"
-      - "0[.][567]\\d+[.].*"
+      - "0[.][789]\\d[.].*|[123][.].*"
   - source: ghcr.io/projectnessie/nessie
     target: quay.io/projectnessie/nessie
     type: repository
@@ -40,17 +40,9 @@ sync:
   - source: ghcr.io/projectnessie/nessie-gc-unstable
     target: quay.io/projectnessie/nessie-gc-unstable
     type: repository
-    tags:
-      allow:
-      - "latest.*"
-      - "0[.][567]\\d+[.].*"
   - source: ghcr.io/projectnessie/nessie-gc-unstable
     target: docker.io/projectnessie/nessie-gc-unstable
     type: repository
-    tags:
-      allow:
-      - "latest.*"
-      - "0[.][567]\\d+[.].*"
   - source: ghcr.io/projectnessie/nessie-gc
     target: quay.io/projectnessie/nessie-gc
     type: repository
