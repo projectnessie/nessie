@@ -1,12 +1,11 @@
 FROM registry.access.redhat.com/ubi9/openjdk-21:1.17-2.1705482269
 
 LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
-LABEL org.opencontainers.image.description="Projectnessie Nessie GC Tool"
+LABEL org.opencontainers.image.description="ProjectNessie GC Tool"
 LABEL org.opencontainers.image.licenses=Apache-2.0
 
 ENV LANGUAGE='en_US:en'
 
-# We make four distinct layers so if there are application changes the library layers can be re-used
 COPY --chown=185 build/executable/nessie-gc /
 
 USER 185
