@@ -15,12 +15,24 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.CONNECTION_CONNECT_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.CONNECTION_INIT_QUERY_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.CONTROL_CONNECTION_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.HEARTBEAT_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.METADATA_SCHEMA_REQUEST_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.TypedDriverOption.REQUEST_TIMEOUT;
+
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.OptionsMap;
+import com.datastax.oss.driver.api.core.config.TypedDriverOption;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 import jakarta.annotation.Nullable;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.List;
 import org.immutables.value.Value;
 
@@ -43,18 +55,33 @@ public abstract class CassandraClientProducer {
   abstract LoadBalancingPolicy loadBalancingPolicy();
 
   public CqlSession createClient() {
-    CqlSessionBuilder cluster = CqlSession.builder().addContactPoints(contactPoints());
+    CqlSessionBuilder client = CqlSession.builder().addContactPoints(contactPoints());
 
     String localDc = localDc();
     if (localDc != null) {
-      cluster.withLocalDatacenter(localDc);
+      client.withLocalDatacenter(localDc);
     }
 
     AuthProvider auth = authProvider();
     if (auth != null) {
-      cluster.withAuthProvider(auth);
+      client.withAuthProvider(auth);
     }
 
-    return cluster.build();
+    OptionsMap options = OptionsMap.driverDefaults();
+
+    // Increase some timeouts to avoid flakiness
+    Duration timeout = Duration.ofSeconds(15);
+    options.put(CONNECTION_CONNECT_TIMEOUT, timeout);
+    options.put(CONNECTION_INIT_QUERY_TIMEOUT, timeout);
+    options.put(CONNECTION_SET_KEYSPACE_TIMEOUT, timeout);
+    options.put(REQUEST_TIMEOUT, timeout);
+    options.put(HEARTBEAT_TIMEOUT, timeout);
+    options.put(METADATA_SCHEMA_REQUEST_TIMEOUT, timeout);
+    options.put(CONTROL_CONNECTION_TIMEOUT, timeout);
+
+    // Disable warnings due to tombstone_warn_threshold
+    options.put(TypedDriverOption.REQUEST_LOG_WARNINGS, false);
+
+    return client.withConfigLoader(DriverConfigLoader.fromMap(options)).build();
   }
 }
