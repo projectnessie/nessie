@@ -688,7 +688,7 @@ jobs:
 
       - name: Check if GC Tool Docker Java image works
         run: |
-          if docker run --rm --name nessie-gc ${DOCKER_GC_IMAGE}:latest-java --help | grep -q "Usage: gc-tool"; then
+          if docker run --rm --name nessie-gc ${DOCKER_GC_IMAGE}:latest-java --help | grep -q "Usage: nessie-gc"; then
             echo "## GC Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
             echo "GC Tool Java Docker image smoke test: PASSED"
           else
