@@ -75,8 +75,8 @@ public class EventSubscribers implements AutoCloseable {
 
   public EventSubscribers(Iterable<EventSubscriber> subscribers) {
     this.subscribers =
-        Collections.unmodifiableList(
-            StreamSupport.stream(subscribers.spliterator(), false).collect(Collectors.toList()));
+        StreamSupport.stream(subscribers.spliterator(), false)
+            .collect(Collectors.toUnmodifiableList());
     acceptedEventTypes =
         Arrays.stream(EventType.values())
             .filter(t -> this.subscribers.stream().anyMatch(s -> s.accepts(t)))
@@ -94,19 +94,24 @@ public class EventSubscribers implements AutoCloseable {
    */
   public synchronized void start(Function<EventSubscriber, EventSubscription> subscriptionFactory) {
     if (!started) {
-      LOGGER.info("Starting subscribers...");
-      Map<EventSubscription, EventSubscriber> subscriptions = new HashMap<>();
-      for (EventSubscriber subscriber : subscribers) {
-        try {
-          EventSubscription subscription = subscriptionFactory.apply(subscriber);
-          subscriber.onSubscribe(subscription);
-          subscriptions.put(subscription, subscriber);
-        } catch (Exception e) {
-          throw new RuntimeException("Error starting subscriber", e);
+      if (subscribers.isEmpty()) {
+        LOGGER.debug("No subscribers to start.");
+        this.subscriptions = Collections.emptyMap();
+      } else {
+        LOGGER.info("Starting subscribers...");
+        Map<EventSubscription, EventSubscriber> subscriptions = new HashMap<>();
+        for (EventSubscriber subscriber : subscribers) {
+          try {
+            EventSubscription subscription = subscriptionFactory.apply(subscriber);
+            subscriber.onSubscribe(subscription);
+            subscriptions.put(subscription, subscriber);
+          } catch (Exception e) {
+            throw new RuntimeException("Error starting subscriber", e);
+          }
         }
+        this.subscriptions = Collections.unmodifiableMap(subscriptions);
+        LOGGER.info("Done starting subscribers.");
       }
-      this.subscriptions = Collections.unmodifiableMap(subscriptions);
-      LOGGER.info("Done starting subscribers.");
       started = true;
     }
   }
