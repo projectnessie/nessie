@@ -84,7 +84,6 @@ dependencies {
     api(project(":nessie-versioned-transfer-proto"))
     api(project(":nessie-versioned-transfer"))
     if (!isIncludedInNesQuEIT()) {
-      api(project(":iceberg-views"))
       api(project(":nessie-spark-antlr-runtime"))
       api(project(":nessie-spark-extensions-grammar"))
       api(project(":nessie-gc-iceberg"))

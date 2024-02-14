@@ -117,7 +117,6 @@ public class TestPublishedPoms {
 
   @ParameterizedTest
   @ValueSource(strings = {
-    "iceberg-views",
     "nessie-spark-antlr-runtime",
     "nessie-spark-extensions-grammar",
     "nessie-spark-extensions-3.2_2.12",
