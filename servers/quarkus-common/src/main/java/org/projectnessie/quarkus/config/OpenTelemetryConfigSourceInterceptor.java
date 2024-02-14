@@ -19,6 +19,7 @@ import io.quarkus.opentelemetry.runtime.config.runtime.exporter.OtlpExporterRunt
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ public class OpenTelemetryConfigSourceInterceptor implements ConfigSourceInterce
   private static final Logger LOGGER =
       LoggerFactory.getLogger(OpenTelemetryConfigSourceInterceptor.class);
   private static final int APPLICATION_PROPERTIES_CLASSPATH_ORDINAL = 250;
+  private static final AtomicBoolean LOGGED = new AtomicBoolean(false);
 
   @Override
   public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
@@ -62,18 +64,26 @@ public class OpenTelemetryConfigSourceInterceptor implements ConfigSourceInterce
       logUserDefinedEndpoint(tracesEndpoint);
       return false;
     }
-    LOGGER.info("No OpenTelemetry endpoint configured, disabling OpenTelemetry");
-    LOGGER.info(
-        "To enable OpenTelemetry, define a traces collector endpoint URL "
-            + "using the property: quarkus.otel.exporter.otlp.traces.endpoint");
+    logTelemetryDisabled();
     return true;
   }
 
   private static void logUserDefinedEndpoint(ConfigValue tracesEndpoint) {
-    LOGGER.info(
-        "Found OpenTelemetry collector endpoint URL: {} (from property: {}); enabling OpenTelemetry",
-        tracesEndpoint.getValue(),
-        tracesEndpoint.getName());
+    if (LOGGED.compareAndSet(false, true)) {
+      LOGGER.info(
+          "Found OpenTelemetry collector endpoint URL: {} (from property: {}); enabling OpenTelemetry",
+          tracesEndpoint.getValue(),
+          tracesEndpoint.getName());
+    }
+  }
+
+  private static void logTelemetryDisabled() {
+    if (LOGGED.compareAndSet(false, true)) {
+      LOGGER.info("No OpenTelemetry endpoint configured, disabling OpenTelemetry");
+      LOGGER.info(
+          "To enable OpenTelemetry, define a traces collector endpoint URL "
+              + "using the property: quarkus.otel.exporter.otlp.traces.endpoint");
+    }
   }
 
   private static boolean isUserDefined(ConfigValue configValue) {
