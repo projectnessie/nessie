@@ -8,34 +8,46 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
-* The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
-  page](https://projectnessie.org/features/gc) for more.
-* Remove synchronizing to docker.io container registry, only publish to ghcr.io and quay.io.
-
 ### Upgrade notes
-
-* Projectnessie no longer publishes container images to docker.io/Docker Hub. Container images are
-  available from ghcr.io and quay.io.
 
 ### Breaking changes
 
 ### New Features
 
-* Add some configuration checks to highlight probably production issues
-* Publish Docker images for the GC tool
-
 ### Changes
-
-* Disable default OIDC tenant when authentication is disabled
-* Disable OpenTelemetry SDK when no endpoint is defined
 
 ### Deprecations
 
 ### Fixes
 
-* Fix VersionStore panels of the Grafana dashboard
-
 ### Commits
+
+## [0.77.0] Release (2024-02-14)
+
+### Highlights
+
+- The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
+  page](https://projectnessie.org/features/gc) for more.
+- Remove synchronizing to docker.io container registry, only publish to ghcr.io and quay.io.
+
+### Upgrade notes
+
+- Projectnessie no longer publishes container images to docker.io/Docker Hub. Container images are
+  available from ghcr.io and quay.io.
+
+### New Features
+
+- Add some configuration checks to highlight probably production issues
+- Publish Docker images for the GC tool
+
+### Changes
+
+- Disable default OIDC tenant when authentication is disabled
+- Disable OpenTelemetry SDK when no endpoint is defined
+
+### Fixes
+
+- Fix VersionStore panels of the Grafana dashboard
 
 ## [0.76.4] Release (2024-01-26)
 
@@ -333,7 +345,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.76.4...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.77.0...HEAD
+[0.77.0]: https://github.com/projectnessie/nessie/compare/nessie-0.76.4...nessie-0.77.0
 [0.76.4]: https://github.com/projectnessie/nessie/compare/nessie-0.76.0...nessie-0.76.4
 [0.76.0]: https://github.com/projectnessie/nessie/compare/nessie-0.75.0...nessie-0.76.0
 [0.75.0]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...nessie-0.75.0

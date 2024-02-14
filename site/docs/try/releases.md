@@ -2,6 +2,64 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.77.0 Release (February 14, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.77.0).
+
+### Highlights
+
+- The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
+  page](https://projectnessie.org/features/gc) for more.
+- Remove synchronizing to docker.io container registry, only publish to ghcr.io and quay.io.
+
+### Upgrade notes
+
+- Projectnessie no longer publishes container images to docker.io/Docker Hub. Container images are
+  available from ghcr.io and quay.io.
+
+### New Features
+
+- Add some configuration checks to highlight probably production issues
+- Publish Docker images for the GC tool
+
+### Changes
+
+- Disable default OIDC tenant when authentication is disabled
+- Disable OpenTelemetry SDK when no endpoint is defined
+
+### Fixes
+
+- Fix VersionStore panels of the Grafana dashboard
+
+### Commits
+* CI: Don't fail CI job when list of changed files is empty (#8066)
+* No longer publish to docker.io, only ghcr.io and sync to quay.io (#8065)
+* Ninja: update CHANGELOG
+* Version catalog: split versions for Quarkus/Platform and Quakus Gradle Plugin (#8062)
+* Mark ContentResponse.getEffectiveReference as not null (#8043)
+* Simplify ClientSideGetMultipleNamespaces (#8044)
+* Separate production from test code in storage modules (#8046)
+* Events: don't log startup messages if there aren't any subscribers (#8061)
+* OpenTelemetry: only log startup messages once (#8059)
+* Publish Docker images for the GC tool (#8055)
+* Renovate: don't add any labels (#8053)
+* Tweak CassandraClientProducer for tests (#8052)
+* Fix `invalid @Startup method` again (#8047)
+* Remove redundant logback-test.xml in classpath (#8048)
+* Use Google Cloud CLI image that supports linux/arm (#8045)
+* Add some configuration checks to highlight probably production issues (#8027)
+* Fix VersionStore panels of the Grafana dashboard (#8033)
+* Custom object types: Use gz as default compression (#8041)
+* Fix typo (#8029)
+* Update Jackson version test matrix in `:nessie-client` (#8030)
+* Re-add `@Startup` annotation to eagerly setup the version store backend (#8028)
+* Gradle - simpler assignments (#8016)
+* CI/Testing: Let Renovate manage Docker image references (#8015)
+* Testing: set dynamic Quarkus test-http port everywhere (#8006)
+* Disable default OIDC tenant when authentication is disabled (#8000)
+* Improve documentation for Nessie on Kubernetes (#7997)
+* Disable OpenTelemetry SDK when no endpoint is defined (#8004)
+
 ## 0.76.6 Release (January 26, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.76.6).
