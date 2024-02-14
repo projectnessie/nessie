@@ -42,9 +42,9 @@ public interface GetMultipleContentsResponse {
 
   /**
    * The effective reference (for example a branch or tag) including the commit ID from which the
-   * entries were fetched.
+   * contents were fetched. Never null when using REST API v2.
    */
-  @Nullable
+  @Nullable // Only nullable in V1
   @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   @JsonView(Views.V2.class)
