@@ -110,10 +110,10 @@ public final class BigTableClientsFactory {
   }
 
   /**
-   * Apply settings that are relevant to both production and test usage. Also called from {@link
-   * AbstractBigTableBackendTestFactory}.
+   * Apply settings that are relevant to both production and test usage. Also called from test
+   * factories.
    */
-  static void applyCommonDataClientSettings(BigtableDataSettings.Builder settings) {
+  public static void applyCommonDataClientSettings(BigtableDataSettings.Builder settings) {
     EnhancedBigtableStubSettings.Builder stubSettings = settings.stubSettings();
 
     stubSettings

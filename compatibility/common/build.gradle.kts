@@ -29,7 +29,7 @@ dependencies {
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))
-  compileOnly(project(":nessie-versioned-storage-mongodb"))
+  compileOnly(project(":nessie-versioned-storage-mongodb-tests"))
   compileOnly(project(":nessie-versioned-storage-testextension"))
   compileOnly(libs.mongodb.driver.sync)
 

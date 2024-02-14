@@ -32,6 +32,7 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.projectnessie.versioned.storage.common.persist.PersistLoader;
+import org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestRocksDBBackendFactory {

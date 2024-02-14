@@ -15,7 +15,7 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(InmemoryBackendTestFactory.class)

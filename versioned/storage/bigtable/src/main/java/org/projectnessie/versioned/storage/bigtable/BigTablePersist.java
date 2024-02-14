@@ -65,7 +65,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -231,8 +230,8 @@ public class BigTablePersist implements Persist {
     }
   }
 
-  @NotNull
-  private static Mutation refsMutation(@NotNull Reference reference) {
+  @Nonnull
+  private static Mutation refsMutation(@Nonnull Reference reference) {
     return Mutation.create()
         .setCell(
             FAMILY_REFS,
@@ -243,7 +242,7 @@ public class BigTablePersist implements Persist {
             unsafeWrap(serializeReference(reference)));
   }
 
-  @NotNull
+  @Nonnull
   private static Filters.ChainFilter refsValueFilter(Reference expected) {
     return FILTERS
         .chain()
@@ -363,9 +362,9 @@ public class BigTablePersist implements Persist {
               ImmutableMap.toImmutableMap(
                   Function.identity(), (ObjType type) -> ByteString.copyFromUtf8(type.name())));
 
-  @NotNull
+  @Nonnull
   private ConditionalRowMutation mutationForStoreObj(
-      @NotNull Obj obj, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
+      @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
 
@@ -524,9 +523,9 @@ public class BigTablePersist implements Persist {
     return backend.client().checkAndMutateRow(conditionalRowMutation);
   }
 
-  @NotNull
+  @Nonnull
   private ConditionalRowMutation mutationForConditional(
-      @NotNull UpdateableObj obj, Mutation mutation) {
+      @Nonnull UpdateableObj obj, Mutation mutation) {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
 
@@ -548,8 +547,8 @@ public class BigTablePersist implements Persist {
         .then(mutation);
   }
 
-  @NotNull
-  private Mutation objectWriteMutation(@NotNull Obj obj, boolean ignoreSoftSizeRestrictions)
+  @Nonnull
+  private Mutation objectWriteMutation(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();

@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.dynamodb;
 
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
+import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(DynamoDBBackendTestFactory.class)

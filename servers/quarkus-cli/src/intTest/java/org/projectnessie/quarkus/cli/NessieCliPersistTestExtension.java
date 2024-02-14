@@ -31,7 +31,7 @@ import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
-import org.projectnessie.versioned.storage.mongodb.MongoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
 
 /**
  * A JUnit5 extension that sets up the execution environment for Nessie CLI tests.

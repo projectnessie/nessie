@@ -16,7 +16,7 @@
 package org.projectnessie.services.impl;
 
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendTestFactory;
+import org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 

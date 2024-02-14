@@ -39,8 +39,7 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  testImplementation(project(":nessie-versioned-storage-rocksdb-tests"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-tests"))

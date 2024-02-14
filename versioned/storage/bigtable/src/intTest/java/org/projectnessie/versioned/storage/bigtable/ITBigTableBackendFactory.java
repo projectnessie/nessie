@@ -24,6 +24,7 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.versioned.storage.bigtabletests.BigTableBackendContainerTestFactory;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;

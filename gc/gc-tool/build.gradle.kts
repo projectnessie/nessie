@@ -93,7 +93,7 @@ dependencies {
   testCompileOnly(platform(libs.jackson.bom))
 
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
-  testImplementation(nessieProject("nessie-versioned-storage-inmemory"))
+  testImplementation(nessieProject("nessie-versioned-storage-inmemory-tests"))
 
   testRuntimeOnly(libs.logback.classic)
 

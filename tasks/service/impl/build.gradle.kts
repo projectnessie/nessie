@@ -64,6 +64,6 @@ dependencies {
   testImplementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-versioned-storage-testextension"))
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
   testRuntimeOnly(libs.logback.classic)
 }

@@ -31,7 +31,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 
-class MongoDBBackend implements Backend {
+public class MongoDBBackend implements Backend {
 
   private final MongoDBBackendConfig config;
   private final MongoClient client;
@@ -39,7 +39,7 @@ class MongoDBBackend implements Backend {
   private MongoCollection<Document> refs;
   private MongoCollection<Document> objs;
 
-  MongoDBBackend(@Nonnull MongoDBBackendConfig config, boolean closeClient) {
+  public MongoDBBackend(@Nonnull MongoDBBackendConfig config, boolean closeClient) {
     this.config = config;
     this.client = config.client();
     this.closeClient = closeClient;

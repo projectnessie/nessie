@@ -56,7 +56,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackend.BatchedQuery;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializers;
@@ -336,7 +335,7 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public boolean deleteConditional(@NotNull UpdateableObj obj) {
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     BoundStatement stmt =
         backend.buildStatement(
             DELETE_OBJ_CONDITIONAL,
@@ -348,7 +347,7 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public boolean updateConditional(@NotNull UpdateableObj expected, @NotNull UpdateableObj newValue)
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
       throws ObjTooLargeException {
     ObjId id = expected.id();
     ObjType type = expected.type();

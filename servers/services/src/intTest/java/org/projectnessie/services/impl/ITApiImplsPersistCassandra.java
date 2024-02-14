@@ -18,7 +18,7 @@ package org.projectnessie.services.impl;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.cassandra.CassandraBackendTestFactory;
+import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 

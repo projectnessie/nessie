@@ -57,7 +57,7 @@ import javax.sql.DataSource;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 
-final class JdbcBackend implements Backend {
+public final class JdbcBackend implements Backend {
 
   private final DatabaseSpecific databaseSpecific;
   private final DataSource dataSource;
@@ -66,7 +66,7 @@ final class JdbcBackend implements Backend {
   private final String createTableRefsSql;
   private final String createTableObjsSql;
 
-  JdbcBackend(
+  public JdbcBackend(
       @Nonnull JdbcBackendConfig config,
       @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {

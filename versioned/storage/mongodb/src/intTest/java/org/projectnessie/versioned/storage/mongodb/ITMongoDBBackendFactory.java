@@ -31,6 +31,7 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.projectnessie.versioned.storage.common.persist.PersistLoader;
+import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class ITMongoDBBackendFactory {

@@ -51,7 +51,7 @@ import org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskObj;
 import org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskRequest;
 import org.projectnessie.nessie.tasks.service.tasktypes.RetryableException;
 import org.projectnessie.versioned.storage.common.persist.Persist;
-import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;

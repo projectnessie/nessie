@@ -42,7 +42,7 @@ import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
-final class DynamoDBBackend implements Backend {
+public final class DynamoDBBackend implements Backend {
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBBackend.class);
 
   private final DynamoDbClient client;
@@ -51,7 +51,7 @@ final class DynamoDBBackend implements Backend {
   final String tableRefs;
   final String tableObjs;
 
-  DynamoDBBackend(@Nonnull DynamoDBBackendConfig config, boolean closeClient) {
+  public DynamoDBBackend(@Nonnull DynamoDBBackendConfig config, boolean closeClient) {
     this.client = config.client();
     this.tableRefs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);

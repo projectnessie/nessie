@@ -42,22 +42,16 @@ dependencies {
   implementation("software.amazon.awssdk:dynamodb")
   implementation("software.amazon.awssdk:apache-client")
 
-  compileOnly(platform(libs.testcontainers.bom))
-  compileOnly("org.testcontainers:testcontainers")
-  compileOnly(libs.docker.java.api)
-
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  intTestImplementation(project(":nessie-versioned-storage-dynamodb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:testcontainers")
-  intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

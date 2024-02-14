@@ -21,10 +21,12 @@ extra["maven.name"] = "Nessie - Quarkus Tests"
 dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-versioned-tests"))
-  implementation(project(":nessie-versioned-storage-bigtable"))
-  implementation(project(":nessie-versioned-storage-cassandra"))
-  implementation(project(":nessie-versioned-storage-dynamodb"))
-  implementation(project(":nessie-versioned-storage-mongodb"))
+  implementation(project(":nessie-versioned-storage-bigtable-tests"))
+  implementation(project(":nessie-versioned-storage-cassandra-tests"))
+  implementation(project(":nessie-versioned-storage-dynamodb-tests"))
+  implementation(project(":nessie-versioned-storage-jdbc-tests"))
+  implementation(project(":nessie-versioned-storage-mongodb-tests"))
+  implementation(project(":nessie-versioned-storage-rocksdb-tests"))
   implementation(project(":nessie-versioned-storage-testextension"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))

@@ -32,6 +32,7 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.projectnessie.versioned.storage.common.persist.PersistLoader;
+import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;

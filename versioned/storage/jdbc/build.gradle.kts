@@ -42,16 +42,7 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(libs.agroal.pool)
-  compileOnly(libs.h2)
-  compileOnly(libs.postgresql)
-  compileOnly(platform(libs.testcontainers.bom))
-  compileOnly("org.testcontainers:postgresql")
-  compileOnly("org.testcontainers:cockroachdb")
-  compileOnly(libs.docker.java.api)
-
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  testFixturesApi(project(":nessie-versioned-storage-jdbc-tests"))
   testFixturesApi(project(":nessie-versioned-storage-common"))
   testFixturesApi(project(":nessie-versioned-storage-common-tests"))
   testFixturesApi(project(":nessie-versioned-storage-testextension"))

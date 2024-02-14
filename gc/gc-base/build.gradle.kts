@@ -45,7 +45,7 @@ dependencies {
   testImplementation(project(":nessie-gc-base-tests"))
   testImplementation(project(":nessie-jaxrs-testextension"))
 
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
 
   testRuntimeOnly(libs.logback.classic)
 
