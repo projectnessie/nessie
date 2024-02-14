@@ -13,15 +13,26 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+* Projectnessie no longer publishes container images to docker.io/Docker Hub. Container images are
+  available from ghcr.io and quay.io.
+
 ### Breaking changes
 
 ### New Features
 
+* Add some configuration checks to highlight probably production issues
+* Publish Docker images for the GC tool
+
 ### Changes
+
+* Disable default OIDC tenant when authentication is disabled
+* Disable OpenTelemetry SDK when no endpoint is defined
 
 ### Deprecations
 
 ### Fixes
+
+* Fix VersionStore panels of the Grafana dashboard
 
 ### Commits
 
