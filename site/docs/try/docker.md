@@ -6,10 +6,9 @@ As part of each release, Nessie is made available as a Docker image. This is the
 and fastest way to try out Nessie locally and test all its capabilities.
 
 The primary repository for Nessie images is [GitHub Container Registry]. Images are also mirrored
-to [Docker Hub] and [Quay.io].
+to [Quay.io]. Note that Nessie images are no longer published or synced to Docker Hub.
 
 [GitHub Container Registry]: https://ghcr.io/projectnessie/nessie
-[Docker Hub]: https://hub.docker.com/r/projectnessie/nessie
 [Quay.io]: https://quay.io/repository/projectnessie/nessie
 
 The image is relatively small and builds on top of standard base images. To get started:
