@@ -17,10 +17,10 @@ package org.projectnessie.gc.tool.cli.commands;
 
 import java.sql.Connection;
 import javax.sql.DataSource;
-import org.projectnessie.gc.contents.jdbc.JdbcHelper;
 import org.projectnessie.gc.tool.cli.Closeables;
 import org.projectnessie.gc.tool.cli.options.EnvironmentDefaultProvider;
 import org.projectnessie.gc.tool.cli.options.JdbcOptions;
+import org.projectnessie.gc.tool.cli.options.SchemaCreateStrategy;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
@@ -39,9 +39,12 @@ public class JdbcCreateSchema extends BaseCommand {
   @Override
   protected Integer call(Closeables closeables) throws Exception {
     DataSource dataSource = closeables.maybeAdd(jdbc.createDataSource());
+    SchemaCreateStrategy schemaCreateStrategy = jdbc.getSchemaCreateStrategy();
+    if (schemaCreateStrategy == null) {
+      schemaCreateStrategy = SchemaCreateStrategy.CREATE;
+    }
     try (Connection conn = dataSource.getConnection()) {
-      JdbcHelper.createTables(conn);
-      conn.commit();
+      schemaCreateStrategy.apply(conn);
     }
     commandSpec
         .commandLine()
