@@ -1,9 +1,196 @@
+# Nessie GC
+
+Nessie GC is a tool to clean up orphaned files in a Nessie repository. It is designed to be run
+periodically to keep the repository clean and to avoid unnecessary storage costs.
+
+## Requirements
+
+The Nessie GC tool is a standalone executable, but requires Java 11 or later to be available on the
+host where it is running.
+
+The Nessie GC tool requires a running Nessie server and a JDBC-compliant database. The Nessie server
+must be reachable from the host where the GC tool is running. The JDBC-compliant database must also
+be reachable from the host where the GC tool is running. The database is used to store the live
+content sets and the deferred deletes.
+
+!!! note
+    Although the GC tool can run in in-memory mode, it is recommended to use a persistent database
+    for production use. Any JDBC compliant database can be used, but it must be created and the
+    schema initialized before running the Nessie GC tool.
+
+## Running locally
+
+The Nessie GC tool can be downloaded from the [GitHub
+Releases](https://github.com/projectnessie/nessie/releases) page, for example:
+
+```shell
+curl -L -o nessie-gc https://github.com/projectnessie/nessie/releases/download/nessie-0.76.6/nessie-gc-0.76.6
+chmod +x nessie-gc
+```
+
+To see the available commands and options, run:
+
+```shell
+./nessie-gc --help
+```
+
+You should see the following output:
+
+```text
+Usage: nessie-gc [-hV] [COMMAND]
+  -h, --help      Show this help message and exit.
+  -V, --version   Print version information and exit.
+Commands:
+  help                           Display help information about the specified
+                                   command.
+  mark-live, identify, mark      Run identify-live-content phase of Nessie GC,
+                                   must not be used with the in-memory
+                                   contents-storage.
+  sweep, expire                  Run expire-files + delete-orphan-files phase
+                                   of Nessie GC using a live-contents-set
+                                   stored by a previous run of the mark-live
+                                   command, must not be used with the in-memory
+                                   contents-storage.
+  gc                             Run identify-live-content and expire-files +
+                                   delete-orphan-files.
+  list                           List existing live-sets, must not be used with
+                                   the in-memory contents-storage.
+  delete                         Delete a live-set, must not be used with the
+                                   in-memory contents-storage.
+  list-deferred                  List files collected as deferred deletes, must
+                                   not be used with the in-memory
+                                   contents-storage.
+  deferred-deletes               Delete files collected as deferred deletes,
+                                   must not be used with the in-memory
+                                   contents-storage.
+  show                           Show information of a live-content-set, must
+                                   not be used with the in-memory
+                                   contents-storage.
+  show-sql-create-schema-script  Print DDL statements to create the schema.
+  create-sql-schema              JDBC schema creation.
+  completion-script              Extracts the command-line completion script.
+```
+
+The following example assumes that you have a Nessie server running at `http://localhost:19120` and
+a PostgreSQL instance running at `jdbc:postgresql://localhost:5432/nessie_gc` with user `pguser` and
+password `mysecretpassword`.
+
+Create the database schema if required:
+
+```shell
+./nessie-gc create-sql-schema \
+  --jdbc-url jdbc:postgresql://localhost:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
+```
+
+Now we can run the Nessie GC tool:
+
+```shell
+./nessie-gc gc \
+  --uri http://localhost:19120/api/v2 \
+  --jdbc \
+  --jdbc-url jdbc:postgresql://localhost:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
+```
+
+## Running with Docker
+
+The tool is also available as a Docker image, hosted on [GitHub Container Registry]. Images are also
+mirrored to [Docker Hub] and [Quay.io].
+
+[GitHub Container Registry]: https://ghcr.io/projectnessie/nessie-gc
+[Docker Hub]: https://hub.docker.com/r/projectnessie/nessie-gc
+[Quay.io]: https://quay.io/repository/projectnessie/nessie-gc
+
+See [Docker](../try/docker.md) for more information.
+
+For testing purposes, let's create a JDBC datastore as follows:
+
+```shell
+docker run --rm -e POSTGRES_USER=pguser -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=nessie_gc -p 5432:5432 postgres:16.2
+```
+
+Create the database schema if required:
+
+```shell
+docker run --rm ghcr.io/projectnessie/nessie-gc:latest create-sql-schema \
+  --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
+```
+
+Now we can run the Nessie GC tool:
+
+```shell
+docker run --rm ghcr.io/projectnessie/nessie-gc:latest gc \
+  --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
+```
+
+The GC tool has a great number of options, which can be seen by running `docker run --rm
+ghcr.io/projectnessie/nessie-gc:latest --help`. The main command is `gc`, which is followed by
+subcommands and options. Check the available subcommands and options by running `docker run --rm
+ghcr.io/projectnessie/nessie-gc:latest gc --help`.
+
+## Running with Kubernetes
+
+The Nessie GC tool can be executed as a Job or a CronJob in a Kubernetes cluster. 
+
+The following example assumes that you have a Nessie deployment and a PostgreSQL instance, all
+running in the same cluster and in the same namespace.
+
+Create a secret for the database credentials:
+
+```shell
+kubectl create secret generic nessie-gc-credentials \
+  --from-literal=JDBC_URL=jdbc:postgresql://postgresql:5432/nessie_gc \
+  --from-literal=JDBC_USER=pguser \
+  --from-literal=JDBC_PASSWORD=mysecretpassword
+```
+
+Assuming that the Nessie service is reachable at `nessie:19120`, create the following Kubernetes job
+to run the GC tool:
+
+```shell
+kubectl apply -f - <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nessie-gc-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: nessie-gc
+        image: ghcr.io/projectnessie/nessie-gc
+        args: 
+          - gc
+          - --uri
+          - http://nessie:19120/api/v2
+          - --jdbc
+          - --jdbc-url
+          - "\$(JDBC_URL)"
+          - --jdbc-user
+          - "\$(JDBC_USER)"
+          - --jdbc-password
+          - "\$(JDBC_PASSWORD)"
+        envFrom:
+        - secretRef:
+            name: nessie-gc-credentials
+      restartPolicy: Never
+EOF
+```
+
 # Nessie GC Internals
 
-_aka Nessie-aware delete-orphan-files_
+The rest of this document describes the internals of the Nessie GC tool and is intended for
+developers who want to understand how the tool works.
 
-Consists of a `gc-base` module, which contains the general base functionality to access a
-repository to identify the live contents, to identify the live files, to list the existing files
+The GC tool consists of a `gc-base` module, which contains the general base functionality to access
+a repository to identify the live contents, to identify the live files, to list the existing files
 and to purge orphan files.
 
 Modules that supplement the `gc-base` module:

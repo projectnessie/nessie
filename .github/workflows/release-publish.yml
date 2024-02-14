@@ -134,12 +134,19 @@ jobs:
           -a "${ARTIFACTS}" \
           -g ":nessie-quarkus" \
           -p "servers/quarkus-server" \
+          -d "Dockerfile-server" \
           ghcr.io/projectnessie/nessie
 
         # Add version to the openapi file name
         cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
         cp gc/gc-tool/build/executable/nessie-gc gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}
+        tools/dockerbuild/build-push-images.sh \
+          -a "${ARTIFACTS}" \
+          -g ":nessie-gc-tool" \
+          -p "gc/gc-tool" \
+          -d "Dockerfile-gctool" \
+          ghcr.io/projectnessie/nessie-gc
 
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
@@ -219,6 +226,8 @@ jobs:
         (\`chmod 744 nessie-gc-${RELEASE_VERSION}\` after download.)
         Can also be run using \`java -jar nessie-gc-${RELEASE_VERSION}\`, because it is actually a Java archive.
         Shell completion can be generated from the \`nessie-gc\` tool.
+        Nessie GC tool is also available as a Docker image: 
+        \`docker run --rm ghcr.io/projectnessie/nessie-gc:${RELEASE_VERSION} --help\`.
 
         The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
         There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.

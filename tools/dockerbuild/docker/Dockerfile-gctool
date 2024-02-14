@@ -1,0 +1,13 @@
+FROM registry.access.redhat.com/ubi9/openjdk-21:1.17-2.1705482269
+
+LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
+LABEL org.opencontainers.image.description="Projectnessie GC Tool"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
+ENV LANGUAGE='en_US:en'
+
+COPY --chown=185 build/executable/nessie-gc /
+
+USER 185
+
+ENTRYPOINT [ "/nessie-gc" ]

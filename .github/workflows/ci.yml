@@ -610,6 +610,7 @@ jobs:
           DOCKER_VERSION="${VERSION%-SNAPSHOT}"
           echo "DOCKER_VERSION=${DOCKER_VERSION}" >> ${GITHUB_ENV}
           echo "DOCKER_IMAGE=localhost:5000/nessie-testing" >> ${GITHUB_ENV}
+          echo "DOCKER_GC_IMAGE=localhost:5000/nessie-gc-testing" >> ${GITHUB_ENV}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
@@ -625,7 +626,16 @@ jobs:
             -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
+            -d "Dockerfile-server" \
             ${DOCKER_IMAGE}
+
+          tools/dockerbuild/build-push-images.sh \
+            -a "${ARTIFACTS}" \
+            -g ":nessie-gc-tool" \
+            -p "gc/gc-tool" \
+            -d "Dockerfile-gctool" \
+            ${DOCKER_GC_IMAGE}
+
           rm -rf "${ARTIFACTS}"
 
       - name: Cleanup buildx
@@ -639,6 +649,10 @@ jobs:
           docker pull ${DOCKER_IMAGE}:latest-java
           docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}
           docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}-java
+          docker pull ${DOCKER_GC_IMAGE}:latest
+          docker pull ${DOCKER_GC_IMAGE}:latest-java
+          docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}
+          docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}-java
           cat <<! >> $GITHUB_STEP_SUMMARY
           ## Docker images
           
@@ -647,7 +661,7 @@ jobs:
           \`\`\`
           !
 
-      - name: Check if Docker Java image works
+      - name: Check if Server Docker Java image works
         run: |
           docker run --detach --name nessie ${DOCKER_IMAGE}:latest-java
           echo "Let Nessie Java Docker image run for one minute (to make sure it starts up fine)..."
@@ -671,6 +685,23 @@ jobs:
           echo "Nessie Java Docker image smoke test: PASSED"
           docker stop nessie
           docker rm nessie
+
+      - name: Check if GC Tool Docker Java image works
+        run: |
+          if docker run --rm --name nessie-gc ${DOCKER_GC_IMAGE}:latest-java --help | grep -q "Usage: nessie-gc"; then
+            echo "## GC Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "GC Tool Java Docker image smoke test: PASSED"
+          else
+           echo "GC Tool Java Docker image smoke test: FAILED" > /dev/stderr
+            cat <<! >> $GITHUB_STEP_SUMMARY
+            ## GC Tool Java Docker image FAILED
+
+            \`\`\`
+            $(docker logs nessie-gc)
+            \`\`\`
+          !
+            exit 1
+          fi
 
   nesqueit:
     name: CI NesQuEIT

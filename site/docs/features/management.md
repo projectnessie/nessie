@@ -34,7 +34,7 @@ downloaded from the [release page on GitHub](https://github.com/projectnessie/ne
     recommended as the storage for the live-content-sets.
 
 !!! info
-    Information about the internals of Nessie GC can be found [here](./gc-internals.md).
+    Information about Nessie GC can be found [here](./gc).
 
 ## Nessie GC tool
 
