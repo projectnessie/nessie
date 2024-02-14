@@ -81,8 +81,8 @@ public class OpenTelemetryConfigSourceInterceptor implements ConfigSourceInterce
     if (LOGGED.compareAndSet(false, true)) {
       LOGGER.info("No OpenTelemetry endpoint configured, disabling OpenTelemetry");
       LOGGER.info(
-        "To enable OpenTelemetry, define a traces collector endpoint URL "
-          + "using the property: quarkus.otel.exporter.otlp.traces.endpoint");
+          "To enable OpenTelemetry, define a traces collector endpoint URL "
+              + "using the property: quarkus.otel.exporter.otlp.traces.endpoint");
     }
   }
 
