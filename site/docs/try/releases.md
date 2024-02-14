@@ -2,6 +2,38 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.77.1 Release (February 14, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.77.1).
+
+### Highlights
+
+- The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
+  page](https://projectnessie.org/features/gc) for more.
+- Remove synchronizing to docker.io container registry, only publish to ghcr.io and quay.io.
+
+### Upgrade notes
+
+- Projectnessie no longer publishes container images to docker.io/Docker Hub. Container images are
+  available from ghcr.io and quay.io.
+
+### New Features
+
+- Add some configuration checks to highlight probably production issues
+- Publish Docker images for the GC tool
+
+### Changes
+
+- Disable default OIDC tenant when authentication is disabled
+- Disable OpenTelemetry SDK when no endpoint is defined
+
+### Fixes
+
+- Fix VersionStore panels of the Grafana dashboard
+
+### Commits
+* Fix release-publishing (#8069)
+
 ## 0.77.0 Release (February 14, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.77.0).
