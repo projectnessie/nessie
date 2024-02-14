@@ -10,6 +10,7 @@ as necessary. Empty sections will not end in the release notes.
 
 * The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
   page](https://projectnessie.org/features/gc) for more.
+* Remove synchronizing to docker.io container registry, only publish to ghcr.io and quay.io.
 
 ### Upgrade notes
 

@@ -28,8 +28,8 @@ Nessie supports Iceberg Tables/Views. Additionally, Nessie is focused on working
 
 You can quickly get started with Nessie by using our small, fast docker image.
 
-**IMPORTANT NOTE** Nessie moves away from `docker.io` to GitHub's container registry `ghcr.io`,
-and also `quay.io`. Previous releases are already available on both ghcr.io and quay.io. Please
+**IMPORTANT NOTE** Nessie has moved away from `docker.io` to GitHub's container registry `ghcr.io`,
+and also `quay.io`. Recent releases are already only available on both ghcr.io and quay.io. Please
 update references to `projectnessie/nessie` in your code to either `ghcr.io/projectnessie/nessie`
 or `quay.io/projectnessie/nessie`.
 
