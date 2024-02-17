@@ -117,7 +117,7 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.2.13" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.0" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 maven-core = { module = "org.apache.maven:maven-resolver-provider", version.ref = "maven" }
 maven-resolver-connector-basic = { module = "org.apache.maven.resolver:maven-resolver-connector-basic", version.ref = "mavenResolver" }
