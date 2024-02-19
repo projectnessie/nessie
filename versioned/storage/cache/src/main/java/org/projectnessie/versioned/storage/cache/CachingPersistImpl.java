@@ -41,10 +41,6 @@ class CachingPersistImpl implements Persist {
     this.cache = cache;
   }
 
-  long currentTimeMicros() {
-    return persist.config().currentTimeMicros();
-  }
-
   @Override
   @Nonnull
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
