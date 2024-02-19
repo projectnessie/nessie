@@ -376,7 +376,7 @@ public class DynamoDBPersist implements Persist {
 
   @Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     List<Map<String, AttributeValue>> keys = new ArrayList<>(Math.min(ids.length, BATCH_GET_LIMIT));
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -397,20 +397,6 @@ public class DynamoDBPersist implements Persist {
 
     if (!keys.isEmpty()) {
       fetchObjsPage(r, keys, idToIndex);
-    }
-
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (id != null && r[i] == null) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
-        }
-        notFound.add(id);
-      }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
     }
 
     return r;

@@ -362,6 +362,24 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+    try {
+      Obj[] r = new Obj[ids.length];
+      bulkFetch(backend.tableObjsId, ids, r, this::dbKey, this::objFromRow, x -> {});
+
+      return r;
+    } catch (ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    } catch (ApiException e) {
+      throw apiException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
 

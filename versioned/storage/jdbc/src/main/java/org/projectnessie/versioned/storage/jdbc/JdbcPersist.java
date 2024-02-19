@@ -210,6 +210,12 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
+  @Nonnull
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+    return withConnectionException(true, conn -> super.fetchObjsIfExist(conn, ids));
+  }
+
+  @Override
   public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return withConnectionException(

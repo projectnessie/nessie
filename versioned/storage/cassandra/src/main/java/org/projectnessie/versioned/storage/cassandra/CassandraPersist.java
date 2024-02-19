@@ -49,7 +49,6 @@ import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -237,7 +236,11 @@ public class CassandraPersist implements Persist {
   @Nonnull
   public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
-    Obj obj = fetchObjs(new ObjId[] {id}, type)[0];
+    Obj obj = fetchObjsIfExist(new ObjId[] {id})[0];
+
+    if (obj == null || !obj.type().equals(type)) {
+      throw new ObjNotFoundException(id);
+    }
 
     @SuppressWarnings("unchecked")
     T r = (T) obj;
@@ -266,12 +269,7 @@ public class CassandraPersist implements Persist {
 
   @Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
-    return fetchObjs(ids, null);
-  }
-
-  @Nonnull
-  Obj[] fetchObjs(@Nonnull ObjId[] ids, @Nullable ObjType type) throws ObjNotFoundException {
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     Function<List<ObjId>, List<String>> idsToStrings =
         queryIds -> queryIds.stream().map(ObjId::toString).collect(Collectors.toList());
 
@@ -303,20 +301,6 @@ public class CassandraPersist implements Persist {
       r = batchedQuery.finish();
     } catch (DriverException e) {
       throw unhandledException(e);
-    }
-
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (id != null && (r[i] == null || (type != null && !r[i].type().equals(type)))) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
-        }
-        notFound.add(id);
-      }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
     }
 
     return r;

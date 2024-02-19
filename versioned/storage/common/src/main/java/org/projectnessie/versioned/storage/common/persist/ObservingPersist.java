@@ -187,6 +187,15 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
+  @Nonnull
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+    return delegate.fetchObjsIfExist(ids);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
   public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
     return delegate.storeObj(obj);
   }

@@ -407,7 +407,7 @@ public class MongoDBPersist implements Persist {
 
   @Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     List<Document> list = new ArrayList<>(ids.length);
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(ids.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -422,20 +422,6 @@ public class MongoDBPersist implements Persist {
 
     if (!list.isEmpty()) {
       fetchObjsPage(r, list, idToIndex);
-    }
-
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (r[i] == null && id != null) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
-        }
-        notFound.add(id);
-      }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
     }
 
     return r;

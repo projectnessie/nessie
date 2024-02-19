@@ -360,6 +360,12 @@ public abstract class AbstractExportImport {
             return inmemory.fetchObjs(ids);
           }
 
+          @Nonnull
+          @Override
+          public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+            return inmemory.fetchObjsIfExist(ids);
+          }
+
           @Override
           public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
               throws ObjTooLargeException {
