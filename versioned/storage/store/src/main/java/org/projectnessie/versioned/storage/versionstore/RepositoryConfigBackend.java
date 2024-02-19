@@ -22,6 +22,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogi
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.stringLogic;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.STRING;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 
@@ -53,7 +54,6 @@ import org.projectnessie.versioned.storage.common.logic.StringLogic.StringValue;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
-import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -79,18 +79,19 @@ class RepositoryConfigBackend {
       CommitObj head = commitLogic(p).headCommit(reference);
       StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndexOrEmpty(head);
 
-      Obj[] objs =
-          p.fetchObjs(
+      StringObj[] objs =
+          p.fetchTypedObjs(
               repositoryConfigTypes.stream()
                   .map(RepositoryConfigBackend::repositoryConfigTypeToStoreKey)
                   .map(storeKey -> valueObjIdFromIndex(index, storeKey))
-                  .toArray(ObjId[]::new));
+                  .toArray(ObjId[]::new),
+              STRING,
+              StringObj.class);
 
       StringLogic stringLogic = stringLogic(p);
 
       return Arrays.stream(objs)
           .filter(Objects::nonNull)
-          .map(StringObj.class::cast)
           .map(
               s -> {
                 try {

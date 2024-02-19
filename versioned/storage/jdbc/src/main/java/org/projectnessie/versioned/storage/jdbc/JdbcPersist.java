@@ -186,14 +186,8 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   @Nonnull
-  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
-    return withConnectionException(true, conn -> super.fetchObj(conn, id));
-  }
-
-  @Override
-  @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     return withConnectionException(true, conn -> super.fetchTypedObj(conn, id, type, typeClass));
   }
 
@@ -204,15 +198,10 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  @Nonnull
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
-    return withConnectionException(true, conn -> super.fetchObjs(conn, ids));
-  }
-
-  @Override
-  @Nonnull
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
-    return withConnectionException(true, conn -> super.fetchObjsIfExist(conn, ids));
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+    return withConnectionException(
+        true, conn -> super.fetchTypedObjsIfExist(conn, ids, type, typeClass));
   }
 
   @Override

@@ -270,13 +270,12 @@ final class IndexesLogicImpl implements IndexesLogic {
 
   private StoreIndex<CommitOp>[] loadIndexSegments(@Nonnull ObjId[] indexes) {
     try {
-      Obj[] objs = persist.fetchObjs(indexes);
+      IndexObj[] objs = persist.fetchTypedObjs(indexes, INDEX, IndexObj.class);
       @SuppressWarnings("unchecked")
       StoreIndex<CommitOp>[] r = new StoreIndex[indexes.length];
       for (int i = 0; i < objs.length; i++) {
-        Obj obj = objs[i];
-        if (obj != null) {
-          IndexObj index = (IndexObj) obj;
+        IndexObj index = objs[i];
+        if (index != null) {
           r[i] = deserializeIndex(index.index()).setObjId(indexes[i]);
         }
       }

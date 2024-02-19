@@ -20,6 +20,7 @@ import static java.util.Collections.singleton;
 
 import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
+import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -179,22 +180,18 @@ class InmemoryPersist implements ValidatingPersist {
     throw new RefConditionFailedException(result[1]);
   }
 
-  @Override
   @Nonnull
+  @Override
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
-    Obj obj = inmemory.objects.get(compositeKey(id));
-    if (obj == null) {
-      throw new ObjNotFoundException(id);
-    }
-    return obj;
+    return fetchTypedObj(id, null, Obj.class);
   }
 
   @Override
   @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     Obj obj = inmemory.objects.get(compositeKey(id));
-    if (obj == null || !obj.type().equals(type)) {
+    if (obj == null || (type != null && !type.equals(obj.type()))) {
       throw new ObjNotFoundException(id);
     }
     @SuppressWarnings("unchecked")
@@ -204,24 +201,21 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
-    Obj obj = inmemory.objects.get(compositeKey(id));
-    if (obj == null) {
-      throw new ObjNotFoundException(id);
-    }
-    return obj.type();
-  }
-
-  @Override
-  @Nonnull
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
-    Obj[] r = new Obj[ids.length];
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
       if (id == null) {
         continue;
       }
-      r[i] = inmemory.objects.get(compositeKey(id));
+      Obj o = inmemory.objects.get(compositeKey(id));
+      if (o != null && (type == null || type.equals(o.type()))) {
+        @SuppressWarnings("unchecked")
+        T typed = (T) o;
+        r[i] = typed;
+      }
     }
     return r;
   }

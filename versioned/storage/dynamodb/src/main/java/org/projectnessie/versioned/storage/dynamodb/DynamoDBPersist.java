@@ -51,6 +51,7 @@ import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.
 import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -313,7 +314,8 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     GetItemResponse item;
     try {
       item = backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
@@ -324,31 +326,11 @@ public class DynamoDBPersist implements Persist {
       throw new ObjNotFoundException(id);
     }
 
-    return itemToObj(item.item());
-  }
-
-  @Override
-  @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
-    GetItemResponse item;
-    try {
-      item = backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
-    } catch (RuntimeException e) {
-      throw unhandledException(e);
-    }
-    if (!item.hasItem()) {
+    T obj = itemToObj(item.item(), type, typeClass);
+    if (obj == null) {
       throw new ObjNotFoundException(id);
     }
-
-    Obj obj = itemToObj(item.item());
-    if (!obj.type().equals(type)) {
-      throw new ObjNotFoundException(id);
-    }
-
-    @SuppressWarnings("unchecked")
-    T r = (T) obj;
-    return r;
+    return obj;
   }
 
   @Override
@@ -376,11 +358,13 @@ public class DynamoDBPersist implements Persist {
 
   @Nonnull
   @Override
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
     List<Map<String, AttributeValue>> keys = new ArrayList<>(Math.min(ids.length, BATCH_GET_LIMIT));
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
-    Obj[] r = new Obj[ids.length];
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
       if (id != null) {
@@ -388,7 +372,7 @@ public class DynamoDBPersist implements Persist {
         idToIndex.put(id, i);
 
         if (keys.size() == BATCH_GET_LIMIT) {
-          fetchObjsPage(r, keys, idToIndex);
+          fetchObjsPage(r, keys, idToIndex, type, typeClass);
           keys.clear();
           idToIndex.clear();
         }
@@ -396,14 +380,18 @@ public class DynamoDBPersist implements Persist {
     }
 
     if (!keys.isEmpty()) {
-      fetchObjsPage(r, keys, idToIndex);
+      fetchObjsPage(r, keys, idToIndex, type, typeClass);
     }
 
     return r;
   }
 
-  private void fetchObjsPage(
-      Obj[] r, List<Map<String, AttributeValue>> keys, Object2IntHashMap<ObjId> idToIndex) {
+  private <T extends Obj> void fetchObjsPage(
+      T[] r,
+      List<Map<String, AttributeValue>> keys,
+      Object2IntHashMap<ObjId> idToIndex,
+      ObjType type,
+      Class<T> typeClass) {
 
     Map<String, KeysAndAttributes> requestItems =
         singletonMap(backend.tableObjs, KeysAndAttributes.builder().keys(keys).build());
@@ -417,10 +405,12 @@ public class DynamoDBPersist implements Persist {
           .get(backend.tableObjs)
           .forEach(
               item -> {
-                Obj obj = itemToObj(item);
-                int idx = idToIndex.getValue(obj.id());
-                if (idx != -1) {
-                  r[idx] = obj;
+                T obj = itemToObj(item, type, typeClass);
+                if (obj != null) {
+                  int idx = idToIndex.getValue(obj.id());
+                  if (idx != -1) {
+                    r[idx] = obj;
+                  }
                 }
               });
     } catch (RuntimeException e) {
@@ -613,14 +603,20 @@ public class DynamoDBPersist implements Persist {
     backend.eraseRepositories(singleton(config().repositoryId()));
   }
 
-  private Obj itemToObj(Map<String, AttributeValue> item) {
+  private <T extends Obj> T itemToObj(
+      Map<String, AttributeValue> item, ObjType t, @SuppressWarnings("unused") Class<T> typeClass) {
     ObjId id = objIdFromString(item.get(KEY_NAME).s().substring(keyPrefix.length()));
     AttributeValue attributeValue = item.get(COL_OBJ_TYPE);
     ObjType type = ObjTypes.forShortName(attributeValue.s());
+    if (t != null && !t.equals(type)) {
+      return null;
+    }
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Map<String, AttributeValue> inner = item.get(serializer.attributeName()).m();
     String versionToken = attributeToString(item, COL_OBJ_VERS);
-    return serializer.fromMap(id, type, inner, versionToken);
+    @SuppressWarnings("unchecked")
+    T typed = (T) serializer.fromMap(id, type, inner, versionToken);
+    return typed;
   }
 
   @Nonnull
@@ -772,7 +768,7 @@ public class DynamoDBPersist implements Persist {
           }
 
           Map<String, AttributeValue> item = pageIter.next();
-          return itemToObj(item);
+          return itemToObj(item, null, Obj.class);
         }
       } catch (RuntimeException e) {
         throw unhandledException(e);

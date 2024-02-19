@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.common.logic;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Collections.emptyIterator;
@@ -880,17 +879,9 @@ final class CommitLogicImpl implements CommitLogic {
 
     CommitObj[] r = new CommitObj[2];
     if (startCommitId != null || endCommitId != null) {
-      Obj[] objs = persist.fetchObjs(new ObjId[] {startCommitId, endCommitId});
-      r[0] = castToCommitObj(objs[0]);
-      r[1] = castToCommitObj(objs[1]);
+      r = persist.fetchTypedObjs(new ObjId[] {startCommitId, endCommitId}, COMMIT, CommitObj.class);
     }
     return r;
-  }
-
-  private static CommitObj castToCommitObj(Obj obj) {
-    checkState(
-        obj == null || obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
-    return (CommitObj) obj;
   }
 
   @Nonnull

@@ -59,8 +59,8 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import jakarta.annotation.Nonnull;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -305,13 +305,20 @@ public class BigTablePersist implements Persist {
 
   @Override
   @Nonnull
-  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     try {
       ByteString key = dbKey(id);
 
       Row row = backend.client().readRow(backend.tableObjsId, key);
       if (row != null) {
-        return objFromRow(row);
+        Obj obj = objFromRow(row);
+        if (type != null && !type.equals(obj.type())) {
+          throw new ObjNotFoundException(id);
+        }
+        @SuppressWarnings("unchecked")
+        T r = (T) obj;
+        return r;
       }
       throw new ObjNotFoundException(id);
     } catch (ApiException e) {
@@ -320,53 +327,22 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
-  @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
-    Obj obj = fetchObj(id);
-    if (!obj.type().equals(type)) {
-      throw new ObjNotFoundException(id);
-    }
-    @SuppressWarnings("unchecked")
-    T r = (T) obj;
-    return r;
-  }
-
-  @Override
-  @Nonnull
-  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
-    return fetchObj(id).type();
-  }
-
-  @Override
-  @Nonnull
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
     try {
-      Obj[] r = new Obj[ids.length];
-      List<ObjId> notFound = new ArrayList<>();
-      bulkFetch(backend.tableObjsId, ids, r, this::dbKey, this::objFromRow, notFound::add);
+      @SuppressWarnings("unchecked")
+      T[] r = (T[]) Array.newInstance(typeClass, ids.length);
 
-      if (!notFound.isEmpty()) {
-        throw new ObjNotFoundException(notFound);
-      }
-
-      return r;
-    } catch (ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    } catch (ApiException e) {
-      throw apiException(e);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  @Nonnull
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
-    try {
-      Obj[] r = new Obj[ids.length];
       bulkFetch(backend.tableObjsId, ids, r, this::dbKey, this::objFromRow, x -> {});
+
+      if (type != null) {
+        for (int i = 0; i < r.length; i++) {
+          Obj o = r[i];
+          if (o != null && !type.equals(o.type())) {
+            r[i] = null;
+          }
+        }
+      }
 
       return r;
     } catch (ExecutionException | TimeoutException e) {

@@ -27,6 +27,7 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 
 import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -257,7 +258,9 @@ class RocksDBPersist implements Persist {
 
   @Override
   @Nonnull
-  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+
     try {
       RocksDBBackend b = backend;
       TransactionDB db = b.db();
@@ -268,41 +271,29 @@ class RocksDBPersist implements Persist {
       if (obj == null) {
         throw new ObjNotFoundException(id);
       }
-      return deserializeObj(id, obj, null);
+      Obj o = deserializeObj(id, obj, null);
+      if (o == null || (type != null && !type.equals(o.type()))) {
+        throw new ObjNotFoundException(id);
+      }
+      @SuppressWarnings("unchecked")
+      T typed = (T) o;
+      return typed;
     } catch (RocksDBException e) {
       throw rocksDbException(e);
     }
   }
 
   @Override
-  @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
-    Obj obj = fetchObj(id);
-    if (!obj.type().equals(type)) {
-      throw new ObjNotFoundException(id);
-    }
-    @SuppressWarnings("unchecked")
-    T r = (T) obj;
-    return r;
-  }
-
-  @Override
-  @Nonnull
-  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
-    return fetchObj(id).type();
-  }
-
-  @Override
-  @Nonnull
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
     try {
       RocksDBBackend b = backend;
       TransactionDB db = b.db();
       ColumnFamilyHandle cf = b.objs();
 
       int num = ids.length;
-      Obj[] r = new Obj[num];
+      @SuppressWarnings("unchecked")
+      T[] r = (T[]) Array.newInstance(typeClass, num);
       List<ColumnFamilyHandle> handles = new ArrayList<>(num);
       List<byte[]> keys = new ArrayList<>(num);
       for (ObjId id : ids) {
@@ -319,7 +310,13 @@ class RocksDBPersist implements Persist {
           if (id != null) {
             byte[] obj = dbResult.get(ri++);
             if (obj != null) {
-              r[i] = deserializeObj(id, obj, null);
+              Obj o = deserializeObj(id, obj, null);
+              if (type != null && !type.equals(o.type())) {
+                o = null;
+              }
+              @SuppressWarnings("unchecked")
+              T typed = (T) o;
+              r[i] = typed;
             }
           }
         }

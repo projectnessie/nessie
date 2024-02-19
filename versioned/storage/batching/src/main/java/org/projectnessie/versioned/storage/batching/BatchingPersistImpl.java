@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -178,23 +179,6 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     }
   }
 
-  @Override
-  @Nonnull
-  @javax.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @javax.annotation.Nonnull ObjId id) throws ObjNotFoundException {
-    readLock();
-    try {
-      Obj r = pendingObj(id);
-      if (r != null) {
-        return r;
-      }
-    } finally {
-      readUnlock();
-    }
-
-    return delegate().fetchObj(id);
-  }
-
   private Obj pendingObj(ObjId id) {
     Obj r = pendingUpserts.get(id);
     if (r == null) {
@@ -207,13 +191,13 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Nonnull
   @javax.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
-      @Nonnull @javax.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+      @Nonnull @javax.annotation.Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass)
       throws ObjNotFoundException {
     readLock();
     try {
       Obj r = pendingObj(id);
       if (r != null) {
-        if (!r.type().equals(type)) {
+        if (type != null && !r.type().equals(type)) {
           throw new ObjNotFoundException(id);
         }
         @SuppressWarnings("unchecked")
@@ -246,11 +230,12 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Override
   @Nonnull
   @javax.annotation.Nonnull
-  public Obj[] fetchObjs(@Nonnull @javax.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public <T extends Obj> T[] fetchTypedObjs(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
 
     ObjId[] backendIds = null;
-    Obj[] r = new Obj[ids.length];
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
 
     backendIds = fetchObjsPre(ids, r, backendIds);
 
@@ -258,11 +243,11 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
       return r;
     }
 
-    Obj[] backendResult = delegate().fetchObjs(backendIds);
+    T[] backendResult = delegate().fetchTypedObjs(backendIds, type, typeClass);
     return fetchObjsPost(backendResult, r);
   }
 
-  private ObjId[] fetchObjsPre(ObjId[] ids, Obj[] r, ObjId[] backendIds) {
+  private <T extends Obj> ObjId[] fetchObjsPre(ObjId[] ids, T[] r, ObjId[] backendIds) {
     readLock();
     try {
       for (int i = 0; i < ids.length; i++) {
@@ -272,7 +257,9 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
         }
         Obj o = pendingObj(id);
         if (o != null) {
-          r[i] = o;
+          @SuppressWarnings("unchecked")
+          T typed = (T) o;
+          r[i] = typed;
         } else {
           if (backendIds == null) {
             backendIds = new ObjId[ids.length];
@@ -286,9 +273,9 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     return backendIds;
   }
 
-  private static Obj[] fetchObjsPost(Obj[] backendResult, Obj[] r) {
+  private static <T extends Obj> T[] fetchObjsPost(T[] backendResult, T[] r) {
     for (int i = 0; i < backendResult.length; i++) {
-      Obj o = backendResult[i];
+      T o = backendResult[i];
       if (o != null) {
         r[i] = o;
       }
@@ -299,10 +286,12 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Override
   @Nonnull
   @javax.annotation.Nonnull
-  public Obj[] fetchObjsIfExist(@Nonnull @javax.annotation.Nonnull ObjId[] ids) {
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
 
     ObjId[] backendIds = null;
-    Obj[] r = new Obj[ids.length];
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
 
     backendIds = fetchObjsPre(ids, r, backendIds);
 
@@ -310,7 +299,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
       return r;
     }
 
-    Obj[] backendResult = delegate().fetchObjsIfExist(backendIds);
+    T[] backendResult = delegate().fetchTypedObjsIfExist(backendIds, type, typeClass);
     return fetchObjsPost(backendResult, r);
   }
 

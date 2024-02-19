@@ -160,8 +160,8 @@ public class ObservingPersist implements Persist {
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
   @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     return delegate.fetchTypedObj(id, type, typeClass);
   }
 
@@ -190,6 +190,26 @@ public class ObservingPersist implements Persist {
   @Nonnull
   public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     return delegate.fetchObjsIfExist(ids);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  @Nonnull
+  public <T extends Obj> T[] fetchTypedObjs(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+    return delegate.fetchTypedObjs(ids, type, typeClass);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  @Nonnull
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+    return delegate.fetchTypedObjsIfExist(ids, type, typeClass);
   }
 
   @WithSpan
