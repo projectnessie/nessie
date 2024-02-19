@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.cache;
 import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
@@ -69,6 +70,11 @@ final class DistributedInvalidationsCacheBackend implements CacheBackend {
   @Override
   public void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj) {
     local.putLocal(repositoryId, obj);
+  }
+
+  @Override
+  public void putNegative(@Nonnull String repositoryId, @Nonnull ObjId id, @Nonnull ObjType type) {
+    local.putNegative(repositoryId, id, type);
   }
 
   @Override

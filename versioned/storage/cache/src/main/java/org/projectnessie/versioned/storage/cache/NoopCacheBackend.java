@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.cache;
 import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
@@ -54,6 +55,9 @@ final class NoopCacheBackend implements CacheBackend {
 
   @Override
   public void remove(@Nonnull String repositoryId, @Nonnull ObjId id) {}
+
+  @Override
+  public void putNegative(@Nonnull String repositoryId, @Nonnull ObjId id, @Nonnull ObjType type) {}
 
   @Override
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {}

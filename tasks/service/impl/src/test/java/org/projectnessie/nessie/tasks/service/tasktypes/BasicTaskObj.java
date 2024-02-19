@@ -32,7 +32,12 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 @JsonDeserialize(as = ImmutableBasicTaskObj.class)
 public interface BasicTaskObj extends TaskObj {
   ObjType TYPE =
-      dynamicCaching("basic", "basic", BasicTaskObj.class, TaskObj.taskDefaultCacheExpire());
+      dynamicCaching(
+          "basic",
+          "basic",
+          BasicTaskObj.class,
+          TaskObj.taskDefaultCacheExpire(),
+          c -> ObjType.NOT_CACHED);
 
   @Override
   @Value.Default

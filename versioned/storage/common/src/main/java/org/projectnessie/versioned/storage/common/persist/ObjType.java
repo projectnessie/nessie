@@ -36,10 +36,27 @@ public interface ObjType {
    *
    * <p>{@value #NOT_CACHED} defines that an object instance must never be cached.
    *
-   * <p>A positive value defines the maximum age of an object
+   * <p>A positive value defines the timestamp in microseconds since epoch when the cached object
+   * can be evicted
    */
   default long cachedObjectExpiresAtMicros(Obj obj, LongSupplier clock) {
     return CACHE_UNLIMITED;
+  }
+
+  /**
+   * Allows an object type to define how long the fact of a non-existing object instance can be
+   * cached.
+   *
+   * <p>{@value #CACHE_UNLIMITED} defines that an object instance can be cached forever.
+   *
+   * <p>{@value #NOT_CACHED}, which is the default implementation, defines that an object instance
+   * must never be cached.
+   *
+   * <p>A positive value defines the timestamp in microseconds since epoch when the negative-cache
+   * sentinel can be evicted
+   */
+  default long negativeCacheExpiresAtMicros(LongSupplier clock) {
+    return NOT_CACHED;
   }
 
   long CACHE_UNLIMITED = -1L;

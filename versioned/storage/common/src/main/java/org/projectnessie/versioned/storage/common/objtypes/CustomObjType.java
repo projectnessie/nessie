@@ -70,17 +70,32 @@ public abstract class CustomObjType<T extends Obj> implements ObjType {
     long calculateExpiresAt(T obj, long currentTimeMicros);
   }
 
+  @FunctionalInterface
+  public interface CacheNegativeCalculation {
+    /**
+     * See {@link ObjType#negativeCacheExpiresAtMicros(LongSupplier)} } for the meaning of the
+     * possible return values.
+     */
+    long negativeCacheExpiresAtMicros(long currentTimeMicros);
+  }
+
   public static <T extends Obj> ObjType dynamicCaching(
       String name,
       String shortName,
       Class<T> targetClass,
-      CacheExpireCalculation<T> cacheExpireCalculation) {
+      CacheExpireCalculation<T> cacheExpireCalculation,
+      CacheNegativeCalculation cacheNegativeCalculation) {
     return new CustomObjType<>(name, shortName, targetClass) {
       @Override
       public long cachedObjectExpiresAtMicros(Obj obj, LongSupplier clock) {
         @SuppressWarnings("unchecked")
         T casted = (T) obj;
         return cacheExpireCalculation.calculateExpiresAt(casted, clock.getAsLong());
+      }
+
+      @Override
+      public long negativeCacheExpiresAtMicros(LongSupplier clock) {
+        return cacheNegativeCalculation.negativeCacheExpiresAtMicros(clock.getAsLong());
       }
     };
   }
