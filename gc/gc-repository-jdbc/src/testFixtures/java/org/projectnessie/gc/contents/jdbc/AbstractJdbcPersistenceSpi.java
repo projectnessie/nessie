@@ -28,7 +28,7 @@ import org.projectnessie.gc.contents.tests.AbstractPersistenceSpi;
 
 public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi {
 
-  private static DataSource dataSource;
+  static DataSource dataSource;
 
   static void initDataSource(String jdbcUrl) throws Exception {
     AgroalJdbcDataSourceProvider dsProvider =
@@ -75,7 +75,7 @@ public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi 
   @Override
   protected void assertDeleted(UUID id) throws Exception {
     try (Connection conn = dataSource.getConnection()) {
-      for (String tableName : SqlDmlDdl.ALL_TABLE_NAMES) {
+      for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
         try (PreparedStatement st =
             conn.prepareStatement(
                 String.format("SELECT * FROM %s WHERE live_set_id = ?", tableName))) {

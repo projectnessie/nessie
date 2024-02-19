@@ -34,6 +34,7 @@ import javax.sql.DataSource;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -93,6 +94,13 @@ public class TestCLI {
             .poolInitialSize(1)
             .build()
             .dataSource();
+  }
+
+  @AfterAll
+  static void closeDataSource() throws Exception {
+    if (dataSource instanceof AutoCloseable) {
+      ((AutoCloseable) dataSource).close();
+    }
   }
 
   private void dropTables() throws Exception {

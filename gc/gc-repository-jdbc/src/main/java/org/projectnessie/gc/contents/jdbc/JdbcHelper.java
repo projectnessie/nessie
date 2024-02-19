@@ -45,7 +45,7 @@ public final class JdbcHelper {
 
   public static void dropTables(Connection connection) throws SQLException {
     try (Statement st = connection.createStatement()) {
-      for (String tableName : SqlDmlDdl.ALL_TABLE_NAMES) {
+      for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
         if (tableExists(connection, tableName)) {
           st.execute("DROP TABLE " + tableName);
         }
