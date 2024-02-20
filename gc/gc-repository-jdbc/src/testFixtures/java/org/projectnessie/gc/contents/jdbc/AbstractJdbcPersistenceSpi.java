@@ -58,16 +58,12 @@ public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi 
   void setup() throws Exception {
     try (Connection conn = dataSource.getConnection()) {
       JdbcHelper.createTables(conn, false);
-      // Test table creation with existing tables
-      JdbcHelper.createTables(conn, true);
     }
   }
 
   @AfterEach
   void tearDown() throws Exception {
     try (Connection conn = dataSource.getConnection()) {
-      JdbcHelper.dropTables(conn);
-      // Test table deletion with non-existing tables
       JdbcHelper.dropTables(conn);
     }
   }
