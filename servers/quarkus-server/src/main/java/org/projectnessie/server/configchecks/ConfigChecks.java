@@ -21,14 +21,13 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.config.QuarkusServerConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
-import org.projectnessie.quarkus.providers.storage.PersistProvider;
 import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConfigChecks {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PersistProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChecks.class);
 
   @Inject VersionStoreConfig versionStoreConfig;
   @Inject QuarkusNessieAuthenticationConfig authenticationConfig;
