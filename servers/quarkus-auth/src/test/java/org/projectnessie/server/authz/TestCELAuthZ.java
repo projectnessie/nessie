@@ -134,7 +134,7 @@ public class TestCELAuthZ {
   private static QuarkusNessieAuthorizationConfig buildConfig(boolean enabled) {
     return new QuarkusNessieAuthorizationConfig() {
       @Override
-      public String authorizationMode() {
+      public String authorizationType() {
         return "CEL";
       }
 

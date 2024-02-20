@@ -43,13 +43,13 @@ public class QuarkusAuthorizer implements Authorizer {
         throw new IllegalStateException("No Nessie Authorizer available");
       }
       Instance<Authorizer> authorizerInstance =
-          authorizers.select(new AuthorizerType.Literal(config.authorizationMode()));
+          authorizers.select(new AuthorizerType.Literal(config.authorizationType()));
       if (authorizerInstance.isUnsatisfied()) {
         throw new IllegalStateException(
-            "No Nessie Authorizer of type '" + config.authorizationMode() + "' available");
+            "No Nessie Authorizer of type '" + config.authorizationType() + "' available");
       }
 
-      LOGGER.info("Using Nessie {} Authorizer", config.authorizationMode());
+      LOGGER.info("Using Nessie {} Authorizer", config.authorizationType());
 
       this.authorizer = authorizerInstance.get();
     } else {
