@@ -1,3 +1,3 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM docker.io/redocly/cli:1.9.0
+FROM docker.io/redocly/cli:1.9.1
