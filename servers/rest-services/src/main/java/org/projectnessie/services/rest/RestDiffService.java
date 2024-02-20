@@ -19,8 +19,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.executable.ExecutableType;
 import jakarta.validation.executable.ValidateOnExecution;
-import java.security.Principal;
-import java.util.function.Supplier;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.DiffApiImpl;
@@ -36,10 +35,7 @@ public class RestDiffService extends DiffApiImpl {
 
   @Inject
   public RestDiffService(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
-    super(config, store, authorizer, principal);
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    super(config, store, authorizer, accessContext);
   }
 }

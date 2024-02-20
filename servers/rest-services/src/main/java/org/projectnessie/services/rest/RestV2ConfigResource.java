@@ -19,10 +19,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
-import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.projectnessie.api.v2.http.HttpConfigApi;
 import org.projectnessie.error.NessieConflictException;
@@ -35,6 +33,7 @@ import org.projectnessie.model.UpdateRepositoryConfigRequest;
 import org.projectnessie.model.UpdateRepositoryConfigResponse;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.model.types.RepositoryConfigTypes;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
@@ -54,11 +53,8 @@ public class RestV2ConfigResource implements HttpConfigApi {
 
   @Inject
   public RestV2ConfigResource(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
-    this.config = new ConfigApiImpl(config, store, authorizer, principal, 2);
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    this.config = new ConfigApiImpl(config, store, authorizer, accessContext, 2);
   }
 
   @Override

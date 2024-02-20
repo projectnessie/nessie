@@ -25,7 +25,6 @@ import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RE
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import jakarta.annotation.Nullable;
-import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v1.NamespaceApi;
 import org.projectnessie.api.v1.params.NamespaceParams;
@@ -51,6 +49,7 @@ import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -69,11 +68,8 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   public NamespaceApiImpl(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
-    super(config, store, authorizer, principal);
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    super(config, store, authorizer, accessContext);
   }
 
   @Override

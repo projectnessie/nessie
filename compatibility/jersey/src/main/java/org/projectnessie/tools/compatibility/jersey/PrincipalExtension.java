@@ -23,7 +23,7 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.util.TypeLiteral;
 import java.security.Principal;
-import java.util.function.Supplier;
+import org.projectnessie.services.authz.AccessContext;
 
 /**
  * A CDI extension that always produces {@code null} {@link Principal} objects simulating execution
@@ -32,12 +32,12 @@ import java.util.function.Supplier;
 public class PrincipalExtension implements Extension {
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-    Supplier<Principal> principal = () -> null;
+    AccessContext accessContext = () -> () -> null;
 
     abd.addBean()
-        .addType(new TypeLiteral<Supplier<Principal>>() {})
+        .addType(new TypeLiteral<AccessContext>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(RequestScoped.class)
-        .produceWith(i -> principal);
+        .produceWith(i -> accessContext);
   }
 }

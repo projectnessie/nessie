@@ -77,7 +77,7 @@ public class TestCELAuthZ {
     QuarkusNessieAuthorizationConfig config = buildConfig(true);
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
     CelBatchAccessChecker batchAccessChecker =
-        new CelBatchAccessChecker(rules, ServerAccessContext.of("meep", () -> "some-user"));
+        new CelBatchAccessChecker(rules, ServerAccessContext.of(() -> "some-user"));
 
     soft.assertThatCode(
             () -> batchAccessChecker.canViewReference(BranchName.of("main")).checkAndThrow())
@@ -94,7 +94,7 @@ public class TestCELAuthZ {
     QuarkusNessieAuthorizationConfig config = buildConfig(true);
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
     CelBatchAccessChecker batchAccessChecker =
-        new CelBatchAccessChecker(rules, ServerAccessContext.of("meep", () -> null));
+        new CelBatchAccessChecker(rules, ServerAccessContext.of(() -> null));
     Check check = Check.builder(type).build();
     if (type == CheckType.VIEW_REFERENCE) {
       soft.assertThatCode(() -> batchAccessChecker.can(check).checkAndThrow())
@@ -120,14 +120,14 @@ public class TestCELAuthZ {
     when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
     soft.assertThat(
             new QuarkusAuthorizer(configEnabled, authorizers)
-                .startAccessCheck(ServerAccessContext.of("meep", () -> "some-user")))
+                .startAccessCheck(ServerAccessContext.of(() -> "some-user")))
         .isInstanceOf(CelBatchAccessChecker.class);
 
     when(celAuthorizerInstance.get()).thenReturn(celAuthorizer);
     when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
     soft.assertThat(
             new QuarkusAuthorizer(configDisabled, authorizers)
-                .startAccessCheck(ServerAccessContext.of("meep", () -> "some-user")))
+                .startAccessCheck(ServerAccessContext.of(() -> "some-user")))
         .isSameAs(AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER);
   }
 
