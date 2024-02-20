@@ -111,6 +111,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | securityContext | object | `{}` | Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
 | service.annotations | object | `{}` | Annotations to add to the service. |
 | service.port | int | `19120` | The port on which the service should listen. |
+| service.sessionAffinity | string | `"None"` | The session affinity for the service. Valid values are: None, ClientIP. ClientIP enables sticky sessions based on the client's IP address. This is generally beneficial to Nessie deployments, but some testing may be required in order to make sure that the load is distributed evenly among the pods. Also, this setting affects only internal clients, not external ones. If Ingress is enabled, it is recommended to set sessionAffinity to None. |
 | service.type | string | `"ClusterIP"` | The type of service to create. |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |

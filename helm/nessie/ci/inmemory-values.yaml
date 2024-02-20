@@ -2,3 +2,5 @@
 versionStoreType: IN_MEMORY
 tracing:
   enabled: true
+service:
+  sessionAffinity: ClientIP
