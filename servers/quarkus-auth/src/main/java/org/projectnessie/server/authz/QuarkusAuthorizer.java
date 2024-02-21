@@ -15,9 +15,8 @@
  */
 package org.projectnessie.server.authz;
 
-import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -31,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
+@Startup
 public class QuarkusAuthorizer implements Authorizer {
   private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusAuthorizer.class);
   private final Authorizer authorizer;
@@ -60,10 +60,5 @@ public class QuarkusAuthorizer implements Authorizer {
   @Override
   public BatchAccessChecker startAccessCheck(AccessContext context) {
     return this.authorizer.startAccessCheck(context);
-  }
-
-  public void eagerAuthorizerInitialization(
-      @Observes StartupEvent event, @SuppressWarnings("unused") Authorizer authorizer) {
-    // no-op
   }
 }
