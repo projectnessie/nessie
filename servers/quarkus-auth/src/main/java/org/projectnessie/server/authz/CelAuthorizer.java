@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,25 @@
  */
 package org.projectnessie.server.authz;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
-import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.AuthorizerType;
 import org.projectnessie.services.authz.BatchAccessChecker;
 
-@ApplicationScoped
+@AuthorizerType("CEL")
+@Dependent
 public class CelAuthorizer implements Authorizer {
-  private final QuarkusNessieAuthorizationConfig config;
   private final CompiledAuthorizationRules compiledRules;
 
   @Inject
-  public CelAuthorizer(
-      QuarkusNessieAuthorizationConfig config, CompiledAuthorizationRules compiledRules) {
-    this.config = config;
+  public CelAuthorizer(CompiledAuthorizationRules compiledRules) {
     this.compiledRules = compiledRules;
   }
 
   @Override
   public BatchAccessChecker startAccessCheck(AccessContext context) {
-    if (!config.enabled()) {
-      return AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
-    }
-
     return new CelBatchAccessChecker(compiledRules, context);
   }
 }

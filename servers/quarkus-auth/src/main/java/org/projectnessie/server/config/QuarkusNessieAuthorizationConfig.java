@@ -35,6 +35,10 @@ public interface QuarkusNessieAuthorizationConfig {
   @WithDefault("false")
   boolean enabled();
 
+  @WithName("type")
+  @WithDefault("CEL")
+  String authorizationType();
+
   /**
    * The authorization rules where the key represents the rule id and the value the CEL expression.
    *
