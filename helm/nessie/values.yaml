@@ -225,16 +225,31 @@ service:
   type: ClusterIP
   # -- The port on which the service should listen.
   port: 19120
+  # -- The session affinity for the service. Valid values are: None, ClientIP.
+  # ClientIP enables sticky sessions based on the client's IP address.
+  # This is generally beneficial to Nessie deployments, but some testing may be
+  # required in order to make sure that the load is distributed evenly among the pods.
+  # Also, this setting affects only internal clients, not external ones.
+  # If Ingress is enabled, it is recommended to set sessionAffinity to None.
+  sessionAffinity: None
   # -- Annotations to add to the service.
   annotations: {}
 
+# Nessie Ingress settings.
+# These settings generate an Ingress resource that routes external traffic to the Nessie service.
+# Consider enabling sticky sessions based on the remote client's IP address;
+# this is generally beneficial to Nessie deployments, but some testing may be
+# required in order to make sure that the load is distributed evenly among the pods.
+# Check your ingress controller's documentation.
 ingress:
   # -- Specifies the ingressClassName; leave empty if you don't want to customize it
   className: ""
   # -- Specifies whether an ingress should be created.
   enabled: false
   # -- Annotations to add to the ingress.
-  annotations: {}
+  annotations: {
+    # nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
+  }
   # -- A list of host paths used to configure the ingress.
   hosts:
     - host: chart-example.local
