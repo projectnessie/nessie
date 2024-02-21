@@ -28,7 +28,7 @@ protobuf = "3.25.3"
 quarkusPlatform = "3.7.3"
 quarkusPlugin = "3.7.3"
 slf4j = "1.7.36"
-undertow = "2.2.28.Final"
+undertow = "2.3.11.Final"
 
 [bundles]
 junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params"]
