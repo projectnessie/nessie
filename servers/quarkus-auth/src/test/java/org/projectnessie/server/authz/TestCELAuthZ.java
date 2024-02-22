@@ -39,7 +39,6 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthorizerType;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.authz.Check.CheckType;
-import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.versioned.BranchName;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -77,7 +76,7 @@ public class TestCELAuthZ {
     QuarkusNessieAuthorizationConfig config = buildConfig(true);
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
     CelBatchAccessChecker batchAccessChecker =
-        new CelBatchAccessChecker(rules, ServerAccessContext.of(() -> "some-user"));
+        new CelBatchAccessChecker(rules, () -> () -> "some-user");
 
     soft.assertThatCode(
             () -> batchAccessChecker.canViewReference(BranchName.of("main")).checkAndThrow())
@@ -93,8 +92,7 @@ public class TestCELAuthZ {
   void celBatchAccessCheckerEmptyChecks(CheckType type) {
     QuarkusNessieAuthorizationConfig config = buildConfig(true);
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
-    CelBatchAccessChecker batchAccessChecker =
-        new CelBatchAccessChecker(rules, ServerAccessContext.of(() -> null));
+    CelBatchAccessChecker batchAccessChecker = new CelBatchAccessChecker(rules, () -> () -> null);
     Check check = Check.builder(type).build();
     if (type == CheckType.VIEW_REFERENCE) {
       soft.assertThatCode(() -> batchAccessChecker.can(check).checkAndThrow())
@@ -120,14 +118,14 @@ public class TestCELAuthZ {
     when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
     soft.assertThat(
             new QuarkusAuthorizer(configEnabled, authorizers)
-                .startAccessCheck(ServerAccessContext.of(() -> "some-user")))
+                .startAccessCheck(() -> () -> "some-user"))
         .isInstanceOf(CelBatchAccessChecker.class);
 
     when(celAuthorizerInstance.get()).thenReturn(celAuthorizer);
     when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
     soft.assertThat(
             new QuarkusAuthorizer(configDisabled, authorizers)
-                .startAccessCheck(ServerAccessContext.of(() -> "some-user")))
+                .startAccessCheck(() -> () -> "some-user"))
         .isSameAs(AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER);
   }
 
