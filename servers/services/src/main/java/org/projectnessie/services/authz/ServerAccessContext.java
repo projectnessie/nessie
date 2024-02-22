@@ -23,13 +23,11 @@ import org.immutables.value.Value;
 public abstract class ServerAccessContext implements AccessContext {
 
   @Override
-  public abstract String operationId();
-
-  @Override
+  @Value.Parameter(order = 1)
   @Nullable
   public abstract Principal user();
 
-  public static ServerAccessContext of(String operationId, Principal principal) {
-    return ImmutableServerAccessContext.builder().operationId(operationId).user(principal).build();
+  public static ServerAccessContext of(Principal principal) {
+    return ImmutableServerAccessContext.builder().user(principal).build();
   }
 }

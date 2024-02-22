@@ -23,14 +23,14 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.ws.rs.core.SecurityContext;
-import java.security.Principal;
 import java.util.function.Supplier;
+import org.projectnessie.services.authz.AccessContext;
 
 public class ContextPrincipalExtension implements Extension {
-  private final Supplier<Principal> principal;
+  private final AccessContext accessContext;
 
   public ContextPrincipalExtension(Supplier<SecurityContext> securityContext) {
-    this.principal =
+    this.accessContext =
         () -> {
           SecurityContext context = securityContext.get();
           return context == null ? null : context.getUserPrincipal();
@@ -40,9 +40,9 @@ public class ContextPrincipalExtension implements Extension {
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
     abd.addBean()
-        .addType(new TypeLiteral<Supplier<Principal>>() {})
+        .addType(new TypeLiteral<AccessContext>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(RequestScoped.class)
-        .produceWith(i -> principal);
+        .produceWith(i -> accessContext);
   }
 }

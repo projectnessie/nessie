@@ -21,7 +21,6 @@ import static org.projectnessie.services.authz.Check.canViewReference;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import java.security.Principal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -29,12 +28,12 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
 import org.projectnessie.services.authz.Check;
@@ -54,11 +53,8 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 public class DiffApiImpl extends BaseApiImpl implements DiffService {
 
   public DiffApiImpl(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
-    super(config, store, authorizer, principal);
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    super(config, store, authorizer, accessContext);
   }
 
   @Override

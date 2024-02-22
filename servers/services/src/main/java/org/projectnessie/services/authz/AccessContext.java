@@ -15,13 +15,19 @@
  */
 package org.projectnessie.services.authz;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+
 import java.security.Principal;
+import java.util.Set;
 
 /** Provides some context about a role/principal that accesses Nessie resources. */
 public interface AccessContext {
-  /** Provide a unique id for the operation being validated (for correlation purposes). */
-  String operationId();
-
   /** Provide the user identity. */
   Principal user();
+
+  default Set<String> roleIds() {
+    String name = user().getName();
+    return name.isEmpty() ? emptySet() : singleton(name);
+  }
 }

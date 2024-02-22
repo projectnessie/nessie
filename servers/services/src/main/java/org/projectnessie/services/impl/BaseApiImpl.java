@@ -27,17 +27,15 @@ import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 import java.security.Principal;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
-import org.projectnessie.services.authz.ServerAccessContext;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.hash.HashResolver;
 import org.projectnessie.versioned.DefaultMetadataRewriter;
@@ -48,18 +46,15 @@ public abstract class BaseApiImpl {
   private final ServerConfig config;
   private final VersionStore store;
   private final Authorizer authorizer;
-  private final Supplier<Principal> principal;
+  private final AccessContext accessContext;
   private HashResolver hashResolver;
 
   protected BaseApiImpl(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;
-    this.principal = principal;
+    this.accessContext = accessContext;
   }
 
   /**
@@ -102,7 +97,7 @@ public abstract class BaseApiImpl {
   }
 
   protected Principal getPrincipal() {
-    return principal.get();
+    return accessContext.user();
   }
 
   protected Authorizer getAuthorizer() {
@@ -117,11 +112,7 @@ public abstract class BaseApiImpl {
   }
 
   protected BatchAccessChecker startAccessCheck() {
-    return getAuthorizer().startAccessCheck(createAccessContext());
-  }
-
-  protected ServerAccessContext createAccessContext() {
-    return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
+    return getAuthorizer().startAccessCheck(accessContext);
   }
 
   protected MetadataRewriter<CommitMeta> commitMetaUpdate(

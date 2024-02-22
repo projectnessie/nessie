@@ -17,16 +17,15 @@ package org.projectnessie.services.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.types.GenericRepositoryConfig;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -43,9 +42,9 @@ public class ConfigApiImpl extends BaseApiImpl implements ConfigService {
       ServerConfig config,
       VersionStore store,
       Authorizer authorizer,
-      Supplier<Principal> principal,
+      AccessContext accessContext,
       int actualApiVersion) {
-    super(config, store, authorizer, principal);
+    super(config, store, authorizer, accessContext);
     this.actualApiVersion = actualApiVersion;
   }
 
