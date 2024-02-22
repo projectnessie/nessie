@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -33,6 +34,7 @@ import javax.sql.DataSource;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -43,12 +45,15 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.jdbc.AgroalJdbcDataSourceProvider;
+import org.projectnessie.gc.contents.jdbc.JdbcHelper;
 import org.projectnessie.gc.contents.jdbc.JdbcPersistenceSpi;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.gc.tool.cli.options.SchemaCreateStrategy;
 import org.projectnessie.gc.tool.cli.util.RunCLI;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.ContentKey;
@@ -64,17 +69,44 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 public class TestCLI {
 
   public static final String JDBC_URL = "jdbc:h2:mem:nessie_gc;MODE=PostgreSQL;DB_CLOSE_DELAY=-1";
-  @NessiePersist static Persist perssit;
+  @NessiePersist static Persist persist;
 
   @InjectSoftAssertions private SoftAssertions soft;
 
-  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> perssit);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 
   private static URI nessieUri;
 
   @BeforeAll
   static void setNessieUri(@NessieClientUri URI uri) {
     nessieUri = uri;
+  }
+
+  private static DataSource dataSource;
+
+  @BeforeAll
+  static void initDataSource() throws Exception {
+    dataSource =
+        AgroalJdbcDataSourceProvider.builder()
+            .jdbcUrl(JDBC_URL)
+            .poolMinSize(1)
+            .poolMaxSize(1)
+            .poolInitialSize(1)
+            .build()
+            .dataSource();
+  }
+
+  @AfterAll
+  static void closeDataSource() throws Exception {
+    if (dataSource instanceof AutoCloseable) {
+      ((AutoCloseable) dataSource).close();
+    }
+  }
+
+  private void dropTables() throws Exception {
+    try (Connection conn = dataSource.getConnection()) {
+      JdbcHelper.dropTables(conn);
+    }
   }
 
   static Stream<Arguments> optionErrors() {
@@ -128,8 +160,19 @@ public class TestCLI {
 
   @Test
   @Order(0)
-  public void createTables() throws Exception {
+  public void createSchema() throws Exception {
+    dropTables();
     RunCLI run = RunCLI.run("create-sql-schema", "--jdbc-url", JDBC_URL);
+    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
+  }
+
+  @ParameterizedTest
+  @EnumSource(SchemaCreateStrategy.class)
+  @Order(1)
+  public void createSchemaWithStrategy(SchemaCreateStrategy strategy) throws Exception {
+    dropTables();
+    RunCLI run =
+        RunCLI.run("create-sql-schema", "--jdbc-schema", strategy.name(), "--jdbc-url", JDBC_URL);
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
   }
 
@@ -152,6 +195,23 @@ public class TestCLI {
   @Order(1)
   public void smokeTestJdbc() throws Exception {
     RunCLI run = RunCLI.run("gc", "--jdbc-url", JDBC_URL, "--uri", nessieUri.toString());
+    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
+  }
+
+  @ParameterizedTest
+  @EnumSource(SchemaCreateStrategy.class)
+  @Order(1)
+  public void smokeTestJdbcWithSchemaUpdate(SchemaCreateStrategy strategy) throws Exception {
+    dropTables();
+    RunCLI run =
+        RunCLI.run(
+            "gc",
+            "--jdbc-schema",
+            strategy.name(),
+            "--jdbc-url",
+            JDBC_URL,
+            "--uri",
+            nessieUri.toString());
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
   }
 

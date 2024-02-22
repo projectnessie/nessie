@@ -51,6 +51,13 @@ public class JdbcOptions {
       description = "JDBC password used to authenticate the database access.")
   String password;
 
+  @CommandLine.Option(
+      names = "--jdbc-schema",
+      description =
+          "How to create the database schema. "
+              + "Possible values: CREATE, DROP_AND_CREATE, CREATE_IF_NOT_EXISTS.")
+  SchemaCreateStrategy schemaCreateStrategy;
+
   public DataSource createDataSource() throws SQLException {
     AgroalJdbcDataSourceProvider.Builder jdbcDsBuilder =
         AgroalJdbcDataSourceProvider.builder()
@@ -59,5 +66,9 @@ public class JdbcOptions {
     properties.forEach(jdbcDsBuilder::putJdbcProperties);
     AgroalJdbcDataSourceProvider dataSourceProvider = jdbcDsBuilder.build();
     return dataSourceProvider.dataSource();
+  }
+
+  public SchemaCreateStrategy getSchemaCreateStrategy() {
+    return schemaCreateStrategy;
   }
 }
