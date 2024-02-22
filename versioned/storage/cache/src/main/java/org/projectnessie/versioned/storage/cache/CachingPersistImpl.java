@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static org.projectnessie.versioned.storage.cache.CacheBackend.NON_EXISTENT_REFERENCE_SENTINEL;
+
 import jakarta.annotation.Nonnull;
 import java.util.Set;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -261,40 +263,148 @@ class CachingPersistImpl implements Persist {
     return persist.name();
   }
 
+  // References
+
   @Override
   @Nonnull
   public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
-    return persist.addReference(reference);
+    Reference r = null;
+    try {
+      return r = persist.addReference(reference);
+    } finally {
+      if (r != null) {
+        cache.putReference(r);
+      } else {
+        cache.removeReference(reference.name());
+      }
+    }
   }
 
   @Override
   @Nonnull
   public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    return persist.markReferenceAsDeleted(reference);
+    Reference r = null;
+    try {
+      return r = persist.markReferenceAsDeleted(reference);
+    } finally {
+      if (r != null) {
+        cache.putReference(r);
+      } else {
+        cache.removeReference(reference.name());
+      }
+    }
   }
 
   @Override
   public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
-    persist.purgeReference(reference);
+    try {
+      persist.purgeReference(reference);
+    } finally {
+      cache.removeReference(reference.name());
+    }
   }
 
   @Override
   @Nonnull
   public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
-    return persist.updateReferencePointer(reference, newPointer);
+    Reference r = null;
+    try {
+      return r = persist.updateReferencePointer(reference, newPointer);
+    } finally {
+      if (r != null) {
+        cache.putReference(r);
+      } else {
+        cache.removeReference(reference.name());
+      }
+    }
   }
 
   @Override
   public Reference fetchReference(@Nonnull String name) {
-    return persist.fetchReference(name);
+    return fetchReferenceInternal(name, false);
+  }
+
+  @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReferenceInternal(name, true);
+  }
+
+  private Reference fetchReferenceInternal(@Nonnull String name, boolean bypassCache) {
+    Reference r = null;
+    if (!bypassCache) {
+      r = cache.getReference(name);
+      if (r == NON_EXISTENT_REFERENCE_SENTINEL) {
+        return null;
+      }
+    }
+
+    if (r == null) {
+      r = persist.fetchReferenceForUpdate(name);
+      if (r == null) {
+        cache.putNegative(name);
+      } else {
+        cache.putReference(r);
+      }
+    }
+    return r;
   }
 
   @Override
   @Nonnull
   public Reference[] fetchReferences(@Nonnull String[] names) {
-    return persist.fetchReferences(names);
+    return fetchReferencesInternal(names, false);
+  }
+
+  @Override
+  @Nonnull
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferencesInternal(names, true);
+  }
+
+  private Reference[] fetchReferencesInternal(@Nonnull String[] names, boolean bypassCache) {
+    Reference[] r = new Reference[names.length];
+
+    String[] backend = null;
+    if (!bypassCache) {
+      for (int i = 0; i < names.length; i++) {
+        String name = names[i];
+        if (name != null) {
+          Reference cr = cache.getReference(name);
+          if (cr != null) {
+            if (cr != NON_EXISTENT_REFERENCE_SENTINEL) {
+              r[i] = cr;
+            }
+          } else {
+            if (backend == null) {
+              backend = new String[names.length];
+            }
+            backend[i] = name;
+          }
+        }
+      }
+    } else {
+      backend = names;
+    }
+
+    if (backend != null) {
+      Reference[] br = persist.fetchReferencesForUpdate(backend);
+      for (int i = 0; i < br.length; i++) {
+        String name = backend[i];
+        if (name != null) {
+          Reference ref = br[i];
+          if (ref != null) {
+            r[i] = ref;
+            cache.putReference(ref);
+          } else {
+            cache.putNegative(name);
+          }
+        }
+      }
+    }
+
+    return r;
   }
 }

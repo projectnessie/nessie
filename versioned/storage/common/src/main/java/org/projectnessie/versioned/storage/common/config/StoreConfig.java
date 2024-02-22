@@ -19,7 +19,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Function;
 import org.immutables.value.Value;
 
@@ -66,6 +68,10 @@ public interface StoreConfig {
 
   String CONFIG_PREVIOUS_HEAD_TIME_SPAN_SECONDS = "ref-previous-head-time-span-seconds";
   long DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS = 5 * 60;
+
+  String CONFIG_CACHE_REFERENCE_TTL = "cache-reference-ttl";
+
+  String CONFIG_CACHE_REFERENCE_NEGATIVE_TTL = "cache-reference-negative-ttl";
 
   /**
    * Whether namespace validation is enabled, changing this to false will break the Nessie
@@ -251,6 +257,27 @@ public interface StoreConfig {
   }
 
   /**
+   * Defines the duration how long references shall be kept in the cache. Enables reference-caching,
+   * if configured with a positive duration value, defaults to not cache references. If reference
+   * caching is enabled, it is highly recommended to also enable negative reference caching.
+   *
+   * <p><em>This is an experimental feature, currently only for single Nessie node deployments! If
+   * in doubt, leave this un-configured!</em>
+   */
+  Optional<Duration> cacheReferenceTtl();
+
+  /**
+   * Defines the duration how long sentinels for non-existing references shall be kept in the cache
+   * (negative reference caching). Enabled, if configured with a positive duration value, default is
+   * not enabled. If reference caching is enabled, it is highly recommended to also enable negative
+   * reference caching.
+   *
+   * <p><em>This is an experimental feature, currently only for single Nessie node deployments! If
+   * in doubt, leave this un-configured!</em>
+   */
+  Optional<Duration> cacheReferenceNegativeTtl();
+
+  /**
    * Retrieves the current timestamp in microseconds since epoch, using the configured {@link
    * #clock()}.
    */
@@ -334,6 +361,14 @@ public interface StoreConfig {
       if (v != null) {
         a = a.withReferencePreviousHeadTimeSpanSeconds(Long.parseLong(v.trim()));
       }
+      v = configFunction.apply(CONFIG_CACHE_REFERENCE_TTL);
+      if (v != null) {
+        a = a.withCacheReferenceTtl(Duration.parse(v.trim()));
+      }
+      v = configFunction.apply(CONFIG_CACHE_REFERENCE_NEGATIVE_TTL);
+      if (v != null) {
+        a = a.withCacheReferenceNegativeTtl(Duration.parse(v.trim()));
+      }
       return a;
     }
 
@@ -379,5 +414,11 @@ public interface StoreConfig {
     Adjustable withReferencePreviousHeadCount(int referencePreviousHeadCount);
 
     Adjustable withReferencePreviousHeadTimeSpanSeconds(long referencePreviousHeadTimeSpanSeconds);
+
+    /** See {@link StoreConfig#cacheReferenceTtl()}. */
+    Adjustable withCacheReferenceTtl(Duration cacheReferenceTtl);
+
+    /** See {@link StoreConfig#cacheReferenceNegativeTtl()}. */
+    Adjustable withCacheReferenceNegativeTtl(Duration cacheReferenceNegativeTtl);
   }
 }

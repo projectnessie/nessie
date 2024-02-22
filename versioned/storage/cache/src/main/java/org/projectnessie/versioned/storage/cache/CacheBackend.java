@@ -15,17 +15,24 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static org.projectnessie.versioned.storage.common.persist.ObjId.zeroLengthObjId;
+import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
+
 import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
 
 /**
  * Provides the cache primitives for a caching {@link Persist} facade, suitable for multiple
  * repositories. It is adviseable to have one {@link CacheBackend} per {@link Backend}.
  */
 public interface CacheBackend {
+  Reference NON_EXISTENT_REFERENCE_SENTINEL =
+      reference("NON_EXISTENT", zeroLengthObjId(), false, -1L, null);
+
   Obj get(@Nonnull String repositoryId, @Nonnull ObjId id);
 
   void put(@Nonnull String repositoryId, @Nonnull Obj obj);
@@ -34,5 +41,13 @@ public interface CacheBackend {
 
   void clear(@Nonnull String repositoryId);
 
-  Persist wrap(@Nonnull Persist perist);
+  Persist wrap(@Nonnull Persist persist);
+
+  Reference getReference(@Nonnull String repositoryId, @Nonnull String name);
+
+  void removeReference(@Nonnull String repositoryId, @Nonnull String name);
+
+  void putReference(@Nonnull String repositoryId, @Nonnull Reference r);
+
+  void putNegative(@Nonnull String repositoryId, @Nonnull String name);
 }

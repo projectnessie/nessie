@@ -15,12 +15,16 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.CACHE_UNLIMITED;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.NOT_CACHED;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
+import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -28,22 +32,31 @@ import com.github.benmanes.caffeine.cache.Expiry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
+import java.time.Duration;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 
 final class CaffeineCacheBackend implements CacheBackend {
 
   public static final String CACHE_NAME = "nessie-objects";
+  private static final byte[] NON_EXISTING_SENTINEL = "NON_EXISTING".getBytes(UTF_8);
 
   private final CacheConfig config;
   final Cache<CacheKeyValue, byte[]> cache;
 
+  private final long refCacheTtlNanos;
+  private final long refCacheNegativeTtlNanos;
+
   CaffeineCacheBackend(CacheConfig config) {
     this.config = config;
+
+    refCacheTtlNanos = config.referenceTtl().orElse(Duration.ZERO).toNanos();
+    refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
 
     Caffeine<CacheKeyValue, byte[]> cacheBuilder =
         Caffeine.newBuilder()
@@ -152,6 +165,52 @@ final class CaffeineCacheBackend implements CacheBackend {
   @Override
   public void clear(@Nonnull String repositoryId) {
     cache.asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
+  }
+
+  @Override
+  public void removeReference(@Nonnull String repositoryId, @Nonnull String name) {
+    if (refCacheTtlNanos <= 0L) {
+      return;
+    }
+    ObjId id = objIdFromByteArray(name.getBytes(UTF_8));
+    CacheKeyValue key = cacheKey(repositoryId, id);
+    cache.invalidate(key);
+  }
+
+  @Override
+  public void putReference(@Nonnull String repositoryId, @Nonnull Reference r) {
+    if (refCacheTtlNanos <= 0L) {
+      return;
+    }
+    ObjId id = objIdFromByteArray(r.name().getBytes(UTF_8));
+    CacheKeyValue key =
+        cacheKeyValue(repositoryId, id, config.clockNanos().getAsLong() + refCacheTtlNanos);
+    cache.put(key, serializeReference(r));
+  }
+
+  @Override
+  public void putNegative(@Nonnull String repositoryId, @Nonnull String name) {
+    if (refCacheNegativeTtlNanos <= 0L) {
+      return;
+    }
+    ObjId id = objIdFromByteArray(name.getBytes(UTF_8));
+    CacheKeyValue key =
+        cacheKeyValue(repositoryId, id, config.clockNanos().getAsLong() + refCacheNegativeTtlNanos);
+    cache.put(key, NON_EXISTING_SENTINEL);
+  }
+
+  @Override
+  public Reference getReference(@Nonnull String repositoryId, @Nonnull String name) {
+    if (refCacheTtlNanos <= 0L) {
+      return null;
+    }
+    ObjId id = objIdFromByteArray(name.getBytes(UTF_8));
+    CacheKeyValue keyValue = cacheKey(repositoryId, id);
+    byte[] bytes = cache.getIfPresent(keyValue);
+    if (bytes == NON_EXISTING_SENTINEL) {
+      return NON_EXISTENT_REFERENCE_SENTINEL;
+    }
+    return bytes != null ? deserializeReference(bytes) : null;
   }
 
   static CacheKeyValue cacheKey(String repositoryId, ObjId id) {

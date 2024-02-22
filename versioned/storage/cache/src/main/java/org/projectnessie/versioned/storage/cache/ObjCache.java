@@ -19,6 +19,7 @@ import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
 
 /** Cache primitives for a specific repository ID, used for one {@link Persist} instance. */
 public interface ObjCache {
@@ -30,4 +31,12 @@ public interface ObjCache {
   void remove(@Nonnull ObjId id);
 
   void clear();
+
+  Reference getReference(@Nonnull String name);
+
+  void removeReference(@Nonnull String name);
+
+  void putReference(@Nonnull Reference r);
+
+  void putNegative(@Nonnull String name);
 }

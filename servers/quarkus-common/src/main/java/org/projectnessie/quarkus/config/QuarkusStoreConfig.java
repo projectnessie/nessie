@@ -20,6 +20,8 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -136,4 +138,12 @@ public interface QuarkusStoreConfig extends StoreConfig {
    */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
   OptionalInt cacheCapacityFractionAdjustMB();
+
+  @WithName(CONFIG_CACHE_REFERENCE_TTL)
+  @Override
+  Optional<Duration> cacheReferenceTtl();
+
+  @WithName(CONFIG_CACHE_REFERENCE_NEGATIVE_TTL)
+  @Override
+  Optional<Duration> cacheReferenceNegativeTtl();
 }
