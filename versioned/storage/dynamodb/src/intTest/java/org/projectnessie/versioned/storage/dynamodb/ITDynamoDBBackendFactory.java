@@ -44,8 +44,6 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 public class ITDynamoDBBackendFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
-
   @Test
   public void productionLike() throws Exception {
     DynamoDBBackendTestFactory testFactory = new DynamoDBBackendTestFactory();
@@ -63,7 +61,7 @@ public class ITDynamoDBBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(DynamoDBPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -78,7 +76,7 @@ public class ITDynamoDBBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(DynamoDBPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -106,7 +104,7 @@ public class ITDynamoDBBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(DynamoDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -120,7 +118,7 @@ public class ITDynamoDBBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(DynamoDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);

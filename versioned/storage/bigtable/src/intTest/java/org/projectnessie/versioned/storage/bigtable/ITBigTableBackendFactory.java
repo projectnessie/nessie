@@ -38,8 +38,6 @@ import org.projectnessie.versioned.storage.common.persist.PersistLoader;
 public class ITBigTableBackendFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
-
   @Test
   public void productionLike() throws Exception {
     BigTableBackendContainerTestFactory testFactory = new BigTableBackendContainerTestFactory();
@@ -62,7 +60,7 @@ public class ITBigTableBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(BigTablePersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(BigTablePersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -81,7 +79,7 @@ public class ITBigTableBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(BigTablePersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(BigTablePersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -109,7 +107,7 @@ public class ITBigTableBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(BigTablePersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(BigTablePersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -123,7 +121,7 @@ public class ITBigTableBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(BigTablePersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(BigTablePersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);

@@ -47,8 +47,6 @@ import org.projectnessie.versioned.storage.common.persist.PersistLoader;
 public abstract class AbstractTestCassandraBackendFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
-
   @Test
   public void productionLike() throws Exception {
     AbstractCassandraBackendTestFactory testFactory = testFactory();
@@ -67,7 +65,7 @@ public abstract class AbstractTestCassandraBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -81,7 +79,7 @@ public abstract class AbstractTestCassandraBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -109,7 +107,7 @@ public abstract class AbstractTestCassandraBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -123,7 +121,7 @@ public abstract class AbstractTestCassandraBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
