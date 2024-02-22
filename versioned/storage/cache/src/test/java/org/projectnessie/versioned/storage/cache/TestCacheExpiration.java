@@ -38,10 +38,11 @@ public class TestCacheExpiration {
     AtomicLong currentTime = new AtomicLong(1234L);
 
     CaffeineCacheBackend backend =
-        CaffeineCacheBackend.builder()
-            .capacity(8)
-            .clockNanos(() -> MICROSECONDS.toNanos(currentTime.get()))
-            .build();
+        new CaffeineCacheBackend(
+            CacheConfig.builder()
+                .capacityMb(8)
+                .clockNanos(() -> MICROSECONDS.toNanos(currentTime.get()))
+                .build());
 
     CacheTestObjTypeBundle.DefaultCachingObj defaultCachingObj =
         ImmutableDefaultCachingObj.builder().id(randomObjId()).value("def").build();
@@ -56,7 +57,7 @@ public class TestCacheExpiration {
     backend.put("repo", dynamicCachingObj);
     backend.put("repo", stdObj);
 
-    ConcurrentMap<CaffeineCacheBackend.CacheKeyValue, byte[]> cacheMap = backend.cache().asMap();
+    ConcurrentMap<CaffeineCacheBackend.CacheKeyValue, byte[]> cacheMap = backend.cache.asMap();
 
     soft.assertThat(cacheMap)
         .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", nonCachingObj.id()))

@@ -15,17 +15,11 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-import io.micrometer.core.instrument.MeterRegistry;
-
 public final class PersistCaches {
   private PersistCaches() {}
 
   /** Produces a {@link CacheBackend} with the given maximum capacity. */
-  public static CacheBackend newBackend(long capacityMb, MeterRegistry meterRegistry) {
-    return CaffeineCacheBackend.builder()
-        .capacity(capacityMb)
-        .meterRegistry(meterRegistry)
-        .clockNanos(System::nanoTime)
-        .build();
+  public static CacheBackend newBackend(CacheConfig cacheConfig) {
+    return new CaffeineCacheBackend(cacheConfig);
   }
 }
