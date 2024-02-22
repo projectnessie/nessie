@@ -121,6 +121,17 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
+
+  @Override
   public Reference fetchReference(@Nonnull String name) {
     try {
       ByteString key = dbKey(name);
@@ -173,7 +184,7 @@ public class BigTablePersist implements Persist {
                       .otherwise(mutation));
 
       if (success) {
-        throw new RefAlreadyExistsException(fetchReference(reference.name()));
+        throw new RefAlreadyExistsException(fetchReferenceForUpdate(reference.name()));
       }
 
       return reference;

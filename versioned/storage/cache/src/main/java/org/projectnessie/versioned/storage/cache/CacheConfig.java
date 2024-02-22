@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.cache;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.function.LongSupplier;
 import org.immutables.value.Value;
@@ -26,6 +27,10 @@ public interface CacheConfig {
   long capacityMb();
 
   Optional<MeterRegistry> meterRegistry();
+
+  Optional<Duration> referenceTtl();
+
+  Optional<Duration> referenceNegativeTtl();
 
   @Value.Default
   default LongSupplier clockNanos() {
@@ -42,6 +47,12 @@ public interface CacheConfig {
 
     @CanIgnoreReturnValue
     Builder meterRegistry(MeterRegistry meterRegistry);
+
+    @CanIgnoreReturnValue
+    Builder referenceTtl(Duration referenceTtl);
+
+    @CanIgnoreReturnValue
+    Builder referenceNegativeTtl(Duration referenceNegativeTtl);
 
     @CanIgnoreReturnValue
     Builder clockNanos(LongSupplier clockNanos);

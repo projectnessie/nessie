@@ -19,6 +19,7 @@ import static java.util.Collections.singleton;
 import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
@@ -137,6 +138,18 @@ class JdbcPersist extends AbstractJdbcPersist {
     } catch (SQLException e) {
       throw unhandledSQLException(e);
     }
+  }
+
+  @Nullable
+  @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
   }
 
   @Override

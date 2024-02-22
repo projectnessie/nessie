@@ -308,10 +308,31 @@ public abstract class AbstractExportImport {
             return inmemory.fetchReference(name);
           }
 
+          @Nullable
+          @Override
+          public Reference fetchReferenceForUpdate(@Nonnull String name) {
+            if (name.startsWith("refs/heads/branch-")) {
+              int refNum = parseInt(name.substring("refs/heads/branch-".length()));
+              return reference(
+                  name,
+                  intToObjId(refNum),
+                  false,
+                  TimeUnit.NANOSECONDS.toMicros(System.nanoTime()),
+                  null);
+            }
+            return inmemory.fetchReferenceForUpdate(name);
+          }
+
           @Nonnull
           @Override
           public Reference[] fetchReferences(@Nonnull String[] names) {
             return inmemory.fetchReferences(names);
+          }
+
+          @Nonnull
+          @Override
+          public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+            return fetchReferences(names);
           }
 
           @Nonnull

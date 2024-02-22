@@ -125,6 +125,9 @@ public interface Persist {
   @Nullable
   Reference fetchReference(@Nonnull String name);
 
+  @Nullable
+  Reference fetchReferenceForUpdate(@Nonnull String name);
+
   /**
    * Like {@link #fetchReference(String)}, but finds multiple references by name at once, leveraging
    * bulk queries against databases.
@@ -136,6 +139,9 @@ public interface Persist {
    */
   @Nonnull
   Reference[] fetchReferences(@Nonnull String[] names);
+
+  @Nonnull
+  Reference[] fetchReferencesForUpdate(@Nonnull String[] names);
 
   // Objects
 

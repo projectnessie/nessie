@@ -146,12 +146,21 @@ public class PersistProvider {
 
     String cacheInfo;
     if (effectiveCacheSizeMB > 0) {
-      CacheConfig cacheConfig =
-          CacheConfig.builder()
-              .capacityMb(effectiveCacheSizeMB)
-              .meterRegistry(meterRegistry)
-              .build();
-      CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig);
+      CacheConfig.Builder cacheConfig =
+          CacheConfig.builder().capacityMb(effectiveCacheSizeMB).meterRegistry(meterRegistry);
+
+      storeConfig
+          .cacheReferenceTtl()
+          .ifPresent(
+              refTtl -> {
+                LOGGER.warn(
+                    "Reference caching is an experimental feature but enabled with a TTL of {}",
+                    refTtl);
+                cacheConfig.referenceTtl(refTtl);
+              });
+      storeConfig.cacheReferenceNegativeTtl().ifPresent(cacheConfig::referenceNegativeTtl);
+
+      CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig.build());
       persist = cacheBackend.wrap(persist);
       cacheInfo = "with " + effectiveCacheSizeMB + " MB objects cache";
     } else {

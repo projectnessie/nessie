@@ -96,6 +96,18 @@ public class CassandraPersist implements Persist {
     return config;
   }
 
+  @Nullable
+  @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
+
   @Override
   public Reference fetchReference(@Nonnull String name) {
     return fetchReferences(new String[] {name})[0];

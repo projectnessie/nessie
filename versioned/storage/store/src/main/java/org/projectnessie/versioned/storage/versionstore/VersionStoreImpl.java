@@ -224,7 +224,7 @@ public class VersionStoreImpl implements VersionStore {
               ? asBranchName(namedRef.getName())
               : asTagName(namedRef.getName());
       try {
-        referenceLogic.getReference(mustNotExist);
+        referenceLogic.getReferenceForUpdate(mustNotExist);
         // A tag with the same name as the branch being created (or a branch with the same name
         // as the tag being created) already exists.
         throw referenceAlreadyExists(namedRef);
@@ -252,7 +252,7 @@ public class VersionStoreImpl implements VersionStore {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     Reference expected;
     try {
-      expected = referenceLogic.getReference(refName);
+      expected = referenceLogic.getReferenceForUpdate(refName);
     } catch (RefNotFoundException e) {
       throw referenceNotFound(namedRef);
     }
@@ -323,7 +323,7 @@ public class VersionStoreImpl implements VersionStore {
       throw referenceNotFound(namedRef);
     } catch (RefConditionFailedException e) {
       RefMapping refMapping = new RefMapping(persist);
-      CommitObj headCommit = refMapping.resolveRefHead(namedRef);
+      CommitObj headCommit = refMapping.resolveRefHeadForUpdate(namedRef);
       throw referenceConflictException(
           namedRef, objIdToHash(expected), headCommit != null ? headCommit.id() : EMPTY_OBJ_ID);
     } catch (RetryTimeoutException e) {

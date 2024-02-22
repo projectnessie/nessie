@@ -96,7 +96,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   @Override
   public boolean repositoryExists() {
     try {
-      Reference ref = persist.fetchReference(REF_REPO.name());
+      Reference ref = persist.fetchReferenceForUpdate(REF_REPO.name());
       if (ref == null) {
         return false;
       }
@@ -207,7 +207,8 @@ final class RepositoryLogicImpl implements RepositoryLogic {
               persist,
               (p, retryState) -> {
                 try {
-                  Reference reference = requireNonNull(persist.fetchReference(REF_REPO.name()));
+                  Reference reference =
+                      requireNonNull(persist.fetchReferenceForUpdate(REF_REPO.name()));
                   return stringLogic(persist)
                       .updateStringOnRef(
                           reference,
@@ -237,7 +238,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   @SuppressWarnings({"JavaTimeDefaultTimeZone"})
   private void initializeInternalRef(
       InternalRef internalRef, Consumer<CreateCommit.Builder> commitEnhancer) {
-    Reference reference = persist.fetchReference(internalRef.name());
+    Reference reference = persist.fetchReferenceForUpdate(internalRef.name());
 
     if (reference == null) {
       CreateCommit.Builder c =

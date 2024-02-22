@@ -19,7 +19,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Function;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
@@ -70,6 +72,10 @@ public interface StoreConfig {
 
   String CONFIG_PREVIOUS_HEAD_TIME_SPAN_SECONDS = "ref-previous-head-time-span-seconds";
   long DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS = 5 * 60;
+
+  String CONFIG_CACHE_REFERENCE_TTL = "cache-reference-ttl";
+
+  String CONFIG_CACHE_REFERENCE_NEGATIVE_TTL = "cache-reference-negative-ttl";
 
   /**
    * Committing operations by default enforce that all (parent) namespaces exist.
@@ -253,6 +259,10 @@ public interface StoreConfig {
     return DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS;
   }
 
+  Optional<Duration> cacheReferenceTtl();
+
+  Optional<Duration> cacheReferenceNegativeTtl();
+
   /**
    * Retrieves the current timestamp in microseconds since epoch, using the configured {@link
    * #clock()}.
@@ -337,6 +347,14 @@ public interface StoreConfig {
       if (v != null) {
         a = a.withReferencePreviousHeadTimeSpanSeconds(Long.parseLong(v.trim()));
       }
+      v = configFunction.apply(CONFIG_CACHE_REFERENCE_TTL);
+      if (v != null) {
+        a = a.withCacheReferenceTtl(Duration.parse(v.trim()));
+      }
+      v = configFunction.apply(CONFIG_CACHE_REFERENCE_NEGATIVE_TTL);
+      if (v != null) {
+        a = a.withCacheReferenceNegativeTtl(Duration.parse(v.trim()));
+      }
       return a;
     }
 
@@ -382,5 +400,11 @@ public interface StoreConfig {
     Adjustable withReferencePreviousHeadCount(int referencePreviousHeadCount);
 
     Adjustable withReferencePreviousHeadTimeSpanSeconds(long referencePreviousHeadTimeSpanSeconds);
+
+    /** See {@link StoreConfig#cacheReferenceTtl()}. */
+    Adjustable withCacheReferenceTtl(Duration cacheReferenceTtl);
+
+    /** See {@link StoreConfig#cacheReferenceNegativeTtl()}. */
+    Adjustable withCacheReferenceNegativeTtl(Duration cacheReferenceNegativeTtl);
   }
 }
