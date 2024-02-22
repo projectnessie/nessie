@@ -46,8 +46,6 @@ import org.projectnessie.versioned.storage.jdbctests.DataSourceProducer;
 public abstract class AbstractTestJdbcBackendFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
-
   protected abstract AbstractJdbcBackendTestFactory testFactory();
 
   @Test
@@ -75,7 +73,7 @@ public abstract class AbstractTestJdbcBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(JdbcPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -90,7 +88,7 @@ public abstract class AbstractTestJdbcBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(JdbcPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -129,7 +127,7 @@ public abstract class AbstractTestJdbcBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(JdbcPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -143,7 +141,7 @@ public abstract class AbstractTestJdbcBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(JdbcPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);

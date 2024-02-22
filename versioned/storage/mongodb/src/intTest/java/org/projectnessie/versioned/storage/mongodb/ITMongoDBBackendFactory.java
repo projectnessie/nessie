@@ -37,8 +37,6 @@ import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactor
 public class ITMongoDBBackendFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
-
   @Test
   public void productionLike() throws Exception {
     MongoDBBackendTestFactory testFactory = new MongoDBBackendTestFactory();
@@ -58,7 +56,7 @@ public class ITMongoDBBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(MongoDBPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -74,7 +72,7 @@ public class ITMongoDBBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(MongoDBPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -102,7 +100,7 @@ public class ITMongoDBBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(MongoDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -116,7 +114,7 @@ public class ITMongoDBBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(MongoDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
