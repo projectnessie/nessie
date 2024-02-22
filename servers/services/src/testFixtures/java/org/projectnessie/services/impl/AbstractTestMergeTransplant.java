@@ -45,6 +45,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
@@ -53,6 +54,7 @@ import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.MergeResponse.ContentKeyDetails;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
@@ -630,5 +632,73 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             tuple(KEY_1, "main-table1"),
             tuple(KEY_2, "branch-table2"),
             tuple(KEY_3, "branch-no-conflict"));
+  }
+
+  @Test
+  public void mergeRecreateTable() throws BaseNessieClientServerException {
+
+    Branch root = createBranch("root");
+    Branch lastRoot = root;
+
+    ContentKey key = ContentKey.of("my_table");
+
+    root =
+        commit(
+                root,
+                fromMessage("initial-create-table"),
+                Put.of(key, IcebergTable.of("something", 42, 43, 44, 45)))
+            .getTargetBranch();
+    soft.assertThat(root).isNotEqualTo(lastRoot);
+    lastRoot = root;
+
+    ContentResponse tableOnRoot =
+        contentApi().getContent(key, root.getName(), root.getHash(), false);
+    soft.assertThat(tableOnRoot.getEffectiveReference()).isEqualTo(root);
+
+    Branch work = createBranch("recreateBranch", root);
+    soft.assertThat(work.getHash()).isEqualTo(root.getHash());
+    Branch lastWork = work;
+
+    work = commit(work, fromMessage("drop-table"), Delete.of(key)).getTargetBranch();
+    soft.assertThat(work).isNotEqualTo(lastWork);
+    lastWork = work;
+
+    work =
+        commit(
+                work,
+                fromMessage("recreate-table"),
+                Put.of(key, IcebergTable.of("something", 42, 43, 44, 45)))
+            .getTargetBranch();
+    soft.assertThat(work).isNotEqualTo(lastWork);
+
+    ContentResponse tableOnWork =
+        contentApi().getContent(key, work.getName(), work.getHash(), false);
+    soft.assertThat(tableOnWork.getEffectiveReference()).isEqualTo(work);
+
+    soft.assertThat(tableOnWork.getContent().getId())
+        .isNotEqualTo(tableOnRoot.getContent().getId());
+
+    MergeResponse mergeResponse =
+        treeApi()
+            .mergeRefIntoBranch(
+                root.getName(),
+                root.getHash(),
+                work.getName(),
+                work.getHash(),
+                fromMessage("merge-recreate"),
+                emptyList(),
+                NORMAL,
+                Boolean.FALSE,
+                Boolean.FALSE,
+                Boolean.FALSE);
+
+    root = Branch.of(mergeResponse.getTargetBranch(), mergeResponse.getResultantTargetHash());
+    soft.assertThat(root).isNotEqualTo(lastRoot);
+
+    ContentResponse tableOnRootAfterMerge =
+        contentApi().getContent(key, root.getName(), root.getHash(), false);
+
+    soft.assertThat(tableOnWork.getContent().getId())
+        .isEqualTo(tableOnRootAfterMerge.getContent().getId());
   }
 }
