@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
+import org.projectnessie.versioned.storage.cache.CacheConfig;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
@@ -53,7 +54,8 @@ final class ClassPersistInstances {
         PersistExtension.annotationInstance(context, NessiePersistCache.class);
     cacheBackend =
         nessiePersistCache != null && nessiePersistCache.capacityMb() >= 0
-            ? PersistCaches.newBackend(nessiePersistCache.capacityMb(), null)
+            ? PersistCaches.newBackend(
+                CacheConfig.builder().capacityMb(nessiePersistCache.capacityMb()).build())
             : null;
 
     backendTestFactory = reusableTestBackend.backendTestFactory(context);

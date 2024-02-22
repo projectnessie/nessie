@@ -25,42 +25,29 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
-import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 
-@Value.Immutable
-abstract class CaffeineCacheBackend implements CacheBackend {
+final class CaffeineCacheBackend implements CacheBackend {
 
   public static final String CACHE_NAME = "nessie-objects";
 
-  static ImmutableCaffeineCacheBackend.Builder builder() {
-    return ImmutableCaffeineCacheBackend.builder();
-  }
+  private final CacheConfig config;
+  final Cache<CacheKeyValue, byte[]> cache;
 
-  /** Cache capacity in MB. */
-  abstract long capacity();
+  CaffeineCacheBackend(CacheConfig config) {
+    this.config = config;
 
-  @Nullable
-  abstract MeterRegistry meterRegistry();
-
-  abstract LongSupplier clockNanos();
-
-  @Value.Derived
-  Cache<CacheKeyValue, byte[]> cache() {
     Caffeine<CacheKeyValue, byte[]> cacheBuilder =
         Caffeine.newBuilder()
-            .maximumWeight(capacity() * 1024L * 1024L)
+            .maximumWeight(config.capacityMb() * 1024L * 1024L)
             .weigher(this::weigher)
             .expireAfter(
                 new Expiry<CacheKeyValue, byte[]>() {
@@ -96,14 +83,20 @@ abstract class CaffeineCacheBackend implements CacheBackend {
                     return currentDurationNanos;
                   }
                 })
-            .ticker(clockNanos()::getAsLong);
-    MeterRegistry meterRegistry = meterRegistry();
-    if (meterRegistry != null) {
-      cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
-      meterRegistry.gauge(
-          "cache_capacity_mb", singletonList(Tag.of("cache", CACHE_NAME)), "", x -> capacity());
-    }
-    return cacheBuilder.build();
+            .ticker(config.clockNanos()::getAsLong);
+    config
+        .meterRegistry()
+        .ifPresent(
+            meterRegistry -> {
+              cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
+              meterRegistry.gauge(
+                  "cache_capacity_mb",
+                  singletonList(Tag.of("cache", CACHE_NAME)),
+                  "",
+                  x -> config.capacityMb());
+            });
+
+    this.cache = cacheBuilder.build();
   }
 
   @Override
@@ -124,7 +117,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   @Override
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKeyValue key = cacheKey(repositoryId, id);
-    byte[] value = cache().getIfPresent(key);
+    byte[] value = cache.getIfPresent(key);
     return value != null ? ProtoSerialization.deserializeObj(id, value, null) : null;
   }
 
@@ -132,7 +125,8 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {
     long expiresAt =
         obj.type()
-            .cachedObjectExpiresAtMicros(obj, () -> NANOSECONDS.toMicros(clockNanos().getAsLong()));
+            .cachedObjectExpiresAtMicros(
+                obj, () -> NANOSECONDS.toMicros(config.clockNanos().getAsLong()));
     if (expiresAt == NOT_CACHED) {
       return;
     }
@@ -142,7 +136,7 @@ abstract class CaffeineCacheBackend implements CacheBackend {
       long expiresAtNanos =
           expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
       CacheKeyValue keyValue = cacheKeyValue(repositoryId, obj.id(), expiresAtNanos);
-      cache().put(keyValue, serialized);
+      cache.put(keyValue, serialized);
     } catch (ObjTooLargeException e) {
       // this should never happen
       throw new RuntimeException(e);
@@ -152,12 +146,12 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   @Override
   public void remove(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKeyValue key = cacheKey(repositoryId, id);
-    cache().invalidate(key);
+    cache.invalidate(key);
   }
 
   @Override
   public void clear(@Nonnull String repositoryId) {
-    cache().asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
+    cache.asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
   }
 
   static CacheKeyValue cacheKey(String repositoryId, ObjId id) {

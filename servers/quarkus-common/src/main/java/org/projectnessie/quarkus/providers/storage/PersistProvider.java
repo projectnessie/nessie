@@ -36,6 +36,7 @@ import org.projectnessie.quarkus.providers.WithInitializedRepository;
 import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
+import org.projectnessie.versioned.storage.cache.CacheConfig;
 import org.projectnessie.versioned.storage.cache.CacheSizing;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -141,11 +142,16 @@ public class PersistProvider {
             .fractionOfMaxHeapSize(storeConfig.cacheCapacityFractionOfHeap())
             .heapSizeAdjustmentMB(storeConfig.cacheCapacityFractionAdjustMB())
             .build();
-    int effectiveCacheSizeMB = cacheSizing.calculateEffectiveSizeInMB();
+    int effectiveCacheSizeMB = cacheSizing.effectiveSizeInMB();
 
     String cacheInfo;
     if (effectiveCacheSizeMB > 0) {
-      CacheBackend cacheBackend = PersistCaches.newBackend(effectiveCacheSizeMB, meterRegistry);
+      CacheConfig cacheConfig =
+          CacheConfig.builder()
+              .capacityMb(effectiveCacheSizeMB)
+              .meterRegistry(meterRegistry)
+              .build();
+      CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig);
       persist = cacheBackend.wrap(persist);
       cacheInfo = "with " + effectiveCacheSizeMB + " MB objects cache";
     } else {
