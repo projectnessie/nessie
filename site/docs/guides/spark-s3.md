@@ -16,25 +16,29 @@ docker run -p 19120:19120 ghcr.io/projectnessie/nessie:latest
 Note: this example will run the Nessie Server using in-memory storage for table metadata. If/when the container
 is deleted, Nessie data about table changes will be lost, yet the data files in S3 will remain.
 
-## Setting up Spark Session
+## Setting up Spark Session for Amazon S3
 
-Configure an AWS profile (e.g. called `demo`) in `~/.aws/credentials` (or other location appropriate for your OS)
-and export the profile name in the `AWS_PROFILE` environment variable. For example:
+Configure [AWS SDK credentials](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html) in any
+way appropriate for the default AWS SDK Credentials Provider Chain.
+
+In this guide we assume an AWS profile (e.g. called `demo`) in defined in `~/.aws/credentials` (or other location
+appropriate for your OS) and contains S3 credentials. Make this profile active for CLI tools by exporting its name
+in the `AWS_PROFILE` environment variable. For example:
 
 ```shell
 export AWS_PROFILE=demo
 ```
 
-Create an S3 bucket of your own. This guide uses the bucket name `spark-demo1`.
+Create an Amazon S3 bucket of your own. This guide uses the bucket name `spark-demo1`.
 
 Start a Spark session:
 
 ```shell
 spark-sql \
  --packages \
-org.apache.iceberg:iceberg-spark-runtime-3.2_2.12:0.13.1,\
-software.amazon.awssdk:bundle:2.17.178,\
-software.amazon.awssdk:url-connection-client:2.17.178 \
+org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.4.3,\
+software.amazon.awssdk:bundle:2.20.131,\
+software.amazon.awssdk:url-connection-client:2.20.131 \
  --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions  \
  --conf spark.sql.catalog.nessie=org.apache.iceberg.spark.SparkCatalog \
  --conf spark.sql.catalog.nessie.warehouse=s3://spark-demo1 \
@@ -54,7 +58,54 @@ for the most up-to-date information on how to connect Iceberg to S3.
 Note: the word `nessie` in configuration property names is the name of the Nessie catalog in the Spark session.
 A different name can be chosen according the user's liking.
 
-Then, in `spark-sql` issue a `use` statement to make `nessie` the current catalog:
+## Setting up Spark Session for Minio
+
+Using Minio is mostly the same as using Amazon S3 except that the S3 endpoint and credentials are different.
+
+For this example, start a local Minio server using Docker:
+
+```shell
+docker run -p 9000:9000 -p 9001:9001 --name minio \
+ -e "MINIO_ROOT_USER=datauser" -e "MINIO_ROOT_PASSWORD=minioSecret" \
+ quay.io/minio/minio:latest server /data --console-address ":9001"
+```
+
+Configure AWS SDK crendetials the same way you would configure them for Amazon S3 (refer to the section above)
+but use relevant Minio credentials. In this example the credentials for the Minio server running in Docker are:
+`aws_access_key_id = datauser`, `aws_secret_access_key = minioSecret`. Assuming the credentials are stored in an
+AWS profile named `demo`, export the profile name in the `AWS_PROFILE` environment variable. For example:
+
+```shell
+export AWS_PROFILE=demo
+```
+
+Create a Minio bucket of your own. This guide uses the bucket name `spark1`.
+
+Start a Spark session:
+
+```shell
+spark-sql \
+ --packages \
+org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.4.3,\
+software.amazon.awssdk:bundle:2.20.131,\
+software.amazon.awssdk:url-connection-client:2.20.131 \
+ --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions  \
+ --conf spark.sql.catalog.nessie=org.apache.iceberg.spark.SparkCatalog \
+ --conf spark.sql.catalog.nessie.warehouse=s3://minio/spark1 \
+ --conf spark.sql.catalog.nessie.s3.endpoint=http://localhost:9000
+ --conf spark.sql.catalog.nessie.catalog-impl=org.apache.iceberg.nessie.NessieCatalog \
+ --conf spark.sql.catalog.nessie.io-impl=org.apache.iceberg.aws.s3.S3FileIO \
+ --conf spark.sql.catalog.nessie.uri=http://localhost:19120/api/v1 \
+ --conf spark.sql.catalog.nessie.ref=main \
+ --conf spark.sql.catalog.nessie.cache-enabled=false
+```
+
+Note the `s3.endpoint` catalog property. it should point to the appropriate Minio endpoint. In this example it points 
+to the local Minio server running in Docker.
+
+# Running DDL and DML in Spark SQL Shell
+
+Once the Spark session initializes, issue a `use` statement to make `nessie` the current catalog:
 ```
 spark-sql> use nessie
 ```
