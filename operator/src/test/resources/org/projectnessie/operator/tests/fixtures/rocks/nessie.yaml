@@ -1,0 +1,109 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  size: 1
+  logLevel: DEBUG
+  service:
+    type: ClusterIP
+    sessionAffinity: ClientIP
+    port: 19120
+    labels: {}
+    annotations: {}
+  versionStore:
+    type: RocksDb
+    rocksDb:
+      storageClassName: standard
+      storageSize: 1Gi
+      selectorLabels:
+        foo: bar
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    rules:
+      - host: nessie.example.com
+        paths:
+          - /
+    tls:
+      - secret: nessie-test-tls
+        hosts:
+          - nessie.example.com
+  authentication:
+    enabled: true
+    oidcAuthServerUrl: http://keycloak:8080/auth/realms/nessie
+    oidcClientId: quarkus-app
+  authorization:
+    enabled: true
+    rules:
+      allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+  telemetry:
+    enabled: true
+    endpoint: https://otlp-collector:4317
+    sample: "0.5d"
+    attributes:
+      foo: "bar"
+  monitoring:
+    enabled: true
+    labels:
+      foo: bar
+    interval: 1s
+  autoscaling:
+    enabled: false
+  extraEnv:
+    - name: QUARKUS_PROFILE
+      value: "prod"
+  advancedConfig:
+    nessie.server.default-branch: my-branch
+    nessie.version.store.persist.repository-id: my-repository
+    nessie.version.store.persist.cache-capacity-mb: 1024
+    nessie.version.store.persist.cache-capacity-fraction-of-heap: 0.7
+    nessie.version.store.persist.cache-capacity-fraction-adjust-mb: 256
+    nessie.version.store.persist.cache-capacity-fraction-min-size-mb: 64
+    quarkus:
+      log:
+        console.format: "%d{HH:mm:ss} %s%e%n"
+        category."org.projectnessie".level: "TRACE"
+  deployment:
+    image:
+      repository: projectnessie/nessie
+      tag: 1.2.3
+      pullPolicy: Never
+    labels:
+      foo: bar
+    annotations:
+      foo: bar
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    serviceAccount:
+      create: true
+      name: nessie-test-custom-service-account
+      annotations:
+        foo: bar
+    podSecurityContext:
+      fsGroup: 1000
+    containerSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+    nodeSelector:
+      foo: bar
+    tolerations:
+      - key: "key"
+        operator: "Equal"
+        value: "value"
+        effect: "NoSchedule"
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "key"
+                  operator: "In"
+                  values:
+                    - "value"
