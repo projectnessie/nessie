@@ -1,0 +1,6 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-simple
+  namespace: nessie-ns
+spec: {}

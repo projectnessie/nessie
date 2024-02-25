@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.server.authentication.enabled=true
+    nessie.server.authorization.enabled=true
+    nessie.server.authorization.rules.allowViewingBranch=op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+    nessie.server.default-branch=my-branch
+    nessie.version.store.persist.cache-capacity-mb=512
+    nessie.version.store.persist.jdbc.datasource=postgresql
+    nessie.version.store.persist.repository-id=my-repository
+    nessie.version.store.type=JDBC
+    quarkus.datasource.postgresql.jdbc.url=jdbc:postgresql://nessie-postgresql.default.svc.cluster.local:5432/nessie
+    quarkus.datasource.postgresql.username=postgres
+    quarkus.log.category."org.projectnessie".level=TRACE
+    quarkus.log.console.format=%d{HH:mm:ss} %s%e%n
+    quarkus.log.console.level=DEBUG
+    quarkus.log.file.level=DEBUG
+    quarkus.log.level=DEBUG
+    quarkus.oidc.auth-server-url=http://keycloak:8080/auth/realms/nessie
+    quarkus.oidc.client-id=quarkus-app
+    quarkus.otel.exporter.otlp.traces.endpoint=https://otlp-collector:4317
+    quarkus.otel.resource.attributes=foo=bar,service.name=nessie-test
+    quarkus.otel.traces.sampler=parentbased_traceidratio
+    quarkus.otel.traces.sampler.arg=0.5d
