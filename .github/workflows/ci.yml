@@ -89,6 +89,7 @@ jobs:
             -x :nessie-quarkus:compileAll
             -x :nessie-quarkus-cli:compileAll
             -x :nessie-events-quarkus:compileAll
+            -x :nessie-operator:compileAll
             --scan
 
       - name: Gradle / Compile Quarkus
@@ -98,6 +99,7 @@ jobs:
             :nessie-quarkus:compileAll
             :nessie-quarkus-cli:compileAll
             :nessie-events-quarkus:compileAll
+            :nessie-operator:compileAll
             --scan
 
       - name: Gradle / Checkstyle
@@ -161,6 +163,7 @@ jobs:
             -x :nessie-quarkus:test
             -x :nessie-quarkus-cli:test
             -x :nessie-events-quarkus:test
+            -x :nessie-operator:test
             --scan
 
       - name: Capture Test Reports
@@ -208,6 +211,7 @@ jobs:
           arguments: |
             :nessie-quarkus:test
             :nessie-events-quarkus:test
+            :nessie-operator:test
             --scan
 
       - name: Dump quarkus.log
@@ -277,6 +281,7 @@ jobs:
             -x :nessie-quarkus:intTest \
             -x :nessie-quarkus-cli:intTest \
             -x :nessie-events-quarkus:intTest \
+            -x :nessie-operator:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
             $(cat ../spark-prjs.txt) \
@@ -446,6 +451,62 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-quarkus'
+          java-version: ${{ matrix.java-version }}
+
+  # TODO move to a nightly job on main only
+  int-test-operator:
+    name: CI Operator E2E Tests
+    runs-on: ubuntu-22.04
+    strategy:
+      max-parallel: 1
+      matrix:
+        java-version: ['17']
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
+        uses: ./.github/actions/dev-tool-java
+        with:
+          java-version: ${{ matrix.java-version }}
+
+      - name: Prepare Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          java-version: ${{ matrix.java-version }}
+
+      - name: Gradle / intTest Operator
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          arguments: |
+            :nessie-operator:intTest
+            --scan
+
+      - name: Dump quarkus.log
+        if: ${{ failure() }}
+        run: |
+          find . -path "**/build/quarkus.log" | while read ql ; do
+            echo "::group::Quarkus build log $ql"
+            cat $ql
+            echo "::endgroup::"
+          done
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-operator-reports
+          path: |
+            **/build/quarkus.log
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
+
+      - name: Save partial Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          job-name: 'int-test-operator'
           java-version: ${{ matrix.java-version }}
 
   determine-jobs:
@@ -925,6 +986,7 @@ jobs:
       - int-test-stores
       - int-test-integrations
       - int-test-quarkus
+      - int-test-operator
     strategy:
       max-parallel: 2
       matrix:

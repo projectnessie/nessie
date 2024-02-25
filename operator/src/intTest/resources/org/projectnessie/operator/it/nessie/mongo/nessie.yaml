@@ -1,0 +1,39 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: MongoDb
+    cache:
+      enabled: false
+    mongoDb:
+      connectionString: mongodb://mongodb.mongodb.svc.cluster.local:27017/nessie?ssl=false
+      databaseName: nessie
+      credentials:
+        secretRef:
+          name: nessie-db-credentials
+        usernameKey: username
+        passwordKey: password
+  ingress:
+    enabled: true
+    annotations:
+      foo: bar
+    rules:
+      - host: nessie.example.com
+        paths:
+          - /
+  serviceMonitor:
+    enabled: false
+  deployment:
+    image:
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 400m
+        memory: 128Mi
+      limits:
+        cpu: 400m
+        memory: 256Mi
+    serviceAccount:
+      name: nessie-test-custom-service-account

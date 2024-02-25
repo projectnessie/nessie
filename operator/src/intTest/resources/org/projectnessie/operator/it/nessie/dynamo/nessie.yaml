@@ -1,0 +1,33 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: DynamoDb
+    cache:
+      fixedSize: 32Mi
+    dynamoDb:
+      credentials:
+        secretRef:
+          name: nessie-dynamo-credentials
+        awsAccessKeyId: accessKey
+        awsSecretAccessKey: secretKey
+      region: us-west-2
+  service:
+    type: LoadBalancer
+    nodePort: 30120
+  serviceMonitor:
+    enabled: false
+  deployment:
+    image:
+      pullPolicy: IfNotPresent
+    serviceAccount:
+      create: true
+    resources:
+      requests:
+        cpu: 400m
+        memory: 128Mi
+      limits:
+        cpu: 400m
+        memory: 256Mi

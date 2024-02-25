@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  NESSIE_SERVER_AUTHENTICATION_ENABLED: "true"
+  NESSIE_SERVER_AUTHORIZATION_ENABLED: "true"
+  NESSIE_SERVER_AUTHORIZATION_RULES_ALLOWVIEWINGBRANCH: "op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
+  NESSIE_SERVER_DEFAULT_BRANCH: "my-branch"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_MB: "512"
+  NESSIE_VERSION_STORE_PERSIST_REPOSITORY_ID: "my-repository"
+  NESSIE_VERSION_STORE_TYPE: "JDBC"
+  QUARKUS_DATASOURCE_JDBC_URL: "jdbc:postgresql://nessie-postgresql.default.svc.cluster.local:5432/nessie"
+  QUARKUS_LOG_CATEGORY__ORG_PROJECTNESSIE__LEVEL: "TRACE"
+  QUARKUS_LOG_CONSOLE_FORMAT: "%d{HH:mm:ss} %s%e%n"
+  QUARKUS_LOG_CONSOLE_LEVEL: "DEBUG"
+  QUARKUS_LOG_FILE_LEVEL: "DEBUG"
+  QUARKUS_LOG_LEVEL: "DEBUG"
+  QUARKUS_LOG_MIN_LEVEL: "DEBUG"
+  QUARKUS_OIDC_AUTH_SERVER_URL: "http://keycloak:8080/auth/realms/nessie"
+  QUARKUS_OIDC_CLIENT_ID: "quarkus-app"
+  QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "https://otlp-collector:4317"
+  QUARKUS_OTEL_RESOURCE_ATTRIBUTES: "foo=bar,service.name=nessie-test"
+  QUARKUS_OTEL_TRACES_SAMPLER: "parentbased_traceidratio"
+  QUARKUS_OTEL_TRACES_SAMPLER_ARG: "0.5d"
+  QUARKUS_PROFILE: "prod"

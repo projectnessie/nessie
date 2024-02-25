@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+    foo: bar
+spec:
+  # replicas not set because of HPA
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+        foo: bar
+      annotations:
+        foo: bar
+    spec:
+      securityContext:
+        fsGroup: 1000
+      nodeSelector:
+        foo: bar
+      tolerations:
+        - key: "key"
+          operator: "Equal"
+          value: "value"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: "key"
+                    operator: "In"
+                    values:
+                      - "value"
+      containers:
+        - name: nessie
+          image: projectnessie/nessie:1.2.3
+          imagePullPolicy: Never
+          ports:
+            - name: nessie
+              containerPort: 19120
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          envFrom:
+            - configMapRef:
+                name: nessie-test
+                optional: false
+          volumeMounts:
+            - name: bigtable-creds
+              mountPath: /bigtable-nessie
+      volumes:
+        - name: bigtable-creds
+          secret:
+            secretName: nessie-db-credentials
+            items:
+              - key: key.json
+                path: sa_credentials.json
+      serviceAccountName: default
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2024-01-22T14:16:21Z'
+      lastTransitionTime: '2024-01-22T14:16:21Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2024-01-22T14:16:21Z'
+      lastTransitionTime: '2024-01-22T14:16:18Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "nessie-test-abcdefg" has successfully progressed.

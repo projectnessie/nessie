@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+    spec:
+      containers:
+        - name: nessie
+          ports:
+            - name: nessie
+              containerPort: 19120
+              protocol: TCP
+            - name: debug
+              containerPort: 5009
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 400m
+              memory: 128Mi
+            limits:
+              cpu: 400m
+              memory: 256Mi
+          envFrom:
+            - configMapRef:
+                name: nessie-test
+                optional: false
+          volumeMounts:
+            - name: bigtable-creds
+              mountPath: /bigtable-nessie
+      volumes:
+        - name: bigtable-creds
+          secret:
+            secretName: nessie-db-credentials
+            items:
+            - key: sa_json
+              path: sa_credentials.json
+      serviceAccountName: default

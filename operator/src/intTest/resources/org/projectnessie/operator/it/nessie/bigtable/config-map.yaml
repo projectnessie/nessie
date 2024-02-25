@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  GOOGLE_APPLICATION_CREDENTIALS: "/bigtable-nessie/sa_credentials.json"
+  JAVA_DEBUG: "true"
+  JAVA_DEBUG_PORT: "5009"
+  JAVA_OPTS_APPEND: "-XX:+PrintFlagsFinal"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_MB: "0"
+  NESSIE_VERSION_STORE_TYPE: "BIGTABLE"
+  NESSIE_VERSION_STORE_PERSIST_BIGTABLE_INSTANCE_ID: "test-instance"
+  NESSIE_VERSION_STORE_PERSIST_BIGTABLE_APP_PROFILE_ID: "nessie"
+  NESSIE_VERSION_STORE_PERSIST_BIGTABLE_EMULATOR_PORT: "8086"
+  QUARKUS_GOOGLE_CLOUD_PROJECT_ID: "test-project"
+  QUARKUS_OIDC_TENANT_ENABLED: "false"
+  QUARKUS_OTEL_SDK_DISABLED: "true"

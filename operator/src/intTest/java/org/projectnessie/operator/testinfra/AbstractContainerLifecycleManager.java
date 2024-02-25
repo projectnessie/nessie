@@ -1,0 +1,73 @@
+/*
+ * Copyright (C) 2024 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.operator.testinfra;
+
+import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import jakarta.annotation.Nullable;
+import java.util.Map;
+import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.Network.NetworkImpl;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+
+public abstract class AbstractContainerLifecycleManager<C extends GenericContainer<?>>
+    implements QuarkusTestResourceLifecycleManager {
+
+  protected C container;
+  protected String inDockerIpAddress;
+
+  protected AbstractContainerLifecycleManager() {}
+
+  @Override
+  public Map<String, String> start() {
+    Logger logger = LoggerFactory.getLogger(getClass());
+    container = createContainer();
+    container
+        .withNetwork(Network.SHARED)
+        .withLogConsumer(new Slf4jLogConsumer(logger))
+        .withStartupAttempts(3);
+    container.start();
+    inDockerIpAddress =
+        Objects.requireNonNull(
+            getInDockerIpAddress(), "could not determine container's in-docker IP address");
+    return Map.of();
+  }
+
+  protected abstract C createContainer();
+
+  /**
+   * The "in-docker" IP address of the container. This IP address is addressable from a deployment
+   * running in the K3s container, contrary to the address returned by `container.getHost()` or any
+   * of the network aliases defined for the container.
+   */
+  @Nullable
+  protected String getInDockerIpAddress() {
+    return container
+        .getCurrentContainerInfo()
+        .getNetworkSettings()
+        .getNetworks()
+        .get(((NetworkImpl) Network.SHARED).getName())
+        .getIpAddress();
+  }
+
+  @Override
+  public void stop() {
+    container.stop();
+  }
+}

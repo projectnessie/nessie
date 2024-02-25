@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+spec:
+  ports:
+    - name: nessie-server
+      protocol: TCP
+      port: 19120
+      targetPort: 19120
+  selector:
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/instance: nessie-test
+  type: ClusterIP
+  sessionAffinity: ClientIP

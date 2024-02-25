@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  NESSIE_VERSION_STORE_TYPE: "ROCKSDB"
+  NESSIE_VERSION_STORE_PERSIST_ROCKS_DATABASE_PATH: "/rocks-nessie"
+  NESSIE_VERSION_STORE_PERSIST_REPOSITORY_ID: "my-repository"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_MB: "0"
+  NESSIE_SERVER_AUTHENTICATION_ENABLED: "true"
+  NESSIE_SERVER_AUTHENTICATION_ANONYMOUS_PATHS: "/q/health/live,/q/health/live/,/q/health/ready,/q/health/ready/,/q/metrics,/q/metrics/"
+  NESSIE_SERVER_AUTHORIZATION_ENABLED: "true"
+  NESSIE_SERVER_AUTHORIZATION_RULES_ALLOW_BRANCH_LISTING: "op=='VIEW_REFERENCE' && role.startsWith('service-account-nessie') && ref.startsWith('main')"
+  NESSIE_SERVER_AUTHORIZATION_RULES_ALLOW_COMMITS: "op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('service-account-nessie') && ref.startsWith('main')"
+  NESSIE_SERVER_AUTHORIZATION_RULES_ALLOW_CREATE_ENTITIES: "op=='CREATE_ENTITY' && role.startsWith('service-account-nessie') && ref.startsWith('main')"
+  QUARKUS_OIDC_AUTH_SERVER_URL: "https://example.com"
+  QUARKUS_OIDC_CLIENT_ID: "nessie"
+  QUARKUS_OIDC_TOKEN_ISSUER: "any"
+  QUARKUS_OTEL_SDK_DISABLED: "true"
