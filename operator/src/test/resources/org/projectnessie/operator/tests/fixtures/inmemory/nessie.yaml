@@ -1,0 +1,20 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  size: 2
+  service:
+    sessionAffinity: ClientIP
+  autoscaling:
+    enabled: true
+    targetMemoryUtilizationPercentage: 80
+  deployment:
+    image:
+      repository: projectnessie/nessie
+      tag: latest
+  remoteDebug:
+    enabled: true
+    port: 5009
+  jvmOptions:
+    - -XX:MaxRAMPercentage=75.0

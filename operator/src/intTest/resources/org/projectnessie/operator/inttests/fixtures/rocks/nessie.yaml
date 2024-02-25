@@ -1,0 +1,69 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  size: 1
+  versionStore:
+    type: RocksDb
+    rocksDb:
+      storageSize: 64m
+  authentication:
+    enabled: true
+    oidcAuthServerUrl: https://example.com
+    oidcClientId: nessie
+  authorization:
+    enabled: true
+    rules:
+      # role name comes form JWT token cf. "preferred_username" field
+      allow_branch_listing: op=='VIEW_REFERENCE' && role.startsWith('service-account-nessie') && ref.startsWith('main')
+      allow_commits: op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('service-account-nessie') && ref.startsWith('main')
+      allow_create_entities: op=='CREATE_ENTITY' && role.startsWith('service-account-nessie') && ref.startsWith('main')
+  extraEnv:
+    - name: QUARKUS_OIDC_TOKEN_ISSUER
+      value: any
+  advancedConfig:
+    nessie.version.store.persist:
+      repository-id: my-repository
+      cache-capacity-mb: "0"
+    nessie.server.authentication.anonymous-paths: /q/health/live,/q/health/live/,/q/health/ready,/q/health/ready/,/q/metrics,/q/metrics/
+  service:
+    type: NodePort
+    nodePort: 30120
+  monitoring:
+    enabled: false
+  deployment:
+    image:
+      repository: projectnessie/nessie-test-server
+      tag: @projectVersion@
+      pullPolicy: Never
+    labels:
+      foo: bar
+    annotations:
+      foo: bar
+    resources:
+      requests:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+      limits:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+    serviceAccount:
+      create: true
+      name: nessie-test-sa
+      annotations:
+        foo: bar
+    livenessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20

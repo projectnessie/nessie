@@ -1,0 +1,45 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-inmemory
+spec:
+  size: 1
+  logLevel: INFO
+  deployment:
+    image:
+      repository: ghcr.io/projectnessie/nessie
+    serviceAccount:
+      create: true
+      name: nessie-inmemory-sa
+  versionStore:
+    type: InMemory
+  authentication:
+    enabled: true
+    oidcAuthServerUrl: http://localhost:8080/auth/realms/nessie
+    oidcClientId: quarkus-app
+  authorization:
+    enabled: true
+    rules:
+      allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+  telemetry:
+    enabled: true
+    endpoint: http://localhost:14268/api/traces
+    sample: "1.0"
+    attributes:
+        foo: "bar"
+  extraEnv:
+    - name: QUARKUS_PROFILE
+      value: "prod"
+  remoteDebug:
+    enabled: true
+    port: 5009
+  jvmOptions:
+    - -XX:+UnlockDiagnosticVMOptions
+    - -XX:+PrintFlagsFinal
+  advancedConfig:
+    nessie.server.default-branch: my-branch
+    nessie.version.store.persist.repository-id: my-repository
+    quarkus:
+      log:
+        console.format: "%d{HH:mm:ss} %s%e%n"
+        category."org.projectnessie".level: "DEBUG"

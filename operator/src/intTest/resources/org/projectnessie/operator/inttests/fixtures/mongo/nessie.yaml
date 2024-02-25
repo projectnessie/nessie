@@ -1,0 +1,49 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: MongoDb
+    cache:
+      enabled: false
+    mongoDb:
+      connectionString: mongodb://mongodb.mongodb.svc.cluster.local:27017/nessie?ssl=false
+      database: nessie
+      username: nessie
+      password:
+        secret: nessie-db-credentials
+        key: password
+  service:
+    type: NodePort
+    nodePort: 30120
+  monitoring:
+    enabled: false
+  deployment:
+    image:
+      repository: projectnessie/nessie-test-server
+      tag: @projectVersion@
+      pullPolicy: Never
+    resources:
+      requests:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+      limits:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+    serviceAccount:
+      name: nessie-test-custom-service-account
+    livenessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20

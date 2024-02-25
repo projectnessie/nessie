@@ -1,0 +1,23 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-rocks
+spec:
+  size: 1
+  logLevel: INFO
+  deployment:
+    image:
+      repository: ghcr.io/projectnessie/nessie
+  versionStore:
+    type: RocksDb
+    rocksDb:
+      storageClassName: standard
+      storageSize: 64Mi
+  # Access nessie:
+  # curl -H "Host: nessie-rocks.example.com" -k https://$(minikube ip)/api/v2/config
+  ingress:
+    enabled: true
+    rules:
+      - host: nessie-rocks.example.com
+        paths:
+          - /
