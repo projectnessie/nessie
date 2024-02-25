@@ -262,9 +262,10 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     super.start();
     LOGGER.info("Keycloak started, creating realm {}...", config.realmName());
 
-    Keycloak adminClient = getKeycloakAdminClient();
     RealmRepresentation realm = createRealm();
-    adminClient.realms().create(realm);
+    try (Keycloak adminClient = getKeycloakAdminClient()) {
+      adminClient.realms().create(realm);
+    }
 
     LOGGER.info("Finished setting up Keycloak, external realm auth url: {}", getExternalRealmUri());
   }
@@ -301,8 +302,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
   @Override
   public void stop() {
     try {
-      Keycloak adminClient = getKeycloakAdminClient();
-      if (adminClient != null) {
+      try (Keycloak adminClient = getKeycloakAdminClient()) {
         RealmResource realm = adminClient.realm(config.realmName());
         realm.remove();
       }
