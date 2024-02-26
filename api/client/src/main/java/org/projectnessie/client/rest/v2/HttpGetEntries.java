@@ -16,6 +16,7 @@
 package org.projectnessie.client.rest.v2;
 
 import org.projectnessie.api.v2.params.EntriesParams;
+import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.builder.BaseGetEntriesBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
@@ -31,6 +32,11 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
   HttpGetEntries(HttpClient client) {
     super(EntriesParams::forNextPage);
     this.client = client;
+  }
+
+  @Override
+  public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
+    throw new UnsupportedOperationException("namespaceDepth is not supported for Nessie API v2");
   }
 
   @Override

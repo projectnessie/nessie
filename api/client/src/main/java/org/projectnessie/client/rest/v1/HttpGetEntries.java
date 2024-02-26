@@ -26,10 +26,17 @@ import org.projectnessie.model.EntriesResponse;
 final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
 
   private final NessieApiClient client;
+  private Integer namespaceDepth;
 
   HttpGetEntries(NessieApiClient client) {
     super(EntriesParams::forNextPage);
     this.client = client;
+  }
+
+  @Override
+  public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
+    this.namespaceDepth = namespaceDepth;
+    return this;
   }
 
   @Override
