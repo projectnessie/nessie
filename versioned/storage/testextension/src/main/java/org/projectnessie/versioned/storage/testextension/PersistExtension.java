@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -226,7 +226,9 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
       ExtensionContext context) {
     StoreConfig.Adjustable config = StoreConfig.Adjustable.empty();
 
-    config = extractCustomConfiguration(persistAnnotation, context).apply(config);
+    config =
+        extractCustomConfiguration(persistAnnotation, context)
+            .apply(context.getTestInstance().orElse(null), config);
 
     Map<String, String> configMap = extractConfig(context, annotatedElement);
 
@@ -237,9 +239,10 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
     return classPersistInstances(context).newPersist(config);
   }
 
-  private static Function<StoreConfig.Adjustable, StoreConfig.Adjustable>
+  private static BiFunction<Object, StoreConfig.Adjustable, StoreConfig.Adjustable>
       extractCustomConfiguration(NessiePersist persistAnnotation, ExtensionContext context) {
-    Function<StoreConfig.Adjustable, StoreConfig.Adjustable> applyCustomConfig = c -> c;
+    BiFunction<Object, StoreConfig.Adjustable, StoreConfig.Adjustable> applyCustomConfig =
+        (testInstance, c) -> c;
     if (!persistAnnotation.configMethod().isEmpty()) {
       Method configMethod =
           findMethod(
@@ -257,8 +260,7 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
 
       makeAccessible(configMethod);
 
-      if (!Modifier.isStatic(configMethod.getModifiers())
-          || Modifier.isPrivate(configMethod.getModifiers())
+      if (Modifier.isPrivate(configMethod.getModifiers())
           || !StoreConfig.Adjustable.class.isAssignableFrom(configMethod.getReturnType())) {
         throw new IllegalArgumentException(
             String.format(
@@ -271,9 +273,9 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
                 context.getRequiredTestClass().getName()));
       }
       applyCustomConfig =
-          c -> {
+          (testInstance, c) -> {
             try {
-              return (StoreConfig.Adjustable) configMethod.invoke(null, c);
+              return (StoreConfig.Adjustable) configMethod.invoke(testInstance, c);
             } catch (InvocationTargetException | IllegalAccessException e) {
               throw new RuntimeException(e);
             }
