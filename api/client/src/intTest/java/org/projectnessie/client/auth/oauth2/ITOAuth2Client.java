@@ -112,16 +112,17 @@ public class ITOAuth2Client {
     tokenEndpoint = issuerUrl.resolve("protocol/openid-connect/token");
     authEndpoint = issuerUrl.resolve("protocol/openid-connect/auth");
     deviceAuthEndpoint = issuerUrl.resolve("protocol/openid-connect/auth/device");
-    Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
-    master = keycloakAdmin.realms().realm("master");
-    updateMasterRealm(10, 15);
-    // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
-    createClient("Client1", false);
-    createClient("Client2", true);
-    // Create a client that will act as a resource server attempting to validate access tokens
-    createClient("ResourceServer", false);
-    // Create a user that will be used to obtain access tokens via password grant
-    createUser();
+    try (Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient()) {
+      master = keycloakAdmin.realms().realm("master");
+      updateMasterRealm(10, 15);
+      // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
+      createClient("Client1", false);
+      createClient("Client2", true);
+      // Create a client that will act as a resource server attempting to validate access tokens
+      createClient("ResourceServer", false);
+      // Create a user that will be used to obtain access tokens via password grant
+      createUser();
+    }
   }
 
   /**
