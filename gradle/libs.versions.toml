@@ -19,7 +19,7 @@ keycloak = "24.0.1"
 maven = "3.9.6"
 mavenResolver = "1.9.18"
 mockito="4.11.0"
-nessieClientVersion = "0.71.0" # Must be in sync with Nessie version in the Iceberg release.
+nessieClientVersion = "0.77.1" # Must be in sync with Nessie version in the Iceberg release.
 opentelemetry = "1.36.0"
 opentelemetryAlpha = "1.31.0-alpha"
 opentracing = "0.33.0"
@@ -67,28 +67,7 @@ hadoop-azure = { module = "org.apache.hadoop:hadoop-azure", version.ref = "hadoo
 hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }
 hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
 hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "8.0.1.Final" }
-iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
-iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceberg" }
-iceberg-azure = { module = "org.apache.iceberg:iceberg-azure", version.ref = "iceberg" }
-iceberg-bundled-guava = { module = "org.apache.iceberg:iceberg-bundled-guava", version.ref = "iceberg" }
-iceberg-common = { module = "org.apache.iceberg:iceberg-common", version.ref = "iceberg" }
-iceberg-core = { module = "org.apache.iceberg:iceberg-core", version.ref = "iceberg" }
-iceberg-gcp = { module = "org.apache.iceberg:iceberg-gcp", version.ref = "iceberg" }
-iceberg-hive-metastore = { module = "org.apache.iceberg:iceberg-hive-metastore", version.ref = "iceberg" }
-iceberg-nessie = { module = "org.apache.iceberg:iceberg-nessie", version.ref = "iceberg" }
-iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg" }
-iceberg-spark-extensions33-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.12", version.ref = "iceberg" }
-iceberg-spark-extensions33-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.13", version.ref = "iceberg" }
-iceberg-spark-extensions34-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.4_2.12", version.ref = "iceberg" }
-iceberg-spark-extensions34-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.4_2.13", version.ref = "iceberg" }
-iceberg-spark-extensions35-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.5_2.12", version.ref = "iceberg" }
-iceberg-spark-extensions35-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.5_2.13", version.ref = "iceberg" }
-iceberg-spark33-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.12", version.ref = "iceberg" }
-iceberg-spark33-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.13", version.ref = "iceberg" }
-iceberg-spark34-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.4_2.12", version.ref = "iceberg" }
-iceberg-spark34-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.4_2.13", version.ref = "iceberg" }
-iceberg-spark35-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.5_2.12", version.ref = "iceberg" }
-iceberg-spark35-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.5_2.13", version.ref = "iceberg" }
+iceberg-bom = { module = "org.apache.iceberg:iceberg-bom", version.ref = "iceberg" }
 immutables-builder = { module = "org.immutables:builder", version.ref = "immutables" }
 immutables-value-annotations = { module = "org.immutables:value-annotations", version.ref = "immutables" }
 immutables-value-processor = { module = "org.immutables:value-processor", version.ref = "immutables" }

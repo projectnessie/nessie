@@ -22,7 +22,8 @@ plugins {
 extra["maven.name"] = "Nessie - GC - Iceberg content functionality"
 
 dependencies {
-  implementation(libs.iceberg.core)
+  implementation(platform(libs.iceberg.bom))
+  implementation("org.apache.iceberg:iceberg-core")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)

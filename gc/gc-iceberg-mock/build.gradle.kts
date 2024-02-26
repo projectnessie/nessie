@@ -19,7 +19,8 @@ plugins { id("nessie-conventions-iceberg") }
 extra["maven.name"] = "Nessie - GC - Mocked Iceberg data for tests"
 
 dependencies {
-  compileOnly(libs.iceberg.core)
+  compileOnly(platform(libs.iceberg.bom))
+  compileOnly("org.apache.iceberg:iceberg-core")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
@@ -40,7 +41,8 @@ dependencies {
 
   testRuntimeOnly(libs.logback.classic)
 
-  testImplementation(libs.iceberg.core)
+  testImplementation(platform(libs.iceberg.bom))
+  testImplementation("org.apache.iceberg:iceberg-core")
 
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)

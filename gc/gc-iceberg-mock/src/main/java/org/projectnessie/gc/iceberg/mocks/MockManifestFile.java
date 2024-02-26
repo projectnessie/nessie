@@ -249,11 +249,11 @@ public abstract class MockManifestFile implements IndexedRecord {
         return minSequenceNumber();
       case "added_snapshot_id":
         return snapshotId();
-      case "added_data_files_count":
+      case "added_files_count":
         return addedFilesCount();
-      case "existing_data_files_count":
+      case "existing_files_count":
         return existingFilesCount();
-      case "deleted_data_files_count":
+      case "deleted_files_count":
         return deletedFilesCount();
       case "added_rows_count":
         return addedRowsCount();

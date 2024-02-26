@@ -14,7 +14,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+* Iceberg bumped to 1.5.0
+
 ### Changes
+
+* SQL extensions for Spark 3.2 have been removed
+* Experimental iceberg-views module has been removed
 
 ### Deprecations
 
