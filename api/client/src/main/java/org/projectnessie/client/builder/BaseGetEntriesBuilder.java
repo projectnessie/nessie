@@ -93,11 +93,6 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   }
 
   @Override
-  public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
-    throw new UnsupportedOperationException("namespaceDepth is not supported for Nessie API v2");
-  }
-
-  @Override
   public GetEntriesBuilder withContent(boolean withContent) {
     this.withContent = withContent;
     return this;
