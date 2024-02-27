@@ -129,6 +129,12 @@ spec:
                   name: {{ .Values.authentication.oidcClientSecret.name }}
                   key: {{ .Values.authentication.oidcClientSecret.key }}
             {{- end -}}
+
+            - name: NESSIE_VERSION_STORE_PERSIST_CACHE_INVALIDATIONS_SERVICE_NAMES
+              value: {{ include "nessie.fullname" . | printf "%s-mgmt" | quote }}
+            - name: NESSIE_VERSION_STORE_PERSIST_CACHE_INVALIDATIONS_VALID_TOKENS
+              value: {{ include "nessie.cacheInvalidation.token" . | quote }}
+
             {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}

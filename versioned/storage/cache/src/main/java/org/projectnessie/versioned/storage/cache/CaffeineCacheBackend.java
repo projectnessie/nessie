@@ -40,7 +40,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 
-final class CaffeineCacheBackend implements CacheBackend {
+class CaffeineCacheBackend implements CacheBackend {
 
   public static final String CACHE_NAME = "nessie-objects";
   private static final byte[] NON_EXISTING_SENTINEL = "NON_EXISTING".getBytes(UTF_8);

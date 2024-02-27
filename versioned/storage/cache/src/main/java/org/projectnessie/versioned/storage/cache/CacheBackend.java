@@ -50,4 +50,8 @@ public interface CacheBackend {
   void putReference(@Nonnull String repositoryId, @Nonnull Reference r);
 
   void putNegative(@Nonnull String repositoryId, @Nonnull String name);
+
+  static CacheBackend noopCacheBackend() {
+    return NoopCacheBackend.INSTANCE;
+  }
 }

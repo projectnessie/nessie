@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,14 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-public final class PersistCaches {
-  private PersistCaches() {}
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 
-  /** Produces a {@link CacheBackend} with the given maximum capacity. */
-  public static CacheBackend newBackend(CacheConfig cacheConfig) {
-    return new CaffeineCacheBackend(cacheConfig);
-  }
+public interface DistributedCacheInvalidation {
+  void removeObj(String repositoryId, ObjId objId);
 
-  /** Wraps distributed invalidations around a cache backend. */
-  public static CacheBackend wrapBackendForDistributedUsage(
-      DistributedCacheInvalidations distributedCacheInvalidations) {
-    return new DistributedInvalidationsCacheBackend(distributedCacheInvalidations);
-  }
+  void putObj(String repositoryId, ObjId objId, int hash);
+
+  void removeReference(String repositoryId, String refName);
+
+  void putReference(String repositoryId, String refName, int hash);
 }

@@ -144,6 +144,7 @@ dependencies {
   testFixturesImplementation(libs.microprofile.openapi)
   testFixturesImplementation(libs.awaitility)
   testFixturesApi(libs.jakarta.validation.api)
+  testFixturesApi(testFixtures(project(":nessie-quarkus-common")))
 
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
