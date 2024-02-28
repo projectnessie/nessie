@@ -15,15 +15,13 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
-import jakarta.annotation.Nullable;
+import java.util.Optional;
 
 public interface JdbcBackendBaseConfig {
 
   /** The JDBC catalog name. If not provided, will be inferred from the datasource. */
-  @Nullable
-  String catalog();
+  Optional<String> catalog();
 
   /** The JDBC schema name. If not provided, will be inferred from the datasource. */
-  @Nullable
-  String schema();
+  Optional<String> schema();
 }

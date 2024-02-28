@@ -72,8 +72,8 @@ public final class JdbcBackend implements Backend {
       @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {
     this.dataSource = config.dataSource();
-    this.catalog = config.catalog();
-    this.schema = config.schema();
+    this.catalog = config.catalog().orElse(null);
+    this.schema = config.schema().orElse(null);
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
     createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
