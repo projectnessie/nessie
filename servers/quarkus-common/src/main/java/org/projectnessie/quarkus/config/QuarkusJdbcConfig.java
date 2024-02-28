@@ -17,9 +17,8 @@ package org.projectnessie.quarkus.config;
 
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithConverter;
-import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import java.util.Optional;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 
 @StaticInitSafe
@@ -27,14 +26,10 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
 
   @WithName("catalog")
-  @WithDefault("")
-  @WithConverter(RepoIdConverter.class)
   @Override
-  String catalog();
+  Optional<String> catalog();
 
   @WithName("schema")
-  @WithDefault("")
-  @WithConverter(RepoIdConverter.class)
   @Override
-  String schema();
+  Optional<String> schema();
 }

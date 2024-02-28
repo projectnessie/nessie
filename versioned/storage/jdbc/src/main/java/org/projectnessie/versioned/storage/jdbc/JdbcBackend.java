@@ -62,16 +62,18 @@ public final class JdbcBackend implements Backend {
   private final DatabaseSpecific databaseSpecific;
   private final DataSource dataSource;
   private final boolean closeDataSource;
-  private final JdbcBackendConfig config;
   private final String createTableRefsSql;
   private final String createTableObjsSql;
+  private String catalog;
+  private String schema;
 
   public JdbcBackend(
       @Nonnull JdbcBackendConfig config,
       @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {
-    this.config = config;
     this.dataSource = config.dataSource();
+    this.catalog = config.catalog().orElse(null);
+    this.schema = config.schema().orElse(null);
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
     createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
@@ -176,6 +178,12 @@ public final class JdbcBackend implements Backend {
   @Override
   public void setupSchema() {
     try (Connection conn = borrowConnection()) {
+      if (catalog == null || catalog.isEmpty()) {
+        catalog = conn.getCatalog();
+      }
+      if (schema == null || schema.isEmpty()) {
+        schema = conn.getSchema();
+      }
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
       createTableIfNotExists(
@@ -211,10 +219,6 @@ public final class JdbcBackend implements Backend {
       Set<String> expectedColumns,
       Map<String, Integer> expectedPrimaryKey)
       throws SQLException {
-
-    // TODO implement catalog + schema stuff...
-    String catalog = config.catalog();
-    String schema = config.schema();
 
     try (Statement st = conn.createStatement()) {
       if (conn.getMetaData().storesLowerCaseIdentifiers()) {
@@ -279,11 +283,11 @@ public final class JdbcBackend implements Backend {
   @Override
   public String configInfo() {
     StringBuilder info = new StringBuilder();
-    String s = config.catalog();
+    String s = catalog;
     if (s != null && !s.isEmpty()) {
       info.append("catalog: ").append(s);
     }
-    s = config.schema();
+    s = schema;
     if (s != null && !s.isEmpty()) {
       if (info.length() > 0) {
         info.append(", ");
