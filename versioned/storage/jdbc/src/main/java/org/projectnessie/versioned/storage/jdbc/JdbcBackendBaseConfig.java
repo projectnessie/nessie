@@ -19,9 +19,11 @@ import jakarta.annotation.Nullable;
 
 public interface JdbcBackendBaseConfig {
 
+  /** The JDBC catalog name. If not provided, will be inferred from the datasource. */
   @Nullable
   String catalog();
 
+  /** The JDBC schema name. If not provided, will be inferred from the datasource. */
   @Nullable
   String schema();
 }
