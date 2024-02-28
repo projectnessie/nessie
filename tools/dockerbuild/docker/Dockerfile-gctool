@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/openjdk-21:1.17-2.1705482269
+FROM registry.access.redhat.com/ubi9/openjdk-21:1.18-1
 
 LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
 LABEL org.opencontainers.image.description="Projectnessie GC Tool"
