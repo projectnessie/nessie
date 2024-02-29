@@ -839,7 +839,7 @@ jobs:
 
       - name: Set up Helm
         if: env.WF_EXEC != 'false'
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v4
         with:
           # https://helm.sh/docs/topics/version_skew/
           version: 'v3.11.3'
