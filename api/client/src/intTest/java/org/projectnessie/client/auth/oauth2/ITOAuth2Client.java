@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -481,12 +482,17 @@ public class ITOAuth2Client {
   private static void createUser() {
     UserRepresentation user = new UserRepresentation();
     user.setUsername("Alice");
+    user.setFirstName("Alice");
+    user.setLastName("Alice");
     CredentialRepresentation credential = new CredentialRepresentation();
     credential.setType(CredentialRepresentation.PASSWORD);
     credential.setValue("s3cr3t");
     credential.setTemporary(false);
     user.setCredentials(ImmutableList.of(credential));
     user.setEnabled(true);
+    user.setEmail("alice@example.com");
+    user.setEmailVerified(true);
+    user.setRequiredActions(Collections.emptyList());
     Response response = master.users().create(user);
     assertThat(response.getStatus()).isEqualTo(201);
   }

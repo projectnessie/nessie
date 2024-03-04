@@ -102,10 +102,14 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     UserRepresentation user = new UserRepresentation();
 
     user.setUsername(username);
+    user.setFirstName(username);
+    user.setLastName(username);
     user.setEnabled(true);
     user.setCredentials(new ArrayList<>());
     user.setRealmRoles(realmRoles);
     user.setEmail(username + "@gmail.com");
+    user.setEmailVerified(true);
+    user.setRequiredActions(Collections.emptyList());
 
     CredentialRepresentation credential = new CredentialRepresentation();
 
