@@ -153,6 +153,28 @@ public class TestHttpClientBuilder {
     }
   }
 
+  @Test
+  void testRequestResponseFilter() throws Exception {
+    try (HttpTestServer server =
+        new HttpTestServer(
+            (req, resp) -> {
+              assertThat(req.getHeader("X-Test")).isEqualTo("test-value");
+              req.getInputStream().close();
+              HttpTestUtil.writeResponseBody(
+                  resp, "{\"maxSupportedApiVersion\":1}", "application/test+json");
+            })) {
+      try (NessieApiV1 client =
+          ((NessieHttpClientBuilder) createClientBuilderFromSystemSettings())
+              .addRequestFilter((ctx) -> ctx.putHeader("X-Test", "test-value"))
+              .addResponseFilter(
+                  (ctx) -> assertThat(ctx.getContentType()).isEqualTo("application/test+json"))
+              .withUri(server.getUri())
+              .build(NessieApiV1.class)) {
+        client.getConfig();
+      }
+    }
+  }
+
   static HttpTestServer.RequestHandler handlerForHeaderTest(
       String headerName, AtomicReference<String> receiver) {
     return (req, resp) -> {

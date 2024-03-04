@@ -199,6 +199,20 @@ public class NessieHttpClientBuilderImpl
     return this;
   }
 
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilder addRequestFilter(RequestFilter filter) {
+    builder.addRequestFilter(filter);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilder addResponseFilter(ResponseFilter filter) {
+    builder.addResponseFilter(filter);
+    return this;
+  }
+
   @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
