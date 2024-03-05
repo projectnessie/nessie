@@ -138,6 +138,16 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
   }
 
   @Override
+  public HttpClientBuilder addRequestFilter(RequestFilter filter) {
+    return (HttpClientBuilder) super.addRequestFilter(filter);
+  }
+
+  @Override
+  public HttpClientBuilder addResponseFilter(ResponseFilter filter) {
+    return (HttpClientBuilder) super.addResponseFilter(filter);
+  }
+
+  @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
     return super.build(apiVersion);
   }
