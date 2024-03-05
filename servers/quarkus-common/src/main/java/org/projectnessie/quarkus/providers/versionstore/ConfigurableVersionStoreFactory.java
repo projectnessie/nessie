@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.providers.versionstore;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
@@ -26,7 +27,6 @@ import java.util.function.Consumer;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.NotObserved;
-import org.projectnessie.quarkus.providers.WithInitializedRepository;
 import org.projectnessie.versioned.EventsVersionStore;
 import org.projectnessie.versioned.Result;
 import org.projectnessie.versioned.VersionStore;
@@ -46,7 +46,7 @@ public class ConfigurableVersionStoreFactory {
       LoggerFactory.getLogger(ConfigurableVersionStoreFactory.class);
 
   private final VersionStoreConfig storeConfig;
-  private final Instance<Persist> persist;
+  private final Persist persist;
   private final Instance<Consumer<Result>> resultConsumer;
 
   /**
@@ -57,7 +57,7 @@ public class ConfigurableVersionStoreFactory {
   @Inject
   public ConfigurableVersionStoreFactory(
       VersionStoreConfig storeConfig,
-      @Any Instance<Persist> persist,
+      @Default Persist persist,
       @Any Instance<Consumer<Result>> resultConsumer) {
     this.storeConfig = storeConfig;
     this.persist = persist;
@@ -72,7 +72,7 @@ public class ConfigurableVersionStoreFactory {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
-      VersionStore versionStore = persistVersionStore();
+      VersionStore versionStore = new VersionStoreImpl(persist);
 
       if (storeConfig.isEventsEnabled() && resultConsumer.isResolvable()) {
         versionStore = new EventsVersionStore(versionStore, resultConsumer.get());
@@ -80,18 +80,6 @@ public class ConfigurableVersionStoreFactory {
       return versionStore;
     } catch (RuntimeException | IOError e) {
       LOGGER.error("Failed to configure/start {} version store", versionStoreType, e);
-      throw e;
-    }
-  }
-
-  private VersionStore persistVersionStore() {
-    try {
-      Persist p = persist.select(WithInitializedRepository.Literal.INSTANCE).get();
-
-      return new VersionStoreImpl(p);
-    } catch (RuntimeException | IOError e) {
-      LOGGER.error(
-          "Failed to configure/start {} version store", storeConfig.getVersionStoreType(), e);
       throw e;
     }
   }

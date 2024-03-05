@@ -17,11 +17,13 @@ package org.projectnessie.quarkus.providers.storage;
 
 import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.providers.NotObserved;
+import org.projectnessie.quarkus.providers.UninitializedRepository;
 import org.projectnessie.versioned.storage.common.persist.ObservingPersist;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /** CDI bean for {@link ObservingPersist}. */
 @Singleton
+@UninitializedRepository
 public class QuarkusObservingPersist extends ObservingPersist {
   public QuarkusObservingPersist(@NotObserved Persist delegate) {
     super(delegate);
