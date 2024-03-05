@@ -514,7 +514,6 @@ final class CommitLogicImpl implements CommitLogic {
     return stripes;
   }
 
-  @SuppressWarnings("UnstableApiUsage")
   @Nonnull
   @Override
   public CommitObj buildCommitObj(
@@ -1037,11 +1036,17 @@ final class CommitLogicImpl implements CommitLogic {
         // key removed
         createCommit.addRemoves(
             commitRemove(d.key(), d.fromPayload(), requireNonNull(d.fromId()), d.fromContentId()));
-      } else {
+      } else if (Objects.equals(d.fromContentId(), d.toContentId())) {
         // key updated
         createCommit.addAdds(
             commitAdd(
-                d.key(), d.toPayload(), requireNonNull(d.toId()), d.fromId(), d.fromContentId()));
+                d.key(), d.toPayload(), requireNonNull(d.toId()), d.fromId(), d.toContentId()));
+      } else {
+        // key re-added
+        createCommit.addRemoves(
+            commitRemove(d.key(), d.fromPayload(), requireNonNull(d.fromId()), d.fromContentId()));
+        createCommit.addAdds(
+            commitAdd(d.key(), d.toPayload(), requireNonNull(d.toId()), null, d.toContentId()));
       }
     }
     return createCommit;

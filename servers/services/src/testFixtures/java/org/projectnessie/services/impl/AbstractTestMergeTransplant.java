@@ -700,5 +700,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     soft.assertThat(tableOnWork.getContent().getId())
         .isEqualTo(tableOnRootAfterMerge.getContent().getId());
+
+    // add a commit modifying the table to ensure the content key is OK
+    commit(root, fromMessage("add-to-merged-table"), Put.of(key, tableOnWork.getContent()));
   }
 }
