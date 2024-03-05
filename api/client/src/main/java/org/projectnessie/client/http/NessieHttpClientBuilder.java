@@ -56,6 +56,20 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
   @CanIgnoreReturnValue
   NessieHttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory);
 
+  /**
+   * Add a request filter to the client. Enables low-level access to the request/response
+   * processing.
+   */
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder addRequestFilter(RequestFilter filter);
+
+  /**
+   * Add a response filter to the client. Enables low-level access to the request/response
+   * processing.
+   */
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder addResponseFilter(ResponseFilter filter);
+
   /** Convenience base class for implementations of {@link NessieHttpClientBuilder}. */
   abstract class AbstractNessieHttpClientBuilder
       extends NessieClientBuilder.AbstractNessieClientBuilder implements NessieHttpClientBuilder {
@@ -109,6 +123,16 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
 
     @Override
     public NessieHttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory) {
+      return this;
+    }
+
+    @Override
+    public NessieHttpClientBuilder addRequestFilter(RequestFilter filter) {
+      return this;
+    }
+
+    @Override
+    public NessieHttpClientBuilder addResponseFilter(ResponseFilter filter) {
       return this;
     }
   }
