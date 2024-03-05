@@ -17,17 +17,17 @@ package org.projectnessie.quarkus.cli;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
 
-import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import java.util.concurrent.Callable;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
+import org.projectnessie.quarkus.providers.UninitializedRepository;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 public abstract class BaseCommand implements Callable<Integer> {
-  @Inject @Default Persist persist;
+  @Inject @UninitializedRepository Persist persist;
 
   @Inject VersionStoreConfig versionStoreConfig;
   @Inject ServerConfig serverConfig;

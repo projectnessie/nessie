@@ -32,11 +32,11 @@ import org.projectnessie.quarkus.providers.versionstore.StoreType;
 @Retention(RUNTIME)
 @Documented
 @Qualifier
-public @interface WithInitializedRepository {
+public @interface UninitializedRepository {
 
   /** Supports inline instantiation of the {@link StoreType} qualifier. */
-  final class Literal extends AnnotationLiteral<WithInitializedRepository>
-      implements WithInitializedRepository {
+  final class Literal extends AnnotationLiteral<UninitializedRepository>
+      implements UninitializedRepository {
 
     public static final Literal INSTANCE = new Literal();
     private static final long serialVersionUID = 1L;
