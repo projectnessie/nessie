@@ -514,7 +514,6 @@ final class CommitLogicImpl implements CommitLogic {
     return stripes;
   }
 
-  @SuppressWarnings("UnstableApiUsage")
   @Nonnull
   @Override
   public CommitObj buildCommitObj(
@@ -624,7 +623,8 @@ final class CommitLogicImpl implements CommitLogic {
       ObjId expectedValue =
           expectedValueReplacement.maybeReplaceValue(false, key, unchanged.expectedValue());
       CommitConflict conflict =
-          checkForConflict(key, contentId, payload, null, existingContent, expectedValue);
+          checkForConflict(
+              key, contentId, payload, null, existingContent, reAdded ? null : expectedValue);
 
       if (conflict != null) {
         handleConflict(conflictHandler, conflicts, conflict);
@@ -662,7 +662,9 @@ final class CommitLogicImpl implements CommitLogic {
       ObjId expectedValue =
           expectedValueReplacement.maybeReplaceValue(true, key, add.expectedValue());
       if (conflict == null) {
-        conflict = checkForConflict(key, contentId, payload, op, existingContent, expectedValue);
+        conflict =
+            checkForConflict(
+                key, contentId, payload, op, existingContent, reAdded ? null : expectedValue);
       }
 
       if (conflict != null) {
@@ -1037,11 +1039,22 @@ final class CommitLogicImpl implements CommitLogic {
         // key removed
         createCommit.addRemoves(
             commitRemove(d.key(), d.fromPayload(), requireNonNull(d.fromId()), d.fromContentId()));
-      } else {
+      } else if (Objects.equals(d.fromContentId(), d.toContentId())) {
         // key updated
         createCommit.addAdds(
             commitAdd(
-                d.key(), d.toPayload(), requireNonNull(d.toId()), d.fromId(), d.fromContentId()));
+                d.key(), d.toPayload(), requireNonNull(d.toId()), d.fromId(), d.toContentId()));
+      } else {
+        // key re-added
+        createCommit.addRemoves(
+            commitRemove(d.key(), d.fromPayload(), requireNonNull(d.fromId()), d.fromContentId()));
+        createCommit.addAdds(
+            commitAdd(
+                d.key(),
+                d.toPayload(),
+                requireNonNull(d.toId()),
+                requireNonNull(d.fromId()),
+                d.toContentId()));
       }
     }
     return createCommit;

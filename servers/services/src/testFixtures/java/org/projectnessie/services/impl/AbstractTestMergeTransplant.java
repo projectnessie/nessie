@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -42,6 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -635,8 +637,81 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
   }
 
   @Test
-  public void mergeRecreateTable() throws BaseNessieClientServerException {
+  public void mergeRecreateTableNoConflict() throws BaseNessieClientServerException {
 
+    MergeRecreateTableSetup setup = setupMergeRecreateTable();
+
+    MergeResponse mergeResponse =
+        treeApi()
+            .mergeRefIntoBranch(
+                setup.root.getName(),
+                setup.root.getHash(),
+                setup.work.getName(),
+                setup.work.getHash(),
+                fromMessage("merge-recreate"),
+                emptyList(),
+                NORMAL,
+                Boolean.FALSE,
+                Boolean.FALSE,
+                Boolean.FALSE);
+
+    Branch rootAfterMerge =
+        Branch.of(mergeResponse.getTargetBranch(), mergeResponse.getResultantTargetHash());
+    soft.assertThat(rootAfterMerge).isNotEqualTo(setup.root);
+
+    ContentResponse tableOnRootAfterMerge =
+        contentApi()
+            .getContent(setup.key, rootAfterMerge.getName(), rootAfterMerge.getHash(), false);
+
+    soft.assertThat(setup.tableOnWork.getContent().getId())
+        .isEqualTo(tableOnRootAfterMerge.getContent().getId());
+
+    // add a commit modifying the table to ensure the content key is OK
+    commit(
+        rootAfterMerge,
+        fromMessage("add-to-merged-table"),
+        Put.of(
+            setup.key,
+            IcebergTable.of("something even more different", 43, 44, 45, 47)
+                .withId(tableOnRootAfterMerge.getContent().getId())));
+  }
+
+  @Test
+  public void mergeRecreateTableConflict() throws BaseNessieClientServerException {
+
+    MergeRecreateTableSetup setup = setupMergeRecreateTable();
+
+    Branch root =
+        commit(
+                setup.root,
+                fromMessage("update-table-on-root"),
+                Put.of(
+                    setup.key,
+                    IcebergTable.of("something even more different", 43, 44, 45, 46)
+                        .withId(setup.tableOnRoot.getContent().getId())))
+            .getTargetBranch();
+    soft.assertThat(root).isNotEqualTo(setup.root);
+
+    assertThatThrownBy(
+            () ->
+                treeApi()
+                    .mergeRefIntoBranch(
+                        root.getName(),
+                        root.getHash(),
+                        setup.work.getName(),
+                        setup.work.getHash(),
+                        fromMessage("merge-recreate-conflict"),
+                        emptyList(),
+                        NORMAL,
+                        Boolean.FALSE,
+                        Boolean.FALSE,
+                        Boolean.FALSE))
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .hasMessage("The following keys have been changed in conflict: '%s'", setup.key);
+  }
+
+  private MergeRecreateTableSetup setupMergeRecreateTable()
+      throws NessieNotFoundException, NessieConflictException {
     Branch root = createBranch("root");
     Branch lastRoot = root;
 
@@ -649,7 +724,6 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 Put.of(key, IcebergTable.of("something", 42, 43, 44, 45)))
             .getTargetBranch();
     soft.assertThat(root).isNotEqualTo(lastRoot);
-    lastRoot = root;
 
     ContentResponse tableOnRoot =
         contentApi().getContent(key, root.getName(), root.getHash(), false);
@@ -667,7 +741,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         commit(
                 work,
                 fromMessage("recreate-table"),
-                Put.of(key, IcebergTable.of("something", 42, 43, 44, 45)))
+                Put.of(key, IcebergTable.of("something different", 42, 43, 44, 45)))
             .getTargetBranch();
     soft.assertThat(work).isNotEqualTo(lastWork);
 
@@ -677,28 +751,78 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     soft.assertThat(tableOnWork.getContent().getId())
         .isNotEqualTo(tableOnRoot.getContent().getId());
+    return new MergeRecreateTableSetup(root, work, tableOnRoot, tableOnWork, key);
+  }
 
-    MergeResponse mergeResponse =
-        treeApi()
-            .mergeRefIntoBranch(
-                root.getName(),
-                root.getHash(),
-                work.getName(),
-                work.getHash(),
-                fromMessage("merge-recreate"),
-                emptyList(),
-                NORMAL,
-                Boolean.FALSE,
-                Boolean.FALSE,
-                Boolean.FALSE);
+  private static class MergeRecreateTableSetup {
 
-    root = Branch.of(mergeResponse.getTargetBranch(), mergeResponse.getResultantTargetHash());
-    soft.assertThat(root).isNotEqualTo(lastRoot);
+    final Branch root;
+    final Branch work;
+    final ContentResponse tableOnRoot;
+    final ContentResponse tableOnWork;
+    final ContentKey key;
 
-    ContentResponse tableOnRootAfterMerge =
-        contentApi().getContent(key, root.getName(), root.getHash(), false);
+    MergeRecreateTableSetup(
+        Branch root,
+        Branch work,
+        ContentResponse tableOnRoot,
+        ContentResponse tableOnWork,
+        ContentKey key) {
+      this.root = root;
+      this.work = work;
+      this.tableOnRoot = tableOnRoot;
+      this.tableOnWork = tableOnWork;
+      this.key = key;
+    }
+  }
 
-    soft.assertThat(tableOnWork.getContent().getId())
-        .isEqualTo(tableOnRootAfterMerge.getContent().getId());
+  @Test
+  public void mergeConflictingKey() throws BaseNessieClientServerException {
+
+    Branch root = createBranch("root");
+    root =
+        commit(
+                root,
+                fromMessage("common-ancestor"),
+                Put.of(ContentKey.of("unrelated"), IcebergTable.of("unrelated", 42, 43, 44, 45)))
+            .getTargetBranch();
+
+    Branch work = createBranch("work", root);
+
+    ContentKey key = ContentKey.of("conflicting");
+
+    root =
+        commit(
+                root,
+                fromMessage("create-table-on-root"),
+                Put.of(key, IcebergTable.of("something", 42, 43, 44, 45)))
+            .getTargetBranch();
+
+    work =
+        commit(
+                work,
+                fromMessage("create-table-on-work"),
+                Put.of(key, IcebergTable.of("something else", 42, 43, 44, 45)))
+            .getTargetBranch();
+
+    Branch lastRoot = root;
+    Branch lastWork = work;
+
+    assertThatThrownBy(
+            () ->
+                treeApi()
+                    .mergeRefIntoBranch(
+                        lastRoot.getName(),
+                        lastRoot.getHash(),
+                        lastWork.getName(),
+                        lastWork.getHash(),
+                        fromMessage("merge-conflicting-keys"),
+                        emptyList(),
+                        NORMAL,
+                        Boolean.FALSE,
+                        Boolean.FALSE,
+                        Boolean.FALSE))
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .hasMessage("The following keys have been changed in conflict: 'conflicting'");
   }
 }
