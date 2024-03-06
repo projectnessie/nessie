@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.util.Objects;
+import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieClientBuilder;
@@ -201,16 +202,32 @@ public class NessieHttpClientBuilderImpl
 
   @CanIgnoreReturnValue
   @Override
-  public NessieHttpClientBuilder addRequestFilter(RequestFilter filter) {
+  public NessieHttpClientBuilderImpl addRequestFilter(RequestFilter filter) {
     builder.addRequestFilter(filter);
     return this;
   }
 
   @CanIgnoreReturnValue
   @Override
-  public NessieHttpClientBuilder addResponseFilter(ResponseFilter filter) {
+  public NessieHttpClientBuilderImpl addResponseFilter(ResponseFilter filter) {
     builder.addResponseFilter(filter);
     return this;
+  }
+
+  @Override
+  public NessieHttpClientBuilderImpl fromConfig(Function<String, String> configuration) {
+    return (NessieHttpClientBuilderImpl) super.fromConfig(configuration);
+  }
+
+  @Override
+  public NessieHttpClientBuilderImpl withAuthenticationFromConfig(
+      Function<String, String> configuration) {
+    return (NessieHttpClientBuilderImpl) super.withAuthenticationFromConfig(configuration);
+  }
+
+  @Override
+  public NessieHttpClientBuilderImpl withUri(String uri) {
+    return (NessieHttpClientBuilderImpl) super.withUri(uri);
   }
 
   @Override

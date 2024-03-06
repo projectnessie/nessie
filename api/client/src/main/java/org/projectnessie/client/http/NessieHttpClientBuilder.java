@@ -20,9 +20,13 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_2;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_REDIRECT;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.net.URI;
 import java.util.function.Function;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
+import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.config.NessieClientConfigSources;
 
 /** HTTP specific Nessie client builder interface. */
@@ -69,6 +73,54 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
    */
   @CanIgnoreReturnValue
   NessieHttpClientBuilder addResponseFilter(ResponseFilter filter);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder fromConfig(Function<String, String> configuration);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withApiCompatibilityCheck(boolean enable);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withAuthenticationFromConfig(Function<String, String> configuration);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withAuthentication(NessieAuthentication authentication);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withTracing(boolean tracing);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withUri(URI uri);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withUri(String uri);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withReadTimeout(int readTimeoutMillis);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withConnectionTimeout(int connectionTimeoutMillis);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withDisableCompression(boolean disableCompression);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withSSLContext(SSLContext sslContext);
+
+  @Override
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withSSLParameters(SSLParameters sslParameters);
 
   /** Convenience base class for implementations of {@link NessieHttpClientBuilder}. */
   abstract class AbstractNessieHttpClientBuilder
@@ -134,6 +186,62 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
     @Override
     public NessieHttpClientBuilder addResponseFilter(ResponseFilter filter) {
       return this;
+    }
+
+    @Override
+    public NessieHttpClientBuilder withAuthenticationFromConfig(
+        Function<String, String> configuration) {
+      return (NessieHttpClientBuilder) super.withAuthenticationFromConfig(configuration);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withUri(String uri) {
+      return (NessieHttpClientBuilder) super.withUri(uri);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withApiCompatibilityCheck(boolean enable) {
+      return (NessieHttpClientBuilder) super.withApiCompatibilityCheck(enable);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withAuthentication(NessieAuthentication authentication) {
+      return (NessieHttpClientBuilder) super.withAuthentication(authentication);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withTracing(boolean tracing) {
+      return (NessieHttpClientBuilder) super.withTracing(tracing);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withUri(URI uri) {
+      return (NessieHttpClientBuilder) super.withUri(uri);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withReadTimeout(int readTimeoutMillis) {
+      return (NessieHttpClientBuilder) super.withReadTimeout(readTimeoutMillis);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withConnectionTimeout(int connectionTimeoutMillis) {
+      return (NessieHttpClientBuilder) super.withConnectionTimeout(connectionTimeoutMillis);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withDisableCompression(boolean disableCompression) {
+      return (NessieHttpClientBuilder) super.withDisableCompression(disableCompression);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withSSLContext(SSLContext sslContext) {
+      return (NessieHttpClientBuilder) super.withSSLContext(sslContext);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withSSLParameters(SSLParameters sslParameters) {
+      return (NessieHttpClientBuilder) super.withSSLParameters(sslParameters);
     }
   }
 }
