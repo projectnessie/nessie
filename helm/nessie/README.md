@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.77.1](https://img.shields.io/badge/Version-0.77.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.78.0](https://img.shields.io/badge/Version-0.78.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -45,16 +45,6 @@ From Nessie repo root:
 ```bash
 $ helm install --namespace nessie-ns nessie helm/nessie
 ```
-
-#### Local Helm chart using a locally built Nessie image
-
-Running minikube with a locally built image is a bit more complex:
-1. Add the `registry` addon to `minikube` using `minikube addons enable registry`
-2. Allow using an insecure registry using `minikube config set insecure-registry "$(minikube ip)"`
-3. Build the image using `tools/dockerbuild/build-push-images.sh -g :nessie-quarkus -p servers/quarkus-server projectnessie/nessie-local -l -t podman`
-4. Push the image using `podman push --tls-verify=false localhost/projectnessie/nessie-local:latest docker://$(minikube ip):5000/projectnessie/nessie-local:latest`
-5. Use the following Helm values: `image.repository=192.168.49.2:5000/projectnessie/nessie-local:latest` and `image.pullPolicy=Always`
-6. Install the Helm chart as described above
 
 ### Uninstalling the chart
 

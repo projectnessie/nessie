@@ -2,6 +2,51 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.78.0 Release (March 07, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.78.0).
+
+### New Features
+
+- GC Tool: ability to skip creating existing tables (IF NOT EXISTS)
+- Make `Authorizer` pluggable
+- Helm chart: add option to set sessionAffinity on Service
+
+### Fixes
+
+- Handle re-added keys when creating squash commits
+- JDBC backend: infer catalog and schema if not specified
+
+### Commits
+* Ninja; update CHANGELOG.md
+* Add convenience `Namespace.getParentOrEmpty()` (#8170)
+* Enforce covariant return types in NessieClientBuilder hierarchy (#8164)
+* Revert meaning of `@WithInitializedRepository` (#8162)
+* Handle re-added keys when creating squash commits (#8160)
+* HTTP client: add request and response filters programmatically (#8154)
+* Reduce flakiness in CustomKeycloakContainer startup (#8153)
+* Docker image tool: implement local image builds (#8141)
+* JDBC backend: infer catalog and schema if not specified (#8131)
+* Bump Scala to 2.12.19 + 2.13.13 (#8125)
+* Bump Spark 3.5 to 3.5.1 (#8124)
+* APIv2: Properly throw an exception when using `GetEntriesBuilder.namespaceDepth` (#7563)
+* Update Iceberg version in mkdocs.yml (#8122)
+* Testing: Allow test instance `@NessiePersist.configMethod` (#8120)
+* Update Iceberg version in README.md (#8121)
+* Keycloak containers: close admin clients (#8118)
+* Remove unnecessary `ServerAccessContext` (#8114)
+* Add set of roles to `AccessContext`, inject AC instead of `Principal` (#8091)
+* Add test case for re-create table and merge (#8113)
+* Add S3 user guide section for Minio (#8102)
+* GC Tool: ability to skip creating existing tables (IF NOT EXISTS) (#8081)
+* Persist-cache: add config object (#8112)
+* Nit/noop: Remove use of anonymous `StoreConfig` impl (#8110)
+* Nit: correct outdated javadoc (#8107)
+* Make `Authorizer` pluggable (#8090)
+* Helm chart: add option to set sessionAffinity on Service (#8095)
+* Fix logging class in `ConfigChecks` (#8089)
+* Remove unused function in CachingPersistImpl (#8086)
+
 ## 0.77.1 Release (February 14, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.77.1).
