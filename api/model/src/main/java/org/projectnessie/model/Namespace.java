@@ -99,6 +99,16 @@ public abstract class Namespace extends Content {
     return Namespace.of(elements.subList(0, elements.size() - 1));
   }
 
+  @JsonIgnore
+  @Value.Redacted
+  public Namespace getParentOrEmpty() {
+    List<String> elements = getElements();
+    if (elements.size() <= 1) {
+      return Namespace.EMPTY;
+    }
+    return Namespace.of(elements.subList(0, elements.size() - 1));
+  }
+
   @NotNull
   @jakarta.validation.constraints.NotNull
   @JsonInclude(Include.NON_EMPTY)
