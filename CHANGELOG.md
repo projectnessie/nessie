@@ -14,11 +14,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+* GC Tool: ability to skip creating existing tables (IF NOT EXISTS)
+* Make `Authorizer` pluggable
+* Helm chart: add option to set sessionAffinity on Service
+
 ### Changes
 
 ### Deprecations
 
 ### Fixes
+
+* Handle re-added keys when creating squash commits
+* JDBC backend: infer catalog and schema if not specified
 
 ### Commits
 
