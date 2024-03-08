@@ -15,10 +15,9 @@
  */
 package org.projectnessie.server.configchecks;
 
-import io.quarkus.runtime.Startup;
-import jakarta.enterprise.inject.Produces;
+import io.quarkus.runtime.StartupEvent;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.config.QuarkusServerConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
@@ -34,12 +33,7 @@ public class ConfigChecks {
   @Inject QuarkusNessieAuthorizationConfig authorizationConfig;
   @Inject QuarkusServerConfig serverConfig;
 
-  // This function shall be called on startup. The actually returned object is currently
-  // meaningless.
-  @Produces
-  @Singleton
-  @Startup
-  public ConfigCheck configCheck() {
+  public void configCheck(@Observes StartupEvent event) {
     if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.IN_MEMORY) {
       LOGGER.warn(
           "Configured version store type IN_MEMORY is only for testing purposes and experimentation, not for production use. "
@@ -75,9 +69,5 @@ public class ConfigChecks {
               + "stack traces might be considered a security risk. "
               + "Recommended action: disable the option, see https://projectnessie.org/try/configuration/");
     }
-
-    return new ConfigCheck();
   }
-
-  public static final class ConfigCheck {}
 }
