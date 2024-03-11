@@ -38,11 +38,12 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  implementation(libs.iceberg.core)
-  runtimeOnly(libs.iceberg.hive.metastore)
-  runtimeOnly(libs.iceberg.aws)
-  runtimeOnly(libs.iceberg.gcp)
-  runtimeOnly(libs.iceberg.azure)
+  implementation(platform(libs.iceberg.bom))
+  implementation("org.apache.iceberg:iceberg-core")
+  runtimeOnly("org.apache.iceberg:iceberg-hive-metastore")
+  runtimeOnly("org.apache.iceberg:iceberg-aws")
+  runtimeOnly("org.apache.iceberg:iceberg-gcp")
+  runtimeOnly("org.apache.iceberg:iceberg-azure")
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))

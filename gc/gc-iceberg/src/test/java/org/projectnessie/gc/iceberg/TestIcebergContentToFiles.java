@@ -126,7 +126,7 @@ public class TestIcebergContentToFiles {
 
     when(inputFile.location()).thenReturn("/blah.metadata.json");
     when(inputFile.newStream()).thenThrow(new NotFoundException("mocked"));
-    when(fileIO.newInputFile(any())).thenReturn(inputFile);
+    when(fileIO.newInputFile(any(String.class))).thenReturn(inputFile);
 
     IcebergContentToFiles contentToFiles = IcebergContentToFiles.builder().io(fileIO).build();
     try (Stream<FileReference> extractFiles =

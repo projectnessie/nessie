@@ -68,17 +68,19 @@ dependencies {
     forSpark(sparkScala.sparkVersion)
   }
 
-  intTestImplementation(libs.iceberg.core)
-  intTestRuntimeOnly(libs.iceberg.hive.metastore)
-  intTestRuntimeOnly(libs.iceberg.aws)
-  intTestRuntimeOnly(libs.iceberg.gcp)
-  intTestRuntimeOnly(libs.iceberg.azure)
-  intTestRuntimeOnly(libs.iceberg.nessie)
-  intTestRuntimeOnly(libs.iceberg.core)
+  intTestImplementation(platform(libs.iceberg.bom))
+  intTestImplementation("org.apache.iceberg:iceberg-core")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-hive-metastore")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-aws")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-gcp")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-azure")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-nessie")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-core")
+  // Reference the exact Iceberg version here, because the iceberg-bom might not contain all
+  // Spark/Flink deps :(
   intTestRuntimeOnly(
     "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
-  intTestRuntimeOnly(libs.iceberg.hive.metastore)
 
   intTestRuntimeOnly(libs.hadoop.client)
   intTestRuntimeOnly(libs.hadoop.aws)
