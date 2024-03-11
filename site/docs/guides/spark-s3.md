@@ -36,7 +36,7 @@ Start a Spark session:
 ```shell
 spark-sql \
  --packages \
-org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.4.3,\
+org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0,\
 software.amazon.awssdk:bundle:2.20.131,\
 software.amazon.awssdk:url-connection-client:2.20.131 \
  --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions  \
@@ -86,7 +86,7 @@ Start a Spark session:
 ```shell
 spark-sql \
  --packages \
-org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.4.3,\
+org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0,\
 software.amazon.awssdk:bundle:2.20.131,\
 software.amazon.awssdk:url-connection-client:2.20.131 \
  --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions  \

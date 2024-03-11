@@ -119,8 +119,6 @@ public class TestPublishedPoms {
   @ValueSource(strings = {
     "nessie-spark-antlr-runtime",
     "nessie-spark-extensions-grammar",
-    "nessie-spark-extensions-3.2_2.12",
-    "nessie-spark-extensions-3.2_2.13",
     "nessie-spark-extensions-3.3_2.12",
     "nessie-spark-extensions-3.3_2.13",
     "nessie-spark-extensions-3.4_2.12",
