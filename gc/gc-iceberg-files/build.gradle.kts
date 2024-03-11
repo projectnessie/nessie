@@ -42,10 +42,11 @@ dependencies {
   // Bump the jabx-impl version 2.2.3-1 via hadoop-common to make it work with Java 17+
   implementation(libs.jaxb.impl)
 
-  implementation(libs.iceberg.core)
-  implementation(libs.iceberg.aws)
-  implementation(libs.iceberg.gcp)
-  implementation(libs.iceberg.azure)
+  implementation(platform(libs.iceberg.bom))
+  implementation("org.apache.iceberg:iceberg-core")
+  implementation("org.apache.iceberg:iceberg-aws")
+  implementation("org.apache.iceberg:iceberg-gcp")
+  implementation("org.apache.iceberg:iceberg-azure")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)

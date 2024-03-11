@@ -36,7 +36,7 @@ public final class BridgeToIceberg {
   public static DataFile dummyDataFile(String filePath, StructType partitionType) {
     PartitionData partitionData = new PartitionData(partitionType);
     return new GenericDataFile(
-        0, filePath, FileFormat.PARQUET, partitionData, 42L, DUMMY_METRICS, null, null, null, 0);
+        0, filePath, FileFormat.PARQUET, partitionData, 42L, DUMMY_METRICS, null, null, 0);
   }
 
   public static IndexedRecord dummyIndexedDataFile(String filePath, StructType partitionType) {
