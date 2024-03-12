@@ -2,6 +2,25 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.79.0 Release (March 12, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.79.0).
+
+### New Features
+
+- Iceberg bumped to 1.5.0
+
+### Changes
+
+- SQL extensions for Spark 3.2 have been removed
+- Experimental iceberg-views module has been removed
+
+### Commits
+* Remove SQL Extensions for Spark 3.2 for Iceberg 1.5+ (#7940)
+* Remove `iceberg-views` module for Iceberg 1.5+ (#8058)
+* Nit: minor javadoc updates in `MergeKeyBehavior` (#8173)
+* Simplify ConfigChecks.configCheck (#8177)
+
 ## 0.78.0 Release (March 07, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.78.0).
