@@ -31,4 +31,7 @@ tasks.named<Jar>("jar").configure {
   archiveClassifier = "raw"
 }
 
-tasks.withType<ShadowJar>().configureEach { exclude("META-INF/jandex.idx") }
+tasks.withType<ShadowJar>().configureEach {
+  exclude("META-INF/jandex.idx")
+  isZip64 = true
+}
