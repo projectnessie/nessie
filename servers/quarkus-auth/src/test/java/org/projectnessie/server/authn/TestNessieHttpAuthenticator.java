@@ -15,13 +15,13 @@
  */
 package org.projectnessie.server.authn;
 
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
+import java.util.Optional;
 import java.util.Set;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -50,8 +50,8 @@ public class TestNessieHttpAuthenticator {
               }
 
               @Override
-              public Set<String> anonymousPaths() {
-                return emptySet();
+              public Optional<Set<String>> anonymousPaths() {
+                return Optional.empty();
               }
             },
             () -> Uni.createFrom().item(ANONYMOUS_IDENTITY));
@@ -75,8 +75,8 @@ public class TestNessieHttpAuthenticator {
               }
 
               @Override
-              public Set<String> anonymousPaths() {
-                return singleton("/foo");
+              public Optional<Set<String>> anonymousPaths() {
+                return Optional.of(singleton("/foo"));
               }
             },
             () -> Uni.createFrom().item(ANONYMOUS_IDENTITY));
