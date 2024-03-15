@@ -15,16 +15,32 @@
  */
 package org.projectnessie.client.config;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_API_VERSION;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
+
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.client.NessieConfigConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -238,6 +254,163 @@ public final class NessieClientConfigSources {
         .fallbackTo(systemEnvironmentConfigSource())
         .fallbackTo(nessieClientConfigFileConfigSource())
         .fallbackTo(dotEnvFileConfigSource());
+  }
+
+  /**
+   * Produces a config source from the Iceberg {@code RESTCatalog} properties, mapping Nessie client
+   * configs to Iceberg REST catalog properties, requiring REST catalog properties as returned from
+   * Nessie Catalog.
+   */
+  public static NessieClientConfigSource fromIcebergRestCatalogProperties(
+      Map<String, String> catalogProperties) {
+    if (!parseBoolean(catalogProperties.get("nessie.is-nessie-catalog"))) {
+      throw new IllegalArgumentException(
+          "The specified properties do not belong to an Iceberg RESTCatalog backed by a Nessie Catalog service.");
+    }
+
+    // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
+    Credential credential = resolveCredential(catalogProperties);
+
+    return x -> {
+      switch (x) {
+        case CONF_NESSIE_URI:
+          // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie
+          // Catalog
+          // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely
+          // assume
+          // that `nessie.core-base-uri` contains a `/` terminated URI.
+          return catalogProperties.get("nessie.core-base-uri") + "v2";
+        case CONF_NESSIE_CLIENT_API_VERSION:
+          return "2";
+        case CONF_NESSIE_OAUTH2_AUTH_ENDPOINT:
+          return resolveOAuthEndpoint(catalogProperties);
+        case CONF_NESSIE_OAUTH2_CLIENT_ID:
+          return credential.clientId;
+        case CONF_NESSIE_OAUTH2_CLIENT_SECRET:
+          // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
+          return credential.secret;
+        case CONF_NESSIE_OAUTH2_CLIENT_SCOPES:
+          // Same default scope as the Iceberg REST Client uses in
+          // o.a.i.rest.RESTSessionCatalog.initialize
+          // See o.a.i.rest.auth.OAuth2Util.SCOPE
+          return resolveOAuthScope(catalogProperties);
+        case CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN:
+          return resolveTokenLifespan(catalogProperties);
+        default:
+          // TODO need the "token" (initial bearer token for OAuth2 as in
+          //  o.a.i.rest.RESTSessionCatalog.initialize?
+          // TODO Nessie has way more OAuth configurations than Iceberg. What shall we do there?
+          String v = catalogProperties.get(x);
+          return v != null ? v : catalogProperties.get(x.replace("nessie.", ""));
+      }
+    };
+  }
+
+  static String resolveTokenLifespan(Map<String, String> catalogProperties) {
+    String life = catalogProperties.getOrDefault("token-expires-in-ms", "3600000");
+    return Duration.ofMillis(Long.parseLong(life)).toString();
+  }
+
+  static String resolveOAuthEndpoint(Map<String, String> catalogProperties) {
+    String uri = catalogProperties.get("oauth2-server-uri");
+    if (uri != null) {
+      return uri;
+    }
+    URI baseUri =
+        URI.create(
+            requireNonNull(
+                catalogProperties.get("nessie.iceberg-base-uri"),
+                "Missing 'nessie.iceberg-base-uri' property"));
+    return baseUri.resolve("v1/oauth/tokens").toString();
+  }
+
+  /**
+   * Collects the OAuth scopes from both {@value
+   * NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SCOPES} and {@code scope} properties, always
+   * adds the {@code catalog} scope.
+   */
+  static String resolveOAuthScope(Map<String, String> catalogProperties) {
+    String nessieScope =
+        "catalog "
+            + resolveViaEnvironment(catalogProperties, CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "")
+            + " "
+            + resolveViaEnvironment(catalogProperties, "scope", "");
+    return Arrays.stream(nessieScope.split(" "))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .distinct()
+        .collect(Collectors.joining(" "));
+  }
+
+  static Credential resolveCredential(Map<String, String> catalogProperties) {
+    String nessieClientId =
+        resolveViaEnvironment(catalogProperties, CONF_NESSIE_OAUTH2_CLIENT_ID, null);
+    String nessieClientSecret =
+        resolveViaEnvironment(catalogProperties, CONF_NESSIE_OAUTH2_CLIENT_SECRET, null);
+
+    Credential credentialFromIceberg =
+        parseIcebergCredential(resolveViaEnvironment(catalogProperties, "credential", null));
+
+    return new Credential(
+        nessieClientId != null ? nessieClientId : credentialFromIceberg.clientId,
+        nessieClientSecret != null ? nessieClientSecret : credentialFromIceberg.secret);
+  }
+
+  /** Allow resolving a property via the environment. */
+  static String resolveViaEnvironment(
+      Map<String, String> properties, String property, String defaultValue) {
+    String value = properties.get(property);
+    if (value == null) {
+      return defaultValue;
+    }
+    if (value.startsWith("env:")) {
+      String env = System.getenv(value.substring("env:".length()));
+      if (env == null) {
+        return defaultValue;
+      }
+      return env;
+    } else {
+      return value;
+    }
+  }
+
+  static Credential parseIcebergCredential(String credential) {
+    // See o.a.i.rest.auth.OAuth2Util.parseCredential
+    if (credential == null) {
+      return new Credential(null, null);
+    }
+    int colon = credential.indexOf(':');
+    if (colon == -1) {
+      return new Credential(null, credential);
+    } else {
+      return new Credential(credential.substring(0, colon), credential.substring(colon + 1));
+    }
+  }
+
+  static final class Credential {
+    final String clientId;
+    final String secret;
+
+    Credential(String clientId, String secret) {
+      this.clientId = clientId;
+      this.secret = secret;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      Credential that = (Credential) o;
+      return Objects.equals(clientId, that.clientId) && Objects.equals(secret, that.secret);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Objects.hashCode(clientId);
+      result = 31 * result + Objects.hashCode(secret);
+      return result;
+    }
   }
 
   public static NessieClientConfigSource emptyConfigSource() {
