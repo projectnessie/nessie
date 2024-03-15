@@ -6,8 +6,8 @@ LABEL org.opencontainers.image.licenses=Apache-2.0
 
 ENV LANGUAGE='en_US:en'
 
-COPY --chown=185 build/executable/nessie-gc /
+COPY --chown=185 build/executable/nessie-gc.jar /
 
 USER 185
 
-ENTRYPOINT [ "/nessie-gc" ]
+ENTRYPOINT [ "java", "-jar", "/nessie-gc.jar" ]

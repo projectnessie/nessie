@@ -26,7 +26,7 @@ Nessie GC is composed of multiple phases:
 3. The **delete** phase can be split out of the **expire** phase, it basically means that orphan 
    files are first collected, so these can be inspected, and then explicitly deleted. 
 
-All relevant operations required for Nessie GC can be run via the `nessie-gc` tool, which can be
+All relevant operations required for Nessie GC can be run via the `nessie-gc.jar` tool, which can be
 downloaded from the [release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
 !!! info
@@ -38,7 +38,7 @@ downloaded from the [release page on GitHub](https://github.com/projectnessie/ne
 
 ## Nessie GC tool
 
-It is recommended to run all Nessie GC phases via the Nessie GC command line tool `nessie-gc`,
+It is recommended to run all Nessie GC phases via the Nessie GC command line tool `nessie-gc.jar`,
 which can be downloaded from the
 [release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
@@ -46,17 +46,20 @@ The Nessie GC tool comes as an uber-jar packaged with everything you need to run
 a data lake using Iceberg.
 
 !!! note
-    Use `nessie-gc help` to get a list of commands supported by the Nessie GC tool.
+    Use `java -jar nessie-gc.jar help` to get a list of commands supported by the Nessie GC tool.
 
 ### Setting up the database for Nessie GC
 
-You can either create the tables manually, use the DDL statements emitted by
-`nessie-gc create-sql-schema` as a template that can be enriched with database specific
-optimizations.
+You can create the tables in two ways:
 
-Or you let the Nessie GC tool create the schema in your existing database, for example like this:
+Manually: use the DDL statements emitted by `java -jar nessie-gc.jar show-sql-create-schema-script`
+as a template that can be enriched with database specific optimizations.
+
+Or alternatively, let the Nessie GC tool create the schema in your existing database, for example
+like this:
+
 ```bash
-nessie-gc create-sql-schema \
+java -jar nessie-gc.jar create-sql-schema \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
@@ -76,8 +79,8 @@ nessie-gc create-sql-schema \
 
 !!! note
     For small, experimental Nessie repositories, that do not access any production data lake
-    information, you can experiment with the `nessie-gc gc` command, which also accepts the
-    `--inmemory` command line option, which does not require an external database for
+    information, you can experiment with the `java -jar nessie-gc.jar gc` command, which also 
+    accepts the `--inmemory` command line option, which does not require an external database for
     live-content-set persistence. In fact, the `--inmemory` option does not persist anything and
     keeps the live-content-set information in memory. The `gc` command runs the _identity_,
     _expire_ and _delete_ phases sequentially.
@@ -87,11 +90,11 @@ nessie-gc create-sql-schema \
 All Nessie GC operations work on exactly one so-called "live content set". Each live content set
 is composed of:
 
-* **Unique ID** each live-content-set is identified by a UUID. The `nessie-gc mark-live` command
-  emits the ID of the live-content-set to the console, but it's recommended to write the new
-  live-content-set ID to a file using the `--write-live-set-id-to` option. Other commands that
-  work on a live-content-set allow reading the ID of the live-content-set using the command line
-  option `--read-live-set-id-from`.
+* **Unique ID** each live-content-set is identified by a UUID. The `java -jar nessie-gc.jar 
+  mark-live` command emits the ID of the live-content-set to the console, but it's recommended to 
+  write the new live-content-set ID to a file using the `--write-live-set-id-to` option. Other 
+  commands that work on a live-content-set allow reading the ID of the live-content-set using the 
+  command line option `--read-live-set-id-from`.
 * **Status** tracks the state and/or progress of a live-content-set and is used to know whether
   the _identify_ and _sweep_ phases started resp. ended and whether those finished successfully
   or with an error. If, for example, the identify phase did not finish successfully, the sweep
@@ -103,7 +106,7 @@ is composed of:
 * **set of file-references to be deleted** as the result of the _identify_ phase, if Nessie GC
   was told to defer deletes using the `--defer-deletes` command line option.
 
-A couple of `nessie-gc` commands allow the listing of all and inspection of individual
+A couple of `nessie-gc.jar` commands allow the listing of all and inspection of individual
 live-content-sets. Those are:
 
 * `list` lists all live-content-sets, starting with the most recent live-set.
@@ -117,11 +120,11 @@ live-content-sets. Those are:
 
 ### Running the _mark_ (or _identify_) phase: Identifying live content references
 
-The _mark_ or _identify_ phase is run via the `mark-live` (or `identify` as an alias) nessie-gc
-command.
+The _mark_ or _identify_ phase is run via the `mark-live` (or `identify` as an alias)
+`nessie-gc.jar` command.
 
 ```shell
-nessie-gc mark-live \
+java -jar nessie-gc.jar mark-live \
   --jdbc... # JDBC settings omitted in this example
 ```
 
@@ -154,7 +157,8 @@ Nessie GC supports three types of cut off policies:
   considered live. In the Nessie GC tool, a duration is always converted to a timestamp using a
   common reference timestamp.
 
-Relevant command line options for `nessie-gc mark-live` (alias `nessie-gc identify`):
+Relevant command line options for `java -jar nessie-gc.jar mark-live` (alias `java -jar 
+nessie-gc.jar identify`):
 
 * `--cutoff reference-name-regex=cut-off-policy` the specified `cut-off-policy` is applied to all
   named references that match the given reference name regular expression.
@@ -202,28 +206,28 @@ options. Examples: `--iceberg s3.access-key-id=S3_ACCESS_KEY` and
 Example of running the _expire_ command follows.
 
 ```shell
-nessie-gc expire --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+java -jar nessie-gc.jar expire --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
   --jdbc... # JDBC settings omitted in this example
 ```
 
 Example of running an _expire_ with _deferred deletion_:
 
 ```shell
-nessie-gc expire --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+java -jar nessie-gc.jar expire --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
   --defer-deletes \
   --jdbc... # JDBC settings omitted in this example
 
 # You can inspect the files to be deleted this way ...
-nessie-gc list-deferred --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+java -jar nessie-gc.jar list-deferred --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
   --jdbc... # JDBC settings omitted in this example
 
 # ... or this way
-nessie-gc show --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+java -jar nessie-gc.jar show --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
   --with-deferred-deletes \
   --jdbc... # JDBC settings omitted in this example
 
 # Now perform the file deletions
-nessie-gc deferred-deletes --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+java -jar nessie-gc.jar deferred-deletes --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
   --jdbc... # JDBC settings omitted in this example
 ```
 
@@ -236,8 +240,8 @@ Since data lakes can easily contain a huge amount of files, the _expire_ phase d
 every live data file (see the Iceberg assets above) individually, but uses a probabilistic data
 structure (bloom filter). The default settings expect, for each content ID, 1,000,000 files and
 uses a false-positive-probability of 0.0001 (those defaults may change, but can be inspected
-with `nessie-gc help expire`). The _expire_ phase will abort, if it hits a content-ID that
-_massively_ exceeds the configured false-positive-probability, because it hits way more live
+with `java -jar nessie-gc.jar help expire`). The _expire_ phase will abort, if it hits a content-ID 
+that _massively_ exceeds the configured false-positive-probability, because it hits way more live
 file references.
 
 !!! note
@@ -250,19 +254,20 @@ It is highly recommended to use a Postgres or compatible or H2 database to persi
 live-content-sets. Running the different Nessie GC phases separately is only supported with such a
 database.
 
-Make yourself familiar with all the commands offered by `nessie-gc` and the available command line
-options. It is safe to run `nessie-gc mark-live`, because it is non-destructive. Use
-`nessie-gc show --with-content-references` to inspect the collected live content references.
+Make yourself familiar with all the commands offered by `nessie-gc.jar` and the available command
+line options. It is safe to run `java -jar nessie-gc.jar mark-live`, because it is non-destructive.
+Use `java -jar nessie-gc.jar show --with-content-references` to inspect the collected live content
+references.
 
 Use _deferred deletion_ and inspect the files to be deleted **before** running
-`nessie-gc deferred-deletes`.
+`java -jar nessie-gc.jar deferred-deletes`.
 
 Use separate invocations for the _mark_, the _sweep_ and the _deferred deletion_ phases.
 
 ### All-in-one
 
-As briefly mentioned above, the `nessie-gc gc` command can be used to combine the _mark_ and _sweep_
-phases, optionally using the `--inmemory` option.
+As briefly mentioned above, the `java -jar nessie-gc.jar gc` command can be used to combine the
+_mark_ and _sweep_ phases, optionally using the `--inmemory` option.
 
 `gc` is equivalent to first running `identify` and then `expire`, and it takes the same set of
 command line options. 
@@ -271,8 +276,8 @@ command line options.
 
 Nessie GC tool emits the log output at `INFO` level. The default log level for the console can be
 overridden using the Java system property `log.level.console`, for example using the following
-command. So instead of directly running `nessie-gc`, just run it as an executable jar.
+command:
 
 ```shell
-java -Dlog.level.console=DEBUG -jar $(which nessie-gc) 
+java -Dlog.level.console=DEBUG -jar nessie-gc.jar
 ```

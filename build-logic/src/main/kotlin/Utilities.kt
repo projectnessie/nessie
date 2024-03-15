@@ -20,7 +20,6 @@ import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.Action
-import org.gradle.api.DefaultTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -29,17 +28,11 @@ import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.FileTree
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.resources.TextResource
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
-import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
@@ -371,29 +364,6 @@ class SparkScalaVersions(
   val scalaVersion: String,
   val runtimeJavaVersion: Int
 )
-
-abstract class UnixExecutableTask : DefaultTask() {
-  @get:OutputFile abstract val executable: RegularFileProperty
-
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val template: RegularFileProperty
-
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val sourceJar: RegularFileProperty
-
-  @TaskAction
-  fun exec() {
-    val exec = executable.get().asFile
-    exec.parentFile.mkdirs()
-    exec.outputStream().use { out ->
-      template.get().asFile.inputStream().use { i -> i.transferTo(out) }
-      sourceJar.get().asFile.inputStream().use { i -> i.transferTo(out) }
-    }
-    exec.setExecutable(true)
-  }
-}
 
 class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>) : Action<Task> {
   override fun execute(task: Task) {

@@ -40,7 +40,7 @@ import picocli.CommandLine.HelpCommand;
  * PerContentDeleteExpired sweep} Nessie GC cycle.
  */
 @CommandLine.Command(
-    name = "nessie-gc",
+    name = "nessie-gc.jar",
     mixinStandardHelpOptions = true,
     versionProvider = NessieVersionProvider.class,
     subcommands = {

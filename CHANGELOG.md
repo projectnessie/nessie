@@ -10,6 +10,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- GC Tool: the Nessie GC tool is not published anymore as a Unix executable file, but as a regular 
+  jar named `nessie-gc.jar`. Instead of running `nessie-gc`, you now run `java -jar nessie-gc.jar`.
+
 ### Breaking changes
 
 ### New Features

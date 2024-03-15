@@ -15,8 +15,6 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.apache.tools.ant.taskdefs.condition.Os
-import org.apache.tools.ant.util.NullOutputStream
 
 plugins {
   id("com.github.johnrengelman.shadow")
@@ -148,36 +146,18 @@ listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-val unixExecutable by tasks.registering(UnixExecutableTask::class)
+val copyUberJar by tasks.registering(Copy::class)
 
-val nessieGcExecutable = layout.buildDirectory.file("executable/nessie-gc")
-
-unixExecutable.configure {
+copyUberJar.configure {
   group = "build"
-  description = "Generates the Unix executable"
-
+  description = "Copies the uber-jar to build/executable"
   dependsOn(shadowJar)
-  executable = nessieGcExecutable
-  template = projectDir.resolve("src/exec/exec-preamble.sh")
-  sourceJar = shadowJar.get().archiveFile
+  from(shadowJar.get().archiveFile)
+  into(project.layout.buildDirectory.dir("executable"))
+  rename { "nessie-gc.jar" }
 }
 
 shadowJar.configure {
   manifest { attributes["Main-Class"] = mainClassName }
-  finalizedBy(unixExecutable)
+  finalizedBy(copyUberJar)
 }
-
-val execSmokeTest by tasks.registering(Exec::class)
-
-execSmokeTest.configure {
-  description = "Verify that the generated nessie-gc executable works"
-  enabled = Os.isFamily(Os.FAMILY_UNIX)
-  val exec = nessieGcExecutable.get()
-  inputs.file(exec).withPathSensitivity(PathSensitivity.RELATIVE)
-  dependsOn(unixExecutable)
-  executable(exec)
-  args("help")
-  standardOutput = NullOutputStream.INSTANCE
-}
-
-tasks.named("check").configure { dependsOn(execSmokeTest) }

@@ -5,8 +5,10 @@ periodically to keep the repository clean and to avoid unnecessary storage costs
 
 ## Requirements
 
-The Nessie GC tool is a standalone executable, but requires Java 11 or later to be available on the
-host where it is running.
+The Nessie GC tool is distributed as an uber-jar and requires Java 11 or later to be available on
+the host where it is running.
+
+It is also available as a Docker image, see below for more information.
 
 The Nessie GC tool requires a running Nessie server and a JDBC-compliant database. The Nessie server
 must be reachable from the host where the GC tool is running. The JDBC-compliant database must also
@@ -24,20 +26,19 @@ The Nessie GC tool can be downloaded from the [GitHub
 Releases](https://github.com/projectnessie/nessie/releases) page, for example:
 
 ```shell
-curl -L -o nessie-gc https://github.com/projectnessie/nessie/releases/download/nessie-0.76.6/nessie-gc-0.76.6
-chmod +x nessie-gc
+curl -L -o nessie-gc.jar https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/nessie-gc-0.80.0.jar
 ```
 
 To see the available commands and options, run:
 
 ```shell
-./nessie-gc --help
+java -jar nessie-gc.jar --help
 ```
 
 You should see the following output:
 
 ```text
-Usage: nessie-gc [-hV] [COMMAND]
+Usage: nessie-gc.jar [-hV] [COMMAND]
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
 Commands:
@@ -78,7 +79,7 @@ password `mysecretpassword`.
 Create the database schema if required:
 
 ```shell
-./nessie-gc create-sql-schema \
+java -jar nessie-gc.jar create-sql-schema \
   --jdbc-url jdbc:postgresql://localhost:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
@@ -87,7 +88,7 @@ Create the database schema if required:
 Now we can run the Nessie GC tool:
 
 ```shell
-./nessie-gc gc \
+java -jar nessie-gc.jar gc \
   --uri http://localhost:19120/api/v2 \
   --jdbc \
   --jdbc-url jdbc:postgresql://localhost:5432/nessie_gc \
@@ -98,10 +99,9 @@ Now we can run the Nessie GC tool:
 ## Running with Docker
 
 The tool is also available as a Docker image, hosted on [GitHub Container Registry]. Images are also
-mirrored to [Docker Hub] and [Quay.io].
+mirrored to [Quay.io].
 
 [GitHub Container Registry]: https://ghcr.io/projectnessie/nessie-gc
-[Docker Hub]: https://hub.docker.com/r/projectnessie/nessie-gc
 [Quay.io]: https://quay.io/repository/projectnessie/nessie-gc
 
 See [Docker](../try/docker.md) for more information.
@@ -183,6 +183,11 @@ spec:
       restartPolicy: Never
 EOF
 ```
+
+# Nessie GC for Nessie Administrators
+
+Please refer to the [Garbage Collection](./management.md#garbage-collection) documentation for
+information on how to run the Nessie GC on a regular basis in production.
 
 # Nessie GC Internals
 
@@ -309,7 +314,7 @@ concept.
 ## Deferred deletion
 
 The default behavior is to immediately deletes orphan files. But it is also possible to record the
-files to be deleted and delete those later. The `nessie-gc` tool supports deferred deletion.
+files to be deleted and delete those later. The `nessie-gc.jar` tool supports deferred deletion.
 
 ## Non-Nessie use cases
 
