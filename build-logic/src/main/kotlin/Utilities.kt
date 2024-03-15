@@ -372,29 +372,6 @@ class SparkScalaVersions(
   val runtimeJavaVersion: Int
 )
 
-abstract class UnixExecutableTask : DefaultTask() {
-  @get:OutputFile abstract val executable: RegularFileProperty
-
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val template: RegularFileProperty
-
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val sourceJar: RegularFileProperty
-
-  @TaskAction
-  fun exec() {
-    val exec = executable.get().asFile
-    exec.parentFile.mkdirs()
-    exec.outputStream().use { out ->
-      template.get().asFile.inputStream().use { i -> i.transferTo(out) }
-      sourceJar.get().asFile.inputStream().use { i -> i.transferTo(out) }
-    }
-    exec.setExecutable(true)
-  }
-}
-
 class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>) : Action<Task> {
   override fun execute(task: Task) {
     files.forEach { f ->
