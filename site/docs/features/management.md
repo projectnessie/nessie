@@ -120,8 +120,8 @@ live-content-sets. Those are:
 
 ### Running the _mark_ (or _identify_) phase: Identifying live content references
 
-The _mark_ or _identify_ phase is run via the `mark-live` (or `identify` as an alias) nessie-gc
-command.
+The _mark_ or _identify_ phase is run via the `mark-live` (or `identify` as an alias)
+`nessie-gc.jar` command.
 
 ```shell
 java -jar nessie-gc.jar mark-live \
