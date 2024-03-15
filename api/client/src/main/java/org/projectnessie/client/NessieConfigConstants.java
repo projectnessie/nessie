@@ -499,6 +499,8 @@ public final class NessieConfigConstants {
   public static final String CONF_ENABLE_API_COMPATIBILITY_CHECK =
       "nessie.enable-api-compatibility-check";
 
+  public static final String CONF_NESSIE_CLIENT_API_VERSION = "nessie.client-api-version";
+
   public static final int DEFAULT_READ_TIMEOUT_MILLIS = 25000;
   public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 5000;
 
