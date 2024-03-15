@@ -39,6 +39,7 @@ jobs:
   java:
     name: Java/Gradle Windows
     runs-on: windows-2022
+    timeout-minutes: 60
     if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
       SPARK_LOCAL_IP: localhost

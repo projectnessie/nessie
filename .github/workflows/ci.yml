@@ -57,6 +57,7 @@ jobs:
   code-checks:
     name: CI Code Checks et al
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -131,6 +132,7 @@ jobs:
   test:
     name: CI Test
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -181,6 +183,7 @@ jobs:
   test-quarkus:
     name: CI Test Quarkus
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -238,6 +241,7 @@ jobs:
   int-test:
     name: CI intTest
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -299,6 +303,7 @@ jobs:
   int-test-stores:
     name: CI intTest versioned/stores
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -349,6 +354,7 @@ jobs:
   int-test-integrations:
     name: CI intTest integrations
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -388,6 +394,7 @@ jobs:
   int-test-quarkus:
     name: CI intTest Quarkus
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -445,6 +452,7 @@ jobs:
   determine-jobs:
     name: CI Determine jobs
     runs-on: ubuntu-22.04
+    timeout-minutes: 5
     outputs:
       # Each "conditional" job has a mapped output here, also a "non-PR" case and a "PR" case
       # with label and globs (at the end of the script).
@@ -557,6 +565,7 @@ jobs:
   docker-testing:
     name: CI Docker build and publishing
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs:
       - determine-jobs
     if: needs.determine-jobs.outputs.docker == 'true'
@@ -706,6 +715,7 @@ jobs:
   nesqueit:
     name: CI NesQuEIT
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs:
       - determine-jobs
     # Only run NesQuEIT tests for PRs, if requested. This job can easily run for 30+ minutes.
@@ -819,6 +829,7 @@ jobs:
   helm-testing:
     name: CI Lint & Test Helm chart
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs:
       - determine-jobs
     if: needs.determine-jobs.outputs.helm == 'true'
@@ -889,6 +900,7 @@ jobs:
   site:
     name: CI Website
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
       - name: Setup Python
@@ -921,6 +933,7 @@ jobs:
     # Store the Gradle cache to GH cache as soon as all relevant Nessie/Gradle jobs have finished.
     name: CI Store Cache
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       # Only include jobs that use Nessie's Gradle cache, especially excluding NesQuEIT, which

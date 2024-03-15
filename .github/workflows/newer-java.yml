@@ -22,6 +22,7 @@ jobs:
   java:
     name: Exercise Java version
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-newer-java')
     strategy:
       max-parallel: 1
