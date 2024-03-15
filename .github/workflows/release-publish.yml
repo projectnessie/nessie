@@ -224,18 +224,9 @@ jobs:
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
         \`\`\`
 
-        Nessie GC tool is attached as [\`nessie-gc-${RELEASE_VERSION}.jar\`](${Q_GC_TOOL_URL}), 
-        which is a standalone uber-jar file that runs on Java 11 or newer:
-        \`\`\`
-        wget ${Q_GC_TOOL_URL}
-        java -jar nessie-gc-${RELEASE_VERSION}.jar
-        \`\`\`
-        Shell completion can be generated from the tool, check its \`help\` command.
-        Nessie GC tool is also available as a Docker image: 
-        \`docker run --rm ghcr.io/projectnessie/nessie-gc:${RELEASE_VERSION} --help\`.
+        Nessie GC tool is attached as [\`nessie-gc-${RELEASE_VERSION}.jar\`](${Q_GC_TOOL_URL}), which is a standalone uber-jar file that runs on Java 11 or newer. Shell completion can be generated from the tool, check its \`help\` command. Nessie GC tool is also available as a Docker image: \`docker run --rm ghcr.io/projectnessie/nessie-gc:${RELEASE_VERSION} --help\`.
 
-        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
-        There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
+        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm. There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
 
         ## Changelog
         
