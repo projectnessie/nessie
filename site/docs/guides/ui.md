@@ -11,4 +11,4 @@ you can find the UI at [localhost:19120](http://localhost:19120/).
 ### Swagger UI
 
 The Swagger UI allows for testing the REST API and reading the API docs. It is available
-at  [localhost:19120/q/swagger-ui](http://localhost:19120/q/swagger-ui/).
+at  [localhost:9000/q/swagger-ui](http://localhost:9000/q/swagger-ui/).

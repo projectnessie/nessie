@@ -19,6 +19,7 @@ import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import java.util.Optional;
 import java.util.Set;
 
 /** Configuration for Nessie authentication settings. */
@@ -37,5 +38,5 @@ public interface QuarkusNessieAuthenticationConfig {
    * @hidden Not present in docs on web-site.
    */
   @WithName("anonymous-paths")
-  Set<String> anonymousPaths();
+  Optional<Set<String>> anonymousPaths();
 }

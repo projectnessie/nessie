@@ -16,6 +16,8 @@
 package org.projectnessie.server;
 
 import io.restassured.RestAssured;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -27,9 +29,17 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractQuarkusRest
   // this test is executed after all tests from the base class
 
   private String getMetrics() {
+    int managementPort = Integer.getInteger("quarkus.management.port");
+    URI managementBaseUri;
+    try {
+      managementBaseUri =
+          new URI("http", null, clientUri.getHost(), managementPort, "/", null, null);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
     return RestAssured.given()
         .when()
-        .baseUri(clientUri.resolve("/").toString())
+        .baseUri(managementBaseUri.toString())
         .basePath("/q/metrics")
         .accept("*/*")
         .get()

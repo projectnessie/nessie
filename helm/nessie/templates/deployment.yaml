@@ -228,11 +228,14 @@ spec:
             - name: nessie-server
               containerPort: 19120
               protocol: TCP
+            - name: nessie-mgmt
+              containerPort: 9000
+              protocol: TCP
           livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /q/health/live
-              port: 19120
+              port: 9000
               scheme: HTTP
             initialDelaySeconds: 2
             periodSeconds: 30
@@ -242,7 +245,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /q/health/ready
-              port: 19120
+              port: 9000
               scheme: HTTP
             initialDelaySeconds: 3
             periodSeconds: 45

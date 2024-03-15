@@ -104,7 +104,7 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
         QuarkusNessieAuthenticationConfig config,
         Supplier<Uni<SecurityIdentity>> anonymousSupplier) {
       this.authEnabled = config.enabled();
-      this.anonymousPaths = config.anonymousPaths();
+      this.anonymousPaths = config.anonymousPaths().orElse(Set.of());
       this.anonymousSupplier = anonymousSupplier;
     }
 

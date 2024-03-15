@@ -21,6 +21,7 @@ import static org.projectnessie.quarkus.tests.profiles.BaseConfigProfile.TEST_RE
 import com.google.common.collect.ImmutableMap;
 import io.restassured.RestAssured;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
 import java.util.List;
@@ -507,9 +508,17 @@ public abstract class AbstractQuarkusEvents {
   }
 
   private String getMetrics() {
+    int managementPort = Integer.getInteger("quarkus.management.port");
+    URI managementBaseUri;
+    try {
+      managementBaseUri =
+          new URI("http", null, clientUri.getHost(), managementPort, "/", null, null);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
     return RestAssured.given()
         .when()
-        .baseUri(clientUri.resolve("/").toString())
+        .baseUri(managementBaseUri.toString())
         .basePath("/q/metrics")
         .accept("*/*")
         .get()

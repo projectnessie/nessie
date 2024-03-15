@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nessie.fullname" . | printf "%s-mgmt" | quote }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    {{- include "nessie.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+      name: nessie-mgmt
+  publishNotReadyAddresses: true
+  clusterIP: None

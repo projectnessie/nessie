@@ -30,7 +30,6 @@ public class EventsEnabledProfile extends BaseConfigProfile {
           .put("quarkus.otel.traces.sampler", "always_on")
           .put("nessie.version.store.events.retry.initial-delay", "PT0.1S")
           .put("nessie.version.store.events.static-properties.foo", "bar")
-          .put("nessie.server.authentication.anonymous-paths", "/q/metrics")
           .build();
 
   @Override
