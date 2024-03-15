@@ -13,6 +13,7 @@ jobs:
   sync:
     name: Synchronize Container Registries
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     if: github.repository == 'projectnessie/nessie'
 
     steps:

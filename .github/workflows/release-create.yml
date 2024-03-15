@@ -49,6 +49,7 @@ jobs:
   create-release:
     name: Create release
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     if: github.repository == 'projectnessie/nessie'
     env:
       RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
