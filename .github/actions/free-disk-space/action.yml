@@ -28,6 +28,8 @@ runs:
           node:16-alpine \
           node:18 \
           node:18-alpine \
+          node:20 \
+          node:20-alpine \
           moby/buildkit:latest \
           alpine:3.16 \
           alpine:3.17 \

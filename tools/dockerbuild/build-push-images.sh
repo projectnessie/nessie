@@ -157,6 +157,7 @@ if [[ ${LOCAL} == 0 ]] ; then
   ${TOOL} buildx use default
   ${TOOL} buildx create \
     --platform linux/amd64,linux/arm64 \
+    ${BUILDX_CONFIG} \
     --use \
     --name nessiebuild \
     --driver-opt network=host || docker buildx use nessiebuild
