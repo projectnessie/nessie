@@ -72,7 +72,7 @@
         "org.projectnessie.cel:cel-bom",
         "org.rocksdb:rocksdbjni",
       ],
-      "labels": ["pr-native", "pr-docker"]
+      labels: ["pr-native", "pr-docker"],
     },
 
     // Reduce awssdk update frequency (which has daily releases)
@@ -81,9 +81,19 @@
       matchPackagePrefixes: ["software.amazon.awssdk"],
       extends: ["schedule:weekly"],
     },
+
+    // Special versioning for Minio
+    {
+      matchManagers: ["docker"],
+      packagePatterns: ["^minio"],
+      versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>\\d{2})-(?<revision>\\d{2})-\\d{2}Z",
+      // see https://docs.renovatebot.com/modules/versioning/#regular-expression-versioning
+      // see https://github.com/renovatebot/renovate/issues/2438
+    },
   ],
 
   // Max 50 PRs in total, 10 per hour
   prConcurrentLimit: 50,
   prHourlyLimit: 2,
 }
+
