@@ -84,7 +84,7 @@
 
     // Special versioning for Minio
     {
-      matchManagers: ["docker"],
+      matchManagers: ["dockerfile"],
       packagePatterns: ["^minio"],
       versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>\\d{2})-(?<revision>\\d{2})-\\d{2}Z",
       // see https://docs.renovatebot.com/modules/versioning/#regular-expression-versioning
