@@ -458,7 +458,6 @@ jobs:
       # with label and globs (at the end of the script).
       docker: ${{ steps.determine.outputs.docker }}
       nesqueit: ${{ steps.determine.outputs.nesqueit }}
-      helm: ${{ steps.determine.outputs.helm }}
     steps:
       - name: install minimatch
         shell: bash
@@ -528,7 +527,6 @@ jobs:
               // Yield default values for all event payload types, except pull_request
               core.setOutput('docker', true);
               core.setOutput('nesqueit', false); // handled in a scheduled job
-              core.setOutput('helm', true);
               return true;
             }
 
@@ -547,7 +545,7 @@ jobs:
             core.startGroup('PR job check / Docker');
             core.setOutput('docker', checkLabelOrGlobs(pr, changedFiles,
               'pr-docker',
-              ['gradle/wrapper/**', 'tools/dockerbuild/**', '.github/**']));
+              ['gradle/wrapper/**', 'tools/dockerbuild/**', 'helm/**', '.github/**']));
             core.endGroup();
 
             core.startGroup('PR job check / NesQuEIT');
@@ -556,14 +554,8 @@ jobs:
               ['gradle/wrapper/**', 'integrations/**', 'api/**', '.github/**']));
             core.endGroup();
 
-            core.startGroup('PR job check / Helm');
-            core.setOutput('helm', checkLabelOrGlobs(pr, changedFiles,
-              'pr-helm',
-              ['helm/**', '.github/**']));
-            core.endGroup();
-
   docker-testing:
-    name: CI Docker build and publishing
+    name: CI Docker and Helm checks
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs:
@@ -579,47 +571,88 @@ jobs:
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
-      - name: Setup docker-registry
+      - name: Extract version
         run: |
-          sudo apt-get install -y docker-registry apache2-utils 
-          cat <<! > config.yml
-          version: 0.1
-          log:
-            fields:
-              service: registry
-          storage:
-            cache:
-              blobdescriptor: inmemory
-            filesystem:
-              rootdirectory: /var/lib/docker-registry
-            delete:
-              enabled: true
-          http:
-            addr: 127.0.0.1:5000
-            headers:
-              X-Content-Type-Options: [nosniff]
-          auth:
-            htpasswd:
-              realm: basic-realm
-              path: /etc/docker/registry/htpasswd
-          health:
-            storagedriver:
-              enabled: true
-              interval: 10s
-              threshold: 3
-          !
-          sudo mv config.yml /etc/docker/registry/config.yml
-          sudo htpasswd -cBb /etc/docker/registry/htpasswd micky mouse 
-          
-          sudo service docker-registry restart
-          
-          echo mouse | docker login -u micky --password-stdin localhost:5000
-
           VERSION="$(cat version.txt)"
           DOCKER_VERSION="${VERSION%-SNAPSHOT}"
+          echo ${DOCKER_VERSION}
           echo "DOCKER_VERSION=${DOCKER_VERSION}" >> ${GITHUB_ENV}
-          echo "DOCKER_IMAGE=localhost:5000/nessie-testing" >> ${GITHUB_ENV}
-          echo "DOCKER_GC_IMAGE=localhost:5000/nessie-gc-testing" >> ${GITHUB_ENV}
+
+      # Free disk space (minikube warning: "Docker is nearly out of disk space, which may cause
+      # deployments to fail! (85% of capacity)")
+      - name: Free disk space
+        uses: ./.github/actions/free-disk-space
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          # https://helm.sh/docs/topics/version_skew/
+          version: 'v3.11.3'
+
+      - name: Setup chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup & Start Minikube
+        uses: medyagh/setup-minikube@v0.0.15
+        with:
+          # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
+          kubernetes-version: stable
+          cache: false
+          # This _should_ work, but doesn't somehow (the image push fails). It errors out looking for a coredns pod
+          # with these settings...
+          #addons: 'registry'
+          #insecure-registry: '192.168.0.0/16'
+
+      - name: Setup Docker registry
+        run: |
+          echo "::group::Get registry IP"
+          DOCKER_REGISTRY="$(minikube ip)"
+          echo "Registry IP is ${DOCKER_REGISTRY}"
+          echo "::endgroup::"
+
+          echo "::group::Update buildkitd_conf for 'docker buildx build'"
+          # Use 'http' instead of 'https' during 'docker buildx build' in 'tools/dockerbuild/build-push-images.sh'
+          cat <<EOF > ../buildkitd.toml                                                                                                                                                                                                                                                                                            
+          [registry."${DOCKER_REGISTRY}:5000"]                                                                                                                                                                                                                                                                                 
+            http = true
+          EOF
+          buildkitd_conf="$(pwd)/../buildkitd.toml"
+          echo "::endgroup::"
+
+          echo "::group::Update /etc/docker/daemon.json for 'docker pull'"
+          cp /etc/docker/daemon.json ..
+          cat ../daemon.json | \
+            jq ". + {\"insecure-registries\": [\"${DOCKER_REGISTRY}:5000\"]}" | \
+            sudo tee /etc/docker/daemon.json
+          echo "::endgroup::"
+
+          # minikube restart, because:
+          #   1. required after docker daemon restart 
+          #   2. tweak the "registry addon" into the start command
+          #   3. tweak the "insecure-registry" setting into the start command
+          # Must delete the minikube cluster to let the insecure-registry setting take effect.
+          # See 'Enabling Insecure Registries' in https://minikube.sigs.k8s.io/docs/handbook/registry/
+          echo "::group::Stop minikube"
+          minikube stop
+          echo "::endgroup::"
+          echo "::group::Delete minikube" 
+          minikube delete
+          echo "::endgroup::"
+          echo "::group::Restart docker daemon"
+          sudo systemctl restart docker
+          echo "::endgroup::"
+          echo "::group::Start minikube"
+          minikube start --insecure-registry="${DOCKER_REGISTRY}:5000" --addons=registry
+          echo "::endgroup::"
+
+          echo "BUILDX_CONFIG=--config ${buildkitd_conf}" >> ${GITHUB_ENV}
+          echo "DOCKER_IMAGE=${DOCKER_REGISTRY}:5000/nessie-testing" >> ${GITHUB_ENV}
+          echo "DOCKER_GC_IMAGE=${DOCKER_REGISTRY}:5000/nessie-gc-testing" >> ${GITHUB_ENV}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
@@ -652,7 +685,7 @@ jobs:
           docker buildx use default
           docker buildx rm nessiebuild
 
-      - name: Docker images exist test
+      - name: Check if expected Docker images exist
         run: |
           docker pull ${DOCKER_IMAGE}:latest
           docker pull ${DOCKER_IMAGE}:latest-java
@@ -672,7 +705,7 @@ jobs:
 
       - name: Check if Server Docker Java image works
         run: |
-          docker run --detach --name nessie ${DOCKER_IMAGE}:latest-java
+          docker run --rm --detach --name nessie ${DOCKER_IMAGE}:latest-java
           echo "Let Nessie Java Docker image run for one minute (to make sure it starts up fine)..."
           for i in {1..60}; do
             STATUS="$(docker container inspect nessie | jq -r '.[0].State.Status')"
@@ -693,7 +726,6 @@ jobs:
           echo "## Nessie Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
           echo "Nessie Java Docker image smoke test: PASSED"
           docker stop nessie
-          docker rm nessie
 
       - name: Check if GC Tool Docker Java image works
         run: |
@@ -711,6 +743,25 @@ jobs:
           !
             exit 1
           fi
+
+      - name: Run chart-testing (list-changed)
+        run: |
+          ct list-changed --target-branch ${{ github.event.repository.default_branch }}
+
+      - name: Run chart-testing (lint)
+        run: ct lint --debug --charts ./helm/nessie
+
+      - name: Show pods
+        run: kubectl get pods -A
+
+      - name: Run chart-testing (install)
+        run: |
+          echo "Using image: ${DOCKER_IMAGE}"
+          echo "        tag: ${DOCKER_VERSION}"
+      
+          ct install \
+            --helm-extra-set-args "--set=image.repository=${DOCKER_IMAGE} --set=image.tag=${DOCKER_VERSION}" \
+            --debug --charts ./helm/nessie
 
   nesqueit:
     name: CI NesQuEIT
@@ -773,7 +824,7 @@ jobs:
           patch-branch: ${{env.ICEBERG_PATCH_BRANCH}}
           work-branch: iceberg-integration-patched
 
-      - name: Set up JDK ${{ matrix.java-version }}
+      - name: Setup JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -825,77 +876,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: intTest --scan
-
-  helm-testing:
-    name: CI Lint & Test Helm chart
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
-    needs:
-      - determine-jobs
-    if: needs.determine-jobs.outputs.helm == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-        with:
-          fetch-depth: 0
-
-      # Skip remaining steps, if current Nessie release version is not available
-      - name: Precheck
-        run: |
-          EXPECT_VERSION="$(cat helm/nessie/Chart.yaml | grep -E '^version: ')"
-          curl https://charts.projectnessie.org/index.yaml 2>/dev/null | grep -q "${EXPECT_VERSION}" || (
-            echo "Skipping Helm checks, because Nessie Helm chart version ${EXPECT_VERSION} is not available"
-            echo "WF_EXEC=false" >> ${GITHUB_ENV}  
-          )
-
-      - name: Set up Helm
-        if: env.WF_EXEC != 'false'
-        uses: azure/setup-helm@v4
-        with:
-          # https://helm.sh/docs/topics/version_skew/
-          version: 'v3.11.3'
-
-      - name: Setup Python
-        if: env.WF_EXEC != 'false'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Set up chart-testing
-        if: env.WF_EXEC != 'false'
-        uses: helm/chart-testing-action@v2.6.1
-        with:
-          # https://github.com/adrienverge/yamllint/tags
-          # default is 1.27.1, but leads to Python install issues
-          yamllint_version: 1.31.0
-          # https://github.com/23andMe/Yamale/releases
-          # default is 3.0.4, just bump to current latest patch version
-          yamale_version: 3.0.8
-
-      - name: Run chart-testing (list-changed)
-        if: env.WF_EXEC != 'false'
-        run: |
-          ct list-changed --target-branch ${{ github.event.repository.default_branch }}
-
-      - name: Run chart-testing (lint)
-        if: env.WF_EXEC != 'false'
-        run: ct lint --debug --charts ./helm/nessie
-
-      - name: Set up & Start Minikube
-        if: env.WF_EXEC != 'false'
-        uses: medyagh/setup-minikube@v0.0.15
-        with:
-          # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
-          kubernetes-version: stable
-          cache: false
-
-      - name: Show pods
-        if: env.WF_EXEC != 'false'
-        run: kubectl get pods -A
-
-      - name: Run chart-testing (install)
-        if: env.WF_EXEC != 'false'
-        run: ct install --debug --charts ./helm/nessie
 
   site:
     name: CI Website
