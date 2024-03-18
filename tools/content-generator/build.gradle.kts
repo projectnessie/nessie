@@ -25,6 +25,7 @@ plugins {
 
 dependencies {
   implementation(project(":nessie-client"))
+  runtimeOnly(libs.httpclient5)
 
   implementation(libs.picocli)
   // TODO help picocli to make their annotation-processor incremental
@@ -54,6 +55,7 @@ dependencies {
   testFixturesCompileOnly(libs.picocli)
   testFixturesCompileOnly(platform(libs.jackson.bom))
   testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testFixturesApi(libs.httpclient5)
 
   testImplementation(project(":nessie-jaxrs-testextension"))
 

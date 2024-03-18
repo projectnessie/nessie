@@ -96,11 +96,6 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   }
 
   @Value.Default
-  default boolean forceUrlConnectionClient() {
-    return false;
-  }
-
-  @Value.Default
   default int getClientSpec() {
     return 2;
   }

@@ -33,11 +33,11 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
  * implementation.
  */
 @SuppressWarnings("Since15") // IntelliJ warns about new APIs. 15 is misleading, it means 11
-public final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
+final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
   final HttpRuntimeConfig config;
   private HttpClient client;
 
-  public JavaHttpClient(HttpRuntimeConfig config) {
+  JavaHttpClient(HttpRuntimeConfig config) {
     this.config = config;
 
     HttpClient.Builder clientBuilder =

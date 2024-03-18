@@ -426,7 +426,7 @@ public final class NessieConfigConstants {
    * Optional, list of comma-separated cipher suites for SSL connections, see {@link
    * javax.net.ssl.SSLParameters#setCipherSuites(String[])}.
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
   public static final String CONF_NESSIE_SSL_CIPHER_SUITES = "nessie.ssl.cipher-suites";
 
@@ -434,7 +434,7 @@ public final class NessieConfigConstants {
    * Optional, list of comma-separated protocols for SSL connections, see {@link
    * javax.net.ssl.SSLParameters#setProtocols(String[])}.
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
   public static final String CONF_NESSIE_SSL_PROTOCOLS = "nessie.ssl.protocols";
 
@@ -444,7 +444,7 @@ public final class NessieConfigConstants {
    *
    * <p>Takes a comma-separated list of SNI hostnames.
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
   public static final String CONF_NESSIE_SNI_HOSTS = "nessie.ssl.sni-hosts";
 
@@ -455,14 +455,14 @@ public final class NessieConfigConstants {
    * <p>Takes a single SNI hostname <em>matcher</em>, a regular expression representing the SNI
    * hostnames to match.
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
   public static final String CONF_NESSIE_SNI_MATCHER = "nessie.ssl.sni-matcher";
 
   /**
    * Optional, allow HTTP/2 upgrade, if set to {@code true}.
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
   public static final String CONF_NESSIE_HTTP_2 = "nessie.http2-upgrade";
 
@@ -477,7 +477,7 @@ public final class NessieConfigConstants {
    *   <li>{@code NORMAL}: Always redirect, except from HTTPS URLs to HTTP URLs.
    * </ul>
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
   public static final String CONF_NESSIE_HTTP_REDIRECT = "nessie.http-redirects";
 
@@ -485,8 +485,10 @@ public final class NessieConfigConstants {
    * Optional, when running on Java 11 force the use of the old {@link java.net.URLConnection} based
    * client for HTTP, if set to {@code true}.
    *
-   * <p>This parameter only works on Java 11 and newer.
+   * @deprecated Use {@link #CONF_NESSIE_CLIENT_NAME} with the value {@code URLConnection}.
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   public static final String CONF_FORCE_URL_CONNECTION_CLIENT =
       "nessie.force-url-connection-client";
 
