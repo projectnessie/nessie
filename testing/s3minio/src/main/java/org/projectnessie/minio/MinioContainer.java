@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
@@ -40,10 +41,11 @@ import org.testcontainers.utility.Base58;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
-final class MinioContainer extends GenericContainer<MinioContainer>
+public final class MinioContainer extends GenericContainer<MinioContainer>
     implements MinioAccess, CloseableResource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MinioContainer.class);
@@ -53,6 +55,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
 
   static {
     URL resource = MinioContainer.class.getResource("Dockerfile-minio-version");
+    Objects.requireNonNull(resource, "Dockerfile-minio-version not found");
     try (InputStream in = resource.openConnection().getInputStream()) {
       String[] imageTag =
           Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
@@ -83,7 +86,13 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   private static final String DEFAULT_STORAGE_DIRECTORY = "/data";
   private static final String HEALTH_ENDPOINT = "/minio/health/ready";
   private static final String MINIO_DOMAIN_NAME;
-  private static final String MINIO_DOMAIN_NIP = "minio.127-0-0-1.nip.io";
+
+  /**
+   * Domain must start with "s3" in order to be recognized as an S3 endpoint by the AWS SDK with
+   * virtual-host-style addressing. The bucket name is expected to be the first part of the domain
+   * name, e.g. "bucket.s3.127-0-0-1.nip.io".
+   */
+  private static final String MINIO_DOMAIN_NIP = "s3.127-0-0-1.nip.io";
 
   static boolean canRunOnMacOs() {
     return MINIO_DOMAIN_NAME.equals(MINIO_DOMAIN_NIP);
@@ -92,7 +101,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   static {
     String name;
     try {
-      InetAddress.getByName(MINIO_DOMAIN_NIP);
+      InetAddress ignored = InetAddress.getByName(MINIO_DOMAIN_NIP);
       name = MINIO_DOMAIN_NIP;
     } catch (UnknownHostException e) {
       LOGGER.warn(
@@ -112,6 +121,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   private String s3endpoint;
   private S3Client s3;
   private URI bucketBaseUri;
+  private String region;
 
   @SuppressWarnings("unused")
   public MinioContainer() {
@@ -137,6 +147,11 @@ final class MinioContainer extends GenericContainer<MinioContainer>
             .forPort(DEFAULT_PORT)
             .forPath(HEALTH_ENDPOINT)
             .withStartupTimeout(Duration.ofMinutes(2)));
+  }
+
+  public MinioContainer withRegion(String region) {
+    this.region = region;
+    return this;
   }
 
   private static String randomString(String prefix) {
@@ -234,6 +249,12 @@ final class MinioContainer extends GenericContainer<MinioContainer>
     return S3Client.builder()
         .httpClientBuilder(UrlConnectionHttpClient.builder())
         .applyMutation(builder -> builder.endpointOverride(URI.create(s3endpoint())))
+        .applyMutation(
+            builder -> {
+              if (region != null) {
+                builder.region(Region.of(region));
+              }
+            })
         // .serviceConfiguration(s3Configuration(s3PathStyleAccess, s3UseArnRegionEnabled))
         // credentialsProvider(s3AccessKeyId, s3SecretAccessKey, s3SessionToken)
         .credentialsProvider(
