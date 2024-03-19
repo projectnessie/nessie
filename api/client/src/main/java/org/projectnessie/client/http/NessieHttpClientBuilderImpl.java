@@ -28,7 +28,6 @@ import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.client.rest.v1.HttpApiV1;
 import org.projectnessie.client.rest.v1.RestV1Client;
 import org.projectnessie.client.rest.v2.HttpApiV2;
@@ -43,10 +42,7 @@ public class NessieHttpClientBuilderImpl
           .enable(SerializationFeature.INDENT_OUTPUT)
           .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
-  private final HttpClient.Builder builder =
-      HttpClient.builder()
-          .setObjectMapper(MAPPER)
-          .addResponseFilter(new NessieHttpResponseFilter());
+  private final HttpClient.Builder builder = HttpClient.builder().setObjectMapper(MAPPER);
 
   private boolean tracing;
 
