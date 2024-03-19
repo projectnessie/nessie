@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -144,19 +145,18 @@ public class ResponseCheckFilter {
    * Captures the first 2kB of the input in case the response is not parsable, to provide a better
    * error message to the user.
    */
-  static final class CapturingInputStream extends InputStream {
+  static final class CapturingInputStream extends FilterInputStream {
     static final int CAPTURE_LEN = 2048;
-    private final InputStream delegate;
     private final byte[] capture = new byte[CAPTURE_LEN];
     private int captured;
 
     CapturingInputStream(InputStream delegate) {
-      this.delegate = delegate;
+      super(delegate);
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-      int rd = delegate.read(b, off, len);
+      int rd = super.read(b, off, len);
       int captureRemain = capture.length - captured;
       if (rd > 0 && captureRemain > 0) {
         int copy = Math.min(rd, captureRemain);
@@ -168,7 +168,7 @@ public class ResponseCheckFilter {
 
     @Override
     public int read() throws IOException {
-      int rd = delegate.read();
+      int rd = super.read();
       if (rd >= 0 && captured < capture.length) {
         capture[captured++] = (byte) rd;
       }
