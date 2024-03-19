@@ -206,7 +206,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: |
-            :nessie-client:test
             :nessie-quarkus:test
             :nessie-events-quarkus:test
             --scan
