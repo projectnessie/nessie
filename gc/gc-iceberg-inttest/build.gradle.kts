@@ -104,6 +104,7 @@ dependencies {
   intTestRuntimeOnly(libs.google.cloud.gcs.connector)
 
   intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
+  intTestImplementation(nessieProject("nessie-gcs-testcontainer"))
   intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly(libs.immutables.builder)
@@ -131,6 +132,9 @@ nessieQuarkusApp {
 }
 
 forceJavaVersionForTests(sparkScala.runtimeJavaVersion)
+
+// Spark stuff is veeery sticky
+tasks.named<Test>("intTest").configure { forkEvery = 1 }
 
 tasks.withType(Test::class.java).configureEach {
   systemProperty("aws.region", "us-east-1")
