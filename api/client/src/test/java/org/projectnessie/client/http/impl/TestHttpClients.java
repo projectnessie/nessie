@@ -62,23 +62,6 @@ public class TestHttpClients {
         .hasMessage("No HTTP client factory for name 'blahblah' found");
   }
 
-  @Test
-  public void illegalCombination() {
-    assertThatThrownBy(
-            () ->
-                HttpClient.builder()
-                    .setBaseUri(URI.create("http://localhost:8080"))
-                    .setObjectMapper(new ObjectMapper())
-                    .setConnectionTimeoutMillis(15000)
-                    .setReadTimeoutMillis(15000)
-                    .setHttpClientName("apachehttp")
-                    .setForceUrlConnectionClient(true)
-                    .build())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
-            "Both forceUrlConnectionClient and httpClientName are specified with incompatible values, migrate to httpClientName");
-  }
-
   static Stream<Arguments> clientByName() {
 
     if (JRE.currentVersion().ordinal() < JRE.JAVA_11.ordinal()) {
@@ -100,7 +83,9 @@ public class TestHttpClients {
               false),
           arguments(
               "urlconnection", "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true),
-          arguments(null, "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true));
+          arguments(null, "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true),
+          arguments(
+              "apachehttp", "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true));
     }
 
     return Stream.of(
