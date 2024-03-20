@@ -15,6 +15,7 @@
  */
 package org.projectnessie.gc.iceberg.files;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.net.URI;
@@ -34,6 +35,8 @@ import org.apache.iceberg.aws.s3.S3FileIO;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.ResolvingFileIO;
+import org.apache.iceberg.io.SupportsBulkOperations;
+import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.immutables.value.Value;
 import org.projectnessie.gc.files.DeleteResult;
 import org.projectnessie.gc.files.DeleteSummary;
@@ -71,12 +74,16 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   }
 
   public interface Builder {
+    @CanIgnoreReturnValue
     Builder hadoopConfiguration(Configuration hadoopConfiguration);
 
+    @CanIgnoreReturnValue
     Builder putProperties(String key, String value);
 
+    @CanIgnoreReturnValue
     Builder putAllProperties(Map<String, ? extends String> entries);
 
+    @CanIgnoreReturnValue
     Builder properties(Map<String, ? extends String> entries);
 
     IcebergFiles build();
@@ -92,9 +99,6 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @SuppressWarnings("immutables:incompat")
   private volatile boolean hasResolvingFileIO;
 
-  @SuppressWarnings("immutables:incompat")
-  private volatile boolean hasS3FileIO;
-
   @Value.Lazy
   public FileIO resolvingFileIO() {
     ResolvingFileIO fileIO = new ResolvingFileIO();
@@ -105,32 +109,21 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     return fileIO;
   }
 
-  @Value.Lazy
-  S3FileIO s3() {
-    S3FileIO fileIO = new S3FileIO();
-    fileIO.initialize(properties());
-    hasS3FileIO = true;
-    LOGGER.debug("Instantiated Iceberg's S3FileIO");
-    return fileIO;
-  }
-
   @Override
   public void close() {
-    try {
-      if (hasS3FileIO) {
-        s3().close();
-      }
-    } finally {
-      if (hasResolvingFileIO) {
-        resolvingFileIO().close();
-      }
+    if (hasResolvingFileIO) {
+      resolvingFileIO().close();
     }
   }
 
-  private boolean isS3(URI uri) {
+  private boolean supportsBulkAndPrefixOperations(URI uri) {
     switch (uri.getScheme()) {
       case "s3":
       case "s3a":
+      case "s3n":
+      case "gs":
+      case "abfs":
+      case "abfss":
         return true;
       default:
         return false;
@@ -141,10 +134,10 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @MustBeClosed
   public Stream<FileReference> listRecursively(URI path) throws NessieFileIOException {
     URI basePath = ensureTrailingSlash(path);
-    if (isS3(path)) {
+    if (supportsBulkAndPrefixOperations(path)) {
 
       @SuppressWarnings("resource")
-      S3FileIO fileIo = s3();
+      SupportsPrefixOperations fileIo = (SupportsPrefixOperations) resolvingFileIO();
       return StreamSupport.stream(fileIo.listPrefix(basePath.toString()).spliterator(), false)
           .map(
               f ->
@@ -205,7 +198,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     try {
       URI absolutePath = fileReference.absolutePath();
       @SuppressWarnings("resource")
-      FileIO fileIO = isS3(absolutePath) ? s3() : resolvingFileIO();
+      FileIO fileIO = resolvingFileIO();
       fileIO.deleteFile(absolutePath.toString());
       return DeleteResult.SUCCESS;
     } catch (Exception e) {
@@ -218,7 +211,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   public DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
     Stream<String> filesAsStrings = filesAsStrings(fileObjects);
 
-    if (isS3(baseUri)) {
+    if (supportsBulkAndPrefixOperations(baseUri)) {
       return s3DeleteMultiple(filesAsStrings);
     }
     return hadoopDeleteMultiple(filesAsStrings);
@@ -226,7 +219,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
 
   private DeleteSummary s3DeleteMultiple(Stream<String> filesAsStrings) {
     @SuppressWarnings("resource")
-    S3FileIO fileIo = s3();
+    SupportsBulkOperations fileIo = (SupportsBulkOperations) resolvingFileIO();
 
     List<String> files = filesAsStrings.collect(Collectors.toList());
     long failed = 0L;

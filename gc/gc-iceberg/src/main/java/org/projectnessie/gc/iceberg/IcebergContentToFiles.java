@@ -49,6 +49,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   private static final Logger LOGGER = LoggerFactory.getLogger(IcebergContentToFiles.class);
   public static final String S3_KEY_NOT_FOUND =
       "software.amazon.awssdk.services.s3.model.NoSuchKeyException";
+  public static final String GCS_STORAGE_EXCEPTION = "com.google.cloud.storage.StorageException";
+  public static final String GCS_NOT_FOUND_START = "404 Not Found";
 
   public static Builder builder() {
     return ImmutableIcebergContentToFiles.builder();
@@ -77,10 +79,27 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     try {
       tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
     } catch (Exception notFoundCandidate) {
+      boolean notFound = false;
       if (notFoundCandidate instanceof NotFoundException
           // Iceberg does not map software.amazon.awssdk.services.s3.model.NoSuchKeyException to
           // its native org.apache.iceberg.exceptions.NotFoundException,
           || S3_KEY_NOT_FOUND.equals(notFoundCandidate.getClass().getName())) {
+        notFound = true;
+      } else {
+        for (Throwable c = notFoundCandidate.getCause(); ; c = c.getCause()) {
+          if (GCS_STORAGE_EXCEPTION.equals(c.getClass().getName())
+              && c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
+            notFound = true;
+            break;
+          }
+
+          if (c == c.getCause()) {
+            break;
+          }
+        }
+      }
+
+      if (notFound) {
         // It is safe to assume that a missing table-metadata means no referenced files.
         // A table-metadata can be missing, because a previous Nessie GC "sweep" phase deleted it.
         LOGGER.info(
@@ -91,6 +110,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
             contentReference.commitId());
         return Stream.empty();
       }
+
       throw new RuntimeException(notFoundCandidate);
     }
 
