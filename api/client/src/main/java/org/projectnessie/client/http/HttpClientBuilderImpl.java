@@ -256,6 +256,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .build();
 
     String clientName = httpClientName;
+    // "HTTP" is the name for `org.projectnessie.client.http.NessieHttpClientBuilderImpl`
     if ("HTTP".equalsIgnoreCase(clientName)) {
       // fall back to default
       clientName = null;
