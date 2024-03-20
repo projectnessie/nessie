@@ -116,7 +116,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     }
   }
 
-  private boolean canBulkAndPrefix(URI uri) {
+  private boolean supportsBulkAndPrefixOperations(URI uri) {
     switch (uri.getScheme()) {
       case "s3":
       case "s3a":
@@ -134,7 +134,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @MustBeClosed
   public Stream<FileReference> listRecursively(URI path) throws NessieFileIOException {
     URI basePath = ensureTrailingSlash(path);
-    if (canBulkAndPrefix(path)) {
+    if (supportsBulkAndPrefixOperations(path)) {
 
       @SuppressWarnings("resource")
       SupportsPrefixOperations fileIo = (SupportsPrefixOperations) resolvingFileIO();
@@ -211,7 +211,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   public DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
     Stream<String> filesAsStrings = filesAsStrings(fileObjects);
 
-    if (canBulkAndPrefix(baseUri)) {
+    if (supportsBulkAndPrefixOperations(baseUri)) {
       return s3DeleteMultiple(filesAsStrings);
     }
     return hadoopDeleteMultiple(filesAsStrings);
