@@ -261,15 +261,14 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
       // fall back to default
       clientName = null;
     }
-    if (clientName == null && forceUrlConnectionClient) {
+
+    if (forceUrlConnectionClient) {
+      if (clientName != null && !"URLConnection".equalsIgnoreCase(clientName)) {
+        LOGGER.warn(
+            "Both forceUrlConnectionClient and httpClientName are specified with incompatible values, migrate to httpClientName");
+      }
       // forced use of URLConnectionClient
       clientName = "URLConnection";
-    }
-    if (clientName != null
-        && forceUrlConnectionClient
-        && !"URLConnection".equalsIgnoreCase(clientName)) {
-      throw new IllegalArgumentException(
-          "Both forceUrlConnectionClient and httpClientName are specified with incompatible values, migrate to httpClientName");
     }
 
     HttpClientFactory httpClientFactory =
