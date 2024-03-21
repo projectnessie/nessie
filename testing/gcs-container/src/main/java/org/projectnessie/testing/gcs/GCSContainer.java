@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -42,8 +43,9 @@ import org.testcontainers.utility.Base58;
  * Provides a test container for Google Cloud Storage, using the {@code
  * docker.io/fsouza/fake-gcs-server} image.
  *
- * <p><em>This container must use a STATIC HOST PORT, which means ONLY ONE INSTANCE CAN RUN AT ANY
- * TIME!</em>
+ * <p>This container must use a static TCP port, see below. To at least mitigate the chance that two
+ * concurrently running containers share the same IP:PORT combination, this implementation uses a
+ * random IP in the range 127.0.0.1 to 127.255.255.254. This does not work on Windows and Mac.
  *
  * <p>It would be really nice to test GCS using the Fake GCS server and dynamic ports, but that's
  * impossible, because of the GCS upload protocol itself. GCS uploads are initiated using one HTTP
@@ -85,6 +87,7 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     }
   }
 
+  private final String localAddress;
   private final String oauth2token;
   private final String bucket;
   private final String projectId;
@@ -97,9 +100,21 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
   public GCSContainer(String image) {
     super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
 
+    ThreadLocalRandom rand = ThreadLocalRandom.current();
+    boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");
+    boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+    localAddress =
+        isMac || isWindows
+            ? "127.0.0.1"
+            : String.format(
+                "127.%d.%d.%d", rand.nextInt(256), rand.nextInt(256), rand.nextInt(1, 255));
+    oauth2token = randomString("token");
+    bucket = randomString("bucket");
+    projectId = randomString("project");
+
     withNetworkAliases(randomString("fake-gcs"));
     withLogConsumer(c -> LOGGER.info("[FAKE-GCS] {}", c.getUtf8StringWithoutLineEnding()));
-    withCommand("-scheme", "http", "-public-host", "127.0.0.1", "-log-level", "warn");
+    withCommand("-scheme", "http", "-public-host", localAddress, "-log-level", "warn");
     setWaitStrategy(
         new HttpWaitStrategy()
             .forPath("/storage/v1/b")
@@ -110,10 +125,6 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
 
     // STATIC PORT BINDING!
     setPortBindings(singletonList(PORT + ":" + PORT));
-
-    oauth2token = randomString("token");
-    bucket = randomString("bucket");
-    projectId = randomString("project");
   }
 
   @Override
@@ -134,7 +145,11 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
   }
 
   public String baseUri() {
-    return String.format("http://127.0.0.1:%d", gcsPort());
+    return String.format("http://%s:%d", localAddress(), gcsPort());
+  }
+
+  public String localAddress() {
+    return localAddress;
   }
 
   public String oauth2token() {
@@ -147,10 +162,6 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
 
   public String bucketUri() {
     return String.format("gs://%s/", bucket);
-  }
-
-  public String serviceHost() {
-    return String.format("http://[::1]:%d", gcsPort());
   }
 
   public String projectId() {
