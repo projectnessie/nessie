@@ -45,7 +45,7 @@ import org.testcontainers.utility.Base58;
  *
  * <p>This container must use a static TCP port, see below. To at least mitigate the chance that two
  * concurrently running containers share the same IP:PORT combination, this implementation uses a
- * random IP in the range 127.0.0.1 to 127.255.255.254. This however does not work on Windows.
+ * random IP in the range 127.0.0.1 to 127.255.255.254. This does not work on Windows and Mac.
  *
  * <p>It would be really nice to test GCS using the Fake GCS server and dynamic ports, but that's
  * impossible, because of the GCS upload protocol itself. GCS uploads are initiated using one HTTP
@@ -101,8 +101,13 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
 
     ThreadLocalRandom rand = ThreadLocalRandom.current();
+    boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");
+    boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
     localAddress =
-        String.format("127.%d.%d.%d", rand.nextInt(256), rand.nextInt(256), rand.nextInt(1, 255));
+        isMac || isWindows
+            ? "127.0.0.1"
+            : String.format(
+                "127.%d.%d.%d", rand.nextInt(256), rand.nextInt(256), rand.nextInt(1, 255));
     oauth2token = randomString("token");
     bucket = randomString("bucket");
     projectId = randomString("project");
