@@ -15,14 +15,15 @@
  */
 package org.projectnessie.s3mock;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
 final class AwsChunkedInputStream extends InputStream {
   private final InputStream input;
-  private AwsChunkedState state = AwsChunkedState.EXPECT_HEADER;
+  private AwsChunkedState state = AwsChunkedState.EXPECT_METADATA;
   private int chunkLen;
 
   // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html#sigv4-chunked-body-definition
@@ -35,7 +36,7 @@ final class AwsChunkedInputStream extends InputStream {
   }
 
   enum AwsChunkedState {
-    EXPECT_HEADER,
+    EXPECT_METADATA,
     DATA,
     EXPECT_SEPARATOR,
     EOF,
@@ -47,7 +48,7 @@ final class AwsChunkedInputStream extends InputStream {
       switch (state) {
         case EOF:
           return -1;
-        case EXPECT_HEADER:
+        case EXPECT_METADATA:
           String header = readLine();
           if (header == null) {
             state = AwsChunkedState.EOF;
@@ -56,7 +57,7 @@ final class AwsChunkedInputStream extends InputStream {
           String[] parts = header.split(";");
           chunkLen = Integer.parseInt(parts[0], 16);
           if (chunkLen == 0) {
-            state = AwsChunkedState.EOF;
+            state = AwsChunkedState.EXPECT_SEPARATOR;
             break;
           }
           // TODO verify 'chunk-signature'
@@ -74,7 +75,7 @@ final class AwsChunkedInputStream extends InputStream {
           int rd = input.read(b, off, len);
           if (rd < 0) {
             state = AwsChunkedState.EOF;
-            return -1;
+            throw new EOFException("Unexpected end of chunk input, not enough data");
           }
           chunkLen -= rd;
           return rd;
@@ -82,11 +83,10 @@ final class AwsChunkedInputStream extends InputStream {
           String sep = readLine();
           if (sep == null) {
             state = AwsChunkedState.EOF;
-            break;
+            throw new EOFException("Expecting empty separator line, but got EOF");
           }
-          Preconditions.checkState(
-              sep.isEmpty(), "Expecting empty separator line, but got '%s'", sep);
-          state = AwsChunkedState.EXPECT_HEADER;
+          checkArgument(sep.isEmpty(), "Expecting empty separator line, but got '%s'", sep);
+          state = AwsChunkedState.EXPECT_METADATA;
           break;
         default:
           throw new IllegalStateException();
@@ -98,7 +98,7 @@ final class AwsChunkedInputStream extends InputStream {
   public int read() throws IOException {
     byte[] buf = new byte[1];
     int r = read(buf, 0, 1);
-    if (r < 0) {
+    if (r <= 0) {
       return r;
     }
     return ((int) buf[0]) & 0xff;
@@ -113,20 +113,18 @@ final class AwsChunkedInputStream extends InputStream {
           // End of stream "marker"
           return null;
         }
-        throw new EOFException();
+        throw new EOFException("Unexpected end of metadata line");
       }
       if (c == 13) {
         c = input.read();
         if (c == -1) {
-          throw new EOFException();
+          throw new EOFException("Unexpected end of metadata line");
         }
-        if (c == 10) {
-          return line.toString();
-        } else {
-          throw new IllegalArgumentException("Illegal CR-LF sequence");
-        }
+        checkArgument(c == 10, "Illegal CR-LF sequence");
+        return line.toString();
       }
       line.append((char) c);
+      checkArgument(line.length() < 8192, "metadata line too long");
     }
   }
 }

@@ -51,7 +51,7 @@ public abstract class S3Bucket {
   }
 
   @Value.Default
-  public PutObject putObject() {
+  public Storer storer() {
     return (objectName, contentType, data) -> {
       throw new UnsupportedOperationException();
     };
@@ -63,8 +63,8 @@ public abstract class S3Bucket {
   }
 
   @FunctionalInterface
-  public interface PutObject {
-    void putObject(String key, String contentType, byte[] data);
+  public interface Storer {
+    void store(String key, String contentType, byte[] data);
   }
 
   @FunctionalInterface
@@ -88,7 +88,7 @@ public abstract class S3Bucket {
                 return objects.get(key);
               }
             })
-        .putObject(
+        .storer(
             (key, contentType, data) -> {
               synchronized (objects) {
                 objects.putIfAbsent(

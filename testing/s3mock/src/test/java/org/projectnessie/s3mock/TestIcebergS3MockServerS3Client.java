@@ -337,7 +337,7 @@ public class TestIcebergS3MockServerS3Client extends AbstractIcebergS3MockServer
             b.putBuckets(
                 BUCKET,
                 S3Bucket.builder()
-                    .putObject(
+                    .storer(
                         (key, contentType, data) -> {
                           writtenKey.set(key);
                           writtenType.set(contentType);
@@ -371,9 +371,8 @@ public class TestIcebergS3MockServerS3Client extends AbstractIcebergS3MockServer
         RequestBody.fromBytes("Hello World".getBytes(StandardCharsets.UTF_8)));
 
     soft.assertThat(
-            IoUtils.toByteArray(
+            IoUtils.toUtf8String(
                 s3.getObject(GetObjectRequest.builder().bucket(BUCKET).key("my-object").build())))
-        .asString()
         .isEqualTo("Hello World");
 
     List<S3Object> contents =

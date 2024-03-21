@@ -53,7 +53,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -67,7 +66,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.projectnessie.s3mock.S3Bucket.ListElement;
@@ -405,7 +403,7 @@ public class S3Resource {
             return Response.status(400, "Content-MD5 does not match content").build();
           }
           try {
-            bucket.putObject().putObject(objectName, contentType, data);
+            bucket.storer().store(objectName, contentType, data);
             return Response.ok()
                 // .header("ETag", asQuotedHex(md5))
                 .header("Date", RFC_1123_DATE_TIME.format(Instant.now().atZone(ZoneId.of("UTC"))))
@@ -416,14 +414,27 @@ public class S3Resource {
         });
   }
 
-  private InputStream chunkedInput(String contentEncoding, InputStream input) throws IOException {
+  private InputStream chunkedInput(String contentEncoding, InputStream input) {
     if (contentEncoding != null) {
-      List<String> contentEncodingList =
-          Arrays.stream(contentEncoding.split(",")).collect(Collectors.toList());
-      if (contentEncodingList.remove("identity")) {
+      String[] encodings = contentEncoding.split(",");
+      boolean identity = false;
+      boolean chunked = false;
+      for (String encoding : encodings) {
+        switch (encoding) {
+          case "identity":
+            identity = true;
+            break;
+          case "aws-chunked":
+            chunked = true;
+            break;
+          default:
+            break;
+        }
+      }
+      if (identity) {
         // no-op
         return input;
-      } else if (contentEncodingList.remove("aws-chunked")) {
+      } else if (chunked) {
         return new AwsChunkedInputStream(input);
       }
     }
