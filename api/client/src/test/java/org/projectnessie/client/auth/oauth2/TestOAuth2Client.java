@@ -52,7 +52,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.http.TestHttpClient;
+import org.projectnessie.client.http.BaseTestHttpClient;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.client.util.HttpTestServer.RequestHandler;
@@ -676,7 +676,7 @@ class TestOAuth2Client {
       soft.assertThat(req.getMethod()).isEqualTo("POST");
       soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
       soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+      Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
       if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
         ErrorResponse response =
             ImmutableErrorResponse.builder()
@@ -776,7 +776,7 @@ class TestOAuth2Client {
       soft.assertThat(req.getMethod()).isEqualTo("POST");
       soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
       soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+      Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
       soft.assertThat(data).containsEntry("scope", "test");
       URI uri = URI.create(req.getRequestURL().toString());
       DeviceCodeResponse response =
@@ -797,7 +797,7 @@ class TestOAuth2Client {
       if (req.getMethod().equals("GET")) {
         writeResponseBody(resp, "<html><body>Enter device code:</body></html>");
       } else {
-        Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+        Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
         soft.assertThat(data).containsEntry("device_user_code", "CAFE-BABE");
         deviceAuthorized = true;
         writeResponseBody(resp, "{\"success\":true}");

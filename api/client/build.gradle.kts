@@ -41,6 +41,8 @@ dependencies {
   compileOnly(libs.jakarta.ws.rs.api)
   compileOnly(libs.javax.ws.rs)
 
+  compileOnly(libs.httpclient5)
+
   implementation(libs.slf4j.api)
   compileOnly(libs.errorprone.annotations)
 
@@ -73,9 +75,12 @@ dependencies {
   testFixturesApi("software.amazon.awssdk:auth")
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
+  testFixturesApi(libs.httpclient5)
   testFixturesImplementation(libs.logback.classic)
 
   testImplementation(libs.wiremock)
+
+  testRuntimeOnly(libs.logback.classic)
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
@@ -142,6 +147,25 @@ testing {
 
     configurations.named("testJava8Implementation") {
       extendsFrom(configurations.getByName("testImplementation"))
+    }
+
+    register("testNoApacheHttp", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      sources { java.srcDirs(sourceSets.getByName("testNoApacheHttp").java.srcDirs) }
+
+      targets {
+        all {
+          testTask.configure { useJUnitPlatform { includeTags("NoApacheHttp") } }
+
+          tasks.named("check").configure { dependsOn(testTask) }
+        }
+      }
+    }
+
+    configurations.named("testNoApacheHttpImplementation") {
+      extendsFrom(configurations.getByName("testImplementation"))
+      exclude(group = "org.apache.httpcomponents.client5")
     }
 
     jacksonTestVersions.forEach { jacksonVersion ->

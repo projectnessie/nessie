@@ -88,7 +88,11 @@ public interface HttpClient extends AutoCloseable {
     Builder setFollowRedirects(String followRedirects);
 
     @CanIgnoreReturnValue
+    @Deprecated
     Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient);
+
+    @CanIgnoreReturnValue
+    Builder setHttpClientName(String clientName);
 
     @CanIgnoreReturnValue
     Builder setReadTimeoutMillis(int readTimeoutMillis);

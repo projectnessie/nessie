@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client;
 
+import static java.util.Collections.singleton;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -59,6 +61,11 @@ public interface NessieClientBuilder {
    * client.
    */
   String name();
+
+  /** Client names supported by this implementation. */
+  default Set<String> names() {
+    return singleton(name());
+  }
 
   /**
    * Priority ordinal used to select the most relevant {@link NessieClientBuilder} implementation.
@@ -195,9 +202,9 @@ public interface NessieClientBuilder {
    *
    * <p>Nessie clients are discovered using Java's {@link ServiceLoader service loader} mechanism.
    *
-   * <p>The selection mechanism uses the given {@link NessieClientBuilder#name() Nessie client name}
-   * or Nessie client builder implementation class name to select the client builder from the list
-   * of available implementations.
+   * <p>The selection mechanism uses the given {@link NessieClientBuilder#names() Nessie client
+   * name} or Nessie client builder implementation class name to select the client builder from the
+   * list of available implementations.
    *
    * <p>If neither a name nor an implementation class are specified, aka both parameters are {@code
    * null}, the Nessie client builder with the highest {@link NessieClientBuilder#priority()} will
@@ -207,7 +214,7 @@ public interface NessieClientBuilder {
    * discouraged.
    *
    * @param clientName the name of the Nessie client, as returned by {@link
-   *     NessieClientBuilder#name()}, or {@code null}
+   *     NessieClientBuilder#names()}, or {@code null}
    * @param clientBuilderImpl the class that implements the Nessie client builder, or {@code null}
    * @return Nessie client builder for the requested name or implementation class.
    * @throws IllegalArgumentException if no Nessie client matching the requested name and/or
@@ -222,7 +229,7 @@ public interface NessieClientBuilder {
     List<NessieClientBuilder> builders = new ArrayList<>();
     for (NessieClientBuilder clientBuilder : implementations) {
       builders.add(clientBuilder);
-      if (clientBuilder.name().equals(clientName)) {
+      if (clientBuilder.names().contains(clientName)) {
         if (clientBuilderImpl != null
             && !clientBuilderImpl.isEmpty()
             && !clientBuilder.getClass().getName().equals(clientBuilderImpl)) {

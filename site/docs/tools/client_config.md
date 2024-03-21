@@ -5,20 +5,21 @@ a way specific to the tool used.
 
 ## Common Nessie client configuration options
 
-| Configuration option               | Mandatory / default | Meaning                                                                                                                                                                   | 
-|------------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.uri`                       | Mandatory           | Nessie REST endpoint                                                                                                                                                      |
-| `nessie.authentication.*`          | Recommended         | Authentication options, see [below](#authentication-settings)                                                                                                             |
-| `nessie.ref`                       | Mandatory           | Name of the Nessie reference, usually `main`.                                                                                                                             |
-| `nessie.ref.hash`                  | Optional            | Hash on `nessie.ref`, usually not specified.                                                                                                                              |
-| `nessie.tracing`                   | Optional            | Boolean property to optionally enable tracing.                                                                                                                            |
-| `nessie.transport.read-timeout`    | Optional            | Network level read timeout in milliseconds. When running with Java 11, this becomes a request timeout.                                                                    |
-| `nessie.transport.connect-timeout` | Optional            | Network level connect timeout in milliseconds.                                                                                                                            |
-| `nessie.http-redirects`            | Optional            | Optional, specify how redirects are handled. `NEVER`: Never redirect (default),`ALWAYS`: Always redirect, `NORMAL`: Always redirect, except from HTTPS URLs to HTTP URLs. |
-| `nessie.ssl.cipher-suites`         | Optional            | Optional, specify the set of allowed SSL cipher suites.                                                                                                                   |
-| `nessie.ssl.protocols`             | Optional            | Optional, specify the set of allowed SSL protocols.                                                                                                                       |
-| `nessie.ssl.sni-hosts`             | Optional            | Optional, specify the set of allowed SNI hosts.                                                                                                                           |
-| `nessie.ssl.sni-matcher`           | Optional            | Optional, specify a SNI matcher regular expression.                                                                                                                       |
+| Configuration option               | Mandatory / default | Meaning                                                                                                                                                                                                                                       | 
+|------------------------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.client-builder-name`       | Optional            | The HTTP client to use. Prefers the new Java HTTP client (`JavaHttp`), if running on Java 11 or newer, or the Java `URLConnection` client. The Apache HTTP client (`ApacheHttp`) can be used, if it has been made available on the classpath. |
+| `nessie.uri`                       | Mandatory           | Nessie REST endpoint                                                                                                                                                                                                                          |
+| `nessie.authentication.*`          | Recommended         | Authentication options, see [below](#authentication-settings)                                                                                                                                                                                 |
+| `nessie.ref`                       | Mandatory           | Name of the Nessie reference, usually `main`.                                                                                                                                                                                                 |
+| `nessie.ref.hash`                  | Optional            | Hash on `nessie.ref`, usually not specified.                                                                                                                                                                                                  |
+| `nessie.tracing`                   | Optional            | Boolean property to optionally enable tracing.                                                                                                                                                                                                |
+| `nessie.transport.read-timeout`    | Optional            | Network level read timeout in milliseconds. When running with Java 11, this becomes a request timeout.                                                                                                                                        |
+| `nessie.transport.connect-timeout` | Optional            | Network level connect timeout in milliseconds.                                                                                                                                                                                                |
+| `nessie.http-redirects`            | Optional            | Optional, specify how redirects are handled. `NEVER`: Never redirect (default),`ALWAYS`: Always redirect, `NORMAL`: Always redirect, except from HTTPS URLs to HTTP URLs.                                                                     |
+| `nessie.ssl.cipher-suites`         | Optional            | Optional, specify the set of allowed SSL cipher suites.                                                                                                                                                                                       |
+| `nessie.ssl.protocols`             | Optional            | Optional, specify the set of allowed SSL protocols.                                                                                                                                                                                           |
+| `nessie.ssl.sni-hosts`             | Optional            | Optional, specify the set of allowed SNI hosts.                                                                                                                                                                                               |
+| `nessie.ssl.sni-matcher`           | Optional            | Optional, specify a SNI matcher regular expression.                                                                                                                                                                                           |
 
 ### Java 11 connection pool options
 
@@ -42,8 +43,8 @@ those via its configuration mechanism.
 
 !!! note
     In case you run into issues with Nessie's new HTTP client for Java 11 and newer, you can try
-    to use the legacy `URLConnection` based HTTP client by setting the system property
-    `nessie.client.force-url-connection-client` to `true`.
+    to use the legacy `URLConnection` based HTTP client by setting the system property or configuration option
+    `nessie.client-builder-name` to `URLConnection`.
 
 ## Spark
 

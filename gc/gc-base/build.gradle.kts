@@ -33,6 +33,7 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(libs.guava)
   implementation(libs.agrona)
+  implementation(libs.httpclient5)
 
   compileOnly(libs.microprofile.openapi)
 

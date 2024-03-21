@@ -123,8 +123,15 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
   }
 
   @Override
+  @Deprecated
+  @SuppressWarnings("deprecation")
   public HttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient) {
     return (HttpClientBuilder) super.withForceUrlConnectionClient(forceUrlConnectionClient);
+  }
+
+  @Override
+  public HttpClientBuilder withClientName(String clientName) {
+    return (HttpClientBuilder) super.withClientName(clientName);
   }
 
   @Override

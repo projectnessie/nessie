@@ -21,7 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -54,6 +56,14 @@ public class NessieHttpClientBuilderImpl
   @Override
   public String name() {
     return "HTTP";
+  }
+
+  @Override
+  public Set<String> names() {
+    Set<String> names = new HashSet<>();
+    names.add("HTTP");
+    names.addAll(HttpClientBuilderImpl.clientNames());
+    return names;
   }
 
   @Override
@@ -176,9 +186,17 @@ public class NessieHttpClientBuilderImpl
 
   @CanIgnoreReturnValue
   @Override
+  @Deprecated
   public NessieHttpClientBuilderImpl withForceUrlConnectionClient(
       boolean forceUrlConnectionClient) {
     builder.setForceUrlConnectionClient(forceUrlConnectionClient);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilderImpl withClientName(String clientName) {
+    builder.setHttpClientName(clientName);
     return this;
   }
 

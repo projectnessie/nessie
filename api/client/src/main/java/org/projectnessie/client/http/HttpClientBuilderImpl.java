@@ -15,20 +15,24 @@
  */
 package org.projectnessie.client.http;
 
+import static java.util.Locale.ROOT;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Function;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieConfigConstants;
+import org.projectnessie.client.http.impl.HttpClientFactory;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.http.impl.HttpUtils;
-import org.projectnessie.client.http.impl.jdk11.JavaHttpClient;
-import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +59,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   private boolean http2Upgrade;
   private String followRedirects;
   private boolean forceUrlConnectionClient;
+  private String httpClientName;
   private int clientSpec = 2;
 
   HttpClientBuilderImpl() {}
@@ -75,6 +80,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     this.http2Upgrade = other.http2Upgrade;
     this.followRedirects = other.followRedirects;
     this.forceUrlConnectionClient = other.forceUrlConnectionClient;
+    this.httpClientName = other.httpClientName;
     this.clientSpec = other.clientSpec;
   }
 
@@ -153,6 +159,12 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   @Override
   public HttpClient.Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient) {
     this.forceUrlConnectionClient = forceUrlConnectionClient;
+    return this;
+  }
+
+  @Override
+  public HttpClient.Builder setHttpClientName(String httpClientName) {
+    this.httpClientName = httpClientName;
     return this;
   }
 
@@ -240,32 +252,56 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .addAllResponseFilters(responseFilters)
             .isHttp11Only(!http2Upgrade)
             .followRedirects(followRedirects)
-            .forceUrlConnectionClient(forceUrlConnectionClient)
             .authentication(authentication)
             .build();
 
-    return ImplSwitch.FACTORY.apply(config);
+    String clientName = httpClientName;
+    // "HTTP" is the name for `org.projectnessie.client.http.NessieHttpClientBuilderImpl`
+    if ("HTTP".equalsIgnoreCase(clientName)) {
+      // fall back to default
+      clientName = null;
+    }
+
+    if (forceUrlConnectionClient) {
+      if (clientName != null && !"URLConnection".equalsIgnoreCase(clientName)) {
+        LOGGER.warn(
+            "Both forceUrlConnectionClient and httpClientName are specified with incompatible values, migrate to httpClientName");
+      }
+      // forced use of URLConnectionClient
+      clientName = "URLConnection";
+    }
+
+    HttpClientFactory httpClientFactory =
+        clientName != null
+            ? ImplSwitch.IMPLEMENTATIONS.get(clientName.toLowerCase(ROOT))
+            : ImplSwitch.PREFERRED;
+    if (httpClientFactory == null) {
+      throw new IllegalArgumentException(
+          "No HTTP client factory for name '" + clientName + "' found");
+    }
+    return httpClientFactory.buildClient(config);
+  }
+
+  static Set<String> clientNames() {
+    return ImplSwitch.IMPLEMENTATIONS.keySet();
   }
 
   static class ImplSwitch {
-    static final Function<HttpRuntimeConfig, HttpClient> FACTORY;
+    static final Map<String, HttpClientFactory> IMPLEMENTATIONS;
+    static final HttpClientFactory PREFERRED;
 
     static {
-      Function<HttpRuntimeConfig, HttpClient> factory;
-      try {
-        Class.forName("java.net.http.HttpClient");
-        factory =
-            config ->
-                // Need the system property for tests, "normal" users can use standard
-                // configuration options.
-                Boolean.getBoolean("nessie.client.force-url-connection-client")
-                        || config.forceUrlConnectionClient()
-                    ? new UrlConnectionClient(config)
-                    : new JavaHttpClient(config);
-      } catch (ClassNotFoundException e) {
-        factory = UrlConnectionClient::new;
+      IMPLEMENTATIONS = new HashMap<>();
+      HttpClientFactory preferred = null;
+      for (HttpClientFactory s : ServiceLoader.load(HttpClientFactory.class)) {
+        if (s.available()) {
+          if (preferred == null || preferred.priority() > s.priority()) {
+            preferred = s;
+          }
+          IMPLEMENTATIONS.put(s.name().toLowerCase(ROOT), s);
+        }
       }
-      FACTORY = factory;
+      PREFERRED = preferred;
     }
   }
 }

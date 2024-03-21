@@ -18,10 +18,8 @@ package org.projectnessie.client.http;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static org.assertj.core.api.Assumptions.assumeThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.projectnessie.client.util.HttpTestUtil.writeEmptyResponse;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
@@ -67,43 +65,32 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
-import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.model.CommitMeta;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestHttpClient {
+public abstract class BaseTestHttpClient {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final Instant NOW = Instant.now();
+  protected static final ObjectMapper MAPPER = new ObjectMapper();
+  protected static final Instant NOW = Instant.now();
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  private HttpClient createClient(URI baseUri, Consumer<HttpClient.Builder> customizer) {
-    HttpClient.Builder b =
-        HttpClient.builder()
-            .setBaseUri(baseUri)
-            .setObjectMapper(MAPPER)
-            .setConnectionTimeoutMillis(15000)
-            .setReadTimeoutMillis(15000);
-    customizer.accept(b);
-    return b.build();
-  }
+  protected abstract HttpClient createClient(URI baseUri, Consumer<HttpClient.Builder> customizer);
+
+  protected abstract boolean supportsHttp2();
 
   @ParameterizedTest
   @CsvSource({"false, false", "false, true", "true, false", "true, true"})
   void testHttpCombinations(boolean ssl, boolean http2) throws Exception {
-    if (http2) {
-      // Old URLConnection based client cannot handle HTTP/2
-      assumeThat(JRE.currentVersion()).matches(jre -> jre.ordinal() >= JRE.JAVA_11.ordinal());
-    }
+    // Old URLConnection based client cannot handle HTTP/2
+    assumeThat(!http2 || supportsHttp2()).isTrue();
 
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
@@ -158,10 +145,8 @@ public class TestHttpClient {
   @ParameterizedTest
   @CsvSource({"false, false", "false, true", "true, false", "true, true"})
   void testWriteWithVariousSizes(boolean ssl, boolean http2) throws Exception {
-    if (http2) {
-      // Old URLConnection based client cannot handle HTTP/2
-      assumeThat(JRE.currentVersion()).matches(jre -> jre.ordinal() >= JRE.JAVA_11.ordinal());
-    }
+    // Old URLConnection based client cannot handle HTTP/2
+    assumeThat(!http2 || supportsHttp2()).isTrue();
 
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
@@ -641,29 +626,6 @@ public class TestHttpClient {
 
   static Stream<ExampleBean> testPostForm() {
     return Stream.of(new ExampleBean(), new ExampleBean("x", 1, NOW));
-  }
-
-  @Test
-  void testCloseJava11Client() throws Exception {
-    assumeThatCode(() -> Class.forName("java.net.http.HttpClient")).doesNotThrowAnyException();
-    HttpRuntimeConfig config = mock(HttpRuntimeConfig.class);
-    when(config.getConnectionTimeoutMillis()).thenReturn(100);
-    HttpClient client =
-        Class.forName("org.projectnessie.client.http.impl.jdk11.JavaHttpClient")
-            .asSubclass(HttpClient.class)
-            .getConstructor(HttpRuntimeConfig.class)
-            .newInstance(config);
-    client.close();
-    verify(config).close();
-  }
-
-  @Test
-  void testCloseJava8Client() {
-    HttpRuntimeConfig config = mock(HttpRuntimeConfig.class);
-    when(config.getConnectionTimeoutMillis()).thenReturn(100);
-    HttpClient client = new UrlConnectionClient(config);
-    client.close();
-    verify(config).close();
   }
 
   @Test

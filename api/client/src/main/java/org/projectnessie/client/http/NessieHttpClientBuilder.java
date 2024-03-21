@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_FORCE_URL_CONNECTION_CLIENT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_2;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_REDIRECT;
 
@@ -51,11 +52,16 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
   NessieHttpClientBuilder withFollowRedirects(String redirects);
 
   /**
-   * Whether to force using the "old" {@link java.net.URLConnection} based client when running on
-   * Java 11 and newer with Java's new HTTP client.
+   * Whether to force using the {@link java.net.URLConnection} based client.
+   *
+   * @deprecated use {@link #withClientName(String)} with the name {@code URLConnection} instead.
    */
+  @Deprecated
   @CanIgnoreReturnValue
   NessieHttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient);
+
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withClientName(String clientName);
 
   @CanIgnoreReturnValue
   NessieHttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory);
@@ -154,6 +160,10 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
       if (s != null) {
         withForceUrlConnectionClient(Boolean.parseBoolean(s.trim()));
       }
+      s = configuration.apply(CONF_NESSIE_CLIENT_NAME);
+      if (s != null) {
+        withClientName(s.trim());
+      }
 
       return this;
     }
@@ -169,7 +179,14 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
     }
 
     @Override
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
     public NessieHttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient) {
+      return this;
+    }
+
+    @Override
+    public NessieHttpClientBuilder withClientName(String clientName) {
       return this;
     }
 
