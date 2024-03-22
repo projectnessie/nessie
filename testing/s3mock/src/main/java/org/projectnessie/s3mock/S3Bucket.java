@@ -16,6 +16,9 @@
 package org.projectnessie.s3mock;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 import org.immutables.value.Value;
 import org.projectnessie.s3mock.data.S3ObjectIdentifier;
@@ -47,9 +50,21 @@ public abstract class S3Bucket {
     return (String prefix) -> Stream.empty();
   }
 
+  @Value.Default
+  public Storer storer() {
+    return (objectName, contentType, data) -> {
+      throw new UnsupportedOperationException();
+    };
+  }
+
   @FunctionalInterface
   public interface Deleter {
     boolean delete(S3ObjectIdentifier objectIdentifier);
+  }
+
+  @FunctionalInterface
+  public interface Storer {
+    void store(String key, String contentType, byte[] data);
   }
 
   @FunctionalInterface
@@ -61,5 +76,79 @@ public abstract class S3Bucket {
     String key();
 
     MockObject object();
+  }
+
+  public static S3Bucket createHeapStorageBucket() {
+    TreeMap<String, MockObject> objects = new TreeMap<>();
+
+    return S3Bucket.builder()
+        .object(
+            key -> {
+              synchronized (objects) {
+                return objects.get(key);
+              }
+            })
+        .storer(
+            (key, contentType, data) -> {
+              synchronized (objects) {
+                objects.putIfAbsent(
+                    key,
+                    MockObject.builder()
+                        .contentLength(data.length)
+                        // .etag("etag")
+                        // .storageClass(StorageClass.STANDARD)
+                        .lastModified(System.currentTimeMillis())
+                        .writer(
+                            ((range, output) -> {
+                              if (range == null) {
+                                output.write(data);
+                              } else {
+                                output.write(
+                                    data, (int) range.start(), (int) (range.end() - range.start()));
+                              }
+                            }))
+                        .build());
+              }
+            })
+        .lister(
+            prefix -> {
+              Collection<String> keys;
+              synchronized (objects) {
+                keys = new ArrayList<>();
+                if (prefix != null) {
+                  for (String key : objects.tailMap(prefix, true).keySet()) {
+                    if (!key.startsWith(prefix)) {
+                      break;
+                    }
+                    keys.add(key);
+                  }
+                } else {
+                  keys.addAll(objects.keySet());
+                }
+              }
+              return keys.stream()
+                  .map(
+                      key ->
+                          new ListElement() {
+                            @Override
+                            public String key() {
+                              return key;
+                            }
+
+                            @Override
+                            public MockObject object() {
+                              synchronized (objects) {
+                                return objects.get(key);
+                              }
+                            }
+                          });
+            })
+        .deleter(
+            oid -> {
+              synchronized (objects) {
+                return objects.remove(oid.key()) != null;
+              }
+            })
+        .build();
   }
 }

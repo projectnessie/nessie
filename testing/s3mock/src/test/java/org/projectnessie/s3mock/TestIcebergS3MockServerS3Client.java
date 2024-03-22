@@ -19,7 +19,9 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -35,16 +37,21 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.utils.IoUtils;
 
 /**
  * Test {@link IcebergS3Mock} using {@link S3Client}. This test class is separate from {@link
@@ -317,5 +324,101 @@ public class TestIcebergS3MockServerS3Client extends AbstractIcebergS3MockServer
         // HTTP RFCs mandate that HTTP/304 must not return a message-body
         .extracting(S3Exception::statusCode)
         .isEqualTo(304);
+  }
+
+  @Test
+  public void putObject() {
+    AtomicReference<String> writtenKey = new AtomicReference<>();
+    AtomicReference<String> writtenType = new AtomicReference<>();
+    AtomicReference<byte[]> writtenData = new AtomicReference<>();
+
+    createServer(
+        b ->
+            b.putBuckets(
+                BUCKET,
+                S3Bucket.builder()
+                    .storer(
+                        (key, contentType, data) -> {
+                          writtenKey.set(key);
+                          writtenType.set(contentType);
+                          writtenData.set(data);
+                        })
+                    .build()));
+
+    s3.putObject(
+        PutObjectRequest.builder()
+            .bucket(BUCKET)
+            .key("my-object")
+            .contentType("text/plain")
+            .build(),
+        RequestBody.fromBytes("Hello World".getBytes(StandardCharsets.UTF_8)));
+
+    soft.assertThat(writtenKey.get()).isEqualTo("my-object");
+    soft.assertThat(writtenType.get()).isEqualTo("text/plain");
+    soft.assertThat(writtenData.get()).asString().isEqualTo("Hello World");
+  }
+
+  @Test
+  public void heapStorage() throws Exception {
+    createServer(b -> b.putBuckets(BUCKET, S3Bucket.createHeapStorageBucket()));
+
+    s3.putObject(
+        PutObjectRequest.builder()
+            .bucket(BUCKET)
+            .key("my-object")
+            .contentType("text/plain")
+            .build(),
+        RequestBody.fromBytes("Hello World".getBytes(StandardCharsets.UTF_8)));
+
+    soft.assertThat(
+            IoUtils.toUtf8String(
+                s3.getObject(GetObjectRequest.builder().bucket(BUCKET).key("my-object").build())))
+        .isEqualTo("Hello World");
+
+    List<S3Object> contents =
+        s3.listObjects(ListObjectsRequest.builder().bucket(BUCKET).build()).contents();
+    soft.assertThat(contents).extracting(S3Object::key).containsExactly("my-object");
+
+    for (int i = 0; i < 5; i++) {
+      s3.putObject(
+          PutObjectRequest.builder()
+              .bucket(BUCKET)
+              .key("objs/o" + i)
+              .contentType("text/plain")
+              .build(),
+          RequestBody.fromBytes(("Hello World " + i).getBytes(StandardCharsets.UTF_8)));
+    }
+    for (int i = 0; i < 5; i++) {
+      s3.putObject(
+          PutObjectRequest.builder()
+              .bucket(BUCKET)
+              .key("foo/f" + i)
+              .contentType("text/plain")
+              .build(),
+          RequestBody.fromBytes(("Foo " + i).getBytes(StandardCharsets.UTF_8)));
+    }
+
+    contents = s3.listObjects(ListObjectsRequest.builder().bucket(BUCKET).build()).contents();
+    soft.assertThat(contents)
+        .extracting(S3Object::key)
+        .containsExactly(
+            "foo/f0",
+            "foo/f1",
+            "foo/f2",
+            "foo/f3",
+            "foo/f4",
+            "my-object",
+            "objs/o0",
+            "objs/o1",
+            "objs/o2",
+            "objs/o3",
+            "objs/o4");
+
+    contents =
+        s3.listObjects(ListObjectsRequest.builder().bucket(BUCKET).prefix("objs").build())
+            .contents();
+    soft.assertThat(contents)
+        .extracting(S3Object::key)
+        .containsExactly("objs/o0", "objs/o1", "objs/o2", "objs/o3", "objs/o4");
   }
 }

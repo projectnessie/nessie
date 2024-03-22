@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -31,17 +32,26 @@ public interface S3Object {
   String key();
 
   @JsonProperty("LastModified")
+  @Nullable
   String lastModified();
 
   @JsonProperty("ETag")
+  @Nullable
   String etag();
 
   @JsonProperty("Size")
+  @Nullable
   String size();
 
   @JsonProperty("StorageClass")
+  @Nullable
   StorageClass storageClass();
 
   @JsonProperty("Owner")
+  @Nullable
   Owner owner();
+
+  static ImmutableS3Object.Builder builder() {
+    return ImmutableS3Object.builder();
+  }
 }
