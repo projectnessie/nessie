@@ -191,20 +191,20 @@ spec:
             - name: QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.tracing.endpoint | quote }}
             {{- if .Values.tracing.attributes }}
-            - name: QUARKUS_OTEL_TRACER_RESOURCE_ATTRIBUTES
+            - name: QUARKUS_OTEL_RESOURCE_ATTRIBUTES
               value: "{{- include "nessie.dictToString" .Values.tracing.attributes }}"
             {{- end }}
             {{- if .Values.tracing.sample }}
             {{ if eq .Values.tracing.sample "all" }}
-            - name: QUARKUS_OTEL_TRACER_SAMPLER
+            - name: QUARKUS_OTEL_TRACES_SAMPLER
               value: "parentbased_always_on"
             {{- else if eq .Values.tracing.sample "none" }}
-            - name: QUARKUS_OTEL_TRACER_SAMPLER
+            - name: QUARKUS_OTEL_TRACES_SAMPLER
               value: "always_off"
             {{- else }}
-            - name: QUARKUS_OTEL_TRACER_SAMPLER
+            - name: QUARKUS_OTEL_TRACES_SAMPLER
               value: "parentbased_traceidratio"
-            - name: QUARKUS_OTEL_TRACER_SAMPLER_ARG
+            - name: QUARKUS_OTEL_TRACES_SAMPLER_ARG
               value: {{ .Values.tracing.sample | quote }}
             {{- end }}
             {{- end }}
