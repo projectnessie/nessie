@@ -15,12 +15,28 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.projectnessie.client.api.NessieApiV1
 
 case class ShowReferenceExec(
     output: Seq[Attribute],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends BaseShowReferenceExec(output, currentCatalog, catalog)
-    with LeafV2CommandExec {}
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
+
+  override protected def runInternal(
+      api: NessieApiV1
+  ): Seq[InternalRow] = {
+
+    val ref = NessieUtils.getCurrentRef(api, currentCatalog, catalog)
+    // todo have to figure out if this is delta or iceberg and extract the ref accordingly
+    singleRowForRef(ref)
+  }
+
+  override def simpleString(maxFields: Int): String = {
+    s"ShowReferenceExec ${catalog.getOrElse(currentCatalog.name())} "
+  }
+}

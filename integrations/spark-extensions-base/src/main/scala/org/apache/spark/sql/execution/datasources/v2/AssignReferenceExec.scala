@@ -22,7 +22,7 @@ import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.model.{Branch, Tag}
 
-abstract class BaseAssignReferenceExec(
+case class AssignReferenceExec(
     output: Seq[Attribute],
     refNameToAssign: String,
     isBranch: Boolean,
@@ -30,7 +30,8 @@ abstract class BaseAssignReferenceExec(
     toRefName: Option[String],
     toHash: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
 
   override protected def runInternal(
       api: NessieApiV1
