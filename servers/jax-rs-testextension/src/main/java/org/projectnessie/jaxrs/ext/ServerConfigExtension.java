@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.config;
+package org.projectnessie.jaxrs.ext;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -21,8 +21,9 @@ import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
+import org.projectnessie.services.config.ExceptionConfig;
+import org.projectnessie.services.config.ServerConfig;
 
-/** This class needs to be in the same package as {@link ServerConfig}. */
 public class ServerConfigExtension implements Extension {
   public static final ServerConfig SERVER_CONFIG =
       new ServerConfig() {

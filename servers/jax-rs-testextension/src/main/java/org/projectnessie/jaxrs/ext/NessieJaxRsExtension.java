@@ -44,9 +44,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.projectnessie.client.ext.NessieClientResolver;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
-import org.projectnessie.services.authz.AuthorizerExtension;
 import org.projectnessie.services.authz.BatchAccessChecker;
-import org.projectnessie.services.config.ServerConfigExtension;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.rest.AccessCheckExceptionMapper;
@@ -67,7 +65,6 @@ import org.projectnessie.services.rest.exceptions.NessieJaxRsJsonMappingExceptio
 import org.projectnessie.services.rest.exceptions.NessieJaxRsJsonParseExceptionMapper;
 import org.projectnessie.services.rest.exceptions.NotSupportedExceptionMapper;
 import org.projectnessie.services.rest.exceptions.ValidationExceptionMapper;
-import org.projectnessie.versioned.VersionStoreImplExtension;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
