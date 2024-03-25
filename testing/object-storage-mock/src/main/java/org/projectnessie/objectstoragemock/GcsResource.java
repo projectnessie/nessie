@@ -15,9 +15,6 @@
  */
 package org.projectnessie.objectstoragemock;
 
-import static com.google.common.net.HttpHeaders.CONTENT_MD5;
-import static com.google.common.net.HttpHeaders.CONTENT_RANGE;
-import static jakarta.ws.rs.core.HttpHeaders.CONTENT_ENCODING;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static jakarta.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -43,7 +40,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -64,7 +60,6 @@ import org.projectnessie.objectstoragemock.gcs.ImmutableErrorResponse;
 import org.projectnessie.objectstoragemock.gcs.ImmutableListResponse;
 import org.projectnessie.objectstoragemock.gcs.ImmutableStorageObject;
 import org.projectnessie.objectstoragemock.gcs.ObjectAlt;
-import org.projectnessie.objectstoragemock.gcs.Projection;
 import org.projectnessie.objectstoragemock.gcs.StorageObject;
 import org.projectnessie.objectstoragemock.gcs.UploadType;
 import org.projectnessie.objectstoragemock.util.Holder;
@@ -86,19 +81,19 @@ public class GcsResource {
 
   @PUT
   @Path("/storage/v1/b/{bucketName:[a-z0-9.-]+}")
-  public Response getBucket(@PathParam("bucketName") String bucketName) {
+  public Response getBucket() {
     return notImplemented();
   }
 
   @POST
   @Path("/storage/v1/b/{bucketName:[a-z0-9.-]+}")
-  public Response createBucket(@PathParam("bucketName") String bucketName) {
+  public Response createBucket() {
     return notImplemented();
   }
 
   @DELETE
   @Path("/storage/v1/b/{bucketName:[a-z0-9.-]+}")
-  public Response deleteBucket(@PathParam("bucketName") String bucketName) {
+  public Response deleteBucket() {
     return notImplemented();
   }
 
@@ -109,19 +104,10 @@ public class GcsResource {
       @PathParam("bucketName") String bucketName,
       @QueryParam("delimiter") @DefaultValue("/") String delimiter,
       @QueryParam("endOffset") String endOffset,
-      @QueryParam("includeFoldersAsPrefixes") @DefaultValue("false")
-          boolean includeFoldersAsPrefixes,
-      @QueryParam("includeTrailingDelimiter") @DefaultValue("false")
-          boolean includeTrailingDelimiter,
       @QueryParam("maxResults") @DefaultValue("2147483647") int maxResults,
-      @QueryParam("matchGlob") String matchGlob,
       @QueryParam("pageToken") String pageToken,
       @QueryParam("prefix") String prefix,
-      @QueryParam("projection") @DefaultValue("full") Projection projection,
-      @QueryParam("startOffset") String startOffset,
-      @QueryParam("softDeleted") @DefaultValue("false") boolean softDeleted,
-      @QueryParam("versions") @DefaultValue("false") boolean versions,
-      @HeaderParam("x-goog-gcs-idempotency-token") String googGcsIdempotencyToken) {
+      @QueryParam("startOffset") String startOffset) {
     return withBucket(
         bucketName,
         b -> {
@@ -182,13 +168,7 @@ public class GcsResource {
   @Path("/storage/v1/b/{bucketName:[a-z0-9.-]+}/o/{object:.+}")
   @Consumes(MediaType.WILDCARD) // Java GCS client sends application/x-www-form-urlencoded
   public Response deleteObject(
-      @PathParam("bucketName") String bucketName,
-      @PathParam("object") String objectName,
-      @QueryParam("generation") Long generation,
-      @QueryParam("ifGenerationMatch") Long ifGenerationMatch,
-      @QueryParam("ifGenerationNotMatch") Long ifGenerationNotMatch,
-      @QueryParam("ifMetagenerationMatch") Long ifMetagenerationMatch,
-      @QueryParam("ifMetagenerationNotMatch") Long ifMetagenerationNotMatch) {
+      @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
     return withBucket(
         bucketName,
         b -> {
@@ -207,40 +187,13 @@ public class GcsResource {
       @PathParam("bucketName") String bucketName,
       @PathParam("object") String objectName,
       @QueryParam("alt") @DefaultValue("json") ObjectAlt alt,
-      @QueryParam("generation") Long generation,
-      @QueryParam("ifGenerationMatch") Long ifGenerationMatch,
-      @QueryParam("ifGenerationNotMatch") Long ifGenerationNotMatch,
-      @QueryParam("ifMetagenerationMatch") Long ifMetagenerationMatch,
-      @QueryParam("ifMetagenerationNotMatch") Long ifMetagenerationNotMatch,
-      @QueryParam("projection") @DefaultValue("full") Projection projection,
-      @QueryParam("softDeleted") @DefaultValue("false") boolean softDeleted,
-      @HeaderParam("X-Goog-Encryption-Algorithm") Range googEncryptionAlgorithm,
-      @HeaderParam("X-Goog-Encryption-Key") String googEncryptionKey,
-      @HeaderParam("X-Goog-Encryption-Key-Sha256") String googEncryptionKeySha256,
       @HeaderParam(RANGE) Range range,
       @HeaderParam(IF_MATCH) List<String> match,
       @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
       @HeaderParam(IF_MODIFIED_SINCE) Date modifiedSince,
       @HeaderParam(IF_UNMODIFIED_SINCE) Date unmodifiedSince) {
     return getObject(
-        bucketName,
-        objectName,
-        alt,
-        generation,
-        ifGenerationMatch,
-        ifGenerationNotMatch,
-        ifMetagenerationMatch,
-        ifMetagenerationNotMatch,
-        projection,
-        softDeleted,
-        googEncryptionAlgorithm,
-        googEncryptionKey,
-        googEncryptionKeySha256,
-        range,
-        match,
-        noneMatch,
-        modifiedSince,
-        unmodifiedSince);
+        bucketName, objectName, alt, range, match, noneMatch, modifiedSince, unmodifiedSince);
   }
 
   @GET
@@ -251,16 +204,6 @@ public class GcsResource {
       @PathParam("bucketName") String bucketName,
       @PathParam("object") String objectName,
       @QueryParam("alt") @DefaultValue("json") ObjectAlt alt,
-      @QueryParam("generation") Long generation,
-      @QueryParam("ifGenerationMatch") Long ifGenerationMatch,
-      @QueryParam("ifGenerationNotMatch") Long ifGenerationNotMatch,
-      @QueryParam("ifMetagenerationMatch") Long ifMetagenerationMatch,
-      @QueryParam("ifMetagenerationNotMatch") Long ifMetagenerationNotMatch,
-      @QueryParam("projection") @DefaultValue("full") Projection projection,
-      @QueryParam("softDeleted") @DefaultValue("false") boolean softDeleted,
-      @HeaderParam("X-Goog-Encryption-Algorithm") Range googEncryptionAlgorithm,
-      @HeaderParam("X-Goog-Encryption-Key") String googEncryptionKey,
-      @HeaderParam("X-Goog-Encryption-Key-Sha256") String googEncryptionKeySha256,
       @HeaderParam(RANGE) Range range,
       @HeaderParam(IF_MATCH) List<String> match,
       @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
@@ -314,52 +257,10 @@ public class GcsResource {
       @PathParam("bucketName") String bucketName,
       @QueryParam("name") String objectName,
       @QueryParam("uploadType") UploadType uploadType,
-      @QueryParam("contentEncoding") String queryContentEncoding,
-      @QueryParam("ifGenerationMatch") Long ifGenerationMatch,
-      @QueryParam("ifGenerationNotMatch") Long ifGenerationNotMatch,
-      @QueryParam("ifMetagenerationMatch") Long ifMetagenerationMatch,
-      @QueryParam("ifMetagenerationNotMatch") Long ifMetagenerationNotMatch,
-      @QueryParam("kmsKeyName") String kmsKeyName,
-      @QueryParam("predefinedAcl") String predefinedAcl,
-      @QueryParam("projection") @DefaultValue("full") Projection projection,
-      @HeaderParam(CONTENT_MD5) String contentMD5,
       @HeaderParam(CONTENT_TYPE) String contentType,
-      @HeaderParam(CONTENT_ENCODING) String contentEncoding,
-      @HeaderParam(CONTENT_RANGE) Range contentRange,
-      @HeaderParam("X-Goog-Encryption-Algorithm") Range googEncryptionAlgorithm,
-      @HeaderParam("X-Goog-Encryption-Key") String googEncryptionKey,
-      @HeaderParam("X-Goog-Encryption-Key-Sha256") String googEncryptionKeySha256,
-      @Context HttpHeaders headers, // For X-Goog-Meta-* headers
       @Context UriInfo uriInfo,
-      InputStream stream
-      //    @HeaderParam(RANGE) Range range,
-      //    @HeaderParam(IF_MATCH) List<String> match,
-      //    @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
-      //    @HeaderParam(IF_MODIFIED_SINCE) Date modifiedSince,
-      //    @HeaderParam(IF_UNMODIFIED_SINCE) Date unmodifiedSince
-      ) {
-    return insertObject(
-        bucketName,
-        objectName,
-        uploadType,
-        queryContentEncoding,
-        ifGenerationMatch,
-        ifGenerationNotMatch,
-        ifMetagenerationMatch,
-        ifMetagenerationNotMatch,
-        kmsKeyName,
-        predefinedAcl,
-        projection,
-        contentMD5,
-        contentType,
-        contentEncoding,
-        contentRange,
-        googEncryptionAlgorithm,
-        googEncryptionKey,
-        googEncryptionKeySha256,
-        headers,
-        uriInfo,
-        stream);
+      InputStream stream) {
+    return insertObject(bucketName, objectName, uploadType, contentType, uriInfo, stream);
   }
 
   @POST
@@ -370,39 +271,19 @@ public class GcsResource {
       @PathParam("bucketName") String bucketName,
       @QueryParam("name") String objectName,
       @QueryParam("uploadType") UploadType uploadType,
-      @QueryParam("contentEncoding") String queryContentEncoding,
-      @QueryParam("ifGenerationMatch") Long ifGenerationMatch,
-      @QueryParam("ifGenerationNotMatch") Long ifGenerationNotMatch,
-      @QueryParam("ifMetagenerationMatch") Long ifMetagenerationMatch,
-      @QueryParam("ifMetagenerationNotMatch") Long ifMetagenerationNotMatch,
-      @QueryParam("kmsKeyName") String kmsKeyName,
-      @QueryParam("predefinedAcl") String predefinedAcl,
-      @QueryParam("projection") @DefaultValue("full") Projection projection,
-      @HeaderParam(CONTENT_MD5) String contentMD5,
       @HeaderParam(CONTENT_TYPE) String contentType,
-      @HeaderParam(CONTENT_ENCODING) String contentEncoding,
-      @HeaderParam(CONTENT_RANGE) Range contentRange,
-      @HeaderParam("X-Goog-Encryption-Algorithm") Range googEncryptionAlgorithm,
-      @HeaderParam("X-Goog-Encryption-Key") String googEncryptionKey,
-      @HeaderParam("X-Goog-Encryption-Key-Sha256") String googEncryptionKeySha256,
-      @Context HttpHeaders headers, // For X-Goog-Meta-* headers
       @Context UriInfo uriInfo,
-      InputStream stream
-      //    @HeaderParam(RANGE) Range range,
-      //    @HeaderParam(IF_MATCH) List<String> match,
-      //    @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
-      //    @HeaderParam(IF_MODIFIED_SINCE) Date modifiedSince,
-      //    @HeaderParam(IF_UNMODIFIED_SINCE) Date unmodifiedSince
-      ) {
+      InputStream stream) {
     return withBucket(
         bucketName,
         bucket -> {
           try {
             Bucket.Updater updater = bucket.updater();
+            MockObject obj;
             switch (uploadType) {
               case media:
                 // Not tested
-                MockObject obj =
+                obj =
                     updater
                         .update(objectName, Bucket.UpdaterMode.CREATE_NEW)
                         .append(0L, stream)
@@ -474,7 +355,7 @@ public class GcsResource {
   }
 
   private static Response preconditionFailed() {
-    return errorResponse(Status.PRECONDITION_FAILED, "conditionNotMet", "Precondition Failed");
+    return errorResponse(Status.PRECONDITION_FAILED, "Precondition Failed");
   }
 
   private static Response notModified(String etag) {
@@ -487,14 +368,14 @@ public class GcsResource {
   }
 
   private static Response bucketNotFound() {
-    return errorResponse(Status.NOT_FOUND, "notFound", "The specified bucket does not exist.");
+    return errorResponse(Status.NOT_FOUND, "The specified bucket does not exist.");
   }
 
   private static Response keyNotFound() {
-    return errorResponse(Status.NOT_FOUND, "notFound", "The specified key does not exist.");
+    return errorResponse(Status.NOT_FOUND, "The specified key does not exist.");
   }
 
-  private static Response errorResponse(Status status, String reason, String message) {
+  private static Response errorResponse(Status status, String message) {
     return Response.status(status)
         .type(MediaType.APPLICATION_JSON)
         .entity(
