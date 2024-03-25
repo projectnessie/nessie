@@ -57,7 +57,7 @@ dependencies {
   implementation(libs.slf4j.api)
 
   testFixturesApi(nessieProject("nessie-gc-base-tests"))
-  testFixturesApi(nessieProject("nessie-s3mock"))
+  testFixturesApi(nessieProject("nessie-object-storage-mock"))
   testFixturesApi(nessieProject("nessie-s3minio"))
 
   testFixturesRuntimeOnly(libs.logback.classic)
