@@ -18,34 +18,29 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.projectnessie.client.api.NessieApiV1
 
-abstract class BaseUseReferenceExec(
+import scala.collection.JavaConverters._
+
+case class ListReferenceExec(
     output: Seq[Attribute],
-    branch: String,
     currentCatalog: CatalogPlugin,
-    timestampOrHash: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
 
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
-
-    val ref =
-      NessieUtils.calculateRef(unquoteRefName(branch), timestampOrHash, api)
-    NessieUtils.setCurrentRefForSpark(
-      currentCatalog,
-      catalog,
-      ref,
-      timestampOrHash.isDefined
-    )
-
-    singleRowForRef(ref)
+    api.getAllReferences
+      .stream()
+      .iterator()
+      .asScala
+      .map(ref => rowForRef(ref))
+      .toSeq // required for Scala 2.13
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"UseReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${unquoteRefName(branch)} "
+    s"ListReferenceExec ${catalog.getOrElse(currentCatalog.name())} "
   }
 }

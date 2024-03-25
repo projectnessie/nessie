@@ -116,7 +116,17 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
   }
 
   private def isNessieCommand(sqlText: String): Boolean = {
-    val normalized = sqlText.toLowerCase(Locale.ROOT).trim()
+    val normalized = sqlText
+      .toLowerCase(Locale.ROOT)
+      .trim()
+      // Strip simple SQL comments that terminate a line, e.g. comments starting with `--` .
+      .replaceAll("--.*?\\n", " ")
+      // Strip newlines.
+      .replaceAll("\\s+", " ")
+      // Strip comments of the form  /* ... */. This must come after stripping newlines so that
+      // comments that span multiple lines are caught.
+      .replaceAll("/\\*.*?\\*/", " ")
+      .trim()
     normalized.startsWith("create branch") || normalized.startsWith(
       "create tag"
     ) ||

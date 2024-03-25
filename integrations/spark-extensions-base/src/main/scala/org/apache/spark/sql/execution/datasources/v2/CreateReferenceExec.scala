@@ -25,9 +25,9 @@ import org.projectnessie.error.{
   NessieNotFoundException,
   NessieReferenceNotFoundException
 }
-import org.projectnessie.model._
+import org.projectnessie.model.{Branch, Tag}
 
-abstract class BaseCreateReferenceExec(
+case class CreateReferenceExec(
     output: Seq[Attribute],
     branch: String,
     currentCatalog: CatalogPlugin,
@@ -35,7 +35,8 @@ abstract class BaseCreateReferenceExec(
     catalog: Option[String],
     createdFrom: Option[String],
     failOnCreate: Boolean
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
 
   override protected def runInternal(
       api: NessieApiV1
@@ -79,4 +80,5 @@ abstract class BaseCreateReferenceExec(
       else "TAG"} ${unquoteRefName(branch)} " +
       s"${createdFrom.map(unquoteRefName)}"
   }
+
 }

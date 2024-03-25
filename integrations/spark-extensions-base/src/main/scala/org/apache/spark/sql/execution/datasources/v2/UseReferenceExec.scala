@@ -15,20 +15,38 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
+import org.projectnessie.client.api.NessieApiV1
 
-case class MergeBranchExec(
+case class UseReferenceExec(
     output: Seq[Attribute],
-    branch: Option[String],
+    branch: String,
     currentCatalog: CatalogPlugin,
-    toRefName: Option[String],
+    timestampOrHash: Option[String],
     catalog: Option[String]
-) extends BaseMergeBranchExec(
-      output,
-      branch,
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
+
+  override protected def runInternal(
+      api: NessieApiV1
+  ): Seq[InternalRow] = {
+
+    val ref =
+      NessieUtils.calculateRef(unquoteRefName(branch), timestampOrHash, api)
+    NessieUtils.setCurrentRefForSpark(
       currentCatalog,
-      toRefName,
-      catalog
+      catalog,
+      ref,
+      timestampOrHash.isDefined
     )
-    with LeafV2CommandExec {}
+
+    singleRowForRef(ref)
+  }
+
+  override def simpleString(maxFields: Int): String = {
+    s"UseReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${unquoteRefName(branch)} "
+  }
+}

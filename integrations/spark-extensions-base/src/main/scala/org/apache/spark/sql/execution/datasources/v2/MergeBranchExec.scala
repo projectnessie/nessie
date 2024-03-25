@@ -21,39 +21,54 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
-import org.projectnessie.error.NessieReferenceNotFoundException
 
-abstract class BaseDropReferenceExec(
+case class MergeBranchExec(
     output: Seq[Attribute],
-    branch: String,
+    branch: Option[String],
     currentCatalog: CatalogPlugin,
-    isBranch: Boolean,
-    catalog: Option[String],
-    failOnDrop: Boolean
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+    toRefName: Option[String],
+    catalog: Option[String]
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
 
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
-    val refName = unquoteRefName(branch)
-    try {
-      val hash = api.getReference.refName(refName).get().getHash
-      if (isBranch) {
-        api.deleteBranch().branchName(refName).hash(hash).delete()
-      } else {
-        api.deleteTag().tagName(refName).hash(hash).delete()
-      }
-    } catch {
-      case e: NessieReferenceNotFoundException =>
-        if (failOnDrop) {
-          throw e
-        }
-    }
-    Seq(InternalRow(UTF8String.fromString("OK")))
+    val from = api.getReference
+      .refName(
+        branch
+          .map(unquoteRefName)
+          .getOrElse(
+            NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
+          )
+      )
+    api
+      .mergeRefIntoBranch()
+      .branchName(
+        toRefName.map(unquoteRefName).getOrElse(api.getDefaultBranch.getName)
+      )
+      .hash(
+        toRefName
+          .map(unquoteRefName)
+          .map(r => api.getReference.refName(r).get.getHash)
+          .getOrElse(api.getDefaultBranch.getHash)
+      )
+      .fromRef(from.get)
+      .merge()
+
+    val ref = api.getReference.refName(
+      toRefName.map(unquoteRefName).getOrElse(api.getDefaultBranch.getName)
+    )
+
+    Seq(
+      InternalRow(
+        UTF8String.fromString(ref.get.getName),
+        UTF8String.fromString(ref.get.getHash)
+      )
+    )
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"DropReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${if (isBranch) "BRANCH"
-      else "TAG"} ${unquoteRefName(branch)} "
+    s"MergeBranchExec ${catalog.getOrElse(currentCatalog.name())} ${branch.map(unquoteRefName)} "
   }
 }

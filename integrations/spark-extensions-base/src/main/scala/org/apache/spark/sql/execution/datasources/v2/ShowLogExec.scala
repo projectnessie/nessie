@@ -15,8 +15,6 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, MapData}
@@ -25,14 +23,18 @@ import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+
 import scala.collection.JavaConverters._
 
-abstract class BaseShowLogExec(
+case class ShowLogExec(
     output: Seq[Attribute],
     branch: Option[String],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
+) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
+    with LeafV2CommandExec {
 
   override protected def runInternal(
       api: NessieApiV1
