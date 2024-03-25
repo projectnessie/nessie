@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  AWS_REGION: "us-west-2"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_MB: "32"
+  NESSIE_VERSION_STORE_TYPE: "DYNAMODB"
+  QUARKUS_OIDC_TENANT_ENABLED: "false"
+  QUARKUS_OTEL_SDK_DISABLED: "true"

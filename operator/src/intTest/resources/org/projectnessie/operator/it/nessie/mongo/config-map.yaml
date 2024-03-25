@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_MB: "0"
+  NESSIE_VERSION_STORE_TYPE: "MONGODB"
+  QUARKUS_MONGODB_CONNECTION_STRING: "mongodb://mongodb.mongodb.svc.cluster.local:27017/nessie?ssl=false"
+  QUARKUS_MONGODB_DATABASE: "nessie"
+  QUARKUS_OIDC_TENANT_ENABLED: "false"
+  QUARKUS_OTEL_SDK_DISABLED: "true"

@@ -1,0 +1,20 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-autoscaling
+spec:
+  size: 1
+  logLevel: INFO
+  deployment:
+    image:
+      repository: projectnessie/nessie
+      tag: 0.75.0
+  versionStore:
+    type: Jdbc
+    jdbc:
+      url: jdbc:h2:mem:nessie
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCpuUtilizationPercentage: 50

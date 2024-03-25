@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  NESSIE_SERVER_DEFAULT_BRANCH: "my-branch"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_FRACTION_OF_HEAP: "0.6"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB: "65"
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_FRACTION_ADJUST_MB: "66"
+  NESSIE_VERSION_STORE_TYPE: "JDBC"
+  QUARKUS_DATASOURCE_JDBC_URL: "jdbc:postgresql://postgresql.postgresql.svc.cluster.local:5432/nessie"
+  QUARKUS_OIDC_TENANT_ENABLED: "false"
+  QUARKUS_OTEL_SDK_DISABLED: "true"

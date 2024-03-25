@@ -1,0 +1,53 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: Jdbc
+    cache:
+      enabled: true
+      heapPercentage: 600m
+      minSize: 65Mi
+      minFreeHeap: 66Mi
+    jdbc:
+      url: jdbc:postgresql://postgresql.postgresql.svc.cluster.local:5432/nessie
+      credentials:
+        secretRef:
+          name: nessie-db-credentials
+        usernameKey: username
+        passwordKey: password
+  extraEnv:
+    - name: NESSIE_SERVER_DEFAULT_BRANCH
+      value: my-branch
+  service:
+    type: NodePort
+    nodePort: 30120
+    sessionAffinity: ClientIP
+    labels:
+      foo: bar
+    annotations:
+      foo: bar
+  serviceMonitor:
+    enabled: false
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 2
+    targetCpuUtilizationPercentage: 99
+  deployment:
+    image:
+      pullPolicy: IfNotPresent
+    labels:
+      foo: bar
+    annotations:
+      foo: bar
+    resources:
+      requests:
+        cpu: 400m
+        memory: 128Mi
+    serviceAccount:
+      create: true
+      name: nessie-test-custom-service-account
+      annotations:
+        foo: bar

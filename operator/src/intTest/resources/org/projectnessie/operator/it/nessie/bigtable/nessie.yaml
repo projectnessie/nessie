@@ -1,0 +1,37 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: BigTable
+    cache:
+      enabled: false
+    bigTable:
+      projectId: "test-project"
+      instanceId: "test-instance"
+      appProfileId: "nessie"
+      credentials:
+        secretRef:
+          name: nessie-db-credentials
+        serviceAccountKey: sa_json
+  service:
+    type: NodePort
+    nodePort: 30120
+  serviceMonitor:
+    interval: 1s
+  remoteDebug:
+    enabled: true
+    port: 5009
+  jvmOptions:
+    - -XX:+PrintFlagsFinal
+  deployment:
+    image:
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 400m
+        memory: 128Mi
+      limits:
+        cpu: 400m
+        memory: 256Mi

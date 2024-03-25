@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+    foo: bar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+        foo: bar
+      annotations:
+        foo: bar
+    spec:
+      volumes:
+        - name: rocks-storage
+          persistentVolumeClaim:
+            claimName: nessie-test
+      containers:
+        - name: nessie
+          ports:
+            - name: nessie
+              containerPort: 19120
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /rocks-nessie
+              name: rocks-storage
+          resources:
+            requests:
+              cpu: 400m
+              memory: 128Mi
+            limits:
+              cpu: 400m
+              memory: 256Mi
+          envFrom:
+            - configMapRef:
+                name: nessie-test
+                optional: false
+      serviceAccountName: nessie-test-sa

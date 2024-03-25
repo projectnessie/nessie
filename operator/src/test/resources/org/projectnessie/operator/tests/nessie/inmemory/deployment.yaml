@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+    spec:
+      containers:
+        - name: nessie
+          image: projectnessie/nessie:latest
+          imagePullPolicy: Always
+          ports:
+            - name: nessie
+              containerPort: 19120
+              protocol: TCP
+            - name: debug
+              containerPort: 5009
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: nessie-test
+                optional: false
+      # "injected" side-car
+      initContainers:
+        - name: sidecar
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: [ 'sleep', '3600' ]
+      serviceAccountName: default
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2024-01-22T14:16:21Z'
+      lastTransitionTime: '2024-01-22T14:16:21Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2024-01-22T14:16:21Z'
+      lastTransitionTime: '2024-01-22T14:16:18Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "nessie-test-abcdefg" has successfully progressed.

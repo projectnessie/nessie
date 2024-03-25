@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  NESSIE_VERSION_STORE_PERSIST_CACHE_CAPACITY_MB: "0"
+  NESSIE_VERSION_STORE_TYPE: "CASSANDRA"
+  QUARKUS_CASSANDRA_CONTACT_POINTS: "cassandra.cassandra.svc.cluster.local:9042"
+  QUARKUS_CASSANDRA_KEYSPACE: "nessie"
+  QUARKUS_CASSANDRA_LOCAL_DATACENTER: "datacenter1"
+  QUARKUS_OIDC_TENANT_ENABLED: "false"
+  QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4317"
+  QUARKUS_OTEL_RESOURCE_ATTRIBUTES: "service.name=nessie-test-custom"
+  QUARKUS_OTEL_TRACES_SAMPLER: "parentbased_always_on"

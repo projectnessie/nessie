@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+    foo: bar
+spec:
+  # replicas not set because of HPA
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+        foo: bar
+      annotations:
+        foo: bar
+    spec:
+      containers:
+        - name: nessie
+          ports:
+            - name: nessie
+              containerPort: 19120
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 400m
+              memory: 128Mi
+          envFrom:
+            - configMapRef:
+                name: nessie-test
+                optional: false
+          env:
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom:
+                  secretKeyRef:
+                    name: nessie-db-credentials
+                    key: username
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                  secretKeyRef:
+                      name: nessie-db-credentials
+                      key: password
+      serviceAccountName: nessie-test-custom-service-account
