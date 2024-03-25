@@ -24,10 +24,8 @@ Although the code does its job, be aware of completely or mostly unimplemented f
 
 ## Hint when you use Azure clients
 
-Be aware that Azure clients _cannot_ be closed - there is just no `.close()` or `.dispose()` method. This means that all
-HTTP connection pools, and all threads will effectively never terminate, eating up a lot of system resources - also
-known as a memory and resource leak - built right into the current Azure client. IMHO that is a really bad software
-design mistake by Microsoft.
+Be aware that Azure clients _cannot_ be closed - there is just no `.close()` or `.dispose()` method. This means that
+HTTP connection pools, threads and other resources will effectively never be released.
 
 ## Example: basic setup
 
