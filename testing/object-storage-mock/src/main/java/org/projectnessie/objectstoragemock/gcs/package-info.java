@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.objectstoragemock.adlsgen2;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.List;
+@Value.Style(
+    defaults = @Value.Immutable(lazyhash = true),
+    allParameters = true,
+    forceJacksonPropertyNames = false,
+    clearBuilder = true,
+    depluralize = true,
+    jdkOnly = true,
+    get = {"get*", "is*"})
+package org.projectnessie.objectstoragemock.gcs;
+
 import org.immutables.value.Value;
-
-@JsonSerialize(as = ImmutablePathList.class)
-@JsonDeserialize(as = ImmutablePathList.class)
-@Value.Immutable
-// See
-// https://learn.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/path/list?view=rest-storageservices-datalakestoragegen2-2019-12-12#pathlist
-public interface PathList {
-  List<Path> paths();
-}

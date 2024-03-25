@@ -25,14 +25,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableListResponse.class)
 @JsonDeserialize(as = ImmutableListResponse.class)
 @Value.Immutable
-@Value.Style(
-    defaults = @Value.Immutable(lazyhash = true),
-    allParameters = true,
-    forceJacksonPropertyNames = false,
-    clearBuilder = true,
-    depluralize = true,
-    jdkOnly = true,
-    get = {"get*", "is*"})
 public interface ListResponse {
   default String kind() {
     return "storage#objects";

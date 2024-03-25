@@ -22,14 +22,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableDataLakeStorageError.class)
 @JsonDeserialize(as = ImmutableDataLakeStorageError.class)
 @Value.Immutable
-@Value.Style(
-    defaults = @Value.Immutable(lazyhash = true),
-    allParameters = true,
-    forceJacksonPropertyNames = false,
-    clearBuilder = true,
-    depluralize = true,
-    jdkOnly = true,
-    get = {"get*", "is*"})
 // See
 // https://learn.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/path/list?view=rest-storageservices-datalakestoragegen2-2019-12-12#datalakestorageerror
 public interface DataLakeStorageError {

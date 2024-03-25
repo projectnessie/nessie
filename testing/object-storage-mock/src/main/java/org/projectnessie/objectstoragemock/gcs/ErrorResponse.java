@@ -25,14 +25,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableErrorResponse.class)
 @JsonDeserialize(as = ImmutableErrorResponse.class)
 @Value.Immutable
-@Value.Style(
-    defaults = @Value.Immutable(lazyhash = true),
-    allParameters = true,
-    forceJacksonPropertyNames = false,
-    clearBuilder = true,
-    depluralize = true,
-    jdkOnly = true,
-    get = {"get*", "is*"})
 public interface ErrorResponse {
   int code();
 

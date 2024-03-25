@@ -29,14 +29,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableStorageObject.class)
 @JsonDeserialize(as = ImmutableStorageObject.class)
 @Value.Immutable
-@Value.Style(
-    defaults = @Value.Immutable(lazyhash = true),
-    allParameters = true,
-    forceJacksonPropertyNames = false,
-    clearBuilder = true,
-    depluralize = true,
-    jdkOnly = true,
-    get = {"get*", "is*"})
 // See https://cloud.google.com/storage/docs/json_api/v1/objects#resource
 public interface StorageObject {
   default String kind() {
