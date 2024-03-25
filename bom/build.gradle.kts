@@ -37,7 +37,6 @@ dependencies {
     api(project(":nessie-gc-repository-jdbc"))
     api(project(":nessie-gcs-testcontainer"))
     api(project(":nessie-model"))
-    api(project(":nessie-jaxrs"))
     api(project(":nessie-jaxrs-testextension"))
     api(project(":nessie-jaxrs-tests"))
     api(project(":nessie-keycloak-testcontainer"))

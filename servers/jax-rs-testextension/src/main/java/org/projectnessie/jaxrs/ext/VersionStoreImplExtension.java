@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.authz;
+package org.projectnessie.jaxrs.ext;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -21,35 +21,27 @@ import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
-import java.util.function.Function;
+import jakarta.enterprise.util.TypeLiteral;
+import java.util.function.Supplier;
+import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 
-/** This class needs to be in the same package as {@link BatchAccessChecker}. */
-public class AuthorizerExtension implements Extension {
-  private volatile Function<AccessContext, BatchAccessChecker> accessCheckerSupplier;
+public class VersionStoreImplExtension implements Extension {
 
-  private final Authorizer authorizer =
-      new Authorizer() {
-        @Override
-        public BatchAccessChecker startAccessCheck(AccessContext context) {
-          if (accessCheckerSupplier == null) {
-            return AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
-          }
-          return accessCheckerSupplier.apply(context);
-        }
-      };
+  private static Supplier<Persist> persist;
 
-  public AuthorizerExtension setAccessCheckerSupplier(
-      Function<AccessContext, BatchAccessChecker> accessCheckerSupplier) {
-    this.accessCheckerSupplier = accessCheckerSupplier;
-    return this;
+  public static VersionStoreImplExtension forPersist(Supplier<Persist> persist) {
+    VersionStoreImplExtension.persist = persist;
+    return new VersionStoreImplExtension();
   }
 
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
     abd.addBean()
-        .addType(Authorizer.class)
+        .addType(new TypeLiteral<VersionStore>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
-        .produceWith(i -> authorizer);
+        .produceWith(i -> new VersionStoreImpl(persist.get()));
   }
 }

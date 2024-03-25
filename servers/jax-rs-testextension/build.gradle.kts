@@ -24,8 +24,18 @@ extra["maven.name"] = "Nessie - JUnit Jupiter Test Extension"
 description = "JUnit Jupiter Extension to run tests against an \"embedded\" Nessie instance."
 
 dependencies {
-  api(project(":nessie-jaxrs"))
+  api(project(":nessie-client"))
   api(project(":nessie-client-testextension"))
+  api(project(":nessie-model"))
+  api(project(":nessie-rest-common"))
+  api(project(":nessie-rest-services"))
+  runtimeOnly(project(":nessie-server-store"))
+  api(project(":nessie-services"))
+  api(project(":nessie-services-config"))
+  api(project(":nessie-versioned-spi"))
+  api(project(":nessie-versioned-storage-common"))
+  api(project(":nessie-versioned-storage-store"))
+  api(project(":nessie-versioned-storage-testextension"))
 
   api(platform(libs.junit.bom))
   api("org.junit.jupiter:junit-jupiter-api")

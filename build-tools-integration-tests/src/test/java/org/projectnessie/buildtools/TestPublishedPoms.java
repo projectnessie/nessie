@@ -88,7 +88,6 @@ public class TestPublishedPoms {
     "nessie-compatibility-jersey",
     "nessie-compatibility-tests",
     "nessie-content-generator",
-    "nessie-jaxrs",
     "nessie-jaxrs-testextension",
     "nessie-jaxrs-tests",
     "nessie-model",
