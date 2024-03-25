@@ -99,6 +99,9 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
         "/* some comment here */ USE REFERENCE %s IN nessie -- and there",
         "/* some comment here */\nUSE REFERENCE %s IN nessie\n-- and there",
         "/* \nsome \ncomment \nhere */\nUSE REFERENCE %s IN nessie\n-- and there",
+        "/* leading -- leading \n */ CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
+        "-- leading \n CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
+        " -- leading \n -- leading \n -- leading \n CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
       })
   @SuppressWarnings("FormatStringAnnotation")
   public void testComments(String sql) throws NessieNotFoundException {
