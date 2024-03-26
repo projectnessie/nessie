@@ -25,6 +25,7 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.objectstoragemock.s3.S3Constants.RANGE;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.inject.Inject;
@@ -296,7 +297,11 @@ public class GcsResource {
                 // read metadata as JSON - see
                 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert
                 ObjectNode metadata = OBJECT_MAPPER.readValue(stream, ObjectNode.class);
-                String ct = metadata.get("contentType").textValue();
+                JsonNode contentTypeNode = metadata.get("contentType");
+                String ct =
+                    contentTypeNode != null
+                        ? contentTypeNode.textValue()
+                        : "application/octet-stream";
                 obj =
                     updater
                         .update(objectName, Bucket.UpdaterMode.CREATE_NEW)

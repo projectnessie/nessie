@@ -16,6 +16,7 @@
 package org.projectnessie.objectstoragemock;
 
 import static com.google.common.net.HttpHeaders.CONTENT_RANGE;
+import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 import static org.projectnessie.objectstoragemock.adlsgen2.DataLakeStorageError.dataLakeStorageErrorObj;
@@ -66,15 +67,34 @@ public class AdlsGen2Resource {
   @PUT
   @Path("/{filesystem:[$a-z0-9](?!.*--)[-a-z0-9]{1,61}[a-z0-9]}/{path:.*}")
   @Consumes(MediaType.WILDCARD)
+  // DataLakeFileClient.uploadWithResponse(...) sends "Accept: application/json"
+  // DataLakeFileClient.getOutputStream(...) sends "Accept: application/xml"
+  @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   public Response create(
-      @PathParam("filesystem") String filesystem, @PathParam("path") String path) {
+      @PathParam("filesystem") String filesystem,
+      @PathParam("path") String path,
+      @HeaderParam("x-ms-blob-type") String msBlobType,
+      @HeaderParam("x-ms-blob-content-type") String msBlobContentType,
+      @HeaderParam(ACCEPT) String accept,
+      InputStream input) {
 
     String normalizedPath = stripLeadingSlash(path);
 
     return withFilesystem(
         filesystem,
         b -> {
-          b.updater().update(normalizedPath, Bucket.UpdaterMode.CREATE_NEW).commit();
+          Bucket.ObjectUpdater updater =
+              b.updater().update(normalizedPath, Bucket.UpdaterMode.CREATE_NEW);
+
+          if ("BlockBlob".equals(msBlobType) && MediaType.APPLICATION_XML.equals(accept)) {
+            // Blob service - DataLakeFileClient.getOutputStream(...)
+            updater.append(0L, input);
+            if (msBlobContentType != null) {
+              updater.setContentType(msBlobContentType);
+            }
+          }
+
+          updater.commit();
           return Response.status(Status.CREATED).build();
         });
   }
@@ -289,6 +309,9 @@ public class AdlsGen2Resource {
   }
 
   private String stripLeadingSlash(String path) {
+    if (path == null) {
+      return "";
+    }
     return path.startsWith("/") ? path.substring(1) : path;
   }
 
