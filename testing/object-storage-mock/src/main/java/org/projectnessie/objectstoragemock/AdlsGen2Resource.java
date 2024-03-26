@@ -69,10 +69,12 @@ public class AdlsGen2Resource {
   public Response create(
       @PathParam("filesystem") String filesystem, @PathParam("path") String path) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
-          b.updater().update(path, Bucket.UpdaterMode.CREATE_NEW).commit();
+          b.updater().update(normalizedPath, Bucket.UpdaterMode.CREATE_NEW).commit();
           return Response.status(Status.CREATED).build();
         });
   }
@@ -88,13 +90,16 @@ public class AdlsGen2Resource {
       @HeaderParam("x-ms-content-type") String msContentType,
       InputStream input) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
           if (!action.appendOrFlush()) {
             return notImplemented();
           }
-          Bucket.ObjectUpdater updater = b.updater().update(path, Bucket.UpdaterMode.UPDATE);
+          Bucket.ObjectUpdater updater =
+              b.updater().update(normalizedPath, Bucket.UpdaterMode.UPDATE);
           if (updater == null) {
             return keyNotFound();
           }
@@ -120,10 +125,12 @@ public class AdlsGen2Resource {
       @PathParam("path") String path,
       @HeaderParam(RANGE) Range range) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
-          MockObject obj = b.object().retrieve(path);
+          MockObject obj = b.object().retrieve(normalizedPath);
           if (obj == null) {
             return keyNotFound();
           }
@@ -161,10 +168,12 @@ public class AdlsGen2Resource {
   public Response getProperties(
       @PathParam("filesystem") String filesystem, @PathParam("path") String path) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
-          MockObject obj = b.object().retrieve(path);
+          MockObject obj = b.object().retrieve(normalizedPath);
           if (obj == null) {
             return keyNotFound();
           }
@@ -190,21 +199,24 @@ public class AdlsGen2Resource {
       @QueryParam("recursive") @DefaultValue("false") boolean recursive) {
     // No clue why there are pagination parameters, although there's no response
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
           if (recursive) {
-            try (Stream<Bucket.ListElement> listStream = b.lister().list(path, continuationToken)) {
-              splitForDirectory(path, continuationToken, listStream)
+            try (Stream<Bucket.ListElement> listStream =
+                b.lister().list(normalizedPath, continuationToken)) {
+              splitForDirectory(normalizedPath, continuationToken, listStream)
                   .forEachRemaining(e -> b.deleter().delete(e.key()));
             }
           } else {
-            MockObject o = b.object().retrieve(path);
+            MockObject o = b.object().retrieve(normalizedPath);
             if (o == null) {
               return keyNotFound();
             }
 
-            if (!b.deleter().delete(path)) {
+            if (!b.deleter().delete(normalizedPath)) {
               return keyNotFound();
             }
           }
@@ -224,11 +236,13 @@ public class AdlsGen2Resource {
 
     // TODO handle 'recursive' - it's special, like everything from MS
 
+    String normalizedPath = stripLeadingSlash(directory);
+
     return withFilesystem(
         filesystem,
         b -> {
           try (Stream<Bucket.ListElement> listStream =
-              b.lister().list(directory, continuationToken)) {
+              b.lister().list(normalizedPath, continuationToken)) {
             ImmutablePathList.Builder result = ImmutablePathList.builder();
 
             int maxKeys = maxResults != null ? maxResults : Integer.MAX_VALUE;
@@ -238,7 +252,7 @@ public class AdlsGen2Resource {
             String lastKey = null;
 
             Spliterator<Bucket.ListElement> split =
-                splitForDirectory(directory, continuationToken, listStream);
+                splitForDirectory(normalizedPath, continuationToken, listStream);
 
             Holder<Bucket.ListElement> current = new Holder<>();
             while (split.tryAdvance(current::set)) {
@@ -272,6 +286,10 @@ public class AdlsGen2Resource {
             return response.build();
           }
         });
+  }
+
+  private String stripLeadingSlash(String path) {
+    return path.startsWith("/") ? path.substring(1) : path;
   }
 
   private static Spliterator<Bucket.ListElement> splitForDirectory(

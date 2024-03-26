@@ -182,7 +182,6 @@ public class GcsResource {
   @GET
   @Path("/download/storage/v1/b/{bucketName:[a-z0-9.-]+}/o/{object:.+}")
   @Produces(MediaType.WILDCARD)
-  @SuppressWarnings("JavaUtilDate")
   public Response downloadObject(
       @PathParam("bucketName") String bucketName,
       @PathParam("object") String objectName,
@@ -199,7 +198,6 @@ public class GcsResource {
   @GET
   @Path("/storage/v1/b/{bucketName:[a-z0-9.-]+}/o/{object:.+}")
   @Produces(MediaType.WILDCARD)
-  @SuppressWarnings("JavaUtilDate")
   public Response getObject(
       @PathParam("bucketName") String bucketName,
       @PathParam("object") String objectName,
