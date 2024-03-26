@@ -384,6 +384,58 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
   }
 
   @Test
+  public void putObjectNoContentType() {
+    AtomicReference<String> writtenKey = new AtomicReference<>();
+    AtomicReference<String> writtenType = new AtomicReference<>();
+    AtomicReference<byte[]> writtenData = new AtomicReference<>();
+
+    createServer(
+        b ->
+            b.putBuckets(
+                BUCKET,
+                Bucket.builder()
+                    .updater(
+                        (key, mode) ->
+                            new Bucket.ObjectUpdater() {
+                              @Override
+                              public Bucket.ObjectUpdater append(long position, InputStream data) {
+                                try {
+                                  writtenData.set(IoUtils.toByteArray(data));
+                                } catch (IOException e) {
+                                  throw new RuntimeException(e);
+                                }
+                                return this;
+                              }
+
+                              @Override
+                              public Bucket.ObjectUpdater flush() {
+                                return this;
+                              }
+
+                              @Override
+                              public Bucket.ObjectUpdater setContentType(String contentType) {
+                                writtenType.set(contentType);
+                                return this;
+                              }
+
+                              @Override
+                              public MockObject commit() {
+                                writtenKey.set(key);
+                                return MockObject.builder().contentType(writtenType.get()).build();
+                              }
+                            })
+                    .build()));
+
+    s3.putObject(
+        PutObjectRequest.builder().bucket(BUCKET).key("my-object").build(),
+        RequestBody.fromBytes("Hello World".getBytes(StandardCharsets.UTF_8)));
+
+    soft.assertThat(writtenKey.get()).isEqualTo("my-object");
+    soft.assertThat(writtenType.get()).isEqualTo("application/octet-stream");
+    soft.assertThat(writtenData.get()).asString().isEqualTo("Hello World");
+  }
+
+  @Test
   public void heapStorage() throws Exception {
     createServer(b -> b.putBuckets(BUCKET, Bucket.createHeapStorageBucket()));
 

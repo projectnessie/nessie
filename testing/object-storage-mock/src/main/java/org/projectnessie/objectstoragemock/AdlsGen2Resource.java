@@ -16,6 +16,7 @@
 package org.projectnessie.objectstoragemock;
 
 import static com.google.common.net.HttpHeaders.CONTENT_RANGE;
+import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 import static org.projectnessie.objectstoragemock.adlsgen2.DataLakeStorageError.dataLakeStorageErrorObj;
@@ -66,13 +67,34 @@ public class AdlsGen2Resource {
   @PUT
   @Path("/{filesystem:[$a-z0-9](?!.*--)[-a-z0-9]{1,61}[a-z0-9]}/{path:.*}")
   @Consumes(MediaType.WILDCARD)
+  // DataLakeFileClient.uploadWithResponse(...) sends "Accept: application/json"
+  // DataLakeFileClient.getOutputStream(...) sends "Accept: application/xml"
+  @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   public Response create(
-      @PathParam("filesystem") String filesystem, @PathParam("path") String path) {
+      @PathParam("filesystem") String filesystem,
+      @PathParam("path") String path,
+      @HeaderParam("x-ms-blob-type") String msBlobType,
+      @HeaderParam("x-ms-blob-content-type") String msBlobContentType,
+      @HeaderParam(ACCEPT) String accept,
+      InputStream input) {
+
+    String normalizedPath = stripLeadingSlash(path);
 
     return withFilesystem(
         filesystem,
         b -> {
-          b.updater().update(path, Bucket.UpdaterMode.CREATE_NEW).commit();
+          Bucket.ObjectUpdater updater =
+              b.updater().update(normalizedPath, Bucket.UpdaterMode.CREATE_NEW);
+
+          if ("BlockBlob".equals(msBlobType) && MediaType.APPLICATION_XML.equals(accept)) {
+            // Blob service - DataLakeFileClient.getOutputStream(...)
+            updater.append(0L, input);
+            if (msBlobContentType != null) {
+              updater.setContentType(msBlobContentType);
+            }
+          }
+
+          updater.commit();
           return Response.status(Status.CREATED).build();
         });
   }
@@ -88,13 +110,16 @@ public class AdlsGen2Resource {
       @HeaderParam("x-ms-content-type") String msContentType,
       InputStream input) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
           if (!action.appendOrFlush()) {
             return notImplemented();
           }
-          Bucket.ObjectUpdater updater = b.updater().update(path, Bucket.UpdaterMode.UPDATE);
+          Bucket.ObjectUpdater updater =
+              b.updater().update(normalizedPath, Bucket.UpdaterMode.UPDATE);
           if (updater == null) {
             return keyNotFound();
           }
@@ -120,10 +145,12 @@ public class AdlsGen2Resource {
       @PathParam("path") String path,
       @HeaderParam(RANGE) Range range) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
-          MockObject obj = b.object().retrieve(path);
+          MockObject obj = b.object().retrieve(normalizedPath);
           if (obj == null) {
             return keyNotFound();
           }
@@ -161,10 +188,12 @@ public class AdlsGen2Resource {
   public Response getProperties(
       @PathParam("filesystem") String filesystem, @PathParam("path") String path) {
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
-          MockObject obj = b.object().retrieve(path);
+          MockObject obj = b.object().retrieve(normalizedPath);
           if (obj == null) {
             return keyNotFound();
           }
@@ -190,21 +219,24 @@ public class AdlsGen2Resource {
       @QueryParam("recursive") @DefaultValue("false") boolean recursive) {
     // No clue why there are pagination parameters, although there's no response
 
+    String normalizedPath = stripLeadingSlash(path);
+
     return withFilesystem(
         filesystem,
         b -> {
           if (recursive) {
-            try (Stream<Bucket.ListElement> listStream = b.lister().list(path, continuationToken)) {
-              splitForDirectory(path, continuationToken, listStream)
+            try (Stream<Bucket.ListElement> listStream =
+                b.lister().list(normalizedPath, continuationToken)) {
+              splitForDirectory(normalizedPath, continuationToken, listStream)
                   .forEachRemaining(e -> b.deleter().delete(e.key()));
             }
           } else {
-            MockObject o = b.object().retrieve(path);
+            MockObject o = b.object().retrieve(normalizedPath);
             if (o == null) {
               return keyNotFound();
             }
 
-            if (!b.deleter().delete(path)) {
+            if (!b.deleter().delete(normalizedPath)) {
               return keyNotFound();
             }
           }
@@ -224,11 +256,13 @@ public class AdlsGen2Resource {
 
     // TODO handle 'recursive' - it's special, like everything from MS
 
+    String normalizedPath = stripLeadingSlash(directory);
+
     return withFilesystem(
         filesystem,
         b -> {
           try (Stream<Bucket.ListElement> listStream =
-              b.lister().list(directory, continuationToken)) {
+              b.lister().list(normalizedPath, continuationToken)) {
             ImmutablePathList.Builder result = ImmutablePathList.builder();
 
             int maxKeys = maxResults != null ? maxResults : Integer.MAX_VALUE;
@@ -238,7 +272,7 @@ public class AdlsGen2Resource {
             String lastKey = null;
 
             Spliterator<Bucket.ListElement> split =
-                splitForDirectory(directory, continuationToken, listStream);
+                splitForDirectory(normalizedPath, continuationToken, listStream);
 
             Holder<Bucket.ListElement> current = new Holder<>();
             while (split.tryAdvance(current::set)) {
@@ -272,6 +306,13 @@ public class AdlsGen2Resource {
             return response.build();
           }
         });
+  }
+
+  private String stripLeadingSlash(String path) {
+    if (path == null) {
+      return "";
+    }
+    return path.startsWith("/") ? path.substring(1) : path;
   }
 
   private static Spliterator<Bucket.ListElement> splitForDirectory(

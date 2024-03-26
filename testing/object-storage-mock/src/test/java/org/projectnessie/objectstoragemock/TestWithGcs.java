@@ -232,6 +232,21 @@ public class TestWithGcs extends AbstractObjectStorageMockServer {
   }
 
   @Test
+  public void putObjectNoContentType() throws Exception {
+    Bucket heap = Bucket.createHeapStorageBucket();
+
+    createServer(b -> b.putBuckets(BUCKET, heap));
+
+    client.createFrom(
+        BlobInfo.newBuilder(BlobId.of(BUCKET, MY_OBJECT_KEY)).build(),
+        new ByteArrayInputStream("Hello World".getBytes(UTF_8)));
+
+    soft.assertThat(heap.object().retrieve(MY_OBJECT_KEY))
+        .extracting(MockObject::contentType, MockObject::contentLength)
+        .containsExactly("application/octet-stream", (long) "Hello World".length());
+  }
+
+  @Test
   public void heapStorage() throws Exception {
     createServer(b -> b.putBuckets(BUCKET, Bucket.createHeapStorageBucket()));
 

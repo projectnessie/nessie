@@ -15,6 +15,7 @@
  */
 package org.projectnessie.objectstoragemock;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import com.azure.core.http.HttpClient;
@@ -31,8 +32,9 @@ import com.azure.storage.file.datalake.models.ListPathsOptions;
 import com.azure.storage.file.datalake.models.PathHttpHeaders;
 import com.azure.storage.file.datalake.models.PathItem;
 import com.azure.storage.file.datalake.models.PathProperties;
+import com.azure.storage.file.datalake.options.DataLakeFileOutputStreamOptions;
 import com.azure.storage.file.datalake.options.FileParallelUploadOptions;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -253,7 +255,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
             b.putBuckets(
                 BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
 
-    byte[] content = "Hello World\nHello Nessie!".getBytes(StandardCharsets.UTF_8);
+    byte[] content = "Hello World\nHello Nessie!".getBytes(UTF_8);
 
     MockObject obj =
         ImmutableMockObject.builder()
@@ -348,7 +350,58 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
   }
 
   @Test
-  public void heapStorage(@TempDir Path dir) throws Exception {
+  public void putObjectNoContentType() {
+    Bucket heap = Bucket.createHeapStorageBucket();
+
+    createServer(b -> b.putBuckets(BUCKET, heap));
+
+    client
+        .getFileClient(MY_OBJECT_KEY)
+        .uploadWithResponse(
+            new FileParallelUploadOptions(BinaryData.fromString("Hello World")), null, null);
+
+    soft.assertThat(heap.object().retrieve(MY_OBJECT_KEY))
+        .extracting(MockObject::contentType, MockObject::contentLength)
+        .containsExactly("application/octet-stream", (long) "Hello World".length());
+  }
+
+  @Test
+  public void putObjectUsingOutputStream() throws Exception {
+    Bucket heap = Bucket.createHeapStorageBucket();
+
+    createServer(b -> b.putBuckets(BUCKET, heap));
+
+    try (OutputStream output =
+        client
+            .getFileClient(MY_OBJECT_KEY)
+            .getOutputStream(
+                new DataLakeFileOutputStreamOptions()
+                    .setHeaders(new PathHttpHeaders().setContentType("text/plain")))) {
+      output.write("Hello World".getBytes(UTF_8));
+    }
+
+    soft.assertThat(heap.object().retrieve(MY_OBJECT_KEY))
+        .extracting(MockObject::contentType, MockObject::contentLength)
+        .containsExactly("text/plain", (long) "Hello World".length());
+  }
+
+  @Test
+  public void putObjectUsingOutputStreamNoContentType() throws Exception {
+    Bucket heap = Bucket.createHeapStorageBucket();
+
+    createServer(b -> b.putBuckets(BUCKET, heap));
+
+    try (OutputStream output = client.getFileClient(MY_OBJECT_KEY).getOutputStream()) {
+      output.write("Hello World".getBytes(UTF_8));
+    }
+
+    soft.assertThat(heap.object().retrieve(MY_OBJECT_KEY))
+        .extracting(MockObject::contentType, MockObject::contentLength)
+        .containsExactly("application/octet-stream", (long) "Hello World".length());
+  }
+
+  @Test
+  public void heapStorage(@TempDir Path dir) {
     createServer(b -> b.putBuckets(BUCKET, Bucket.createHeapStorageBucket()));
 
     BinaryData data = BinaryData.fromString("Hello World");
