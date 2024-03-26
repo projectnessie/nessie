@@ -52,13 +52,11 @@ public class ITMinioExtension {
         .containsEntry("s3.endpoint", minio.s3endpoint())
         .containsKey("http-client.type");
 
-    soft.assertThat(minio.hadoopConfiguration()).isNotNull();
-    soft.assertThat(minio.hadoopConfiguration().get("fs.s3a.access.key"))
-        .isEqualTo(minio.accessKey());
-    soft.assertThat(minio.hadoopConfiguration().get("fs.s3a.secret.key"))
-        .isEqualTo(minio.secretKey());
-    soft.assertThat(minio.hadoopConfiguration().get("fs.s3a.endpoint"))
-        .isEqualTo(minio.s3endpoint());
+    soft.assertThat(minio.hadoopConfig())
+        .isNotNull()
+        .containsEntry("fs.s3a.access.key", minio.accessKey())
+        .containsEntry("fs.s3a.secret.key", minio.secretKey())
+        .containsEntry("fs.s3a.endpoint", minio.s3endpoint());
 
     minio.s3put("some-key", RequestBody.fromString("hello world"));
 

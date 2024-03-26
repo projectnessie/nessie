@@ -19,12 +19,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder;
 import com.google.cloud.NoCredentials;
+import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import java.io.ByteArrayInputStream;
+import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,6 +246,25 @@ public class TestWithGcs extends AbstractObjectStorageMockServer {
     soft.assertThat(heap.object().retrieve(MY_OBJECT_KEY))
         .extracting(MockObject::contentType, MockObject::contentLength)
         .containsExactly("application/octet-stream", (long) "Hello World".length());
+  }
+
+  @Test
+  public void putObjectWithWriter() throws Exception {
+    Bucket heap = Bucket.createHeapStorageBucket();
+
+    createServer(b -> b.putBuckets(BUCKET, heap));
+
+    try (WriteChannel channel =
+        client.writer(
+            BlobInfo.newBuilder(BlobId.of(BUCKET, MY_OBJECT_KEY))
+                .setContentType("text/plain")
+                .build())) {
+      Channels.newOutputStream(channel).write("Hello World".getBytes(UTF_8));
+    }
+
+    soft.assertThat(heap.object().retrieve(MY_OBJECT_KEY))
+        .extracting(MockObject::contentType, MockObject::contentLength)
+        .containsExactly("text/plain", (long) "Hello World".length());
   }
 
   @Test

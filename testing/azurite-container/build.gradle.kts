@@ -33,6 +33,12 @@ dependencies {
 
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
+
+  compileOnly(platform(libs.junit.bom))
+  compileOnly("org.junit.jupiter:junit-jupiter-api")
+
+  intTestImplementation(libs.bundles.junit.testing)
+  intTestRuntimeOnly(libs.logback.classic)
 }
 
 tasks.withType(Test::class.java).configureEach {

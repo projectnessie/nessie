@@ -15,6 +15,7 @@
  */
 package org.projectnessie.testing.gcs;
 
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 
@@ -24,8 +25,8 @@ import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -33,10 +34,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.Base58;
 
 /**
@@ -54,16 +56,17 @@ import org.testcontainers.utility.Base58;
  * dynamically mapped port for this test, because the initial HTTP request does not have a {@code
  * Host} header.
  */
-public class GCSContainer extends GenericContainer<GCSContainer> {
+public class GcsContainer extends GenericContainer<GcsContainer>
+    implements GcsAccess, CloseableResource {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GCSContainer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(GcsContainer.class);
   public static final int PORT = 4443;
 
   private static final String DEFAULT_IMAGE;
   private static final String DEFAULT_TAG;
 
   static {
-    URL resource = GCSContainer.class.getResource("Dockerfile-fake-gcs-server-version");
+    URL resource = GcsContainer.class.getResource("Dockerfile-fake-gcs-server-version");
     Objects.requireNonNull(resource, "Dockerfile-fake-gcs-server-version not found");
     try (InputStream in = resource.openConnection().getInputStream()) {
       String[] imageTag =
@@ -92,12 +95,12 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
   private final String bucket;
   private final String projectId;
 
-  public GCSContainer() {
-    this(null);
+  public GcsContainer() {
+    this(null, null, null, null);
   }
 
   @SuppressWarnings("resource")
-  public GCSContainer(String image) {
+  public GcsContainer(String image, String bucket, String projectId, String oauth2token) {
     super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
 
     ThreadLocalRandom rand = ThreadLocalRandom.current();
@@ -106,68 +109,76 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     localAddress =
         isMac || isWindows
             ? "127.0.0.1"
-            : String.format(
-                "127.%d.%d.%d", rand.nextInt(256), rand.nextInt(256), rand.nextInt(1, 255));
-    oauth2token = randomString("token");
-    bucket = randomString("bucket");
-    projectId = randomString("project");
+            : format("127.%d.%d.%d", rand.nextInt(256), rand.nextInt(256), rand.nextInt(1, 255));
+    if (oauth2token == null) {
+      oauth2token = randomString("token");
+    }
+    if (bucket == null) {
+      bucket = randomString("bucket");
+    }
+    if (projectId == null) {
+      projectId = randomString("project");
+    }
+    this.oauth2token = oauth2token;
+    this.bucket = bucket;
+    this.projectId = projectId;
 
     withNetworkAliases(randomString("fake-gcs"));
     withLogConsumer(c -> LOGGER.info("[FAKE-GCS] {}", c.getUtf8StringWithoutLineEnding()));
-    withCommand("-scheme", "http", "-public-host", localAddress, "-log-level", "warn");
-    setWaitStrategy(
-        new HttpWaitStrategy()
-            .forPath("/storage/v1/b")
-            .forPort(PORT)
-            .withStartupTimeout(Duration.ofMinutes(2)));
+    withCommand(
+        "-scheme",
+        "http",
+        "-public-host",
+        localAddress,
+        "-log-level",
+        "info",
+        "-external-url",
+        format("http://%s:%d/", localAddress, PORT));
+    setWaitStrategy(new LogMessageWaitStrategy().withRegEx(".*server started at .*"));
 
     addExposedPort(PORT);
 
     // STATIC PORT BINDING!
-    setPortBindings(singletonList(PORT + ":" + PORT));
+    setPortBindings(singletonList(localAddress + ":" + PORT + ":" + PORT));
   }
 
   @Override
   public void start() {
     super.start();
 
-    try (Storage storage =
-        StorageOptions.http()
-            .setHost(baseUri())
-            .setCredentials(OAuth2Credentials.create(new AccessToken(oauth2token, null)))
-            .setProjectId(projectId)
-            .build()
-            .getService()) {
+    try (Storage storage = newStorage()) {
       storage.create(BucketInfo.newBuilder(bucket).build());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
+  @Override
   public String baseUri() {
-    return String.format("http://%s:%d", localAddress(), gcsPort());
+    return format("http://%s:%d", localAddress(), gcsPort());
   }
 
+  @Override
   public String localAddress() {
     return localAddress;
   }
 
+  @Override
   public String oauth2token() {
     return oauth2token;
   }
 
+  @Override
   public String bucket() {
     return bucket;
   }
 
-  public String bucketUri() {
-    return String.format("gs://%s/", bucket);
-  }
-
+  @Override
   public String projectId() {
     return projectId;
   }
 
+  @Override
   public Storage newStorage() {
     return StorageOptions.http()
         .setHost(baseUri())
@@ -175,6 +186,19 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
         .setProjectId(projectId)
         .build()
         .getService();
+  }
+
+  @Override
+  public URI bucketUri() {
+    return bucketUri("");
+  }
+
+  @Override
+  public URI bucketUri(String key) {
+    if (key.startsWith("/")) {
+      key = key.substring(1);
+    }
+    return URI.create(format("gs://%s/%s", bucket, key));
   }
 
   private int gcsPort() {
@@ -185,6 +209,7 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     return prefix + "-" + Base58.randomString(6).toLowerCase(Locale.ROOT);
   }
 
+  @Override
   public Map<String, String> hadoopConfig() {
     Map<String, String> r = new HashMap<>();
     // See https://github.com/GoogleCloudDataproc/hadoop-connectors/blob/master/gcs/CONFIGURATION.md
@@ -192,6 +217,7 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     r.put("fs.AbstractFileSystem.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFS");
     r.put("fs.gs.storage.root.url", baseUri());
     r.put("fs.gs.project.id", projectId);
+    // TODO the docs don't mention anything about using an OAuth2 token :(
     r.put("fs.gs.auth.type", "USER_CREDENTIALS");
     r.put("fs.gs.auth.client.id", "foo");
     r.put("fs.gs.auth.client.secret", "bar");
@@ -199,6 +225,7 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     return r;
   }
 
+  @Override
   public Map<String, String> icebergProperties() {
     Map<String, String> r = new HashMap<>();
     r.put("io-impl", "org.apache.iceberg.gcp.gcs.GCSFileIO");
@@ -206,5 +233,10 @@ public class GCSContainer extends GenericContainer<GCSContainer> {
     r.put("gcs.service.host", baseUri());
     r.put("gcs.oauth2.token", oauth2token);
     return r;
+  }
+
+  @Override
+  public void close() {
+    stop();
   }
 }
