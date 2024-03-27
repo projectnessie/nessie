@@ -55,7 +55,7 @@ In pyspark, usage would look like...
     The config parameter `spark.jars` only takes a list of jar files and does not resolve
     transitive dependencies.
 
-The docs for the [Java API](https://iceberg.apache.org/java-api-quickstart) in Iceberg explain how to use a `Catalog`.
+The docs for the [Java API](https://iceberg.apache.org/docs/latest/java-api-quickstart/) in Iceberg explain how to use a `Catalog`.
 The only change is that a Nessie catalog should be instantiated
 
 === "Java"
@@ -232,7 +232,7 @@ iceberg metadata is finally written to disk and a commit takes place on Nessie.
 Now that we have created an Iceberg table in nessie we can write to it. The iceberg `DataSourceV2` allows for either
 `overwrite` or `append` mode in a standard `spark.write`.
 
-Spark support is constantly evolving. See the [iceberg](https://iceberg.apache.org/spark-writes/) docs for an up-to-date support table.
+Spark support is constantly evolving. See the [iceberg](https://iceberg.apache.org/docs/latest/spark-writes/) docs for an up-to-date support table.
 
 ### Spark3
 
@@ -266,7 +266,7 @@ Spark3 table creation/insertion is as follows:
     INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
     ```
 
-The full list of operations can be found [here](https://iceberg.apache.org/spark-writes/). Everything that Iceberg
+The full list of operations can be found [here](https://iceberg.apache.org/docs/latest/spark-writes/). Everything that Iceberg
 supports the Nessie Iceberg Catalog also supports.
 
 ## Reading
