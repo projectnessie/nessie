@@ -5,11 +5,11 @@
 
 To access Hive via Iceberg, you will need to make sure `iceberg-hive-runtime` is added to Hive. This can be done either by adding the JAR file to `auxlib` folder in Hive home directory, by adding the JAR file to `hive-site.xml` file or via Hive shell, e.g: `add jar /path/to/iceberg-hive-runtime.jar;`. Nessie's Iceberg module is already included with `iceberg-hive-runtime` JAR distribution.
 
-For more general information about Hive and Iceberg, refer to [Iceberg and Hive documentation](https://iceberg.apache.org/hive/).
+For more general information about Hive and Iceberg, refer to [Iceberg and Hive documentation](https://iceberg.apache.org/docs/latest/hive/).
 
 ## Configuration 
 
-To configure a Nessie Catalog in Hive, first it needs to be [registered in Hive](https://iceberg.apache.org/hive/#custom-iceberg-catalogs), this can be done by configuring the following properties in Hive (Replace `<catalog_name>` with the name of your catalog):
+To configure a Nessie Catalog in Hive, first it needs to be [registered in Hive](https://iceberg.apache.org/docs/latest/hive/#custom-iceberg-catalogs), this can be done by configuring the following properties in Hive (Replace `<catalog_name>` with the name of your catalog):
 
 ```
 SET iceberg.catalog.<catalog_name>.catalog-impl=org.apache.iceberg.nessie.NessieCatalog
@@ -61,7 +61,7 @@ Whereby the above properties are explained as below:
 
 ## Writing and reading tables
 
-To read and write into tables that are managed by Iceberg and Nessie, typical Hive SQL queries can be used. Refer to this documentation [here](https://iceberg.apache.org/hive/#querying-with-sql) for more information.
+To read and write into tables that are managed by Iceberg and Nessie, typical Hive SQL queries can be used. Refer to this documentation [here](https://iceberg.apache.org/docs/latest/hive/#dml-commands) for more information.
 
 **Note**: Hive doesn't support the notation of `<table>@<branch>`, therefore everytime you want to execute against a specific branch, you will need to set this property to point to the working branch, e.g: `SET iceberg.catalog.<catalog_name>.ref=main`. E.g:
 ```

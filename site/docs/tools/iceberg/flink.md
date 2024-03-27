@@ -3,7 +3,7 @@
 !!! note    
     Detailed steps on how to set up Pyspark + Iceberg + Flink + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-flink-demo-nba.ipynb)
 
-In order to use Flink with Python API, you will need to make sure `pyflink` have access to all Hadoop JARs as mentioned in these [docs](https://iceberg.apache.org/flink/#preparation-when-using-flinks-python-api). After that, you will need to make sure `iceberg-flink-runtime` is added to Flink. This can be done by adding the iceberg JAR to `pyflink` via `env.add_jar`, e.g: `env.add_jars("file://path/to/jar/iceberg-flink-runtime-{{ versions.iceberg }}.jar")`. This can be shown below:
+In order to use Flink with Python API, you will need to make sure `pyflink` have access to all Hadoop JARs as mentioned in these [docs](https://iceberg.apache.org/docs/latest/flink/#flinks-python-api). After that, you will need to make sure `iceberg-flink-runtime` is added to Flink. This can be done by adding the iceberg JAR to `pyflink` via `env.add_jar`, e.g: `env.add_jars("file://path/to/jar/iceberg-flink-runtime-{{ versions.iceberg }}.jar")`. This can be shown below:
 
 ```python
 import os
@@ -35,7 +35,7 @@ table_env.execute_sql(
 
 With the above statement, we have created a Nessie catalog (via Iceberg) that Flink will use to manage the tables.
 
-For more general information about Flink and Iceberg, refer to [Iceberg and Flink documentation](https://iceberg.apache.org/flink/).
+For more general information about Flink and Iceberg, refer to [Iceberg and Flink documentation](https://iceberg.apache.org/docs/latest/flink/).
 
 
 ## Configuration 
@@ -95,4 +95,4 @@ SELECT * FROM `<catalog_name>`.`<database_name>`.`<table_name>@<branch>#<hash>`;
 
 ## Other DDL statements
 
-To read and write into tables that are managed by Iceberg and Nessie, typical Flink SQL queries can be used. Refer to this documentation [here](https://iceberg.apache.org/flink/#ddl-commands) for more information.
+To read and write into tables that are managed by Iceberg and Nessie, typical Flink SQL queries can be used. Refer to this documentation [here](https://iceberg.apache.org/docs/latest/flink-ddl/) for more information.
