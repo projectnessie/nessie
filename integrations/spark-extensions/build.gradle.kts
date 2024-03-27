@@ -49,8 +49,14 @@ dependencies {
   testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
 
-  testFixturesRuntimeOnly(libs.logback.classic)
-  testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
+  testFixturesRuntimeOnly(libs.logback.classic) {
+    version { strictly(libs.versions.logback.compat.get()) }
+    // Logback 1.3 brings Slf4j 2.0, which doesn't work with Spark up to 3.3
+    exclude("org.slf4j", "slf4j-api")
+  }
+  testFixturesImplementation(libs.slf4j.log4j.over.slf4j) {
+    version { require(libs.versions.slf4j.compat.get()) }
+  }
   testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   testFixturesImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
