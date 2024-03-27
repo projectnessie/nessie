@@ -25,7 +25,7 @@ services:
     environment:
       - nessie.version.store.type=DYNAMODB
       - quarkus.dynamodb.endpoint-override=http://dynamodb:8000
-      - quarkus.dynamodb.aws.region=us-west-2
+      - quarkus.dynamodb.client.region=us-west-2
       - quarkus.dynamodb.aws.credentials.type=STATIC
       - quarkus.dynamodb.aws.credentials.static-provider.access-key-id=fakeKeyId
       - quarkus.dynamodb.aws.credentials.static-provider.secret-access-key=fakeSecretAccessKey

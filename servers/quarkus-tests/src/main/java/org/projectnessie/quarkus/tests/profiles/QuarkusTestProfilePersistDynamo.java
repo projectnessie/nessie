@@ -31,7 +31,7 @@ public class QuarkusTestProfilePersistDynamo extends BaseConfigProfile {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", DYNAMODB.name())
-        .put("quarkus.dynamodb.aws.region", US_WEST_2.id())
+        .put("quarkus.dynamodb.client.region", US_WEST_2.id())
         .put("quarkus.dynamodb.aws.credentials.type", STATIC.name())
         .put("quarkus.dynamodb.aws.credentials.static-provider.access-key-id", "xxx")
         .put("quarkus.dynamodb.aws.credentials.static-provider.secret-access-key", "xxx")

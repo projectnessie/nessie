@@ -57,7 +57,7 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
     r.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
     r.putAll(minio.icebergProperties());
 
-    System.setProperty("aws.region", "us-east-1");
+    System.setProperty("client.region", "us-east-1");
     System.setProperty("aws.s3.endpoint", minio.s3endpoint());
     System.setProperty("aws.s3.accessKey", minio.accessKey());
     System.setProperty("aws.s3.secretAccessKey", minio.secretKey());

@@ -39,4 +39,4 @@ dependencies {
   intTestRuntimeOnly(libs.logback.classic)
 }
 
-tasks.withType(Test::class.java).configureEach { systemProperty("aws.region", "us-east-1") }
+tasks.withType(Test::class.java).configureEach { systemProperty("client.region", "us-east-1") }
