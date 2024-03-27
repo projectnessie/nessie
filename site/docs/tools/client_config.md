@@ -298,7 +298,7 @@ poll the OAuth2 server for the authentication status, until the authentication i
 
 ### Authentication Type `AWS`
 
-For the `AWS` Authentication Type the `authentication.aws.region` property should be set to the
+For the `AWS` Authentication Type the `authentication.client.region` property should be set to the
 AWS region where the Nessie Server endpoint is located.
 
 Additional AWS authentication configuration should be provided via standard AWS configuration files. 
