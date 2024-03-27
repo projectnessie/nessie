@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.hash.Hashing;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import jakarta.validation.constraints.NotNull;
 import java.util.Locale;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
@@ -68,7 +67,6 @@ public abstract class AbstractQuarkusSmoke {
     this.api = clientFactory.make();
   }
 
-  @NotNull
   public NessieApiV1 api() {
     return api;
   }
