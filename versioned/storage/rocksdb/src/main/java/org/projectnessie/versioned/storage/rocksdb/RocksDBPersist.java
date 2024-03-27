@@ -92,6 +92,17 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
+
+  @Override
   public Reference fetchReference(@Nonnull String name) {
     try {
       RocksDBBackend v = backend;

@@ -74,7 +74,7 @@ class RepositoryConfigBackend {
   public List<RepositoryConfig> getConfigs(Set<RepositoryConfig.Type> repositoryConfigTypes) {
     try {
       Persist p = persist;
-      Reference reference = configsRef();
+      Reference reference = configsRef(false);
       IndexesLogic indexesLogic = indexesLogic(p);
       CommitObj head = commitLogic(p).headCommit(reference);
       StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndexOrEmpty(head);
@@ -117,7 +117,7 @@ class RepositoryConfigBackend {
           (p, retryState) -> {
             Reference reference;
             try {
-              reference = configsRef();
+              reference = configsRef(true);
             } catch (RetryTimeoutException ex) {
               throw new CommitWrappedException(new CommitRetry.RetryException(Optional.empty()));
             }
@@ -175,11 +175,14 @@ class RepositoryConfigBackend {
   }
 
   /** Retrieves the configs-reference, creates the reference, if it does not exist. */
-  private Reference configsRef() throws RetryTimeoutException {
+  private Reference configsRef(boolean bypassCache) throws RetryTimeoutException {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     Reference reference;
     try {
-      reference = referenceLogic.getReference(REPO_CONFIG_REF);
+      reference =
+          bypassCache
+              ? referenceLogic.getReferenceForUpdate(REPO_CONFIG_REF)
+              : referenceLogic.getReference(REPO_CONFIG_REF);
     } catch (RefNotFoundException e) {
       try {
         reference = referenceLogic.createReference(REPO_CONFIG_REF, ObjId.EMPTY_OBJ_ID, null);

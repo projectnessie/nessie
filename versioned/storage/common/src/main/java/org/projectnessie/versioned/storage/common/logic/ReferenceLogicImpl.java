@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
@@ -186,6 +187,17 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @Override
   @Nonnull
   public List<Reference> getReferences(@Nonnull List<String> references) {
+    return getReferences(references, persist::fetchReferences);
+  }
+
+  @Override
+  @Nonnull
+  public List<Reference> getReferencesForUpdate(@Nonnull List<String> references) {
+    return getReferences(references, persist::fetchReferencesForUpdate);
+  }
+
+  private List<Reference> getReferences(
+      @Nonnull List<String> references, Function<String[], Reference[]> fetchRefs) {
     int refCount = references.size();
     String[] refsArray;
     int refRefsIndex = references.indexOf(REF_REFS.name());
@@ -196,7 +208,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       refRefsIndex = references.size();
       refsArray[refRefsIndex] = REF_REFS.name();
     }
-    Reference[] refs = persist.fetchReferences(refsArray);
+    Reference[] refs = fetchRefs.apply(refsArray);
 
     Supplier<SuppliedCommitIndex> refsIndexSupplier = createRefsIndexSupplier(refs[refRefsIndex]);
 
@@ -370,7 +382,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       throws RefNotFoundException, RefConditionFailedException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
-    Reference reference = persist.fetchReference(name);
+    Reference reference = persist.fetchReferenceForUpdate(name);
     Supplier<SuppliedCommitIndex> indexSupplier = null;
     if (reference == null) {
       StoreKey nameKey = key(name);
@@ -471,7 +483,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       return commitRetry(
           persist,
           (p, retryState) -> {
-            Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
+            Reference refRefs = requireNonNull(p.fetchReferenceForUpdate(REF_REFS.name()));
             RefObj ref = ref(name, pointer, refCreatedTimestamp, extendedInfoObj);
             try {
               p.storeObj(ref);
@@ -512,7 +524,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       StoreIndexElement<CommitOp> el = indexSupplier.get().index().get(key(name));
       checkNotNull(el, "Key %s missing in index", name);
 
-      Reference existing = persist.fetchReference(name);
+      Reference existing = persist.fetchReferenceForUpdate(name);
 
       if (existing != null) {
         return new CommitReferenceResult(reference, existing, REF_ROW_EXISTS);
@@ -550,7 +562,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       commitRetry(
           persist,
           (p, retryState) -> {
-            Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
+            Reference refRefs = requireNonNull(p.fetchReferenceForUpdate(REF_REFS.name()));
             if (expectedRefRefsHead != null && !refRefs.pointer().equals(expectedRefRefsHead)) {
               throw new RuntimeException(REF_REFS_ADVANCED);
             }
@@ -774,7 +786,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   }
 
   private boolean refRefsOutOfDate(SuppliedCommitIndex index) {
-    Reference refRefs = persist.fetchReference(REF_REFS.name());
+    Reference refRefs = persist.fetchReferenceForUpdate(REF_REFS.name());
     return !index.pointer().equals(requireNonNull(refRefs).pointer());
   }
 

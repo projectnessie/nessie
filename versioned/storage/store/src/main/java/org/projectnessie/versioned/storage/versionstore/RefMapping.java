@@ -246,6 +246,10 @@ public class RefMapping {
     throw new IllegalArgumentException("Unsupported ref type, got " + ref);
   }
 
+  CommitObj resolveRefHeadForUpdate(@Nonnull NamedRef namedRef) throws ReferenceNotFoundException {
+    return resolveNamedRefHead(resolveNamedRefForUpdate(namedRef));
+  }
+
   CommitObj resolveNamedRefHead(@Nonnull NamedRef namedRef) throws ReferenceNotFoundException {
     return resolveNamedRefHead(resolveNamedRef(namedRef));
   }
@@ -269,10 +273,22 @@ public class RefMapping {
     }
   }
 
+  @Nonnull
+  public Reference resolveNamedRefForUpdate(@Nonnull NamedRef namedRef)
+      throws ReferenceNotFoundException {
+    String refName = namedRefToRefName(namedRef);
+    ReferenceLogic referenceLogic = referenceLogic(persist);
+    try {
+      return referenceLogic.getReferenceForUpdate(refName);
+    } catch (RefNotFoundException e) {
+      throw referenceNotFound(namedRef);
+    }
+  }
+
   public Reference resolveNamedRef(@Nonnull String refName) throws ReferenceNotFoundException {
     ReferenceLogic referenceLogic = referenceLogic(persist);
-    List<Reference> refs =
-        referenceLogic.getReferences(asList(asBranchName(refName), asTagName(refName)));
+    List<String> refNames = asList(asBranchName(refName), asTagName(refName));
+    List<Reference> refs = referenceLogic.getReferences(refNames);
     Reference branch = refs.get(0);
     Reference tag = refs.get(1);
 

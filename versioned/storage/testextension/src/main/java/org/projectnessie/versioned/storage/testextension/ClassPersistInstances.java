@@ -19,6 +19,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 import static org.projectnessie.versioned.storage.testextension.PersistExtension.KEY_REUSABLE_BACKEND;
 import static org.projectnessie.versioned.storage.testextension.PersistExtension.NAMESPACE;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -55,7 +56,11 @@ final class ClassPersistInstances {
     cacheBackend =
         nessiePersistCache != null && nessiePersistCache.capacityMb() >= 0
             ? PersistCaches.newBackend(
-                CacheConfig.builder().capacityMb(nessiePersistCache.capacityMb()).build())
+                CacheConfig.builder()
+                    .capacityMb(nessiePersistCache.capacityMb())
+                    .referenceTtl(Duration.ofMinutes(1))
+                    .referenceNegativeTtl(Duration.ofMinutes(1))
+                    .build())
             : null;
 
     backendTestFactory = reusableTestBackend.backendTestFactory(context);

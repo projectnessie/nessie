@@ -245,6 +245,17 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
+
+  @Override
   public Reference fetchReference(@Nonnull String name) {
     FindIterable<Document> result = backend.refs().find(eq(ID_PROPERTY_NAME, idRefDoc(name)));
 

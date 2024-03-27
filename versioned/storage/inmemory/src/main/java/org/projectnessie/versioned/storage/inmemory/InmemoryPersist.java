@@ -77,6 +77,17 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
+
+  @Override
   public Reference fetchReference(@Nonnull String name) {
     return inmemory.references.get(compositeKey(name));
   }

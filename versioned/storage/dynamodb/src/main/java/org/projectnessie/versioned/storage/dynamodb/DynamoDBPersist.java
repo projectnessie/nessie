@@ -199,6 +199,18 @@ public class DynamoDBPersist implements Persist {
     }
   }
 
+  @Nullable
+  @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
+
+  @Nonnull
+  @Override
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
+
   @Override
   @Nullable
   public Reference fetchReference(@Nonnull String name) {

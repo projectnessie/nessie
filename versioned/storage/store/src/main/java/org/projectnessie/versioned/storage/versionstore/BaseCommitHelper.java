@@ -208,7 +208,7 @@ class BaseCommitHelper {
             RefMapping refMapping = new RefMapping(p);
             Reference reference;
             try {
-              reference = refMapping.resolveNamedRef(branch);
+              reference = refMapping.resolveNamedRefForUpdate(branch);
             } catch (ReferenceNotFoundException e) {
               throw new CommitWrappedException(e);
             }
