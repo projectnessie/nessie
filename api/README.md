@@ -35,7 +35,7 @@ the Nessie API.
 
 The published version of the Nessie OpenAPI specification is available on [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).
 
-The current development version is available from a running Nessie server at http://localhost:19120/q/swagger-ui.
+The current development version is available from a running Nessie server at http://localhost:9000/q/swagger-ui.
 
 # Migrating from API v1 to v2
 
