@@ -22,6 +22,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AnonymousAuthenticationRequest;
 import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.security.spi.runtime.AuthenticationSuccessEvent;
+import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticator;
 import io.smallrye.mutiny.Uni;
@@ -63,6 +64,7 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
       Event<AuthenticationFailureEvent> authFailureEvent,
       Event<AuthenticationSuccessEvent> authSuccessEvent,
       BeanManager beanManager,
+      HttpBuildTimeConfig httpBuildTimeConfig,
       Instance<HttpAuthenticationMechanism> httpAuthenticationMechanism,
       Instance<IdentityProvider<?>> providers,
       @ConfigProperty(name = "quarkus.security.events.enabled") boolean securityEventsEnabled) {
@@ -71,6 +73,7 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
         authFailureEvent,
         authSuccessEvent,
         beanManager,
+        httpBuildTimeConfig,
         httpAuthenticationMechanism,
         providers,
         securityEventsEnabled);
