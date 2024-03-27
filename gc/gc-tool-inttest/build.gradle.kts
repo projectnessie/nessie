@@ -56,7 +56,7 @@ dependencies {
   intTestImplementation(
     nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
   )
-  intTestImplementation(nessieProject("nessie-s3minio"))
+  intTestImplementation(nessieProject("nessie-minio-testcontainer"))
 
   intTestImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)

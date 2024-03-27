@@ -30,7 +30,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,12 +201,13 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
   }
 
   @Override
-  public Configuration hadoopConfiguration() {
-    Configuration conf = new Configuration();
-    conf.set("fs.s3a.access.key", accessKey());
-    conf.set("fs.s3a.secret.key", secretKey());
-    conf.set("fs.s3a.endpoint", s3endpoint());
-    return conf;
+  public Map<String, String> hadoopConfig() {
+    Map<String, String> r = new HashMap<>();
+    r.put("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
+    r.put("fs.s3a.access.key", accessKey());
+    r.put("fs.s3a.secret.key", secretKey());
+    r.put("fs.s3a.endpoint", s3endpoint());
+    return r;
   }
 
   @Override

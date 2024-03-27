@@ -260,10 +260,10 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
   }
 
   protected Set<URI> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
-    try (Stream<FileReference> list = icebergFiles.listRecursively(s3BucketUri())) {
+    try (Stream<FileReference> list = icebergFiles.listRecursively(bucketUri())) {
       return list.map(FileReference::absolutePath).collect(Collectors.toCollection(TreeSet::new));
     }
   }
 
-  protected abstract URI s3BucketUri();
+  protected abstract URI bucketUri();
 }

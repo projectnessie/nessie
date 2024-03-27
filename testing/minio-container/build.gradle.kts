@@ -28,18 +28,14 @@ dependencies {
   implementation("software.amazon.awssdk:s3")
   implementation("software.amazon.awssdk:url-connection-client")
 
-  // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
-  implementation(platform(libs.jackson.bom))
-  compileOnly(libs.hadoop.common)
+  implementation(libs.guava)
 
-  implementation(platform(libs.junit.bom))
-  implementation("org.junit.jupiter:junit-jupiter-api")
+  compileOnly(platform(libs.junit.bom))
+  compileOnly("org.junit.jupiter:junit-jupiter-api")
 
   compileOnly(libs.errorprone.annotations)
 
   intTestImplementation(libs.bundles.junit.testing)
-  intTestImplementation(libs.hadoop.common) { withSparkExcludes() }
-
   intTestRuntimeOnly(libs.logback.classic)
 }
 

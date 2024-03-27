@@ -19,75 +19,51 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.azure.AzureProperties;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
-import org.projectnessie.testing.azurite.AzuriteContainer;
+import org.projectnessie.testing.azurite.Azurite;
+import org.projectnessie.testing.azurite.AzuriteAccess;
+import org.projectnessie.testing.azurite.AzuriteExtension;
 
-@Disabled(
-    "Iceberg-azure cannot use Azurite (emulator), as it does not allow setting a shared-secret (user/pass)")
-// org.apache.iceberg.azure.AzureProperties.applyClientConfiguration only allows SAS and default,
-// but not
-// UsernamePasswordCredential, although even Hadoop-Azure would work with it.
+@Disabled("Needs an Iceberg release with https://github.com/apache/iceberg/pull/10045")
+@ExtendWith(AzuriteExtension.class)
 public class ITSparkIcebergNessieAzure extends AbstractITSparkIcebergNessieObjectStorage {
 
-  private static AzuriteContainer azuriteContainer;
+  public static final String BUCKET_URI = "/my/prefix";
 
-  @BeforeAll
-  static void startAzurite() {
-    azuriteContainer = new AzuriteContainer();
-    azuriteContainer.start();
-  }
-
-  @AfterAll
-  static void stopAzurite() {
-    azuriteContainer.stop();
-  }
-
-  @BeforeEach
-  void createStorageContainer() {
-    azuriteContainer.createStorageContainer();
-  }
-
-  @AfterEach
-  void deleteStorageContainer() {
-    azuriteContainer.deleteStorageContainer();
-  }
+  private static @Azurite AzuriteAccess azuriteAccess;
 
   @Override
   protected String warehouseURI() {
-    return azuriteContainer.location("");
+    return azuriteAccess.location(BUCKET_URI);
   }
 
   @Override
   protected Map<String, String> sparkHadoop() {
-    return azuriteContainer.hadoopConfig();
+    return azuriteAccess.hadoopConfig();
   }
 
   @Override
   protected Map<String, String> nessieParams() {
     Map<String, String> r = new HashMap<>(super.nessieParams());
-    r.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
-    r.put(AzureProperties.ADLS_CONNECTION_STRING_PREFIX, azuriteContainer.endpoint());
+    r.putAll(azuriteAccess.icebergProperties());
     return r;
   }
 
   @Override
   IcebergFiles icebergFiles() {
-    Map<String, String> props = new HashMap<>();
-
     Configuration conf = new Configuration();
+    azuriteAccess.hadoopConfig().forEach(conf::set);
 
-    return IcebergFiles.builder().properties(props).hadoopConfiguration(conf).build();
+    return IcebergFiles.builder()
+        .properties(azuriteAccess.icebergProperties())
+        .hadoopConfiguration(conf)
+        .build();
   }
 
   @Override
-  protected URI s3BucketUri() {
-    return URI.create(azuriteContainer.location(""));
+  protected URI bucketUri() {
+    return URI.create(azuriteAccess.location(BUCKET_URI));
   }
 }

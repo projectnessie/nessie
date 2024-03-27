@@ -21,6 +21,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,10 +46,12 @@ public class ITIcebergS3Files extends AbstractFiles {
   void setUp(@Minio MinioAccess minio) {
     this.minio = minio;
     this.baseUri = minio.s3BucketUri(BUCKET_URI_PREFIX);
+    Configuration config = new Configuration();
+    minio.hadoopConfig().forEach(config::set);
     this.s3 =
         IcebergFiles.builder()
             .properties(minio.icebergProperties())
-            .hadoopConfiguration(minio.hadoopConfiguration())
+            .hadoopConfiguration(config)
             .build();
   }
 

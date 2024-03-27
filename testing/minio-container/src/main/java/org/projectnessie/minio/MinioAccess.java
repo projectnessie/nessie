@@ -17,7 +17,6 @@ package org.projectnessie.minio;
 
 import java.net.URI;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -48,7 +47,7 @@ public interface MinioAccess {
   Map<String, String> icebergProperties();
 
   /** Properties needed by Apache Hadoop to access this instance. */
-  Configuration hadoopConfiguration();
+  Map<String, String> hadoopConfig();
 
   /** S3 scheme URI including the bucket to access the given path. */
   URI s3BucketUri(String path);

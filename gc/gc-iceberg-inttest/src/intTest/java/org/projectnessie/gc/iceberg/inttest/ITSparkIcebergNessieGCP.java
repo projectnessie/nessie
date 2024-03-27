@@ -15,70 +15,53 @@
  */
 package org.projectnessie.gc.iceberg.inttest;
 
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Storage;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
-import org.projectnessie.testing.gcs.GCSContainer;
+import org.projectnessie.testing.gcs.Gcs;
+import org.projectnessie.testing.gcs.GcsAccess;
+import org.projectnessie.testing.gcs.GcsExtension;
 
+@ExtendWith(GcsExtension.class)
 public class ITSparkIcebergNessieGCP extends AbstractITSparkIcebergNessieObjectStorage {
 
-  private static GCSContainer gcsContainer;
-  private static Storage gcsService;
+  public static final String BUCKET_URI = "/my/prefix";
 
-  @BeforeAll
-  static void setupGcs() {
-    gcsContainer = new GCSContainer();
-    gcsContainer.start();
-
-    gcsService = gcsContainer.newStorage();
-  }
-
-  @AfterAll
-  static void stopGcs() throws Exception {
-    gcsService.close();
-  }
+  private static @Gcs GcsAccess gcsAccess;
 
   @Override
   protected String warehouseURI() {
-    return gcsContainer.bucketUri();
+    return gcsAccess.bucketUri(BUCKET_URI).toString();
   }
 
   @Override
   protected Map<String, String> sparkHadoop() {
-    return gcsContainer.hadoopConfig();
+    return gcsAccess.hadoopConfig();
   }
 
   @Override
   protected Map<String, String> nessieParams() {
     Map<String, String> r = new HashMap<>(super.nessieParams());
-    r.putAll(gcsContainer.icebergProperties());
+    r.putAll(gcsAccess.icebergProperties());
     return r;
-  }
-
-  @AfterEach
-  void purgeGcs() {
-    gcsService.list(gcsContainer.bucket()).iterateAll().forEach(Blob::delete);
   }
 
   @Override
   IcebergFiles icebergFiles() {
-    Map<String, String> props = gcsContainer.icebergProperties();
-
     Configuration conf = new Configuration();
-    gcsContainer.hadoopConfig().forEach(conf::set);
+    gcsAccess.hadoopConfig().forEach(conf::set);
 
-    return IcebergFiles.builder().properties(props).hadoopConfiguration(conf).build();
+    return IcebergFiles.builder()
+        .properties(gcsAccess.icebergProperties())
+        .hadoopConfiguration(conf)
+        .build();
   }
 
   @Override
-  protected URI s3BucketUri() {
-    return URI.create(gcsContainer.bucketUri());
+  protected URI bucketUri() {
+    return gcsAccess.bucketUri(BUCKET_URI);
   }
 }

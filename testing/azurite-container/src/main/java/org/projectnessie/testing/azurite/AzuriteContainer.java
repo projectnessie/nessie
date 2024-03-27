@@ -15,51 +15,108 @@
  */
 package org.projectnessie.testing.azurite;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.file.datalake.DataLakeServiceClient;
 import com.azure.storage.file.datalake.DataLakeServiceClientBuilder;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.utility.Base58;
 
-public class AzuriteContainer extends GenericContainer<AzuriteContainer> {
+public class AzuriteContainer extends GenericContainer<AzuriteContainer>
+    implements AzuriteAccess, CloseableResource {
 
   private static final int DEFAULT_PORT = 10000; // default blob service port
-  private static final String DEFAULT_IMAGE = "mcr.microsoft.com/azure-storage/azurite";
-  private static final String DEFAULT_TAG = "latest";
+  private static final String DEFAULT_IMAGE;
+  private static final String DEFAULT_TAG;
   private static final String LOG_WAIT_REGEX =
       "Azurite Blob service is successfully listening at .*";
 
-  public static final String ACCOUNT = "account";
-  public static final String ACCOUNT_FQ = ACCOUNT + ".dfs.core.windows.net";
-  public static final String KEY = "key";
-  public static final String KEY_BASE64 =
-      new String(Base64.getEncoder().encode(KEY.getBytes(StandardCharsets.UTF_8)));
-  ;
-  public static final String STORAGE_CONTAINER = "container";
+  static {
+    URL resource = AzuriteContainer.class.getResource("Dockerfile-azurite-version");
+    Objects.requireNonNull(resource, "Dockerfile-azurite-version not found");
+    try (InputStream in = resource.openConnection().getInputStream()) {
+      String[] imageTag =
+          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+              .map(String::trim)
+              .filter(l -> l.startsWith("FROM "))
+              .map(l -> l.substring(5).trim().split(":"))
+              .findFirst()
+              .orElseThrow();
+      DEFAULT_IMAGE =
+          System.getProperty(
+              "nessie.testing.azurite.image",
+              Optional.ofNullable(System.getenv("AZURITE_DOCKER_IMAGE")).orElse(imageTag[0]));
+      DEFAULT_TAG =
+          System.getProperty(
+              "nessie.testing.azurite.tag",
+              Optional.ofNullable(System.getenv("AZURITE_DOCKER_TAG")).orElse(imageTag[1]));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract tag from " + resource, e);
+    }
+  }
+
+  private final String storageContainer;
+  private final String account;
+  private final String accountFq;
+  private final String secret;
+  private final String secretBase64;
 
   public AzuriteContainer() {
-    this(DEFAULT_IMAGE + ":" + DEFAULT_TAG);
+    this(DEFAULT_IMAGE + ":" + DEFAULT_TAG, null, null, null);
   }
 
-  public AzuriteContainer(String image) {
+  public AzuriteContainer(String image, String storageContainer, String account, String secret) {
     super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
+    if (storageContainer == null) {
+      storageContainer = randomString("filesystem");
+    }
+    if (account == null) {
+      account = randomString("account");
+    }
+    if (secret == null) {
+      secret = randomString("secret");
+    }
+    this.storageContainer = storageContainer;
+    this.account = account;
+    this.accountFq = account + ".dfs.core.windows.net";
+    this.secret = secret;
+    this.secretBase64 = new String(Base64.getEncoder().encode(secret.getBytes(UTF_8)));
+
     this.addExposedPort(DEFAULT_PORT);
-    this.addEnv("AZURITE_ACCOUNTS", ACCOUNT + ":" + KEY_BASE64);
     this.setWaitStrategy(new LogMessageWaitStrategy().withRegEx(LOG_WAIT_REGEX));
+    this.addEnv("AZURITE_ACCOUNTS", account + ":" + this.secretBase64);
   }
 
+  @Override
+  public void start() {
+    super.start();
+
+    createStorageContainer();
+  }
+
+  @Override
   public void createStorageContainer() {
-    serviceClient().createFileSystem(STORAGE_CONTAINER);
+    serviceClient().createFileSystem(storageContainer);
   }
 
+  @Override
   public void deleteStorageContainer() {
-    serviceClient().deleteFileSystem(STORAGE_CONTAINER);
+    serviceClient().deleteFileSystem(storageContainer);
   }
 
+  @Override
   public DataLakeServiceClient serviceClient() {
     return new DataLakeServiceClientBuilder()
         .endpoint(endpoint())
@@ -67,22 +124,65 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer> {
         .buildClient();
   }
 
+  @Override
+  public String storageContainer() {
+    return storageContainer;
+  }
+
+  @Override
   public String location(String path) {
-    return String.format("abfs://%s@%s/%s", STORAGE_CONTAINER, ACCOUNT_FQ, path);
+    if (path.startsWith("/")) {
+      path = path.substring(1);
+    }
+    return String.format("abfs://%s@%s/%s", storageContainer, accountFq, path);
   }
 
+  @Override
   public String endpoint() {
-    return String.format("http://%s/%s", endpointHostPort(), ACCOUNT);
+    return String.format("http://%s/%s", endpointHostPort(), account);
   }
 
+  @Override
   public String endpointHostPort() {
     return String.format("%s:%d", getHost(), getMappedPort(DEFAULT_PORT));
   }
 
+  @Override
   public StorageSharedKeyCredential credential() {
-    return new StorageSharedKeyCredential(ACCOUNT, KEY_BASE64);
+    return new StorageSharedKeyCredential(account, secretBase64);
   }
 
+  @Override
+  public String account() {
+    return account;
+  }
+
+  @Override
+  public String accountFq() {
+    return accountFq;
+  }
+
+  @Override
+  public String secret() {
+    return secret;
+  }
+
+  @Override
+  public String secretBase64() {
+    return secretBase64;
+  }
+
+  @Override
+  public Map<String, String> icebergProperties() {
+    Map<String, String> r = new HashMap<>();
+    r.put("io-impl", "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
+    r.put("adls.connection-string." + accountFq, endpoint());
+    r.put("adls.auth.shared-key.account.name", account);
+    r.put("adls.auth.shared-key.account.key", secretBase64);
+    return r;
+  }
+
+  @Override
   public Map<String, String> hadoopConfig() {
     Map<String, String> r = new HashMap<>();
 
@@ -92,10 +192,20 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer> {
     r.put("fs.azure.always.use.https", "false");
     r.put("fs.azure.abfs.endpoint", endpointHostPort());
 
+    r.put("fs.azure.test.emulator", "true");
+    r.put("fs.azure.storage.emulator.account.name", account);
     r.put("fs.azure.account.auth.type", "SharedKey");
-    r.put("fs.azure.storage.emulator.account.name", ACCOUNT_FQ);
-    r.put("fs.azure.account.key." + ACCOUNT_FQ, KEY_BASE64);
+    r.put("fs.azure.account.key." + accountFq, secretBase64);
 
     return r;
+  }
+
+  private static String randomString(String prefix) {
+    return prefix + "-" + Base58.randomString(6).toLowerCase(Locale.ROOT);
+  }
+
+  @Override
+  public void close() {
+    stop();
   }
 }
