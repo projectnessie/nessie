@@ -100,7 +100,6 @@ dependencies {
   }
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
-  testFixturesApi("io.quarkus:quarkus-rest-client")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
   testFixturesImplementation(libs.guava)
