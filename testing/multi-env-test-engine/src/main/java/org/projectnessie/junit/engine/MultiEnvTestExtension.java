@@ -37,4 +37,13 @@ public interface MultiEnvTestExtension extends Extension {
    * invocations of this method to ensure a stable test case creation order.
    */
   List<String> allEnvironmentIds(ConfigurationParameters configuration);
+
+  /**
+   * Allows {@link MultiEnvTestExtension}s to define their relative ordering within a JUnit
+   * UniqueID. Higher numbers will appear earlier in the JUnit UniqueId. For extensions with the
+   * same order value, the segmentType will be sorted alphabetically.
+   */
+  default int getOrder() {
+    return 0;
+  }
 }
