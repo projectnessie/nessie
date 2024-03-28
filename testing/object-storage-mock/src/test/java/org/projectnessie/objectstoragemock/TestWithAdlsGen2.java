@@ -17,6 +17,7 @@ package org.projectnessie.objectstoragemock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.rest.Response;
@@ -332,7 +333,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObject() {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -351,7 +352,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObjectNoContentType() {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -367,7 +368,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObjectUsingOutputStream() throws Exception {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -387,7 +388,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObjectUsingOutputStreamNoContentType() throws Exception {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -402,7 +403,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
 
   @Test
   public void heapStorage(@TempDir Path dir) {
-    createServer(b -> b.putBuckets(BUCKET, Bucket.createHeapStorageBucket()));
+    createServer(b -> b.putBuckets(BUCKET, newHeapStorageBucket().bucket()));
 
     BinaryData data = BinaryData.fromString("Hello World");
     client.getFileClient(MY_OBJECT_KEY).upload(data, false);
