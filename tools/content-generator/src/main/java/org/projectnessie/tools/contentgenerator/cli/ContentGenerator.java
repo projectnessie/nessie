@@ -38,6 +38,7 @@ import picocli.CommandLine;
       ReadContent.class,
       RefreshContent.class,
       DeleteContent.class,
+      DeleteRecursive.class,
       CreateMissingNamespaces.class,
       CommandLine.HelpCommand.class
     })
