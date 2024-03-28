@@ -16,6 +16,7 @@
 package org.projectnessie.objectstoragemock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
 import com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder;
 import com.google.cloud.NoCredentials;
@@ -220,7 +221,7 @@ public class TestWithGcs extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObject() throws Exception {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -235,7 +236,7 @@ public class TestWithGcs extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObjectNoContentType() throws Exception {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -250,7 +251,7 @@ public class TestWithGcs extends AbstractObjectStorageMockServer {
 
   @Test
   public void putObjectWithWriter() throws Exception {
-    Bucket heap = Bucket.createHeapStorageBucket();
+    Bucket heap = newHeapStorageBucket().bucket();
 
     createServer(b -> b.putBuckets(BUCKET, heap));
 
@@ -269,7 +270,7 @@ public class TestWithGcs extends AbstractObjectStorageMockServer {
 
   @Test
   public void heapStorage() throws Exception {
-    createServer(b -> b.putBuckets(BUCKET, Bucket.createHeapStorageBucket()));
+    createServer(b -> b.putBuckets(BUCKET, newHeapStorageBucket().bucket()));
 
     byte[] data = "Hello World".getBytes(UTF_8);
     client.createFrom(

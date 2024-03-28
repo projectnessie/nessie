@@ -16,6 +16,7 @@
 package org.projectnessie.objectstoragemock;
 
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -437,7 +438,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
 
   @Test
   public void heapStorage() throws Exception {
-    createServer(b -> b.putBuckets(BUCKET, Bucket.createHeapStorageBucket()));
+    createServer(b -> b.putBuckets(BUCKET, newHeapStorageBucket().bucket()));
 
     s3.putObject(
         PutObjectRequest.builder()
