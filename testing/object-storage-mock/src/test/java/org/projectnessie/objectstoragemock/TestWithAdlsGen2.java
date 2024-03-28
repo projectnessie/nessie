@@ -403,7 +403,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
 
   @Test
   public void heapStorage(@TempDir Path dir) {
-    Bucket heap = newHeapStorageBucket().bucket();
+    createServer(b -> b.putBuckets(BUCKET, newHeapStorageBucket().bucket()));
 
     BinaryData data = BinaryData.fromString("Hello World");
     client.getFileClient(MY_OBJECT_KEY).upload(data, false);
