@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.io.ByteArrayOutputStream
+
 plugins {
   `java-library`
 }
@@ -22,7 +24,9 @@ extra["maven.name"] = "Generates markdown for the projectnessie site for client 
 
 val genProjects by configurations.creating
 val genSources by configurations.creating
+val cliGrammar by configurations.creating
 val doclet by configurations.creating
+val cliRunner by configurations.creating
 
 val genProjectPaths = listOf(
   ":nessie-model",
@@ -51,20 +55,27 @@ dependencies {
     genProjects(project(p))
     genSources(project(p, "mainSourceElements"))
   }
+
+  cliGrammar(project(":nessie-cli-grammar")) {
+    setTransitive(false)
+  }
+
+  cliRunner(project(":nessie-cli"))
 }
 
-tasks.register("generateDocs", JavaExec::class.java) {
-  val targetDir = layout.buildDirectory.dir("markdown-docs")
+val generatedMarkdownDocsDir = layout.buildDirectory.dir("generatedMarkdownDocs")
+
+val generatedMarkdownDocs = tasks.register<JavaExec>("generatedMarkdownDocs") {
 
   mainClass = "org.projectnessie.nessie.docgen.DocGenTool"
 
-  outputs.dir(targetDir)
+  outputs.dir(generatedMarkdownDocsDir)
   inputs.files(doclet)
   inputs.files(genProjects)
   inputs.files(genSources)
 
   doFirst {
-    delete(targetDir)
+    delete(generatedMarkdownDocsDir)
   }
 
   argumentProviders.add(CommandLineArgumentProvider {
@@ -106,9 +117,70 @@ tasks.register("generateDocs", JavaExec::class.java) {
     listOf(
       "--classpath", classes.joinToString(":"),
       "--sourcepath", sources.joinToString(":"),
-      "--destination", targetDir.get().toString()
+      "--destination", generatedMarkdownDocsDir.get().toString()
     ) + (if (logger.isInfoEnabled) listOf("--verbose") else listOf())
   })
 
   classpath(doclet)
+}
+
+val cliHelpDir = layout.buildDirectory.dir("cliHelp")
+
+val cliHelp = tasks.register<JavaExec>("cliHelp") {
+  mainClass = "-jar"
+
+  inputs.files(cliRunner)
+  outputs.dir(cliHelpDir)
+
+  classpath(cliRunner)
+
+  mainClass = "org.projectnessie.nessie.cli.cli.NessieCliMain"
+  args("--help", "--dumb")
+
+  doFirst {
+    delete(cliHelpDir)
+  }
+
+  standardOutput = ByteArrayOutputStream()
+
+  doLast {
+    cliHelpDir.get().asFile.mkdirs()
+
+    file(cliHelpDir.get().file("cli-help.md")).writeText("```\n$standardOutput\n```\n")
+  }
+}
+
+tasks.register<Copy>("generateDocs") {
+  dependsOn(generatedMarkdownDocs)
+  dependsOn(cliHelp)
+
+  val targetDir = layout.buildDirectory.dir("markdown-docs")
+
+  doFirst {
+    delete(targetDir)
+  }
+
+  inputs.files(cliGrammar)
+  outputs.dir(targetDir)
+
+  into(targetDir)
+
+  from(generatedMarkdownDocsDir)
+  from(cliHelpDir)
+  from(provider { zipTree(cliGrammar.singleFile) }) {
+    include("org/projectnessie/nessie/cli/syntax/*.md")
+    eachFile {
+      path = "cli-syntax-$name"
+    }
+  }
+  from(provider { zipTree(cliGrammar.singleFile) }) {
+    include("org/projectnessie/nessie/cli/syntax/*.help.txt")
+    eachFile {
+      path = "cli-help-${name.replace(".help.txt", ".md")}"
+    }
+  }
+
+  doLast {
+    delete(targetDir.get().dir("org"))
+  }
 }

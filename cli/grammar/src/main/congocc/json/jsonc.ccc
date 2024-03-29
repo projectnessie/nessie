@@ -1,0 +1,19 @@
+/*
+ * A JSONC (JSON with comments) grammar
+ */
+PARSER_PACKAGE="org.projectnessie.nessie.cli.jsongrammar";
+PARSER_CLASS=JsonCParser;
+LEXER_CLASS=JsonCLexer;
+DEFAULT_LEXICAL_STATE=JSON;
+#if FT
+FAULT_TOLERANT;
+FAULT_TOLERANT_DEFAULT=false;
+#endif
+
+UNPARSED #Comment :
+    <SINGLE_LINE_COMMENT : "//" (~["\n"])* >
+    |
+    <?MULTI_LINE_COMMENT : "/*" (~[])* "*/">
+;
+
+INCLUDE "json.ccc"

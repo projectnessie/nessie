@@ -1,0 +1,105 @@
+/*
+ * Author: Jonathan Revusky revusky@congocc.org
+ * This JSON Grammar is free to use or adapt.
+ * It is (as far as I can tell) an EXACT implementation
+ * of the spec found here: https://www.json.org/json-en.html
+ * That means that you cannot put comments in there.
+ * Also, you cannot put trailing commas inside hashes and lists.
+ * There is an accompanying JSONC (JSON with comments) grammar
+ * in JSONC.ccc. That allows Java-style comments but
+ * still does not allow the trailing commas!
+ */
+
+ //N.B. The various exclam (!) markers inserted have to do with
+ // experimental fault-tolerant parsing. Unless you set FAULT_TOLERANT=true
+ // these are ignored.
+
+PARSER_PACKAGE="org.parsers.json";
+NODE_PACKAGE="org.parsers.json.ast";
+DEFAULT_LEXICAL_STATE=JSON;
+#if FT
+FAULT_TOLERANT;
+FAULT_TOLERANT_DEFAULT=false;
+#endif
+
+SKIP : <WHITESPACE : (" "| "\t"| "\n"| "\r")+>;
+
+// Delimiters
+TOKEN #Delimiter :
+    <COLON : ':'>
+    |
+    <COMMA : ','>
+    |
+    <OPEN_BRACKET : '['>
+    |
+    <CLOSE_BRACKET : ']'>
+    |
+    <OPEN_BRACE : "{" >
+    |
+    <CLOSE_BRACE : "}">
+;
+
+// Literals
+TOKEN #Literal :
+    <TRUE: 'true'> #BooleanLiteral
+    |
+    <FALSE: "false"> #BooleanLiteral
+    |
+    <NULL: "null"> #NullLiteral
+    |
+    <#ESCAPE1 : '\\' (['\\', '"', '/',"b","f","n","r","t"])>
+    |
+    <#ESCAPE2 : "\\u" (["0"-"9", "a"-"f", "A"-"F"]) {4}>
+    |
+    <#REGULAR_CHAR : ~["\u0000"-"\u001F",'"',"\\"]>
+    |
+    <STRING_LITERAL : '"' (<REGULAR_CHAR>|<ESCAPE2>|<ESCAPE1>)* '"'> #StringLiteral
+    |
+    <#ZERO : "0">
+    |
+    <#NON_ZERO : (['1'-'9'])(["0"-"9"])*>
+    |
+    <#FRACTION : "." (["0"-"9"])+>
+    |
+    <#EXPONENT : ["E","e"]["+","-"](["1"-"9"])+>
+    |
+    <NUMBER : ("-")?(<ZERO>|<NON_ZERO>)(<FRACTION>)?(<EXPONENT>)?> #NumberLiteral
+;
+
+Root : Value! <EOF>! ;
+
+Array :
+    <OPEN_BRACKET>
+    [
+      Value (<COMMA> Value)*!
+    ]
+    <CLOSE_BRACKET>
+;
+
+Value :
+    <TRUE>
+    |
+    <FALSE>
+    |
+    <NULL>
+    |
+    <STRING_LITERAL>
+    |
+    <NUMBER>
+    |
+    Array
+    |
+    JSONObject
+
+;
+
+KeyValuePair : <STRING_LITERAL> <COLON> Value;
+
+JSONObject :
+    <OPEN_BRACE>!
+    [
+        KeyValuePair ("," KeyValuePair)*!
+    ]
+    <CLOSE_BRACE>!
+;
+

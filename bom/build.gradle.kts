@@ -27,6 +27,8 @@ dependencies {
   constraints {
     api(rootProject)
     api(project(":nessie-azurite-testcontainer"))
+    api(project(":nessie-cli"))
+    api(project(":nessie-cli-grammar"))
     api(project(":nessie-client"))
     api(project(":nessie-client-testextension"))
     api(project(":nessie-combined-cs"))

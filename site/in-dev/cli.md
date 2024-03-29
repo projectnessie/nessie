@@ -5,81 +5,158 @@ title: "Nessie CLI"
 # Nessie CLI
 
 The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
-and tag management capabilities. This is installed as `pynessie` via `pip install pynessie`.
-Additional information about `pynessie` and release notes can be found at the [PyPI](https://pypi.org/project/pynessie/) site. 
+and tag management capabilities. This is installed as a standalone uber jar from the 
+[Nessie download page](../downloads/index.md) or the
+[releases page on GitHub](https://github.com/projectnessie/nessie/releases/). 
 
-## Installation
+Nessie CLI is designed to be usable as an interactive REPL supporting auto-completion,
+highlighting where appropriage and has built-in help. Long outputs, like a commit log,
+are automatically paged like the Unix `less` command.
 
-```
-# python 3 required
-pip install pynessie
-```
 
-## Usage 
-All the REST API calls are exposed via the command line interface. To see a list of what is available run:
 
-``` bash
-$ nessie --help
-``` 
+![Nessie CLI](../img/cli-intro.png)
 
-All docs of the CLI can be found [here](https://nessie.readthedocs.io/en/latest/cli.html).
+## Usage
 
-## Configuration
+Nessie CLI requires Java 11.
 
-You can configure the Nessie CLI by creating a configuration file as described below:
-
-* macOS: `~/.config/nessie` and `~/Library/Application Support/nessie`
-* Other Unix: `~/.config/nessie` and `/etc/nessie`
-* Windows: `%APPDATA%\nessie` where the `APPDATA` environment variable falls
-  back to `%HOME%\AppData\Roaming` if undefined
-* Via the environment variable `DREMIO_CLIENTDIR`
-
-The default config file is as follows:
-
-``` yaml
-auth:
-    # Authentication type can be: none, bearer or aws
-    type: none
-    
-    # OpenID token for the "bearer" authentication type
-    # token: <OpenID token>
-    
-    timeout: 10
-
-# Nessie endpoint
-endpoint: http://localhost/api/v1
-
-# whether to skip SSL cert verification
-verify: true 
+```bash
+java -jar nessie-cli-<version>.jar
 ```
 
-Possible values for the `auth.type` property are:
+### Command line options
 
-* `none` (default)
-* `bearer`
-* `aws`
+{% include './generated-docs/cli-help.md' %}
 
-When configuring authentication type `bearer`, the `auth.token` parameter should be set to a valid
-[OpenID token](https://openid.net/specs/openid-connect-core-1_0.html). The token can be set in the Nessie
-configuration file, as an environment variable (details below), or by the `--auth-token <TOKEN>` command
-line option (for each command).
+## REPL Commands
 
-When configuring authentication type `aws`, the client delegates to the [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) 
-library. You can configure credentials using any of the standard [Boto AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
-Additionally, the Nessie `auth.region` parameter should be set to the relevant AWS region.
+The following syntax descriptions illustrate how commands are used and the order of
+clauses.
 
-The command line interface can be configured with most of the above parameters via flags or by setting
-a config directory. The relevant configs can also be set via environment variables. These take precedence. The
-environment variable format is to append `NESSIE_` to a config parameter and nested configs are separated by a *_*. For
-example: `NESSIE_AUTH_TIMEOUT` maps to `auth.timeout` in the default configuration file above.
+!!! info
+    `CODE` style means the term is a keyword.
 
+    **BoldTerms** mean variable input, see <u>[Descripton of Command Parts below](#command-parts)</u>
 
-## Working with JSON
+    Square brackets `[` `]` mean that the contents are optional (0 or 1 occurrence).
 
-The Nessie CLI can return data in json format and can be used effectively with [`jq`](https://stedolan.github.io/jq/). For example:
+    Curly brackets `{` `}` mean that the contents can be repeated 0 or more times.
 
-``` bash
-$ nessie --json branch -l | jq .
-```
+### **`CONNECT`**
 
-The Nessie CLI is built on the great Python [Click](https://click.palletsprojects.com) library. It requires Python 3.x.
+{% include './generated-docs/cli-syntax-ConnectStatement.md' %}
+
+{% include './generated-docs/cli-help-ConnectStatement.md' %}
+
+### **`CREATE BANCH` / `TAG`**
+
+{% include './generated-docs/cli-syntax-CreateReferenceStatement.md' %}
+
+{% include './generated-docs/cli-help-CreateReferenceStatement.md' %}
+
+### **`CREATE NAMESPACE`**
+
+{% include './generated-docs/cli-syntax-CreateNamespaceStatement.md' %}
+
+{% include './generated-docs/cli-help-CreateNamespaceStatement.md' %}
+
+### **`DROP BRANCH` / `TAG`**
+
+{% include './generated-docs/cli-syntax-DropReferenceStatement.md' %}
+
+{% include './generated-docs/cli-help-DropReferenceStatement.md' %}
+
+### **`DROP TABLE` / `VIEW` / `NAMESPACE`**
+
+{% include './generated-docs/cli-syntax-DropContentStatement.md' %}
+
+{% include './generated-docs/cli-help-DropContentStatement.md' %}
+
+### **`ASSIGN BRANCH` / `TAG`**
+
+{% include './generated-docs/cli-syntax-AssignReferenceStatement.md' %}
+
+{% include './generated-docs/cli-help-AssignReferenceStatement.md' %}
+
+### **`ALTER NAMESPACE`**
+
+{% include './generated-docs/cli-syntax-AlterNamespaceStatement.md' %}
+
+{% include './generated-docs/cli-help-AlterNamespaceStatement.md' %}
+
+### **`LIST CONTENTS`**
+
+{% include './generated-docs/cli-syntax-ListContentsStatement.md' %}
+
+{% include './generated-docs/cli-help-ListContentsStatement.md' %}
+
+### **`LIST REFERENCES`**
+
+{% include './generated-docs/cli-syntax-ListReferencesStatement.md' %}
+
+{% include './generated-docs/cli-help-ListReferencesStatement.md' %}
+
+### **`MERGE BRANCH`**
+
+{% include './generated-docs/cli-syntax-MergeBranchStatement.md' %}
+
+{% include './generated-docs/cli-help-MergeBranchStatement.md' %}
+
+### **`SHOW LOG`**
+
+{% include './generated-docs/cli-syntax-ShowLogStatement.md' %}
+
+{% include './generated-docs/cli-help-ShowLogStatement.md' %}
+
+### **`SHOW TABLE` / `VIEW` / `NAMESPACE`**
+
+{% include './generated-docs/cli-syntax-ShowContentStatement.md' %}
+
+{% include './generated-docs/cli-help-ShowContentStatement.md' %}
+
+### **`SHOW REFERENCE`**
+
+{% include './generated-docs/cli-syntax-ShowReferenceStatement.md' %}
+
+{% include './generated-docs/cli-help-ShowReferenceStatement.md' %}
+
+### **`USE`**
+
+{% include './generated-docs/cli-syntax-UseReferenceStatement.md' %}
+
+{% include './generated-docs/cli-help-UseReferenceStatement.md' %}
+
+### **`HELP`**
+
+{% include './generated-docs/cli-syntax-HelpStatement.md' %}
+
+{% include './generated-docs/cli-help-HelpStatement.md' %}
+
+### **`EXIT`**
+
+{% include './generated-docs/cli-syntax-ExitStatement.md' %}
+
+{% include './generated-docs/cli-help-ExitStatement.md' %}
+
+## Command parts
+
+### **ReferenceType**
+
+{% include './generated-docs/cli-syntax-ReferenceType.md' %}
+
+### **ContentKind**
+
+{% include './generated-docs/cli-syntax-ContentKind.md' %}
+
+### **ExistingReference**
+
+{% include './generated-docs/cli-help-ExistingReference.md' %}
+
+### **ReferenceName**
+
+{% include './generated-docs/cli-help-ReferenceName.md' %}
+
+### **TimestampOrHash**
+
+{% include './generated-docs/cli-help-TimestampOrHash.md' %}
