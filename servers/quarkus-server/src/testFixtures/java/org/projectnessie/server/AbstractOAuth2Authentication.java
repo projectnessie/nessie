@@ -86,6 +86,7 @@ public abstract class AbstractOAuth2Authentication extends BaseClientAuthTest {
     config.setProperty("nessie.authentication.oauth2.grant-type", "client_credentials");
     config.setProperty("nessie.authentication.oauth2.client-id", "quarkus-service-app");
     config.setProperty("nessie.authentication.oauth2.client-secret", "secret");
+    config.setProperty("nessie.authentication.oauth2.client-scopes", "scope1 scope2");
     return config;
   }
 

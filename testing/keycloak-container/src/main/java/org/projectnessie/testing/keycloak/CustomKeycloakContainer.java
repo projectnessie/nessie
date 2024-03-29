@@ -66,7 +66,8 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     return ImmutableKeycloakConfig.builder();
   }
 
-  public static ClientRepresentation createServiceClient(String clientId) {
+  public static ClientRepresentation createServiceClient(
+      String clientId, List<String> clientScopes) {
     ClientRepresentation client = new ClientRepresentation();
 
     client.setClientId(clientId);
@@ -74,6 +75,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     client.setSecret(CLIENT_SECRET);
     client.setDirectAccessGrantsEnabled(true);
     client.setServiceAccountsEnabled(true);
+    client.setDefaultClientScopes(clientScopes);
 
     // required for authorization code grant
     client.setStandardFlowEnabled(true);
