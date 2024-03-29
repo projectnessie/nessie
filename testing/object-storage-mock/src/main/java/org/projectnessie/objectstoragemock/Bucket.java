@@ -68,6 +68,7 @@ public abstract class Bucket {
   public enum UpdaterMode {
     CREATE_NEW,
     UPDATE,
+    UPSERT,
   }
 
   public interface ObjectUpdater {

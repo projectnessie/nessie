@@ -265,7 +265,7 @@ public class GcsResource {
   @POST
   @Path("/upload/storage/v1/b/{bucketName:[a-z0-9.-]+}/o")
   @Consumes(MediaType.WILDCARD)
-  // See https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
+  // See https://cloud.google.com/storage/docs/uploading-objects#uploading-an-object
   public Response insertObject(
       @PathParam("bucketName") String bucketName,
       @QueryParam("name") String objectName,
@@ -284,7 +284,7 @@ public class GcsResource {
                 // Not tested
                 obj =
                     updater
-                        .update(objectName, Bucket.UpdaterMode.CREATE_NEW)
+                        .update(objectName, Bucket.UpdaterMode.UPSERT)
                         .append(0L, stream)
                         .setContentType(contentType)
                         .commit();
@@ -304,7 +304,7 @@ public class GcsResource {
                         : "application/octet-stream";
                 obj =
                     updater
-                        .update(objectName, Bucket.UpdaterMode.CREATE_NEW)
+                        .update(objectName, Bucket.UpdaterMode.UPSERT)
                         .setContentType(ct)
                         .commit();
 

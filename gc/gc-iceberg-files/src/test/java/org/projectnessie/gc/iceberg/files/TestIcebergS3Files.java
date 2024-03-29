@@ -18,17 +18,13 @@ package org.projectnessie.gc.iceberg.files;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.aws.HttpClientProperties;
-import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -138,7 +134,7 @@ public class TestIcebergS3Files {
 
   private IcebergFiles createIcebergFiles(MockServer server) {
     return IcebergFiles.builder()
-        .properties(icebergProperties(server))
+        .properties(server.icebergProperties())
         .hadoopConfiguration(hadoopConfiguration(server))
         .build();
   }
@@ -174,20 +170,9 @@ public class TestIcebergS3Files {
     return URI.create(String.format("s3://%s/", BUCKET)).resolve(path);
   }
 
-  protected Map<String, String> icebergProperties(MockServer server) {
-    Map<String, String> props = new HashMap<>();
-    props.put(S3FileIOProperties.ACCESS_KEY_ID, "accessKey");
-    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, "secretKey");
-    props.put(S3FileIOProperties.ENDPOINT, server.getS3BaseUri().toString());
-    props.put(HttpClientProperties.CLIENT_TYPE, HttpClientProperties.CLIENT_TYPE_URLCONNECTION);
-    return props;
-  }
-
   protected Configuration hadoopConfiguration(MockServer server) {
     Configuration conf = new Configuration();
-    conf.set("fs.s3a.access.key", "accessKey");
-    conf.set("fs.s3a.secret.key", "secretKey");
-    conf.set("fs.s3a.endpoint", server.getS3BaseUri().toString());
+    server.hadoopConfiguration().forEach(conf::set);
     return conf;
   }
 }

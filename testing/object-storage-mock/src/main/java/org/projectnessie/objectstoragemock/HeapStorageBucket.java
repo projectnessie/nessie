@@ -103,6 +103,8 @@ public class HeapStorageBucket {
             throw new IllegalStateException("Object '" + key + "' does not exist");
           }
           break;
+        case UPSERT:
+          break;
         default:
           throw new IllegalArgumentException(mode.name());
       }
