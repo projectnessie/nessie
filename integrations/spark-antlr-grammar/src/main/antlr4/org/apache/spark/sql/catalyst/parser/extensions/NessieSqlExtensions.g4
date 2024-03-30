@@ -193,7 +193,7 @@ BRACKETED_COMMENT
     ;
 
 WS
-    : [ \r\n\t]+ -> skip
+    : [ \r\n\t\p{White_Space}]+ -> channel(HIDDEN)
     ;
 
 // Catch-all for anything we can't recognize.
