@@ -29,16 +29,20 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.Option;
 
@@ -49,6 +53,13 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
       description =
           "Process all active keys in all branches (supersedes --input and all other selector options).")
   private boolean all;
+
+  @Option(
+      names = {"--nested"},
+      description =
+          "Process only keys equal to or nested under the value of the key specified by --key options"
+              + " (supersedes --input; may be used together with --all).")
+  private boolean nested;
 
   @Option(
       names = {"-r", "--ref", "--branch"},
@@ -109,6 +120,8 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
     try (NessieApiV2 api = createNessieApiInstance()) {
       if (all) {
         processAll(api);
+      } else if (nested) {
+        processAll(api, branchFromOptions(api));
       } else if (input == null) {
         processBatch(api, branchFromOptions(api), singletonList(ContentKey.of(keyElements)));
       } else {
@@ -139,17 +152,27 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
     api.getAllReferences().stream().forEach(r -> processAll(api, r));
   }
 
+  private Namespace rootNamespace() {
+    return nested ? Namespace.of(keyElements) : Namespace.EMPTY;
+  }
+
+  protected Iterator<List<ContentKey>> partitionKeys(Stream<ContentKey> input, int batchSize) {
+    return Iterators.partition(input.iterator(), batchSize);
+  }
+
   private void processAll(NessieApiV2 api, Reference ref) {
     if (!(ref instanceof Branch)) {
       return;
     }
 
     try {
-      Iterators.partition(
-              api.getEntries().reference(ref).withContent(false).stream()
-                  .map(EntriesResponse.Entry::getName)
-                  .iterator(),
-              batchSize)
+      Namespace root = rootNamespace();
+      GetEntriesBuilder listRequest = api.getEntries().reference(ref).withContent(false);
+      if (!root.isEmpty()) {
+        listRequest.prefixKey(root.toContentKey());
+      }
+
+      partitionKeys(listRequest.stream().map(EntriesResponse.Entry::getName), batchSize)
           .forEachRemaining(batch -> processBatch(api, (Branch) ref, batch));
     } catch (NessieNotFoundException ex) {
       throw new RuntimeException(ex);
