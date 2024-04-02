@@ -55,9 +55,9 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
   private boolean all;
 
   @Option(
-      names = {"--nested"},
+      names = {"-R", "--recursive"},
       description =
-          "Process only keys equal to or nested under the value of the key specified by --key options"
+          "Process keys equal to or nested under the value of the key specified by --key options"
               + " (supersedes --input; may be used together with --all).")
   private boolean nested;
 

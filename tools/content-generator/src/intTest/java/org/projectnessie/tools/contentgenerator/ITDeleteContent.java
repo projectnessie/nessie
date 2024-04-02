@@ -207,7 +207,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
             "1", // validate deleting keys before namespaces
             "--branch",
             branch.getName(),
-            "--nested",
+            "--recursive",
             "--key",
             CONTENT_KEY.getElements().get(0));
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
@@ -226,7 +226,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
             "--uri",
             NESSIE_API_URI,
             "--all",
-            "--nested",
+            "--recursive",
             "--key",
             CONTENT_KEY.getElements().get(0));
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
@@ -245,7 +245,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
     }
 
     ProcessResult proc =
-        runGeneratorCmd("delete", "--uri", NESSIE_API_URI, "--nested", "--key", "non-existent");
+        runGeneratorCmd("delete", "--uri", NESSIE_API_URI, "--recursive", "--key", "non-existent");
     assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
 
     try (NessieApiV2 api = buildNessieApi()) {
