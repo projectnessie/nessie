@@ -183,7 +183,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void deleteNested() throws NessieNotFoundException, NessieConflictException {
+  void deleteRecursive() throws NessieNotFoundException, NessieConflictException {
     try (NessieApiV2 api = buildNessieApi()) {
       IcebergTable table = IcebergTable.of("testMeta", 1, 2, 3, 4);
       Namespace nested = Namespace.of(CONTENT_KEY.getElements().get(0), "nested");
