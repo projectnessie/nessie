@@ -17,6 +17,7 @@ package org.projectnessie.server;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.ResourceArg;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -33,7 +34,11 @@ import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 @QuarkusIntegrationTest
 @QuarkusTestResource(
     restrictToAnnotatedClass = true,
-    value = KeycloakTestResourceLifecycleManager.class)
+    value = KeycloakTestResourceLifecycleManager.class,
+    initArgs =
+        @ResourceArg(
+            name = KeycloakTestResourceLifecycleManager.KEYCLOAK_CLIENT_SCOPES,
+            value = "scope1,scope2"))
 @TestProfile(ITOAuth2Authentication.Profile.class)
 public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
 
