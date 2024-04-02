@@ -218,7 +218,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
   }
 
   @Test
-  void deleteAllNested() throws NessieNotFoundException {
+  void deleteAllRecursive() throws NessieNotFoundException {
 
     ProcessResult proc =
         runGeneratorCmd(
