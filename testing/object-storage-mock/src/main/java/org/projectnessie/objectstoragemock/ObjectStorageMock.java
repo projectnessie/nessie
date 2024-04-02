@@ -41,6 +41,16 @@ public abstract class ObjectStorageMock {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ObjectStorageMock.class);
 
+  /**
+   * The hostname with which to create the HTTP server. The default is 127.0.0.1.
+   *
+   * <p>Note: for S3, the default address will generate endpoint URIs that work with S3 clients out
+   * of the box, but technically, they are not valid S3 endpoints. If you need compliance, for
+   * example to make the endpoint URI parseable by {@code S3Utilities}, use {@code
+   * s3.127-0-0-1.nip.io} instead. Make sure in this case to create your S3 clients with path-style
+   * access enforced, because if the endpoint is valid, the client will attempt to use
+   * virtual-host-style access by default, which this S3 mock server cannot handle.
+   */
   @Value.Default
   public String initAddress() {
     return "127.0.0.1";
@@ -64,8 +74,18 @@ public abstract class ObjectStorageMock {
       props.put("s3.access-key-id", "accessKey");
       props.put("s3.secret-access-key", "secretKey");
       props.put("s3.endpoint", getS3BaseUri().toString());
+      // must enforce path-style access because S3Resource has the bucket name in its path
+      props.put("s3.path-style-access", "true");
       props.put("http-client.type", "urlconnection");
       return props;
+    }
+
+    default Map<String, String> hadoopConfiguration() {
+      Map<String, String> conf = new HashMap<>();
+      conf.put("fs.s3a.access.key", "accessKey");
+      conf.put("fs.s3a.secret.key", "secretKey");
+      conf.put("fs.s3a.endpoint", getS3BaseUri().toString());
+      return conf;
     }
   }
 
@@ -127,7 +147,7 @@ public abstract class ObjectStorageMock {
 
     @Override
     public URI getS3BaseUri() {
-      return baseUri.resolve("s3/");
+      return baseUri;
     }
 
     @Override

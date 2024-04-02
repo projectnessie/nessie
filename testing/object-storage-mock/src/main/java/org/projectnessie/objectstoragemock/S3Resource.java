@@ -87,7 +87,7 @@ import org.projectnessie.objectstoragemock.util.Holder;
 import org.projectnessie.objectstoragemock.util.PrefixSpliterator;
 import org.projectnessie.objectstoragemock.util.StartAfterSpliterator;
 
-@Path("/s3/")
+@Path("/")
 @Produces(MediaType.APPLICATION_XML)
 @Consumes(MediaType.APPLICATION_XML)
 public class S3Resource {
@@ -388,7 +388,7 @@ public class S3Resource {
 
             bucket
                 .updater()
-                .update(objectName, Bucket.UpdaterMode.CREATE_NEW)
+                .update(objectName, Bucket.UpdaterMode.UPSERT)
                 .append(0L, input)
                 .setContentType(contentType)
                 .commit();
