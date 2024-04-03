@@ -58,7 +58,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-  id("com.gradle.enterprise") version ("3.17")
+  id("com.gradle.develocity") version ("3.17")
   if (System.getenv("CI") != null || System.getProperty("allow-java-download").toBoolean()) {
     // Enable automatic Java toolchain download in CI or when explicitly requested by the user.
     // If in doubt, install the required Java toolchain manually, preferably using a "proper"
@@ -68,11 +68,11 @@ plugins {
   }
 }
 
-gradleEnterprise {
+develocity {
   if (System.getenv("CI") != null) {
     buildScan {
-      termsOfServiceUrl = "https://gradle.com/terms-of-service"
-      termsOfServiceAgree = "yes"
+      termsOfUseUrl = "https://gradle.com/terms-of-service"
+      termsOfUseAgree = "yes"
       // Add some potentially interesting information from the environment
       listOf(
           "GITHUB_ACTION_REPOSITORY",
@@ -101,6 +101,8 @@ gradleEnterprise {
         link("PRs", "$ghUrl/$ghRepo/pulls")
       }
     }
+  } else {
+    buildScan { publishing { onlyIf { gradle.startParameter.isBuildScan } } }
   }
 }
 
