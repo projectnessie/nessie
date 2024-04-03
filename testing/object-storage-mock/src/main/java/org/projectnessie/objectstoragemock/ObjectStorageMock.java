@@ -20,6 +20,8 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +35,10 @@ import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.jetty.JettyHttpContainerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.immutables.value.Value;
+import org.projectnessie.objectstoragemock.sts.AssumeRoleHandler;
+import org.projectnessie.objectstoragemock.sts.ImmutableAssumeRoleResult;
+import org.projectnessie.objectstoragemock.sts.ImmutableCredentials;
+import org.projectnessie.objectstoragemock.sts.ImmutableRoleUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,12 +68,37 @@ public abstract class ObjectStorageMock {
 
   public abstract Map<String, Bucket> buckets();
 
+  @Value.Default
+  public AssumeRoleHandler assumeRoleHandler() {
+    return ((action,
+        version,
+        roleArn,
+        roleSessionName,
+        policy,
+        durationSeconds,
+        externalId,
+        serialNumber) ->
+        ImmutableAssumeRoleResult.builder()
+            .credentials(
+                ImmutableCredentials.builder()
+                    .accessKeyId("access-key-id")
+                    .secretAccessKey("secret-access-key")
+                    .expiration(Instant.now().plus(15, ChronoUnit.MINUTES))
+                    .build())
+            .sourceIdentity("source-identity")
+            .assumedRoleUser(
+                ImmutableRoleUser.builder().arn("arn").assumedRoleId("assumedRoleId").build())
+            .build());
+  }
+
   public interface MockServer extends AutoCloseable {
     URI getS3BaseUri();
 
     URI getGcsBaseUri();
 
     URI getAdlsGen2BaseUri();
+
+    URI getStsEndpointURI();
 
     default Map<String, String> icebergProperties() {
       Map<String, String> props = new HashMap<>();
@@ -146,6 +177,11 @@ public abstract class ObjectStorageMock {
     }
 
     @Override
+    public URI getStsEndpointURI() {
+      return baseUri.resolve("sts/assumeRole");
+    }
+
+    @Override
     public URI getS3BaseUri() {
       return baseUri;
     }
@@ -183,6 +219,7 @@ public abstract class ObjectStorageMock {
     config.register(S3Resource.class);
     config.register(AdlsGen2Resource.class);
     config.register(GcsResource.class);
+    config.register(StsResource.class);
 
     if (LOGGER.isDebugEnabled()) {
       config.register(

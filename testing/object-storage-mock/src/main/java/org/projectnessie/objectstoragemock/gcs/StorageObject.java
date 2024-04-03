@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import org.immutables.value.Value;
@@ -70,6 +72,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant softDeleteTime();
 
   @Nullable
@@ -78,6 +82,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant hardDeleteTime();
 
   @Nullable
@@ -136,6 +142,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant timeCreated();
 
   @Nullable
@@ -144,6 +152,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant updated();
 
   @Nullable
@@ -152,6 +162,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant timeDeleted();
 
   @Nullable
@@ -160,6 +172,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant timeStorageClassUpdated();
 
   @Nullable
@@ -168,6 +182,8 @@ public interface StorageObject {
       shape = JsonFormat.Shape.STRING,
       pattern = StdDateFormat.DATE_FORMAT_STR_ISO8601,
       timezone = "UTC")
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   Instant customTime();
 
   @Nullable
