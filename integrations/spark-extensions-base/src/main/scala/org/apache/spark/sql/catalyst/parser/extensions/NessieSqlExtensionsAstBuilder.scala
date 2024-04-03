@@ -94,7 +94,7 @@ class NessieSqlExtensionsAstBuilder(delegate: ParserInterface)
       val refName = asText(ctx.reference)
       val timestampOrHash = asText(ctx.tsOrHash)
       val catalogName = asText(ctx.catalog)
-      ShowLogCommand(refName, catalogName)
+      ShowLogCommand(refName, timestampOrHash, catalogName)
     }
 
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan =
