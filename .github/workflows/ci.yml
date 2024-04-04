@@ -92,13 +92,11 @@ jobs:
             --scan
 
       - name: Gradle / Compile Quarkus
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: |
-            :nessie-quarkus:compileAll
-            :nessie-quarkus-cli:compileAll
-            :nessie-events-quarkus:compileAll
-            --scan
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan
 
       - name: Gradle / Checkstyle
         uses: gradle/actions/setup-gradle@v3
@@ -202,13 +200,19 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - name: Gradle / Test Quarkus
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: |
-            :nessie-quarkus:test
-            :nessie-events-quarkus:test
-            --scan
+      - name: Gradle / Test Quarkus Server
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus:test --scan || \
+            ./gradlew :nessie-quarkus:test --scan || \
+            ./gradlew :nessie-quarkus:test --scan
+
+      - name: Gradle / Test Quarkus Events
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-events-quarkus:test --scan || \
+            ./gradlew :nessie-events-quarkus:test --scan || \
+            ./gradlew :nessie-events-quarkus:test --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -412,14 +416,26 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - name: Gradle / intTest Quarkus
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: |
-            :nessie-quarkus:intTest
-            :nessie-quarkus-cli:intTest
-            :nessie-events-quarkus:intTest
-            --scan
+      - name: Gradle / intTest Quarkus Server
+        run:
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus:intTest --scan || \
+            ./gradlew :nessie-quarkus:intTest --scan || \
+            ./gradlew :nessie-quarkus:intTest --scan
+
+      - name: Gradle / intTest Quarkus CLI
+        run:
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus-cli:intTest --scan || \
+            ./gradlew :nessie-quarkus-cli:intTest --scan || \
+            ./gradlew :nessie-quarkus-cli:intTest --scan
+
+      - name: Gradle / intTest Quarkus Events
+        run:
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-events-quarkus:intTest --scan || \
+            ./gradlew :nessie-events-quarkus:intTest --scan || \
+            ./gradlew :nessie-events-quarkus:intTest --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
