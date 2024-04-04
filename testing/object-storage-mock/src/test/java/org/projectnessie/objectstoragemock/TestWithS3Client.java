@@ -15,11 +15,13 @@
  */
 package org.projectnessie.objectstoragemock;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +43,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.endpoints.Endpoint;
+import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -53,6 +58,11 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.endpoints.StsEndpointProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
+import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
+import software.amazon.awssdk.services.sts.model.Credentials;
 import software.amazon.awssdk.utils.IoUtils;
 
 /**
@@ -70,11 +80,15 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
 
   @InjectSoftAssertions private SoftAssertions soft;
 
+  private SdkHttpClient sdkClient;
+
   @Override
   protected void onCreated(MockServer serverInstance) {
+    sdkClient = UrlConnectionHttpClient.builder().build();
+
     s3 =
         S3Client.builder()
-            .httpClientBuilder(UrlConnectionHttpClient.builder())
+            .httpClient(sdkClient)
             .applyMutation(builder -> builder.endpointOverride(serverInstance.getS3BaseUri()))
             .credentialsProvider(
                 StaticCredentialsProvider.create(
@@ -91,6 +105,46 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         s3 = null;
       }
     }
+  }
+
+  @Test
+  public void assumeRole() {
+    createServer(b -> {});
+
+    URI endpoint = serverInstance.getStsEndpointURI();
+
+    StsEndpointProvider provider =
+        params -> completedFuture(Endpoint.builder().url(endpoint).build());
+
+    StsClient stsClient =
+        StsClient.builder()
+            .httpClient(sdkClient)
+            // .endpointOverride(serverInstance.getStsEndpointURI())
+            .endpointProvider(provider)
+            .region(Region.EU_CENTRAL_1)
+            .build();
+
+    AssumeRoleRequest request =
+        AssumeRoleRequest.builder()
+            .roleSessionName("nessie")
+            .roleArn("arn-thingy")
+            .policy("policy")
+            .durationSeconds(1234)
+            .externalId("external-id")
+            .serialNumber("42")
+            .overrideConfiguration(
+                builder ->
+                    builder.credentialsProvider(
+                        () -> AwsBasicCredentials.create("accessKeyId", "secretAccessKey")))
+            .build();
+
+    AssumeRoleResponse response = stsClient.assumeRole(request);
+
+    soft.assertThat(response).isNotNull();
+    soft.assertThat(response.sourceIdentity()).isEqualTo("source-identity");
+    soft.assertThat(response.credentials())
+        .extracting(Credentials::accessKeyId, Credentials::secretAccessKey)
+        .containsExactly("access-key-id", "secret-access-key");
   }
 
   @Test

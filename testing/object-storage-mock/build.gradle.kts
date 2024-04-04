@@ -45,6 +45,7 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
   implementation("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider")
   implementation("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-xml-provider")
 
@@ -57,6 +58,7 @@ dependencies {
   testImplementation(platform(libs.awssdk.bom))
   testImplementation("software.amazon.awssdk:s3")
   testImplementation("software.amazon.awssdk:url-connection-client")
+  testImplementation("software.amazon.awssdk:sts")
 
   testImplementation(platform(libs.azuresdk.bom))
   testImplementation("com.azure:azure-storage-file-datalake")
