@@ -45,6 +45,8 @@ public class JdbcCreateSchema extends BaseCommand {
     }
     try (Connection conn = dataSource.getConnection()) {
       schemaCreateStrategy.apply(conn);
+      // by default autocommit is set to false, so we commit here
+      conn.commit();
     }
     commandSpec
         .commandLine()
