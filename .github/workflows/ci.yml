@@ -613,7 +613,7 @@ jobs:
           python-version: '3.11'
 
       - name: Setup & Start Minikube
-        uses: medyagh/setup-minikube@v0.0.15
+        uses: medyagh/setup-minikube@v0.0.16
         with:
           # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
           kubernetes-version: stable
