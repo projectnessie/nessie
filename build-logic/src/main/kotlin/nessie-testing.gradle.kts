@@ -79,8 +79,16 @@ tasks.withType<Test>().configureEach {
   systemProperty("user.language", "en")
   systemProperty("user.country", "US")
   systemProperty("user.variant", "")
+
   jvmArgumentProviders.add(
-    CommandLineArgumentProvider { listOf("-Dtest.log.level=${testLogLevel()}") }
+    CommandLineArgumentProvider {
+      listOf(
+        "-Dtest.log.level=${testLogLevel()}",
+        "-Djunit.platform.reporting.open.xml.enabled=true",
+        "-Djunit.platform.reporting.output.dir=${reports.junitXml.outputLocation.get().asFile.absolutePath}",
+        "-Djunit.jupiter.execution.timeout.default=5m"
+      )
+    }
   )
   environment("TESTCONTAINERS_REUSE_ENABLE", "true")
 
