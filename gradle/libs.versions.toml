@@ -31,7 +31,7 @@ slf4j = "1.7.36"
 undertow = "2.2.28.Final"
 
 [bundles]
-junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params"]
+junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params", "junit-platform-reporting"]
 
 [libraries]
 agroal-pool = { module = "io.agroal:agroal-pool", version = "2.3" }
@@ -93,6 +93,7 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.2.13" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 maven-core = { module = "org.apache.maven:maven-resolver-provider", version.ref = "maven" }
