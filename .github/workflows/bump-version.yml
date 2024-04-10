@@ -79,11 +79,6 @@ jobs:
         echo "BUMPED_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
         echo "BUMPED_VERSION_NO_SNAPSHOT=${BUMPED_VERSION%-SNAPSHOT}" >> ${GITHUB_ENV}
 
-    - name: Bump versions for Python, site/, helm and UI
-      uses: ./.github/actions/bump-versions
-      with:
-        new-version: ${{ env.BUMPED_VERSION_NO_SNAPSHOT }}
-
     - name: Configure bump-version-bot-user in git config
       run: |
         git config --global user.email "nessie-bump-version-workflow-noreply@projectnessie.org"

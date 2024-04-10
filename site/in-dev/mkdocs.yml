@@ -1,0 +1,20 @@
+# This file defines the navigation for the docs of each Nessie release, allowing to have different contents
+# and navigation for each release.
+
+# The site_name is replaced later during a release
+site_name: in-dev
+repo_url: https://github.com/projectnessie/nessie
+
+plugins:
+  - search
+
+nav:
+  - index.md
+  - configuration.md
+  - security.md
+  - authentication.md
+  - authorization.md
+  - client_config.md
+  - export_import.md
+  - gc.md
+  - cli.md

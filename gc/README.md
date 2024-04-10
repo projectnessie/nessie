@@ -1,3 +1,3 @@
 # Nessie GC
 
-See [here](../site/docs/features/gc.md).
+See [here](../site/in-dev/gc.md).

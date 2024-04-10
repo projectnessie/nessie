@@ -76,7 +76,7 @@ with the instructions from this guide.
 
 ## Using Nessie CLI
 
-Now that the Nessie server runs in authenticated mode with a Keycloak, [clients](../tools/cli.md) have to provide
+Now that the Nessie server runs in authenticated mode with a Keycloak, [clients](../nessie-latest/cli.md) have to provide
 credentials in the form of bearer authentication tokens. For example:
 
 ```shell

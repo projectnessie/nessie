@@ -12,7 +12,7 @@ Maven. The coordinates are:
 <dependency>
   <groupId>org.projectnessie.nessie</groupId>
   <artifactId>nessie-client</artifactId>
-  <version>{{ versions.java }}</version>
+  <version>{{ versions.nessie }}</version>
 </dependency> 
 ```
 
@@ -205,7 +205,7 @@ api.transplantCommitsIntoBranch()
 ## Authentication
 
 Nessie has multiple `NessieAuthenticationProvider` implementations that allow different client authentication mechanisms as can be seen below.
-The documentation for how to configure Nessie server authentication can be found [here](../try/authentication.md).
+The documentation for how to configure Nessie server authentication can be found [here](../nessie-latest/authentication.md).
 
 When configured with authentication enabled, a Nessie server expects every HTTP request to contain a 
 valid Bearer token in an `Authorization` header. Two authentication providers allow a Nessie client
@@ -266,4 +266,4 @@ token endpoint, which is then used as a Bearer token to authenticate against Nes
    
 The main advantage of the `Oauth2AuthenticationProvider` over `BearerAuthenticationProvider` is 
 that the token is automatically refreshed when it expires. It has more configuration options, 
-which are documented in the [Tools Configuration](../tools/client_config.md) section.
+which are documented in the [Tools Configuration](../nessie-latest/client_config.md) section.

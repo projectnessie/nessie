@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # Community
 
 Nessie is developed as a consensus-driven open source product under the Apache 2.0

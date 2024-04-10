@@ -1,4 +1,8 @@
-# Accessing data in S3 with Spark
+---
+title: "Accessing data in S3 with Apache Spark"
+---
+
+# Accessing data in S3 with Apache Spark
 
 In this guide we walk through the process of configuring an [Apache Spark](https://spark.apache.org/) session to work 
 with data files stored in Amazon [S3](https://aws.amazon.com/s3/) and version history in a local Nessie Server.
@@ -127,7 +131,7 @@ Time taken: 3.225 seconds, Fetched 1 row(s)
 ```
 
 Branches, merges and other git-like commands can be run as well, as explained in the 
-[Getting Started](../try/index.md) guide. 
+[Getting Started](../downloads/index.md) guide. 
 
 Note: The above example uses the `spark-sql` shell, but the same configuration options apply to `spark-shell`.
 
@@ -139,4 +143,4 @@ environment variable.
 The Nessie Server in this example does not require authentication.
 
 If the Nessie Server runs with authentication enabled, additional configuration parameters will be required in the
-Spark session. Please refer to the [Authentication in Tools](../tools/auth_config.md) section for details.
+Spark session. Please refer to the [Authentication in Tools](../nessie-latest/client_config.md) section for details.

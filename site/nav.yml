@@ -1,0 +1,56 @@
+
+nav:
+  - Guides:
+    - guides/index.md
+    - guides/about.md
+    - Setting up Nessie:
+      - guides/docker.md
+      - guides/kubernetes.md
+      - guides/minikube.md
+      - guides/tls.md
+      - guides/keycloak.md
+      - guides/grafana.md
+      - guides/ui.md
+    - Managing Nessie:
+      - guides/management.md
+      - guides/migration.md
+    - Concepts:
+      - guides/tables-views.md
+      - guides/transactions.md
+      - guides/nessie_vs_git.md
+      - guides/best-practices.md
+    - Iceberg:
+      - iceberg/iceberg.md
+      - iceberg/spark.md
+      - iceberg/flink.md
+      - iceberg/hive.md
+      - iceberg/views.md
+    - Spark:
+      - guides/spark-s3.md
+      - guides/sql.md
+    - Development:
+      - develop/index.md
+      - develop/spec.md
+      - develop/kernel.md
+      - develop/rest.md
+      - develop/python.md
+      - develop/java.md
+      - develop/content-types.md
+      - develop/repository-configs.md
+
+  - Docs:
+    - Latest Release: '!include build/versions/latest/mkdocs.yml'
+    - Releases/Upgrade Notes:
+      - Release Notes: releases.md
+      - Upgrade Notes: server-upgrade.md
+    - Unreleased (nightly): '!include build/versions/nightly/mkdocs.yml'
+# Do NOT change, move or remove the following line!!
+# RELEASE_PLACEHOLDER_MARKER
+    - Nessie 0.79.0: '!include build/versions/0.79.0/mkdocs.yml'
+  - Downloads: downloads/index.md
+  - Community: community.md
+  - Blog: blog/index.md
+
+not_in_nav: |
+  index.md
+  develop
