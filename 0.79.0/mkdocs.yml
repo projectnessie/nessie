@@ -1,0 +1,18 @@
+
+site_name: "Nessie 0.79.0"
+
+repo_url: https://github.com/projectnessie/nessie
+
+plugins:
+  - search
+
+nav:
+  - index.md
+  - configuration.md
+  - security.md
+  - authentication.md
+  - authorization.md
+  - client_config.md
+  - export_import.md
+  - gc.md
+  - cli.md
