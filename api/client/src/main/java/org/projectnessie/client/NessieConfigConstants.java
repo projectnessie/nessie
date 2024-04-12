@@ -137,7 +137,7 @@ public final class NessieConfigConstants {
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint} or {@linkplain
    *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
    * </ul>
    *
    * <p>For the "password" grant type, the following properties must be provided:
@@ -146,7 +146,7 @@ public final class NessieConfigConstants {
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint} or {@linkplain
    *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_USERNAME username}
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_PASSWORD password}
    * </ul>
@@ -159,7 +159,7 @@ public final class NessieConfigConstants {
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_AUTH_ENDPOINT authorization endpoint} or {@linkplain
    *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
    * </ul>
    *
    * <p>For the "device_code" grant type, the following properties must be provided:
@@ -170,7 +170,7 @@ public final class NessieConfigConstants {
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT device authorization endpoint} or
    *       {@linkplain #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
    *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret}
+   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
    * </ul>
    *
    * <p>Both client and user must be properly configured with appropriate permissions in the OAuth2

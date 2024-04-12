@@ -22,7 +22,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
@@ -49,6 +48,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -169,8 +169,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
    * requests since it's immutable and its close method is a no-op.
    */
   @Value.Lazy
-  HttpAuthentication getBasicAuthentication() {
-    return BasicAuthenticationProvider.create(getClientId(), getClientSecret().getStringAndClear());
+  Optional<HttpAuthentication> getBasicAuthentication() {
+    return getClientSecret()
+        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getStringAndClear()));
   }
 
   /**
@@ -239,11 +240,6 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_CLIENT_ID,
         !getClientId().isEmpty(),
         "client ID must not be empty");
-    check(
-        violations,
-        CONF_NESSIE_OAUTH2_CLIENT_SECRET,
-        getClientSecret().length() > 0,
-        "client secret must not be empty");
     check(
         violations,
         CONF_NESSIE_OAUTH2_ISSUER_URL + " / " + CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
