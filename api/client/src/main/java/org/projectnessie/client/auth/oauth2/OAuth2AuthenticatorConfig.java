@@ -312,9 +312,13 @@ public interface OAuth2AuthenticatorConfig {
   }
 
   /**
-   * The port to use for the local web server that listens for the authorization code. Optional. If
-   * not set or set to zero, a random port from the dynamic client port range will be used. Only
-   * relevant when using the {@link GrantType#AUTHORIZATION_CODE} grant type.
+   * The port to use for the local web server that listens for the authorization code.
+   *
+   * <p>When running a client inside a container make sure to specify a port and forward the port to
+   * the container host.
+   *
+   * <p>If not set or set to zero, a random port from the dynamic client port range will be used.
+   * Only relevant when using the {@link GrantType#AUTHORIZATION_CODE} grant type.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT
    */

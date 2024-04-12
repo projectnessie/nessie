@@ -303,10 +303,16 @@ public final class NessieConfigConstants {
 
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT}) for the
-   * OAuth2 authentication provider. The port used for the internal web server that listens for the
-   * authorization code callback. This is only used if the grant type to use is {@value
-   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}. Optional; if not present, a random port
-   * will be used.
+   * OAuth2 authentication provider.
+   *
+   * <p>When running a client inside a container make sure to specify a port and forward the port to
+   * the container host.
+   *
+   * <p>The port used for the internal web server that listens for the authorization code callback.
+   * This is only used if the grant type to use is {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}.
+   *
+   * <p>Optional; if not present, a random port will be used.
    */
   public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT =
       "nessie.authentication.oauth2.auth-code-flow.web-port";
