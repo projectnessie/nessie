@@ -104,7 +104,7 @@ jobs:
         LAST_VERSION="${LAST_TAG#nessie-}"
         LAST_VERSION_PATTERN="$(echo ${LAST_VERSION} | sed 's/\([^.]*\)[.]\([^.]*\)[.].*/\1\\.\2/')\\."
 
-        for fn in SECURITY.md README.md site/docs/try/server-upgrade.md ; do
+        for fn in SECURITY.md README.md site/docs/server-upgrade.md ; do
           sed -i "s/${LAST_VERSION_PATTERN}[^ ]*/${RELEASE_VERSION}/" ${fn}
         done
 
@@ -115,7 +115,7 @@ jobs:
         FAILS=""
         # version pattern without patch version
         VERSION_PATTERN="$(echo ${RELEASE_VERSION} | sed 's/\([^.]*\)[.]\([^.]*\)[.].*/\1\\.\2/')\\."
-        grep -q " ${VERSION_PATTERN}" < site/docs/try/server-upgrade.md || FAILS="${FAILS} site/docs/try/server-upgrade.md"
+        grep -q " ${VERSION_PATTERN}" < site/docs/server-upgrade.md || FAILS="${FAILS} site/docs/server-upgrade.md"
         grep -q "^| ${VERSION_PATTERN}" < README.md || FAILS="${FAILS} README.md"
         grep -q "^| ${VERSION_PATTERN}.* .*check_mark.*$" < SECURITY.md || FAILS="${FAILS} SECURITY.md"
         if [[ -n ${FAILS} ]] ; then
@@ -123,26 +123,30 @@ jobs:
           exit 1
         fi
 
-    - name: Bump versions for site/ and helm
-      uses: ./.github/actions/bump-versions
-      with:
-        new-version: ${{ env.RELEASE_VERSION }}
-        bump-helm-version: 'true'
-        bump-site-version: 'true'
-
     - name: Patch changelog
       uses: gradle/actions/setup-gradle@v3
       with:
         cache-disabled: true
         arguments: :patchChangelog
 
-    # Updates the site/docs/try/releases.md file, takes the first four lines (the big heading),
+    - name: Update site
+      shell: bash
+      working-directory: site
+      run: |
+        bin/release.sh ${RELEASE_VERSION}
+
+    - name: Bump version in helm/nessie
+      shell: bash
+      run: |
+        sed -i "s/^version: [0-9.]*$/version: ${RELEASE_VERSION}/" helm/nessie/Chart.yaml
+
+    # Updates the site/docs/releases.md file, takes the first four lines (the big heading),
     # adds a heading with the version and a note referencing the release notes on GitHub,
     # followed by the Git change log, finalized with the remainder of the
-    # previous site/docs/try/releases.md file.
+    # previous site/docs/releases.md file.
     - name: Update releases.md file
       run: |
-        head -4 site/docs/try/releases.md > /tmp/releases.md
+        head -4 site/docs/releases.md > /tmp/releases.md
         cat <<!  >> /tmp/releases.md
         ## ${RELEASE_VERSION} Release ($(date '+%B %d, %Y'))
         
@@ -157,10 +161,10 @@ jobs:
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
           --format='format:* %s' ${LAST_TAG}..HEAD . |\
           grep -v '^\* \[release\] .*$' >> /tmp/releases.md || true
-        
-        tail +4 site/docs/try/releases.md >> /tmp/releases.md
-        
-        cp /tmp/releases.md site/docs/try/releases.md
+
+        tail +4 site/docs/releases.md >> /tmp/releases.md
+
+        cp /tmp/releases.md site/docs/releases.md
         rm /tmp/releases.md
 
     - name: Update helm/README.md
@@ -218,11 +222,6 @@ jobs:
         | Git HEAD                   | \`$(git rev-parse HEAD)\` |
         !
 
-    - name: Bump versions for site/ and helm
-      uses: ./.github/actions/bump-versions
-      with:
-        new-version: ${{ env.NEXT_VERSION_NO_SNAPSHOT }}
-
       # Record the next development iteration in Git
     - name: Record next development version in Git
       run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
@@ -237,6 +236,9 @@ jobs:
 
         # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
         git config --rename-section http.https://github.com/ http.https://save.github.com/
+
+        # Push changes to docs to site-docs branch
+        (cd site/build/site-docs ; git push --no-verify "${UPSTREAM}" HEAD:site-docs)
 
         git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF} ${GIT_TAG}
 

@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # Community
 
 Nessie is developed as a consensus-driven open source product under the Apache 2.0
@@ -33,7 +39,7 @@ Google Groups as a mailing list.
 ## Contribution
 
 All contributors are welcome to Project Nessie. To get started, feel free to introduce yourself
-on Slack or our Google Group. Nessie is open to everyone!
+on [Zulip](https://project-nessie.zulipchat.com/) or our Google Group. Nessie is open to everyone!
 
 Please see the [CONTRIBUTING.md guide](https://github.com/projectnessie/nessie/blob/main/CONTRIBUTING.md) for more information
 on how to contribute.

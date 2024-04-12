@@ -1,13 +1,13 @@
 # Nessie on Minikube
 
-If you followed our [Docker guide](../try/docker.md), you can now try Nessie on Kubernetes with
+If you followed our [Docker guide](../guides/docker.md), you can now try Nessie on Kubernetes with
 Minikube.
 
 Minikube is a tool that makes it easy to run Kubernetes locally. This document describes how to run
 Nessie on Minikube, using the [Nessie Helm chart]. Please familiarize yourself with the Nessie Helm
 chart before proceeding.
 
-[Nessie Helm chart]: ../try/kubernetes.md
+[Nessie Helm chart]: ../guides/kubernetes.md
 
 ## Setup
 

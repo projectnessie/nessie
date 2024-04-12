@@ -1,6 +1,18 @@
 img.bordered {
-    height: auto;
-    width: auto;
-    border: 1px solid #9f9f9f;
-    transition: transform ease-in-out 0.3s;
+  height: auto;
+  width: auto;
+  border: 1px solid #9f9f9f;
+  transition: transform ease-in-out 0.3s;
+}
+
+.md-tabs__link {
+  font-size: 2em;
+}
+
+.md-tabs {
+  background-color: #5d6cc0;
+}
+
+.md-nav__item {
+  font-size: 1.2em;
 }

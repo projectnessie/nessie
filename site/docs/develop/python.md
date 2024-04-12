@@ -8,7 +8,7 @@ pip install pynessie
 ## Configuration
 
 When you install pynessie, you get the Python client along with a Python CLI. Configuration 
-for both is covered in our reference for the [command line interface](../tools/cli.md). 
+for both is covered in our reference for the [command line interface](../nessie-latest/cli.md). 
 
 ## Usage
 
@@ -27,7 +27,7 @@ All endpoint options are available from this client.
 ## Spark usage from Python
 
 A common way to interact with Nessie is via Spark. You can read more about working 
-with Nessie, Spark and Iceberg together on our [Iceberg Client](../tools/iceberg/spark.md) docs page.
+with Nessie, Spark and Iceberg together on our [Iceberg Client](../iceberg/spark.md) docs page.
 
 ## API Documentation
 
