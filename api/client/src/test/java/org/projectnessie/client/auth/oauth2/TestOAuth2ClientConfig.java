@@ -110,13 +110,6 @@ class TestOAuth2ClientConfig {
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
-                .clientSecret("")
-                .tokenEndpoint(URI.create("https://example.com/token")),
-            singletonList(
-                "client secret must not be empty (nessie.authentication.oauth2.client-secret)")),
-        Arguments.of(
-            OAuth2ClientConfig.builder()
-                .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.TOKEN_EXCHANGE),
@@ -304,16 +297,6 @@ class TestOAuth2ClientConfig {
             null,
             new IllegalArgumentException(
                 "OAuth2 authentication is missing some parameters and could not be initialized: client ID must not be empty (nessie.authentication.oauth2.client-id)")),
-        Arguments.of(
-            ImmutableMap.of(
-                CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, "https://example.com/token",
-                CONF_NESSIE_OAUTH2_CLIENT_ID, "Alice",
-                CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW, "PT10S",
-                CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN, "PT30S",
-                CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "test"),
-            null,
-            new IllegalArgumentException(
-                "OAuth2 authentication is missing some parameters and could not be initialized: client secret must not be empty (nessie.authentication.oauth2.client-secret)")),
         Arguments.of(
             ImmutableMap.builder()
                 .put(CONF_NESSIE_OAUTH2_ISSUER_URL, "https://example.com/")

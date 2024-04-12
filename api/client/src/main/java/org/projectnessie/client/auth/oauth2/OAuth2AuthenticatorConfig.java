@@ -199,13 +199,13 @@ public interface OAuth2AuthenticatorConfig {
   String getClientId();
 
   /**
-   * The OAuth2 client secret. Must be set.
+   * The OAuth2 client secret. Must be set, if required by the IdP.
    *
    * <p>Once read by the Nessie client, the secret contents will be cleared from memory.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SECRET
    */
-  Secret getClientSecret();
+  Optional<Secret> getClientSecret();
 
   /**
    * The OAuth2 username. Only relevant for {@link GrantType#PASSWORD} grant type.

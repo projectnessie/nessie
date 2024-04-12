@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -296,11 +297,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   private <T> T invokeTokensEndpoint(Object request, Class<T> responseClass) {
-    return httpClient
-        .newRequest(config.getResolvedTokenEndpoint())
-        .authentication(config.getBasicAuthentication())
-        .postForm(request)
-        .readEntity(responseClass);
+    HttpRequest req = httpClient.newRequest(config.getResolvedTokenEndpoint());
+    config.getBasicAuthentication().ifPresent(req::authentication);
+    return req.postForm(request).readEntity(responseClass);
   }
 
   private boolean isAboutToExpire(Token token) {

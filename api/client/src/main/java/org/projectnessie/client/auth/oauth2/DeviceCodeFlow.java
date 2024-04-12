@@ -25,6 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 
 class DeviceCodeFlow implements AutoCloseable {
@@ -119,12 +120,9 @@ class DeviceCodeFlow implements AutoCloseable {
             // don't include client id, it's in the basic auth header
             .scope(config.getScope().orElse(null))
             .build();
-    return config
-        .getHttpClient()
-        .newRequest(config.getResolvedDeviceAuthEndpoint())
-        .authentication(config.getBasicAuthentication())
-        .postForm(body)
-        .readEntity(DeviceCodeResponse.class);
+    HttpRequest request = config.getHttpClient().newRequest(config.getResolvedDeviceAuthEndpoint());
+    config.getBasicAuthentication().ifPresent(request::authentication);
+    return request.postForm(body).readEntity(DeviceCodeResponse.class);
   }
 
   private void checkPollInterval(Duration serverPollInterval) {
@@ -160,12 +158,9 @@ class DeviceCodeFlow implements AutoCloseable {
               .scope(config.getScope().orElse(null))
               // don't include client id, it's in the basic auth header
               .build();
-      HttpResponse response =
-          config
-              .getHttpClient()
-              .newRequest(config.getResolvedTokenEndpoint())
-              .authentication(config.getBasicAuthentication())
-              .postForm(body);
+      HttpRequest request = config.getHttpClient().newRequest(config.getResolvedTokenEndpoint());
+      config.getBasicAuthentication().ifPresent(request::authentication);
+      HttpResponse response = request.postForm(body);
       Tokens tokens = response.readEntity(DeviceCodeTokensResponse.class);
       LOGGER.debug("Device Code Flow: new tokens received");
       tokensFuture.complete(tokens);

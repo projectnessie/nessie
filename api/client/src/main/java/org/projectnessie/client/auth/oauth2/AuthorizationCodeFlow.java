@@ -36,6 +36,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.http.impl.UriBuilder;
@@ -190,12 +191,9 @@ class AuthorizationCodeFlow implements AutoCloseable {
             .clientId(config.getClientId())
             .scope(config.getScope().orElse(null))
             .build();
-    HttpResponse response =
-        config
-            .getHttpClient()
-            .newRequest(config.getResolvedTokenEndpoint())
-            .authentication(config.getBasicAuthentication())
-            .postForm(body);
+    HttpRequest request = config.getHttpClient().newRequest(config.getResolvedTokenEndpoint());
+    config.getBasicAuthentication().ifPresent(request::authentication);
+    HttpResponse response = request.postForm(body);
     Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
