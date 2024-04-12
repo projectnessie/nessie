@@ -22,5 +22,6 @@ import java.util.Optional;
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.dynamodb")
 public interface QuarkusDynamoDBConfig {
+  /** Prefix for tables, default is no prefix. */
   Optional<String> tablePrefix();
 }

@@ -46,6 +46,8 @@ dependencies {
   implementation(libs.slf4j.api)
   compileOnly(libs.errorprone.annotations)
 
+  compileOnly(project(":nessie-doc-generator-annotations"))
+
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)

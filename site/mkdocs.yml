@@ -59,6 +59,7 @@ plugins:
       authors_file: ./blog/.authors.yml
       post_excerpt: required
       pagination_per_page: 5
+  - include-markdown
   - macros:
       on_error_fail: true
       module_name: macros
@@ -148,6 +149,7 @@ markdown_extensions:
   - pymdownx.tilde
 
 watch:
+  - in-dev
   - overrides
   - nav.yml
   - macros.py

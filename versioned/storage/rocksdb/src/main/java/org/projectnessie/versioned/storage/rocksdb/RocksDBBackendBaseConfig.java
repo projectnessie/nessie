@@ -18,5 +18,6 @@ package org.projectnessie.versioned.storage.rocksdb;
 import java.nio.file.Path;
 
 public interface RocksDBBackendBaseConfig {
+  /** Sets RocksDB storage path. */
   Path databasePath();
 }

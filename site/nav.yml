@@ -54,3 +54,4 @@ nav:
 not_in_nav: |
   index.md
   develop
+  **/generated-docs/
