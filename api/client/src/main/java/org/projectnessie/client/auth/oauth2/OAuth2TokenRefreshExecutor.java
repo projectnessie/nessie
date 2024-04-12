@@ -28,8 +28,14 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2TokenRefreshExecutor.class);
 
+  // Need multiple threads:
+  // - One to run org.projectnessie.client.auth.oauth2.OAuth2Client.renewTokens
+  // - One to run org.projectnessie.client.auth.oauth2.DeviceCodeFlow.pollForNewTokens
+  // - (a spare one - just in case) ;)
+  private static final int CORE_POOL_SIZE = 3;
+
   OAuth2TokenRefreshExecutor(Duration keepAlive) {
-    super(1, new OAuth2TokenRefreshThreadFactory());
+    super(CORE_POOL_SIZE, new OAuth2TokenRefreshThreadFactory());
     setKeepAliveTime(keepAlive.toNanos(), TimeUnit.NANOSECONDS);
     allowCoreThreadTimeOut(true);
   }
@@ -44,7 +50,7 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
           shutdownNow();
         }
       } catch (InterruptedException e) {
-        LOGGER.warn("OAuth2 token refresh executor termination interrupted", e);
+        LOGGER.debug("OAuth2 token refresh executor termination interrupted", e);
         Thread.currentThread().interrupt();
       }
     }

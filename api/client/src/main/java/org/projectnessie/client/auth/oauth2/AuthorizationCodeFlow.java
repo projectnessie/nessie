@@ -30,6 +30,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Phaser;
@@ -128,10 +129,9 @@ class AuthorizationCodeFlow implements AutoCloseable {
     try {
       return tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (TimeoutException e) {
-      LOGGER.error("Timed out waiting for authorization code.");
       abort();
       throw new RuntimeException("Timed out waiting waiting for authorization code", e);
-    } catch (InterruptedException e) {
+    } catch (CancellationException | InterruptedException e) {
       abort();
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);

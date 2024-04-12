@@ -65,12 +65,16 @@ import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @ExtendWith(SoftAssertionsExtension.class)
 public class ITOAuth2Client {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ITOAuth2Client.class);
 
   public static final String IMAGE_TAG;
 
@@ -379,6 +383,7 @@ public class ITOAuth2Client {
             .newRequest()
             .path("realms/master/protocol/openid-connect/token")
             .header("Authorization", "Bearer " + accessToken.getPayload());
+    LOGGER.debug("Trying to use token (cause of the next POST request)");
     HttpResponse response =
         request.postForm(
             ImmutableMap.of(
@@ -399,6 +404,7 @@ public class ITOAuth2Client {
   private void revokeAccessToken(HttpClient httpClient, AccessToken accessToken) {
     HttpRequest request =
         httpClient.newRequest().path("realms/master/protocol/openid-connect/revoke");
+    LOGGER.debug("Revoking token (cause of the next POST request)");
     request.postForm(ImmutableMap.of("token", accessToken.getPayload()));
   }
 

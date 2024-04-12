@@ -65,6 +65,9 @@ final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
 
   @Override
   public HttpRequest newRequest(URI baseUri) {
+    if (client == null) {
+      throw new IllegalStateException("Client already closed");
+    }
     return new JavaRequest(this.config, baseUri, client::send);
   }
 
@@ -75,7 +78,10 @@ final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
 
   @Override
   public void close() {
-    client = null;
-    config.close();
+    try {
+      config.close();
+    } finally {
+      client = null;
+    }
   }
 }

@@ -32,7 +32,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpRequest;
@@ -85,7 +87,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     lastAccess = config.getClock().get();
     currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), this.executor);
     currentTokensStage
-        .whenComplete((tokens, error) -> log(error))
+        .whenComplete((tokens, error) -> maybeHandleError(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
   }
 
@@ -103,7 +105,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   Tokens getCurrentTokens() {
     try {
       return currentTokensStage.toCompletableFuture().get();
-    } catch (InterruptedException e) {
+    } catch (CancellationException | InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
@@ -209,12 +211,19 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             // if that fails, of if tokens weren't available, try fetching brand-new tokens
             .exceptionally(error -> fetchNewTokens());
     currentTokensStage
-        .whenComplete((tokens, error) -> log(error))
+        .whenComplete((tokens, error) -> maybeHandleError(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
   }
 
-  private void log(Throwable error) {
+  private void maybeHandleError(Throwable error) {
     if (error != null) {
+      if (hasCauseMatching(error, t -> t instanceof TimeoutException)) {
+        LOGGER.debug("Closing due to {}", error.toString());
+        // The auth-request already timed out, close this client to prevent future requests, which
+        // are unnecessary and also cause confusing logs (and in a user-facing client confusion).
+        close();
+        return;
+      }
       boolean tokensStageCancelled = error instanceof CancellationException && closing.get();
       if (tokensStageCancelled) {
         return;
@@ -226,6 +235,15 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     } else {
       LOGGER.debug("Successfully renewed tokens");
     }
+  }
+
+  static boolean hasCauseMatching(Throwable t, Predicate<Throwable> test) {
+    for (; t != null; t = t.getCause()) {
+      if (test.test(t)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Tokens fetchNewTokens() {
@@ -252,7 +270,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
           return flow.fetchNewTokens();
         }
       case DEVICE_CODE:
-        try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
+        try (DeviceCodeFlow flow = new DeviceCodeFlow(config, executor)) {
           return flow.fetchNewTokens();
         }
       default:

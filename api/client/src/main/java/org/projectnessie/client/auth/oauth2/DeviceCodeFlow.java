@@ -17,9 +17,9 @@ package org.projectnessie.client.auth.oauth2;
 
 import java.io.PrintStream;
 import java.time.Duration;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -46,18 +46,19 @@ class DeviceCodeFlow implements AutoCloseable {
   private volatile Duration pollInterval;
   private volatile Future<?> pollFuture;
 
-  DeviceCodeFlow(OAuth2ClientConfig config) {
-    this(config, System.out);
+  DeviceCodeFlow(OAuth2ClientConfig config, ScheduledExecutorService executor) {
+    this(config, System.out, executor);
   }
 
-  DeviceCodeFlow(OAuth2ClientConfig config, PrintStream console) {
+  DeviceCodeFlow(
+      OAuth2ClientConfig config, PrintStream console, ScheduledExecutorService executor) {
     this.config = config;
     this.console = console;
     flowTimeout = config.getDeviceCodeFlowTimeout();
     pollInterval = config.getDeviceCodeFlowPollInterval();
     closeFuture.thenRun(this::doClose);
     LOGGER.debug("Device Code Flow: started");
-    executor = Executors.newSingleThreadScheduledExecutor();
+    this.executor = executor;
   }
 
   @Override
@@ -67,7 +68,6 @@ class DeviceCodeFlow implements AutoCloseable {
 
   private void doClose() {
     LOGGER.debug("Device Code Flow: closing");
-    executor.shutdownNow();
     pollFuture = null;
     // don't close the HTTP client nor the console, they are not ours
   }
@@ -96,10 +96,9 @@ class DeviceCodeFlow implements AutoCloseable {
     try {
       return tokensFuture.get(flowTimeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (TimeoutException e) {
-      LOGGER.error("Timed out waiting for user to authorize device.");
       abort();
       throw new RuntimeException("Timed out waiting for user to authorize device", e);
-    } catch (InterruptedException e) {
+    } catch (CancellationException | InterruptedException e) {
       abort();
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);

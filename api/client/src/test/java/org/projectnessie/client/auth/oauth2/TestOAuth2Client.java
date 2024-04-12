@@ -35,6 +35,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -435,11 +436,15 @@ class TestOAuth2Client {
               .deviceCodeFlowPollInterval(Duration.ofMillis(100))
               .build();
 
+      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
       try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
-          DeviceCodeFlow flow = new DeviceCodeFlow(config, resourceOwner.getConsoleOut())) {
+          DeviceCodeFlow flow =
+              new DeviceCodeFlow(config, resourceOwner.getConsoleOut(), executor)) {
         resourceOwner.setErrorListener(e -> flow.close());
         Tokens tokens = flow.fetchNewTokens();
         checkInitialResponse((TokensResponseBase) tokens, false);
+      } finally {
+        executor.shutdown();
       }
     }
   }
@@ -456,11 +461,14 @@ class TestOAuth2Client {
               .deviceCodeFlowTimeout(Duration.ofMillis(100))
               .build();
 
-      try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
+      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+      try (DeviceCodeFlow flow = new DeviceCodeFlow(config, executor)) {
 
         soft.assertThatThrownBy(flow::fetchNewTokens)
             .hasMessageContaining("Timed out waiting for user to authorize device")
             .hasCauseInstanceOf(TimeoutException.class);
+      } finally {
+        executor.shutdown();
       }
     }
   }

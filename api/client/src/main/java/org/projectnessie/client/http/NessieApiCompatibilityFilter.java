@@ -16,7 +16,9 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,9 +67,14 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
           e.toString());
       return;
     } catch (Exception e) {
-      LOGGER.warn(
-          "API compatibility check: failed to contact config endpoint, proceeding without check",
-          e);
+      if (hasCauseMatching(
+          e, t -> t instanceof InterruptedException || t instanceof TimeoutException)) {
+        Thread.currentThread().interrupt();
+      } else {
+        LOGGER.warn(
+            "API compatibility check: failed to contact config endpoint, proceeding without check",
+            e);
+      }
       return;
     }
     int minServerApiVersion =
@@ -83,5 +90,14 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
       throw new NessieApiCompatibilityException(
           clientApiVersion, minServerApiVersion, maxServerApiVersion, actualServerApiVersion);
     }
+  }
+
+  static boolean hasCauseMatching(Throwable t, Predicate<Throwable> test) {
+    for (; t != null; t = t.getCause()) {
+      if (test.test(t)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
