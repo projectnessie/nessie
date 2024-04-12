@@ -48,8 +48,6 @@ class TestOAuth2AuthenticationProvider {
   void testNullParams() {
     assertThatThrownBy(() -> new OAuth2AuthenticationProvider().build(null))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> new OAuth2AuthenticationProvider().build(prop -> null))
-        .isInstanceOf(NullPointerException.class);
     assertThatThrownBy(() -> OAuth2AuthenticationProvider.create((OAuth2AuthenticatorConfig) null))
         .isInstanceOf(NullPointerException.class);
     assertThatThrownBy(() -> OAuth2AuthenticationProvider.create((OAuth2Authenticator) null))

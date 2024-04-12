@@ -76,9 +76,13 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         config.getPassword().map(s -> s.getBytesAndClear(StandardCharsets.UTF_8)).orElse(null);
     scope = config.getScope().orElse(null);
     httpClient = config.getHttpClient();
-    executor = config.getExecutor();
+    executor =
+        config
+            .getExecutor()
+            .orElseGet(
+                () -> new OAuth2TokenRefreshExecutor(config.getBackgroundThreadIdleTimeout()));
     lastAccess = config.getClock().get();
-    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), config.getExecutor());
+    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), this.executor);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));

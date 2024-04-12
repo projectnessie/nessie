@@ -15,7 +15,11 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static java.lang.String.join;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT;
@@ -41,6 +45,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -52,69 +57,80 @@ class TestOAuth2ClientConfig {
 
   @ParameterizedTest
   @MethodSource
-  void testCheck(OAuth2ClientConfig.Builder config, Throwable expected) {
-    Throwable actual = catchThrowable(config::build);
-    assertThat(actual).isInstanceOf(expected.getClass()).hasMessage(expected.getMessage());
+  void testCheck(OAuth2ClientConfig.Builder config, List<String> expected) {
+    assertThatIllegalArgumentException()
+        .isThrownBy(config::build)
+        .withMessage(
+            "OAuth2 authentication is missing some parameters and could not be initialized: "
+                + join(", ", expected));
   }
 
   static Stream<Arguments> testCheck() {
     return Stream.of(
         Arguments.of(
             OAuth2ClientConfig.builder().clientId("Alice").clientSecret("s3cr3t"),
-            new IllegalArgumentException("either issuer URL or token endpoint must be set")),
+            singletonList(
+                "either issuer URL or token endpoint must be set (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.token-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("http://example.com?query")),
-            new IllegalArgumentException("Token endpoint must not have a query part")),
+            singletonList(
+                "Token endpoint must not have a query part (nessie.authentication.oauth2.token-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("http://example.com#fragment")),
-            new IllegalArgumentException("Token endpoint must not have a fragment part")),
+            singletonList(
+                "Token endpoint must not have a fragment part (nessie.authentication.oauth2.token-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .authEndpoint(URI.create("http://example.com?query")),
-            new IllegalArgumentException("Authorization endpoint must not have a query part")),
+            singletonList(
+                "Authorization endpoint must not have a query part (nessie.authentication.oauth2.auth-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .authEndpoint(URI.create("http://example.com#fragment")),
-            new IllegalArgumentException("Authorization endpoint must not have a fragment part")),
+            singletonList(
+                "Authorization endpoint must not have a fragment part (nessie.authentication.oauth2.auth-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token")),
-            new IllegalArgumentException("client ID must not be empty")),
+            singletonList("client ID must not be empty (nessie.authentication.oauth2.client-id)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("")
                 .tokenEndpoint(URI.create("https://example.com/token")),
-            new IllegalArgumentException("client secret must not be empty")),
+            singletonList(
+                "client secret must not be empty (nessie.authentication.oauth2.client-secret)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.TOKEN_EXCHANGE),
-            new IllegalArgumentException(
-                "grant type must be either 'client_credentials', 'password', 'authorization_code' or 'device_code'")),
+            singletonList(
+                "grant type must be either 'client_credentials', 'password', 'authorization_code' or 'device_code' (nessie.authentication.oauth2.grant-type)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.PASSWORD),
-            new IllegalArgumentException("username must be set if grant type is 'password'")),
+            asList(
+                "username must be set if grant type is 'password' (nessie.authentication.oauth2.username)",
+                "password must be set if grant type is 'password' (nessie.authentication.oauth2.password)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -122,7 +138,9 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.PASSWORD)
                 .username(""),
-            new IllegalArgumentException("username must be set if grant type is 'password'")),
+            asList(
+                "username must be set if grant type is 'password' (nessie.authentication.oauth2.username)",
+                "password must be set if grant type is 'password' (nessie.authentication.oauth2.password)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -130,7 +148,8 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.PASSWORD)
                 .username("Alice"),
-            new IllegalArgumentException("password must be set if grant type is 'password'")),
+            singletonList(
+                "password must be set if grant type is 'password' (nessie.authentication.oauth2.password)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -139,15 +158,16 @@ class TestOAuth2ClientConfig {
                 .grantType(GrantType.PASSWORD)
                 .username("Alice")
                 .password(""),
-            new IllegalArgumentException("password must be set if grant type is 'password'")),
+            singletonList(
+                "password must be set if grant type is 'password' (nessie.authentication.oauth2.password)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.AUTHORIZATION_CODE),
-            new IllegalArgumentException(
-                "either issuer URL or authorization endpoint must be set if grant type is 'authorization_code'")),
+            singletonList(
+                "either issuer URL or authorization endpoint must be set if grant type is 'authorization_code' (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.auth-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -156,8 +176,8 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .authEndpoint(URI.create("http://example.com"))
                 .authorizationCodeFlowWebServerPort(-1),
-            new IllegalArgumentException(
-                "authorization code flow: web server port must be between 0 and 65535 (inclusive)")),
+            singletonList(
+                "authorization code flow: web server port must be between 0 and 65535 (inclusive) (nessie.authentication.oauth2.auth-code-flow.web-port)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -166,16 +186,16 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .authEndpoint(URI.create("http://example.com"))
                 .authorizationCodeFlowTimeout(Duration.ofSeconds(1)),
-            new IllegalArgumentException(
-                "authorization code flow: timeout must be greater than or equal to PT10S")),
+            singletonList(
+                "authorization code flow: timeout must be greater than or equal to PT30S (nessie.authentication.oauth2.auth-code-flow.timeout)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.DEVICE_CODE),
-            new IllegalArgumentException(
-                "either issuer URL or device authorization endpoint must be set if grant type is 'device_code'")),
+            singletonList(
+                "either issuer URL or device authorization endpoint must be set if grant type is 'device_code' (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.auth-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -184,8 +204,8 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .deviceAuthEndpoint(URI.create("http://example.com"))
                 .deviceCodeFlowTimeout(Duration.ofSeconds(1)),
-            new IllegalArgumentException(
-                "device code flow: timeout must be greater than or equal to PT10S")),
+            singletonList(
+                "device code flow: timeout must be greater than or equal to PT30S (nessie.authentication.oauth2.device-code-flow.timeout)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -194,24 +214,25 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .deviceAuthEndpoint(URI.create("http://example.com"))
                 .deviceCodeFlowPollInterval(Duration.ofSeconds(1)),
-            new IllegalArgumentException(
-                "device code flow: poll interval must be greater than or equal to PT5S")),
+            singletonList(
+                "device code flow: poll interval must be greater than or equal to PT5S (nessie.authentication.oauth2.device-code-flow.poll-interval)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .defaultAccessTokenLifespan(Duration.ofSeconds(2)),
-            new IllegalArgumentException(
-                "default token lifespan must be greater than or equal to PT10S")),
+            asList(
+                "default token lifespan must be greater than or equal to PT10S (nessie.authentication.oauth2.default-access-token-lifespan)",
+                "refresh safety window must be less than the default token lifespan (nessie.authentication.oauth2.refresh-safety-window/nessie.authentication.oauth2.default-access-token-lifespan)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .refreshSafetyWindow(Duration.ofMillis(100)),
-            new IllegalArgumentException(
-                "refresh safety window must be greater than or equal to PT1S")),
+            singletonList(
+                "refresh safety window must be greater than or equal to PT1S (nessie.authentication.oauth2.refresh-safety-window)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -219,23 +240,24 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .refreshSafetyWindow(Duration.ofMinutes(10))
                 .defaultAccessTokenLifespan(Duration.ofMinutes(5)),
-            new IllegalArgumentException(
-                "refresh safety window must be less than the default token lifespan")),
+            singletonList(
+                "refresh safety window must be less than the default token lifespan (nessie.authentication.oauth2.refresh-safety-window/nessie.authentication.oauth2.default-access-token-lifespan)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .preemptiveTokenRefreshIdleTimeout(Duration.ofMillis(100)),
-            new IllegalArgumentException(
-                "preemptive token refresh idle timeout must be greater than or equal to PT1S")),
+            singletonList(
+                "preemptive token refresh idle timeout must be greater than or equal to PT1S (nessie.authentication.oauth2.preemptive-token-refresh-idle-timeout)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .backgroundThreadIdleTimeout(Duration.ZERO),
-            new IllegalArgumentException("Core threads must have nonzero keep alive times")));
+            singletonList(
+                "background thread idle timeout must be greater than zero (nessie.authentication.oauth2.background-thread-idle-timeout)")));
   }
 
   @ParameterizedTest
@@ -280,7 +302,8 @@ class TestOAuth2ClientConfig {
                 CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN, "PT30S",
                 CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "test"),
             null,
-            new NullPointerException("client ID must not be null")),
+            new IllegalArgumentException(
+                "OAuth2 authentication is missing some parameters and could not be initialized: client ID must not be empty (nessie.authentication.oauth2.client-id)")),
         Arguments.of(
             ImmutableMap.of(
                 CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, "https://example.com/token",
@@ -289,7 +312,8 @@ class TestOAuth2ClientConfig {
                 CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN, "PT30S",
                 CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "test"),
             null,
-            new NullPointerException("client secret must not be null")),
+            new IllegalArgumentException(
+                "OAuth2 authentication is missing some parameters and could not be initialized: client secret must not be empty (nessie.authentication.oauth2.client-secret)")),
         Arguments.of(
             ImmutableMap.builder()
                 .put(CONF_NESSIE_OAUTH2_ISSUER_URL, "https://example.com/")
