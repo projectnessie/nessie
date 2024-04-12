@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -113,14 +114,23 @@ public class ResponseCheckFilter {
         JsonNode errorData = reader.readTree(capturing);
         try {
           error = reader.treeToValue(errorData, NessieError.class);
-        } catch (JsonProcessingException e) {
-
+        } catch (MismatchedInputException e) {
           // If the error payload is valid JSON, but does not represent a NessieError, it is likely
           // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
           // text to the caller for trouble-shooting.
           error =
               ImmutableNessieError.builder()
-                  .message(errorData.toString())
+                  .message(capturing.captured())
+                  .status(status.getCode())
+                  .reason(status.getReason())
+                  .build();
+        } catch (JsonProcessingException e) {
+          // If the error payload is valid JSON, but does not represent a NessieError, it is likely
+          // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
+          // text to the caller for trouble-shooting.
+          error =
+              ImmutableNessieError.builder()
+                  .message(capturing.captured())
                   .status(status.getCode())
                   .reason(status.getReason())
                   .clientProcessingException(e)
