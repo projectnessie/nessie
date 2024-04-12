@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,26 +113,29 @@ public class ResponseCheckFilter {
         JsonNode errorData = reader.readTree(capturing);
         try {
           error = reader.treeToValue(errorData, NessieError.class);
-        } catch (MismatchedInputException e) {
-          // If the error payload is valid JSON, but does not represent a NessieError, it is likely
-          // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
-          // text to the caller for trouble-shooting.
-          error =
-              ImmutableNessieError.builder()
-                  .message(capturing.captured())
-                  .status(status.getCode())
-                  .reason(status.getReason())
-                  .build();
         } catch (JsonProcessingException e) {
-          // If the error payload is valid JSON, but does not represent a NessieError, it is likely
-          // produced by Quarkus and contains the server-side logged error ID. Report the raw JSON
-          // text to the caller for trouble-shooting.
+          // The error payload is valid JSON (or an empty response), but does not represent a
+          // NessieError.
+          //
+          // This can happen when the endpoint is not a Nessie REST API endpoint, but for example an
+          // OAuth2 service.
+          //
+          // Report the captured source input just in case, but do not populate
+          // `clientProcessingException`, because that would put the Jackson exception stack trace
+          // in the message of the (later) thrown exception, which is likely to be displayed to
+          // users. Humans get confused when they see stack traces, even if the reason's legit, for
+          // example an authentication failure.
+          //
+          String cap = capturing.captured().trim();
           error =
               ImmutableNessieError.builder()
-                  .message(capturing.captured())
+                  .message(
+                      cap.isEmpty()
+                          ? "got empty response body from server"
+                          : ("Could not parse error object in response beginning with: "
+                              + capturing.captured()))
                   .status(status.getCode())
                   .reason(status.getReason())
-                  .clientProcessingException(e)
                   .build();
         }
       } catch (IOException e) {
