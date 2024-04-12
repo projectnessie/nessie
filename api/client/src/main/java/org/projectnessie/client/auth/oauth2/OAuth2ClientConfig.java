@@ -320,7 +320,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
           CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT,
           getAuthorizationCodeFlowTimeout().compareTo(getMinAuthorizationCodeFlowTimeout()) >= 0,
           "authorization code flow: timeout must be greater than or equal to %s",
-          Duration.ofSeconds(10));
+          getMinAuthorizationCodeFlowTimeout());
     }
     if (grantType == GrantType.DEVICE_CODE) {
       check(
@@ -334,13 +334,13 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
           CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
           getDeviceCodeFlowPollInterval().compareTo(getMinDeviceCodeFlowPollInterval()) >= 0,
           "device code flow: poll interval must be greater than or equal to %s",
-          Duration.ofSeconds(5));
+          getMinDeviceCodeFlowPollInterval());
       check(
           violations,
           CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT,
           getDeviceCodeFlowTimeout().compareTo(getMinDeviceCodeFlowTimeout()) >= 0,
           "device code flow: timeout must be greater than or equal to %s",
-          Duration.ofSeconds(10));
+          getMinDeviceCodeFlowTimeout());
     }
     check(
         violations,

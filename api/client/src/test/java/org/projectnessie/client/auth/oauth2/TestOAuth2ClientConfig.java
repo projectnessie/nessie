@@ -187,7 +187,7 @@ class TestOAuth2ClientConfig {
                 .authEndpoint(URI.create("http://example.com"))
                 .authorizationCodeFlowTimeout(Duration.ofSeconds(1)),
             singletonList(
-                "authorization code flow: timeout must be greater than or equal to PT10S (nessie.authentication.oauth2.auth-code-flow.timeout)")),
+                "authorization code flow: timeout must be greater than or equal to PT30S (nessie.authentication.oauth2.auth-code-flow.timeout)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -205,7 +205,7 @@ class TestOAuth2ClientConfig {
                 .deviceAuthEndpoint(URI.create("http://example.com"))
                 .deviceCodeFlowTimeout(Duration.ofSeconds(1)),
             singletonList(
-                "device code flow: timeout must be greater than or equal to PT10S (nessie.authentication.oauth2.device-code-flow.timeout)")),
+                "device code flow: timeout must be greater than or equal to PT30S (nessie.authentication.oauth2.device-code-flow.timeout)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
