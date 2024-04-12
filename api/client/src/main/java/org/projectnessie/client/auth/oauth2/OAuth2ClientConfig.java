@@ -246,7 +246,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         "client secret must not be empty");
     check(
         violations,
-        CONF_NESSIE_OAUTH2_ISSUER_URL + "/" + CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
+        CONF_NESSIE_OAUTH2_ISSUER_URL + " / " + CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,
         getIssuerUrl().isPresent() || getTokenEndpoint().isPresent(),
         "either issuer URL or token endpoint must be set");
     if (getTokenEndpoint().isPresent()) {
@@ -303,7 +303,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     if (grantType == GrantType.AUTHORIZATION_CODE) {
       check(
           violations,
-          CONF_NESSIE_OAUTH2_ISSUER_URL + "/" + CONF_NESSIE_OAUTH2_AUTH_ENDPOINT,
+          CONF_NESSIE_OAUTH2_ISSUER_URL + " / " + CONF_NESSIE_OAUTH2_AUTH_ENDPOINT,
           getIssuerUrl().isPresent() || getAuthEndpoint().isPresent(),
           "either issuer URL or authorization endpoint must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
@@ -325,7 +325,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     if (grantType == GrantType.DEVICE_CODE) {
       check(
           violations,
-          CONF_NESSIE_OAUTH2_ISSUER_URL + "/" + CONF_NESSIE_OAUTH2_AUTH_ENDPOINT,
+          CONF_NESSIE_OAUTH2_ISSUER_URL + " / " + CONF_NESSIE_OAUTH2_AUTH_ENDPOINT,
           getIssuerUrl().isPresent() || getDeviceAuthEndpoint().isPresent(),
           "either issuer URL or device authorization endpoint must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE);
@@ -368,8 +368,6 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
             >= 0,
         "preemptive token refresh idle timeout must be greater than or equal to %s",
         getMinPreemptiveTokenRefreshIdleTimeout());
-
-    // This check is rather useless, because the executor is created
     check(
         violations,
         CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT,

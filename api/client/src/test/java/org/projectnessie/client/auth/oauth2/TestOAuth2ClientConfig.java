@@ -70,7 +70,7 @@ class TestOAuth2ClientConfig {
         Arguments.of(
             OAuth2ClientConfig.builder().clientId("Alice").clientSecret("s3cr3t"),
             singletonList(
-                "either issuer URL or token endpoint must be set (nessie.authentication.oauth2.issuer-url/nessie.authentication.oauth2.token-endpoint)")),
+                "either issuer URL or token endpoint must be set (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.token-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -167,7 +167,7 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.AUTHORIZATION_CODE),
             singletonList(
-                "either issuer URL or authorization endpoint must be set if grant type is 'authorization_code' (nessie.authentication.oauth2.issuer-url/nessie.authentication.oauth2.auth-endpoint)")),
+                "either issuer URL or authorization endpoint must be set if grant type is 'authorization_code' (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.auth-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -195,7 +195,7 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.DEVICE_CODE),
             singletonList(
-                "either issuer URL or device authorization endpoint must be set if grant type is 'device_code' (nessie.authentication.oauth2.issuer-url/nessie.authentication.oauth2.auth-endpoint)")),
+                "either issuer URL or device authorization endpoint must be set if grant type is 'device_code' (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.auth-endpoint)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
