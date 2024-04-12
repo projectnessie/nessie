@@ -19,15 +19,9 @@ theme:
   features:
     - navigation.tabs
     - navigation.tabs.sticky
-#    - navigation.expand
-#    - navigation.instant
     - navigation.indexes
-#    - navigation.path
-#    - navigation.sections
     - navigation.top
     - navigation.tracking
-#    - toc.integrate
-#    - offline
     - search.suggest
     - search.highlight
     - content.tabs.link
@@ -50,21 +44,11 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
     - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/projectnessie/nessie
+      link: ghcr.io/projectnessie/nessie
     - icon: fontawesome/brands/github
       link: https://github.com/projectnessie/nessie
     - icon: fontawesome/brands/youtube
       link: https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ?view_as=subscriber
-#  consent:
-#    title: Cookie consent
-#    description: >-
-#      We use cookies to recognize your repeated visits and preferences, as well
-#      as to measure the effectiveness of our documentation and whether users
-#      find what they're searching for. With your consent, you're helping us to
-#      make our documentation better.
-#    actions:
-#      - accept
-#      - manage
 
 plugins:
   - search

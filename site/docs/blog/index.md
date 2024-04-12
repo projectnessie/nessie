@@ -1,6 +1,7 @@
 ---
+title: "Blog"
 hide:
   - navigation
 ---
 
-# Blog
+# Nessie Blog
