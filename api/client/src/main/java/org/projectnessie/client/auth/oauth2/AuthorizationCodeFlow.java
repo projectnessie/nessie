@@ -161,7 +161,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     } catch (ExecutionException e) {
       abort();
       Throwable cause = e.getCause();
-      LOGGER.error("Authentication failed: {}", cause.getMessage());
+      LOGGER.error("Authentication failed: {}", cause.toString());
       if (cause instanceof HttpClientException) {
         throw (HttpClientException) cause;
       }
