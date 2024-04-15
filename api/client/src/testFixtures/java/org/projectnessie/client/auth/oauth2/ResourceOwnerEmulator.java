@@ -31,6 +31,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -81,6 +82,11 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private static final Pattern HIDDEN_CODE_PATTERN =
       Pattern.compile("<input type=\"hidden\" name=\"code\" value=\"([^\"]+)\">");
 
+  private static final Pattern USER_CODE_PATTERN =
+      Pattern.compile(Pattern.quote(DeviceCodeFlow.MSG_PREFIX) + "[A-Z]{4}-[A-Z]{4}");
+
+  private static final AtomicInteger COUNTER = new AtomicInteger(1);
+
   private final GrantType grantType;
   private final String username;
   private final String password;
@@ -88,9 +94,12 @@ public class ResourceOwnerEmulator implements AutoCloseable {
 
   private final PipedOutputStream pipeOut = new PipedOutputStream();
   private final PipedInputStream pipeIn = new PipedInputStream(pipeOut);
-  private final PrintStream consoleOut = new PrintStream(pipeOut);
+  private final PrintStream consoleOut = new PrintStream(pipeOut, true, "UTF-8");
   private final BufferedReader consoleIn = new BufferedReader(new InputStreamReader(pipeIn, UTF_8));
   private final PrintStream standardOut;
+
+  private URL authUrl;
+  private String userCode;
 
   private volatile boolean replaceSystemOut;
   private volatile boolean closing;
@@ -112,10 +121,9 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     this.grantType = grantType;
     this.username = username;
     this.password = password;
-    AtomicInteger counter = new AtomicInteger(1);
     executor =
         Executors.newFixedThreadPool(
-            2, r -> new Thread(r, "ResourceOwnerEmulator-" + counter.getAndIncrement()));
+            2, r -> new Thread(r, "ResourceOwnerEmulator-" + COUNTER.getAndIncrement()));
     standardOut = System.out;
     executor.submit(this::readConsole);
   }
@@ -157,30 +165,33 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   private void readConsole() {
     try {
       String line;
-      URL authUrl = null;
       while ((line = consoleIn.readLine()) != null) {
         standardOut.println(line);
-        if (line.startsWith(AuthorizationCodeFlow.MSG_PREFIX) && line.contains("http")) {
-          authUrl = new URL(line.substring(line.indexOf("http")));
-          Consumer<URL> listener = authUrlListener;
-          if (listener != null) {
-            listener.accept(authUrl);
-          }
-          if (grantType == GrantType.AUTHORIZATION_CODE) {
-            URL finalAuthUrl = authUrl;
-            executor.submit(() -> triggerAuthorizationCodeFlow(finalAuthUrl));
-          }
-        }
-        if (line.matches(Pattern.quote(DeviceCodeFlow.MSG_PREFIX) + "[A-Z]{4}-[A-Z]{4}")) {
-          URL finalAuthUrl = authUrl;
-          assertThat(finalAuthUrl).isNotNull();
-          String userCode = line.substring(DeviceCodeFlow.MSG_PREFIX.length());
-          executor.submit(() -> triggerDeviceCodeFlow(finalAuthUrl, userCode));
+        standardOut.flush();
+        switch (grantType) {
+          case AUTHORIZATION_CODE:
+            if (line.startsWith(AuthorizationCodeFlow.MSG_PREFIX) && line.contains("http")) {
+              authUrl = extractAuthUrl(line);
+              executor.submit(this::triggerAuthorizationCodeFlow);
+            }
+            break;
+          case DEVICE_CODE:
+            if (line.startsWith(DeviceCodeFlow.MSG_PREFIX) && line.contains("http")) {
+              authUrl = extractAuthUrl(line);
+            }
+            if (USER_CODE_PATTERN.matcher(line).matches()) {
+              assertThat(authUrl).isNotNull();
+              userCode = line.substring(DeviceCodeFlow.MSG_PREFIX.length());
+              executor.submit(this::triggerDeviceCodeFlow);
+            }
+            break;
+          default:
+            throw new IllegalStateException("Unsupported grant type: " + grantType);
         }
       }
     } catch (IOException ignored) {
-      // Expected when closing the console
-    } catch (Exception | AssertionError t) {
+      // Expected: consoleIn.readLine() throws an IOException when closing
+    } catch (RuntimeException | AssertionError t) {
       recordFailure(t);
     }
   }
@@ -189,17 +200,17 @@ public class ResourceOwnerEmulator implements AutoCloseable {
    * Emulate user browsing to the authorization URL printed on the console, then following the
    * instructions and optionally logging in with their credentials.
    */
-  private void triggerAuthorizationCodeFlow(URL initialUrl) {
+  private void triggerAuthorizationCodeFlow() {
     try {
       LOGGER.info("Starting authorization code flow.");
       Set<String> cookies = new HashSet<>();
       URL callbackUrl;
       if (username == null || password == null) {
-        HttpURLConnection conn = (HttpURLConnection) initialUrl.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) authUrl.openConnection();
         callbackUrl = readRedirectUrl(conn, cookies);
         conn.disconnect();
       } else {
-        callbackUrl = login(initialUrl, cookies);
+        callbackUrl = login(authUrl, cookies);
       }
       invokeCallbackUrl(callbackUrl);
       LOGGER.info("Authorization code flow completed.");
@@ -216,11 +227,11 @@ public class ResourceOwnerEmulator implements AutoCloseable {
    * Emulate user browsing to the authorization URL printed on the console, then following the
    * instructions, entering the user code and optionally logging in with their credentials.
    */
-  private void triggerDeviceCodeFlow(URL initialUrl, String userCode) {
+  private void triggerDeviceCodeFlow() {
     try {
       LOGGER.info("Starting device code flow.");
       Set<String> cookies = new HashSet<>();
-      URL loginPageUrl = enterUserCode(initialUrl, userCode, cookies);
+      URL loginPageUrl = enterUserCode(authUrl, userCode, cookies);
       if (loginPageUrl != null) {
         URL consentPageUrl = login(loginPageUrl, cookies);
         authorizeDevice(consentPageUrl, cookies);
@@ -235,8 +246,23 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     }
   }
 
+  private URL extractAuthUrl(String line) {
+    URL authUrl;
+    try {
+      authUrl = new URL(line.substring(line.indexOf("http")));
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+    Consumer<URL> listener = authUrlListener;
+    if (listener != null) {
+      listener.accept(authUrl);
+    }
+    return authUrl;
+  }
+
   /** Emulate user logging in to the authorization server. */
   private URL login(URL loginPageUrl, Set<String> cookies) throws IOException {
+    LOGGER.info("Performing login...");
     // receive login page
     HttpURLConnection loginPageConn = openConnection(loginPageUrl);
     loginPageConn.setRequestMethod("GET");
@@ -263,6 +289,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
 
   /** Emulate browser being redirected to callback URL. */
   private void invokeCallbackUrl(URL callbackUrl) throws IOException {
+    LOGGER.info("Opening callback URL...");
     assertThat(callbackUrl)
         .hasPath(AuthorizationCodeFlow.CONTEXT_PATH)
         .hasParameter("code")
@@ -291,6 +318,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
   /** Emulate user entering provided user code on the authorization server. */
   private URL enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
       throws IOException {
+    LOGGER.info("Entering user code...");
     // receive device code page
     HttpURLConnection codePageConn = openConnection(codePageUrl);
     codePageConn.setRequestMethod("GET");
@@ -317,6 +345,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
 
   /** Emulate user consenting to authorize device on the authorization server. */
   private void authorizeDevice(URL consentPageUrl, Set<String> cookies) throws IOException {
+    LOGGER.info("Authorizing device...");
     // receive consent page
     HttpURLConnection consentPageConn = openConnection(consentPageUrl);
     consentPageConn.setRequestMethod("GET");
@@ -442,6 +471,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     String location = conn.getHeaderField("Location");
     assertThat(location).isNotNull();
     readCookies(conn, cookies);
+    LOGGER.info("Redirected to: {}", location);
     return new URL(location);
   }
 

@@ -64,9 +64,8 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private final URI authorizationUri;
   private final Duration flowTimeout;
 
-  private final CompletableFuture<HttpExchange> requestFuture = new CompletableFuture<>();
+  private final CompletableFuture<HttpExchange> redirectUriFuture = new CompletableFuture<>();
   private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
-  private final CompletableFuture<String> authCodeFuture;
   private final CompletableFuture<Tokens> tokensFuture;
 
   private final Phaser inflightRequestsPhaser = new Phaser(1);
@@ -79,8 +78,11 @@ class AuthorizationCodeFlow implements AutoCloseable {
     this.config = config;
     this.console = console;
     this.flowTimeout = config.getAuthorizationCodeFlowTimeout();
-    authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
-    tokensFuture = authCodeFuture.thenApply(this::fetchNewTokens);
+    tokensFuture =
+        redirectUriFuture
+            .thenApply(this::extractAuthorizationCode)
+            .thenApply(this::fetchNewTokens)
+            .whenComplete(this::log);
     closeFuture.thenRun(this::doClose);
     server =
         createServer(config.getAuthorizationCodeFlowWebServerPort().orElse(0), this::doRequest);
@@ -114,8 +116,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private void abort() {
     tokensFuture.cancel(true);
-    authCodeFuture.cancel(true);
-    requestFuture.cancel(true);
+    redirectUriFuture.cancel(true);
   }
 
   public Tokens fetchNewTokens() {
@@ -138,7 +139,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     } catch (ExecutionException e) {
       abort();
       Throwable cause = e.getCause();
-      LOGGER.error("Authentication failed: " + cause.getMessage());
+      LOGGER.error("Authentication failed: {}", cause.getMessage());
       if (cause instanceof HttpClientException) {
         throw (HttpClientException) cause;
       }
@@ -149,7 +150,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private void doRequest(HttpExchange exchange) {
     LOGGER.debug("Authorization Code Flow: received request");
     inflightRequestsPhaser.register();
-    requestFuture.complete(exchange);
+    redirectUriFuture.complete(exchange);
     tokensFuture
         .handle((tokens, error) -> doResponse(exchange, error))
         .whenComplete((v, error) -> exchange.close())
@@ -157,7 +158,9 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   private Void doResponse(HttpExchange exchange, Throwable error) {
-    LOGGER.debug("Authorization Code Flow: sending response");
+    LOGGER.debug(
+        "Authorization Code Flow: sending response, error: {}",
+        error == null ? "none" : error.toString());
     try {
       if (error == null) {
         writeResponse(exchange, HTTP_OK, HTML_TEMPLATE_OK);
@@ -171,6 +174,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   private String extractAuthorizationCode(HttpExchange exchange) {
+    LOGGER.debug("Authorization Code Flow: extracting code");
     Map<String, String> params = HttpUtils.parseQueryString(exchange.getRequestURI().getQuery());
     if (!state.equals(params.get("state"))) {
       throw new IllegalArgumentException("Missing or invalid state");
@@ -197,6 +201,16 @@ class AuthorizationCodeFlow implements AutoCloseable {
     Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
+  }
+
+  private void log(Tokens tokens, Throwable error) {
+    if (LOGGER.isDebugEnabled()) {
+      if (error == null) {
+        LOGGER.debug("Authorization Code Flow: tokens received");
+      } else {
+        LOGGER.debug("Authorization Code Flow: error fetching tokens: {}", error.toString());
+      }
+    }
   }
 
   private static HttpServer createServer(int port, HttpHandler handler) {
