@@ -169,16 +169,24 @@ class AuthorizationCodeFlow implements AutoCloseable {
     }
   }
 
+  /**
+   * Handle the incoming HTTP request to the redirect URI. Since we are using the default executor,
+   * which is a synchronous one, the very first invocation of this method will block the HTTP
+   * server's dispatcher thread, until the authorization code is extracted and exchanged for tokens.
+   * Subsequent requests will be processed immediately. The response to the request will be delayed
+   * until the tokens are received.
+   */
   private void doRequest(HttpExchange exchange) {
     LOGGER.debug("Authorization Code Flow: received request");
     inflightRequestsPhaser.register();
-    redirectUriFuture.complete(exchange);
+    redirectUriFuture.complete(exchange); // will trigger the token fetching the first time
     tokensFuture
         .handle((tokens, error) -> doResponse(exchange, error))
         .whenComplete((v, error) -> exchange.close())
         .whenComplete((v, error) -> inflightRequestsPhaser.arriveAndDeregister());
   }
 
+  /** Send the response to the incoming HTTP request to the redirect URI. */
   private Void doResponse(HttpExchange exchange, Throwable error) {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
