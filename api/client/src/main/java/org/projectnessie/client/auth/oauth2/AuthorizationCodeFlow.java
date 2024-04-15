@@ -64,10 +64,32 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private final URI authorizationUri;
   private final Duration flowTimeout;
 
+  /**
+   * A future that will complete when the redirect URI is called for the first time. It will then
+   * trigger the code extraction then the token fetching. Subsequent calls to the redirect URI will
+   * not trigger any action. Note that the response to the redirect URI will be delayed until the
+   * tokens are received.
+   */
   private final CompletableFuture<HttpExchange> redirectUriFuture = new CompletableFuture<>();
-  private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+
+  /**
+   * A future that will complete when the tokens are received in exchange for the authorization
+   * code. Its completion will release all pending responses to the redirect URI. If the redirect
+   * URI is called again after the tokens are received, the response will be immediate.
+   */
   private final CompletableFuture<Tokens> tokensFuture;
 
+  /**
+   * A future that will complete when the close method is called. It is used only to avoid closing
+   * resources multiple times. Its completion stops the internal HTTP server.
+   */
+  private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+
+  /**
+   * A phaser that will prevent the close() method from returning until all inflight requests have
+   * been processed. It is used to avoid closing the server prematurely and leaving the user's
+   * browser with an aborted HTTP request.
+   */
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
   AuthorizationCodeFlow(OAuth2ClientConfig config) {
@@ -158,9 +180,11 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   private Void doResponse(HttpExchange exchange, Throwable error) {
-    LOGGER.debug(
-        "Authorization Code Flow: sending response, error: {}",
-        error == null ? "none" : error.toString());
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "Authorization Code Flow: sending response, error: {}",
+          error == null ? "none" : error.toString());
+    }
     try {
       if (error == null) {
         writeResponse(exchange, HTTP_OK, HTML_TEMPLATE_OK);
