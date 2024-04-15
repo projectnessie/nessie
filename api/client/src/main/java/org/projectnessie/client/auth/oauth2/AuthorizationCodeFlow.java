@@ -80,15 +80,15 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private final CompletableFuture<Tokens> tokensFuture;
 
   /**
-   * A future that will complete when the close method is called. It is used only to avoid closing
-   * resources multiple times. Its completion stops the internal HTTP server.
+   * A future that will complete when the close() method is called. It is used merely to avoid
+   * closing resources multiple times. Its completion stops the internal HTTP server.
    */
   private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
 
   /**
-   * A phaser that will prevent the close() method from returning until all inflight requests have
-   * been processed. It is used to avoid closing the server prematurely and leaving the user's
-   * browser with an aborted HTTP request.
+   * A phaser that will delay closing the internal HTTP server until all inflight requests have been
+   * processed. It is used to avoid closing the server prematurely and leaving the user's browser
+   * with an aborted HTTP request.
    */
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
