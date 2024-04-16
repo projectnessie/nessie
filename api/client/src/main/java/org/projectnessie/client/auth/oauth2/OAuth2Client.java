@@ -82,7 +82,6 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .getExecutor()
             .orElseGet(
                 () -> new OAuth2TokenRefreshExecutor(config.getBackgroundThreadIdleTimeout()));
-    lastAccess = config.getClock().get();
     currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), this.executor);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
@@ -128,6 +127,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   @Override
   public void start() {
+    lastAccess = config.getClock().get();
     started.complete(null);
   }
 
@@ -158,6 +158,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   private void wakeUp(Instant now) {
+    if (closing.get()) {
+      return;
+    }
     LOGGER.debug("Waking up...");
     Tokens currentTokens = getCurrentTokensIfAvailable();
     Duration delay = nextTokenRefresh(currentTokens, now, Duration.ZERO);
@@ -171,6 +174,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   private void maybeScheduleTokensRenewal(Tokens currentTokens) {
+    if (closing.get()) {
+      return;
+    }
     Instant now = config.getClock().get();
     if (Duration.between(lastAccess, now).compareTo(config.getPreemptiveTokenRefreshIdleTimeout())
         > 0) {
@@ -215,8 +221,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private void log(Throwable error) {
     if (error != null) {
-      boolean tokensStageCancelled = error instanceof CancellationException && closing.get();
-      if (tokensStageCancelled) {
+      if (closing.get()) {
         return;
       }
       if (error instanceof CompletionException) {
@@ -250,10 +255,14 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       case AUTHORIZATION_CODE:
         try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config)) {
           return flow.fetchNewTokens();
+        } finally {
+          lastAccess = config.getClock().get();
         }
       case DEVICE_CODE:
         try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
           return flow.fetchNewTokens();
+        } finally {
+          lastAccess = config.getClock().get();
         }
       default:
         throw new IllegalStateException("Unsupported grant type: " + config.getGrantType());
