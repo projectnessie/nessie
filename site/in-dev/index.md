@@ -25,6 +25,25 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     docker run -p 19120:19120 quay.io/projectnessie/nessie-unstable
     ```
 
+## Nessie GC Tool as Docker image
+
+Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+
+**The image tags are updated twice per day during weekdays.**
+
+=== "GitHub Container Registry"
+    [![ghcr.io GitHub Container Registry](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=ghcr.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://github.com/projectnessie/nessie/pkgs/container/nessie-gc)
+    ```bash
+    docker pull ghcr.io/projectnessie/nessie-gc-unstable
+    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc-unstable --help
+    ```
+=== "Quay.io"
+    [![quay.io Quay](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie-gc?tab=tags)
+    ```bash
+    docker pull quay.io/projectnessie/nessie-gc-unstable
+    docker run -p 19120:19120 quay.io/projectnessie/nessie-gc-unstable --help
+    ```
+
 ### Build from source
 
 See [projectnessie/nessie GitHub](https://github.com/projectnessie/nessie) for build instructions.

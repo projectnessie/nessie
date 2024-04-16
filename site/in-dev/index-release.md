@@ -43,6 +43,23 @@ curl -o nessie-quarkus-::NESSIE_VERSION::-runner.jar \
 java -jar nessie-quarkus-::NESSIE_VERSION::-runner.jar
 ```
 
+## Nessie GC Tool as Docker image
+
+Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+
+=== "GitHub Container Registry"
+    [![ghcr.io GitHub Container Registry](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=ghcr.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://github.com/projectnessie/nessie/pkgs/container/nessie-gc)
+    ```bash
+    docker pull ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION::
+    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: --help
+    ```
+=== "Quay.io"
+    [![quay.io Quay](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie-gc?tab=tags)
+    ```bash
+    docker pull quay.io/projectnessie/nessie-gc:::NESSIE_VERSION::
+    docker run -p 19120:19120 quay.io/projectnessie/nessie-gc:::NESSIE_VERSION:: --help
+    ```
+
 ### Nessie GC Tool as a standalone uber jar
 
 Requires Java 11, Java 17 recommended.
