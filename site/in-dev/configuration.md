@@ -2,7 +2,7 @@
 title: "Server Configuration"
 ---
 
-# Configuration
+# Server Configuration
 
 The Nessie server is configurable via properties as listed in
 the [application.properties](https://github.com/projectnessie/nessie/blob/main/servers/quarkus-server/src/main/resources/application.properties)

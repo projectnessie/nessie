@@ -2,7 +2,7 @@
 title: "Client Configuration"
 ---
 
-# Configuration and authentication in Tools
+# Client Configuration
 
 When Nessie is integrated into a broader data processing environment, authentication settings need to be provided in
 a way specific to the tool used.
