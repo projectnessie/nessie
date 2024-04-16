@@ -171,7 +171,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   @Value.Lazy
   Optional<HttpAuthentication> getBasicAuthentication() {
     return getClientSecret()
-        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getStringAndClear()));
+        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()));
   }
 
   /**
@@ -189,6 +189,11 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .setDisableCompression(true)
         .addResponseFilter(this::checkErrorResponse)
         .build();
+  }
+
+  void clearSecrets() {
+    getClientSecret().ifPresent(Secret::clear);
+    getPassword().ifPresent(Secret::clear);
   }
 
   private void checkErrorResponse(ResponseContext responseContext) {

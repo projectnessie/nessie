@@ -21,14 +21,46 @@ import java.util.Locale;
 public enum GrantType {
 
   // initial grant types
-  CLIENT_CREDENTIALS("client_credentials"),
-  PASSWORD("password"),
-  AUTHORIZATION_CODE("authorization_code"),
-  DEVICE_CODE("urn:ietf:params:oauth:grant-type:device_code"),
+
+  CLIENT_CREDENTIALS("client_credentials") {
+    @Override
+    Flow newFlow(OAuth2ClientConfig config) {
+      return new ClientCredentialsFlow(config);
+    }
+  },
+  PASSWORD("password") {
+    @Override
+    Flow newFlow(OAuth2ClientConfig config) {
+      return new ResourceOwnerPasswordFlow(config);
+    }
+  },
+  AUTHORIZATION_CODE("authorization_code") {
+    @Override
+    Flow newFlow(OAuth2ClientConfig config) {
+      return new AuthorizationCodeFlow(config);
+    }
+  },
+  DEVICE_CODE("urn:ietf:params:oauth:grant-type:device_code") {
+    @Override
+    Flow newFlow(OAuth2ClientConfig config) {
+      return new DeviceCodeFlow(config);
+    }
+  },
 
   // grant types for refreshing tokens (cannot be used for initial token acquisition)
-  REFRESH_TOKEN("refresh_token"),
-  TOKEN_EXCHANGE("urn:ietf:params:oauth:grant-type:token-exchange"),
+
+  REFRESH_TOKEN("refresh_token") {
+    @Override
+    Flow newFlow(OAuth2ClientConfig config) {
+      return new RefreshTokensFlow(config);
+    }
+  },
+  TOKEN_EXCHANGE("urn:ietf:params:oauth:grant-type:token-exchange") {
+    @Override
+    Flow newFlow(OAuth2ClientConfig config) {
+      return new TokenExchangeFlow(config);
+    }
+  },
   ;
 
   private final String canonicalName;
@@ -50,5 +82,11 @@ public enum GrantType {
       }
     }
     throw new IllegalArgumentException("Unknown grant type: " + name);
+  }
+
+  abstract Flow newFlow(OAuth2ClientConfig config);
+
+  public boolean requiresUserInteraction() {
+    return this == AUTHORIZATION_CODE || this == DEVICE_CODE;
   }
 }

@@ -40,6 +40,8 @@ interface TokensExchangeResponse extends TokensResponseBase {
    * representation of the issued security token.
    */
   @JsonProperty("issued_token_type")
+  // This is a required field, but Keycloak does not return it for OIDC clients, only for SAML
+  // clients.
   @Nullable
   URI getIssuedTokenType();
 }

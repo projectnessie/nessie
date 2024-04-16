@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import static java.time.Duration.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.entry;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,7 +39,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.assertj.core.api.SoftAssertions;
@@ -49,9 +47,6 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.BaseTestHttpClient;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.util.HttpTestServer;
@@ -396,7 +391,7 @@ class TestOAuth2Client {
           AuthorizationCodeFlow flow =
               new AuthorizationCodeFlow(config, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
-        Tokens tokens = flow.fetchNewTokens();
+        Tokens tokens = flow.fetchNewTokens(null);
         checkInitialResponse((TokensResponseBase) tokens, false);
       }
     }
@@ -416,7 +411,7 @@ class TestOAuth2Client {
 
       try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config)) {
 
-        soft.assertThatThrownBy(flow::fetchNewTokens)
+        soft.assertThatThrownBy(() -> flow.fetchNewTokens(null))
             .hasMessageContaining("Timed out waiting waiting for authorization code")
             .hasCauseInstanceOf(TimeoutException.class);
       }
@@ -438,7 +433,7 @@ class TestOAuth2Client {
       try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
           DeviceCodeFlow flow = new DeviceCodeFlow(config, resourceOwner.getConsoleOut())) {
         resourceOwner.setErrorListener(e -> flow.close());
-        Tokens tokens = flow.fetchNewTokens();
+        Tokens tokens = flow.fetchNewTokens(null);
         checkInitialResponse((TokensResponseBase) tokens, false);
       }
     }
@@ -458,7 +453,7 @@ class TestOAuth2Client {
 
       try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
 
-        soft.assertThatThrownBy(flow::fetchNewTokens)
+        soft.assertThatThrownBy(() -> flow.fetchNewTokens(null))
             .hasMessageContaining("Timed out waiting for user to authorize device")
             .hasCauseInstanceOf(TimeoutException.class);
       }
@@ -491,7 +486,7 @@ class TestOAuth2Client {
       try (OAuth2Client client = new OAuth2Client(config)) {
         Tokens currentTokens = getClientCredentialsTokensResponse();
         TokensExchangeResponse tokens =
-            ((TokensExchangeResponse) client.exchangeTokens(currentTokens));
+            ((TokensExchangeResponse) client.refreshTokens(currentTokens));
         checkExchangeResponse(tokens);
       }
     }
@@ -510,7 +505,7 @@ class TestOAuth2Client {
                 .withRefreshTokenExpirationTime(now.minus(Duration.ofSeconds(1)));
 
         soft.assertThatThrownBy(() -> client.refreshTokens(currentTokens))
-            .isInstanceOf(OAuth2Client.MustFetchNewTokensException.class)
+            .isInstanceOf(MustFetchNewTokensException.class)
             .hasMessage("Refresh token is about to expire");
       }
     }
@@ -526,8 +521,8 @@ class TestOAuth2Client {
       try (OAuth2Client client = new OAuth2Client(config)) {
         Tokens currentTokens = getClientCredentialsTokensResponse();
 
-        soft.assertThatThrownBy(() -> client.exchangeTokens(currentTokens))
-            .isInstanceOf(OAuth2Client.MustFetchNewTokensException.class)
+        soft.assertThatThrownBy(() -> client.refreshTokens(currentTokens))
+            .isInstanceOf(MustFetchNewTokensException.class)
             .hasMessage("Token exchange is disabled");
       }
     }
@@ -552,95 +547,6 @@ class TestOAuth2Client {
                 });
       }
     }
-  }
-
-  @ParameterizedTest
-  @MethodSource
-  void testTokenExpirationTime(
-      Instant now, Token token, Duration defaultLifespan, Instant expected) {
-    Instant expirationTime = OAuth2Client.tokenExpirationTime(now, token, defaultLifespan);
-    assertThat(expirationTime).isEqualTo(expected);
-  }
-
-  static Stream<Arguments> testTokenExpirationTime() {
-    Instant now = Instant.now();
-    Duration defaultLifespan = Duration.ofHours(1);
-    Instant customExpirationTime = now.plus(Duration.ofMinutes(1));
-    return Stream.of(
-        // expiration time from the token response => custom expiration time
-        Arguments.of(
-            now,
-            ImmutableRefreshToken.builder()
-                .payload("access-initial")
-                .expirationTime(customExpirationTime)
-                .build(),
-            defaultLifespan,
-            customExpirationTime),
-        // no expiration time in the response, token is a JWT, exp claim present => exp claim
-        Arguments.of(
-            now,
-            ImmutableRefreshToken.builder().payload(TestJwtToken.JWT_NON_EMPTY).build(),
-            defaultLifespan,
-            TestJwtToken.JWT_EXP_CLAIM),
-        // no expiration time in the response, token is a JWT, but no exp claim => default lifespan
-        Arguments.of(
-            now,
-            ImmutableRefreshToken.builder().payload(TestJwtToken.JWT_EMPTY).build(),
-            defaultLifespan,
-            now.plus(defaultLifespan)));
-  }
-
-  @ParameterizedTest
-  @MethodSource
-  void testShortestDelay(
-      Instant now,
-      Instant accessExp,
-      Instant refreshExp,
-      Duration safetyWindow,
-      Duration minRefreshDelay,
-      Duration expected) {
-    Duration actual =
-        OAuth2Client.shortestDelay(now, accessExp, refreshExp, safetyWindow, minRefreshDelay);
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  static Stream<Arguments> testShortestDelay() {
-    Instant now = Instant.now();
-    Duration oneMinute = Duration.ofMinutes(1);
-    Duration thirtySeconds = Duration.ofSeconds(30);
-    Duration defaultWindow = Duration.ofSeconds(10);
-    Duration oneSecond = Duration.ofSeconds(1);
-    return Stream.of(
-        // refresh token < access token
-        Arguments.of(
-            now,
-            now.plus(oneMinute),
-            now.plus(thirtySeconds),
-            defaultWindow,
-            oneSecond,
-            thirtySeconds.minus(defaultWindow)),
-        // refresh token > access token
-        Arguments.of(
-            now,
-            now.plus(thirtySeconds),
-            now.plus(oneMinute),
-            defaultWindow,
-            oneSecond,
-            thirtySeconds.minus(defaultWindow)),
-        // access token already expired: MIN_REFRESH_DELAY
-        Arguments.of(
-            now, now.minus(oneMinute), now.plus(oneMinute), defaultWindow, oneSecond, oneSecond),
-        // refresh token already expired: MIN_REFRESH_DELAY
-        Arguments.of(
-            now, now.plus(oneMinute), now.minus(oneMinute), defaultWindow, oneSecond, oneSecond),
-        // expirationTime - safety window > MIN_REFRESH_DELAY
-        Arguments.of(
-            now, now.plus(oneMinute), now.plus(oneMinute), thirtySeconds, oneSecond, thirtySeconds),
-        // expirationTime - safety window <= MIN_REFRESH_DELAY
-        Arguments.of(
-            now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, oneSecond, oneSecond),
-        // expirationTime - safety window <= ZERO (immediate refresh use case)
-        Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, ZERO, ZERO));
   }
 
   private class TestRequestHandler implements HttpTestServer.RequestHandler {
@@ -712,11 +618,11 @@ class TestOAuth2Client {
         soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
             .isEqualTo("access-initial");
         soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
-            .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
+            .isEqualTo(TokenExchangeFlow.ACCESS_TOKEN_ID);
         soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
         soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
         soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
-            .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
+            .isEqualTo(TokenExchangeFlow.REFRESH_TOKEN_ID);
         response = getTokensExchangeResponse();
       } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
@@ -869,7 +775,7 @@ class TestOAuth2Client {
 
   private ImmutableTokensExchangeResponse getTokensExchangeResponse() {
     return ImmutableTokensExchangeResponse.builder()
-        .issuedTokenType(TokenTypeIdentifiers.REFRESH_TOKEN)
+        .issuedTokenType(TokenExchangeFlow.REFRESH_TOKEN_ID)
         .tokenType("bearer")
         .accessTokenPayload("access-exchanged")
         .accessTokenExpirationTime(now.plus(Duration.ofHours(3)))
@@ -924,7 +830,7 @@ class TestOAuth2Client {
         .isAfterOrEqualTo(now.plus(Duration.ofDays(3)).minusSeconds(10));
     soft.assertThat(tokens.getScope()).isEqualTo("test");
     soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
-    soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
+    soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenExchangeFlow.REFRESH_TOKEN_ID);
   }
 
   private OAuth2ClientConfig.Builder configBuilder(HttpTestServer server, boolean discovery) {

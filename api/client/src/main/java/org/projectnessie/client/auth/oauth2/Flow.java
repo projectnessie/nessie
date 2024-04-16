@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,12 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.util.Arrays;
+import javax.annotation.Nullable;
 
-/** A secret that can be cleared. */
-public final class Secret {
+interface Flow extends AutoCloseable {
 
-  // Visible for testing
-  final char[] value;
+  Tokens fetchNewTokens(@Nullable Tokens currentTokens);
 
-  public Secret(String value) {
-    this.value = value.toCharArray();
-  }
-
-  public int length() {
-    return value.length;
-  }
-
-  public String getString() {
-    return new String(value);
-  }
-
-  public void clear() {
-    Arrays.fill(value, '\0');
-  }
+  @Override
+  default void close() {}
 }

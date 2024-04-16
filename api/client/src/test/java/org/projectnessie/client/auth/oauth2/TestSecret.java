@@ -17,38 +17,22 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 class TestSecret {
 
   @Test
   void length() {
-    Secret secret = new Secret("secret".toCharArray());
-    assertThat(secret.length()).isEqualTo(6);
-  }
-
-  @Test
-  void getCharsAndClear() {
     Secret secret = new Secret("secret");
-    char[] chars = secret.getCharsAndClear();
-    assertThat(chars).hasSize(6).containsExactly('s', 'e', 'c', 'r', 'e', 't');
-    assertThat(secret.value).containsOnly('\0');
+    assertThat(secret.length()).isEqualTo(6);
   }
 
   @Test
   void getStringAndClear() {
     Secret secret = new Secret("secret");
-    String string = secret.getStringAndClear();
+    String string = secret.getString();
+    secret.clear();
     assertThat(string).isEqualTo("secret");
-    assertThat(secret.value).containsOnly('\0');
-  }
-
-  @Test
-  void getBytesAndClear() {
-    Secret secret = new Secret("sécrèt");
-    byte[] bytes = secret.getBytesAndClear(StandardCharsets.UTF_8);
-    assertThat(new String(bytes, StandardCharsets.UTF_8)).isEqualTo("sécrèt");
     assertThat(secret.value).containsOnly('\0');
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,8 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.util.Arrays;
-
-/** A secret that can be cleared. */
-public final class Secret {
-
-  // Visible for testing
-  final char[] value;
-
-  public Secret(String value) {
-    this.value = value.toCharArray();
-  }
-
-  public int length() {
-    return value.length;
-  }
-
-  public String getString() {
-    return new String(value);
-  }
-
-  public void clear() {
-    Arrays.fill(value, '\0');
+class MustFetchNewTokensException extends RuntimeException {
+  public MustFetchNewTokensException(String message) {
+    super(message);
   }
 }
