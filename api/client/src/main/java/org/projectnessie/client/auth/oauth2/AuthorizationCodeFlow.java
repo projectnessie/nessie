@@ -64,11 +64,32 @@ class AuthorizationCodeFlow implements AutoCloseable {
   private final URI authorizationUri;
   private final Duration flowTimeout;
 
-  private final CompletableFuture<HttpExchange> requestFuture = new CompletableFuture<>();
-  private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
-  private final CompletableFuture<String> authCodeFuture;
+  /**
+   * A future that will complete when the redirect URI is called for the first time. It will then
+   * trigger the code extraction then the token fetching. Subsequent calls to the redirect URI will
+   * not trigger any action. Note that the response to the redirect URI will be delayed until the
+   * tokens are received.
+   */
+  private final CompletableFuture<HttpExchange> redirectUriFuture = new CompletableFuture<>();
+
+  /**
+   * A future that will complete when the tokens are received in exchange for the authorization
+   * code. Its completion will release all pending responses to the redirect URI. If the redirect
+   * URI is called again after the tokens are received, the response will be immediate.
+   */
   private final CompletableFuture<Tokens> tokensFuture;
 
+  /**
+   * A future that will complete when the close() method is called. It is used merely to avoid
+   * closing resources multiple times. Its completion stops the internal HTTP server.
+   */
+  private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+
+  /**
+   * A phaser that will delay closing the internal HTTP server until all inflight requests have been
+   * processed. It is used to avoid closing the server prematurely and leaving the user's browser
+   * with an aborted HTTP request.
+   */
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
   AuthorizationCodeFlow(OAuth2ClientConfig config) {
@@ -79,8 +100,11 @@ class AuthorizationCodeFlow implements AutoCloseable {
     this.config = config;
     this.console = console;
     this.flowTimeout = config.getAuthorizationCodeFlowTimeout();
-    authCodeFuture = requestFuture.thenApply(this::extractAuthorizationCode);
-    tokensFuture = authCodeFuture.thenApply(this::fetchNewTokens);
+    tokensFuture =
+        redirectUriFuture
+            .thenApply(this::extractAuthorizationCode)
+            .thenApply(this::fetchNewTokens)
+            .whenComplete(this::log);
     closeFuture.thenRun(this::doClose);
     server =
         createServer(config.getAuthorizationCodeFlowWebServerPort().orElse(0), this::doRequest);
@@ -114,8 +138,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private void abort() {
     tokensFuture.cancel(true);
-    authCodeFuture.cancel(true);
-    requestFuture.cancel(true);
+    redirectUriFuture.cancel(true);
   }
 
   public Tokens fetchNewTokens() {
@@ -138,7 +161,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
     } catch (ExecutionException e) {
       abort();
       Throwable cause = e.getCause();
-      LOGGER.error("Authentication failed: " + cause.getMessage());
+      LOGGER.error("Authentication failed: {}", cause.toString());
       if (cause instanceof HttpClientException) {
         throw (HttpClientException) cause;
       }
@@ -146,18 +169,30 @@ class AuthorizationCodeFlow implements AutoCloseable {
     }
   }
 
+  /**
+   * Handle the incoming HTTP request to the redirect URI. Since we are using the default executor,
+   * which is a synchronous one, the very first invocation of this method will block the HTTP
+   * server's dispatcher thread, until the authorization code is extracted and exchanged for tokens.
+   * Subsequent requests will be processed immediately. The response to the request will be delayed
+   * until the tokens are received.
+   */
   private void doRequest(HttpExchange exchange) {
     LOGGER.debug("Authorization Code Flow: received request");
     inflightRequestsPhaser.register();
-    requestFuture.complete(exchange);
+    redirectUriFuture.complete(exchange); // will trigger the token fetching the first time
     tokensFuture
         .handle((tokens, error) -> doResponse(exchange, error))
         .whenComplete((v, error) -> exchange.close())
         .whenComplete((v, error) -> inflightRequestsPhaser.arriveAndDeregister());
   }
 
+  /** Send the response to the incoming HTTP request to the redirect URI. */
   private Void doResponse(HttpExchange exchange, Throwable error) {
-    LOGGER.debug("Authorization Code Flow: sending response");
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "Authorization Code Flow: sending response, error: {}",
+          error == null ? "none" : error.toString());
+    }
     try {
       if (error == null) {
         writeResponse(exchange, HTTP_OK, HTML_TEMPLATE_OK);
@@ -171,6 +206,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   private String extractAuthorizationCode(HttpExchange exchange) {
+    LOGGER.debug("Authorization Code Flow: extracting code");
     Map<String, String> params = HttpUtils.parseQueryString(exchange.getRequestURI().getQuery());
     if (!state.equals(params.get("state"))) {
       throw new IllegalArgumentException("Missing or invalid state");
@@ -197,6 +233,16 @@ class AuthorizationCodeFlow implements AutoCloseable {
     Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
+  }
+
+  private void log(Tokens tokens, Throwable error) {
+    if (LOGGER.isDebugEnabled()) {
+      if (error == null) {
+        LOGGER.debug("Authorization Code Flow: tokens received");
+      } else {
+        LOGGER.debug("Authorization Code Flow: error fetching tokens: {}", error.toString());
+      }
+    }
   }
 
   private static HttpServer createServer(int port, HttpHandler handler) {
