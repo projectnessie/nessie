@@ -2,7 +2,7 @@
 title: "Export/Import Tool"
 ---
 
-# Nessie Repository Maintenance
+# Export/Import Tool
 
 This page explains how to use the Nessie Quarkus CLI tool to perform repository maintenance tasks
 such as:
