@@ -16,14 +16,14 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 === "GitHub Container Registry"
     [![ghcr.io GitHub Container Registry](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=ghcr.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://ghcr.io/projectnessie/nessie)
     ```bash
-    docker pull ghcr.io/projectnessie/nessie
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie
+    docker pull ghcr.io/projectnessie/nessie:{{ versions.nessie }}
+    docker run -p 19120:19120 ghcr.io/projectnessie/nessie:{{ versions.nessie }}
     ```
 === "Quay.io"
     [![quay.io Quay](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie?tab=tags)
     ```bash
-    docker pull quay.io/projectnessie/nessie
-    docker run -p 19120:19120 quay.io/projectnessie/nessie
+    docker pull quay.io/projectnessie/nessie:{{ versions.nessie }}
+    docker run -p 19120:19120 quay.io/projectnessie/nessie:{{ versions.nessie }}
     ```
 
 ## Nessie Server Helm Chart
@@ -52,14 +52,14 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 === "GitHub Container Registry"
     [![ghcr.io GitHub Container Registry](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=ghcr.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://github.com/projectnessie/nessie/pkgs/container/nessie-gc)
     ```bash
-    docker pull ghcr.io/projectnessie/nessie-gc
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc --help
+    docker pull ghcr.io/projectnessie/nessie-gc:{{ versions.nessie }}
+    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc:{{ versions.nessie }} --help
     ```
 === "Quay.io"
     [![quay.io Quay](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie-gc?tab=tags)
     ```bash
-    docker pull quay.io/projectnessie/nessie-gc
-    docker run -p 19120:19120 quay.io/projectnessie/nessie-gc --help
+    docker pull quay.io/projectnessie/nessie-gc:{{ versions.nessie }}
+    docker run -p 19120:19120 quay.io/projectnessie/nessie-gc:{{ versions.nessie }} --help
     ```
 
 ## Nessie GC Tool as a standalone uber jar
