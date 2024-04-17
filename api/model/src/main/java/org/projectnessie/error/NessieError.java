@@ -79,6 +79,22 @@ public interface NessieError {
   String getServerStackTrace();
 
   /**
+   * Client-side {@link Exception} related to the processing of the error response.
+   *
+   * <p>This {@link Exception} generally represents any errors related to the decoding of the
+   * payload returned by the server to describe the error.
+   *
+   * @deprecated Use {@link #getClientProcessingError()}
+   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @JsonIgnore
+  @Value.Auxiliary
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Deprecated
+  Exception getClientProcessingException();
+
+  /**
    * Client-side error message related to the processing of the error response.
    *
    * <p>This generally represents any errors related to the decoding of the payload returned by the
@@ -111,8 +127,12 @@ public interface NessieError {
 
     if (getClientProcessingError() != null) {
       sb.append(
-              "\nAdditionally, the client-side exception below was caught while decoding the HTTP response: ")
+              "\nAdditionally, the client-side error below was caught while decoding the HTTP response: ")
           .append(getClientProcessingError());
+    } else if (getClientProcessingException() != null) {
+      sb.append(
+              "\nAdditionally, the client-side exception below was caught while decoding the HTTP response: ")
+          .append(getClientProcessingException());
     }
 
     return sb.toString();
