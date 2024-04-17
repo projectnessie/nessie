@@ -23,8 +23,8 @@ public final class Secret {
     this.value = value.toCharArray();
   }
 
-  int length() {
-    return value.length;
+  boolean isNotEmpty() {
+    return value.length > 0;
   }
 
   String getString() {

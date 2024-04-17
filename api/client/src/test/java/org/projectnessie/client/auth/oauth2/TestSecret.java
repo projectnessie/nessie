@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 class TestSecret {
 
   @Test
-  void length() {
-    Secret secret = new Secret("secret");
-    assertThat(secret.length()).isEqualTo(6);
+  void isNotEmpty() {
+    assertThat(new Secret("").isNotEmpty()).isFalse();
+    assertThat(new Secret("secret").isNotEmpty()).isTrue();
   }
 
   @Test
