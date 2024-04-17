@@ -15,50 +15,19 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-
-/** A secret that can be cleared once read. */
 public final class Secret {
 
-  // Visible for testing
-  final char[] value;
-
-  public Secret(char... value) {
-    this.value = value;
-  }
+  private final char[] value;
 
   public Secret(String value) {
     this.value = value.toCharArray();
   }
 
-  public int length() {
-    return value.length;
+  boolean isNotEmpty() {
+    return value.length > 0;
   }
 
-  public char[] getCharsAndClear() {
-    char[] v = value.clone();
-    Arrays.fill(value, '\0');
-    return v;
-  }
-
-  public String getStringAndClear() {
-    String s = new String(value);
-    Arrays.fill(value, '\0');
-    return s;
-  }
-
-  public byte[] getBytesAndClear(Charset charset) {
-    CharBuffer cb = CharBuffer.wrap(value);
-    ByteBuffer bb = charset.encode(cb);
-    byte[] bytes = new byte[bb.remaining()];
-    bb.get(bytes);
-    if (bb.hasArray()) {
-      Arrays.fill(bb.array(), (byte) 0);
-    }
-    Arrays.fill(value, '\0');
-    return bytes;
+  String getString() {
+    return new String(value);
   }
 }

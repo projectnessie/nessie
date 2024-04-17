@@ -35,13 +35,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.annotation.Nullable;
 import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpRequest;
-import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.http.impl.UriBuilder;
 
-class AuthorizationCodeFlow implements AutoCloseable {
+/**
+ * An implementation of the <a
+ * href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1">Authorization Code Grant</a>
+ * flow.
+ */
+class AuthorizationCodeFlow extends AbstractFlow {
 
   static final String CONTEXT_PATH = "/nessie-client/auth";
   static final String MSG_PREFIX = "[nessie-oauth2-client] ";
@@ -56,7 +60,6 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private static final int STATE_LENGTH = 16;
 
-  private final OAuth2ClientConfig config;
   private final PrintStream console;
   private final String state;
   private final HttpServer server;
@@ -97,7 +100,7 @@ class AuthorizationCodeFlow implements AutoCloseable {
   }
 
   AuthorizationCodeFlow(OAuth2ClientConfig config, PrintStream console) {
-    this.config = config;
+    super(config);
     this.console = console;
     this.flowTimeout = config.getAuthorizationCodeFlowTimeout();
     tokensFuture =
@@ -141,7 +144,8 @@ class AuthorizationCodeFlow implements AutoCloseable {
     redirectUriFuture.cancel(true);
   }
 
-  public Tokens fetchNewTokens() {
+  @Override
+  public Tokens fetchNewTokens(@Nullable Tokens ignored) {
     console.println();
     console.println(MSG_PREFIX + "======= Nessie authentication required =======");
     console.println(MSG_PREFIX + "Browse to the following URL to continue:");
@@ -220,17 +224,14 @@ class AuthorizationCodeFlow implements AutoCloseable {
 
   private Tokens fetchNewTokens(String code) {
     LOGGER.debug("Authorization Code Flow: fetching new tokens");
-    AuthorizationCodeTokensRequest body =
+    AuthorizationCodeTokensRequest request =
         ImmutableAuthorizationCodeTokensRequest.builder()
             .code(code)
             .redirectUri(redirectUri)
             .clientId(config.getClientId())
             .scope(config.getScope().orElse(null))
             .build();
-    HttpRequest request = config.getHttpClient().newRequest(config.getResolvedTokenEndpoint());
-    config.getBasicAuthentication().ifPresent(request::authentication);
-    HttpResponse response = request.postForm(body);
-    Tokens tokens = response.readEntity(AuthorizationCodeTokensResponse.class);
+    Tokens tokens = invokeTokenEndpoint(request, AuthorizationCodeTokensResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
   }

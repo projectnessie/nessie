@@ -171,7 +171,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   @Value.Lazy
   Optional<HttpAuthentication> getBasicAuthentication() {
     return getClientSecret()
-        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getStringAndClear()));
+        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()));
   }
 
   /**
@@ -292,7 +292,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
       check(
           violations,
           CONF_NESSIE_OAUTH2_PASSWORD,
-          getPassword().isPresent() && getPassword().get().length() > 0,
+          getPassword().isPresent() && getPassword().get().isNotEmpty(),
           "password must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
     }

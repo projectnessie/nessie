@@ -24,23 +24,37 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.annotation.Nullable;
 import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpRequest;
-import org.projectnessie.client.http.HttpResponse;
 
-class DeviceCodeFlow implements AutoCloseable {
+/**
+ * An implementation of the <a href="https://datatracker.ietf.org/doc/html/rfc8628">Device
+ * Authorization Grant</a> flow.
+ */
+class DeviceCodeFlow extends AbstractFlow {
 
   static final String MSG_PREFIX = "[nessie-oauth2-client] ";
 
   private static final org.slf4j.Logger LOGGER =
       org.slf4j.LoggerFactory.getLogger(DeviceCodeFlow.class);
 
-  private final OAuth2ClientConfig config;
   private final PrintStream console;
   private final Duration flowTimeout;
 
+  /**
+   * A future that will complete when fresh tokens are eventually obtained after polling the token
+   * endpoint.
+   */
   private final CompletableFuture<Tokens> tokensFuture = new CompletableFuture<>();
+
+  /**
+   * A future that will complete when the close() method is called. It is used merely to avoid
+   * closing resources multiple times. Its completion stops the internal polling loop and its
+   * executor.
+   */
   private final CompletableFuture<Void> closeFuture = new CompletableFuture<>();
+
+  /** The executor that is used to periodically poll the token endpoint. */
   private final ScheduledExecutorService executor;
 
   private volatile Duration pollInterval;
@@ -51,7 +65,7 @@ class DeviceCodeFlow implements AutoCloseable {
   }
 
   DeviceCodeFlow(OAuth2ClientConfig config, PrintStream console) {
-    this.config = config;
+    super(config);
     this.console = console;
     flowTimeout = config.getDeviceCodeFlowTimeout();
     pollInterval = config.getDeviceCodeFlowPollInterval();
@@ -80,7 +94,8 @@ class DeviceCodeFlow implements AutoCloseable {
     tokensFuture.cancel(true);
   }
 
-  public Tokens fetchNewTokens() {
+  @Override
+  public Tokens fetchNewTokens(@Nullable Tokens currentTokens) {
     DeviceCodeResponse response = requestDeviceCode();
     checkPollInterval(response.getInterval());
     console.println();
@@ -120,9 +135,7 @@ class DeviceCodeFlow implements AutoCloseable {
             // don't include client id, it's in the basic auth header
             .scope(config.getScope().orElse(null))
             .build();
-    HttpRequest request = config.getHttpClient().newRequest(config.getResolvedDeviceAuthEndpoint());
-    config.getBasicAuthentication().ifPresent(request::authentication);
-    return request.postForm(body).readEntity(DeviceCodeResponse.class);
+    return invokeEndpoint(config.getResolvedDeviceAuthEndpoint(), body, DeviceCodeResponse.class);
   }
 
   private void checkPollInterval(Duration serverPollInterval) {
@@ -152,16 +165,13 @@ class DeviceCodeFlow implements AutoCloseable {
   private void pollForNewTokens(String deviceCode) {
     try {
       LOGGER.debug("Device Code Flow: polling for new tokens");
-      DeviceCodeTokensRequest body =
+      DeviceCodeTokensRequest request =
           ImmutableDeviceCodeTokensRequest.builder()
               .deviceCode(deviceCode)
               .scope(config.getScope().orElse(null))
               // don't include client id, it's in the basic auth header
               .build();
-      HttpRequest request = config.getHttpClient().newRequest(config.getResolvedTokenEndpoint());
-      config.getBasicAuthentication().ifPresent(request::authentication);
-      HttpResponse response = request.postForm(body);
-      Tokens tokens = response.readEntity(DeviceCodeTokensResponse.class);
+      Tokens tokens = invokeTokenEndpoint(request, DeviceCodeTokensResponse.class);
       LOGGER.debug("Device Code Flow: new tokens received");
       tokensFuture.complete(tokens);
     } catch (OAuth2Exception e) {

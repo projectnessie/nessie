@@ -282,7 +282,7 @@ public class ITOAuth2Client {
       // second request: another client credentials grant since no refresh token was sent
       // and token exchange is disabled – cannot call refreshTokens() tokens here
       soft.assertThatThrownBy(() -> client.refreshTokens(firstTokens))
-          .isInstanceOf(OAuth2Client.MustFetchNewTokensException.class);
+          .isInstanceOf(MustFetchNewTokensException.class);
       Tokens nextTokens = client.fetchNewTokens();
       soft.assertThat(nextTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
       soft.assertThat(nextTokens.getRefreshToken()).isNull();
