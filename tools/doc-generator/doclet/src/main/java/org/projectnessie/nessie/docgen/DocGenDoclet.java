@@ -95,6 +95,9 @@ public class DocGenDoclet implements Doclet {
       System.out.println("Generating properties config pages for " + page.name());
       for (Map.Entry<String, Iterable<PropertiesConfigItem>> e : page.sectionItems().entrySet()) {
         String group = e.getKey();
+        if (group.isEmpty()) {
+          group = "main";
+        }
         System.out.println("... generating page group " + group);
         Iterable<PropertiesConfigItem> items = e.getValue();
 

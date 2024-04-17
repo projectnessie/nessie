@@ -13,7 +13,7 @@ See also [Authentication Settings](#authentication-settings) below.
 
 ### Common settings
 
-{% include './generated-docs/client-config-.md' %}
+{% include './generated-docs/client-config-main.md' %}
 
 ### Network settings
 
