@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client.auth;
 
-import java.util.function.Consumer;
 import org.projectnessie.client.http.HttpAuthentication;
 
 /**
@@ -29,7 +28,7 @@ import org.projectnessie.client.http.HttpAuthentication;
  */
 public interface NessieAuthentication extends AutoCloseable {
 
-  default void start(Consumer<Runnable> cancellationCallbackConsumer) {
+  default void start() {
     // no-op
   }
 

@@ -80,7 +80,7 @@ class TestOAuth2Client {
 
       try (OAuth2Client client = new OAuth2Client(config)) {
 
-        client.start(null);
+        client.start();
 
         // should fetch the initial token
         AccessToken token = client.authenticate();
@@ -154,7 +154,7 @@ class TestOAuth2Client {
 
       try (OAuth2Client client = new OAuth2Client(config)) {
 
-        client.start(null);
+        client.start();
         soft.assertThatThrownBy(client::authenticate)
             .hasCauseInstanceOf(RejectedExecutionException.class);
 
@@ -188,7 +188,7 @@ class TestOAuth2Client {
 
         // will trigger token fetch (successful), then schedule a refresh, then reject it,
         // then sleep
-        client.start(null);
+        client.start();
         soft.assertThat(client.sleeping).isTrue();
         soft.assertThat(client.getCurrentTokens())
             .isInstanceOf(ClientCredentialsTokensResponse.class);
@@ -247,7 +247,7 @@ class TestOAuth2Client {
         // Emulate failure on initial token fetch
         // => propagate the error but schedule a refresh ASAP
         handlerRef.set(failureHandler);
-        client.start(null);
+        client.start();
         Runnable renewalTask = currentRenewalTask.get();
         soft.assertThat(renewalTask).isNotNull();
         soft.assertThatThrownBy(client::authenticate).isInstanceOf(OAuth2Exception.class);

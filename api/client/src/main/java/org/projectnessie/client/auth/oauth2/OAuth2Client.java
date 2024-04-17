@@ -28,7 +28,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import org.projectnessie.client.auth.BearerAuthenticationProvider;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
@@ -115,10 +114,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   @Override
-  public void start(Consumer<Runnable> cancellationCallbackConsumer) {
-    if (cancellationCallbackConsumer != null) {
-      cancellationCallbackConsumer.accept(this::close);
-    }
+  public void start() {
     lastAccess = config.getClock().get();
     started.complete(null);
   }

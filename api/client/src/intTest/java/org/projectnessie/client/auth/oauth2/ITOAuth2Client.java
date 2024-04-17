@@ -160,9 +160,9 @@ public class ITOAuth2Client {
       resourceOwner.replaceSystemOut();
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> executor.shutdownNow());
-      client1.start(null);
-      client2.start(null);
-      client3.start(null);
+      client1.start();
+      client2.start();
+      client3.start();
       ScheduledFuture<?> future =
           executor.scheduleWithFixedDelay(
               () -> {
@@ -295,7 +295,7 @@ public class ITOAuth2Client {
   void testOAuth2ClientUnauthorizedBadClientSecret() {
     OAuth2ClientConfig config = clientConfig("Client1", false).clientSecret("BAD SECRET").build();
     try (OAuth2Client client = new OAuth2Client(config)) {
-      client.start(null);
+      client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
@@ -308,7 +308,7 @@ public class ITOAuth2Client {
     OAuth2ClientConfig config =
         clientConfig("Client2", false).grantType(PASSWORD).password("BAD PASSWORD").build();
     try (OAuth2Client client = new OAuth2Client(config)) {
-      client.start(null);
+      client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
@@ -327,7 +327,7 @@ public class ITOAuth2Client {
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> client.close());
       resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
-      client.start(null);
+      client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
@@ -345,7 +345,7 @@ public class ITOAuth2Client {
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.setErrorListener(e -> client.close());
       resourceOwner.denyConsent();
-      client.start(null);
+      client.start();
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus, OAuth2Exception::getErrorCode)

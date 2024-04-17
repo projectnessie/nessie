@@ -293,7 +293,10 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
 
     if (authentication != null) {
       try {
-        authentication.start(cancellationCallbackConsumer);
+        authentication.start();
+        if (cancellationCallbackConsumer != null) {
+          cancellationCallbackConsumer.accept(authentication::close);
+        }
       } catch (RuntimeException e) {
         try {
           client.close();

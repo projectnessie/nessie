@@ -17,7 +17,6 @@ package org.projectnessie.client.auth.oauth2;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
@@ -90,8 +89,8 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
     }
 
     @Override
-    public void start(Consumer<Runnable> cancellationCallbackConsumer) {
-      authenticator.start(cancellationCallbackConsumer);
+    public void start() {
+      authenticator.start();
     }
 
     @Override
