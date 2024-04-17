@@ -144,6 +144,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
     redirectUriFuture.cancel(true);
   }
 
+  @Override
   public Tokens fetchNewTokens(@Nullable Tokens ignored) {
     console.println();
     console.println(MSG_PREFIX + "======= Nessie authentication required =======");

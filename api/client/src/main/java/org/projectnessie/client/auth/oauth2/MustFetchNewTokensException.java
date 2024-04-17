@@ -16,7 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 class MustFetchNewTokensException extends RuntimeException {
-  public MustFetchNewTokensException(String message) {
+  MustFetchNewTokensException(String message) {
     super(message);
   }
 }

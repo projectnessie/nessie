@@ -94,7 +94,8 @@ class DeviceCodeFlow extends AbstractFlow {
     tokensFuture.cancel(true);
   }
 
-  public Tokens fetchNewTokens(@Nullable Tokens ignored) {
+  @Override
+  public Tokens fetchNewTokens(@Nullable Tokens currentTokens) {
     DeviceCodeResponse response = requestDeviceCode();
     checkPollInterval(response.getInterval());
     console.println();
