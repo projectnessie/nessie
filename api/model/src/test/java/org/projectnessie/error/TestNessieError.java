@@ -121,7 +121,7 @@ class TestNessieError {
                     + "[)]: message\\R"
                     + "foo.bar.InternalServerError\\R"
                     + "\tat some.other.Class\\R"
-                    + "Additionally, the client-side exception below was caught while decoding the HTTP response: "
+                    + "Additionally, the client-side error below was caught while decoding the HTTP response: "
                     + "java.lang.Exception: processingException",
                 Pattern.DOTALL));
   }
