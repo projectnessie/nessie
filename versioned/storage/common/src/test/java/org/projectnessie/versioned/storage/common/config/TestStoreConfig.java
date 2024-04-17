@@ -53,7 +53,6 @@ public class TestStoreConfig {
   public static final int REFERENCE_TIME = 1000000;
   @InjectSoftAssertions SoftAssertions soft;
 
-  @SuppressWarnings("removal")
   static Stream<Arguments> adjustable() {
     return Stream.of(
         // config properties
@@ -116,7 +115,12 @@ public class TestStoreConfig {
             CONFIG_NAMESPACE_VALIDATION,
             "false",
             (Function<Adjustable, StoreConfig>) e -> e.withValidateNamespaces(false),
-            (Predicate<StoreConfig>) c -> !c.validateNamespaces()),
+            (Predicate<StoreConfig>)
+                c -> {
+                  @SuppressWarnings("removal")
+                  boolean validateNamespaces = c.validateNamespaces();
+                  return !validateNamespaces;
+                }),
         // default methods (current time in micros + hasher)
         arguments(
             "x",
