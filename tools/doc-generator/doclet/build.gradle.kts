@@ -53,6 +53,8 @@ dependencies {
 }
 
 tasks.named<Test>("test") {
+  // The test needs the classpath for the necessary dependencies (annotations + smallrye-config).
+  // Resolving the dependencies must happen during task execution (not configuration).
   jvmArgumentProviders.add(
     CommandLineArgumentProvider {
       // So, in theory, all 'org.gradle.category' attributes should use the type
