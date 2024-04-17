@@ -42,7 +42,7 @@ public class TestDocGenTool {
     Integer result = tool.call();
     soft.assertThat(result).isEqualTo(0);
 
-    Path fileProps = dir.resolve("props-.md");
+    Path fileProps = dir.resolve("props-main.md");
     Path filePropsA = dir.resolve("props-a_a_a.md");
     Path filePropsB = dir.resolve("props-b_b.md");
     soft.assertThat(fileProps)

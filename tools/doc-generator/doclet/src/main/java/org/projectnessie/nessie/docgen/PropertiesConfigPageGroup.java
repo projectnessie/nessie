@@ -59,9 +59,9 @@ public class PropertiesConfigPageGroup {
     Set<String> processedSections = new HashSet<>();
 
     for (Map.Entry<String, List<PropertiesConfigItem>> e : items.entrySet()) {
-      String group = e.getKey();
-      if (processedSections.add(group)) {
-        consumer.accept(group, e.getValue());
+      String section = e.getKey();
+      if (processedSections.add(section)) {
+        consumer.accept(section, e.getValue());
       }
     }
   }

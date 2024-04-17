@@ -94,14 +94,14 @@ public class DocGenDoclet implements Doclet {
     for (PropertiesConfigPageGroup page : propertiesConfigs.pages()) {
       System.out.println("Generating properties config pages for " + page.name());
       for (Map.Entry<String, Iterable<PropertiesConfigItem>> e : page.sectionItems().entrySet()) {
-        String group = e.getKey();
-        if (group.isEmpty()) {
-          group = "main";
+        String section = e.getKey();
+        if (section.isEmpty()) {
+          section = "main";
         }
-        System.out.println("... generating page group " + group);
+        System.out.println("... generating page section " + section);
         Iterable<PropertiesConfigItem> items = e.getValue();
 
-        Path file = outputDirectory.resolve(page.name() + "-" + safeFileName(group) + ".md");
+        Path file = outputDirectory.resolve(page.name() + "-" + safeFileName(section) + ".md");
         try (BufferedWriter fw = Files.newBufferedWriter(file, UTF_8, CREATE, TRUNCATE_EXISTING);
             PrintWriter writer = new PrintWriter(fw)) {
           writer.println("| Property | Description |");

@@ -20,18 +20,39 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/** Contains annotations for {@code nessie-doc-generator-doclet}. */
 public interface ConfigDocs {
-  @Target({ElementType.TYPE, ElementType.FIELD})
+  /**
+   * For properties-configs, declares a class containing configuration constants for "properties"
+   * and gives it a page name. The generated markdown files will start with this name.
+   */
+  @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.SOURCE)
   @interface ConfigPageGroup {
     String name();
   }
 
-  @Target({ElementType.METHOD, ElementType.FIELD})
+  /**
+   * For properties-configs, declares that a property constant field appears in the generated
+   * markdown files.
+   */
+  @Target(ElementType.FIELD)
   @Retention(RetentionPolicy.SOURCE)
   @interface ConfigItem {
+    /**
+     * The name of the "section" in which this constant field shall appear. The name of the
+     * generated markdown file will "end" with this name.
+     */
     String section() default "";
+  }
 
-    String name() default "";
+  /**
+   * For smallrye-configs, gives map-keys a name that appears as a placeholder in the fully
+   * qualified config name in the generated docs.
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.SOURCE)
+  @interface ConfigPropertyName {
+    String value() default "";
   }
 }

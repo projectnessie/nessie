@@ -30,7 +30,7 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public class SmallRyeConfigPropertyInfo implements PropertyInfo {
   private final Property property;
@@ -56,8 +56,8 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
   @Override
   public String propertySuffix() {
     if (property.isMap()) {
-      ConfigItem ci = element.getAnnotation(ConfigItem.class);
-      return ci == null || ci.name().isEmpty() ? "<name>" : ci.name();
+      ConfigPropertyName ci = element.getAnnotation(ConfigPropertyName.class);
+      return ci == null || ci.value().isEmpty() ? "<name>" : ci.value();
     }
     return "";
   }

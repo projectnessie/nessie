@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 @ConfigMapping(prefix = "my.types")
 public interface AllTypes extends IntOne {
@@ -91,6 +91,6 @@ public interface AllTypes extends IntOne {
   Optional<MappedA> optionalMappedA();
 
   /** Map of string to {@code MappedA}. */
-  @ConfigItem(name = "mappy")
+  @ConfigPropertyName("mappy")
   Map<String, MappedA> mapStringMappedA();
 }
