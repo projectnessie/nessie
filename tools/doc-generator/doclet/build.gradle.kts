@@ -16,6 +16,9 @@
 
 plugins { id("nessie-conventions-server") }
 
+extra["maven.name"] =
+  "Code to generate markdown documentation files for 'properties' and smallrye-config"
+
 val genProjects by configurations.creating
 val genSources by configurations.creating
 

@@ -18,6 +18,8 @@ plugins {
   `java-library`
 }
 
+extra["maven.name"] = "Generates markdown for the projectnessie site for client + server documentation"
+
 val genProjects by configurations.creating
 val genSources by configurations.creating
 val doclet by configurations.creating
