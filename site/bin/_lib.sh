@@ -173,7 +173,7 @@ update_version () {
 
   # Update version information within the mkdocs.yml file using sed commands
   if [ "$(uname)" == "Darwin" ]; then
-    sed -i '' -E "s/(^site\_name:[[:space:]]+).*$/\1${version}/" "${version}/mkdocs.yml"
+    sed -i '' -E "s/(^site\_name:[[:space:]]+).*$/\1Nessie ${version}/" "${version}/mkdocs.yml"
   elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     sed -i'' -E "s/(^site_name:[[:space:]]+).*$/\1Nessie ${version}/" "${version}/mkdocs.yml"
   fi
