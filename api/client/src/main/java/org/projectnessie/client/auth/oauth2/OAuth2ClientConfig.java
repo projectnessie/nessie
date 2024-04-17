@@ -191,11 +191,6 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .build();
   }
 
-  void clearSecrets() {
-    getClientSecret().ifPresent(Secret::clear);
-    getPassword().ifPresent(Secret::clear);
-  }
-
   private void checkErrorResponse(ResponseContext responseContext) {
     try {
       Status status = responseContext.getResponseCode();

@@ -135,7 +135,6 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         }
         // Always close the HTTP client (can't be shared).
         httpClient.close();
-        config.clearSecrets();
       } finally {
         tokenRefreshFuture = null;
       }

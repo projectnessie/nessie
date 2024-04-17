@@ -15,27 +15,19 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.util.Arrays;
-
-/** A secret that can be cleared. */
 public final class Secret {
 
-  // Visible for testing
-  final char[] value;
+  private final char[] value;
 
   public Secret(String value) {
     this.value = value.toCharArray();
   }
 
-  public int length() {
+  int length() {
     return value.length;
   }
 
-  public String getString() {
+  String getString() {
     return new String(value);
-  }
-
-  public void clear() {
-    Arrays.fill(value, '\0');
   }
 }

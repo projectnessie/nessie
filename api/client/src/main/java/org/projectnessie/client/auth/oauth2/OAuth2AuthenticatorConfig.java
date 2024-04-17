@@ -201,8 +201,6 @@ public interface OAuth2AuthenticatorConfig {
   /**
    * The OAuth2 client secret. Must be set, if required by the IdP.
    *
-   * <p>When the Nessie client is closed, the secret contents will be cleared from memory.
-   *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SECRET
    */
   Optional<Secret> getClientSecret();
@@ -216,8 +214,6 @@ public interface OAuth2AuthenticatorConfig {
 
   /**
    * The OAuth2 password. Only relevant for {@link GrantType#PASSWORD} grant type.
-   *
-   * <p>When the Nessie client is closed, the password contents will be cleared from memory.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_PASSWORD
    */

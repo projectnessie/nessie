@@ -28,11 +28,9 @@ class TestSecret {
   }
 
   @Test
-  void getStringAndClear() {
+  void getString() {
     Secret secret = new Secret("secret");
     String string = secret.getString();
-    secret.clear();
     assertThat(string).isEqualTo("secret");
-    assertThat(secret.value).containsOnly('\0');
   }
 }
