@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -170,6 +171,9 @@ public interface NessieClientBuilder {
   /** Optionally configure specific {@link SSLParameters}. */
   @CanIgnoreReturnValue
   NessieClientBuilder withSSLParameters(SSLParameters sslParameters);
+
+  @CanIgnoreReturnValue
+  NessieClientBuilder withCancellationCallback(Consumer<Runnable> cancellationCallbackConsumer);
 
   /**
    * Builds a new {@link NessieApi}.
@@ -423,6 +427,12 @@ public interface NessieClientBuilder {
 
     @Override
     public NessieClientBuilder withSSLParameters(SSLParameters sslParameters) {
+      return this;
+    }
+
+    @Override
+    public NessieClientBuilder withCancellationCallback(
+        Consumer<Runnable> cancellationCallbackConsumer) {
       return this;
     }
   }

@@ -73,7 +73,7 @@ class TestRestInMemoryNaiveClient extends BaseTestNessieApi implements NessieCli
 
     // Abuse the authentication callback a bit to inject the noAcceptFilter into the java client.
     return builder.withAuthentication(
-        (HttpAuthentication) client -> client.addRequestFilter(noAcceptFilter));
+        (HttpAuthentication) (client) -> client.addRequestFilter(noAcceptFilter));
   }
 
   @AfterEach

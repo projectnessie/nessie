@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieConfigConstants;
@@ -61,6 +62,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   private boolean forceUrlConnectionClient;
   private String httpClientName;
   private int clientSpec = 2;
+  private Consumer<Runnable> cancellationCallbackConsumer;
 
   HttpClientBuilderImpl() {}
 
@@ -82,6 +84,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     this.forceUrlConnectionClient = other.forceUrlConnectionClient;
     this.httpClientName = other.httpClientName;
     this.clientSpec = other.clientSpec;
+    this.cancellationCallbackConsumer = other.cancellationCallbackConsumer;
   }
 
   /** Creates a (shallow) copy of this builder. */
@@ -220,6 +223,13 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
+  public HttpClient.Builder setCancellationCallback(
+      Consumer<Runnable> cancellationCallbackConsumer) {
+    this.cancellationCallbackConsumer = cancellationCallbackConsumer;
+    return this;
+  }
+
+  @Override
   public HttpClient build() {
     HttpUtils.checkArgument(
         mapper != null, "Cannot construct Http client. Must have a non-null object mapper");
@@ -234,7 +244,6 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
 
     if (authentication != null) {
       authentication.applyToHttpClient(this);
-      authentication.start();
     }
 
     HttpRuntimeConfig config =
@@ -253,6 +262,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .isHttp11Only(!http2Upgrade)
             .followRedirects(followRedirects)
             .authentication(authentication)
+            .cancellationCallbackConsumer(cancellationCallbackConsumer)
             .build();
 
     String clientName = httpClientName;
@@ -279,7 +289,22 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
       throw new IllegalArgumentException(
           "No HTTP client factory for name '" + clientName + "' found");
     }
-    return httpClientFactory.buildClient(config);
+    HttpClient client = httpClientFactory.buildClient(config);
+
+    if (authentication != null) {
+      try {
+        authentication.start(cancellationCallbackConsumer);
+      } catch (RuntimeException e) {
+        try {
+          client.close();
+        } catch (RuntimeException e2) {
+          e.addSuppressed(e2);
+        }
+        throw e;
+      }
+    }
+
+    return client;
   }
 
   static Set<String> clientNames() {

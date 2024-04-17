@@ -18,6 +18,7 @@ package org.projectnessie.client.http.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -99,6 +100,9 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   default int getClientSpec() {
     return 2;
   }
+
+  @Nullable
+  Consumer<Runnable> getCancellationCallbackConsumer();
 
   @Override
   default void close() {

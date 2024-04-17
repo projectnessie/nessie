@@ -72,7 +72,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
     HttpAuthentication auth = this.auth;
     if (auth != null) {
       auth.applyToHttpRequest(context);
-      auth.start();
+      auth.start(config.getCancellationCallbackConsumer());
     }
 
     return doesOutput;

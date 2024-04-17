@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import java.util.function.Consumer;
+
 public interface OAuth2Authenticator extends AutoCloseable {
 
   /**
@@ -26,7 +28,7 @@ public interface OAuth2Authenticator extends AutoCloseable {
    *
    * <p>This method never throws an exception.
    */
-  void start();
+  void start(Consumer<Runnable> cancellationCallbackConsumer);
 
   /**
    * Attempts to authenticate the client and returns a valid {@link AccessToken}.

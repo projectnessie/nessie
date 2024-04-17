@@ -40,8 +40,9 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
       shutdown();
       try {
         if (!awaitTermination(10, TimeUnit.SECONDS)) {
-          LOGGER.warn("OAuth2 token refresh executor did not terminate within 10 seconds");
-          shutdownNow();
+          if (!shutdownNow().isEmpty()) {
+            LOGGER.warn("OAuth2 token refresh executor did not terminate within 10 seconds");
+          }
         }
       } catch (InterruptedException e) {
         LOGGER.warn("OAuth2 token refresh executor termination interrupted", e);
