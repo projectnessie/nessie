@@ -79,6 +79,7 @@ public interface StoreConfig {
    * @since 0.52.0
    * @deprecated This setting will be removed.
    */
+  @Deprecated(forRemoval = true)
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Value.Default
   default boolean validateNamespaces() {

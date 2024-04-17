@@ -53,6 +53,7 @@ public class TestStoreConfig {
   public static final int REFERENCE_TIME = 1000000;
   @InjectSoftAssertions SoftAssertions soft;
 
+  @SuppressWarnings("removal")
   static Stream<Arguments> adjustable() {
     return Stream.of(
         // config properties

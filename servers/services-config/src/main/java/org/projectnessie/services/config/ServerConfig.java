@@ -31,7 +31,7 @@ public interface ServerConfig extends ExceptionConfig {
    * The number of entity-checks that are grouped into a call to `BatchAccessChecker`. The default
    * value is quite conservative, it is the responsibility of the operator to adjust this value
    * according to the capabilities of the actual authz implementation. Note that the number of
-   * checks can be exceeded depending on the context of the checks.
+   * checks can be slightly exceeded by the implementation, depending on the call site.
    */
   default int accessChecksBatchSize() {
     return DEFAULT_ACCESS_CHECK_BATCH_SIZE;
