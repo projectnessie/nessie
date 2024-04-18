@@ -262,7 +262,6 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .isHttp11Only(!http2Upgrade)
             .followRedirects(followRedirects)
             .authentication(authentication)
-            .cancellationCallbackConsumer(cancellationCallbackConsumer)
             .build();
 
     String clientName = httpClientName;
@@ -290,13 +289,13 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
           "No HTTP client factory for name '" + clientName + "' found");
     }
     HttpClient client = httpClientFactory.buildClient(config);
+    if (cancellationCallbackConsumer != null) {
+      cancellationCallbackConsumer.accept(client::close);
+    }
 
     if (authentication != null) {
       try {
         authentication.start();
-        if (cancellationCallbackConsumer != null) {
-          cancellationCallbackConsumer.accept(authentication::close);
-        }
       } catch (RuntimeException e) {
         try {
           client.close();

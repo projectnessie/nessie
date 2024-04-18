@@ -27,8 +27,8 @@ public interface HttpAuthentication extends NessieAuthentication {
    * Configure the given {@link HttpClient} to use this authentication. Called when authentication
    * is set on the {@link HttpClient} level only.
    *
-   * @param client client to configure
    * @see HttpClient.Builder#setAuthentication(HttpAuthentication)
+   * @param client client to configure
    */
   void applyToHttpClient(HttpClient.Builder client);
 

@@ -33,7 +33,6 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
@@ -74,10 +73,6 @@ public abstract class BaseHttpRequest extends HttpRequest {
     if (auth != null) {
       auth.applyToHttpRequest(context);
       auth.start();
-      Consumer<Runnable> cancel = config.getCancellationCallbackConsumer();
-      if (cancel != null) {
-        cancel.accept(auth::close);
-      }
     }
 
     return doesOutput;

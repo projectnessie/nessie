@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
@@ -116,8 +115,6 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   Supplier<Instant> getClock() {
     return Clock.systemUTC()::instant;
   }
-
-  abstract Optional<Consumer<Runnable>> getCancellationCallbackConsumer();
 
   @Value.Lazy
   JsonNode getOpenIdProviderMetadata() {

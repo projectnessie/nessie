@@ -172,6 +172,13 @@ public interface NessieClientBuilder {
   @CanIgnoreReturnValue
   NessieClientBuilder withSSLParameters(SSLParameters sslParameters);
 
+  /**
+   * Registers a callback to cancel an ongoing, blocking client setup.
+   *
+   * <p>When using "blocking" authentication, for example OAuth2 device or code flows, is being
+   * used, users may want to cancel an ongoing authentication. An application can register a
+   * callback that can be called asynchronously, for example from a SIGINT handler.
+   */
   @CanIgnoreReturnValue
   NessieClientBuilder withCancellationCallback(Consumer<Runnable> cancellationCallbackConsumer);
 

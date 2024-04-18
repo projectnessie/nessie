@@ -20,7 +20,6 @@ import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
 import static org.projectnessie.client.http.impl.HttpUtils.isHttpUri;
 
 import java.net.URI;
-import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.impl.HttpHeaders;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
@@ -54,7 +53,7 @@ public abstract class HttpRequest
    * Sets the authentication to use for this request. A non-null value will override the
    * authentication object set on the {@link HttpClient} level, if any.
    *
-   * <p>The passed authentication object will be {@linkplain NessieAuthentication#start() started}
+   * <p>The passed authentication object will be {@linkplain HttpAuthentication#start() started}
    * when this request is prepared, and will be {@linkplain HttpAuthentication#close() closed}
    * immediately after this request is {@linkplain HttpRequest#executeRequest(Method, Object)
    * executed}.
