@@ -86,6 +86,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @Override
   long assumedWallClockDriftMicros();
 
+  @SuppressWarnings("removal")
   @WithName(CONFIG_NAMESPACE_VALIDATION)
   @WithDefault("" + DEFAULT_NAMESPACE_VALIDATION)
   @Override
