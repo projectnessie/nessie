@@ -15,6 +15,7 @@ jacoco = "0.8.12"
 jandex = "3.1.7"
 jmh = "1.37"
 junit = "5.10.2"
+kafka = "3.5.1"
 keycloak = "24.0.3"
 maven = "3.9.6"
 mavenResolver = "1.9.18"
@@ -94,6 +95,8 @@ junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
+kafka-streams-test-utils = { module = "org.apache.kafka:kafka-streams-test-utils", version.ref = "kafka" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.2.13" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 maven-core = { module = "org.apache.maven:maven-resolver-provider", version.ref = "maven" }
@@ -149,6 +152,7 @@ wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version
 
 [plugins]
 annotations-stripper = { id = "org.projectnessie.annotation-stripper", version = "0.1.2" }
+avro = { id = "com.github.davidmc24.gradle.plugin.avro", version = "1.8.0" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.1.0" }
 gatling = { id = "io.gatling.gradle", version = "3.10.5.1" }
 jmh = { id = "me.champeau.jmh", version = "0.7.2" }
