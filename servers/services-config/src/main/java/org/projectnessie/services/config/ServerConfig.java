@@ -21,12 +21,18 @@ public interface ServerConfig extends ExceptionConfig {
   int DEFAULT_ACCESS_CHECK_BATCH_SIZE = 100;
 
   /**
-   * Gets the branch to use if not provided by the user.
+   * The default branch to use if not provided by the user.
    *
    * @return the branch to use
    */
   String getDefaultBranch();
 
+  /**
+   * The number of entity-checks that are grouped into a call to `BatchAccessChecker`. The default
+   * value is quite conservative, it is the responsibility of the operator to adjust this value
+   * according to the capabilities of the actual authz implementation. Note that the number of
+   * checks can be slightly exceeded by the implementation, depending on the call site.
+   */
   default int accessChecksBatchSize() {
     return DEFAULT_ACCESS_CHECK_BATCH_SIZE;
   }

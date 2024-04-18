@@ -37,22 +37,6 @@ pull_remote () {
   git pull "${REMOTE}" "${BRANCH}"
 }
 
-# Pushes changes from a local branch to a specified branch of a remote repository.
-# Arguments:
-#   $1: Branch name to push changes to
-push_remote () {
-  echo " --> push remote"
-
-  local BRANCH
-  BRANCH="$1"
-
-  # Ensure the branch argument is not empty
-  assert_not_empty "${BRANCH}"
-
-  # Push changes to the specified branch of the remote repository
-  git push "${REMOTE}" "${BRANCH}"
-}
-
 # Sets up and activates the virtual environment
 virtual_env () {
   echo " --> venv"
@@ -120,7 +104,7 @@ create_nightly () {
   mkdir -p build/versions/nightly/docs
 
   # Create symbolic links and copy configuration files for the 'nightly' documentation
-  cp -r in-dev/* build/versions/nightly/docs
+  cp -rL in-dev/* build/versions/nightly/docs
   mv build/versions/nightly/docs/mkdocs.yml build/versions/nightly
   rm build/versions/nightly/docs/index-release.md
 
@@ -197,7 +181,7 @@ search_exclude_versioned_docs () {
   python3 -c "import os
 for f in filter(lambda x: x.endswith('.md'), os.listdir()): lines = open(f).readlines(); open(f, 'w').writelines(lines[:2] + ['search:\n', '  exclude: true\n'] + lines[2:]);"
 
-  cd -
+  cd - > /dev/null
 }
 
 # Sets up local worktrees for the documentation and performs operations related to different versions.
@@ -225,6 +209,15 @@ pull_versioned_docs () {
 
   # Create the 'nightly' version of documentation
   create_nightly  
+}
+
+# Generates docs as markdown include files
+generate_docs() {
+  cd ..
+
+  ./gradlew :nessie-doc-generator:generateDocs
+
+  cd - > /dev/null
 }
 
 # Called during a Nessie release.
@@ -258,9 +251,8 @@ release() {
   echo "     ... copying release version doc contents"
   rm -rf "${target}"
   mkdir -p "${target}"/docs
-  cp -r in-dev/* "${target}/docs"
-  mv "${target}/docs/mkdocs.yml" "${target}/docs"
-  rm "${target}/docs/README.md"
+  cp -rL in-dev/* "${target}/docs"
+  mv "${target}/docs/mkdocs.yml" "${target}"
 
   echo "     ... replace index.md with index-release.md"
   mv "${target}/docs/index-release.md" "${target}/docs/index.md"
@@ -272,7 +264,7 @@ release() {
   find "${target}" -name "*.md" -exec sed -i "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
 
   echo "     ... adding release to nav.yml"
-  sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include docs\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml
+  sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include build\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml
 
   echo "     ... committing to local site-docs branch"
   (cd "${site_docs_dir}" ; git add . ; git commit -m "Add Nessie release ${RELEASE_VERSION}")

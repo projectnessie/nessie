@@ -37,6 +37,7 @@ public interface QuarkusBigTableConfig extends BigTableClientsConfig {
   @Override
   boolean enableTelemetry();
 
+  /** Prefix for tables, default is no prefix. */
   Optional<String> tablePrefix();
 
   @WithDefault("false")

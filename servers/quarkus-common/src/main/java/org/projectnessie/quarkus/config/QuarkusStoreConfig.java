@@ -86,6 +86,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @Override
   long assumedWallClockDriftMicros();
 
+  @SuppressWarnings("removal")
   @WithName(CONFIG_NAMESPACE_VALIDATION)
   @WithDefault("" + DEFAULT_NAMESPACE_VALIDATION)
   @Override
@@ -103,21 +104,36 @@ public interface QuarkusStoreConfig extends StoreConfig {
 
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
 
+  /**
+   * Fixed amount of heap used to cache objects, set to 0 to disable the cache entirely. Must not be
+   * used with fractional cache sizing. See description for {@code cache-capacity-fraction-of-heap}
+   * for the default value.
+   */
   @WithName(CONFIG_CACHE_CAPACITY_MB)
   OptionalInt cacheCapacityMB();
 
   String CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB = "cache-capacity-fraction-min-size-mb";
 
+  /** When using fractional cache sizing, this amount in MB is the minimum cache size. */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB)
   OptionalInt cacheCapacityFractionMinSizeMb();
 
   String CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP = "cache-capacity-fraction-of-heap";
 
+  /**
+   * Fraction of Java’s max heap size to use for cache objects, set to 0 to disable. Must not be
+   * used with fixed cache sizing. If neither this value nor a fixed size is configured, a default
+   * of .7 (70%) is assumed.
+   */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP)
   OptionalDouble cacheCapacityFractionOfHeap();
 
   String CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB = "cache-capacity-fraction-adjust-mb";
 
+  /**
+   * When using fractional cache sizing, this amount in MB of the heap will always be “kept free”
+   * when calculating the cache size.
+   */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
   OptionalInt cacheCapacityFractionAdjustMB();
 }

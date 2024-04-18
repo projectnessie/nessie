@@ -269,7 +269,9 @@ class BaseCommitHelper {
       Object2IntHashMap<ContentKey> allKeysToDelete,
       StoreIndex<CommitOp> headIndex,
       Consumer<Conflict> conflictConsumer) {
-    if (!persist.config().validateNamespaces()) {
+    @SuppressWarnings("removal")
+    boolean validateNamespaces = persist.config().validateNamespaces();
+    if (!validateNamespaces) {
       return;
     }
 
@@ -332,7 +334,9 @@ class BaseCommitHelper {
       Map<ContentKey, Content> newContent,
       StoreIndex<CommitOp> headIndex,
       Consumer<Conflict> conflictConsumer) {
-    if (!persist.config().validateNamespaces()) {
+    @SuppressWarnings("removal")
+    boolean validateNamespaces = persist.config().validateNamespaces();
+    if (!validateNamespaces) {
       return;
     }
     if (newContent.isEmpty()) {

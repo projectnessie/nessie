@@ -26,12 +26,16 @@ import java.util.Set;
 @ConfigMapping(prefix = "nessie.server.authentication")
 public interface QuarkusNessieAuthenticationConfig {
 
-  /** Returns {@code true} if Nessie authentication is enabled. */
+  /** Enable Nessie authentication. */
   @WithName("enabled")
   @WithDefault("false")
   boolean enabled();
 
-  /** Returns the set of HTTP URL paths that are permitted to be serviced without authentication. */
+  /**
+   * Returns the set of HTTP URL paths that are permitted to be serviced without authentication.
+   *
+   * @hidden Not present in docs on web-site.
+   */
   @WithName("anonymous-paths")
   Set<String> anonymousPaths();
 }

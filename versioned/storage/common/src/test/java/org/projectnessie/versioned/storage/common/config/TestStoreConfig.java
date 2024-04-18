@@ -115,7 +115,12 @@ public class TestStoreConfig {
             CONFIG_NAMESPACE_VALIDATION,
             "false",
             (Function<Adjustable, StoreConfig>) e -> e.withValidateNamespaces(false),
-            (Predicate<StoreConfig>) c -> !c.validateNamespaces()),
+            (Predicate<StoreConfig>)
+                c -> {
+                  @SuppressWarnings("removal")
+                  boolean validateNamespaces = c.validateNamespaces();
+                  return !validateNamespaces;
+                }),
         // default methods (current time in micros + hasher)
         arguments(
             "x",

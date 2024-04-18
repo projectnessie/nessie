@@ -27,7 +27,7 @@ import java.util.Map;
 public interface QuarkusNessieAuthorizationConfig {
 
   /**
-   * Returns {@code true} if Nessie authorization is enabled.
+   * Enable Nessie authorization.
    *
    * @return {@code true} if Nessie authorization is enabled.
    */
@@ -35,12 +35,13 @@ public interface QuarkusNessieAuthorizationConfig {
   @WithDefault("false")
   boolean enabled();
 
+  /** Sets the authorizer type to use. */
   @WithName("type")
   @WithDefault("CEL")
   String authorizationType();
 
   /**
-   * The authorization rules where the key represents the rule id and the value the CEL expression.
+   * CEL authorization rules where the key represents the rule id and the value the CEL expression.
    *
    * @return The authorization rules where the key represents the rule id and the value the CEL
    *     expression.

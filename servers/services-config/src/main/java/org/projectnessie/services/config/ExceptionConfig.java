@@ -18,7 +18,8 @@ package org.projectnessie.services.config;
 public interface ExceptionConfig {
 
   /**
-   * Returns {@code true} if server stack trace should be sent to the client in case of error.
+   * Whether stack traces should be sent to the client in case of error. The default is {@code
+   * false} to not expose internal details for security reasons.
    *
    * @return {@code true} if the server should send the stack trace to the client.
    */

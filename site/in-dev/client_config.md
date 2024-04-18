@@ -7,23 +7,47 @@ title: "Client Configuration"
 When Nessie is integrated into a broader data processing environment, authentication settings need to be provided in
 a way specific to the tool used.
 
-## Common Nessie client configuration options
+## Nessie client configuration options
 
-| Configuration option               | Mandatory / default | Meaning                                                                                                                                                                                                                                       | 
-|------------------------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.client-builder-name`       | Optional            | The HTTP client to use. Prefers the new Java HTTP client (`JavaHttp`), if running on Java 11 or newer, or the Java `URLConnection` client. The Apache HTTP client (`ApacheHttp`) can be used, if it has been made available on the classpath. |
-| `nessie.uri`                       | Mandatory           | Nessie REST endpoint                                                                                                                                                                                                                          |
-| `nessie.authentication.*`          | Recommended         | Authentication options, see [below](#authentication-settings)                                                                                                                                                                                 |
-| `nessie.ref`                       | Mandatory           | Name of the Nessie reference, usually `main`.                                                                                                                                                                                                 |
-| `nessie.ref.hash`                  | Optional            | Hash on `nessie.ref`, usually not specified.                                                                                                                                                                                                  |
-| `nessie.tracing`                   | Optional            | Boolean property to optionally enable tracing.                                                                                                                                                                                                |
-| `nessie.transport.read-timeout`    | Optional            | Network level read timeout in milliseconds. When running with Java 11, this becomes a request timeout.                                                                                                                                        |
-| `nessie.transport.connect-timeout` | Optional            | Network level connect timeout in milliseconds.                                                                                                                                                                                                |
-| `nessie.http-redirects`            | Optional            | Optional, specify how redirects are handled. `NEVER`: Never redirect (default),`ALWAYS`: Always redirect, `NORMAL`: Always redirect, except from HTTPS URLs to HTTP URLs.                                                                     |
-| `nessie.ssl.cipher-suites`         | Optional            | Optional, specify the set of allowed SSL cipher suites.                                                                                                                                                                                       |
-| `nessie.ssl.protocols`             | Optional            | Optional, specify the set of allowed SSL protocols.                                                                                                                                                                                           |
-| `nessie.ssl.sni-hosts`             | Optional            | Optional, specify the set of allowed SNI hosts.                                                                                                                                                                                               |
-| `nessie.ssl.sni-matcher`           | Optional            | Optional, specify a SNI matcher regular expression.                                                                                                                                                                                           |
+See also [Authentication Settings](#authentication-settings) below.
+
+### Common settings
+
+{% include './generated-docs/client-config-main.md' %}
+
+### Network settings
+
+{% include './generated-docs/client-config-Network.md' %}
+
+### HTTP settings
+
+{% include './generated-docs/client-config-Network_HTTP.md' %}
+
+### Bearer authentication settings
+
+See also [Authentication Settings](#authentication-settings) below.
+
+{% include './generated-docs/client-config-Bearer_Authentication.md' %}
+
+### OAuth2 settings
+
+See also [Authentication Settings](#authentication-settings) below.
+
+{% include './generated-docs/client-config-OAuth2_Authentication.md' %}
+
+### AWS authentication settings
+
+Additional AWS authentication configuration should be provided via standard AWS configuration files.
+
+See also [Authentication Settings](#authentication-settings) below.
+
+{% include './generated-docs/client-config-AWS_Authentication.md' %}
+
+### Basic authentication settings
+
+See also [Authentication Settings](#authentication-settings) below.
+
+{% include './generated-docs/client-config-Basic_Authentication.md' %}
 
 ### Java 11 connection pool options
 
@@ -143,6 +167,7 @@ the `application.properties` file of the Nessie server:
 nessie.server.authentication.enabled=true
 quarkus.oidc.auth-server-url=https://<keycloak-server>/realms/<realm-name>
 ```
+
 The most important property is `authentication.oauth2.grant-type`, which defines the grant type to
 use when authenticating against the OAuth2 server. Valid values are: 
 
@@ -299,10 +324,3 @@ to the "authorization_code" grant type, it requires the user to authenticate in 
 but it does not require the browser and the terminal session to be running on the same machine. The 
 user will be prompted to authenticate in a local browser window, and the remote Nessie client will
 poll the OAuth2 server for the authentication status, until the authentication is complete.
-
-### Authentication Type `AWS`
-
-For the `AWS` Authentication Type the `authentication.aws.region` property should be set to the
-AWS region where the Nessie Server endpoint is located.
-
-Additional AWS authentication configuration should be provided via standard AWS configuration files. 

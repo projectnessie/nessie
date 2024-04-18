@@ -15,47 +15,47 @@
  */
 package org.projectnessie.client;
 
-import java.util.Collection;
-import java.util.List;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPageGroup;
 
 /** Configuration constants for Nessie clients. */
 @SuppressWarnings("JavadocDeclaration")
+@ConfigPageGroup(name = "client-config")
 public final class NessieConfigConstants {
   /** Config property name ({@value #CONF_NESSIE_URI}) for the Nessie service URL. */
-  public static final String CONF_NESSIE_URI = "nessie.uri";
+  @ConfigItem public static final String CONF_NESSIE_URI = "nessie.uri";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_USERNAME}) for the username used for (basic)
-   * authentication.
+   * Username used for the insecure {@code BASIC} authentication.
    *
    * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
    *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
+  @ConfigItem(section = "Basic Authentication")
   public static final String CONF_NESSIE_USERNAME = "nessie.authentication.username";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_PASSWORD}) for the password used for (basic)
-   * authentication.
+   * Password used for the insecure {@code BASIC} authentication.
    *
    * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
    *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
+  @ConfigItem(section = "Basic Authentication")
   public static final String CONF_NESSIE_PASSWORD = "nessie.authentication.password";
 
-  /**
-   * Config property name ({@value #CONF_NESSIE_AUTH_TOKEN}) for the token used for (bearer)
-   * authentication.
-   */
+  /** Token used for {@code BEARER} authentication. */
+  @ConfigItem(section = "Bearer Authentication")
   public static final String CONF_NESSIE_AUTH_TOKEN = "nessie.authentication.token";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_ISSUER_URL}) for the OAuth2 authentication
-   * provider. The root URL of the OpenID Connect identity issuer provider, which will be used for
+   * OAuth2 issuer URL.
+   *
+   * <p>The root URL of the OpenID Connect identity issuer provider, which will be used for
    * discovering supported endpoints and their locations. For Keycloak, this is typically the realm
    * URL: {@code https://<keycloak-server>/realms/<realm-name>}.
    *
@@ -65,24 +65,24 @@ public final class NessieConfigConstants {
    *
    * <p>Either this property or {@link #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT} must be set.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_ISSUER_URL =
       "nessie.authentication.oauth2.issuer-url";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT}) for the OAuth2
-   * authentication provider. The URL of the OAuth2 token endpoint. For Keycloak, this is typically
-   * {@code https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token}.
+   * URL of the OAuth2 token endpoint. For Keycloak, this is typically {@code
+   * https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token}.
    *
    * <p>Either this property or {@link #CONF_NESSIE_OAUTH2_ISSUER_URL} must be set. In case it is
    * not set, the token endpoint will be discovered from the {@link #CONF_NESSIE_OAUTH2_ISSUER_URL
    * issuer URL}, using the OpenID Connect Discovery metadata published by the issuer.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT =
       "nessie.authentication.oauth2.token-endpoint";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTH_ENDPOINT}) for the OAuth2 authentication
-   * provider. The URL of the OAuth2 authorization endpoint. For Keycloak, this is typically {@code
+   * URL of the OAuth2 authorization endpoint. For Keycloak, this is typically {@code
    * https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth}.
    *
    * <p>If using the "authorization_code" grant type, either this property or {@link
@@ -90,18 +90,18 @@ public final class NessieConfigConstants {
    * will be discovered from the {@link #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}, using the OpenID
    * Connect Discovery metadata published by the issuer.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_AUTH_ENDPOINT =
       "nessie.authentication.oauth2.auth-endpoint";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT}) for the OAuth2
-   * authentication provider. The URL of the OAuth2 device authorization endpoint. For Keycloak,
-   * this is typically {@code
+   * URL of the OAuth2 device authorization endpoint. For Keycloak, this is typically {@code
    * http://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth/device}.
    *
    * <p>If using the "Device Code" grant type, either this property or {@link
    * #CONF_NESSIE_OAUTH2_ISSUER_URL} must be set.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT =
       "nessie.authentication.oauth2.device-auth-endpoint";
 
@@ -116,9 +116,7 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE = "device_code";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_GRANT_TYPE}) for the OAuth2 authentication
-   * provider. The grant type to use when authenticating against the OAuth2 server. Valid values
-   * are:
+   * The grant type to use when authenticating against the OAuth2 server. Valid values are:
    *
    * <ul>
    *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS}
@@ -176,120 +174,121 @@ public final class NessieConfigConstants {
    * <p>Both client and user must be properly configured with appropriate permissions in the OAuth2
    * server for the authentication to succeed.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE =
       "nessie.authentication.oauth2.grant-type";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_ID}) for the OAuth2 authentication
-   * provider. The client ID to use when authenticating against the OAuth2 server. Required if using
-   * OAuth2 authentication, ignored otherwise.
+   * Client ID to use when authenticating against the OAuth2 server. Required if using OAuth2
+   * authentication, ignored otherwise.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_CLIENT_ID =
       "nessie.authentication.oauth2.client-id";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_SECRET}) for the OAuth2 authentication
-   * provider. The client secret to use when authenticating against the OAuth2 server. Required if
-   * using OAuth2 authentication, ignored otherwise.
+   * Client secret to use when authenticating against the OAuth2 server. Required if using OAuth2
+   * authentication, ignored otherwise.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_CLIENT_SECRET =
       "nessie.authentication.oauth2.client-secret";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_USERNAME}) for the OAuth2 authentication
-   * provider. The username to use when authenticating against the OAuth2 server. Required if using
-   * OAuth2 authentication and "password" grant type, ignored otherwise.
+   * Username to use when authenticating against the OAuth2 server. Required if using OAuth2
+   * authentication and "password" grant type, ignored otherwise.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_USERNAME = "nessie.authentication.oauth2.username";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_PASSWORD}) for the OAuth2 authentication
-   * provider. The user password to use when authenticating against the OAuth2 server. Required if
-   * using OAuth2 authentication and the "password" grant type, ignored otherwise.
+   * Password to use when authenticating against the OAuth2 server. Required if using OAuth2
+   * authentication and the "password" grant type, ignored otherwise.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_PASSWORD = "nessie.authentication.oauth2.password";
 
   public static final String DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN = "PT1M";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN}) for the
-   * OAuth2 authentication provider. The default access token lifespan; if the OAuth2 server returns
-   * an access token without specifying its expiration time, this value will be used. Optional,
-   * defaults to {@value #DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN}. Must be a valid <a
+   * Default access token lifespan; if the OAuth2 server returns an access token without specifying
+   * its expiration time, this value will be used.
+   *
+   * <p>Optional, defaults to {@value #DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN =
       "nessie.authentication.oauth2.default-access-token-lifespan";
 
   public static final String DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN = "PT30M";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN}) for the
-   * OAuth2 authentication provider. The default refresh token lifespan; if the OAuth2 server
-   * returns a refresh token without specifying its expiration time, this value will be used.
-   * Optional, defaults to {@value #DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN}. Must be a valid <a
+   * Default refresh token lifespan. If the OAuth2 server returns a refresh token without specifying
+   * its expiration time, this value will be used.
+   *
+   * <p>Optional, defaults to {@value #DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN =
       "nessie.authentication.oauth2.default-refresh-token-lifespan";
 
   public static final String DEFAULT_REFRESH_SAFETY_WINDOW = "PT10S";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW}) for the OAuth2
-   * authentication provider. The refresh safety window to use; a new token will be fetched when the
-   * current token's remaining lifespan is less than this value. Optional, defaults to {@value
+   * Refresh safety window to use; a new token will be fetched when the current token's remaining
+   * lifespan is less than this value. Optional, defaults to {@value
    * #DEFAULT_REFRESH_SAFETY_WINDOW}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW =
       "nessie.authentication.oauth2.refresh-safety-window";
 
   public static final String DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT = "PT30S";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT}) for
-   * the OAuth2 authentication provider. For how long the OAuth2 provider should keep the tokens
-   * fresh, if the client is not being actively used. Setting this value too high may cause an
-   * excessive usage of network I/O and thread resources; conversely, when setting it too low, if
-   * the client is used again, the calling thread may block if the tokens are expired and need to be
-   * renewed synchronously. Optional, defaults to {@value
-   * #DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT}. Must be a valid <a
-   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   * Defines for how long the OAuth2 provider should keep the tokens fresh, if the client is not
+   * being actively used. Setting this value too high may cause an excessive usage of network I/O
+   * and thread resources; conversely, when setting it too low, if the client is used again, the
+   * calling thread may block if the tokens are expired and need to be renewed synchronously.
+   * Optional, defaults to {@value #DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT}. Must be a valid
+   * <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT =
       "nessie.authentication.oauth2.preemptive-token-refresh-idle-timeout";
 
   public static final String DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT = "PT30S";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT}) for the
-   * OAuth2 authentication provider. How long the background thread should be kept running if the
-   * client is not being actively used, or no token refreshes are being executed. Optional, defaults
-   * to {@value #DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT}. Setting this value too high will cause the
-   * background thread to keep running even if the client is not used anymore, potentially leaking
-   * thread and memory resources; conversely, setting it too low could cause the background thread
-   * to be restarted too often. Must be a valid <a
+   * Defines how long the background thread should be kept running if the client is not being
+   * actively used, or no token refreshes are being executed. Optional, defaults to {@value
+   * #DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT}. Setting this value too high will cause the background
+   * thread to keep running even if the client is not used anymore, potentially leaking thread and
+   * memory resources; conversely, setting it too low could cause the background thread to be
+   * restarted too often. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT =
       "nessie.authentication.oauth2.background-thread-idle-timeout";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES}) for the OAuth2 authentication
-   * provider. Space-separated list of scopes to include in each request to the OAuth2 server.
-   * Optional, defaults to empty (no scopes).
+   * Space-separated list of scopes to include in each request to the OAuth2 server. Optional,
+   * defaults to empty (no scopes).
    *
    * <p>The scope names will not be validated by the Nessie client; make sure they are valid
    * according to <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">RFC 6749
    * Section 3.3</a>.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_CLIENT_SCOPES =
       "nessie.authentication.oauth2.client-scopes";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED}) for the OAuth2
-   * authentication provider. If set to {@code true}, the Nessie client will attempt to exchange
+   * Enables token exchange, if set to {@code true}, the Nessie client will attempt to exchange
    * access tokens for refresh tokens whenever appropriate. This, however, can only work if the
    * OAuth2 server supports token exchange. Optional, defaults to {@code true} (enabled).
    *
@@ -298,12 +297,12 @@ public final class NessieConfigConstants {
    * href="https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange">Using
    * token exchange</a> for more information and how to enable this feature.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED =
       "nessie.authentication.oauth2.token-exchange-enabled";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT}) for the
-   * OAuth2 authentication provider.
+   * Port of the OAuth2 authorization code flow web server.
    *
    * <p>When running a client inside a container make sure to specify a port and forward the port to
    * the container host.
@@ -314,155 +313,155 @@ public final class NessieConfigConstants {
    *
    * <p>Optional; if not present, a random port will be used.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT =
       "nessie.authentication.oauth2.auth-code-flow.web-port";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT}) for the
-   * OAuth2 authentication provider. How long the client should wait for the authorization code flow
-   * to complete. This is only used if the grant type to use is {@value
+   * Defines how long the client should wait for the authorization code flow to complete. This is
+   * only used if the grant type to use is {@value
    * #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}. Optional, defaults to {@value
    * #DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT}.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT =
       "nessie.authentication.oauth2.auth-code-flow.timeout";
 
   public static final String DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT = "PT5M";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT}) for the OAuth2
-   * authentication provider. How long the client should wait for the device code flow to complete.
-   * This is only used if the grant type to use is {@value
-   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE}. Optional, defaults to {@value
-   * #DEFAULT_DEVICE_CODE_FLOW_TIMEOUT}.
+   * Defines how long the client should wait for the device code flow to complete. This is only used
+   * if the grant type to use is {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE}. Optional,
+   * defaults to {@value #DEFAULT_DEVICE_CODE_FLOW_TIMEOUT}.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT =
       "nessie.authentication.oauth2.device-code-flow.timeout";
 
   public static final String DEFAULT_DEVICE_CODE_FLOW_TIMEOUT = "PT5M";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL}) for the
-   * OAuth2 authentication provider. How often the client should poll the OAuth2 server for the
-   * device code flow to complete. This is only used if the grant type to use is {@value
+   * Defines how often the client should poll the OAuth2 server for the device code flow to
+   * complete. This is only used if the grant type to use is {@value
    * #CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE}. Optional, defaults to {@value
    * #DEFAULT_DEVICE_CODE_FLOW_POLL_INTERVAL}.
    */
+  @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL =
       "nessie.authentication.oauth2.device-code-flow.poll-interval";
 
   public static final String DEFAULT_DEVICE_CODE_FLOW_POLL_INTERVAL = "PT5S";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_AWS_REGION}) for the region used for AWS
-   * authentication.
+   * AWS region used for {@code AWS} authentication, must be configured to the same region as the
+   * Nessie setver.
    */
+  @ConfigItem(section = "AWS Authentication")
   public static final String CONF_NESSIE_AWS_REGION = "nessie.authentication.aws.region";
 
-  /**
-   * Config property name ({@value #CONF_NESSIE_AWS_PROFILE}) for the profile name used for AWS
-   * authentication (optional).
-   */
+  /** AWS profile name used for {@code AWS} authentication (optional). */
+  @ConfigItem(section = "AWS Authentication")
   public static final String CONF_NESSIE_AWS_PROFILE = "nessie.authentication.aws.profile";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
-   * Valid values are {@code BASIC}, {@code BEARER}, {@code OAUTH2} and {@code AWS}.
+   * ID of the authentication provider to use, default is no authentication.
    *
-   * <p>The value is matched against the values returned by {@link
-   * NessieAuthenticationProvider#getAuthTypeValue()} of the available authentication providers.
+   * <p>Valid values are {@code BASIC}, {@code BEARER}, {@code OAUTH2} and {@code AWS}.
+   *
+   * <p>The value is matched against the values returned as the supported auth-type by
+   * implementations of {@link NessieAuthenticationProvider} across all available authentication
+   * providers.
    *
    * <p>Note that "basic" HTTP authentication is not considered secure, use {@code BEARER} instead.
    */
-  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.authentication.type";
+  @ConfigItem public static final String CONF_NESSIE_AUTH_TYPE = "nessie.authentication.type";
+
+  /** Name of the initial Nessie reference, usually {@code main}. */
+  @ConfigItem public static final String CONF_NESSIE_REF = "nessie.ref";
+
+  /** Commit ID (hash) on {@value #CONF_NESSIE_REF}, usually not specified. */
+  @ConfigItem public static final String CONF_NESSIE_REF_HASH = "nessie.ref.hash";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference name used by clients,
-   * recommended setting.
+   * Enable adding the HTTP headers of an active OpenTracing span to all Nessie requests. Disabled
+   * by default.
    */
-  public static final String CONF_NESSIE_REF = "nessie.ref";
+  @ConfigItem public static final String CONF_NESSIE_TRACING = "nessie.tracing";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_REF_HASH}) for the nessie reference hash used by
-   * clients, optional setting.
+   * Network level read timeout in milliseconds. When running with Java 11, this becomes a request
+   * timeout. Default is {@value #DEFAULT_READ_TIMEOUT_MILLIS} ms.
    */
-  public static final String CONF_NESSIE_REF_HASH = "nessie.ref.hash";
-
-  /**
-   * Config property name ({@value #CONF_NESSIE_TRACING}) to enable adding the HTTP headers of an
-   * active OpenTracing span to all Nessie requests. Valid values are {@code true} and {@code
-   * false}.
-   */
-  public static final String CONF_NESSIE_TRACING = "nessie.tracing";
-
-  /**
-   * Config property name ({@value #CONF_READ_TIMEOUT}) for the network transport read-timeout,
-   * default is {@value #DEFAULT_READ_TIMEOUT_MILLIS}.
-   */
+  @ConfigItem(section = "Network")
   public static final String CONF_READ_TIMEOUT = "nessie.transport.read-timeout";
 
   /**
-   * Config property name ({@value #CONF_CONNECT_TIMEOUT}) for the network transport connect timeout
-   * in milliseconds, default is {@value #DEFAULT_CONNECT_TIMEOUT_MILLIS}.
+   * Network level connect timeout in milliseconds, default is {@value
+   * #DEFAULT_CONNECT_TIMEOUT_MILLIS}.
    */
+  @ConfigItem(section = "Network")
   public static final String CONF_CONNECT_TIMEOUT = "nessie.transport.connect-timeout";
 
   /**
    * Config property name ({@value #CONF_NESSIE_DISABLE_COMPRESSION}) to disable compression on the
    * network layer, if set to {@code true}.
    */
+  @ConfigItem(section = "Network")
   public static final String CONF_NESSIE_DISABLE_COMPRESSION =
       "nessie.transport.disable-compression";
 
-  /** Config property name ({@value #CONF_NESSIE_CLIENT_NAME}) for custom client builder name. */
-  public static final String CONF_NESSIE_CLIENT_NAME = "nessie.client-builder-name";
+  /**
+   * Name of the Nessie client to use. If not specified, the implementation prefers the new Java
+   * HTTP client ({@code JavaHttp}), if running on Java 11 or newer, or the Java {@code
+   * URLConnection} client. The Apache HTTP client ({@code ApacheHttp}) can be used, if it has been
+   * made available on the classpath.
+   */
+  @ConfigItem public static final String CONF_NESSIE_CLIENT_NAME = "nessie.client-builder-name";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_CLIENT_BUILDER_IMPL}) for custom client builder
-   * class name.
+   * Similar to {@value #CONF_NESSIE_CLIENT_NAME}, but uses a class name.
    *
-   * @deprecated Prefer using Nessie client implementation <em>names</em>, configured via {@link
+   * @deprecated Prefer using Nessie client implementation <em>names</em>, configured via {@value
    *     #CONF_NESSIE_CLIENT_NAME}.
    */
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
+  @ConfigItem
   public static final String CONF_NESSIE_CLIENT_BUILDER_IMPL = "nessie.client-builder-impl";
 
   /**
-   * Optional, list of comma-separated cipher suites for SSL connections, see {@link
-   * javax.net.ssl.SSLParameters#setCipherSuites(String[])}.
+   * Optional, list of comma-separated cipher suites for SSL connections.
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
+  @ConfigItem(section = "Network")
   public static final String CONF_NESSIE_SSL_CIPHER_SUITES = "nessie.ssl.cipher-suites";
 
   /**
-   * Optional, list of comma-separated protocols for SSL connections, see {@link
-   * javax.net.ssl.SSLParameters#setProtocols(String[])}.
+   * Optional, list of comma-separated protocols for SSL connections.
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
+  @ConfigItem(section = "Network")
   public static final String CONF_NESSIE_SSL_PROTOCOLS = "nessie.ssl.protocols";
 
   /**
-   * Optional, the SNI host names for SSL connections, see {@link
-   * javax.net.ssl.SSLParameters#setServerNames(List)}.
-   *
-   * <p>Takes a comma-separated list of SNI hostnames.
+   * Optional, comma-separated list of SNI host names for SSL connections.
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
+  @ConfigItem(section = "Network")
   public static final String CONF_NESSIE_SNI_HOSTS = "nessie.ssl.sni-hosts";
 
   /**
-   * Optional, a single SNI matcher for SSL connections, see {@link
-   * javax.net.ssl.SSLParameters#setSNIMatchers(Collection)}.
+   * Optional, a single SNI matcher for SSL connections.
    *
    * <p>Takes a single SNI hostname <em>matcher</em>, a regular expression representing the SNI
    * hostnames to match.
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
+  @ConfigItem(section = "Network")
   public static final String CONF_NESSIE_SNI_MATCHER = "nessie.ssl.sni-matcher";
 
   /**
@@ -470,12 +469,11 @@ public final class NessieConfigConstants {
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
+  @ConfigItem(section = "Network / HTTP")
   public static final String CONF_NESSIE_HTTP_2 = "nessie.http2-upgrade";
 
   /**
    * Optional, specify how redirects are handled.
-   *
-   * <p>See {@link java.net.http.HttpClient.Redirect}, possible values:
    *
    * <ul>
    *   <li>{@code NEVER}: Never redirect.
@@ -485,6 +483,7 @@ public final class NessieConfigConstants {
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.
    */
+  @ConfigItem(section = "Network / HTTP")
   public static final String CONF_NESSIE_HTTP_REDIRECT = "nessie.http-redirects";
 
   /**
@@ -504,9 +503,15 @@ public final class NessieConfigConstants {
    * <p>You can also control this setting by setting the system property {@code
    * nessie.client.enable-api-compatibility-check} to {@code true} or {@code false}.
    */
+  @ConfigItem
   public static final String CONF_ENABLE_API_COMPATIBILITY_CHECK =
       "nessie.enable-api-compatibility-check";
 
+  /**
+   * Explicitly specify the Nessie API version number to use. The default for this setting depends
+   * on the client being used.
+   */
+  @ConfigItem
   public static final String CONF_NESSIE_CLIENT_API_VERSION = "nessie.client-api-version";
 
   public static final int DEFAULT_READ_TIMEOUT_MILLIS = 25000;

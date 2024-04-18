@@ -28,6 +28,7 @@ protobuf = "3.25.3"
 quarkusPlatform = "3.9.3"
 quarkusPlugin = "3.9.4"
 slf4j = "1.7.36"
+smallryeConfig = "3.7.1"
 undertow = "2.2.28.Final"
 
 [bundles]
@@ -132,6 +133,7 @@ slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
 slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
 snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.5" }
+smallrye-config-core = { module = "io.smallrye.config:smallrye-config-core", version.ref = "smallryeConfig" }
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
 spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.4, 3.5[", prefer = "3.4.2"}}

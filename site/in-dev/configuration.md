@@ -42,21 +42,20 @@ For more information on docker images, see [Docker image options](#docker-image-
 
 ### Core Settings
 
-| Property                                  | Default values | Type      | Description                                                                                                                                                                                                                                                                                                                                       |
-|-------------------------------------------|----------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.server.default-branch`            | `main`         | `String`  | Sets the default branch to use if not provided by the user.                                                                                                                                                                                                                                                                                       |
-| `nessie.server.send-stacktrace-to-client` | `false`        | `boolean` | Sets if server stack trace should be sent to the client in case of error.                                                                                                                                                                                                                                                                         |
-| `nessie.server.access-checks-batch-size`  | `100`          | `int`     | The number of entity-checks that are grouped into a call to `BatchAccessChecker`. The default value is quite conservative, it is the responsibility of the operator to adjust this value according to the capabilities of the actual authz implementation. Note that the number of checks can be exceeded depending on the context of the checks. |
+{% include './generated-docs/smallrye-nessie_server.md' %}
 
+Related Quarkus settings:
+
+| Property                  | Default values | Type      | Description                           |
+|---------------------------|----------------|-----------|---------------------------------------|
+| `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port                    |
+
+!!! info
+    A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
 
 ### Version Store Settings
 
-| Property                             | Default values | Type               | Description                                                                                                                                                                                                                                                                                                      |
-|--------------------------------------|----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`          | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`, `BIGTABLE`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` were removed in Nessie 0.75.0, please [migrate] to one of the above. |
-| `nessie.version.store.events.enable` | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                                           |
-
-[migrate]: ../guides/migration.md
+{% include './generated-docs/smallrye-nessie_version_store.md' %}
 
 ### Support for the database specific implementations
 
@@ -71,36 +70,19 @@ For more information on docker images, see [Docker image options](#docker-image-
 | CockroachDB      | experimental, known issues                       | `JDBC`                                                  | Known to raise user-facing "write too old" errors under contention.                                                                                                                                                             |
 | Apache Cassandra | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                     |
 | ScyllaDB         | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. |
-| (all legacy)     | out of support, code removed since Nessie 0.75.0 | `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` | no longer supported, [migrate] to one of the above.                                                                                                                                                                             |
 
 #### BigTable Version Store Settings
 
 When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
+{% include './generated-docs/smallrye-nessie_version_store_persist_bigtable.md' %}
+
+Related Quarkus settings:
+
 | Property                                                      | Default values | Type                  | Description                                                                                                              |
 |---------------------------------------------------------------|----------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------|
 | `quarkus.google.cloud.project-id`                             |                | `String`              | The Google project ID, mandatory.                                                                                        |
 | (Google authentication)                                       |                |                       | See [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/) for documentation. | 
-| `nessie.version.store.persist.bigtable.app-profile-id`        | `nessie`       | `String`              | Sets the profile-id to be used with Google BigTable.                                                                     |
-| `nessie.version.store.persist.bigtable.instance-id`           | `nessie`       | `String`              | Sets the instance-id to be used with Google BigTable.                                                                    |
-| `nessie.version.store.persist.bigtable.quota-project-id`      | n/a            | `String`              | Google BigTable quote project ID (optional).                                                                             |
-| `nessie.version.store.persist.bigtable.emulator-host`         | n/a            | `String`              | When using the BigTable emulator, used to configure the host.                                                            |
-| `nessie.version.store.persist.bigtable.emulator-port`         | `8086`         | `int`                 | When using the BigTable emulator, used to configure the port.                                                            |
-| `nessie.version.store.persist.bigtable.endpoint`              | n/a            | `String`              | Google BigTable endpoint (if not default).                                                                               |
-| `nessie.version.store.persist.bigtable.mtls-endpoint`         | n/a            | `String`              | Google BigTable MTLS endpoint (if not default).                                                                          |
-| `nessie.version.store.persist.bigtable.jwt-audience-mapping`  | n/a            | `Map<String, String>` | Google BigTable JWT audience mappings (if necessary).                                                                    |
-| `nessie.version.store.persist.bigtable.table-prefix`          | n/a            | `String`              | Prefix for tables, default is no prefix.                                                                                 |
-| `nessie.version.store.persist.bigtable.min-channel-count`     | `1`            | `int`                 | Minimum number of gRPC channels. Refer to Google docs for details.                                                       |
-| `nessie.version.store.persist.bigtable.max-channel-count`     | `200`          | `int`                 | Maximum number of gRPC channels. Refer to Google docs for details.                                                       |
-| `nessie.version.store.persist.bigtable.initial-channel-count` | `1`            | `int`                 | Initial number of gRPC channels. Refer to Google docs for details.                                                       |
-| `nessie.version.store.persist.bigtable.min-rpcs-per-channel`  | `0`            | `int`                 | Minimum number of RPCs per channel. Refer to Google docs for details.                                                    |
-| `nessie.version.store.persist.bigtable.max-rpcs-per-channel`  | (unlimited)    | `int`                 | Maximum number of RPCs per channel. Refer to Google docs for details.                                                    |
-| `nessie.version.store.persist.bigtable.max-attempts`          | (unspecified)  | `int`                 | Maximum number of attempts for each Bigtable API call (including retries).                                               |
-| `nessie.version.store.persist.bigtable.total-timeout`         | (unspecified)  | `Duration`            | Total timeout (including retries) for Bigtable API calls.                                                                |
-| `nessie.version.store.persist.bigtable.initial-rpc-timeout`   | (unspecified)  | `Duration`            | Initial RPC timeout.                                                                                                     |
-| `nessie.version.store.persist.bigtable.initial-retry-delay`   | (unspecified)  | `Duration`            | Initial retry delay.                                                                                                     |
-| `nessie.version.store.persist.bigtable.max-retry-delay`       | (unspecified)  | `Duration`            | Max retry-delay.                                                                                                         |
-| `nessie.version.store.persist.bigtable.enable-telemetry`      | `true`         | `boolean`             | Enables telemetry with OpenCensus.                                                                                       |
 
 
 !!! info
@@ -112,17 +94,21 @@ Setting `nessie.version.store.type=JDBC` enables transactional/RDBMS as the vers
 Configuration of the datastore will be done by Quarkus and depends on many factors, such as the actual database in use. 
 A complete set of JDBC configuration options can be found on [quarkus.io](https://quarkus.io/guides/datasource).
 
+{% include './generated-docs/smallrye-nessie_version_store_persist_jdbc.md' %}
+
 #### RocksDB Version Store Settings
 
 When setting `nessie.version.store.type=ROCKSDB` which enables RocksDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-| Property                                           | Default values        | Type     | Description                                          |
-|----------------------------------------------------|-----------------------|----------|------------------------------------------------------|
-| `nessie.version.store.persist.rocks.database-path` | `/tmp/nessie-rocksdb` | `String` | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
+{% include './generated-docs/smallrye-nessie_version_store_persist_rocks.md' %}
 
 #### Cassandra Version Store Settings
 
 When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandra or ScyllaDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+
+{% include './generated-docs/smallrye-nessie_version_store_cassandra.md' %}
+
+Related Quarkus settings:
 
 | Property                                     | Default values | Type      | Description                                                                                                                          |
 |----------------------------------------------|----------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------|
@@ -132,8 +118,6 @@ When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandr
 | `quarkus.cassandra.auth.username`            |                | `String`  | Cassandra authentication username, see [Quarkus docs](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database).     |
 | `quarkus.cassandra.auth.password`            |                | `String`  | Cassandra authentication password, see [Quarkus docs](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database).     |
 | `quarkus.cassandra.health.enabled`           | `false`        | `boolean` | See Quarkus docs.                                                                                                                    |
-| `nessie.version.store.cassandra.ddl-timeout` | `PT5S`         | `String`  | DDL statement timeout for DDL.                                                                                                       |  
-| `nessie.version.store.cassandra.dml-timeout` | `PT3S`         | `String`  | DML statement timeout for DDL.                                                                                                       |
 
 !!! info
     A complete set of the Quarkus Cassandra extension configuration options can be found on [quarkus.io](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database)
@@ -142,13 +126,16 @@ When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandr
 
 When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
+{% include './generated-docs/smallrye-nessie_version_store_persist_dynamodb.md' %}
+
+Related Quarkus settings:
+
 | Property                                             | Default values | Type     | Description                                                                                                                                                                                                                                       |
 |------------------------------------------------------|----------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `quarkus.dynamodb.aws.region`                        |                | `String` | Sets DynamoDB AWS region.                                                                                                                                                                                                                         |
 | `quarkus.dynamodb.aws.credentials.type`              | `default`      | `String` | See [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference) docs for possible values. Sets the credentials provider that should be used to authenticate with AWS. |
 | `quarkus.dynamodb.endpoint-override`                 |                | `URI`    | Sets the endpoint URI with which the SDK should communicate. If not specified, an appropriate endpoint to be used for the given service and region.                                                                                               |
 | `quarkus.dynamodb.sync-client.type`                  | `url`          | `String` | Possible values are: `url`, `apache`. Sets the type of the sync HTTP client implementation                                                                                                                                                        |
-| `nessie.version.store.persist.dynamodb.table-prefix` | n/a            | `String` | Prefix for tables, default is no prefix.                                                                                                                                                                                                          |
 
 !!! info
     A complete set of DynamoDB configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference).
@@ -156,6 +143,8 @@ When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the 
 #### MongoDB Version Store Settings
 
 When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+
+Related Quarkus settings:
 
 | Property                            | Default values | Type     | Description                     |
 |-------------------------------------|----------------|----------|---------------------------------|
@@ -177,53 +166,23 @@ into the configured data store:
 Usually, only the cache-capacity should be adjusted to the amount of the Java heap "available" for the cache. The
 default is conservative, bumping the cache size is recommended.
 
-| Property                                                           | Default values      | Type      | Description                                                                                                                                                                                                           |
-|--------------------------------------------------------------------|---------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.persist.repository-id`                       |                     | `String`  | Sets Nessie repository ID (optional). This ID can be used to distinguish multiple Nessie repositories that reside in the same storage instance.                                                                       |
-| `nessie.version.store.persist.parents-per-commit`                  | `20`                | `int`     | Sets the number of parent-commit-hashes stored in Nessie store.                                                                                                                                                       |
-| `nessie.version.store.persist.commit-timeout-millis`               | `5000`              | `int`     | Sets the timeout for CAS-like operations in milliseconds.                                                                                                                                                             |
-| `nessie.version.store.persist.commit-retries`                      | `Integer.MAX_VALUE` | `int`     | Sets the maximum retries for CAS-like operations.                                                                                                                                                                     |
-| `nessie.version.store.persist.retry-initial-sleep-millis-lower`    | `5`                 | `int`     | Configures the initial lower-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                                                             |
-| `nessie.version.store.persist.retry-initial-sleep-millis-upper`    | `25`                | `int`     | Configures the initial upper-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                                                             |
-| `nessie.version.store.persist.retry-max-sleep-millis`              | `250`               | `int`     | Configures the max sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                                                                             |
-| `nessie.version.store.persist.max-incremental-index-size`          | `50 * 1024`         | `int`     | Maximum serialized size of key indexes stored inside commit objects. Trade off: bigger incremental indexes reduce the amount of reads, at the expense of "bigger" read results.                                       |
-| `nessie.version.store.persist.max-serialized-index-size`           | `200 * 1024`        | `int`     | Maximum serialized size of key indexes stored as separate objects.  Trade off: bigger incremental indexes reduce the amount of reads, at the expense of "bigger" read results.                                        |
-| `nessie.version.store.persist.max-reference-stripes-per-commit`    | `50`                | `int`     | Maximum number of referenced index objects stored inside commit objects.                                                                                                                                              |
-| `nessie.version.store.persist.assumed-wall-clock-drift-micros`     | `5_000_000`         | `long`    | Sets the assumed wall-clock drift between multiple Nessie instances, in microseconds.                                                                                                                                 |
-| `nessie.version.store.persist.namespace-validation`                | `true`              | `boolean` | Whether namespace validation is enabled, changing this to `false` will break the Nessie specification!                                                                                                                |
-| `nessie.version.store.persist.cache-capacity-mb`                   | see description     | `int`     | Fixed amount of heap used to cache objects, set to `0` to disable the cache entirely. Must not be used with fractional cache sizing. See description for `cache-capacity-fraction-of-heap` for the default value.     |
-| `nessie.version.store.persist.cache-capacity-fraction-of-heap`     | see description     | `double`  | Fraction of Java's max heap size to use for cache objects, set to `0` to disable. Must not be used with fixed cache sizing. If neither this value nor a fixed size is configured, a default of `.7` (70%) is assumed. |
-| `nessie.version.store.persist.cache-capacity-fraction-adjust-mb`   | `256`               | `int`     | When using fractional cache sizing, this amount in MB of the heap will always be "kept free" when calculating the cache size.                                                                                         |
-| `nessie.version.store.persist.cache-capacity-fraction-min-size-mb` | `64`                | `int`     | When using fractional cache sizing, this amount in MB is the minimum cache size.                                                                                                                                      |
-| `nessie.version.store.persist.ref-previous-head-count`             | `20`                | `int`     | Named references keep a history of up to this amount of previous HEAD pointers, and up to the configured age.                                                                                                         |
-| `nessie.version.store.persist.ref-previous-head-time-span-seconds` | `300`               | `int`     | Named references keep a history of previous HEAD pointers with this age in _seconds_, and up to the configured amount.                                                                                                |
+{% include './generated-docs/smallrye-nessie_version_store_persist.md' %}
 
 ### Authentication settings
 
+{% include './generated-docs/smallrye-nessie_server_authentication.md' %}
+
+Related Quarkus settings:
+
 | Property                               | Default values | Type      | Description                                                                                                                                                  |
 |----------------------------------------|----------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.server.authentication.enabled` | `false`        | `boolean` | Sets whether [authentication](authentication.md) should be enabled on the Nessie server.                                                                   |
 | `quarkus.oidc.auth-server-url`         |                | `String`  | Sets the base URL of the OpenID Connect (OIDC) server if `nessie.server.authentication.enabled=true`                                                         |
 | `quarkus.oidc.client-id`               |                | `String`  | Sets client-id of the application if `nessie.server.authentication.enabled=true`. Each application has a client-id that is used to identify the application. |
 
 
 ### Authorization settings
 
-| Property                                     | Default values | Type      | Description                                                                              |
-|----------------------------------------------|----------------|-----------|------------------------------------------------------------------------------------------|
-| `nessie.server.authorization.enabled`        | `false`        | `boolean` | Sets whether [authorization](authorization.md) should be enabled on the Nessie server. |
-| `nessie.server.authorization.rules.<ruleId>` |                | `Map`     | Sets the [authorization](authorization.md) rules that can be used in CEL format.       |
-
-
-## Quarkus Server Settings Related to Nessie
-
-| Property                  | Default values | Type      | Description                           |
-|---------------------------|----------------|-----------|---------------------------------------|
-| `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port                    |
-
-
-!!! info
-    A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
+{% include './generated-docs/smallrye-nessie_server_authorization.md' %}
 
 ### Metrics
 Metrics are published using prometheus and can be collected via standard methods. See:

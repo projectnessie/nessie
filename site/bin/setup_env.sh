@@ -12,4 +12,6 @@ fi
 
 install_deps
 
+generate_docs
+
 pull_versioned_docs

@@ -17,7 +17,6 @@ package org.projectnessie.quarkus.config;
 
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithName;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 
@@ -25,11 +24,9 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 @ConfigMapping(prefix = "nessie.version.store.persist.jdbc")
 public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
 
-  @WithName("catalog")
   @Override
   Optional<String> catalog();
 
-  @WithName("schema")
   @Override
   Optional<String> schema();
 }
