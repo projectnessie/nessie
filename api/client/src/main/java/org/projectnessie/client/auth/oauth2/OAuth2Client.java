@@ -54,6 +54,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private final HttpClient httpClient;
   private final ScheduledExecutorService executor;
   private final CompletableFuture<Void> started = new CompletableFuture<>();
+  private final CompletableFuture<Void> used = new CompletableFuture<>();
   /* Visible for testing. */ final AtomicBoolean sleeping = new AtomicBoolean();
   private final AtomicBoolean closing = new AtomicBoolean();
 
@@ -70,7 +71,13 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .getExecutor()
             .orElseGet(
                 () -> new OAuth2TokenRefreshExecutor(config.getBackgroundThreadIdleTimeout()));
-    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), this.executor);
+    // when user interaction is not required, token fetch can happen immediately upon start();
+    // otherwise, it will be deferred until authenticate() is called the first time.
+    CompletableFuture<?> ready =
+        config.getGrantType().requiresUserInteraction()
+            ? CompletableFuture.allOf(started, used)
+            : started;
+    currentTokensStage = ready.thenApplyAsync((v) -> fetchNewTokens(), executor);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
@@ -78,6 +85,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   @Override
   public AccessToken authenticate() {
+    used.complete(null);
     Instant now = config.getClock().get();
     lastAccess = now;
     if (sleeping.compareAndSet(true, false)) {
@@ -270,10 +278,12 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     boolean shouldWarn =
         lastWarn == null || Duration.between(lastWarn, now).compareTo(MIN_WARN_INTERVAL) > 0;
     if (shouldWarn) {
+      // defer logging until the client is used to avoid confusing log messages appearing
+      // before the client is actually used
       if (error instanceof HttpClientException) {
-        LOGGER.warn("{}: {}", message, error.toString());
+        used.thenRun(() -> LOGGER.warn("{}: {}", message, error.toString()));
       } else {
-        LOGGER.warn(message, error);
+        used.thenRun(() -> LOGGER.warn(message, error));
       }
       lastWarn = now;
     } else {
