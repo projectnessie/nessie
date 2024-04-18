@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletionStage;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieConfigConstants;
@@ -62,7 +62,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   private boolean forceUrlConnectionClient;
   private String httpClientName;
   private int clientSpec = 2;
-  private Consumer<Runnable> cancellationCallbackConsumer;
+  private CompletionStage<?> cancellationFuture;
 
   HttpClientBuilderImpl() {}
 
@@ -84,7 +84,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     this.forceUrlConnectionClient = other.forceUrlConnectionClient;
     this.httpClientName = other.httpClientName;
     this.clientSpec = other.clientSpec;
-    this.cancellationCallbackConsumer = other.cancellationCallbackConsumer;
+    this.cancellationFuture = other.cancellationFuture;
   }
 
   /** Creates a (shallow) copy of this builder. */
@@ -223,9 +223,8 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
-  public HttpClient.Builder setCancellationCallback(
-      Consumer<Runnable> cancellationCallbackConsumer) {
-    this.cancellationCallbackConsumer = cancellationCallbackConsumer;
+  public HttpClient.Builder setCancellationFuture(CompletionStage<?> cancellationFuture) {
+    this.cancellationFuture = cancellationFuture;
     return this;
   }
 
@@ -289,8 +288,8 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
           "No HTTP client factory for name '" + clientName + "' found");
     }
     HttpClient client = httpClientFactory.buildClient(config);
-    if (cancellationCallbackConsumer != null) {
-      cancellationCallbackConsumer.accept(client::close);
+    if (cancellationFuture != null) {
+      cancellationFuture.thenRun(client::close);
     }
 
     if (authentication != null) {

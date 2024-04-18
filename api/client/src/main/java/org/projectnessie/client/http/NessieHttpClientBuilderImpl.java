@@ -24,7 +24,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -246,9 +246,8 @@ public class NessieHttpClientBuilderImpl
   }
 
   @Override
-  public NessieClientBuilder withCancellationCallback(
-      Consumer<Runnable> cancellationCallbackConsumer) {
-    builder.setCancellationCallback(cancellationCallbackConsumer);
+  public NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture) {
+    builder.setCancellationFuture(cancellationFuture);
     return this;
   }
 
