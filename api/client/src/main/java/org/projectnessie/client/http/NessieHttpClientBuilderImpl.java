@@ -24,6 +24,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -242,6 +243,12 @@ public class NessieHttpClientBuilderImpl
   @Override
   public NessieHttpClientBuilderImpl withUri(String uri) {
     return (NessieHttpClientBuilderImpl) super.withUri(uri);
+  }
+
+  @Override
+  public NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture) {
+    builder.setCancellationFuture(cancellationFuture);
+    return this;
   }
 
   @Override

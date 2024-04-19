@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,8 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
       LOGGER.warn(
           "API compatibility check: failed to contact config endpoint, proceeding without check: {}",
           e.toString());
+      return;
+    } catch (CancellationException e) {
       return;
     } catch (Exception e) {
       LOGGER.warn(

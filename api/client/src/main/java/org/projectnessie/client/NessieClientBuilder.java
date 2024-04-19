@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -170,6 +171,25 @@ public interface NessieClientBuilder {
   /** Optionally configure specific {@link SSLParameters}. */
   @CanIgnoreReturnValue
   NessieClientBuilder withSSLParameters(SSLParameters sslParameters);
+
+  /**
+   * Registers a future to cancel an ongoing, blocking client setup.
+   *
+   * <p>When using "blocking" authentication, for example OAuth2 device or code flows, is being
+   * used, users may want to cancel an ongoing authentication. An application can register a
+   * callback that can be called asynchronously, for example from a SIGINT handler.
+   *
+   * <p>To implement cancellation: <code><pre>
+   *   CompletableFuture<?> cancel = new CompletableFuture<>();
+   *
+   *   registerYourInterruptHandler(cancel::complete);
+   *
+   *   NessieClientBuilder.createClientBuilderFromSystemSettings(...)
+   *     .withCancellationFuture(cancel);
+   * </pre></code>
+   */
+  @CanIgnoreReturnValue
+  NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture);
 
   /**
    * Builds a new {@link NessieApi}.
@@ -423,6 +443,11 @@ public interface NessieClientBuilder {
 
     @Override
     public NessieClientBuilder withSSLParameters(SSLParameters sslParameters) {
+      return this;
+    }
+
+    @Override
+    public NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture) {
       return this;
     }
   }

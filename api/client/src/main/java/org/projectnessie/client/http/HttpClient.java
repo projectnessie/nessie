@@ -18,6 +18,7 @@ package org.projectnessie.client.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
+import java.util.concurrent.CompletionStage;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
@@ -125,7 +126,10 @@ public interface HttpClient extends AutoCloseable {
      * remove tracing once it is added.
      */
     @CanIgnoreReturnValue
-    public Builder addTracing();
+    Builder addTracing();
+
+    @CanIgnoreReturnValue
+    Builder setCancellationFuture(CompletionStage<?> cancellationFuture);
 
     /** Construct an HttpClient from builder settings. */
     HttpClient build();
