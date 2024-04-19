@@ -42,8 +42,10 @@ public interface AllTypes extends IntOne {
 
   List<String> stringList();
 
+  @ConfigPropertyName("stringkey")
   Map<String, String> stringStringMap();
 
+  @ConfigPropertyName("key2")
   Map<String, Duration> stringDurationMap();
 
   Map<String, Path> stringPathMap();
