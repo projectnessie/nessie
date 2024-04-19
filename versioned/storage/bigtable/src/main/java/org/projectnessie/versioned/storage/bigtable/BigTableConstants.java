@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.bigtable;
 
 import com.google.protobuf.ByteString;
+import java.time.Duration;
 
 final class BigTableConstants {
 
@@ -39,7 +40,7 @@ final class BigTableConstants {
   static final int MAX_BULK_READS = 100;
   static final int MAX_BULK_MUTATIONS = 1000;
 
-  static final long READ_TIMEOUT_MILLIS = 5000L;
+  static final Duration DEFAULT_BULK_READ_TIMEOUT = Duration.ofSeconds(5);
 
   private BigTableConstants() {}
 }

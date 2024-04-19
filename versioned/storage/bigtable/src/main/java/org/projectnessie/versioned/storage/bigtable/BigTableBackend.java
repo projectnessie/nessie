@@ -55,6 +55,7 @@ public final class BigTableBackend implements Backend {
   private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackend.class);
   static final ByteString REPO_REGEX_SUFFIX = copyFromUtf8("\\C*");
 
+  private final BigTableBackendConfig config;
   private final BigtableDataClient dataClient;
   private final BigtableTableAdminClient tableAdminClient;
   private final boolean closeClient;
@@ -63,6 +64,7 @@ public final class BigTableBackend implements Backend {
   final String tableObjs;
 
   public BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
+    this.config = config;
     this.dataClient = config.dataClient();
     this.tableAdminClient = config.tableAdminClient();
     this.tableRefs =
@@ -70,6 +72,11 @@ public final class BigTableBackend implements Backend {
     this.tableObjs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
     this.closeClient = closeClient;
+  }
+
+  @Nonnull
+  public BigTableBackendConfig config() {
+    return config;
   }
 
   @Nonnull
