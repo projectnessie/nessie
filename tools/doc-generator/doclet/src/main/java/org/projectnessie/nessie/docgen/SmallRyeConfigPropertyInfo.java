@@ -162,22 +162,6 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
     return defaultValue(property);
   }
 
-  @Override
-  public Optional<Boolean> optional() {
-    boolean opt = false;
-    if (property.isOptional()) {
-      opt = true;
-    } else if (property.isLeaf()) {
-      LeafProperty leaf = property.asLeaf();
-      Class<?> rawType = leaf.getValueRawType();
-      opt =
-          rawType == OptionalInt.class
-              || rawType == OptionalLong.class
-              || rawType == OptionalDouble.class;
-    }
-    return Optional.of(opt);
-  }
-
   public static String defaultValue(Property property) {
     if (property.isOptional()) {
       MayBeOptionalProperty nested = property.asOptional().getNestedProperty();

@@ -63,9 +63,4 @@ public class PropertiesConfigItem implements PropertyInfo {
   public Optional<Class<?>> groupType() {
     return Optional.empty();
   }
-
-  @Override
-  public Optional<Boolean> optional() {
-    return Optional.empty();
-  }
 }
