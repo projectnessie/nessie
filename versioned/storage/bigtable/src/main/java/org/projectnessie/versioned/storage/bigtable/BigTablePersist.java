@@ -85,11 +85,14 @@ public class BigTablePersist implements Persist {
   private final BigTableBackend backend;
   private final StoreConfig config;
   private final ByteString keyPrefix;
+  private final long apiTimeoutMillis;
 
   BigTablePersist(BigTableBackend backend, StoreConfig config) {
     this.backend = backend;
     this.config = config;
     this.keyPrefix = copyFromUtf8(config.repositoryId() + ':');
+    this.apiTimeoutMillis =
+        backend.config().totalApiTimeout().orElse(DEFAULT_BULK_READ_TIMEOUT).toMillis();
   }
 
   static RuntimeException apiException(ApiException e) {
@@ -689,13 +692,10 @@ public class BigTablePersist implements Persist {
       }
     }
 
-    long timeoutMillis =
-        backend.config().totalApiTimeout().orElse(DEFAULT_BULK_READ_TIMEOUT).toMillis();
-
     for (int idx = 0; idx < num; idx++) {
       ApiFuture<Row> handle = handles[idx];
       if (handle != null) {
-        Row row = handle.get(timeoutMillis, MILLISECONDS);
+        Row row = handle.get(apiTimeoutMillis, MILLISECONDS);
         if (row != null) {
           r[idx] = resultGen.apply(row);
         } else {
