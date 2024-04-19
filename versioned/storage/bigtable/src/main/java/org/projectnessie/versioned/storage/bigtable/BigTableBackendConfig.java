@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.bigtable;
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import jakarta.annotation.Nullable;
+import java.time.Duration;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -29,6 +30,9 @@ public interface BigTableBackendConfig {
   BigtableTableAdminClient tableAdminClient();
 
   Optional<String> tablePrefix();
+
+  /** Total timeout (including retries) for Bigtable API calls. */
+  Optional<Duration> totalApiTimeout();
 
   static ImmutableBigTableBackendConfig.Builder builder() {
     return ImmutableBigTableBackendConfig.builder();

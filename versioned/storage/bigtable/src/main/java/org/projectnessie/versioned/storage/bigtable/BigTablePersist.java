@@ -22,6 +22,7 @@ import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.CELL_TIMESTAMP;
+import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.DEFAULT_BULK_READ_TIMEOUT;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAMILY_REFS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_PARALLEL_READS;
@@ -30,7 +31,6 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUA
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_VERS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_REFS;
-import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.READ_TIMEOUT_MILLIS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
@@ -85,11 +85,14 @@ public class BigTablePersist implements Persist {
   private final BigTableBackend backend;
   private final StoreConfig config;
   private final ByteString keyPrefix;
+  private final long apiTimeoutMillis;
 
   BigTablePersist(BigTableBackend backend, StoreConfig config) {
     this.backend = backend;
     this.config = config;
     this.keyPrefix = copyFromUtf8(config.repositoryId() + ':');
+    this.apiTimeoutMillis =
+        backend.config().totalApiTimeout().orElse(DEFAULT_BULK_READ_TIMEOUT).toMillis();
   }
 
   static RuntimeException apiException(ApiException e) {
@@ -692,7 +695,7 @@ public class BigTablePersist implements Persist {
     for (int idx = 0; idx < num; idx++) {
       ApiFuture<Row> handle = handles[idx];
       if (handle != null) {
-        Row row = handle.get(READ_TIMEOUT_MILLIS, MILLISECONDS);
+        Row row = handle.get(apiTimeoutMillis, MILLISECONDS);
         if (row != null) {
           r[idx] = resultGen.apply(row);
         } else {
