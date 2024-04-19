@@ -32,6 +32,7 @@ dependencies {
   implementation(platform(libs.google.cloud.bigtable.bom))
   implementation("com.google.cloud:google-cloud-bigtable")
 
+  compileOnly(project(":nessie-doc-generator-annotations"))
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
 

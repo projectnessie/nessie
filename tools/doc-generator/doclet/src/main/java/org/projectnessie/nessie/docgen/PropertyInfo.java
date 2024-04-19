@@ -33,4 +33,6 @@ public interface PropertyInfo {
   DocCommentTree doc();
 
   Optional<Class<?>> groupType();
+
+  Optional<Boolean> optional();
 }

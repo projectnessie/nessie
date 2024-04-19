@@ -34,12 +34,15 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
 
 public class SmallRyeConfigPropertyInfo implements PropertyInfo {
   private final Property property;
+  private final String propertyName;
   private final DocCommentTree doc;
   private final ExecutableElement element;
 
-  SmallRyeConfigPropertyInfo(ExecutableElement element, Property property, DocCommentTree doc) {
+  SmallRyeConfigPropertyInfo(
+      ExecutableElement element, Property property, String propertyName, DocCommentTree doc) {
     this.element = element;
     this.property = property;
+    this.propertyName = propertyName;
     this.doc = doc;
   }
 
@@ -50,14 +53,14 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
 
   @Override
   public String propertyName() {
-    return property.getPropertyName();
+    return propertyName;
   }
 
   @Override
   public String propertySuffix() {
     if (property.isMap()) {
       ConfigPropertyName ci = element.getAnnotation(ConfigPropertyName.class);
-      return ci == null || ci.value().isEmpty() ? "<name>" : ci.value();
+      return ci == null || ci.value().isEmpty() ? "name" : ci.value();
     }
     return "";
   }
@@ -157,6 +160,22 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
   @Override
   public String defaultValue() {
     return defaultValue(property);
+  }
+
+  @Override
+  public Optional<Boolean> optional() {
+    boolean opt = false;
+    if (property.isOptional()) {
+      opt = true;
+    } else if (property.isLeaf()) {
+      LeafProperty leaf = property.asLeaf();
+      Class<?> rawType = leaf.getValueRawType();
+      opt =
+          rawType == OptionalInt.class
+              || rawType == OptionalLong.class
+              || rawType == OptionalDouble.class;
+    }
+    return Optional.of(opt);
   }
 
   public static String defaultValue(Property property) {

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
  * Settings used to create and configure BigTable clients (data and table admin).
@@ -56,6 +57,7 @@ public interface BigTableClientsConfig {
   }
 
   /** Google BigTable JWT audience mappings (if necessary). */
+  @ConfigPropertyName("mapping")
   Map<String, String> jwtAudienceMapping();
 
   /** Initial retry delay. */

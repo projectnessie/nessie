@@ -158,16 +158,15 @@ public class DocGenDoclet implements Doclet {
     if (!md.isHidden()) {
       Optional<Class<?>> groupType = prop.groupType();
       String propertyName = md.propertyName();
-      if (groupType.isPresent()) {
-        String suffix = md.propertySuffix();
-        if (!suffix.isEmpty()) {
-          propertyName += ".`_`" + suffix + "`_`";
-        }
+      String suffix = md.propertySuffix();
+      if (!suffix.isEmpty()) {
+        propertyName += ".`_`<" + suffix + ">`_`";
       }
       String fullName = propertyNamePrefix + propertyName;
 
       writer.print("| ");
-      writer.print('`' + fullName + '`');
+      String fullNameCode = ('`' + fullName + '`').replaceAll("``", "");
+      writer.print(fullNameCode);
       writer.print(" | ");
       String dv = prop.defaultValue();
       if (dv != null) {

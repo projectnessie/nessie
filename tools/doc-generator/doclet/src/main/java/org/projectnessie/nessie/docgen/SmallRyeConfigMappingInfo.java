@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.docgen;
 
 import com.sun.source.doctree.DocCommentTree;
+import io.smallrye.config.ConfigMapping.NamingStrategy;
 import io.smallrye.config.ConfigMappingInterface;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -93,7 +94,13 @@ public final class SmallRyeConfigMappingInfo {
       docExec = executables.get(0);
     }
 
-    return new SmallRyeConfigPropertyInfo(docExec, property, doc);
+    NamingStrategy namingStrategy =
+        configMappingInterfaces.isEmpty()
+            ? NamingStrategy.KEBAB_CASE
+            : configMappingInterfaces.get(0).getNamingStrategy();
+    String propertyName = property.getPropertyName(namingStrategy);
+
+    return new SmallRyeConfigPropertyInfo(docExec, property, propertyName, doc);
   }
 
   void processType(
