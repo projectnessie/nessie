@@ -180,7 +180,7 @@ public interface NessieClientBuilder {
    * callback that can be called asynchronously, for example from a SIGINT handler.
    *
    * <p>To implement cancellation: <code><pre>
-   *   CompletableFuture<Terminal.Signal> cancel = new CompletableFuture<>();
+   *   CompletableFuture<?> cancel = new CompletableFuture<>();
    *
    *   registerYourInterruptHandler(cancel::complete);
    *
