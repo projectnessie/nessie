@@ -1,3 +1,7 @@
+---
+search:
+  exclude: true
+---
 # Nessie 0.79.0
 
 GitHub [release page](https://github.com/projectnessie/nessie/releases/tag/nessie-0.79.0) for 0.79.0.
