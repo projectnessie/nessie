@@ -69,6 +69,11 @@ jobs:
       uses: actions/setup-go@v5
     ### END runner setup
 
+    - name: Configure release-bot-user in git config
+      run: |
+        git config --global user.email "nessie-release-workflow-noreply@projectnessie.org"
+        git config --global user.name "Nessie Release Workflow [bot]"
+
     - name: Bump to release version
       uses: gradle/actions/setup-gradle@v3
       with:
@@ -171,11 +176,6 @@ jobs:
       run: |
         go install github.com/norwoodj/helm-docs/cmd/helm-docs@latest
         $(go env GOPATH)/bin/helm-docs --chart-search-root=helm
-
-    - name: Configure release-bot-user in git config
-      run: |
-        git config --global user.email "nessie-release-workflow-noreply@projectnessie.org"
-        git config --global user.name "Nessie Release Workflow [bot]"
 
     # Record the release-version in git and add the git tag for the release.
     - name: Record ${{ env.RELEASE_VERSION }} release in git
