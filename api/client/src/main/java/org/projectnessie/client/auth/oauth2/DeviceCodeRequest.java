@@ -41,4 +41,12 @@ interface DeviceCodeRequest {
   @Nullable
   @JsonProperty("scope")
   String getScope();
+
+  interface Builder {
+    Builder clientId(String clientId);
+
+    Builder scope(String scope);
+
+    DeviceCodeRequest build();
+  }
 }

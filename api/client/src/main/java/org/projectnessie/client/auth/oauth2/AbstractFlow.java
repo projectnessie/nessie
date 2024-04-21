@@ -27,15 +27,31 @@ abstract class AbstractFlow implements Flow {
     this.config = config;
   }
 
-  <T> T invokeEndpoint(URI endpoint, Object request, Class<? extends T> responseClass) {
+  <REQ extends TokensRequestBase, RESP extends TokensResponseBase> RESP invokeTokenEndpoint(
+      TokensRequestBase.Builder<REQ> request, Class<? extends RESP> responseClass) {
+    request.scope(config.getScope().orElse(null));
+    if (request instanceof PublicTokensRequestBase.Builder
+        && !config.getClientSecret().isPresent()) {
+      ((PublicTokensRequestBase.Builder<?>) request).clientId(config.getClientId());
+    }
+    return invokeEndpoint(config.getResolvedTokenEndpoint(), request.build(), responseClass);
+  }
+
+  DeviceCodeResponse invokeDeviceAuthEndpoint() {
+    DeviceCodeRequest.Builder request =
+        ImmutableDeviceCodeRequest.builder().scope(config.getScope().orElse(null));
+    if (!config.getClientSecret().isPresent()) {
+      request.clientId(config.getClientId());
+    }
+    return invokeEndpoint(
+        config.getResolvedDeviceAuthEndpoint(), request.build(), DeviceCodeResponse.class);
+  }
+
+  private <REQ, RESP> RESP invokeEndpoint(
+      URI endpoint, REQ request, Class<? extends RESP> responseClass) {
     HttpRequest req = config.getHttpClient().newRequest(endpoint);
     config.getBasicAuthentication().ifPresent(req::authentication);
     HttpResponse response = req.postForm(request);
     return response.readEntity(responseClass);
-  }
-
-  <T extends TokensResponseBase> T invokeTokenEndpoint(
-      TokensRequestBase request, Class<? extends T> responseClass) {
-    return invokeEndpoint(config.getResolvedTokenEndpoint(), request, responseClass);
   }
 }

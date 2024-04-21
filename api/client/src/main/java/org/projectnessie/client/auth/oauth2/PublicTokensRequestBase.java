@@ -17,42 +17,28 @@ package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
- * Common base for all requests to the token endpoint.
+ * Common base for requests to the token endpoint using grant types compatible with public clients.
  *
- * @see ClientCredentialsTokensRequest
  * @see PasswordTokensRequest
  * @see AuthorizationCodeTokensRequest
  * @see DeviceCodeRequest
  * @see RefreshTokensRequest
  * @see TokensExchangeRequest
  */
-interface TokensRequestBase {
-
-  /** REQUIRED. The authorization grant type. */
-  @JsonProperty("grant_type")
-  @Value.Derived
-  GrantType getGrantType();
+interface PublicTokensRequestBase extends TokensRequestBase {
 
   /**
-   * OPTIONAL, if identical to the scope requested by the client; otherwise, REQUIRED. The scope of
-   * the access token as described by <a
-   * href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">Section 3.3</a>.
-   *
-   * <p>In case of refresh, the requested scope MUST NOT include any scope not originally granted by
-   * the resource owner, and if omitted is treated as equal to the scope originally granted by the
-   * resource owner.
+   * The client identifier as described in Section 2.2 of [RFC6749]. REQUIRED if the client is not
+   * authenticating with the authorization server as described in Section 3.2.1. of [RFC6749].
    */
+  @JsonProperty("client_id")
   @Nullable
-  @JsonProperty("scope")
-  String getScope();
+  String getClientId();
 
-  interface Builder<T extends TokensRequestBase> {
+  interface Builder<T extends PublicTokensRequestBase> extends TokensRequestBase.Builder<T> {
 
-    Builder<T> scope(String scope);
-
-    T build();
+    Builder<T> clientId(String clientId);
   }
 }

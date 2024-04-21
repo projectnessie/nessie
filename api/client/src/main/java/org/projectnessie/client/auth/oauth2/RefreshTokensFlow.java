@@ -38,11 +38,9 @@ class RefreshTokensFlow extends AbstractFlow {
     if (isAboutToExpire(currentTokens.getRefreshToken())) {
       throw new MustFetchNewTokensException("Refresh token is about to expire");
     }
-    RefreshTokensRequest request =
+    RefreshTokensRequest.Builder request =
         ImmutableRefreshTokensRequest.builder()
-            .refreshToken(currentTokens.getRefreshToken().getPayload())
-            .scope(config.getScope().orElse(null))
-            .build();
+            .refreshToken(currentTokens.getRefreshToken().getPayload());
     return invokeTokenEndpoint(request, RefreshTokensResponse.class);
   }
 

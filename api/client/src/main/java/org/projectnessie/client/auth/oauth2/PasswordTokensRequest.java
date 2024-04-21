@@ -38,10 +38,10 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutablePasswordTokensRequest.class)
 @JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
-interface PasswordTokensRequest extends TokensRequestBase {
+interface PasswordTokensRequest extends PublicTokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "password". */
-  @Value.Default
+  @Value.Derived
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
@@ -55,4 +55,10 @@ interface PasswordTokensRequest extends TokensRequestBase {
   /** REQUIRED. The resource owner password. */
   @JsonProperty("password")
   String getPassword();
+
+  interface Builder extends PublicTokensRequestBase.Builder<PasswordTokensRequest> {
+    Builder username(String username);
+
+    Builder password(String password);
+  }
 }

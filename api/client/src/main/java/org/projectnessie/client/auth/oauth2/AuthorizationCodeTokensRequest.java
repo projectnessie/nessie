@@ -39,10 +39,10 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableAuthorizationCodeTokensRequest.class)
 @JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
-interface AuthorizationCodeTokensRequest extends TokensRequestBase {
+interface AuthorizationCodeTokensRequest extends PublicTokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "authorization_code". */
-  @Value.Default
+  @Value.Derived
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
@@ -57,7 +57,9 @@ interface AuthorizationCodeTokensRequest extends TokensRequestBase {
   @JsonProperty("redirect_uri")
   String getRedirectUri();
 
-  /** REQUIRED. The client ID. */
-  @JsonProperty("client_id")
-  String getClientId();
+  interface Builder extends PublicTokensRequestBase.Builder<AuthorizationCodeTokensRequest> {
+    Builder code(String code);
+
+    Builder redirectUri(String redirectUri);
+  }
 }

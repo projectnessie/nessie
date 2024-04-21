@@ -35,15 +35,15 @@ import org.immutables.value.Value;
  * grant_type=refresh_token&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA
  * </pre>
  *
- * The response to this request is an {@link ClientCredentialsTokensResponse}.
+ * The response to this request is a {@link RefreshTokensResponse}.
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableRefreshTokensRequest.class)
 @JsonDeserialize(as = ImmutableRefreshTokensRequest.class)
-interface RefreshTokensRequest extends TokensRequestBase {
+interface RefreshTokensRequest extends PublicTokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "refresh_token". */
-  @Value.Default
+  @Value.Derived
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
@@ -53,4 +53,9 @@ interface RefreshTokensRequest extends TokensRequestBase {
   /** REQUIRED. The refresh token issued to the client. */
   @JsonProperty("refresh_token")
   String getRefreshToken();
+
+  interface Builder extends PublicTokensRequestBase.Builder<RefreshTokensRequest> {
+
+    Builder refreshToken(String refreshToken);
+  }
 }

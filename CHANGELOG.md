@@ -8,6 +8,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- The Nessie client now supports public clients when using OAuth 2 authentication. Public clients 
+  are clients that do not have a client secret; they are compatible with the `password`, 
+  `authorization_code`, and `device_code` grant types. See the
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
 ### Upgrade notes
 
 ### Breaking changes

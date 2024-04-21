@@ -41,10 +41,12 @@ import org.immutables.value.Value;
 interface ClientCredentialsTokensRequest extends TokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "client_credentials". */
-  @Value.Default
+  @Value.Derived
   @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
     return GrantType.CLIENT_CREDENTIALS;
   }
+
+  interface Builder extends TokensRequestBase.Builder<ClientCredentialsTokensRequest> {}
 }

@@ -31,7 +31,7 @@ public enum GrantType {
   PASSWORD("password") {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
-      return new ResourceOwnerPasswordFlow(config);
+      return new PasswordFlow(config);
     }
   },
   AUTHORIZATION_CODE("authorization_code") {
