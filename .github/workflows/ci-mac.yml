@@ -38,7 +38,7 @@ concurrency:
 jobs:
   java:
     name: Java/Gradle macOS
-    runs-on: macos-13
+    runs-on: macos-14
     timeout-minutes: 60
     if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
