@@ -2,6 +2,87 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.80.0 Release (April 21, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.80.0).
+
+### Upgrade notes
+
+- GC Tool: the Nessie GC tool is not published anymore as a Unix executable file, but as a regular 
+  jar named `nessie-gc.jar`. Instead of running `nessie-gc`, you now run `java -jar nessie-gc.jar`.
+
+### New Features
+
+- Nessie clients can now use the Apache HTTP client, if it's available on the classpath
+- Nessie clients now return more readable error messages
+
+### Fixes
+
+- Helm chart: Fix incorrect OpenTelemetry variable names
+- SQL extensions: Respect comments in SQL
+- GC tool: perform commit after schema creation
+
+### Commits
+* Ninja: reorg steps in release-create GH workflow
+* Ninja: update CHANGELOG
+* Make bulk read timeout configurable in BigTablePersist (#8361)
+* Fix generates smallrye-config site docs, always add map-key (#8356)
+* Ability to cancel interactive client authentication (#8347)
+* OAuth2Client: defer initial token fetch when user interaction is required (#8354)
+* Generate server and client docs from source (#8334)
+* Update `ResponseCheckFilter` to return more human friendly error message (#8321)
+* Fix site docs generation on macOS (#8350)
+* OAuth2Client: refactor HTTP exchanges into separate flows (#8338)
+* Add nessie version placeholder as docker image tags (#8339)
+* Docs: align titles with metadata (#8341)
+* OAuth2Client: improve sleep/close detection (#8337)
+* Cleanup ResourceOwnerEmulator and AuthorizationCodeFlow (#8333)
+* Add Nessie GC as Docker Image section to downloads page (#8332)
+* Site: Fix link in site footer (#8327)
+* Make `nessie.authentication.oauth2.client-secret` optional (#8323)
+* Site rearrangement (#8318)
+* OAuth2 client config: "bark" with all check-errors (#8322)
+* Cleanup: Remove the outdated WORKFLOWS.md file (#8320)
+* OAuth2/client: doc-nit: add note about running a client in a conainer (#8324)
+* Renovate: Update package pattern (#8311)
+* Testing: add test method timeout + more verbose reporting (#8310)
+* Remove left-over micrometer-pattern (#8307)
+* CI: Mitigate still unfixed Gradle bug leading to a `ConcurrentModificationException` (#8297)
+* Testing/obj-storage-mock: add dummy assume-role endpoint (#8288)
+* Use new plugin ID `com.gradle.develocity` instead of `com.gradle.enterprise` (#8293)
+* Commit after schema creation for GC tool (#8290)
+*  Content Generator: reorganize options using argument groups (#8284)
+* Update README.md to point to correct url (#8282)
+* Add --recursive to BulkCommittingCommand (#8271)
+* Configurable scopes in KeycloakTestResourceLifecycleManager (#8275)
+* Enforce S3 path-style access for ObjectStorageMock (#8272)
+* SQL extensions: fix whitespace not appearing in antlr exceptions (#8273)
+* Testing: Move `Bucket.createHeapStorageBucket()` to separate class, allow clearing it (#8268)
+* [Docs]: Fix iceberg-links on docs with latest url (#8260)
+* Object-store test containers improvements (#8258)
+* Testing/object-storage-mock: support different ADLS client upload behavior (#8256)
+* Add support for ADLS Gen2 and GCS to Object Storage Mock (#8244)
+* Remove effectively unnecessary `:nessie-jaxrs` module (#8247)
+* Respect comments in SQL + move code to extensions-base (#8248)
+* S3-Mock: add local heap storage (#8236)
+* Fix incorrect OpenTelemetry variable names (#8237)
+* Add Apache HTTP client, choose HTTP client by name (#8224)
+* HTTP-Client: capture beginning of unparseable error response (#8226)
+* Allow concurrent instances of GCSContainer (#8235)
+* Add GCS testcontainer + IT for Nessie-GC (#8233)
+* Bump `com.google.cloud.bigdataoss:gcs-connector` from `hadoop3-2.2.18` to `.21` (#8232)
+* CI: Remove duplicate run of `:nessie-client:test` (#8229)
+* Minor enhancements to MinioContainer (#8225)
+* Prevent duplicate ResponseCheckFilter (#8223)
+* CI: Unify Docker + Helm jobs, validate helm chart against local image (#8215)
+* Ninja: Fix renovate config
+* Renovate/versioning schema for Minio (#8210)
+* Add `NessieClientConfigSource` backed by Iceberg REST catalog properties (#8206)
+* Fix nessie-gc executable (#8205)
+* CI: Add timeouts to all jobs (#8203)
+* Bump Minio testing container (#8194)
+* Build: Allow "big" shadow-jars (#8192)
+
 ## 0.79.0 Release (March 12, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.79.0).
