@@ -131,7 +131,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
   String CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB = "cache-capacity-fraction-adjust-mb";
 
   /**
-   * When using fractional cache sizing, this amount in MB of the heap will always be “kept free”
+   * When using fractional cache sizing, this amount in MB of the heap will always be "kept free"
    * when calculating the cache size.
    */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
