@@ -1,3 +1,7 @@
+---
+title: "Nessie ::NESSIE_VERSION::"
+---
+
 # Nessie ::NESSIE_VERSION::
 
 GitHub [release page](https://github.com/projectnessie/nessie/releases/tag/nessie-::NESSIE_VERSION::) for ::NESSIE_VERSION::.

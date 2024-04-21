@@ -131,9 +131,13 @@ create_latest () {
   rm -rf build/versions/latest/
   mkdir build/versions/latest/
 
-  # Create symbolic links and copy configuration files for the 'latest' documentation
-  ln -s "../${version}/docs" build/versions/latest/docs
+  # Copy docs + configuration files for the 'latest' documentation
+  cp -rL "build/versions/${version}/docs" build/versions/latest/
   cp "build/versions/${version}/mkdocs.yml" build/versions/latest/
+
+  # Exclude the latest-version-NUMBER directory from the search index
+  # (keeps the 'nessie-latest' in the search index)
+  search_exclude_versioned_docs "build/versions/${version}"
 
   cd build/versions/
 
@@ -165,21 +169,33 @@ update_version () {
 
 # Excludes versioned documentation from search indexing by modifying .md files.
 # Arguments:
-#   $1: version - The version number of the documentation to exclude from search indexing.
+#   $1: version_docs_dir - The docs/ directory of the versioned documentation to exclude from
+#       search indexing.
 search_exclude_versioned_docs () {
   echo " --> search exclude version docs"
 
-  local version
-  version="$1"
+  local version_docs_dir
+  version_docs_dir="$1"
 
   # Ensure version is not empty
-  assert_not_empty "${version}"
+  assert_not_empty "${version_docs_dir}"
 
-  cd "${version}/docs/"
+  echo "     ... in ${version_docs_dir}"
+
+  cd "${version_docs_dir}"
 
   # Modify .md files to exclude versioned documentation from search indexing
-  python3 -c "import os
-for f in filter(lambda x: x.endswith('.md'), os.listdir()): lines = open(f).readlines(); open(f, 'w').writelines(lines[:2] + ['search:\n', '  exclude: true\n'] + lines[2:]);"
+  python3 -c "import glob
+for f in glob.glob('./**/*.md', recursive=True):
+  # Generated docs are only included and become part of another page.
+  if not \"/generated-docs\" in f:
+    lines = open(f).readlines()
+    # Add an empty front-matter, if not present.
+    if lines[0] != '---\n':
+      lines = ['---\n', '---\n', '\n'] + lines
+    lines = lines[:1] + ['search:\n', '  exclude: true\n'] + lines[1:]
+    open(f, 'w').writelines(lines)
+"
 
   cd - > /dev/null
 }
@@ -208,7 +224,8 @@ pull_versioned_docs () {
   create_latest "${latest_version}"
 
   # Create the 'nightly' version of documentation
-  create_nightly  
+  create_nightly
+  search_exclude_versioned_docs "build/versions/nightly/"
 }
 
 # Generates docs as markdown include files
@@ -239,6 +256,12 @@ release() {
 
   assert_not_empty "${RELEASE_VERSION}"
 
+  # Retrieve the latest version of documentation for processing
+  local latest_version
+  latest_version=$(get_latest_version)
+
+  echo "     ... latest version is: ${latest_version}"
+
   echo "     ... update top-level mkdocs.yml"
   sed -i "s/^    nessie: [0-9.]*$/    nessie: ${RELEASE_VERSION}/"  ./mkdocs.yml
 
@@ -258,13 +281,16 @@ release() {
   mv "${target}/docs/index-release.md" "${target}/docs/index.md"
 
   echo "     ... replace title in versioned mkdocs.yml"
-  sed -i'' -E "s/(^site_name:[[:space:]]+).*$/\1\"Nessie ${version}\"/" "${target}/mkdocs.yml"
+  sed -i'' -E "s/(^site_name:[[:space:]]+).*$/\1\"Nessie ${RELEASE_VERSION}\"/" "${target}/mkdocs.yml"
 
   echo "     ... replace version placeholder in versioned docs"
   find "${target}" -name "*.md" -exec sed -i "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
 
   echo "     ... adding release to nav.yml"
   sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include build\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml
+
+  # Exclude the previous latest version from the search index
+  search_exclude_versioned_docs "${site_docs_dir}/${latest_version}/"
 
   echo "     ... committing to local site-docs branch"
   (cd "${site_docs_dir}" ; git add . ; git commit -m "Add Nessie release ${RELEASE_VERSION}")
