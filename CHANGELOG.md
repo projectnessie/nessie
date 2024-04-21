@@ -17,11 +17,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Nessie clients can now use the Apache HTTP client, if it's available on the classpath
+- Nessie clients now return more readable error messages
+
 ### Changes
 
 ### Deprecations
 
 ### Fixes
+
+- Helm chart: Fix incorrect OpenTelemetry variable names
+- SQL extensions: Respect comments in SQL
+- GC tool: perform commit after schema creation
 
 ### Commits
 
