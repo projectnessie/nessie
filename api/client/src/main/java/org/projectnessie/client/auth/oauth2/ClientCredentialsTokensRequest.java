@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -38,11 +38,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableClientCredentialsTokensRequest.class)
 @JsonDeserialize(as = ImmutableClientCredentialsTokensRequest.class)
+@JsonTypeName(GrantType.Constants.CLIENT_CREDENTIALS)
 interface ClientCredentialsTokensRequest extends TokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "client_credentials". */
   @Value.Derived
-  @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
     return GrantType.CLIENT_CREDENTIALS;

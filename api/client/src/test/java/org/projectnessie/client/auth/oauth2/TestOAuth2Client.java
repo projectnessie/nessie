@@ -595,7 +595,7 @@ class TestOAuth2Client {
       TokensRequestBase request;
       Object response;
       int statusCode = 200;
-      String grantType = data.remove("grant_type"); // determined by the target type
+      String grantType = data.get("grant_type");
       if (grantType.equals(GrantType.CLIENT_CREDENTIALS.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, ClientCredentialsTokensRequest.class);
         soft.assertThat(request.getScope()).isEqualTo("test");

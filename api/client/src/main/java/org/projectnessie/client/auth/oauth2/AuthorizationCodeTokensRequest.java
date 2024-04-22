@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -40,11 +41,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableAuthorizationCodeTokensRequest.class)
 @JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
+@JsonTypeName(GrantType.Constants.AUTHORIZATION_CODE)
 interface AuthorizationCodeTokensRequest extends PublicTokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "authorization_code". */
   @Value.Derived
-  @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
     return GrantType.AUTHORIZATION_CODE;

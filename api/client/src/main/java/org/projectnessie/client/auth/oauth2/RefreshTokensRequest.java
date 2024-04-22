@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -41,11 +42,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableRefreshTokensRequest.class)
 @JsonDeserialize(as = ImmutableRefreshTokensRequest.class)
+@JsonTypeName(GrantType.Constants.REFRESH_TOKEN)
 interface RefreshTokensRequest extends PublicTokensRequestBase {
 
   /** REQUIRED. Value MUST be set to "refresh_token". */
   @Value.Derived
-  @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
     return GrantType.REFRESH_TOKEN;

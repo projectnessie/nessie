@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -44,6 +45,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableTokensExchangeRequest.class)
 @JsonDeserialize(as = ImmutableTokensExchangeRequest.class)
+@JsonTypeName(GrantType.Constants.TOKEN_EXCHANGE)
 interface TokensExchangeRequest extends PublicTokensRequestBase {
 
   /**
@@ -51,7 +53,6 @@ interface TokensExchangeRequest extends PublicTokensRequestBase {
    * performed.
    */
   @Value.Derived
-  @JsonProperty("grant_type")
   @Override
   default GrantType getGrantType() {
     return GrantType.TOKEN_EXCHANGE;
