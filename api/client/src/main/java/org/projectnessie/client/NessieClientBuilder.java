@@ -179,14 +179,16 @@ public interface NessieClientBuilder {
    * used, users may want to cancel an ongoing authentication. An application can register a
    * callback that can be called asynchronously, for example from a SIGINT handler.
    *
-   * <p>To implement cancellation: <code><pre>
-   *   CompletableFuture<?> cancel = new CompletableFuture<>();
+   * <p>To implement cancellation:
    *
-   *   registerYourInterruptHandler(cancel::complete);
+   * <pre>{@code
+   * CompletableFuture<?> cancel = new CompletableFuture<>();
    *
-   *   NessieClientBuilder.createClientBuilderFromSystemSettings(...)
-   *     .withCancellationFuture(cancel);
-   * </pre></code>
+   * registerYourInterruptHandler(cancel::complete);
+   *
+   * NessieClientBuilder.createClientBuilderFromSystemSettings(...)
+   *   .withCancellationFuture(cancel);
+   * }</pre>
    */
   @CanIgnoreReturnValue
   NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture);
