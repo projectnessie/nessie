@@ -581,7 +581,7 @@ class TestOAuth2Client {
         throws IOException {
       soft.assertThat(req.getMethod()).isEqualTo("POST");
       soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
+      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic Q2xpZW50MTpzM2NyM3Q=");
       Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
       if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
         ErrorResponse response =
@@ -605,12 +605,14 @@ class TestOAuth2Client {
         soft.assertThat(request.getScope()).isEqualTo("test");
         soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
         soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getPasswordTokensResponse();
       } else if (grantType.equals(GrantType.REFRESH_TOKEN.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, RefreshTokensRequest.class);
         soft.assertThat(request.getScope()).isEqualTo("test");
         soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
             .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getRefreshTokensResponse();
       } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, TokensExchangeRequest.class);
@@ -623,6 +625,7 @@ class TestOAuth2Client {
         soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
         soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
             .isEqualTo(TokenExchangeFlow.REFRESH_TOKEN_ID);
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getTokensExchangeResponse();
       } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
@@ -632,8 +635,7 @@ class TestOAuth2Client {
         soft.assertThat(((AuthorizationCodeTokensRequest) request).getRedirectUri())
             .contains("http://localhost:")
             .contains("/nessie-client/auth");
-        soft.assertThat(((AuthorizationCodeTokensRequest) request).getClientId())
-            .isEqualTo("Alice");
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getAuthorizationCodeTokensResponse();
       } else if (grantType.equals(GrantType.DEVICE_CODE.canonicalName())) {
         if (deviceAuthorized) {
@@ -641,6 +643,7 @@ class TestOAuth2Client {
           soft.assertThat(request.getScope()).isEqualTo("test");
           soft.assertThat(((DeviceCodeTokensRequest) request).getDeviceCode())
               .isEqualTo("device-code");
+          soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
           response = getDeviceAuthorizationTokensResponse();
         } else {
           response =
@@ -668,7 +671,7 @@ class TestOAuth2Client {
       Map<String, String> data = HttpUtils.parseQueryString(req.getQueryString());
       soft.assertThat(data)
           .containsEntry("response_type", "code")
-          .containsEntry("client_id", "Alice")
+          .containsEntry("client_id", "Client1")
           .containsEntry("scope", "test")
           .containsKey("redirect_uri")
           .containsKey("state");
@@ -681,7 +684,7 @@ class TestOAuth2Client {
         throws IOException {
       soft.assertThat(req.getMethod()).isEqualTo("POST");
       soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
+      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic Q2xpZW50MTpzM2NyM3Q=");
       Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
       soft.assertThat(data).containsEntry("scope", "test");
       URI uri = URI.create(req.getRequestURL().toString());
@@ -836,7 +839,7 @@ class TestOAuth2Client {
   private OAuth2ClientConfig.Builder configBuilder(HttpTestServer server, boolean discovery) {
     OAuth2ClientConfig.Builder builder =
         OAuth2ClientConfig.builder()
-            .clientId("Alice")
+            .clientId("Client1")
             .clientSecret("s3cr3t")
             .scope("test")
             .clock(() -> now);

@@ -109,6 +109,12 @@ class TestOAuth2ClientConfig {
             singletonList("client ID must not be empty (nessie.authentication.oauth2.client-id)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
+                .clientId("client1")
+                .tokenEndpoint(URI.create("https://example.com/token")),
+            singletonList(
+                "client secret must not be empty when grant type is 'client_credentials' (nessie.authentication.oauth2.grant-type / nessie.authentication.oauth2.client-secret)")),
+        Arguments.of(
+            OAuth2ClientConfig.builder()
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))

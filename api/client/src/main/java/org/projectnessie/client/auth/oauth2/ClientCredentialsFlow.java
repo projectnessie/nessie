@@ -30,10 +30,7 @@ class ClientCredentialsFlow extends AbstractFlow {
 
   @Override
   public Tokens fetchNewTokens(@Nullable Tokens ignored) {
-    ClientCredentialsTokensRequest request =
-        ImmutableClientCredentialsTokensRequest.builder()
-            .scope(config.getScope().orElse(null))
-            .build();
+    ClientCredentialsTokensRequest.Builder request = ClientCredentialsTokensRequest.builder();
     return invokeTokenEndpoint(request, ClientCredentialsTokensResponse.class);
   }
 }

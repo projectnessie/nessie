@@ -22,25 +22,25 @@ public enum GrantType {
 
   // initial grant types
 
-  CLIENT_CREDENTIALS("client_credentials") {
+  CLIENT_CREDENTIALS(Constants.CLIENT_CREDENTIALS) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
       return new ClientCredentialsFlow(config);
     }
   },
-  PASSWORD("password") {
+  PASSWORD(Constants.PASSWORD) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
-      return new ResourceOwnerPasswordFlow(config);
+      return new PasswordFlow(config);
     }
   },
-  AUTHORIZATION_CODE("authorization_code") {
+  AUTHORIZATION_CODE(Constants.AUTHORIZATION_CODE) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
       return new AuthorizationCodeFlow(config);
     }
   },
-  DEVICE_CODE("urn:ietf:params:oauth:grant-type:device_code") {
+  DEVICE_CODE(Constants.DEVICE_CODE) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
       return new DeviceCodeFlow(config);
@@ -49,13 +49,13 @@ public enum GrantType {
 
   // grant types for refreshing tokens (cannot be used for initial token acquisition)
 
-  REFRESH_TOKEN("refresh_token") {
+  REFRESH_TOKEN(Constants.REFRESH_TOKEN) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
       return new RefreshTokensFlow(config);
     }
   },
-  TOKEN_EXCHANGE("urn:ietf:params:oauth:grant-type:token-exchange") {
+  TOKEN_EXCHANGE(Constants.TOKEN_EXCHANGE) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
       return new TokenExchangeFlow(config);
@@ -88,5 +88,15 @@ public enum GrantType {
 
   public boolean requiresUserInteraction() {
     return this == AUTHORIZATION_CODE || this == DEVICE_CODE;
+  }
+
+  public static class Constants {
+
+    public static final String CLIENT_CREDENTIALS = "client_credentials";
+    public static final String PASSWORD = "password";
+    public static final String AUTHORIZATION_CODE = "authorization_code";
+    public static final String DEVICE_CODE = "urn:ietf:params:oauth:grant-type:device_code";
+    public static final String REFRESH_TOKEN = "refresh_token";
+    public static final String TOKEN_EXCHANGE = "urn:ietf:params:oauth:grant-type:token-exchange";
   }
 }

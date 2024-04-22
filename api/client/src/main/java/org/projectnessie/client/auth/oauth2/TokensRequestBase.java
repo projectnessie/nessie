@@ -16,12 +16,36 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 
 /**
- * Common base for {@link ClientCredentialsTokensRequest}, {@link PasswordTokensRequest}, {@link
- * RefreshTokensRequest} and {@link TokensExchangeRequest}.
+ * Common base for all requests to the token endpoint.
+ *
+ * @see ClientCredentialsTokensRequest
+ * @see PasswordTokensRequest
+ * @see AuthorizationCodeTokensRequest
+ * @see DeviceCodeRequest
+ * @see RefreshTokensRequest
+ * @see TokensExchangeRequest
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "grant_type")
+@JsonSubTypes({
+  @JsonSubTypes.Type(
+      value = AuthorizationCodeTokensRequest.class,
+      name = GrantType.Constants.AUTHORIZATION_CODE),
+  @JsonSubTypes.Type(
+      value = ClientCredentialsTokensRequest.class,
+      name = GrantType.Constants.CLIENT_CREDENTIALS),
+  @JsonSubTypes.Type(value = DeviceCodeTokensRequest.class, name = GrantType.Constants.DEVICE_CODE),
+  @JsonSubTypes.Type(value = PasswordTokensRequest.class, name = GrantType.Constants.PASSWORD),
+  @JsonSubTypes.Type(value = RefreshTokensRequest.class, name = GrantType.Constants.REFRESH_TOKEN),
+  @JsonSubTypes.Type(
+      value = TokensExchangeRequest.class,
+      name = GrantType.Constants.TOKEN_EXCHANGE),
+})
 interface TokensRequestBase {
 
   /** REQUIRED. The authorization grant type. */
@@ -40,4 +64,12 @@ interface TokensRequestBase {
   @Nullable
   @JsonProperty("scope")
   String getScope();
+
+  interface Builder<T extends TokensRequestBase> {
+
+    @CanIgnoreReturnValue
+    Builder<T> scope(String scope);
+
+    T build();
+  }
 }

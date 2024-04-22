@@ -16,8 +16,10 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -38,11 +40,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutablePasswordTokensRequest.class)
 @JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
-interface PasswordTokensRequest extends TokensRequestBase {
+@JsonTypeName(GrantType.Constants.PASSWORD)
+interface PasswordTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "password". */
-  @Value.Default
-  @JsonProperty("grant_type")
+  @Value.Derived
   @Override
   default GrantType getGrantType() {
     return GrantType.PASSWORD;
@@ -55,4 +57,18 @@ interface PasswordTokensRequest extends TokensRequestBase {
   /** REQUIRED. The resource owner password. */
   @JsonProperty("password")
   String getPassword();
+
+  static Builder builder() {
+    return ImmutablePasswordTokensRequest.builder();
+  }
+
+  interface Builder
+      extends TokensRequestBase.Builder<PasswordTokensRequest>,
+          PublicClientRequest.Builder<PasswordTokensRequest> {
+    @CanIgnoreReturnValue
+    Builder username(String username);
+
+    @CanIgnoreReturnValue
+    Builder password(String password);
+  }
 }

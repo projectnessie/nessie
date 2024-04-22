@@ -16,8 +16,10 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -39,11 +41,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableAuthorizationCodeTokensRequest.class)
 @JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
-interface AuthorizationCodeTokensRequest extends TokensRequestBase {
+@JsonTypeName(GrantType.Constants.AUTHORIZATION_CODE)
+interface AuthorizationCodeTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "authorization_code". */
-  @Value.Default
-  @JsonProperty("grant_type")
+  @Value.Derived
   @Override
   default GrantType getGrantType() {
     return GrantType.AUTHORIZATION_CODE;
@@ -57,7 +59,17 @@ interface AuthorizationCodeTokensRequest extends TokensRequestBase {
   @JsonProperty("redirect_uri")
   String getRedirectUri();
 
-  /** REQUIRED. The client ID. */
-  @JsonProperty("client_id")
-  String getClientId();
+  static Builder builder() {
+    return ImmutableAuthorizationCodeTokensRequest.builder();
+  }
+
+  interface Builder
+      extends TokensRequestBase.Builder<AuthorizationCodeTokensRequest>,
+          PublicClientRequest.Builder<AuthorizationCodeTokensRequest> {
+    @CanIgnoreReturnValue
+    Builder code(String code);
+
+    @CanIgnoreReturnValue
+    Builder redirectUri(String redirectUri);
+  }
 }

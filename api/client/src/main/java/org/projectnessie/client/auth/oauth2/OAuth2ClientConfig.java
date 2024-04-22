@@ -22,6 +22,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
@@ -114,6 +115,11 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   @Value.Default
   Supplier<Instant> getClock() {
     return Clock.systemUTC()::instant;
+  }
+
+  @Value.Derived
+  boolean isPublicClient() {
+    return !getClientSecret().isPresent();
   }
 
   @Value.Lazy
@@ -240,6 +246,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_CLIENT_ID,
         !getClientId().isEmpty(),
         "client ID must not be empty");
+    check(
+        violations,
+        CONF_NESSIE_OAUTH2_GRANT_TYPE + " / " + CONF_NESSIE_OAUTH2_CLIENT_SECRET,
+        getClientSecret().isPresent() || getGrantType() != GrantType.CLIENT_CREDENTIALS,
+        "client secret must not be empty when grant type is '%s'",
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS);
     check(
         violations,
         CONF_NESSIE_OAUTH2_ISSUER_URL + " / " + CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT,

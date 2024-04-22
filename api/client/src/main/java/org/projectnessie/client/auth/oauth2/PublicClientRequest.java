@@ -16,34 +16,30 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
- * A device authorization request as defined in <a
- * href="https://tools.ietf.org/html/rfc8628#section-3.1">RFC 8628 Section 3.1</a>.
+ * Common interface for requests using grant types compatible with public clients.
+ *
+ * @see AuthorizationCodeTokensRequest
+ * @see DeviceCodeRequest
+ * @see PasswordTokensRequest
+ * @see RefreshTokensRequest
+ * @see TokensExchangeRequest
  */
-@Value.Immutable
-@JsonSerialize(as = ImmutableDeviceCodeRequest.class)
-@JsonDeserialize(as = ImmutableDeviceCodeRequest.class)
-interface DeviceCodeRequest extends PublicClientRequest {
+interface PublicClientRequest {
 
+  /**
+   * The client identifier as described in Section 2.2 of [RFC6749]. REQUIRED if the client is not
+   * authenticating with the authorization server as described in Section 3.2.1. of [RFC6749].
+   */
+  @JsonProperty("client_id")
   @Nullable
-  @JsonProperty("scope")
-  String getScope();
+  String getClientId();
 
-  static Builder builder() {
-    return ImmutableDeviceCodeRequest.builder();
-  }
-
-  interface Builder extends PublicClientRequest.Builder<DeviceCodeRequest> {
+  interface Builder<T> {
     @CanIgnoreReturnValue
-    Builder scope(String scope);
-
-    @SuppressWarnings("ClassEscapesDefinedScope")
-    DeviceCodeRequest build();
+    Builder<T> clientId(String clientId);
   }
 }

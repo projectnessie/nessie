@@ -16,9 +16,10 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -40,11 +41,11 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableDeviceCodeTokensRequest.class)
 @JsonDeserialize(as = ImmutableDeviceCodeTokensRequest.class)
-interface DeviceCodeTokensRequest extends TokensRequestBase {
+@JsonTypeName(GrantType.Constants.DEVICE_CODE)
+interface DeviceCodeTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "urn:ietf:params:oauth:grant-type:device_code" */
-  @Value.Default
-  @JsonProperty("grant_type")
+  @Value.Derived
   @Override
   default GrantType getGrantType() {
     return GrantType.DEVICE_CODE;
@@ -57,11 +58,15 @@ interface DeviceCodeTokensRequest extends TokensRequestBase {
   @JsonProperty("device_code")
   String getDeviceCode();
 
-  /**
-   * The client identifier as described in Section 2.2 of [RFC6749]. REQUIRED if the client is not
-   * authenticating with the authorization server as described in Section 3.2.1. of [RFC6749].
-   */
-  @JsonProperty("client_id")
-  @Nullable
-  String getClientId();
+  static Builder builder() {
+    return ImmutableDeviceCodeTokensRequest.builder();
+  }
+
+  interface Builder
+      extends TokensRequestBase.Builder<DeviceCodeTokensRequest>,
+          PublicClientRequest.Builder<DeviceCodeTokensRequest> {
+
+    @CanIgnoreReturnValue
+    Builder deviceCode(String deviceCode);
+  }
 }

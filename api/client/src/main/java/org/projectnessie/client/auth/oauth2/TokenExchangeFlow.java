@@ -41,13 +41,11 @@ class TokenExchangeFlow extends AbstractFlow {
       throw new MustFetchNewTokensException("Token exchange is disabled");
     }
     Objects.requireNonNull(currentTokens);
-    TokensExchangeRequest request =
-        ImmutableTokensExchangeRequest.builder()
+    TokensExchangeRequest.Builder request =
+        TokensExchangeRequest.builder()
             .subjectToken(currentTokens.getAccessToken().getPayload())
             .subjectTokenType(ACCESS_TOKEN_ID)
-            .requestedTokenType(REFRESH_TOKEN_ID)
-            .scope(config.getScope().orElse(null))
-            .build();
+            .requestedTokenType(REFRESH_TOKEN_ID);
     return invokeTokenEndpoint(request, TokensExchangeResponse.class);
   }
 }

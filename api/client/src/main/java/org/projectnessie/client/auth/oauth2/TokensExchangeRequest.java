@@ -16,8 +16,10 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -43,14 +45,14 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableTokensExchangeRequest.class)
 @JsonDeserialize(as = ImmutableTokensExchangeRequest.class)
-interface TokensExchangeRequest extends TokensRequestBase {
+@JsonTypeName(GrantType.Constants.TOKEN_EXCHANGE)
+interface TokensExchangeRequest extends TokensRequestBase, PublicClientRequest {
 
   /**
    * REQUIRED. The value {@link GrantType#TOKEN_EXCHANGE} indicates that a token exchange is being
    * performed.
    */
-  @Value.Default
-  @JsonProperty("grant_type")
+  @Value.Derived
   @Override
   default GrantType getGrantType() {
     return GrantType.TOKEN_EXCHANGE;
@@ -136,4 +138,34 @@ interface TokensExchangeRequest extends TokensRequestBase {
   @Nullable
   @JsonProperty("actor_token_type")
   URI getActorTokenType();
+
+  static Builder builder() {
+    return ImmutableTokensExchangeRequest.builder();
+  }
+
+  interface Builder
+      extends TokensRequestBase.Builder<TokensExchangeRequest>,
+          PublicClientRequest.Builder<TokensExchangeRequest> {
+
+    @CanIgnoreReturnValue
+    Builder resource(URI resource);
+
+    @CanIgnoreReturnValue
+    Builder audience(String audience);
+
+    @CanIgnoreReturnValue
+    Builder requestedTokenType(URI requestedTokenType);
+
+    @CanIgnoreReturnValue
+    Builder subjectToken(String subjectToken);
+
+    @CanIgnoreReturnValue
+    Builder subjectTokenType(URI subjectTokenType);
+
+    @CanIgnoreReturnValue
+    Builder actorToken(String actorToken);
+
+    @CanIgnoreReturnValue
+    Builder actorTokenType(URI actorTokenType);
+  }
 }

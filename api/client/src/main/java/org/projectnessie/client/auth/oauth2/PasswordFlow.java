@@ -22,9 +22,9 @@ import javax.annotation.Nullable;
  * href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.3">Resource Owner Password
  * Credentials Grant</a> flow.
  */
-class ResourceOwnerPasswordFlow extends AbstractFlow {
+class PasswordFlow extends AbstractFlow {
 
-  ResourceOwnerPasswordFlow(OAuth2ClientConfig config) {
+  PasswordFlow(OAuth2ClientConfig config) {
     super(config);
   }
 
@@ -37,12 +37,8 @@ class ResourceOwnerPasswordFlow extends AbstractFlow {
             .getPassword()
             .map(Secret::getString)
             .orElseThrow(() -> new IllegalStateException("Password is required"));
-    PasswordTokensRequest request =
-        ImmutablePasswordTokensRequest.builder()
-            .username(username)
-            .password(password)
-            .scope(config.getScope().orElse(null))
-            .build();
+    PasswordTokensRequest.Builder request =
+        PasswordTokensRequest.builder().username(username).password(password);
     return invokeTokenEndpoint(request, PasswordTokensResponse.class);
   }
 }
