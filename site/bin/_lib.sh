@@ -138,6 +138,8 @@ create_latest () {
   # Exclude the latest-version-NUMBER directory from the search index
   # (keeps the 'nessie-latest' in the search index)
   search_exclude_versioned_docs "build/versions/${version}"
+  # Only exclude the raw generated .md files (those are included).
+  search_exclude_generated_docs "build/versions/latest"
 
   cd build/versions/
 
@@ -187,14 +189,43 @@ search_exclude_versioned_docs () {
   # Modify .md files to exclude versioned documentation from search indexing
   python3 -c "import glob
 for f in glob.glob('./**/*.md', recursive=True):
-  # Generated docs are only included and become part of another page.
-  if not \"/generated-docs\" in f:
-    lines = open(f).readlines()
-    # Add an empty front-matter, if not present.
-    if lines[0] != '---\n':
-      lines = ['---\n', '---\n', '\n'] + lines
-    lines = lines[:1] + ['search:\n', '  exclude: true\n'] + lines[1:]
-    open(f, 'w').writelines(lines)
+  lines = open(f).readlines()
+  # Add an empty front-matter, if not present.
+  if lines[0] != '---\n':
+    lines = ['---\n', '---\n', '<!--start-->\n', '\n'] + lines
+  lines = lines[:1] + ['search:\n', '  exclude: true\n'] + lines[1:]
+  open(f, 'w').writelines(lines)
+"
+
+  cd - > /dev/null
+}
+
+# Excludes generated documentation from search indexing by modifying .md files.
+# Arguments:
+#   $1: version_docs_dir - The docs/ directory of the versioned documentation to exclude from
+#       search indexing.
+search_exclude_generated_docs () {
+  echo " --> search exclude generated docs"
+
+  local version_docs_dir
+  version_docs_dir="$1"
+
+  # Ensure version is not empty
+  assert_not_empty "${version_docs_dir}"
+
+  echo "     ... in ${version_docs_dir}"
+
+  cd "${version_docs_dir}"
+
+  # Modify .md files to exclude versioned documentation from search indexing
+  python3 -c "import glob
+for f in glob.glob('./**/generated-docs/*.md', recursive=True):
+  lines = open(f).readlines()
+  # Add an empty front-matter, if not present.
+  if lines[0] != '---\n':
+    lines = ['---\n', '---\n', '<!--start-->\n', '\n'] + lines
+  lines = lines[:1] + ['search:\n', '  exclude: true\n'] + lines[1:]
+  open(f, 'w').writelines(lines)
 "
 
   cd - > /dev/null
