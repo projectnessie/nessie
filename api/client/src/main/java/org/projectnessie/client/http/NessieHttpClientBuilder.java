@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client.http;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_FORCE_URL_CONNECTION_CLIENT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_2;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_REDIRECT;
@@ -156,7 +155,9 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
         withFollowRedirects(s.trim());
       }
 
-      s = configuration.apply(CONF_FORCE_URL_CONNECTION_CLIENT);
+      @SuppressWarnings("deprecation")
+      String forceUrlConnectionClient = NessieConfigConstants.CONF_FORCE_URL_CONNECTION_CLIENT;
+      s = configuration.apply(forceUrlConnectionClient);
       if (s != null) {
         withForceUrlConnectionClient(Boolean.parseBoolean(s.trim()));
       }
