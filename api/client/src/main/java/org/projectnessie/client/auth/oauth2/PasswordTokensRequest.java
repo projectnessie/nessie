@@ -41,7 +41,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutablePasswordTokensRequest.class)
 @JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
 @JsonTypeName(GrantType.Constants.PASSWORD)
-interface PasswordTokensRequest extends PublicTokensRequestBase {
+interface PasswordTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "password". */
   @Value.Derived
@@ -62,7 +62,9 @@ interface PasswordTokensRequest extends PublicTokensRequestBase {
     return ImmutablePasswordTokensRequest.builder();
   }
 
-  interface Builder extends PublicTokensRequestBase.Builder<PasswordTokensRequest> {
+  interface Builder
+      extends TokensRequestBase.Builder<PasswordTokensRequest>,
+          PublicClientRequest.Builder<PasswordTokensRequest> {
     @CanIgnoreReturnValue
     Builder username(String username);
 

@@ -119,7 +119,6 @@ class AuthorizationCodeFlow extends AbstractFlow {
         new UriBuilder(authEndpoint.resolve("/"))
             .path(authEndpoint.getPath())
             .queryParam("response_type", "code")
-            // client ID is required in all cases here
             .queryParam("client_id", config.getClientId())
             .queryParam("scope", config.getScope().orElse(null))
             .queryParam("redirect_uri", redirectUri)

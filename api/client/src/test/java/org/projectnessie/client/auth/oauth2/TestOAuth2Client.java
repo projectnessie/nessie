@@ -605,14 +605,14 @@ class TestOAuth2Client {
         soft.assertThat(request.getScope()).isEqualTo("test");
         soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
         soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
-        soft.assertThat(((PublicTokensRequestBase) request).getClientId()).isNull();
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getPasswordTokensResponse();
       } else if (grantType.equals(GrantType.REFRESH_TOKEN.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, RefreshTokensRequest.class);
         soft.assertThat(request.getScope()).isEqualTo("test");
         soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
             .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
-        soft.assertThat(((PublicTokensRequestBase) request).getClientId()).isNull();
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getRefreshTokensResponse();
       } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, TokensExchangeRequest.class);
@@ -625,7 +625,7 @@ class TestOAuth2Client {
         soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
         soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
             .isEqualTo(TokenExchangeFlow.REFRESH_TOKEN_ID);
-        soft.assertThat(((PublicTokensRequestBase) request).getClientId()).isNull();
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getTokensExchangeResponse();
       } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
@@ -635,7 +635,7 @@ class TestOAuth2Client {
         soft.assertThat(((AuthorizationCodeTokensRequest) request).getRedirectUri())
             .contains("http://localhost:")
             .contains("/nessie-client/auth");
-        soft.assertThat(((PublicTokensRequestBase) request).getClientId()).isNull();
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getAuthorizationCodeTokensResponse();
       } else if (grantType.equals(GrantType.DEVICE_CODE.canonicalName())) {
         if (deviceAuthorized) {
@@ -643,7 +643,7 @@ class TestOAuth2Client {
           soft.assertThat(request.getScope()).isEqualTo("test");
           soft.assertThat(((DeviceCodeTokensRequest) request).getDeviceCode())
               .isEqualTo("device-code");
-          soft.assertThat(((PublicTokensRequestBase) request).getClientId()).isNull();
+          soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
           response = getDeviceAuthorizationTokensResponse();
         } else {
           response =

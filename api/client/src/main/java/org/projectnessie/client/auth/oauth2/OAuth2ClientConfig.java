@@ -117,6 +117,11 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     return Clock.systemUTC()::instant;
   }
 
+  @Value.Derived
+  boolean isPublicClient() {
+    return !getClientSecret().isPresent();
+  }
+
   @Value.Lazy
   JsonNode getOpenIdProviderMetadata() {
     URI issuerUrl = getIssuerUrl().orElseThrow(IllegalStateException::new);

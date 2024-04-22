@@ -29,15 +29,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableDeviceCodeRequest.class)
 @JsonDeserialize(as = ImmutableDeviceCodeRequest.class)
-interface DeviceCodeRequest {
-
-  /**
-   * The client identifier as described in Section 2.2 of [RFC6749]. REQUIRED if the client is not
-   * authenticating with the authorization server as described in Section 3.2.1. of [RFC6749].
-   */
-  @Nullable
-  @JsonProperty("client_id")
-  String getClientId();
+interface DeviceCodeRequest extends PublicClientRequest {
 
   @Nullable
   @JsonProperty("scope")
@@ -47,10 +39,7 @@ interface DeviceCodeRequest {
     return ImmutableDeviceCodeRequest.builder();
   }
 
-  interface Builder {
-    @CanIgnoreReturnValue
-    Builder clientId(String clientId);
-
+  interface Builder extends PublicClientRequest.Builder<DeviceCodeRequest> {
     @CanIgnoreReturnValue
     Builder scope(String scope);
 

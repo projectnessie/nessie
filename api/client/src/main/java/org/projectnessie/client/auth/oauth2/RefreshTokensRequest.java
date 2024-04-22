@@ -43,7 +43,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableRefreshTokensRequest.class)
 @JsonDeserialize(as = ImmutableRefreshTokensRequest.class)
 @JsonTypeName(GrantType.Constants.REFRESH_TOKEN)
-interface RefreshTokensRequest extends PublicTokensRequestBase {
+interface RefreshTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "refresh_token". */
   @Value.Derived
@@ -60,7 +60,9 @@ interface RefreshTokensRequest extends PublicTokensRequestBase {
     return ImmutableRefreshTokensRequest.builder();
   }
 
-  interface Builder extends PublicTokensRequestBase.Builder<RefreshTokensRequest> {
+  interface Builder
+      extends TokensRequestBase.Builder<RefreshTokensRequest>,
+          PublicClientRequest.Builder<RefreshTokensRequest> {
 
     @CanIgnoreReturnValue
     Builder refreshToken(String refreshToken);

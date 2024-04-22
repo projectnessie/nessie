@@ -46,7 +46,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableTokensExchangeRequest.class)
 @JsonDeserialize(as = ImmutableTokensExchangeRequest.class)
 @JsonTypeName(GrantType.Constants.TOKEN_EXCHANGE)
-interface TokensExchangeRequest extends PublicTokensRequestBase {
+interface TokensExchangeRequest extends TokensRequestBase, PublicClientRequest {
 
   /**
    * REQUIRED. The value {@link GrantType#TOKEN_EXCHANGE} indicates that a token exchange is being
@@ -143,7 +143,9 @@ interface TokensExchangeRequest extends PublicTokensRequestBase {
     return ImmutableTokensExchangeRequest.builder();
   }
 
-  interface Builder extends PublicTokensRequestBase.Builder<TokensExchangeRequest> {
+  interface Builder
+      extends TokensRequestBase.Builder<TokensExchangeRequest>,
+          PublicClientRequest.Builder<TokensExchangeRequest> {
 
     @CanIgnoreReturnValue
     Builder resource(URI resource);

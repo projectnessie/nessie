@@ -29,22 +29,23 @@ abstract class AbstractFlow implements Flow {
 
   <REQ extends TokensRequestBase, RESP extends TokensResponseBase> RESP invokeTokenEndpoint(
       TokensRequestBase.Builder<REQ> request, Class<? extends RESP> responseClass) {
-    request.scope(config.getScope().orElse(null));
-    if (request instanceof PublicTokensRequestBase.Builder
-        && !config.getClientSecret().isPresent()) {
-      ((PublicTokensRequestBase.Builder<?>) request).clientId(config.getClientId());
-    }
+    config.getScope().ifPresent(request::scope);
+    maybeAddClientId(request);
     return invokeEndpoint(config.getResolvedTokenEndpoint(), request.build(), responseClass);
   }
 
   DeviceCodeResponse invokeDeviceAuthEndpoint() {
-    DeviceCodeRequest.Builder request =
-        DeviceCodeRequest.builder().scope(config.getScope().orElse(null));
-    if (!config.getClientSecret().isPresent()) {
-      request.clientId(config.getClientId());
-    }
+    DeviceCodeRequest.Builder request = DeviceCodeRequest.builder();
+    config.getScope().ifPresent(request::scope);
+    maybeAddClientId(request);
     return invokeEndpoint(
         config.getResolvedDeviceAuthEndpoint(), request.build(), DeviceCodeResponse.class);
+  }
+
+  private void maybeAddClientId(Object request) {
+    if (config.isPublicClient() && request instanceof PublicClientRequest.Builder) {
+      ((PublicClientRequest.Builder<?>) request).clientId(config.getClientId());
+    }
   }
 
   private <REQ, RESP> RESP invokeEndpoint(

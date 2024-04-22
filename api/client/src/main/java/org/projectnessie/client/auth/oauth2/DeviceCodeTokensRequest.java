@@ -42,7 +42,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableDeviceCodeTokensRequest.class)
 @JsonDeserialize(as = ImmutableDeviceCodeTokensRequest.class)
 @JsonTypeName(GrantType.Constants.DEVICE_CODE)
-interface DeviceCodeTokensRequest extends PublicTokensRequestBase {
+interface DeviceCodeTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "urn:ietf:params:oauth:grant-type:device_code" */
   @Value.Derived
@@ -62,7 +62,10 @@ interface DeviceCodeTokensRequest extends PublicTokensRequestBase {
     return ImmutableDeviceCodeTokensRequest.builder();
   }
 
-  interface Builder extends PublicTokensRequestBase.Builder<DeviceCodeTokensRequest> {
+  interface Builder
+      extends TokensRequestBase.Builder<DeviceCodeTokensRequest>,
+          PublicClientRequest.Builder<DeviceCodeTokensRequest> {
+
     @CanIgnoreReturnValue
     Builder deviceCode(String deviceCode);
   }

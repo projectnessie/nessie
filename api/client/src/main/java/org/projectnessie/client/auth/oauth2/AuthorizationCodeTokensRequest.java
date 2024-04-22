@@ -42,7 +42,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableAuthorizationCodeTokensRequest.class)
 @JsonDeserialize(as = ImmutableAuthorizationCodeTokensRequest.class)
 @JsonTypeName(GrantType.Constants.AUTHORIZATION_CODE)
-interface AuthorizationCodeTokensRequest extends PublicTokensRequestBase {
+interface AuthorizationCodeTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "authorization_code". */
   @Value.Derived
@@ -63,7 +63,9 @@ interface AuthorizationCodeTokensRequest extends PublicTokensRequestBase {
     return ImmutableAuthorizationCodeTokensRequest.builder();
   }
 
-  interface Builder extends PublicTokensRequestBase.Builder<AuthorizationCodeTokensRequest> {
+  interface Builder
+      extends TokensRequestBase.Builder<AuthorizationCodeTokensRequest>,
+          PublicClientRequest.Builder<AuthorizationCodeTokensRequest> {
     @CanIgnoreReturnValue
     Builder code(String code);
 

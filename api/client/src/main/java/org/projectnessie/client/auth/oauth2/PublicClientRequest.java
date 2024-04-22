@@ -20,15 +20,15 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 
 /**
- * Common base for requests to the token endpoint using grant types compatible with public clients.
+ * Common interface for requests using grant types compatible with public clients.
  *
- * @see PasswordTokensRequest
  * @see AuthorizationCodeTokensRequest
  * @see DeviceCodeRequest
+ * @see PasswordTokensRequest
  * @see RefreshTokensRequest
  * @see TokensExchangeRequest
  */
-interface PublicTokensRequestBase extends TokensRequestBase {
+interface PublicClientRequest {
 
   /**
    * The client identifier as described in Section 2.2 of [RFC6749]. REQUIRED if the client is not
@@ -38,8 +38,7 @@ interface PublicTokensRequestBase extends TokensRequestBase {
   @Nullable
   String getClientId();
 
-  interface Builder<T extends PublicTokensRequestBase> extends TokensRequestBase.Builder<T> {
-
+  interface Builder<T> {
     @CanIgnoreReturnValue
     Builder<T> clientId(String clientId);
   }
