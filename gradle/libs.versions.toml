@@ -42,7 +42,7 @@ antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "ant
 assertj-core = { module = "org.assertj:assertj-core", version = "3.25.3" }
 avro = { module = "org.apache.avro:avro", version = "1.11.3" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.1" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.25.31" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.25.35" }
 azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.22" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
