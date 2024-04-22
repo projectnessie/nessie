@@ -59,7 +59,8 @@ plugins:
       authors_file: ./blog/.authors.yml
       post_excerpt: required
       pagination_per_page: 5
-  - include-markdown
+  - include-markdown:
+      start: "<!--start-->"
   - macros:
       on_error_fail: true
       module_name: macros
