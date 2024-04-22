@@ -19,6 +19,30 @@ import java.net.URI;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 
+/**
+ * Infrastructure shared by all flows.
+ *
+ * <p>The general behavior adopted by the OAuth2 client wrt to client authentication is as follows:
+ *
+ * <p>For confidential clients:
+ *
+ * <ol>
+ *   <li>Authenticate the client with a Basic authentication header (while it is also possible to
+ *       authenticate using {@code client_id} + {@code client_secret} in the request body, the OAuth
+ *       2.0 spec considers this method less secure, so we don't use it);
+ *   <li>Do NOT include {@code client_id} nor {@code client_secret} in the request body, since the
+ *       spec also forbids more than one authentication method in each request.
+ * </ol>
+ *
+ * <p>For public clients:
+ *
+ * <ol>
+ *   <li>Do not include any Basic authentication header (since there is no client secret);
+ *   <li>But do include {@code client_id} in the request body, in order to identify the client
+ *       (according to the spec, including {@code client_id} is mandatory for public clients using
+ *       the Authorization Code Grant, and optional for other grants – but we always include it).
+ * </ol>
+ */
 abstract class AbstractFlow implements Flow {
 
   final OAuth2ClientConfig config;
