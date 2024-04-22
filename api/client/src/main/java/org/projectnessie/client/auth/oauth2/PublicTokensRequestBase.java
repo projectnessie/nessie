@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 
 /**
@@ -39,6 +40,7 @@ interface PublicTokensRequestBase extends TokensRequestBase {
 
   interface Builder<T extends PublicTokensRequestBase> extends TokensRequestBase.Builder<T> {
 
+    @CanIgnoreReturnValue
     Builder<T> clientId(String clientId);
   }
 }

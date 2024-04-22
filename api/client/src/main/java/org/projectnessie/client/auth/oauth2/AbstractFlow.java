@@ -39,7 +39,7 @@ abstract class AbstractFlow implements Flow {
 
   DeviceCodeResponse invokeDeviceAuthEndpoint() {
     DeviceCodeRequest.Builder request =
-        ImmutableDeviceCodeRequest.builder().scope(config.getScope().orElse(null));
+        DeviceCodeRequest.builder().scope(config.getScope().orElse(null));
     if (!config.getClientSecret().isPresent()) {
       request.clientId(config.getClientId());
     }

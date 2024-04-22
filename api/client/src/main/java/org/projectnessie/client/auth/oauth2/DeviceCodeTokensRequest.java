@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -56,7 +57,12 @@ interface DeviceCodeTokensRequest extends PublicTokensRequestBase {
   @JsonProperty("device_code")
   String getDeviceCode();
 
+  static Builder builder() {
+    return ImmutableDeviceCodeTokensRequest.builder();
+  }
+
   interface Builder extends PublicTokensRequestBase.Builder<DeviceCodeTokensRequest> {
+    @CanIgnoreReturnValue
     Builder deviceCode(String deviceCode);
   }
 }

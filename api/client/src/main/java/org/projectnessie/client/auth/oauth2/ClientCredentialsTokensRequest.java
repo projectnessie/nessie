@@ -48,5 +48,9 @@ interface ClientCredentialsTokensRequest extends TokensRequestBase {
     return GrantType.CLIENT_CREDENTIALS;
   }
 
+  static Builder builder() {
+    return ImmutableClientCredentialsTokensRequest.builder();
+  }
+
   interface Builder extends TokensRequestBase.Builder<ClientCredentialsTokensRequest> {}
 }

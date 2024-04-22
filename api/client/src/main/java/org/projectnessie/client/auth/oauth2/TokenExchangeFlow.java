@@ -42,7 +42,7 @@ class TokenExchangeFlow extends AbstractFlow {
     }
     Objects.requireNonNull(currentTokens);
     TokensExchangeRequest.Builder request =
-        ImmutableTokensExchangeRequest.builder()
+        TokensExchangeRequest.builder()
             .subjectToken(currentTokens.getAccessToken().getPayload())
             .subjectTokenType(ACCESS_TOKEN_ID)
             .requestedTokenType(REFRESH_TOKEN_ID);

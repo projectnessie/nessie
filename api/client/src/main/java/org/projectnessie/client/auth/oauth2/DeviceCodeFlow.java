@@ -96,7 +96,7 @@ class DeviceCodeFlow extends AbstractFlow {
 
   @Override
   public Tokens fetchNewTokens(@Nullable Tokens currentTokens) {
-    DeviceCodeResponse response = requestDeviceCode();
+    DeviceCodeResponse response = invokeDeviceAuthEndpoint();
     checkPollInterval(response.getInterval());
     console.println();
     console.println(MSG_PREFIX + "======= Nessie authentication required =======");
@@ -129,10 +129,6 @@ class DeviceCodeFlow extends AbstractFlow {
     }
   }
 
-  private DeviceCodeResponse requestDeviceCode() {
-    return invokeDeviceAuthEndpoint();
-  }
-
   private void checkPollInterval(Duration serverPollInterval) {
     if (!config.ignoreDeviceCodeFlowServerPollInterval()
         && serverPollInterval != null
@@ -161,7 +157,7 @@ class DeviceCodeFlow extends AbstractFlow {
     try {
       LOGGER.debug("Device Code Flow: polling for new tokens");
       DeviceCodeTokensRequest.Builder request =
-          ImmutableDeviceCodeTokensRequest.builder().deviceCode(deviceCode);
+          DeviceCodeTokensRequest.builder().deviceCode(deviceCode);
       Tokens tokens = invokeTokenEndpoint(request, DeviceCodeTokensResponse.class);
       LOGGER.debug("Device Code Flow: new tokens received");
       tokensFuture.complete(tokens);

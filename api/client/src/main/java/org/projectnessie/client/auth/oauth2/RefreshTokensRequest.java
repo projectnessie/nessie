@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -54,8 +55,13 @@ interface RefreshTokensRequest extends PublicTokensRequestBase {
   @JsonProperty("refresh_token")
   String getRefreshToken();
 
+  static Builder builder() {
+    return ImmutableRefreshTokensRequest.builder();
+  }
+
   interface Builder extends PublicTokensRequestBase.Builder<RefreshTokensRequest> {
 
+    @CanIgnoreReturnValue
     Builder refreshToken(String refreshToken);
   }
 }

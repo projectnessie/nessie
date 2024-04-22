@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -42,11 +43,18 @@ interface DeviceCodeRequest {
   @JsonProperty("scope")
   String getScope();
 
+  static Builder builder() {
+    return ImmutableDeviceCodeRequest.builder();
+  }
+
   interface Builder {
+    @CanIgnoreReturnValue
     Builder clientId(String clientId);
 
+    @CanIgnoreReturnValue
     Builder scope(String scope);
 
+    @SuppressWarnings("ClassEscapesDefinedScope")
     DeviceCodeRequest build();
   }
 }

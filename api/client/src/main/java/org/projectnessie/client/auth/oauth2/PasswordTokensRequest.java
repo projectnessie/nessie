@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -56,9 +57,15 @@ interface PasswordTokensRequest extends PublicTokensRequestBase {
   @JsonProperty("password")
   String getPassword();
 
+  static Builder builder() {
+    return ImmutablePasswordTokensRequest.builder();
+  }
+
   interface Builder extends PublicTokensRequestBase.Builder<PasswordTokensRequest> {
+    @CanIgnoreReturnValue
     Builder username(String username);
 
+    @CanIgnoreReturnValue
     Builder password(String password);
   }
 }

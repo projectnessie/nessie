@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -57,9 +58,15 @@ interface AuthorizationCodeTokensRequest extends PublicTokensRequestBase {
   @JsonProperty("redirect_uri")
   String getRedirectUri();
 
+  static Builder builder() {
+    return ImmutableAuthorizationCodeTokensRequest.builder();
+  }
+
   interface Builder extends PublicTokensRequestBase.Builder<AuthorizationCodeTokensRequest> {
+    @CanIgnoreReturnValue
     Builder code(String code);
 
+    @CanIgnoreReturnValue
     Builder redirectUri(String redirectUri);
   }
 }

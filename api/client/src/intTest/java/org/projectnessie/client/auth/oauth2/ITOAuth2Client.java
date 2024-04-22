@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.client.auth.oauth2.GrantType.AUTHORIZATION_CODE;
+import static org.projectnessie.client.auth.oauth2.GrantType.CLIENT_CREDENTIALS;
 import static org.projectnessie.client.auth.oauth2.GrantType.DEVICE_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.PASSWORD;
 
@@ -134,7 +135,7 @@ public class ITOAuth2Client {
    * This test exercises the OAuth2 client "in real life", that is, with background token refresh
    * running.
    *
-   * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
+   * <p>For 20 seconds, 3 OAuth2 clients will strive to keep the access tokens valid; in the
    * meantime, another HTTP client will attempt to validate the obtained tokens.
    *
    * <p>This should be enough to exercise the OAuth2 client's background refresh logic with all
@@ -150,7 +151,8 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws Exception {
-    OAuth2ClientConfig config1 = clientConfig("Private1", true, false).build();
+    OAuth2ClientConfig config1 =
+        clientConfig("Private1", true, false).grantType(CLIENT_CREDENTIALS).build();
     OAuth2ClientConfig config2 = clientConfig("Private2", true, false).grantType(PASSWORD).build();
     OAuth2ClientConfig config3 =
         clientConfig("Public1", false, false).grantType(AUTHORIZATION_CODE).build();
@@ -190,23 +192,14 @@ public class ITOAuth2Client {
   }
 
   /**
-   * Dummy sentence to make Checkstyle happy.
-   *
-   * <p>This test exercises the OAuth2 client with the following setup:
-   *
-   * <ul>
-   *   <li>endpoint discovery on;
-   *   <li>client_credentials, password, authorization_code or device_code grant type for obtaining
-   *       the initial access token;
-   *   <li>refresh token sent on the initial response;
-   *   <li>refresh_token grant type for refreshing the access token.
-   * </ul>
+   * This test exercises the OAuth2 client with the following setup: endpoint discovery on; refresh
+   * token sent on the initial response; refresh_token grant type for refreshing the access token.
    */
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
       names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2RefreshTokenOn(GrantType initialGrantType) throws Exception {
+  void testOAuth2ConfidentialClientRefreshTokenOn(GrantType initialGrantType) throws Exception {
     OAuth2ClientConfig config =
         clientConfig("Private2", true, true).grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(config);
@@ -227,22 +220,14 @@ public class ITOAuth2Client {
   }
 
   /**
-   * Dummy sentence to make Checkstyle happy.
-   *
-   * <p>This test exercises the OAuth2 client with the following setup:
-   *
-   * <ul>
-   *   <li>client_credentials, password, authorization_code or device_code grant type for obtaining
-   *       the access token;
-   *   <li>no refresh token sent on the initial response;
-   *   <li>token exchange for obtaining the refresh token.
-   * </ul>
+   * This test exercises the OAuth2 client with the following setup: endpoint discovery off; no
+   * refresh token sent on the initial response; token exchange for obtaining the refresh token.
    */
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
       names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2RefreshTokenOff(GrantType initialGrantType) throws Exception {
+  void testOAuth2ConfidentialClientRefreshTokenOff(GrantType initialGrantType) throws Exception {
     OAuth2ClientConfig config =
         clientConfig("Private1", true, false).grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(config);
@@ -263,23 +248,14 @@ public class ITOAuth2Client {
   }
 
   /**
-   * Dummy sentence to make Checkstyle happy.
-   *
-   * <p>This test exercises the OAuth2 client with the following setup:
-   *
-   * <ul>
-   *   <li>client_credentials, password, authorization_code or device_code grant type for obtaining
-   *       the access token;
-   *   <li>no refresh token sent on the initial response;
-   *   <li>no token exchange for obtaining the refresh token;
-   *   <li>another client credentials grant for refreshing the access token.
-   * </ul>
+   * This test exercises the OAuth2 client with the following setup: endpoint discovery off; no
+   * refresh token sent on the initial response; no token exchange for obtaining the refresh token.
    */
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
       names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2ClientRefreshTokenOffTokenExchangeDisabled(GrantType initialGrantType)
+  void testOAuth2ConfidentialClientRefreshTokenOffTokenExchangeOff(GrantType initialGrantType)
       throws Exception {
     OAuth2ClientConfig config =
         clientConfig("Private1", true, false)
@@ -294,7 +270,7 @@ public class ITOAuth2Client {
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
       soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
-      // second request: another client credentials grant since no refresh token was sent
+      // second request: another initial grant since no refresh token was sent
       // and token exchange is disabled – cannot call refreshTokens() tokens here
       soft.assertThatThrownBy(() -> client.refreshTokens(firstTokens))
           .isInstanceOf(MustFetchNewTokensException.class);
@@ -307,24 +283,15 @@ public class ITOAuth2Client {
   }
 
   /**
-   * Dummy sentence to make Checkstyle happy.
-   *
-   * <p>This test exercises the OAuth2 client with the following setup:
-   *
-   * <ul>
-   *   <li>endpoint discovery on;
-   *   <li>public client (no client secret);
-   *   <li>password, authorization_code or device_code grant type for obtaining the initial access
-   *       token;
-   *   <li>refresh token sent on the initial response;
-   *   <li>refresh_token grant type for refreshing the access token.
-   * </ul>
+   * This test exercises the OAuth2 client with the following setup: endpoint discovery on; public
+   * client (no client secret); refresh token sent on the initial response; refresh_token grant type
+   * for refreshing the access token.
    */
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
       names = {"PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2ClientPublicRefreshTokenOn(GrantType initialGrantType) throws Exception {
+  void testOAuth2PublicClientRefreshTokenOn(GrantType initialGrantType) throws Exception {
     OAuth2ClientConfig config =
         clientConfig("Public2", false, true).grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(config);
@@ -345,24 +312,15 @@ public class ITOAuth2Client {
   }
 
   /**
-   * Dummy sentence to make Checkstyle happy.
-   *
-   * <p>This test exercises the OAuth2 client with the following setup:
-   *
-   * <ul>
-   *   <li>endpoint discovery on;
-   *   <li>public client (no client secret);
-   *   <li>password, authorization_code or device_code grant type for obtaining the initial access
-   *       token;
-   *   <li>no refresh token sent on the initial response;
-   *   <li>token exchange for obtaining the refresh token.
-   * </ul>
+   * This test exercises the OAuth2 client with the following setup: endpoint discovery on; public
+   * client (no client secret); no refresh token sent on the initial response; token exchange for
+   * obtaining the refresh token.
    */
   @ParameterizedTest
   @EnumSource(
       value = GrantType.class,
       names = {"PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2ClientPublicRefreshTokenOff(GrantType initialGrantType) throws Exception {
+  void testOAuth2PublicClientRefreshTokenOff(GrantType initialGrantType) throws Exception {
     OAuth2ClientConfig config =
         clientConfig("Public1", false, true).grantType(initialGrantType).build();
     try (OAuth2Client client = new OAuth2Client(config);
@@ -379,6 +337,42 @@ public class ITOAuth2Client {
       soft.assertThat(exchangedTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
       compareTokens(firstTokens, exchangedTokens, "Public1");
+    }
+  }
+
+  /**
+   * This test exercises the OAuth2 client with the following setup: endpoint discovery on; public
+   * client (no client secret); no refresh token sent on the initial response; no token exchange for
+   * obtaining the refresh token.
+   */
+  @ParameterizedTest
+  @EnumSource(
+      value = GrantType.class,
+      names = {"PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
+  void testOAuth2PublicClientRefreshTokenOffTokenExchangeOff(GrantType initialGrantType)
+      throws Exception {
+    OAuth2ClientConfig config =
+        clientConfig("Public1", false, true)
+            .grantType(initialGrantType)
+            .tokenExchangeEnabled(false)
+            .build();
+    try (OAuth2Client client = new OAuth2Client(config);
+        AutoCloseable ignored = newTestSetup(initialGrantType, client);
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
+      // first request: initial grant
+      Tokens firstTokens = client.fetchNewTokens();
+      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
+      soft.assertThat(firstTokens.getRefreshToken()).isNull();
+      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
+      // second request: another initial grant since no refresh token was sent
+      // and token exchange is disabled – cannot call refreshTokens() tokens here
+      soft.assertThatThrownBy(() -> client.refreshTokens(firstTokens))
+          .isInstanceOf(MustFetchNewTokensException.class);
+      Tokens nextTokens = client.fetchNewTokens();
+      soft.assertThat(nextTokens.getRefreshToken()).isNull();
+      soft.assertThat(nextTokens).isInstanceOf(expectedResponseClass(initialGrantType));
+      tryUseAccessToken(validatingClient, nextTokens.getAccessToken());
+      compareTokens(firstTokens, nextTokens, "Public1");
     }
   }
 

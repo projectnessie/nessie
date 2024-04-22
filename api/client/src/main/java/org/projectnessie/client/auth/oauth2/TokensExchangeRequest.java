@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -137,20 +138,31 @@ interface TokensExchangeRequest extends PublicTokensRequestBase {
   @JsonProperty("actor_token_type")
   URI getActorTokenType();
 
+  static Builder builder() {
+    return ImmutableTokensExchangeRequest.builder();
+  }
+
   interface Builder extends PublicTokensRequestBase.Builder<TokensExchangeRequest> {
 
+    @CanIgnoreReturnValue
     Builder resource(URI resource);
 
+    @CanIgnoreReturnValue
     Builder audience(String audience);
 
+    @CanIgnoreReturnValue
     Builder requestedTokenType(URI requestedTokenType);
 
+    @CanIgnoreReturnValue
     Builder subjectToken(String subjectToken);
 
+    @CanIgnoreReturnValue
     Builder subjectTokenType(URI subjectTokenType);
 
+    @CanIgnoreReturnValue
     Builder actorToken(String actorToken);
 
+    @CanIgnoreReturnValue
     Builder actorTokenType(URI actorTokenType);
   }
 }

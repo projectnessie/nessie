@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -51,6 +52,7 @@ interface TokensRequestBase {
 
   interface Builder<T extends TokensRequestBase> {
 
+    @CanIgnoreReturnValue
     Builder<T> scope(String scope);
 
     T build();
