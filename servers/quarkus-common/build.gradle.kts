@@ -49,6 +49,7 @@ dependencies {
   implementation("io.quarkus:quarkus-micrometer")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
+  implementation("software.amazon.awssdk:sts")
   implementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }
