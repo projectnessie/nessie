@@ -71,6 +71,11 @@ spec:
             - name: AWS_REGION
               value: {{ .Values.dynamodb.region }}
             {{- end }}
+            {{- if .Values.dynamodb.profile }}
+            - name: AWS_PROFILE
+              value: {{ .Values.dynamodb.profile }}
+            {{- end }}
+            {{- if .Values.dynamodb.secret }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -81,6 +86,7 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.dynamodb.secret.name }}
                   key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
+            {{- end }}
             {{- end }}
 
             {{- if eq .Values.versionStoreType "CASSANDRA" }}

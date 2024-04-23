@@ -20,6 +20,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- The Nessie Helm chart now supports AWS profiles. There are now two ways to configure AWS 
+  credentials in the Helm chart:
+  - Using a secret. The secret name can be set in the `dynamodb.secret` value.
+  - Using an AWS profile (new). The profile name can be set in the `dynamodb.profile` value.
+
 ### Changes
 
 ### Deprecations
