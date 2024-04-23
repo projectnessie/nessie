@@ -33,7 +33,7 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
 
   @Inject ExceptionConfig config;
 
-  @Context private HttpHeaders headers;
+  @Context HttpHeaders headers;
 
   protected Response buildBadRequestResponse(Exception e) {
     return buildExceptionResponse(ErrorCode.BAD_REQUEST, e.getMessage(), e);
