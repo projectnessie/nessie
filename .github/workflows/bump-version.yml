@@ -63,7 +63,7 @@ jobs:
     - name: Get previous version information
       run: echo "PREVIOUS_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
 
-    - name: Bump to version
+    - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       env:
         # Same as for ci.yml
@@ -72,7 +72,9 @@ jobs:
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
         cache-read-only: true
-        arguments: :bumpVersion --bumpType ${{ env.BUMP_TYPE }}
+
+    - name: Bump to version
+      run: ./gradlew :bumpVersion --bumpType ${{ env.BUMP_TYPE }}
 
     - name: Get bumped version information
       run: |

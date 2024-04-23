@@ -28,11 +28,13 @@ jobs:
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
-      - name: Gradle / setup
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-disabled: true
-          arguments: projects
+
+      - name: List projects
+        run: ./gradlew projects
 
       - name: Gradle / publish snapshot
         env:
