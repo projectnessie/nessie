@@ -28,7 +28,7 @@ protobuf = "3.25.3"
 quarkusPlatform = "3.9.4"
 quarkusPlugin = "3.9.4"
 slf4j = "1.7.36"
-smallryeConfig = "3.7.1"
+smallryeConfig = "3.8.0"
 undertow = "2.2.28.Final"
 
 [bundles]
