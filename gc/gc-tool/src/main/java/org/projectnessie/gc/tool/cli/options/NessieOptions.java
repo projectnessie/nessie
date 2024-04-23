@@ -16,13 +16,12 @@
 package org.projectnessie.gc.tool.cli.options;
 
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
@@ -61,10 +60,11 @@ public class NessieOptions {
     return NessieRepositoryConnector.nessie(closeables.add(createNessieApi()));
   }
 
+  @SuppressWarnings("deprecation")
   NessieApiV1 createNessieApi() {
     Map<String, String> baseConfig = new HashMap<>(nessieOptions);
-    baseConfig.put(CONF_NESSIE_CLIENT_NAME, nessieClientName);
-    baseConfig.put(CONF_NESSIE_CLIENT_BUILDER_IMPL, nessieApi);
+    baseConfig.put(NessieConfigConstants.CONF_NESSIE_CLIENT_NAME, nessieClientName);
+    baseConfig.put(NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL, nessieApi);
     return createClientBuilderFromSystemSettings(mapConfigSource(baseConfig))
         .withUri(nessieUri)
         .build(NessieApiV2.class);

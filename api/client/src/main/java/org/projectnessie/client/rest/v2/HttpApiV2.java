@@ -40,6 +40,7 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
 
 public class HttpApiV2 implements NessieApiV2 {
@@ -114,32 +115,36 @@ public class HttpApiV2 implements NessieApiV2 {
   }
 
   @Override
+  @Deprecated
   public AssignTagBuilder assignTag() {
     return new HttpAssignTag(client);
   }
 
   @Override
+  @Deprecated
   public DeleteTagBuilder deleteTag() {
     return new HttpDeleteTag(client);
   }
 
   @Override
+  @Deprecated
   public AssignBranchBuilder assignBranch() {
     return new HttpAssignBranch(client);
   }
 
   @Override
+  @Deprecated
   public DeleteBranchBuilder deleteBranch() {
     return new HttpDeleteBranch(client);
   }
 
   @Override
-  public AssignReferenceBuilder assignReference() {
+  public AssignReferenceBuilder<Reference> assignReference() {
     return new HttpAssignReference(client);
   }
 
   @Override
-  public DeleteReferenceBuilder deleteReference() {
+  public DeleteReferenceBuilder<Reference> deleteReference() {
     return new HttpDeleteReference(client);
   }
 

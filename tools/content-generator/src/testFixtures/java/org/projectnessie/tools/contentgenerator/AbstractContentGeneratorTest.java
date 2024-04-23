@@ -53,15 +53,15 @@ public class AbstractContentGeneratorTest {
   void emptyRepo() throws Exception {
     try (NessieApiV2 api = buildNessieApi()) {
       Branch defaultBranch = api.getDefaultBranch();
-      api.assignBranch().branch(defaultBranch).assignTo(Detached.of(NO_ANCESTOR)).assign();
+      api.assignReference().reference(defaultBranch).assignTo(Detached.of(NO_ANCESTOR)).assign();
       api.getAllReferences().stream()
           .forEach(
               ref -> {
                 try {
-                  if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-                    api.deleteBranch().branch((Branch) ref).delete();
-                  } else if (ref instanceof Tag) {
-                    api.deleteTag().tag((Tag) ref).delete();
+                  if (ref instanceof Tag
+                      || (ref instanceof Branch
+                          && !ref.getName().equals(defaultBranch.getName()))) {
+                    api.deleteReference().reference(ref).delete();
                   }
                 } catch (NessieConflictException | NessieNotFoundException e) {
                   throw new RuntimeException(e);
