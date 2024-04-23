@@ -154,7 +154,7 @@ annotations-stripper = { id = "org.projectnessie.annotation-stripper", version =
 errorprone = { id = "net.ltgt.errorprone", version = "3.1.0" }
 gatling = { id = "io.gatling.gradle", version = "3.10.5.1" }
 jmh = { id = "me.champeau.jmh", version = "0.7.2" }
-nessie-run = { id = "org.projectnessie", version = "0.32.0" }
+nessie-run = { id = "org.projectnessie", version = "0.32.1" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
