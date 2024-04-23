@@ -36,10 +36,10 @@ val openapiSource by
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-quarkus-auth"))
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-events-quarkus"))
-  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
@@ -47,16 +47,16 @@ dependencies {
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
-  implementation("org.jboss.resteasy:resteasy-core-spi")
-  implementation("io.quarkus:quarkus-resteasy")
-  implementation("io.quarkus:quarkus-resteasy-jackson")
+  implementation("io.quarkus:quarkus-resteasy-reactive")
+  implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
   implementation("io.quarkus:quarkus-reactive-routes")
-  implementation("io.quarkus:quarkus-elytron-security-properties-file")
-  implementation("io.quarkus:quarkus-smallrye-health")
-  implementation("io.quarkus:quarkus-oidc")
-  implementation("io.quarkus:quarkus-smallrye-openapi")
-  implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-core-deployment")
+  implementation("io.quarkus:quarkus-hibernate-validator")
+  implementation("io.quarkus:quarkus-smallrye-health")
+  implementation("io.quarkus:quarkus-smallrye-openapi")
+  implementation("io.quarkus:quarkus-elytron-security-properties-file")
+  implementation("io.quarkus:quarkus-oidc")
+  implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
@@ -76,6 +76,9 @@ dependencies {
   }
 
   openapiSource(project(":nessie-model", "openapiSource"))
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 
   testFixturesApi(project(":nessie-client"))
   testFixturesApi(testFixtures(project(":nessie-client")))
@@ -105,13 +108,10 @@ dependencies {
   testFixturesImplementation(libs.guava)
   testFixturesImplementation(libs.microprofile.openapi)
   testFixturesImplementation(libs.awaitility)
-
-  testFixturesApi(platform(libs.junit.bom))
-  testFixturesApi(libs.bundles.junit.testing)
+  testFixturesApi(libs.jakarta.validation.api)
 
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
-  intTestImplementation(libs.keycloak.admin.client)
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)
