@@ -46,8 +46,12 @@ rocksdb:
 dynamodb:
   # -- The AWS region to use.
   region: us-west-2
+  # -- The name of the profile that should be used, when loading AWS credentials from a profile
+  # file. Required only if no secret is provided below.
+  profile: default
   secret:
-    # -- The secret name to pull AWS credentials from.
+    # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
+    # credentials provider chain is used.
     name: awscreds
     # -- The secret key storing the AWS secret key id.
     awsAccessKeyId: aws_access_key_id
