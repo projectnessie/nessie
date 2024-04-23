@@ -2,4 +2,4 @@
 # Version is managed by Renovate - do not edit.
 # See https://cloud.google.com/sdk/docs/downloads-docker#docker_image_options
 # Use debian_component_based because it supports linux/arm
-FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:472.0.0-debian_component_based
+FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:473.0.0-debian_component_based
