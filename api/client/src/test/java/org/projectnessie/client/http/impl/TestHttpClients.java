@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.HttpClient;
 
 public class TestHttpClients {
+  @SuppressWarnings("deprecation")
   @ParameterizedTest
   @MethodSource
   public void clientByName(
@@ -47,6 +48,7 @@ public class TestHttpClients {
     }
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void unknownClient() {
     assertThatThrownBy(

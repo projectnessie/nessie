@@ -39,6 +39,7 @@ public class ConfigProps {
    * @deprecated this is deprecated because of {@link #CONF_THREE}.
    */
   @ConfigItem(section = "b b")
+  @Deprecated
   public static final String CONF_TWO = "property.two";
 
   /**

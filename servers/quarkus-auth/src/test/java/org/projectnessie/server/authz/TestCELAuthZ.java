@@ -111,7 +111,9 @@ public class TestCELAuthZ {
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(configEnabled);
     CelAuthorizer celAuthorizer = new CelAuthorizer(rules);
 
+    @SuppressWarnings("unchecked")
     Instance<Authorizer> authorizers = mock(Instance.class);
+    @SuppressWarnings("unchecked")
     Instance<Authorizer> celAuthorizerInstance = mock(Instance.class);
 
     when(celAuthorizerInstance.get()).thenReturn(celAuthorizer);

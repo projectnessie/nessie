@@ -41,7 +41,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -472,15 +471,17 @@ public abstract class BaseTestNessieApi {
 
     Reference ref = createReference(ref0, main.getName());
 
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
     soft.assertThatThrownBy(
-            () -> apiV2().assignReference().refName(ref0.getName()).assignTo(main1).assign())
+            () -> api.assignReference().refName(ref0.getName()).assignTo(main1).assign())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Expected hash must be provided");
 
     soft.assertThatThrownBy(
             () ->
-                apiV2()
-                    .assignReference()
+                api.assignReference()
                     .refName(ref0.getName())
                     .hash(ref0.getHash())
                     .refType(anotherType)
@@ -489,14 +490,13 @@ public abstract class BaseTestNessieApi {
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageMatching(".*Expected reference type .+ does not match existing reference.*");
 
-    ref = apiV2().assignReference().reference(ref).assignTo(main1).assignAndGet();
+    ref = api.assignReference().reference(ref).assignTo(main1).assignAndGet();
     soft.assertThat(ref)
         .extracting(Reference::getName, Reference::getHash)
         .containsExactly(ref0.getName(), main1.getHash());
 
     ref =
-        apiV2()
-            .assignReference()
+        api.assignReference()
             .refName(ref.getName())
             .hash(ref.getHash())
             .assignTo(main)
@@ -506,8 +506,7 @@ public abstract class BaseTestNessieApi {
         .containsExactly(ref0.getName(), main.getHash());
 
     ref =
-        apiV2()
-            .assignReference()
+        api.assignReference()
             .refName(ref.getName())
             .hash(ref.getHash())
             .refType(ref.getType())
@@ -518,7 +517,7 @@ public abstract class BaseTestNessieApi {
         .containsExactly(ref0.getName(), main1.getHash());
 
     AssignReferenceBuilder<Reference> assignRequest =
-        apiV2().assignReference().refName(ref.getName()).hash(ref.getHash()).assignTo(main1);
+        api.assignReference().refName(ref.getName()).hash(ref.getHash()).assignTo(main1);
     ref =
         referenceType == ReferenceType.BRANCH
             ? assignRequest.asBranch().assignAndGet()
@@ -527,22 +526,21 @@ public abstract class BaseTestNessieApi {
         .extracting(Reference::getName, Reference::getHash)
         .containsExactly(ref0.getName(), main1.getHash());
 
-    soft.assertThatThrownBy(() -> apiV2().deleteReference().refName(ref0.getName()).delete())
+    soft.assertThatThrownBy(() -> api.deleteReference().refName(ref0.getName()).delete())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Expected hash must be provided");
 
-    Reference deleted = apiV2().deleteReference().reference(ref).getAndDelete();
+    Reference deleted = api.deleteReference().reference(ref).getAndDelete();
     soft.assertThat(deleted).isEqualTo(ref);
 
     ref = createReference(ref0, main.getName());
-    deleted = apiV2().deleteReference().refName(ref.getName()).hash(ref.getHash()).getAndDelete();
+    deleted = api.deleteReference().refName(ref.getName()).hash(ref.getHash()).getAndDelete();
     soft.assertThat(deleted).isEqualTo(ref);
 
     ref = createReference(ref0, main.getName());
     soft.assertThatThrownBy(
             () ->
-                apiV2()
-                    .deleteReference()
+                api.deleteReference()
                     .refName(ref0.getName())
                     .hash(ref0.getHash())
                     .refType(anotherType)
@@ -551,8 +549,7 @@ public abstract class BaseTestNessieApi {
         .hasMessageMatching(".*Expected reference type .+ does not match existing reference.*");
 
     deleted =
-        apiV2()
-            .deleteReference()
+        api.deleteReference()
             .refName(ref.getName())
             .hash(ref.getHash())
             .refType(ref.getType())
@@ -561,7 +558,7 @@ public abstract class BaseTestNessieApi {
 
     ref = createReference(ref0, main.getName());
     DeleteReferenceBuilder<Reference> deleteRequest =
-        apiV2().deleteReference().refName(ref.getName()).hash(ref.getHash());
+        api.deleteReference().refName(ref.getName()).hash(ref.getHash());
     deleted =
         referenceType == ReferenceType.BRANCH
             ? deleteRequest.asBranch().getAndDelete()
@@ -709,6 +706,7 @@ public abstract class BaseTestNessieApi {
         .containsKeys(ContentKey.of("a", "a"), ContentKey.of("b", "a"), ContentKey.of("b", "b"));
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void mergeTransplantDryRunWithConflictInResult() throws Exception {
     Branch main0 =
@@ -1795,7 +1793,8 @@ public abstract class BaseTestNessieApi {
                                 .findFirst())
                         .map(LogEntry::getCommitMeta)
                         .map(CommitMeta::getHash)
-                        .isEqualTo(Optional.of(hashes.get(i2))))
+                        .get()
+                        .isEqualTo(hashes.get(i2)))
             .describedAs(
                 "commit-log - %s - relative-commit-spec %s - ref-commit: %s %s",
                 i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime())
@@ -1810,7 +1809,6 @@ public abstract class BaseTestNessieApi {
                               .refName(branchName)
                               .hashOnRef(relativeCommitSpec)
                               .stream()
-                              .map(Entry::getName)
                               .count())
                       .isEqualTo(1 + numCommits - i2);
                 })
@@ -2088,8 +2086,11 @@ public abstract class BaseTestNessieApi {
     // Functionality is tested in the version-store tests, this test only validates that there is a
     // result.
 
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
     ReferenceHistoryResponse response =
-        apiV2().referenceHistory().refName(branch.getName()).headCommitsToScan(1000).get();
+        api.referenceHistory().refName(branch.getName()).headCommitsToScan(1000).get();
     soft.assertThat(response)
         .extracting(
             ReferenceHistoryResponse::getReference, ReferenceHistoryResponse::commitLogConsistency)
