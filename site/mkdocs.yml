@@ -88,6 +88,7 @@ plugins:
         tools/export_import.md: nessie-latest/export_import.md
         tools/iceberg/flink.md: iceberg/flink.md
         tools/iceberg/hive.md: iceberg/hive.md
+        tools/iceberg/trino.md: iceberg/trino.md
         tools/iceberg/index.md: iceberg/iceberg.md
         tools/iceberg/spark.md: iceberg/spark.md
         tools/index.md: nessie-latest/index.md
