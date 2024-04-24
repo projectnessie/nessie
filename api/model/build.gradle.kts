@@ -120,10 +120,11 @@ tasks.named<Test>("intTest").configure {
 
 val java11Jar =
   tasks.register<Jar>("java11Jar") {
-    dependsOn("stripAnnotations")
+    dependsOn("stripAnnotations", "processResources")
     archiveClassifier = "java11"
     from(project.layout.buildDirectory.dir("classes/annotationStripped/main/META-INF/versions/11"))
     from(project.layout.buildDirectory.dir("classes/java/main")) { exclude("META-INF/versions/**") }
+    from(project.layout.buildDirectory.dir("resources/main")) { exclude("META-INF/jandex.idx") }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
   }
 
