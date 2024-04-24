@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.common.io.Files
 import io.quarkus.gradle.tasks.QuarkusBuild
 import org.apache.tools.ant.taskdefs.condition.Os
 
@@ -156,13 +157,53 @@ quarkus {
 }
 
 val quarkusAppPartsBuild = tasks.named("quarkusAppPartsBuild")
+val quarkusDependenciesBuild = tasks.named("quarkusDependenciesBuild")
+val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
 quarkusAppPartsBuild.configure {
   dependsOn(pullOpenApiSpec)
   inputs.files(openapiSource)
 }
 
-val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
+// Copies the nessie-model w/ java11-classifier, otherwise the fast-jar doesn't
+// start, part of the resteasy-reactive hack see
+// https://github.com/quarkusio/quarkus/issues/40236 and
+// https://github.com/projectnessie/nessie/issues/8390
+quarkusDependenciesBuild.configure {
+  doLast {
+    val src =
+      file(
+        "build/quarkus-build/dep/lib/main/org.projectnessie.nessie.nessie-model-${project.version}-java11.jar"
+      )
+    // Only "fast-jar" builds populate 'quarkus-build/dep/lib'
+    if (src.exists()) {
+      Files.copy(
+        src,
+        file(
+          "build/quarkus-build/dep/lib/main/org.projectnessie.nessie.nessie-model-${project.version}.jar"
+        )
+      )
+    }
+  }
+}
+
+quarkusBuild.configure {
+  doLast {
+    val src =
+      file(
+        "build/quarkus-app/lib/main/org.projectnessie.nessie.nessie-model-${project.version}-java11.jar"
+      )
+    // Only "fast-jar" builds populate 'quarkus-build/dep/lib'
+    if (src.exists()) {
+      Files.copy(
+        src,
+        file(
+          "build/quarkus-app/lib/main/org.projectnessie.nessie.nessie-model-${project.version}.jar"
+        )
+      )
+    }
+  }
+}
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.
