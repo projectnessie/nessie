@@ -20,11 +20,18 @@ import io.smallrye.openapi.gradleplugin.SmallryeOpenApiTask
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-  id("nessie-conventions-client")
+  id("nessie-conventions-quarkus")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
   alias(libs.plugins.smallrye.openapi)
 }
+
+extra["maven.name"] = "Nessie - Model - Variant only for Java 17+ consumers"
+
+description =
+  "nessie-model-jakarta is effectively the same as nessie-model, but it is _not_ a " +
+    "multi-release jar and retains the jakarta annotations in the canonical classes. " +
+    "Please note that this artifact will go away, once Nessie no longer support Java 8 for clients. " +
+    "Therefore, do _not_ refer to this artifact - it is only meant for consumption by Nessie-Quarkus."
 
 dependencies {
   implementation(platform(libs.jackson.bom))
@@ -44,23 +51,6 @@ dependencies {
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
-
-  testCompileOnly(libs.microprofile.openapi)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
-  testCompileOnly(libs.jakarta.ws.rs.api)
-  testCompileOnly(libs.javax.ws.rs)
-  testCompileOnly(libs.jakarta.validation.api)
-  testCompileOnly(libs.javax.validation.api)
-  testCompileOnly(libs.jakarta.annotation.api)
-  testCompileOnly(libs.findbugs.jsr305)
-
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-
-  intTestImplementation(platform(libs.testcontainers.bom))
-  intTestImplementation("org.testcontainers:testcontainers")
-  intTestImplementation(libs.awaitility)
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
@@ -97,19 +87,3 @@ generateOpenApiSpec.configure {
 }
 
 artifacts { add(openapiSource.name, file("src/main/resources/META-INF")) }
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion = 11
-  }
-}
-
-tasks.named<Test>("intTest").configure {
-  dependsOn(generateOpenApiSpec)
-  systemProperty(
-    "openapiSchemaDir",
-    project.layout.buildDirectory.dir("generated/openapi/META-INF/openapi").get().toString()
-  )
-  systemProperty("redoclyConfDir", "$projectDir/src/redocly")
-}
