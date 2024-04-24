@@ -113,3 +113,50 @@ tasks.named<Test>("intTest").configure {
   )
   systemProperty("redoclyConfDir", "$projectDir/src/redocly")
 }
+
+// Build a Java 11+ jar w/o the multi-release-jar stuff, see
+// https://github.com/quarkusio/quarkus/issues/40236 and
+// https://github.com/projectnessie/nessie/issues/8390
+
+val java11Jar =
+  tasks.register<Jar>("java11Jar") {
+    dependsOn("stripAnnotations", "processResources")
+    archiveClassifier = "java11"
+    from(project.layout.buildDirectory.dir("classes/annotationStripped/main/META-INF/versions/11"))
+    from(project.layout.buildDirectory.dir("classes/java/main")) { exclude("META-INF/versions/**") }
+    from(project.layout.buildDirectory.dir("resources/main")) { exclude("META-INF/jandex.idx") }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  }
+
+val java11 by
+  configurations.creating {
+    description = "Artifact for Java 11"
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    description = "Java 11 only jar variant"
+    attributes {
+      attribute(
+        Category.CATEGORY_ATTRIBUTE,
+        project.objects.named(Category::class.java, Category.LIBRARY)
+      )
+      attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 11)
+      attribute(
+        LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+        project.objects.named(LibraryElements::class.java, LibraryElements.JAR)
+      )
+      attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+    }
+  }
+
+artifacts { add(java11.name, java11Jar) { builtBy(java11Jar) } }
+
+publishing {
+  publications {
+    named<MavenPublication>("maven") {
+      artifact(java11Jar) {
+        classifier = "java11"
+        builtBy(java11Jar)
+      }
+    }
+  }
+}
