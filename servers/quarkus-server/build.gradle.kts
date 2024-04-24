@@ -34,7 +34,12 @@ val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
 dependencies {
-  implementation(project(":nessie-model"))
+  implementation(project(":nessie-model")) {
+    // Select the Java11 classifier for Quarkus w/ resteasy-reactive, see
+    // https://github.com/quarkusio/quarkus/issues/40236 and
+    // https://github.com/projectnessie/nessie/issues/8390
+    attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 11) }
+  }
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-quarkus-auth"))
