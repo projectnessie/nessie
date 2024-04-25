@@ -4,8 +4,8 @@ title: "Nessie + Iceberg + Trino"
 
 # Trino via Iceberg
 
-Trino comes with Iceberg and Nessie catalog clients installed by default. 
-You can deploy Trino using any of the methods mentioned in [this document](https://trino.io/docs/current/installation.html) and to become familiar with the Iceberg connector, refer [this document](https://trino.io/docs/current/connector/iceberg.html?highlight=iceberg+connector).
+Trino can be deployed for use with Nessie by any of the methods mentioned in the [Trino Installation Guide](https://trino.io/docs/current/installation.html).
+To access Iceberg tables, one needs to configure the Iceberg connector. Refer to the [Trino Iceberg Connector Documentation](https://trino.io/docs/current/connector/iceberg.html?highlight=iceberg+connector) for more information.
 Nessie catalog properties required for the Iceberg connector can be found at https://trino.io/docs/current/object-storage/metastores.html#nessie-catalog.
 
 Sample Nessie configuration for Iceberg connector in `etc/catalog/iceberg.properties`
@@ -13,8 +13,13 @@ Sample Nessie configuration for Iceberg connector in `etc/catalog/iceberg.proper
 connector.name=iceberg
 iceberg.catalog.type=nessie
 iceberg.nessie-catalog.uri=http://localhost:19120/api/v2
-iceberg.nessie-catalog.default-warehouse-dir=/Users/foo/wh
 iceberg.nessie-catalog.ref=main
+iceberg.nessie-catalog.default-warehouse-dir=s3://warehouse
+fs.native-s3.enabled=true
+s3.endpoint=https://<s3_url>
+s3.region=<aws_region>
+s3.aws-access-key=<aws_access_key>
+s3.aws-secret-key=<aws_secret_key>
 ```
 
 !!! note
