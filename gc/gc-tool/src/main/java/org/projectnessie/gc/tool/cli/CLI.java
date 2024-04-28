@@ -60,6 +60,11 @@ import picocli.CommandLine.HelpCommand;
 public class CLI {
 
   public static void main(String... arguments) {
+
+    // There's no easy, better way :(
+    // Setting the usage-width to 100 chars so that URLs are not line-wrapped.
+    System.setProperty("picocli.usage.width", "100");
+
     System.exit(runMain(arguments));
   }
 
