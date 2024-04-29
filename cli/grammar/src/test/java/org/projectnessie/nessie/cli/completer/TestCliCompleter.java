@@ -211,15 +211,31 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("CONNECT TO http://127.0.0.1 USING"),
+            List.of("CONNECT TO http://127.0.0.1 ON", "CONNECT TO http://127.0.0.1 USING"),
             CompletionType.NONE,
-            List.of(TokenType.USING)),
+            List.of(TokenType.ON, TokenType.USING)),
         arguments(
             "CONNECT TO \"http://127.0.0.1\"",
             false,
             List.of(),
             List.of(),
-            List.of("CONNECT TO \"http://127.0.0.1\" USING"),
+            List.of("CONNECT TO \"http://127.0.0.1\" ON", "CONNECT TO \"http://127.0.0.1\" USING"),
+            CompletionType.NONE,
+            List.of(TokenType.ON, TokenType.USING)),
+        arguments(
+            "CONNECT TO http://127.0.0.1 ON ",
+            true,
+            List.of(),
+            List.of(),
+            List.of(),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "CONNECT TO http://127.0.0.1 ON myBranch",
+            false,
+            List.of(),
+            List.of(),
+            List.of("CONNECT TO http://127.0.0.1 ON myBranch USING"),
             CompletionType.NONE,
             List.of(TokenType.USING)),
         arguments(
@@ -1006,12 +1022,28 @@ public class TestCliCompleter {
             List.of(
                 ImmutableConnectCommandSpec.builder().uri("http://foo.bar:1234/api/v2").build())),
         arguments(
+            "CONNECT TO \"http://foo.bar:1234/api/v2\" ON myBranch",
+            List.of(
+                ImmutableConnectCommandSpec.builder()
+                    .uri("http://foo.bar:1234/api/v2")
+                    .initialReference("myBranch")
+                    .build())),
+        arguments(
             "CONNECT TO https://foo.bar/x/y/zapi/v2 USING a=b AND c=d",
             List.of(
                 ImmutableConnectCommandSpec.builder()
                     .uri("https://foo.bar/x/y/zapi/v2")
                     .putParameter("a", "b")
                     .putParameter("c", "d")
+                    .build())),
+        arguments(
+            "CONNECT TO https://foo.bar/x/y/zapi/v2 ON myBranch USING a=b AND c=d",
+            List.of(
+                ImmutableConnectCommandSpec.builder()
+                    .uri("https://foo.bar/x/y/zapi/v2")
+                    .putParameter("a", "b")
+                    .putParameter("c", "d")
+                    .initialReference("myBranch")
                     .build())),
         arguments("HELP", List.of(ImmutableHelpCommandSpec.builder().build())),
         arguments(

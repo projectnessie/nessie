@@ -32,10 +32,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.zip.GZIPOutputStream;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshot;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 
 public class IcebergGenerateFixtures {
@@ -94,6 +96,12 @@ public class IcebergGenerateFixtures {
 
   public static String generateMetadataWithManifestList(String basePath, ObjectWriter writer)
       throws Exception {
+    return generateMetadataWithManifestList(basePath, writer, m -> {});
+  }
+
+  public static String generateMetadataWithManifestList(
+      String basePath, ObjectWriter writer, Consumer<IcebergTableMetadata> metadataConsumer)
+      throws Exception {
     IcebergSchemaGenerator schemaGenerator =
         IcebergSchemaGenerator.spec().numColumns(10).numPartitionColumns(2).generate();
 
@@ -109,6 +117,7 @@ public class IcebergGenerateFixtures {
     UUID commitId = randomUUID();
     long snapshotId = 1;
     long sequenceNumber = 1;
+    long timestamp = 1715175169320L;
     IcebergManifestFileGenerator manifestFileGenerator =
         IcebergManifestFileGenerator.builder()
             .addDataFiles(3)
@@ -133,7 +142,7 @@ public class IcebergGenerateFixtures {
     IcebergSnapshot snapshotWithManifestList =
         IcebergSnapshot.builder()
             .snapshotId(snapshotId)
-            .timestampMs(System.currentTimeMillis())
+            .timestampMs(timestamp)
             .schemaId(schemaGenerator.getIcebergSchema().schemaId())
             .sequenceNumber(sequenceNumber)
             .manifestList(manifestList)
@@ -142,12 +151,17 @@ public class IcebergGenerateFixtures {
     IcebergTableMetadata icebergMetadataWithManifestList =
         IcebergTableMetadata.builder()
             .from(tableMetadataSimple().formatVersion(2).build())
+            .lastUpdatedMs(timestamp)
             .schemas(singletonList(schemaGenerator.getIcebergSchema()))
             .partitionSpecs(singletonList(schemaGenerator.getIcebergPartitionSpec()))
+            .sortOrders(singletonList(IcebergSortOrder.UNSORTED_ORDER))
             .currentSnapshotId(snapshotId)
             .defaultSpecId(schemaGenerator.getIcebergPartitionSpec().specId())
+            .defaultSortOrderId(IcebergSortOrder.UNSORTED_ORDER.orderId())
+            .lastSequenceNumber(1L)
             .snapshots(singletonList(snapshotWithManifestList))
             .build();
+    metadataConsumer.accept(icebergMetadataWithManifestList);
     return writer.write(
         URI.create("table-metadata-with-manifest-list/table-metadata-with-manifest-list.json"),
         IcebergJson.objectMapper()

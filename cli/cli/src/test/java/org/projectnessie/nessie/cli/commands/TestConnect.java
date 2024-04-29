@@ -36,8 +36,9 @@ public class TestConnect extends BaseTestCommand {
       soft.assertThat(cli.capturedOutput())
           .containsExactly(
               format("Connecting to %s ...", nessieBaseUri()),
+              format("No Iceberg REST endpoint at %s ...", nessieBaseUri().resolve("../iceberg/")),
               format(
-                  "Successfully connected to %s - Nessie API version 2, spec version 2.1.0",
+                  "Successfully connected to Nessie REST at %s - Nessie API version 2, spec version 2.1.0",
                   nessieBaseUri()));
 
       soft.assertThatCode(cli::mandatoryNessieApi).doesNotThrowAnyException();
@@ -55,7 +56,10 @@ public class TestConnect extends BaseTestCommand {
 
       soft.assertThatThrownBy(() -> cli.execute(spec)).isInstanceOf(HttpClientException.class);
 
-      soft.assertThat(cli.capturedOutput()).containsExactly(format("Connecting to %s ...", badUri));
+      soft.assertThat(cli.capturedOutput())
+          .containsExactly(
+              format("Connecting to %s ...", badUri),
+              format("No Iceberg REST endpoint at %s ...", badUri));
     }
   }
 }
