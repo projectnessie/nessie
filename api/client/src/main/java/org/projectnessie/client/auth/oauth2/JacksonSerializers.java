@@ -56,7 +56,9 @@ class JacksonSerializers {
     public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       if (p.currentToken().isNumeric()) {
         int seconds = p.getValueAsInt();
-        return Instant.now().plusSeconds(seconds);
+        if (seconds != 0) {
+          return Instant.now().plusSeconds(seconds);
+        }
       }
       return null;
     }
@@ -89,7 +91,9 @@ class JacksonSerializers {
     public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       if (p.currentToken().isNumeric()) {
         int seconds = p.getValueAsInt();
-        return Duration.ofSeconds(seconds);
+        if (seconds != 0) {
+          return Duration.ofSeconds(seconds);
+        }
       }
       return null;
     }
