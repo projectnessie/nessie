@@ -8,6 +8,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- New Nessie CLI tool + REPL
+
 ### Upgrade notes
 
 ### Breaking changes
