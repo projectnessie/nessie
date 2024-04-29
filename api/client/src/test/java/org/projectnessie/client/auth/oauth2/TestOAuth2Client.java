@@ -624,7 +624,7 @@ class TestOAuth2Client {
         soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
         soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
         soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
-            .isEqualTo(TokenExchangeFlow.REFRESH_TOKEN_ID);
+            .isEqualTo(TokenExchangeFlow.ACCESS_TOKEN_ID);
         soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getTokensExchangeResponse();
       } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
@@ -778,7 +778,7 @@ class TestOAuth2Client {
 
   private ImmutableTokensExchangeResponse getTokensExchangeResponse() {
     return ImmutableTokensExchangeResponse.builder()
-        .issuedTokenType(TokenExchangeFlow.REFRESH_TOKEN_ID)
+        .issuedTokenType(TokenExchangeFlow.ACCESS_TOKEN_ID)
         .tokenType("bearer")
         .accessTokenPayload("access-exchanged")
         .accessTokenExpirationTime(now.plus(Duration.ofHours(3)))
@@ -833,7 +833,7 @@ class TestOAuth2Client {
         .isAfterOrEqualTo(now.plus(Duration.ofDays(3)).minusSeconds(10));
     soft.assertThat(tokens.getScope()).isEqualTo("test");
     soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
-    soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenExchangeFlow.REFRESH_TOKEN_ID);
+    soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenExchangeFlow.ACCESS_TOKEN_ID);
   }
 
   private OAuth2ClientConfig.Builder configBuilder(HttpTestServer server, boolean discovery) {

@@ -15,9 +15,6 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientUtils.tokenExpirationTime;
-
-import java.time.Instant;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -41,12 +38,5 @@ class RefreshTokensFlow extends AbstractFlow {
     RefreshTokensRequest.Builder request =
         RefreshTokensRequest.builder().refreshToken(currentTokens.getRefreshToken().getPayload());
     return invokeTokenEndpoint(request, RefreshTokensResponse.class);
-  }
-
-  private boolean isAboutToExpire(Token token) {
-    Instant now = config.getClock().get();
-    Instant expirationTime =
-        tokenExpirationTime(now, token, config.getDefaultRefreshTokenLifespan());
-    return expirationTime.isBefore(now.plus(config.getRefreshSafetyWindow()));
   }
 }
