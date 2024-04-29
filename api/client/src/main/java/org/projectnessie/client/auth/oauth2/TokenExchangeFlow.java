@@ -44,7 +44,7 @@ class TokenExchangeFlow extends AbstractFlow {
             .subjectToken(currentTokens.getAccessToken().getPayload())
             .subjectTokenType(ACCESS_TOKEN_ID)
             .requestedTokenType(ACCESS_TOKEN_ID);
-    TokensExchangeResponse response = invokeTokenEndpoint(request, TokensExchangeResponse.class);
+    Tokens response = invokeTokenEndpoint(request, TokensExchangeResponse.class);
     // Keycloak may return the same access token instead of a new one,
     // so we need to check if the access token is about to expire.
     if (isAboutToExpire(response.getAccessToken())) {

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.time.Instant;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 class TestJacksonSerializers {
@@ -29,8 +29,8 @@ class TestJacksonSerializers {
   @Test
   void testSerializeInstantToSeconds() throws JsonProcessingException {
     MyBean input = new MyBean();
-    input.setExpiresAt(Instant.now().plusSeconds(100));
-    String expected = "\\{\"expiresAt\":\\d+}";
+    input.setExpiresIn(Duration.ofSeconds(100));
+    String expected = "\\{\"expiresIn\":\\d+}";
     String actual = new ObjectMapper().writeValueAsString(input);
     assertThat(actual).containsPattern(expected);
   }
@@ -38,39 +38,45 @@ class TestJacksonSerializers {
   @Test
   void testDeserializeSecondsToInstant() throws JsonProcessingException {
     MyBean expected = new MyBean();
-    expected.setExpiresAt(Instant.now().plusSeconds(100));
-    String json = "{\"expiresAt\":100}";
+    expected.setExpiresIn(Duration.ofSeconds(100));
+    String json = "{\"expiresIn\":100}";
     MyBean actual = new ObjectMapper().readValue(json, MyBean.class);
-    assertThat(actual.getExpiresAt())
+    assertThat(actual.getExpiresIn())
         // allow for a 10-second clock skew
         .isBetween(
-            expected.getExpiresAt().minusSeconds(10), expected.getExpiresAt().plusSeconds(10));
+            expected.getExpiresIn().minusSeconds(10), expected.getExpiresIn().plusSeconds(10));
   }
 
   @Test
   void testSerializeNull() throws JsonProcessingException {
     String actual = new ObjectMapper().writeValueAsString(new MyBean());
-    assertThat(actual).isEqualTo("{\"expiresAt\":null}");
+    assertThat(actual).isEqualTo("{\"expiresIn\":null}");
   }
 
   @Test
   void testDeserializeNull() throws JsonProcessingException {
-    MyBean actual = new ObjectMapper().readValue("{\"expiresAt\":null}", MyBean.class);
-    assertThat(actual.getExpiresAt()).isNull();
+    MyBean actual = new ObjectMapper().readValue("{\"expiresIn\":null}", MyBean.class);
+    assertThat(actual.getExpiresIn()).isNull();
+  }
+
+  @Test
+  void testDeserializeZero() throws JsonProcessingException {
+    MyBean actual = new ObjectMapper().readValue("{\"expiresIn\":0}", MyBean.class);
+    assertThat(actual.getExpiresIn()).isNull();
   }
 
   private static class MyBean {
 
-    @JsonSerialize(using = JacksonSerializers.InstantToSecondsSerializer.class)
-    @JsonDeserialize(using = JacksonSerializers.SecondsToInstantDeserializer.class)
-    private Instant expiresAt;
+    @JsonSerialize(using = JacksonSerializers.DurationToSecondsSerializer.class)
+    @JsonDeserialize(using = JacksonSerializers.SecondsToDurationDeserializer.class)
+    private Duration expiresIn;
 
-    public Instant getExpiresAt() {
-      return expiresAt;
+    public Duration getExpiresIn() {
+      return expiresIn;
     }
 
-    public void setExpiresAt(Instant expiresAt) {
-      this.expiresAt = expiresAt;
+    public void setExpiresIn(Duration expiresIn) {
+      this.expiresIn = expiresIn;
     }
   }
 }

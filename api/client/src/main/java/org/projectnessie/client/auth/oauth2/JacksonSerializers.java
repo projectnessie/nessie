@@ -23,46 +23,10 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 
 class JacksonSerializers {
 
   private JacksonSerializers() {}
-
-  static class InstantToSecondsSerializer extends StdSerializer<Instant> {
-
-    public InstantToSecondsSerializer() {
-      super(Instant.class);
-    }
-
-    @Override
-    public void serialize(Instant value, JsonGenerator gen, SerializerProvider serializers)
-        throws IOException {
-      if (value == null) {
-        gen.writeNull();
-      } else {
-        gen.writeNumber(Duration.between(Instant.now(), value).getSeconds());
-      }
-    }
-  }
-
-  static class SecondsToInstantDeserializer extends StdDeserializer<Instant> {
-
-    public SecondsToInstantDeserializer() {
-      super(Instant.class);
-    }
-
-    @Override
-    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      if (p.currentToken().isNumeric()) {
-        int seconds = p.getValueAsInt();
-        if (seconds != 0) {
-          return Instant.now().plusSeconds(seconds);
-        }
-      }
-      return null;
-    }
-  }
 
   static class DurationToSecondsSerializer extends StdSerializer<Duration> {
 
@@ -88,7 +52,7 @@ class JacksonSerializers {
     }
 
     @Override
-    public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public Duration deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
       if (p.currentToken().isNumeric()) {
         int seconds = p.getValueAsInt();
         if (seconds != 0) {
