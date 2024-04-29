@@ -19,7 +19,6 @@ import static org.projectnessie.gc.iceberg.inttest.Util.expire;
 import static org.projectnessie.gc.iceberg.inttest.Util.identifyLiveContents;
 
 import java.io.File;
-import java.net.URI;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,6 +44,7 @@ import org.projectnessie.gc.identify.CutoffPolicy;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.spark.extensions.NessieSparkSessionExtensions;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 @DisabledOnOs(
@@ -78,7 +78,7 @@ public class ITSparkIcebergNessieLocalNoSchema extends SparkSqlTestBase {
       sql("select * from nessie.db1.t1");
       sql("describe formatted nessie.db1.t1");
 
-      Set<URI> filesBefore = allFiles(icebergFiles);
+      Set<StorageUri> filesBefore = allFiles(icebergFiles);
 
       Instant maxFileModificationTime = Instant.now();
 
@@ -93,7 +93,7 @@ public class ITSparkIcebergNessieLocalNoSchema extends SparkSqlTestBase {
       // ... and sweep
       DeleteSummary deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
       soft.assertThat(deleteSummary.deleted()).isEqualTo(0L);
-      Set<URI> filesAfter = allFiles(icebergFiles);
+      Set<StorageUri> filesAfter = allFiles(icebergFiles);
       soft.assertThat(filesAfter).containsExactlyElementsOf(filesBefore);
 
       // Only the last commit is considered live:
@@ -108,17 +108,18 @@ public class ITSparkIcebergNessieLocalNoSchema extends SparkSqlTestBase {
       deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
       soft.assertThat(deleteSummary.deleted()).isEqualTo(3L);
       filesAfter = allFiles(icebergFiles);
-      Set<URI> removedFiles = new HashSet<>(filesBefore);
+      Set<StorageUri> removedFiles = new HashSet<>(filesBefore);
       removedFiles.removeAll(filesAfter);
       // The first and second table-metadata and the manifest-list from the second table metadata
       // got cleaned up.
       soft.assertThat(removedFiles)
-          .allMatch(u -> u.getPath().endsWith(".json") || u.getPath().endsWith(".avro"));
+          .allMatch(u -> u.location().endsWith(".json") || u.location().endsWith(".avro"));
     }
   }
 
-  private Set<URI> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
-    try (Stream<FileReference> list = icebergFiles.listRecursively(tempFile.toURI())) {
+  private Set<StorageUri> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
+    try (Stream<FileReference> list =
+        icebergFiles.listRecursively(StorageUri.of(tempFile.toURI()))) {
       return list.map(FileReference::absolutePath).collect(Collectors.toCollection(TreeSet::new));
     }
   }

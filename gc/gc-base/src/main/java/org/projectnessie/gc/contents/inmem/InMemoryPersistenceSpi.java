@@ -20,7 +20,6 @@ import static java.util.Collections.emptySet;
 import com.google.common.base.Preconditions;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +40,7 @@ import org.projectnessie.gc.contents.LiveContentSet.Status;
 import org.projectnessie.gc.contents.LiveContentSetNotFoundException;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * A <em>non-production</em> {@link PersistenceSpi} implementation that keeps all information in
@@ -55,7 +55,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
     /** Map of content-ID to set of content-references. */
     final Map<String, Set<ContentReference>> contents = new ConcurrentHashMap<>();
 
-    final Map<String, Collection<URI>> baseLocations = new ConcurrentHashMap<>();
+    final Map<String, Collection<StorageUri>> baseLocations = new ConcurrentHashMap<>();
 
     final AtomicReference<LiveContentSet> liveContentSet;
 
@@ -184,7 +184,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   @Override
   public void associateBaseLocations(
-      UUID liveSetId, String contentId, Collection<URI> baseLocations) {
+      UUID liveSetId, String contentId, Collection<StorageUri> baseLocations) {
     assertStatus(get(liveSetId), Status.EXPIRY_IN_PROGRESS)
         .baseLocations
         .computeIfAbsent(contentId, x -> new HashSet<>())
@@ -192,12 +192,12 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   }
 
   @Override
-  public Stream<URI> fetchBaseLocations(UUID liveSetId, String contentId) {
+  public Stream<StorageUri> fetchBaseLocations(UUID liveSetId, String contentId) {
     return get(liveSetId).baseLocations.getOrDefault(contentId, emptySet()).stream();
   }
 
   @Override
-  public Stream<URI> fetchAllBaseLocations(UUID liveSetId) {
+  public Stream<StorageUri> fetchAllBaseLocations(UUID liveSetId) {
     return liveContentSets.values().stream()
         .flatMap(lcs -> lcs.baseLocations.values().stream())
         .flatMap(Collection::stream);

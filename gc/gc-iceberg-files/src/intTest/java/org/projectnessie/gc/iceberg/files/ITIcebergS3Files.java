@@ -15,7 +15,6 @@
  */
 package org.projectnessie.gc.iceberg.files;
 
-import java.net.URI;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -32,6 +31,7 @@ import org.projectnessie.gc.files.tests.AbstractFiles;
 import org.projectnessie.minio.Minio;
 import org.projectnessie.minio.MinioAccess;
 import org.projectnessie.minio.MinioExtension;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.core.sync.RequestBody;
 
 @ExtendWith(MinioExtension.class)
@@ -40,12 +40,12 @@ public class ITIcebergS3Files extends AbstractFiles {
   public static final String BUCKET_URI_PREFIX = "/path/";
   private MinioAccess minio;
   private IcebergFiles s3;
-  private URI baseUri;
+  private StorageUri baseUri;
 
   @BeforeEach
   void setUp(@Minio MinioAccess minio) {
     this.minio = minio;
-    this.baseUri = minio.s3BucketUri(BUCKET_URI_PREFIX);
+    this.baseUri = StorageUri.of(minio.s3BucketUri(BUCKET_URI_PREFIX));
     Configuration config = new Configuration();
     minio.hadoopConfig().forEach(config::set);
     this.s3 =
@@ -67,7 +67,7 @@ public class ITIcebergS3Files extends AbstractFiles {
   }
 
   @Override
-  protected URI baseUri() {
+  protected StorageUri baseUri() {
     return baseUri;
   }
 

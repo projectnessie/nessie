@@ -17,11 +17,9 @@ package org.projectnessie.gc.files.local;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.AbstractMap;
 import java.util.stream.Stream;
@@ -30,6 +28,7 @@ import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.files.NessieFileIOException;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +42,10 @@ public class LocalFiles implements FilesLister, FileDeleter {
 
   @Override
   @MustBeClosed
-  public Stream<FileReference> listRecursively(URI path) throws NessieFileIOException {
-    URI basePath = ensureTrailingSlash(path);
+  public Stream<FileReference> listRecursively(StorageUri path) throws NessieFileIOException {
+    StorageUri basePath = ensureTrailingSlash(path);
     try {
-      Path start = Paths.get(basePath);
+      Path start = basePath.toLocalPath();
       return Files.walk(start)
           .filter(p -> !p.equals(start))
           .map(
@@ -63,7 +62,7 @@ public class LocalFiles implements FilesLister, FileDeleter {
           .map(
               e ->
                   FileReference.of(
-                      basePath.relativize(e.getKey()),
+                      basePath.relativize(StorageUri.of(e.getKey())),
                       basePath,
                       e.getValue().lastModifiedTime().toMillis()));
     } catch (IOException e) {
@@ -74,7 +73,7 @@ public class LocalFiles implements FilesLister, FileDeleter {
   @Override
   public DeleteResult delete(FileReference fileReference) {
     try {
-      Files.delete(Paths.get(fileReference.absolutePath()));
+      Files.delete(fileReference.absolutePath().toLocalPath());
       return DeleteResult.SUCCESS;
     } catch (NoSuchFileException e) {
       return DeleteResult.SUCCESS;
@@ -84,10 +83,10 @@ public class LocalFiles implements FilesLister, FileDeleter {
     }
   }
 
-  static URI ensureTrailingSlash(URI uri) {
-    if (uri.getPath().endsWith("/")) {
+  static StorageUri ensureTrailingSlash(StorageUri uri) {
+    if (uri.location().endsWith("/")) {
       return uri;
     }
-    return URI.create(uri + "/");
+    return StorageUri.of(uri + "/");
   }
 }

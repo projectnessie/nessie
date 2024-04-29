@@ -18,7 +18,6 @@ package org.projectnessie.gc.iceberg.inttest;
 import static java.util.Collections.emptySet;
 
 import jakarta.annotation.Nonnull;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -46,6 +45,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * Verifies that {@link IcebergContentToFiles} against data ingested via "real" Iceberg yields the
@@ -142,7 +142,7 @@ public class ITContentToFilesCrossCheck extends SparkSqlTestBase {
     try (Stream<FileReference> extracted = contentToFiles.extractFiles(contentReference)) {
       return extracted
           .map(FileReference::absolutePath)
-          .map(URI::toString)
+          .map(StorageUri::location)
           .collect(Collectors.toSet());
     }
   }

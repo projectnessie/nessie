@@ -18,7 +18,6 @@ package org.projectnessie.gc.contents;
 import com.google.errorprone.annotations.MustBeClosed;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
@@ -30,6 +29,7 @@ import org.projectnessie.gc.files.DeleteSummary;
 import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * Represents a set of identified live contents from an {@link
@@ -84,18 +84,18 @@ public abstract class LiveContentSet {
     return persistenceSpi().fetchContentReferences(id(), contentId);
   }
 
-  public void associateBaseLocations(String contentId, Collection<URI> baseLocations) {
+  public void associateBaseLocations(String contentId, Collection<StorageUri> baseLocations) {
     // TODO detect duplicate base locations for different content-IDs
     persistenceSpi().associateBaseLocations(id(), contentId, baseLocations);
   }
 
   @MustBeClosed
-  public Stream<URI> fetchAllBaseLocations() {
+  public Stream<StorageUri> fetchAllBaseLocations() {
     return persistenceSpi().fetchAllBaseLocations(id());
   }
 
   @MustBeClosed
-  public Stream<URI> fetchBaseLocations(@NotNull String contentId) {
+  public Stream<StorageUri> fetchBaseLocations(@NotNull String contentId) {
     return persistenceSpi().fetchBaseLocations(id(), contentId);
   }
 
@@ -136,7 +136,7 @@ public abstract class LiveContentSet {
       }
 
       @Override
-      public DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
+      public DeleteSummary deleteMultiple(StorageUri baseUri, Stream<FileReference> fileObjects) {
         long count = addFileDeletions(fileObjects);
         return DeleteSummary.of(count, 0);
       }

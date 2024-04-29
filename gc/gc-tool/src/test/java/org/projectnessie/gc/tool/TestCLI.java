@@ -57,6 +57,7 @@ import org.projectnessie.gc.tool.cli.options.SchemaCreateStrategy;
 import org.projectnessie.gc.tool.cli.util.RunCLI;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
@@ -343,8 +344,8 @@ public class TestCLI {
     UUID id =
         UUID.fromString(new String(Files.readAllBytes(liveSetIdFile), StandardCharsets.UTF_8));
 
-    URI dataLakeDir1 = dir.resolve("data-lake/dir1").toUri();
-    URI dataLakeDir2 = dir.resolve("data-lake/dir2").toUri();
+    StorageUri dataLakeDir1 = StorageUri.of(dir.resolve("data-lake/dir1").toUri());
+    StorageUri dataLakeDir2 = StorageUri.of(dir.resolve("data-lake/dir2").toUri());
     DataSource dataSource =
         AgroalJdbcDataSourceProvider.builder().jdbcUrl(JDBC_URL).build().dataSource();
     try {
@@ -370,9 +371,9 @@ public class TestCLI {
       persistenceSpi.addFileDeletions(
           id,
           Stream.of(
-              FileReference.of(URI.create("file1"), dataLakeDir1, 42L),
-              FileReference.of(URI.create("file2"), dataLakeDir1, 42L),
-              FileReference.of(URI.create("file3"), dataLakeDir2, 88L)));
+              FileReference.of(StorageUri.of("file1"), dataLakeDir1, 42L),
+              FileReference.of(StorageUri.of("file2"), dataLakeDir1, 42L),
+              FileReference.of(StorageUri.of("file3"), dataLakeDir2, 88L)));
     } finally {
       ((AutoCloseable) dataSource).close();
     }
@@ -418,8 +419,8 @@ public class TestCLI {
     UUID id =
         UUID.fromString(new String(Files.readAllBytes(liveSetIdFile), StandardCharsets.UTF_8));
 
-    URI dataLakeDir1 = dir.resolve("data-lake/dir1").toUri();
-    URI dataLakeDir2 = dir.resolve("data-lake/dir2").toUri();
+    StorageUri dataLakeDir1 = StorageUri.of(dir.resolve("data-lake/dir1").toUri());
+    StorageUri dataLakeDir2 = StorageUri.of(dir.resolve("data-lake/dir2").toUri());
     DataSource dataSource =
         AgroalJdbcDataSourceProvider.builder().jdbcUrl(JDBC_URL).build().dataSource();
     try {
@@ -428,9 +429,9 @@ public class TestCLI {
       persistenceSpi.addFileDeletions(
           id,
           Stream.of(
-              FileReference.of(URI.create("file1"), dataLakeDir1, 42L),
-              FileReference.of(URI.create("file2"), dataLakeDir1, 42L),
-              FileReference.of(URI.create("file3"), dataLakeDir2, 88L)));
+              FileReference.of(StorageUri.of("file1"), dataLakeDir1, 42L),
+              FileReference.of(StorageUri.of("file2"), dataLakeDir1, 42L),
+              FileReference.of(StorageUri.of("file3"), dataLakeDir2, 88L)));
     } finally {
       ((AutoCloseable) dataSource).close();
     }

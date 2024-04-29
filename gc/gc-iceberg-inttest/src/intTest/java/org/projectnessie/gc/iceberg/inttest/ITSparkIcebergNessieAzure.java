@@ -15,13 +15,13 @@
  */
 package org.projectnessie.gc.iceberg.inttest;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.testing.azurite.Azurite;
 import org.projectnessie.testing.azurite.AzuriteAccess;
 import org.projectnessie.testing.azurite.AzuriteExtension;
@@ -63,7 +63,7 @@ public class ITSparkIcebergNessieAzure extends AbstractITSparkIcebergNessieObjec
   }
 
   @Override
-  protected URI bucketUri() {
-    return URI.create(azuriteAccess.location(BUCKET_URI));
+  protected StorageUri bucketUri() {
+    return StorageUri.of(azuriteAccess.location(BUCKET_URI));
   }
 }

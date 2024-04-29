@@ -17,7 +17,6 @@ package org.projectnessie.gc.tool.cli.commands;
 
 import static java.lang.String.format;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -26,6 +25,7 @@ import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.tool.cli.options.EnvironmentDefaultProvider;
+import org.projectnessie.storage.uri.StorageUri;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 
@@ -104,7 +104,8 @@ public class ShowLiveSet extends BaseLiveSetCommand {
               out.println(Ansi.AUTO.text("@|bold   Content ID " + contentId + "|@"));
 
               if (showBaseLocations) {
-                try (Stream<URI> baseLocations = liveContentSet.fetchBaseLocations(contentId)) {
+                try (Stream<StorageUri> baseLocations =
+                    liveContentSet.fetchBaseLocations(contentId)) {
                   baseLocations.forEach(l -> out.printf("    Base location: %s%n", l));
                 }
               }
