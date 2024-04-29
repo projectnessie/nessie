@@ -81,14 +81,13 @@ jobs:
           java-version: ${{ matrix.java-version }}
 
       - name: Gradle / Compile
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: |
-            spotlessCheck
-            compileAll
-            -x :nessie-quarkus:compileAll
-            -x :nessie-quarkus-cli:compileAll
-            -x :nessie-events-quarkus:compileAll
+        run: |
+          ./gradlew \
+            spotlessCheck \
+            compileAll \
+            -x :nessie-quarkus:compileAll \
+            -x :nessie-quarkus-cli:compileAll \
+            -x :nessie-events-quarkus:compileAll \
             --scan
 
       - name: Gradle / Compile Quarkus
@@ -99,26 +98,18 @@ jobs:
             ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan
 
       - name: Gradle / Checkstyle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: checkstyle --scan
+        run: ./gradlew checkstyle --scan
 
       - name: Gradle / Assemble
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: assemble --scan
+        run: ./gradlew assemble --scan
 
       - name: Gradle / Publish to Maven local
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: publishToMavenLocal --scan
+        run: ./gradlew publishToMavenLocal --scan
 
       # This is a rather quick one and uses the output of 'publishToMavenLocal', which uses the
       # outputs of 'assemble'
       - name: Gradle / build tools integration tests
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: buildToolsIntegrationTest
+        run: ./gradlew buildToolsIntegrationTest
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
@@ -150,16 +141,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
 
       - name: Gradle / test
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: |
-            test
-            :nessie-client:check 
-            -x :nessie-client:intTest 
-            -x :nessie-quarkus:test
-            -x :nessie-quarkus-cli:test
-            -x :nessie-events-quarkus:test
-            --scan
+        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-quarkus-cli:test -x :nessie-events-quarkus:test --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v4
@@ -848,31 +830,25 @@ jobs:
             11
             17
 
-      - name: Iceberg Nessie test
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: true
-          arguments: :iceberg:iceberg-nessie:test --scan
+
+      - name: Iceberg Nessie test
+        run: ./gradlew :iceberg:iceberg-nessie:test --scan
 
       - name: Nessie Spark 3.3 / 2.12 Extensions test
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
+        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
       - name: Nessie Spark 3.4 / 2.13 Extensions test
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
+        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
 
       - name: Nessie Spark 3.5 / 2.13 Extensions test
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
+        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
 
       #- name: Publish Nessie + Iceberg to local Maven repo
-      #  uses: gradle/gradle-build-action@v2
-      #  with:
-      #    arguments: publishLocal --scan
+      #  run: ./gradlew publishLocal --scan
       #
       #- name: Gather locally published versions
       #  run: |
@@ -888,9 +864,7 @@ jobs:
       #    !
 
       - name: Tools & Integrations tests
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: intTest --scan
+        run: ./gradlew intTest --scan
 
   site:
     name: CI Website

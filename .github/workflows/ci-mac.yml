@@ -50,7 +50,7 @@ jobs:
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
-    - name: Gradle / compile
+    - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       env:
         # Same as for ci.yml
@@ -59,14 +59,14 @@ jobs:
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
         cache-read-only: true
-        arguments: assemble --scan
+
+    - name: Gradle / compile
+      run: ./gradlew assemble --scan
 
     - name: Gradle / unit test
-      uses: gradle/actions/setup-gradle@v3
       env:
         SPARK_LOCAL_IP: localhost
-      with:
-        arguments: test --scan
+      run: ./gradlew test --scan
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v4

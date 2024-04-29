@@ -40,6 +40,11 @@ jobs:
         more-memory: 'true'
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
+      with:
+        java-version: ${{ matrix.java-version }}
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
       env:
         # Same as for ci.yml
         GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17
@@ -47,47 +52,36 @@ jobs:
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
         cache-read-only: true
-        java-version: ${{ matrix.java-version }}
 
     - name: Gradle / compile
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: |
-          spotlessCheck
-          compileAll
-          -x :nessie-quarkus:compileAll
-          -x :nessie-quarkus-cli:compileAll
-          -x :nessie-events-quarkus:compileAll
+      run: |
+        ./gradlew \
+          spotlessCheck \
+          compileAll \
+          -x :nessie-quarkus:compileAll \
+          -x :nessie-quarkus-cli:compileAll \
+          -x :nessie-events-quarkus:compileAll \
           --scan
 
     - name: Gradle / Compile Quarkus
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: |
-          :nessie-quarkus:compileAll
-          :nessie-quarkus-cli:compileAll
-          :nessie-events-quarkus:compileAll
+      run: |
+        ./gradlew \
+          :nessie-quarkus:compileAll \
+          :nessie-quarkus-cli:compileAll \
+          :nessie-events-quarkus:compileAll \
           --scan
 
     - name: Gradle / unit test
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: test --scan
+      run: ./gradlew test --scan
 
     - name: Gradle / check incl. integ-test
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: check --scan
+      run: ./gradlew check --scan
 
     - name: Gradle / assemble + publish local
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: assemble publishToMavenLocal --scan
+      run: ./gradlew assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        arguments: buildToolsIntegrationTest
+      run: ./gradlew buildToolsIntegrationTest
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v4

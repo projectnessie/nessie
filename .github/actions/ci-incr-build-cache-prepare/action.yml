@@ -28,11 +28,14 @@ runs:
           echo "GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE=${{ inputs.job-instance }}" >> ${GITHUB_ENV}
         fi
 
-    - name: Gradle / Init
+    - name: Gradle / Setup
       uses: gradle/actions/setup-gradle@v3
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
-        arguments: -h
+
+    - name: Gradle / Init
+      shell: bash
+      run: ./gradlew -h
 
     - name: Download existing workflow artifacts
       uses: actions/download-artifact@v4
