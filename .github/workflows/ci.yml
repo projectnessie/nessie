@@ -63,7 +63,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -136,7 +136,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -187,7 +187,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -252,7 +252,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -312,7 +312,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -361,7 +361,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -403,7 +403,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -578,7 +578,7 @@ jobs:
     if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           fetch-depth: 0
       - name: Setup runner
@@ -805,7 +805,7 @@ jobs:
           git config --global user.name "Integrations Testing [Bot]"
 
       - name: Checkout NeQuEIT repo
-        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}
@@ -897,7 +897,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -951,7 +951,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
