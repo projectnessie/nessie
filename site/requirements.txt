@@ -1,4 +1,4 @@
-mkdocs==1.5.3
+mkdocs==1.6.0
 mkdocs-awesome-pages-plugin==2.9.2
 mkdocs-include-markdown-plugin==6.0.5
 mkdocs-macros-plugin==1.0.5
