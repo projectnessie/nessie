@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.MoreExecutors;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -424,10 +425,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     } catch (IOException e) {
       LOGGER.warn("Error closing console streams", e);
     }
-    executor.shutdown();
-    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-      executor.shutdownNow();
-    }
+    MoreExecutors.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS);
     Throwable t = error;
     if (t != null) {
       if (t instanceof Exception) {
