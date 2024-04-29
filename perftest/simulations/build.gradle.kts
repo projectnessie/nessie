@@ -18,8 +18,8 @@ import com.google.common.collect.Maps
 import io.gatling.gradle.GatlingRunTask
 
 plugins {
-  alias(libs.plugins.gatling)
   id("nessie-conventions-scala")
+  alias(libs.plugins.gatling)
   alias(libs.plugins.nessie.run)
 }
 
@@ -66,8 +66,6 @@ tasks.withType(GatlingRunTask::class.java).configureEach {
 
 gatling {
   gatlingVersion = libs.versions.gatling.get()
-  // Null is OK (io.gatling.gradle.LogbackConfigTask checks for it)
-  logLevel = System.getProperty("gatling.logLevel")
 
   jvmArgs =
     System.getProperties()
