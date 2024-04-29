@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.MoreExecutors;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -189,9 +191,7 @@ public class ResourceOwnerEmulator implements AutoCloseable {
             throw new IllegalStateException("Unsupported grant type: " + grantType);
         }
       }
-    } catch (IOException ignored) {
-      // Expected: consoleIn.readLine() throws an IOException when closing
-    } catch (RuntimeException | AssertionError t) {
+    } catch (RuntimeException | AssertionError | IOException t) {
       recordFailure(t);
     }
   }
@@ -418,9 +418,14 @@ public class ResourceOwnerEmulator implements AutoCloseable {
     if (replaceSystemOut) {
       System.setOut(standardOut);
     }
-    executor.shutdownNow();
-    consoleIn.close();
-    consoleOut.close();
+    try {
+      // close writer first to signal end of input to reader
+      consoleOut.close();
+      consoleIn.close();
+    } catch (IOException e) {
+      LOGGER.warn("Error closing console streams", e);
+    }
+    MoreExecutors.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS);
     Throwable t = error;
     if (t != null) {
       if (t instanceof Exception) {

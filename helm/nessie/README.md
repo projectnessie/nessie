@@ -76,10 +76,11 @@ $ helm uninstall --namespace nessie-ns nessie
 | cassandra.contactPoints | string | `nil` |  |
 | cassandra.keyspace | string | `"nessie"` |  |
 | cassandra.localDatacenter | string | `nil` |  |
+| dynamodb.profile | string | `"default"` | The name of the profile that should be used, when loading AWS credentials from a profile file. Required only if no secret is provided below. |
 | dynamodb.region | string | `"us-west-2"` | The AWS region to use. |
 | dynamodb.secret.awsAccessKeyId | string | `"aws_access_key_id"` | The secret key storing the AWS secret key id. |
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
-| dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. |
+| dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. Optional; if not present, the default AWS credentials provider chain is used. |
 | extraEnv | list | `[]` | Advanced configuration via Environment Variables. Extra environment variables to add to the Nessie server container. You can pass here any valid EnvVar object: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core This can be useful to get configuration values from Kubernetes secrets or config maps. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |

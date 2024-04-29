@@ -33,8 +33,15 @@ val quarkusRunner by
 val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
+// Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
+// resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
+// for clients, we have to live with :nessie-model producing an MR-jar. See
+// https://github.com/quarkusio/quarkus/issues/40236 and
+// https://github.com/projectnessie/nessie/issues/8390.
+configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
+
 dependencies {
-  implementation(project(":nessie-model"))
+  implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-quarkus-auth"))
@@ -75,12 +82,13 @@ dependencies {
     implementation("io.quarkus:quarkus-minikube")
   }
 
-  openapiSource(project(":nessie-model", "openapiSource"))
+  openapiSource(project(":nessie-model-quarkus", "openapiSource"))
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
   testFixturesApi(project(":nessie-client"))
+  testFixturesApi(project(":nessie-model-quarkus"))
   testFixturesApi(testFixtures(project(":nessie-client")))
   testFixturesApi(project(":nessie-client-testextension"))
   testFixturesApi(project(":nessie-jaxrs-tests"))
@@ -151,13 +159,12 @@ quarkus {
 }
 
 val quarkusAppPartsBuild = tasks.named("quarkusAppPartsBuild")
+val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
 quarkusAppPartsBuild.configure {
   dependsOn(pullOpenApiSpec)
   inputs.files(openapiSource)
 }
-
-val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.

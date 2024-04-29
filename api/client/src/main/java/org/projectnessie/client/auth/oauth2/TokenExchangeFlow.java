@@ -29,8 +29,6 @@ class TokenExchangeFlow extends AbstractFlow {
 
   static final URI ACCESS_TOKEN_ID = URI.create("urn:ietf:params:oauth:token-type:access_token");
 
-  static final URI REFRESH_TOKEN_ID = URI.create("urn:ietf:params:oauth:token-type:refresh_token");
-
   TokenExchangeFlow(OAuth2ClientConfig config) {
     super(config);
   }
@@ -45,7 +43,13 @@ class TokenExchangeFlow extends AbstractFlow {
         TokensExchangeRequest.builder()
             .subjectToken(currentTokens.getAccessToken().getPayload())
             .subjectTokenType(ACCESS_TOKEN_ID)
-            .requestedTokenType(REFRESH_TOKEN_ID);
-    return invokeTokenEndpoint(request, TokensExchangeResponse.class);
+            .requestedTokenType(ACCESS_TOKEN_ID);
+    TokensExchangeResponse response = invokeTokenEndpoint(request, TokensExchangeResponse.class);
+    // Keycloak may return the same access token instead of a new one,
+    // so we need to check if the access token is about to expire.
+    if (isAboutToExpire(response.getAccessToken())) {
+      throw new MustFetchNewTokensException("Access token is about to expire");
+    }
+    return response;
   }
 }

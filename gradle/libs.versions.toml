@@ -3,8 +3,8 @@
 [versions]
 antlr4 = "4.13.1"
 bouncycastle = "1.70"
-checkstyle = "10.15.0"
-errorprone = "2.26.1"
+checkstyle = "10.16.0"
+errorprone = "2.27.0"
 errorproneSlf4j = "0.1.23"
 gatling = "3.10.5"
 googleJavaFormat = "1.22.0"
@@ -17,7 +17,7 @@ jmh = "1.37"
 junit = "5.10.2"
 keycloak = "24.0.3"
 maven = "3.9.6"
-mavenResolver = "1.9.19"
+mavenResolver = "1.9.20"
 mockito="4.11.0"
 nessieClientVersion = "0.77.1" # Must be in sync with Nessie version in the Iceberg release.
 opentelemetry = "1.37.0"
@@ -25,10 +25,10 @@ opentelemetryAlpha = "1.31.0-alpha"
 opentracing = "0.33.0"
 picocli = "4.7.5"
 protobuf = "3.25.3"
-quarkusPlatform = "3.9.4"
+quarkusPlatform = "3.9.5"
 quarkusPlugin = "3.9.4"
 slf4j = "1.7.36"
-smallryeConfig = "3.7.1"
+smallryeConfig = "3.8.1"
 undertow = "2.2.28.Final"
 
 [bundles]
@@ -42,8 +42,8 @@ antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "ant
 assertj-core = { module = "org.assertj:assertj-core", version = "3.25.3" }
 avro = { module = "org.apache.avro:avro", version = "1.11.3" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.1" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.25.35" }
-azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.22" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.25.40" }
+azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.23" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
 cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version = "4.17.0" }
@@ -126,7 +126,7 @@ quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", 
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkusPlatform" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.0.6" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.4.0" }
-rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "9.1.0" }
+rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "9.1.1" }
 scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.19" }}
 scala-library-v213 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.13, 2.14[", prefer = "2.13.13"}}
 slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -154,7 +154,7 @@ annotations-stripper = { id = "org.projectnessie.annotation-stripper", version =
 errorprone = { id = "net.ltgt.errorprone", version = "3.1.0" }
 gatling = { id = "io.gatling.gradle", version = "3.10.5.1" }
 jmh = { id = "me.champeau.jmh", version = "0.7.2" }
-nessie-run = { id = "org.projectnessie", version = "0.32.0" }
+nessie-run = { id = "org.projectnessie", version = "0.32.1" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
