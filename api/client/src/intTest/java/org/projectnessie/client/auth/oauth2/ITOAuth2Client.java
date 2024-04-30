@@ -513,8 +513,8 @@ public class ITOAuth2Client {
             .refreshSafetyWindow(Duration.ofSeconds(5))
             // Exercise the code path where Keycloak will request client to slow down
             .ignoreDeviceCodeFlowServerPollInterval(true)
-            .minDeviceCodeFlowPollInterval(Duration.ofSeconds(1))
-            .deviceCodeFlowPollInterval(Duration.ofSeconds(1));
+            .minDeviceCodeFlowPollInterval(Duration.ofMillis(500))
+            .deviceCodeFlowPollInterval(Duration.ofMillis(500));
     if (confidential) {
       builder.clientSecret("s3cr3t");
     }
@@ -540,6 +540,7 @@ public class ITOAuth2Client {
     masterRep.setClientSessionMaxLifespan(refreshTokenLifespanSeconds);
     masterRep.setSsoSessionIdleTimeout(refreshTokenLifespanSeconds);
     masterRep.setSsoSessionMaxLifespan(refreshTokenLifespanSeconds);
+    masterRep.setOAuth2DevicePollingInterval(1);
     master.update(masterRep);
   }
 
