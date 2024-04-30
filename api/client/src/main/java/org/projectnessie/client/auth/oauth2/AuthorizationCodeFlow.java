@@ -96,12 +96,8 @@ class AuthorizationCodeFlow extends AbstractFlow {
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
   AuthorizationCodeFlow(OAuth2ClientConfig config) {
-    this(config, System.out);
-  }
-
-  AuthorizationCodeFlow(OAuth2ClientConfig config, PrintStream console) {
     super(config);
-    this.console = console;
+    this.console = config.getConsole();
     this.flowTimeout = config.getAuthorizationCodeFlowTimeout();
     tokensFuture =
         redirectUriFuture

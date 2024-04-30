@@ -43,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -110,6 +111,11 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   @Value.Default
   public boolean ignoreDeviceCodeFlowServerPollInterval() {
     return false;
+  }
+
+  @Value.Default
+  PrintStream getConsole() {
+    return System.out;
   }
 
   @Value.Default
@@ -509,6 +515,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
     @CanIgnoreReturnValue
     Builder ignoreDeviceCodeFlowServerPollInterval(boolean ignoreDeviceCodeFlowServerPollInterval);
+
+    @CanIgnoreReturnValue
+    Builder console(PrintStream console);
 
     @CanIgnoreReturnValue
     Builder clock(Supplier<Instant> clock);

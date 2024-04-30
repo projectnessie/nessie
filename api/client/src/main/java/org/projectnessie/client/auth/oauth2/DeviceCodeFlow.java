@@ -61,12 +61,8 @@ class DeviceCodeFlow extends AbstractFlow {
   private volatile Future<?> pollFuture;
 
   DeviceCodeFlow(OAuth2ClientConfig config) {
-    this(config, System.out);
-  }
-
-  DeviceCodeFlow(OAuth2ClientConfig config, PrintStream console) {
     super(config);
-    this.console = console;
+    this.console = config.getConsole();
     flowTimeout = config.getDeviceCodeFlowTimeout();
     pollInterval = config.getDeviceCodeFlowPollInterval();
     closeFuture.thenRun(this::doClose);

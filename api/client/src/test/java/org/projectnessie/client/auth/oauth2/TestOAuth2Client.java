@@ -389,16 +389,20 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), false)) {
 
-      OAuth2ClientConfig config =
-          configBuilder(server, false).grantType(GrantType.AUTHORIZATION_CODE).build();
+      try (AuthorizationCodeResourceOwnerEmulator resourceOwner =
+          new AuthorizationCodeResourceOwnerEmulator()) {
 
-      try (ResourceOwnerEmulator resourceOwner =
-              new ResourceOwnerEmulator(GrantType.AUTHORIZATION_CODE);
-          AuthorizationCodeFlow flow =
-              new AuthorizationCodeFlow(config, resourceOwner.getConsoleOut())) {
-        resourceOwner.setErrorListener(e -> flow.close());
-        Tokens tokens = flow.fetchNewTokens(null);
-        checkInitialResponse(tokens, false);
+        OAuth2ClientConfig config =
+            configBuilder(server, false)
+                .grantType(GrantType.AUTHORIZATION_CODE)
+                .console(resourceOwner.getConsole())
+                .build();
+
+        try (AuthorizationCodeFlow flow = new AuthorizationCodeFlow(config)) {
+          resourceOwner.setErrorListener(e -> flow.close());
+          Tokens tokens = flow.fetchNewTokens(null);
+          checkInitialResponse(tokens, false);
+        }
       }
     }
   }
@@ -429,18 +433,21 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), false)) {
 
-      OAuth2ClientConfig config =
-          configBuilder(server, false)
-              .grantType(GrantType.DEVICE_CODE)
-              .minDeviceCodeFlowPollInterval(Duration.ofMillis(100))
-              .deviceCodeFlowPollInterval(Duration.ofMillis(100))
-              .build();
+      try (DeviceCodeResourceOwnerEmulator resourceOwner = new DeviceCodeResourceOwnerEmulator()) {
 
-      try (ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(GrantType.DEVICE_CODE);
-          DeviceCodeFlow flow = new DeviceCodeFlow(config, resourceOwner.getConsoleOut())) {
-        resourceOwner.setErrorListener(e -> flow.close());
-        Tokens tokens = flow.fetchNewTokens(null);
-        checkInitialResponse(tokens, false);
+        OAuth2ClientConfig config =
+            configBuilder(server, false)
+                .grantType(GrantType.DEVICE_CODE)
+                .minDeviceCodeFlowPollInterval(Duration.ofMillis(100))
+                .deviceCodeFlowPollInterval(Duration.ofMillis(100))
+                .console(resourceOwner.getConsole())
+                .build();
+
+        try (DeviceCodeFlow flow = new DeviceCodeFlow(config)) {
+          resourceOwner.setErrorListener(e -> flow.close());
+          Tokens tokens = flow.fetchNewTokens(null);
+          checkInitialResponse(tokens, false);
+        }
       }
     }
   }
