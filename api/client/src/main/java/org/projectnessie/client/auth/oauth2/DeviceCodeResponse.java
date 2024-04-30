@@ -72,9 +72,7 @@ public interface DeviceCodeResponse {
   @JsonProperty("verification_uri_complete")
   URI getVerificationUriComplete();
 
-  /**
-   * REQUIRED. The lifetime in seconds of the "device_code" and "user_code".
-   */
+  /** REQUIRED. The lifetime in seconds of the "device_code" and "user_code". */
   @JsonProperty("expires_in")
   int getExpiresInSeconds();
 

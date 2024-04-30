@@ -505,9 +505,7 @@ class TestOAuth2Client {
 
       try (OAuth2Client client = new OAuth2Client(config)) {
         Tokens currentTokens =
-            getPasswordTokensResponse()
-              .withRefreshTokenExpiresInSeconds(1)
-              .asTokens(() -> now);
+            getPasswordTokensResponse().withRefreshTokenExpiresInSeconds(1).asTokens(() -> now);
 
         soft.assertThatThrownBy(() -> client.refreshTokens(currentTokens))
             .isInstanceOf(MustFetchNewTokensException.class)
