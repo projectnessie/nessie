@@ -18,9 +18,6 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -38,23 +35,24 @@ interface TokensResponseBase {
   /** Convert this response to a {@link Tokens} pair using the provided clock. */
   default Tokens asTokens(Supplier<Instant> clock) {
 
-    Duration accessExpiresIn = getAccessTokenExpiresIn();
+    Instant now = clock.get();
+
+    Integer accessExpiresIn = getAccessTokenExpiresInSeconds();
     AccessToken accessToken =
         ImmutableAccessToken.builder()
             .tokenType(getTokenType())
             .payload(getAccessTokenPayload())
-            .expirationTime(accessExpiresIn == null ? null : clock.get().plus(accessExpiresIn))
+            .expirationTime(accessExpiresIn == null ? null : now.plusSeconds(accessExpiresIn))
             .build();
 
     String refreshTokenPayload = getRefreshTokenPayload();
-    Duration refreshExpiresIn = getRefreshTokenExpiresIn();
+    Integer refreshExpiresIn = getRefreshTokenExpiresInSeconds();
     RefreshToken refreshToken =
         refreshTokenPayload == null
             ? null
             : ImmutableRefreshToken.builder()
                 .payload(refreshTokenPayload)
-                .expirationTime(
-                    refreshExpiresIn == null ? null : clock.get().plus(refreshExpiresIn))
+                .expirationTime(refreshExpiresIn == null ? null : now.plusSeconds(refreshExpiresIn))
                 .build();
 
     return new Tokens() {
@@ -95,9 +93,7 @@ interface TokensResponseBase {
   @Nullable
   @JsonProperty("expires_in")
   @JsonUnwrapped
-  @JsonSerialize(using = JacksonSerializers.DurationToSecondsSerializer.class)
-  @JsonDeserialize(using = JacksonSerializers.SecondsToDurationDeserializer.class)
-  Duration getAccessTokenExpiresIn();
+  Integer getAccessTokenExpiresInSeconds();
 
   /**
    * OPTIONAL. The refresh token, which can be used to obtain new access tokens using the same
@@ -120,9 +116,7 @@ interface TokensResponseBase {
    */
   @Nullable
   @JsonProperty("refresh_expires_in")
-  @JsonSerialize(using = JacksonSerializers.DurationToSecondsSerializer.class)
-  @JsonDeserialize(using = JacksonSerializers.SecondsToDurationDeserializer.class)
-  Duration getRefreshTokenExpiresIn();
+  Integer getRefreshTokenExpiresInSeconds();
 
   /**
    * OPTIONAL, if identical to the scope requested by the client; otherwise, REQUIRED. The scope of
