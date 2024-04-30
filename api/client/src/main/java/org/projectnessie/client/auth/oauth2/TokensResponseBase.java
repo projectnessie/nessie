@@ -16,15 +16,12 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Common base for {@link ClientCredentialsTokensResponse}, {@link RefreshTokensResponse} and {@link
@@ -33,31 +30,44 @@ import org.immutables.value.Value;
  *
  * <p>It is also a flattened representation of a {@link Tokens} pair.
  */
-interface TokensResponseBase extends Tokens {
+interface TokensResponseBase {
 
-  @Value.Lazy
-  @JsonIgnore
-  @Override
-  default AccessToken getAccessToken() {
-    return ImmutableAccessToken.builder()
-        .tokenType(getTokenType())
-        .payload(getAccessTokenPayload())
-        .expirationTime(getAccessTokenExpirationTime())
-        .build();
-  }
+  /** Convert this response to a {@link Tokens} pair using the provided clock. */
+  default Tokens asTokens(Supplier<Instant> clock) {
 
-  @Nullable
-  @Value.Lazy
-  @JsonIgnore
-  @Override
-  default RefreshToken getRefreshToken() {
-    if (getRefreshTokenPayload() != null) {
-      return ImmutableRefreshToken.builder()
-          .payload(getRefreshTokenPayload())
-          .expirationTime(getRefreshTokenExpirationTime())
-          .build();
-    }
-    return null;
+    Instant now = clock.get();
+
+    Integer accessExpiresIn = getAccessTokenExpiresInSeconds();
+    AccessToken accessToken =
+        ImmutableAccessToken.builder()
+            .tokenType(getTokenType())
+            .payload(getAccessTokenPayload())
+            .expirationTime(accessExpiresIn == null ? null : now.plusSeconds(accessExpiresIn))
+            .build();
+
+    String refreshTokenPayload = getRefreshTokenPayload();
+    Integer refreshExpiresIn = getRefreshTokenExpiresInSeconds();
+    RefreshToken refreshToken =
+        refreshTokenPayload == null
+            ? null
+            : ImmutableRefreshToken.builder()
+                .payload(refreshTokenPayload)
+                .expirationTime(refreshExpiresIn == null ? null : now.plusSeconds(refreshExpiresIn))
+                .build();
+
+    return new Tokens() {
+
+      @Override
+      public AccessToken getAccessToken() {
+        return accessToken;
+      }
+
+      @Nullable
+      @Override
+      public RefreshToken getRefreshToken() {
+        return refreshToken;
+      }
+    };
   }
 
   /**
@@ -83,9 +93,7 @@ interface TokensResponseBase extends Tokens {
   @Nullable
   @JsonProperty("expires_in")
   @JsonUnwrapped
-  @JsonSerialize(using = JacksonSerializers.InstantToSecondsSerializer.class)
-  @JsonDeserialize(using = JacksonSerializers.SecondsToInstantDeserializer.class)
-  Instant getAccessTokenExpirationTime();
+  Integer getAccessTokenExpiresInSeconds();
 
   /**
    * OPTIONAL. The refresh token, which can be used to obtain new access tokens using the same
@@ -108,9 +116,7 @@ interface TokensResponseBase extends Tokens {
    */
   @Nullable
   @JsonProperty("refresh_expires_in")
-  @JsonSerialize(using = JacksonSerializers.InstantToSecondsSerializer.class)
-  @JsonDeserialize(using = JacksonSerializers.SecondsToInstantDeserializer.class)
-  Instant getRefreshTokenExpirationTime();
+  Integer getRefreshTokenExpiresInSeconds();
 
   /**
    * OPTIONAL, if identical to the scope requested by the client; otherwise, REQUIRED. The scope of

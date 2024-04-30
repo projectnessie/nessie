@@ -207,12 +207,10 @@ public class ITOAuth2Client {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       // first request: initial grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: refresh token grant
       Tokens refreshedTokens = client.refreshTokens(firstTokens);
-      soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
       compareTokens(firstTokens, refreshedTokens, "Private2");
@@ -235,12 +233,10 @@ public class ITOAuth2Client {
         HttpClient validatingClient = validatingHttpClient("Private1").build()) {
       // first request: initial grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: token exchange since no refresh token was sent
       Tokens exchangedTokens = client.refreshTokens(firstTokens);
-      soft.assertThat(exchangedTokens).isInstanceOf(TokensExchangeResponse.class);
       soft.assertThat(exchangedTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
       compareTokens(firstTokens, exchangedTokens, "Private1");
@@ -268,7 +264,6 @@ public class ITOAuth2Client {
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: another initial grant since no refresh token was sent
       // and token exchange is disabled – cannot call refreshTokens() tokens here
@@ -276,7 +271,6 @@ public class ITOAuth2Client {
           .isInstanceOf(MustFetchNewTokensException.class);
       Tokens nextTokens = client.fetchNewTokens();
       soft.assertThat(nextTokens.getRefreshToken()).isNull();
-      soft.assertThat(nextTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       tryUseAccessToken(validatingClient, nextTokens.getAccessToken());
       compareTokens(firstTokens, nextTokens, "Private1");
     }
@@ -299,12 +293,10 @@ public class ITOAuth2Client {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       // first request: initial grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: refresh token grant
       Tokens refreshedTokens = client.refreshTokens(firstTokens);
-      soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
       compareTokens(firstTokens, refreshedTokens, "Public2");
@@ -328,12 +320,10 @@ public class ITOAuth2Client {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       // first request: initial grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: token exchange since no refresh token was sent
       Tokens exchangedTokens = client.refreshTokens(firstTokens);
-      soft.assertThat(exchangedTokens).isInstanceOf(TokensExchangeResponse.class);
       soft.assertThat(exchangedTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
       compareTokens(firstTokens, exchangedTokens, "Public1");
@@ -361,7 +351,6 @@ public class ITOAuth2Client {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       // first request: initial grant
       Tokens firstTokens = client.fetchNewTokens();
-      soft.assertThat(firstTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: another initial grant since no refresh token was sent
@@ -370,7 +359,6 @@ public class ITOAuth2Client {
           .isInstanceOf(MustFetchNewTokensException.class);
       Tokens nextTokens = client.fetchNewTokens();
       soft.assertThat(nextTokens.getRefreshToken()).isNull();
-      soft.assertThat(nextTokens).isInstanceOf(expectedResponseClass(initialGrantType));
       tryUseAccessToken(validatingClient, nextTokens.getAccessToken());
       compareTokens(firstTokens, nextTokens, "Public1");
     }
@@ -601,21 +589,6 @@ public class ITOAuth2Client {
         .setObjectMapper(new ObjectMapper())
         .setDisableCompression(true)
         .setAuthentication(authentication);
-  }
-
-  private static Class<?> expectedResponseClass(GrantType initialGrantType) {
-    switch (initialGrantType) {
-      case CLIENT_CREDENTIALS:
-        return ClientCredentialsTokensResponse.class;
-      case PASSWORD:
-        return PasswordTokensResponse.class;
-      case AUTHORIZATION_CODE:
-        return AuthorizationCodeTokensResponse.class;
-      case DEVICE_CODE:
-        return DeviceCodeTokensResponse.class;
-      default:
-        throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
-    }
   }
 
   private AutoCloseable newTestSetup(GrantType initialGrantType, OAuth2Client client)

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
-import java.time.Duration;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -75,9 +74,7 @@ public interface DeviceCodeResponse {
 
   /** REQUIRED. The lifetime in seconds of the "device_code" and "user_code". */
   @JsonProperty("expires_in")
-  @JsonSerialize(using = JacksonSerializers.DurationToSecondsSerializer.class)
-  @JsonDeserialize(using = JacksonSerializers.SecondsToDurationDeserializer.class)
-  Duration getExpiresIn();
+  int getExpiresInSeconds();
 
   /**
    * OPTIONAL. The minimum amount of time in seconds that the client SHOULD wait between polling
@@ -85,7 +82,5 @@ public interface DeviceCodeResponse {
    */
   @Nullable
   @JsonProperty("interval")
-  @JsonSerialize(using = JacksonSerializers.DurationToSecondsSerializer.class)
-  @JsonDeserialize(using = JacksonSerializers.SecondsToDurationDeserializer.class)
-  Duration getInterval();
+  Integer getIntervalSeconds();
 }

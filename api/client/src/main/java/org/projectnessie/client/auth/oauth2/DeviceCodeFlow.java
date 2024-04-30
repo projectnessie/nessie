@@ -97,14 +97,14 @@ class DeviceCodeFlow extends AbstractFlow {
   @Override
   public Tokens fetchNewTokens(@Nullable Tokens currentTokens) {
     DeviceCodeResponse response = invokeDeviceAuthEndpoint();
-    checkPollInterval(response.getInterval());
+    checkPollInterval(response.getIntervalSeconds());
     console.println();
     console.println(MSG_PREFIX + "======= Nessie authentication required =======");
     console.println(MSG_PREFIX + "Browse to the following URL:");
     console.println(MSG_PREFIX + response.getVerificationUri());
     console.println(MSG_PREFIX + "And enter the code:");
     console.println(MSG_PREFIX + response.getUserCode());
-    printExpirationNotice(response.getExpiresIn());
+    printExpirationNotice(response.getExpiresInSeconds());
     console.println();
     console.flush();
     pollFuture = executor.submit(() -> pollForNewTokens(response.getDeviceCode()));
@@ -129,19 +129,18 @@ class DeviceCodeFlow extends AbstractFlow {
     }
   }
 
-  private void checkPollInterval(Duration serverPollInterval) {
+  private void checkPollInterval(Integer serverPollInterval) {
     if (!config.ignoreDeviceCodeFlowServerPollInterval()
         && serverPollInterval != null
-        && serverPollInterval.compareTo(pollInterval) > 0) {
+        && serverPollInterval > pollInterval.getSeconds()) {
       LOGGER.debug(
           "Device Code Flow: server requested minimum poll interval of {} seconds",
-          serverPollInterval.getSeconds());
-      pollInterval = serverPollInterval;
+          serverPollInterval);
+      pollInterval = Duration.ofSeconds(serverPollInterval);
     }
   }
 
-  private void printExpirationNotice(Duration expiresIn) {
-    long seconds = expiresIn.getSeconds();
+  private void printExpirationNotice(int seconds) {
     String exp;
     if (seconds < 60) {
       exp = seconds + " seconds";
