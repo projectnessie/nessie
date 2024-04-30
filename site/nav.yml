@@ -24,6 +24,7 @@ nav:
       - iceberg/spark.md
       - iceberg/flink.md
       - iceberg/hive.md
+      - iceberg/trino.md
       - iceberg/views.md
     - Spark:
       - guides/spark-s3.md
