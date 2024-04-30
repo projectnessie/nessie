@@ -16,11 +16,10 @@
 
 SKIP : <WHITESPACE : (" " | "\r" | "\n" | "\t" )+ > #Whitespace;
 
-// Note: tokens should be ordered by their lenth (see https://parsers.org/)
+// Note: tokens should be ordered by their length (see https://parsers.org/)
 
 TOKEN #Command
-  : <CONNECT: "CONNECT">
-  | <USE: "USE">
+  : <USE: "USE">
   | <DROP: "DROP">
   | <LIST: "LIST">
   | <SHOW: "SHOW">
@@ -30,6 +29,7 @@ TOKEN #Command
   | <MERGE: "MERGE">
   | <ASSIGN: "ASSIGN">
   | <CREATE: "CREATE">
+  | <CONNECT: "CONNECT">
   ;
 
 TOKEN

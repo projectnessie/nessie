@@ -49,7 +49,7 @@ java -jar nessie-quarkus-::NESSIE_VERSION::-runner.jar
 
 ### Nessie CLI as a standalone uber jar
 
-Requires Java 17 or newer.
+Requires Java 11 or newer.
 
 ```bash
 curl -o nessie-cli-::NESSIE_VERSION::-runner.jar \

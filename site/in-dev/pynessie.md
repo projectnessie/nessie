@@ -4,6 +4,10 @@ title: "Python based CLI"
 
 # Python based CLI
 
+!!! warning
+    The Python based CLI has been superseded by the new [Nessie CLI](./cli.md). This Python CLI
+    is currently no longer developed and does not support Nessie REST API v2.
+
 The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
 and tag management capabilities. This is installed as `pynessie` via `pip install pynessie`.
 Additional information about `pynessie` and release notes can be found at the [PyPI](https://pypi.org/project/pynessie/) site. 
