@@ -44,6 +44,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.projectnessie.client.auth.NessieAuthentication;
+import org.projectnessie.client.auth.oauth2.AuthorizationCodeResourceOwnerEmulator;
+import org.projectnessie.client.auth.oauth2.DeviceCodeResourceOwnerEmulator;
 import org.projectnessie.client.auth.oauth2.GrantType;
 import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.client.http.impl.HttpUtils;
@@ -263,36 +265,47 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
 
   @Override
   protected ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException {
-    ResourceOwnerEmulator resourceOwner =
-        grantType == GrantType.AUTHORIZATION_CODE
-            ? ResourceOwnerEmulator.forAuthorizationCode()
-            : ResourceOwnerEmulator.forDeviceCode();
+    return switch (grantType) {
+      case CLIENT_CREDENTIALS, PASSWORD -> ResourceOwnerEmulator.INACTIVE;
+      case AUTHORIZATION_CODE -> newAuthorizationCodeResourceOwner();
+      case DEVICE_CODE -> newDeviceCodeResourceOwner();
+      default -> throw new IllegalArgumentException("Unsupported grant type: " + grantType);
+    };
+  }
+
+  private AuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
+      throws IOException {
+    AuthorizationCodeResourceOwnerEmulator resourceOwner =
+        new AuthorizationCodeResourceOwnerEmulator();
     resourceOwner.replaceSystemOut();
-    if (grantType == GrantType.AUTHORIZATION_CODE) {
-      resourceOwner.setAuthUrlListener(
-          url -> {
-            String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
-            wireMockServer.stubFor(
-                WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
-                    .withQueryParam("response_type", equalTo("code"))
-                    .withQueryParam("client_id", equalTo("quarkus-service-app"))
-                    .withQueryParam("redirect_uri", containing("http"))
-                    .withQueryParam("state", equalTo(state))
-                    .willReturn(authorizationCodeResponse(state)));
-          });
-    } else {
-      resourceOwner.setFlowCompletionListener(
-          () -> {
-            // Reconfigure token endpoint to send a valid token
-            wireMockServer.stubFor(
-                WireMock.post(TOKEN_ENDPOINT_PATH)
-                    .withHeader(
-                        "Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
-                    .withRequestBody(containing("device_code"))
-                    .willReturn(successfulResponse(VALID_TOKEN)));
-            wireMockServer.removeStubMapping(authPendingMapping);
-          });
-    }
+    resourceOwner.setAuthUrlListener(
+        url -> {
+          String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
+          wireMockServer.stubFor(
+              WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
+                  .withQueryParam("response_type", equalTo("code"))
+                  .withQueryParam("client_id", equalTo("quarkus-service-app"))
+                  .withQueryParam("redirect_uri", containing("http"))
+                  .withQueryParam("state", equalTo(state))
+                  .willReturn(authorizationCodeResponse(state)));
+        });
+    return resourceOwner;
+  }
+
+  private DeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
+    DeviceCodeResourceOwnerEmulator resourceOwner = new DeviceCodeResourceOwnerEmulator();
+    resourceOwner.replaceSystemOut();
+    resourceOwner.setCompletionListener(
+        () -> {
+          // Reconfigure token endpoint to send a valid token
+          wireMockServer.stubFor(
+              WireMock.post(TOKEN_ENDPOINT_PATH)
+                  .withHeader(
+                      "Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+                  .withRequestBody(containing("device_code"))
+                  .willReturn(successfulResponse(VALID_TOKEN)));
+          wireMockServer.removeStubMapping(authPendingMapping);
+        });
     return resourceOwner;
   }
 

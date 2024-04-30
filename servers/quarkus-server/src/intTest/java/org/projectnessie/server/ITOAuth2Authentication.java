@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 import java.util.Properties;
+import org.projectnessie.client.auth.oauth2.AuthorizationCodeResourceOwnerEmulator;
+import org.projectnessie.client.auth.oauth2.DeviceCodeResourceOwnerEmulator;
 import org.projectnessie.client.auth.oauth2.GrantType;
 import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
@@ -69,7 +71,27 @@ public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
 
   @Override
   protected ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException {
-    ResourceOwnerEmulator resourceOwner = new ResourceOwnerEmulator(grantType, "alice", "alice");
+    return switch (grantType) {
+      case CLIENT_CREDENTIALS, PASSWORD -> ResourceOwnerEmulator.INACTIVE;
+      case AUTHORIZATION_CODE -> newAuthorizationCodeResourceOwner();
+      case DEVICE_CODE -> newDeviceCodeResourceOwner();
+      default -> throw new IllegalArgumentException("Unsupported grant type: " + grantType);
+    };
+  }
+
+  private AuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
+      throws IOException {
+    AuthorizationCodeResourceOwnerEmulator resourceOwner =
+        new AuthorizationCodeResourceOwnerEmulator("alice", "alice");
+    resourceOwner.replaceSystemOut();
+    resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
+    resourceOwner.setErrorListener(e -> api().close());
+    return resourceOwner;
+  }
+
+  private DeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
+    DeviceCodeResourceOwnerEmulator resourceOwner =
+        new DeviceCodeResourceOwnerEmulator("alice", "alice");
     resourceOwner.replaceSystemOut();
     resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
     resourceOwner.setErrorListener(e -> api().close());
