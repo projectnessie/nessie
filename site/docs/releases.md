@@ -2,6 +2,47 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.81.0 Release (May 01, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.81.0).
+
+### Highlights
+
+- The Nessie client now supports public clients when using OAuth 2 authentication. Public clients 
+  are clients that do not have a client secret; they are compatible with the `password`, 
+  `authorization_code`, and `device_code` grant types. See the
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
+### New Features
+
+- The Nessie Helm chart now supports AWS profiles. There are now two ways to configure AWS 
+  credentials in the Helm chart:
+  - Using a secret. The secret name can be set in the `dynamodb.secret` value.
+  - Using an AWS profile (new). The profile name can be set in the `dynamodb.profile` value.
+
+### Commits
+* GC: Fix NPE when fetching/parsing table-metadata JSON (#8428)
+* Docs: Trino Nessie configurations (#8385)
+* OAuth2Client: refactor ResourceOwnerEmulator (#8425)
+* OAuthClient: don't call Instant.now() in serde layer (#8419)
+* ITOAuth2Client: reduce device code poll interval (#8424)
+* Update GH workflows / Gradle run steps (#8386)
+* OAuthClient: consider zero as null for refresh_expires_in field (#8415)
+* OAuthClient: minor tweaks to the token exchange flow (#8414)
+* ResourceOwnerEmulator: properly shutdown executor (#8407)
+* Simpler workaround for #8390 (#8397)
+* Fix Quarkus uber-jar (#8394)
+* Helm charts: add support for AWS profiles (#8382)
+* Let nessie-quarkus use resteasy-reactive (#8383)
+* Resolve some minor build warnings (#8380)
+* Add Amazon STS to dependencies of Nessie Core server (#8377)
+* Nessie client: fix javadoc and compiler warnings (#8376)
+* OAuth2Client: fully support public clients (#8372)
+* Site: exclude generated .md files from search index (#8374)
+* Site: exlude old releases from search index, fix released-version title and page-dir (#8368)
+* Nit: replace non-ASCII double-quote (#8369)
+
 ## 0.80.0 Release (April 21, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.80.0).

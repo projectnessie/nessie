@@ -8,22 +8,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
-- The Nessie client now supports public clients when using OAuth 2 authentication. Public clients 
-  are clients that do not have a client secret; they are compatible with the `password`, 
-  `authorization_code`, and `device_code` grant types. See the
-  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
-  for details.
-
 ### Upgrade notes
 
 ### Breaking changes
 
 ### New Features
-
-- The Nessie Helm chart now supports AWS profiles. There are now two ways to configure AWS 
-  credentials in the Helm chart:
-  - Using a secret. The secret name can be set in the `dynamodb.secret` value.
-  - Using an AWS profile (new). The profile name can be set in the `dynamodb.profile` value.
 
 ### Changes
 
@@ -32,6 +21,23 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.81.0] Release (2024-05-01)
+
+### Highlights
+
+- The Nessie client now supports public clients when using OAuth 2 authentication. Public clients 
+  are clients that do not have a client secret; they are compatible with the `password`, 
+  `authorization_code`, and `device_code` grant types. See the
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
+### New Features
+
+- The Nessie Helm chart now supports AWS profiles. There are now two ways to configure AWS 
+  credentials in the Helm chart:
+  - Using a secret. The secret name can be set in the `dynamodb.secret` value.
+  - Using an AWS profile (new). The profile name can be set in the `dynamodb.profile` value.
 
 ## [0.80.0] Release (2024-04-21)
 
@@ -398,7 +404,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...HEAD
+[0.81.0]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...nessie-0.81.0
 [0.80.0]: https://github.com/projectnessie/nessie/compare/nessie-0.79.0...nessie-0.80.0
 [0.79.0]: https://github.com/projectnessie/nessie/compare/nessie-0.78.0...nessie-0.79.0
 [0.78.0]: https://github.com/projectnessie/nessie/compare/nessie-0.77.0...nessie-0.78.0
