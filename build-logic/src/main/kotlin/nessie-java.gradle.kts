@@ -44,6 +44,9 @@ tasks.withType<JavaCompile>().configureEach {
       options.compilerArgs.add("-Xlint:output-file-clash")
       // Warns on ambiguous overloads, see JDK-8026369
       options.compilerArgs.add("-Xlint:overloads")
+      // Disable warnings about command line options (specifically: "source/target value 8 is
+      // obsolete and will be removed in a future release")
+      options.compilerArgs.add("-Xlint:-options")
     }
   }
 }
