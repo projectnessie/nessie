@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,7 +35,7 @@ public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceO
   private static final Logger LOGGER =
       LoggerFactory.getLogger(AuthorizationCodeResourceOwnerEmulator.class);
 
-  private URL authUrl;
+  private URI authUrl;
 
   private volatile String authorizationCode;
   private volatile int expectedCallbackStatus = HTTP_OK;
@@ -77,15 +76,15 @@ public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceO
     try {
       LOGGER.info("Starting authorization code flow.");
       Set<String> cookies = new HashSet<>();
-      URL callbackUrl;
+      URI callbackUri;
       if (username == null || password == null) {
-        HttpURLConnection conn = (HttpURLConnection) authUrl.openConnection();
-        callbackUrl = readRedirectUrl(conn, cookies);
+        HttpURLConnection conn = (HttpURLConnection) authUrl.toURL().openConnection();
+        callbackUri = readRedirectUrl(conn, cookies);
         conn.disconnect();
       } else {
-        callbackUrl = login(authUrl, cookies);
+        callbackUri = login(authUrl, cookies);
       }
-      invokeCallbackUrl(callbackUrl);
+      invokeCallbackUrl(callbackUri);
       LOGGER.info("Authorization code flow completed.");
       notifyFlowCompleted();
     } catch (Exception | AssertionError t) {
@@ -94,7 +93,7 @@ public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceO
   }
 
   /** Emulate browser being redirected to callback URL. */
-  private void invokeCallbackUrl(URL callbackUrl) throws Exception {
+  private void invokeCallbackUrl(URI callbackUrl) throws Exception {
     LOGGER.info("Opening callback URL...");
     assertThat(callbackUrl)
         .hasPath(AuthorizationCodeFlow.CONTEXT_PATH)
@@ -105,16 +104,15 @@ public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceO
       Map<String, String> params = HttpUtils.parseQueryString(callbackUrl.getQuery());
       callbackUrl =
           new URI(
-                  callbackUrl.getProtocol(),
-                  null,
-                  callbackUrl.getHost(),
-                  callbackUrl.getPort(),
-                  callbackUrl.getPath(),
-                  "code=" + URLEncoder.encode(code, "UTF-8") + "&state=" + params.get("state"),
-                  null)
-              .toURL();
+              callbackUrl.getScheme(),
+              null,
+              callbackUrl.getHost(),
+              callbackUrl.getPort(),
+              callbackUrl.getPath(),
+              "code=" + URLEncoder.encode(code, "UTF-8") + "&state=" + params.get("state"),
+              null);
     }
-    HttpURLConnection conn = (HttpURLConnection) callbackUrl.openConnection();
+    HttpURLConnection conn = (HttpURLConnection) callbackUrl.toURL().openConnection();
     conn.setRequestMethod("GET");
     int status = conn.getResponseCode();
     conn.disconnect();

@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +44,7 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
   private static final Pattern USER_CODE_PATTERN =
       Pattern.compile(Pattern.quote(DeviceCodeFlow.MSG_PREFIX) + "[A-Z]{4}-[A-Z]{4}");
 
-  private URL authUrl;
+  private URI authUrl;
   private String userCode;
 
   private volatile boolean denyConsent = false;
@@ -88,9 +87,9 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
     try {
       LOGGER.info("Starting device code flow.");
       Set<String> cookies = new HashSet<>();
-      URL loginPageUrl = enterUserCode(authUrl, userCode, cookies);
+      URI loginPageUrl = enterUserCode(authUrl, userCode, cookies);
       if (loginPageUrl != null) {
-        URL consentPageUrl = login(loginPageUrl, cookies);
+        URI consentPageUrl = login(loginPageUrl, cookies);
         authorizeDevice(consentPageUrl, cookies);
       }
       LOGGER.info("Device code flow completed.");
@@ -101,7 +100,7 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
   }
 
   /** Emulate user entering provided user code on the authorization server. */
-  private URL enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
+  private URI enterUserCode(URI codePageUrl, String userCode, Set<String> cookies)
       throws Exception {
     LOGGER.info("Entering user code...");
     // receive device code page
@@ -110,7 +109,7 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
     HttpURLConnection codeActionConn = openConnection(codePageUrl);
     Map<String, String> data = ImmutableMap.of("device_user_code", userCode);
     postForm(codeActionConn, data, cookies);
-    URL loginUrl;
+    URI loginUrl;
     if (username != null && password != null) {
       // Expect a redirect to the login page
       loginUrl = readRedirectUrl(codeActionConn, cookies);
@@ -124,32 +123,26 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
   }
 
   /** Emulate user consenting to authorize device on the authorization server. */
-  private void authorizeDevice(URL consentPageUrl, Set<String> cookies) throws Exception {
+  private void authorizeDevice(URI consentPageUrl, Set<String> cookies) throws Exception {
     LOGGER.info("Authorizing device...");
     // receive consent page
     String consentHtml = getHtmlPage(consentPageUrl, cookies);
     Matcher matcher = FORM_ACTION_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
-    String formAction = matcher.group(1);
-    int q = formAction.indexOf('?');
-    String query = q != -1 ? formAction.substring(q + 1) : null;
-    if (q != -1) {
-      formAction = formAction.substring(0, q);
-    }
+    URI formAction = URI.create(matcher.group(1));
     matcher = HIDDEN_CODE_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
     String deviceCode = matcher.group(1);
     // send consent form
-    URL consentActionUrl =
+    URI consentActionUrl =
         new URI(
-                consentPageUrl.getProtocol(),
-                null,
-                consentPageUrl.getHost(),
-                consentPageUrl.getPort(),
-                formAction,
-                query,
-                null)
-            .toURL();
+            consentPageUrl.getScheme(),
+            null,
+            consentPageUrl.getHost(),
+            consentPageUrl.getPort(),
+            formAction.getPath(),
+            formAction.getQuery(),
+            null);
     HttpURLConnection consentActionConn = openConnection(consentActionUrl);
     Map<String, String> data =
         denyConsent
