@@ -4,7 +4,7 @@
 antlr4 = "4.13.1"
 bouncycastle = "1.70"
 checkstyle = "10.16.0"
-errorprone = "2.27.0"
+errorprone = "2.27.1"
 errorproneSlf4j = "0.1.23"
 gatling = "3.10.5"
 googleJavaFormat = "1.22.0"
