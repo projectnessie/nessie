@@ -37,10 +37,10 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.module
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
@@ -226,7 +226,8 @@ fun DependencyHandlerScope.nessieProject(
   return if (!isIncludedInNesQuEIT(project(":").dependencyProject.gradle)) {
     project(":$artifactId", configuration)
   } else {
-    module(NessieProjects.groupIdForArtifact(artifactId), artifactId, configuration = configuration)
+    val groupId = NessieProjects.groupIdForArtifact(artifactId)
+    create(groupId, artifactId, configuration = configuration)
   }
 }
 
