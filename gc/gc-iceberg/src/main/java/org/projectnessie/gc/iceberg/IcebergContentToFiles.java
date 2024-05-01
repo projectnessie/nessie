@@ -86,7 +86,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
           || S3_KEY_NOT_FOUND.equals(notFoundCandidate.getClass().getName())) {
         notFound = true;
       } else {
-        for (Throwable c = notFoundCandidate.getCause(); ; c = c.getCause()) {
+        for (Throwable c = notFoundCandidate.getCause(); c != null; c = c.getCause()) {
           if (GCS_STORAGE_EXCEPTION.equals(c.getClass().getName())
               && c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
             notFound = true;
