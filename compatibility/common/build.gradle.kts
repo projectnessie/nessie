@@ -36,11 +36,7 @@ dependencies {
   implementation(platform(libs.jersey.bom))
   api(libs.slf4j.api)
   api(libs.logback.classic)
-  implementation(libs.maven.core)
-  implementation(libs.maven.resolver.provider)
-  implementation(libs.maven.resolver.connector.basic)
-  implementation(libs.maven.resolver.transport.file)
-  implementation(libs.maven.resolver.transport.http)
+  implementation(libs.maven.resolver.supplier)
   implementation(libs.guava)
 
   compileOnly(libs.jakarta.enterprise.cdi.api)
