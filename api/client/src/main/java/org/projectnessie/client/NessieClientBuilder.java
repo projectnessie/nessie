@@ -18,7 +18,6 @@ package org.projectnessie.client;
 import static java.util.Collections.singleton;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_HOSTS;
@@ -190,6 +189,7 @@ public interface NessieClientBuilder {
    *   .withCancellationFuture(cancel);
    * }</pre>
    */
+  @SuppressWarnings("unused")
   @CanIgnoreReturnValue
   NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture);
 
@@ -214,7 +214,8 @@ public interface NessieClientBuilder {
     NessieClientConfigSource configSource = mainConfigSource.fallbackTo(defaultConfigSources());
     String clientName = configSource.getValue(CONF_NESSIE_CLIENT_NAME);
     @SuppressWarnings("deprecation")
-    String clientBuilderImpl = configSource.getValue(CONF_NESSIE_CLIENT_BUILDER_IMPL);
+    String clientBuilderImpl =
+        configSource.getValue(NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL);
     return createClientBuilder(clientName, clientBuilderImpl).fromConfig(configSource.asFunction());
   }
 

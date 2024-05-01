@@ -160,6 +160,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
+  @Deprecated
   public HttpClient.Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient) {
     this.forceUrlConnectionClient = forceUrlConnectionClient;
     return this;

@@ -27,15 +27,32 @@ tasks.withType<JavaCompile>().configureEach {
   options.encoding = "UTF-8"
   options.compilerArgs.add("-parameters")
 
-  // Required to enable incremental compilation w/ immutables, see
-  // https://github.com/immutables/immutables/pull/858 and
-  // https://github.com/immutables/immutables/issues/804#issuecomment-487366544
-  options.compilerArgs.add("-Aimmutables.gradle.incremental")
-
   // Warn on deprecated-for-removal
   options.compilerArgs.add("-Xlint:removal")
   // Warn on preview features being used
   options.compilerArgs.add("-Xlint:preview")
+
+  // Warn on deprecations for Java release >= 9. Do not emit individual deprecation
+  // warnings for Java 8, because the JLS for Java 8 demands deprecation warnings
+  // for each imported deprecated element, see JEP 211.
+  options.compilerArgumentProviders.add(
+    CommandLineArgumentProvider {
+      val args = mutableListOf<String>()
+      val apPath = options.annotationProcessorPath
+      if (apPath != null && apPath.files.any { f -> f.name.contains("value-processor-") }) {
+        // Required to enable incremental compilation w/ immutables, see
+        // https://github.com/immutables/immutables/pull/858 and
+        // https://github.com/immutables/immutables/issues/804#issuecomment-487366544
+        // Only add this argument, if the APT's being used to prevent javac from emitting
+        // an "unused APT option" warning.
+        args.add("-Aimmutables.gradle.incremental")
+      }
+      if (options.release.getOrElse(8) >= 9) {
+        args.add("-Xlint:deprecation")
+      }
+      args
+    }
+  )
 
   doFirst {
     if (javaCompiler.get().metadata.languageVersion.asInt() >= 21) {

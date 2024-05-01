@@ -34,6 +34,7 @@ import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Iterator;
@@ -146,8 +147,8 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   protected URL extractAuthUrl(String line) {
     URL authUrl;
     try {
-      authUrl = new URL(line.substring(line.indexOf("http")));
-    } catch (MalformedURLException e) {
+      authUrl = new URI(line.substring(line.indexOf("http"))).toURL();
+    } catch (URISyntaxException | MalformedURLException e) {
       throw new RuntimeException(e);
     }
     Consumer<URL> listener = authUrlListener;
@@ -158,13 +159,13 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   }
 
   /** Emulate user logging in to the authorization server. */
-  protected URL login(URL loginPageUrl, Set<String> cookies) throws IOException {
+  protected URL login(URL loginPageUrl, Set<String> cookies) throws Exception {
     LOGGER.info("Performing login...");
     // receive login page
     String loginHtml = getHtmlPage(loginPageUrl, cookies);
     Matcher matcher = LOGIN_FORM_ACTION_PATTERN.matcher(loginHtml);
     assertThat(matcher.find()).isTrue();
-    URL loginActionUrl = new URL(matcher.group(1));
+    URL loginActionUrl = new URI(matcher.group(1)).toURL();
     // send login form
     HttpURLConnection loginActionConn = openConnection(loginActionUrl);
     Map<String, String> data =
@@ -178,7 +179,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     return redirectUrl;
   }
 
-  protected String getHtmlPage(URL url, Set<String> cookies) throws IOException {
+  protected String getHtmlPage(URL url, Set<String> cookies) throws Exception {
     HttpURLConnection conn = openConnection(url);
     conn.setRequestMethod("GET");
     writeCookies(conn, cookies);
@@ -209,13 +210,21 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
    * accessible by this client; this is necessary because the auth server may be sending URLs with a
    * hostname + port address that is only accessible within a Docker network, e.g. keycloak:8080.
    */
-  protected HttpURLConnection openConnection(URL url) throws IOException {
+  protected HttpURLConnection openConnection(URL url) throws Exception {
     HttpURLConnection conn;
     if (baseUri == null || baseUri.getHost().equals(url.getHost())) {
       conn = (HttpURLConnection) url.openConnection();
     } else {
       URL transformed =
-          new URL(baseUri.getScheme(), baseUri.getHost(), baseUri.getPort(), url.getFile());
+          new URI(
+                  baseUri.getScheme(),
+                  null,
+                  baseUri.getHost(),
+                  baseUri.getPort(),
+                  url.getFile(),
+                  null,
+                  null)
+              .toURL();
       conn = (HttpURLConnection) transformed.openConnection();
     }
     // See https://github.com/projectnessie/nessie/issues/7918
@@ -281,14 +290,14 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   }
 
   protected static URL readRedirectUrl(HttpURLConnection conn, Set<String> cookies)
-      throws IOException {
+      throws Exception {
     conn.setInstanceFollowRedirects(false);
     assertThat(conn.getResponseCode()).isIn(HTTP_MOVED_TEMP, HTTP_MOVED_PERM);
     String location = conn.getHeaderField("Location");
     assertThat(location).isNotNull();
     readCookies(conn, cookies);
     LOGGER.info("Redirected to: {}", location);
-    return new URL(location);
+    return new URI(location).toURL();
   }
 
   protected static void readCookies(HttpURLConnection conn, Set<String> cookies) {

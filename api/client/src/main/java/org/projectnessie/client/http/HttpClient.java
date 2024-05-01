@@ -55,6 +55,7 @@ public interface HttpClient extends AutoCloseable {
   interface Builder {
     Builder copy();
 
+    @SuppressWarnings("unused")
     @CanIgnoreReturnValue
     Builder setClientSpec(int clientSpec);
 
@@ -88,6 +89,7 @@ public interface HttpClient extends AutoCloseable {
     @CanIgnoreReturnValue
     Builder setFollowRedirects(String followRedirects);
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @CanIgnoreReturnValue
     @Deprecated
     Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient);

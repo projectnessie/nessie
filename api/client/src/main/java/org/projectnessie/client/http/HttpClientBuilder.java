@@ -57,6 +57,7 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
     return (HttpClientBuilder) super.withUri(uri);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public HttpClientBuilder fromSystemProperties() {
     return (HttpClientBuilder) super.fromSystemProperties();

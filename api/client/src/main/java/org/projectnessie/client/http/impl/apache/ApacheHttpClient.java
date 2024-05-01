@@ -17,6 +17,7 @@ package org.projectnessie.client.http.impl.apache;
 
 import java.io.IOException;
 import java.net.URI;
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
@@ -67,13 +68,16 @@ final class ApacheHttpClient implements HttpClient {
             .build();
 
     connManager.setDefaultSocketConfig(socketConfig);
-    connManager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
+    connManager.setDefaultConnectionConfig(
+        ConnectionConfig.custom()
+            .setValidateAfterInactivity(TimeValue.ofSeconds(10))
+            .setConnectTimeout(Timeout.ofMilliseconds(config.getConnectionTimeoutMillis()))
+            .build());
     connManager.setMaxTotal(100);
     connManager.setDefaultMaxPerRoute(10);
 
     RequestConfig defaultRequestConfig =
         RequestConfig.custom()
-            .setConnectTimeout(Timeout.ofMilliseconds(config.getConnectionTimeoutMillis()))
             .setResponseTimeout(Timeout.ofMilliseconds(config.getReadTimeoutMillis()))
             .setRedirectsEnabled(true)
             .setCircularRedirectsAllowed(false)

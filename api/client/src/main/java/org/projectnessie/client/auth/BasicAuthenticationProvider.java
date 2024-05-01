@@ -15,12 +15,10 @@
  */
 package org.projectnessie.client.auth;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.function.Function;
+import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
@@ -47,12 +45,12 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
 
   @Override
   public HttpAuthentication build(Function<String, String> configSupplier) {
-    String username = configSupplier.apply(CONF_NESSIE_USERNAME);
+    String username = configSupplier.apply(NessieConfigConstants.CONF_NESSIE_USERNAME);
     if (username == null) {
       username = configSupplier.apply("nessie.username"); // legacy property name
     }
 
-    String password = configSupplier.apply(CONF_NESSIE_PASSWORD);
+    String password = configSupplier.apply(NessieConfigConstants.CONF_NESSIE_PASSWORD);
     if (password == null) {
       password = configSupplier.apply("nessie.password"); // legacy property name
     }

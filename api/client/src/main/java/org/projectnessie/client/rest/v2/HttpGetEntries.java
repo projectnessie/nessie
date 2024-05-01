@@ -35,6 +35,7 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
   }
 
   @Override
+  @Deprecated
   public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
     throw new UnsupportedOperationException("namespaceDepth is not supported for Nessie API v2");
   }

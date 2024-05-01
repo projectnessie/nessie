@@ -17,20 +17,21 @@ package org.projectnessie.client.http.impl.apache;
 
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_TYPE;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.Header;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 
 final class ApacheResponseContext implements ResponseContext {
 
-  private final CloseableHttpResponse response;
-  private URI uri;
+  private final ClassicHttpResponse response;
+  private final URI uri;
 
-  ApacheResponseContext(CloseableHttpResponse response, URI uri) {
+  ApacheResponseContext(ClassicHttpResponse response, URI uri) {
     this.response = response;
     this.uri = uri;
   }
@@ -65,7 +66,8 @@ final class ApacheResponseContext implements ResponseContext {
 
   @Override
   public String getContentType() {
-    return headerValue(HEADER_CONTENT_TYPE);
+    Header header = response.getFirstHeader(HEADER_CONTENT_TYPE);
+    return header != null ? header.getValue() : null;
   }
 
   @Override
@@ -73,23 +75,21 @@ final class ApacheResponseContext implements ResponseContext {
     return uri;
   }
 
-  private String headerValue(String name) {
-    Header header = response.getFirstHeader(name);
-    return header != null ? header.getValue() : null;
-  }
-
   private InputStream reader() throws IOException {
     return new RequestClosingInputStream(response);
   }
 
-  private static final class RequestClosingInputStream extends InputStream {
-    private final InputStream in;
-    private final CloseableHttpResponse response;
+  private static final class RequestClosingInputStream extends FilterInputStream {
+    private final ClassicHttpResponse response;
 
-    RequestClosingInputStream(CloseableHttpResponse response) throws IOException {
+    RequestClosingInputStream(ClassicHttpResponse response) throws IOException {
+      super(closeOnFail(response));
       this.response = response;
+    }
+
+    private static InputStream closeOnFail(ClassicHttpResponse response) throws IOException {
       try {
-        this.in = response.getEntity().getContent();
+        return response.getEntity().getContent();
       } catch (IOException e) {
         response.close();
         throw e;
@@ -97,34 +97,9 @@ final class ApacheResponseContext implements ResponseContext {
     }
 
     @Override
-    public int read() throws IOException {
-      return in.read();
-    }
-
-    @Override
-    public int read(byte[] b) throws IOException {
-      return in.read(b);
-    }
-
-    @Override
-    public int read(byte[] b, int off, int len) throws IOException {
-      return in.read(b, off, len);
-    }
-
-    @Override
-    public long skip(long n) throws IOException {
-      return in.skip(n);
-    }
-
-    @Override
-    public int available() throws IOException {
-      return in.available();
-    }
-
-    @Override
     public void close() throws IOException {
       try {
-        in.close();
+        super.close();
       } finally {
         response.close();
       }

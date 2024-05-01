@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashSet;
@@ -93,7 +94,7 @@ public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceO
   }
 
   /** Emulate browser being redirected to callback URL. */
-  private void invokeCallbackUrl(URL callbackUrl) throws IOException {
+  private void invokeCallbackUrl(URL callbackUrl) throws Exception {
     LOGGER.info("Opening callback URL...");
     assertThat(callbackUrl)
         .hasPath(AuthorizationCodeFlow.CONTEXT_PATH)
@@ -103,15 +104,15 @@ public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceO
     if (code != null) {
       Map<String, String> params = HttpUtils.parseQueryString(callbackUrl.getQuery());
       callbackUrl =
-          new URL(
-              callbackUrl.getProtocol(),
-              callbackUrl.getHost(),
-              callbackUrl.getPort(),
-              callbackUrl.getPath()
-                  + "?code="
-                  + URLEncoder.encode(code, "UTF-8")
-                  + "&state="
-                  + params.get("state"));
+          new URI(
+                  callbackUrl.getProtocol(),
+                  null,
+                  callbackUrl.getHost(),
+                  callbackUrl.getPort(),
+                  callbackUrl.getPath(),
+                  "code=" + URLEncoder.encode(code, "UTF-8") + "&state=" + params.get("state"),
+                  null)
+              .toURL();
     }
     HttpURLConnection conn = (HttpURLConnection) callbackUrl.openConnection();
     conn.setRequestMethod("GET");

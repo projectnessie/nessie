@@ -40,6 +40,7 @@ public interface RefLogResponse extends PaginatedResponse {
   @Schema(type = SchemaType.OBJECT, title = "RefLogResponseEntry", deprecated = true, hidden = true)
   @JsonSerialize(as = ImmutableRefLogResponseEntry.class)
   @JsonDeserialize(as = ImmutableRefLogResponseEntry.class)
+  @Deprecated // Not supported since API v2
   interface RefLogResponseEntry {
     static ImmutableRefLogResponseEntry.Builder builder() {
       return ImmutableRefLogResponseEntry.builder();

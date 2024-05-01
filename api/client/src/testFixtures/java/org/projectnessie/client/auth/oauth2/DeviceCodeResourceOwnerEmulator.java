@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
 
   /** Emulate user entering provided user code on the authorization server. */
   private URL enterUserCode(URL codePageUrl, String userCode, Set<String> cookies)
-      throws IOException {
+      throws Exception {
     LOGGER.info("Entering user code...");
     // receive device code page
     getHtmlPage(codePageUrl, cookies);
@@ -123,23 +124,32 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
   }
 
   /** Emulate user consenting to authorize device on the authorization server. */
-  private void authorizeDevice(URL consentPageUrl, Set<String> cookies) throws IOException {
+  private void authorizeDevice(URL consentPageUrl, Set<String> cookies) throws Exception {
     LOGGER.info("Authorizing device...");
     // receive consent page
     String consentHtml = getHtmlPage(consentPageUrl, cookies);
     Matcher matcher = FORM_ACTION_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
     String formAction = matcher.group(1);
+    int q = formAction.indexOf('?');
+    String query = q != -1 ? formAction.substring(q + 1) : null;
+    if (q != -1) {
+      formAction = formAction.substring(0, q);
+    }
     matcher = HIDDEN_CODE_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
     String deviceCode = matcher.group(1);
     // send consent form
     URL consentActionUrl =
-        new URL(
-            consentPageUrl.getProtocol(),
-            consentPageUrl.getHost(),
-            consentPageUrl.getPort(),
-            formAction);
+        new URI(
+                consentPageUrl.getProtocol(),
+                null,
+                consentPageUrl.getHost(),
+                consentPageUrl.getPort(),
+                formAction,
+                query,
+                null)
+            .toURL();
     HttpURLConnection consentActionConn = openConnection(consentActionUrl);
     Map<String, String> data =
         denyConsent
