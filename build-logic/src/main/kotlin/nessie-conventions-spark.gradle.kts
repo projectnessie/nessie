@@ -29,4 +29,7 @@ plugins {
 
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
-tasks.withType<ScalaCompile>().configureEach { options.release = 8 }
+tasks.withType<ScalaCompile>().configureEach {
+  options.release = 8
+  scalaCompileOptions.additionalParameters.add("-release:8")
+}
