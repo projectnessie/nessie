@@ -23,7 +23,6 @@ version '0.0.2-SNAPSHOT'
 
 def nessieVersion = file("../version.txt").text.trim()
 def versionMavenResolver = "1.9.20"
-def versionMaven = "3.9.6"
 
 dependencies {
   implementation(enforcedPlatform("org.projectnessie.nessie:nessie-bom:$nessieVersion"))
@@ -42,10 +41,7 @@ dependencies {
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
   testImplementation("org.assertj:assertj-core:3.25.3")
 
-  testImplementation("org.apache.maven:maven-resolver-provider:$versionMaven")
-  testImplementation("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
-  testImplementation("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")
-  testImplementation("org.apache.maven.resolver:maven-resolver-transport-http:$versionMavenResolver")
+  testImplementation("org.apache.maven.resolver:maven-resolver-supplier:$versionMavenResolver")
 }
 
 tasks.withType(Test).configureEach {
