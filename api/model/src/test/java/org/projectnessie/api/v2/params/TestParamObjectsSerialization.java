@@ -31,7 +31,10 @@ import org.projectnessie.model.TestModelObjectsSerialization;
  */
 public class TestParamObjectsSerialization extends TestModelObjectsSerialization {
 
-  @SuppressWarnings("unused") // called by JUnit framework based on annotations in superclass
+  @SuppressWarnings({
+    "unused",
+    "deprecation"
+  }) // called by JUnit framework based on annotations in superclass
   static List<Case> goodCases() {
     final String branchName = "testBranch";
 

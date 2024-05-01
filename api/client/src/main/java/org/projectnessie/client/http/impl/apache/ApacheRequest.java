@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
@@ -72,9 +72,9 @@ final class ApacheRequest extends BaseHttpRequest {
       request.setEntity(entity);
     }
 
-    CloseableHttpResponse response = null;
+    ClassicHttpResponse response = null;
     try {
-      response = client.client.execute(request);
+      response = client.client.executeOpen(null, request, null);
 
       ApacheResponseContext responseContext = new ApacheResponseContext(response, uri);
 

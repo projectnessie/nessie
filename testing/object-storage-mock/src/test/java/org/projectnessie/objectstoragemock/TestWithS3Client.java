@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -107,6 +108,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     }
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void assumeRole() {
     createServer(b -> {});
@@ -147,6 +149,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .containsExactly("access-key-id", "secret-access-key");
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void listBuckets() {
     createServer(
@@ -156,7 +159,8 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
 
     soft.assertThat(s3.listBuckets())
         .extracting(ListBucketsResponse::buckets)
-        .asList()
+        .asInstanceOf(
+            InstanceOfAssertFactories.list(software.amazon.awssdk.services.s3.model.Bucket.class))
         .map(software.amazon.awssdk.services.s3.model.Bucket.class::cast)
         .map(software.amazon.awssdk.services.s3.model.Bucket::name)
         .containsExactlyInAnyOrder(BUCKET, "secret");
@@ -169,6 +173,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .isInstanceOf(NoSuchBucketException.class);
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void listObjectsV2() {
 
@@ -233,6 +238,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .isEqualTo(100_000);
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void headObject() {
     Map<String, MockObject> objects = new HashMap<>();
@@ -262,6 +268,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
             obj.contentLength(), '"' + obj.etag() + '"', obj.contentType(), obj.lastModified());
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void deleteObject() {
     Map<String, MockObject> objects = new HashMap<>();
@@ -289,7 +296,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     soft.assertThat(s3.deleteObject(b -> b.bucket(BUCKET).key(MY_OBJECT_KEY))).isNotNull();
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "resource"})
   @Test
   public void batchDeleteObject() {
     Map<String, MockObject> objects = new HashMap<>();
@@ -331,6 +338,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .isNotNull();
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void getObject() {
     Map<String, MockObject> objects = new HashMap<>();
@@ -382,6 +390,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .isEqualTo(304);
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void putObject() {
     AtomicReference<String> writtenKey = new AtomicReference<>();
@@ -438,6 +447,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     soft.assertThat(writtenData.get()).asString().isEqualTo("Hello World");
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void putObjectNoContentType() {
     AtomicReference<String> writtenKey = new AtomicReference<>();
@@ -490,6 +500,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     soft.assertThat(writtenData.get()).asString().isEqualTo("Hello World");
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void heapStorage() throws Exception {
     createServer(b -> b.putBuckets(BUCKET, newHeapStorageBucket().bucket()));

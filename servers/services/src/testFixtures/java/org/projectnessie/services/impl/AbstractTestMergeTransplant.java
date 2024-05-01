@@ -128,6 +128,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         throws NessieNotFoundException, NessieConflictException;
   }
 
+  @SuppressWarnings("deprecation")
   private void mergeTransplant(
       boolean verifyAdditionalParents,
       MergeTransplantActor actor,
@@ -572,6 +573,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     returnConflictAsResult));
   }
 
+  @SuppressWarnings("deprecation")
   private void testMergeTransplantWithCustomModes(MergeTransplantActor actor)
       throws BaseNessieClientServerException {
     Branch target = createBranch("target");

@@ -50,6 +50,7 @@ import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
+import com.google.cloud.bigtable.data.v2.models.TableId;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -127,7 +128,7 @@ public class BigTablePersist implements Persist {
   public Reference fetchReference(@Nonnull String name) {
     try {
       ByteString key = dbKey(name);
-      Row row = backend.client().readRow(backend.tableRefs, key);
+      Row row = backend.client().readRow(backend.tableRefsId, key);
       return row != null ? referenceFromRow(row) : null;
     } catch (ApiException e) {
       throw apiException(e);
@@ -140,7 +141,12 @@ public class BigTablePersist implements Persist {
     try {
       Reference[] r = new Reference[names.length];
       bulkFetch(
-          backend.tableRefs, names, r, this::dbKey, BigTablePersist::referenceFromRow, name -> {});
+          backend.tableRefsId,
+          names,
+          r,
+          this::dbKey,
+          BigTablePersist::referenceFromRow,
+          name -> {});
       return r;
     } catch (ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
@@ -171,7 +177,7 @@ public class BigTablePersist implements Persist {
           backend
               .client()
               .checkAndMutateRow(
-                  ConditionalRowMutation.create(backend.tableRefs, key)
+                  ConditionalRowMutation.create(backend.tableRefsId, key)
                       .condition(condition)
                       .otherwise(mutation));
 
@@ -271,7 +277,7 @@ public class BigTablePersist implements Persist {
     return backend
         .client()
         .checkAndMutateRow(
-            ConditionalRowMutation.create(backend.tableRefs, key)
+            ConditionalRowMutation.create(backend.tableRefsId, key)
                 .condition(condition)
                 .then(mutation));
   }
@@ -292,7 +298,7 @@ public class BigTablePersist implements Persist {
     try {
       ByteString key = dbKey(id);
 
-      Row row = backend.client().readRow(backend.tableObjs, key);
+      Row row = backend.client().readRow(backend.tableObjsId, key);
       if (row != null) {
         return objFromRow(row);
       }
@@ -327,7 +333,7 @@ public class BigTablePersist implements Persist {
     try {
       Obj[] r = new Obj[ids.length];
       List<ObjId> notFound = new ArrayList<>();
-      bulkFetch(backend.tableObjs, ids, r, this::dbKey, this::objFromRow, notFound::add);
+      bulkFetch(backend.tableObjsId, ids, r, this::dbKey, this::objFromRow, notFound::add);
 
       if (!notFound.isEmpty()) {
         throw new ObjNotFoundException(notFound);
@@ -379,7 +385,7 @@ public class BigTablePersist implements Persist {
             .filter(FILTERS.key().exactMatch(key))
             .filter(FILTERS.family().exactMatch(FAMILY_OBJS))
             .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJS));
-    return ConditionalRowMutation.create(backend.tableObjs, key)
+    return ConditionalRowMutation.create(backend.tableObjsId, key)
         .condition(condition)
         .otherwise(mutation);
   }
@@ -427,7 +433,7 @@ public class BigTablePersist implements Persist {
       ByteString key = dbKey(id);
       backend
           .client()
-          .mutateRow(RowMutation.create(backend.tableObjs, key, Mutation.create().deleteRow()));
+          .mutateRow(RowMutation.create(backend.tableObjsId, key, Mutation.create().deleteRow()));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -439,7 +445,7 @@ public class BigTablePersist implements Persist {
       return;
     }
     try (Batcher<RowMutationEntry, Void> batcher =
-        backend.client().newBulkMutationBatcher(backend.tableObjs)) {
+        backend.client().newBulkMutationBatcher(backend.tableObjsId)) {
       for (ObjId id : ids) {
         if (id != null) {
           ByteString key = dbKey(id);
@@ -468,7 +474,7 @@ public class BigTablePersist implements Persist {
 
       backend
           .client()
-          .mutateRow(objToMutation(obj, RowMutation.create(backend.tableObjs, key), serialized));
+          .mutateRow(objToMutation(obj, RowMutation.create(backend.tableObjsId, key), serialized));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -481,7 +487,7 @@ public class BigTablePersist implements Persist {
     }
 
     try (Batcher<RowMutationEntry, Void> batcher =
-        backend.client().newBulkMutationBatcher(backend.tableObjs)) {
+        backend.client().newBulkMutationBatcher(backend.tableObjsId)) {
       for (Obj obj : objs) {
         if (obj == null) {
           continue;
@@ -545,7 +551,7 @@ public class BigTablePersist implements Persist {
     Filter condition =
         FILTERS.condition(objTypeFilter).then(objVersionFilter).otherwise(FILTERS.block());
 
-    return ConditionalRowMutation.create(backend.tableObjs, key)
+    return ConditionalRowMutation.create(backend.tableObjsId, key)
         .condition(condition)
         .then(mutation);
   }
@@ -597,7 +603,7 @@ public class BigTablePersist implements Persist {
 
     ScanAllObjectsIterator(Predicate<ObjType> filter) {
 
-      Query q = Query.create(backend.tableObjs).prefix(keyPrefix);
+      Query q = Query.create(backend.tableObjsId).prefix(keyPrefix);
 
       Filters.ChainFilter filterChain =
           FILTERS.chain().filter(FILTERS.family().exactMatch(FAMILY_OBJS));
@@ -671,7 +677,7 @@ public class BigTablePersist implements Persist {
   }
 
   private <ID, R> void bulkFetch(
-      String tableId,
+      TableId tableId,
       ID[] ids,
       R[] r,
       Function<ID, ByteString> keyGen,

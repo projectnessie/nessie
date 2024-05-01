@@ -185,6 +185,7 @@ public class NessieHttpClientBuilderImpl
     return this;
   }
 
+  @SuppressWarnings("deprecation")
   @CanIgnoreReturnValue
   @Override
   @Deprecated

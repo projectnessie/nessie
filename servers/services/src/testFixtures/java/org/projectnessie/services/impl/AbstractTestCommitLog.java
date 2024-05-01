@@ -216,7 +216,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
     soft.assertThat(initialCommitTime).isNotNull();
     Instant lastCommitTime = log.get(0).getCommitMeta().getCommitTime();
     soft.assertThat(lastCommitTime).isNotNull();
-    Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
+    Instant fiveMinLater = requireNonNull(initialCommitTime).plus(5, ChronoUnit.MINUTES);
 
     log =
         commitLog(
@@ -419,6 +419,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         .containsExactlyElementsOf(allMessages);
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void commitLogExtended() throws Exception {
     String branch = "commitLogExtended";

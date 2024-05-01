@@ -15,6 +15,8 @@
  */
 package org.projectnessie.objectstoragemock;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BooleanNode;
@@ -25,10 +27,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -68,7 +70,8 @@ public class TestMockServer extends AbstractObjectStorageMockServer {
     soft.assertThat(result)
         .extracting(ListAllMyBucketsResult::buckets)
         .extracting(Buckets::buckets)
-        .asList()
+        .asInstanceOf(
+            InstanceOfAssertFactories.list(org.projectnessie.objectstoragemock.s3.Bucket.class))
         .map(org.projectnessie.objectstoragemock.s3.Bucket.class::cast)
         .map(org.projectnessie.objectstoragemock.s3.Bucket::name)
         .containsExactlyInAnyOrder(BUCKET, "secret");
@@ -107,7 +110,7 @@ public class TestMockServer extends AbstractObjectStorageMockServer {
         ImmutableMockObject.builder()
             .contentLength(content.length())
             .contentType("text/plain")
-            .writer((range, w) -> w.write(content.getBytes(StandardCharsets.UTF_8)))
+            .writer((range, w) -> w.write(content.getBytes(UTF_8)))
             .build();
     objects.put(MY_OBJECT_KEY, obj);
 
@@ -166,7 +169,7 @@ public class TestMockServer extends AbstractObjectStorageMockServer {
       return JSON_MAPPER.readValue(out.toByteArray(), type);
     }
     if (type.isAssignableFrom(String.class)) {
-      return (T) out.toString("UTF-8");
+      return (T) out.toString(UTF_8);
     }
     return (T) out.toByteArray();
   }

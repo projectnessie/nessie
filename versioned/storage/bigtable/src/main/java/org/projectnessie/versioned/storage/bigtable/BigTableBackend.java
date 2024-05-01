@@ -37,6 +37,7 @@ import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
+import com.google.cloud.bigtable.data.v2.models.TableId;
 import com.google.protobuf.ByteString;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -62,6 +63,8 @@ public final class BigTableBackend implements Backend {
 
   final String tableRefs;
   final String tableObjs;
+  final TableId tableRefsId;
+  final TableId tableObjsId;
 
   public BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
     this.config = config;
@@ -71,6 +74,8 @@ public final class BigTableBackend implements Backend {
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
     this.tableObjs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
+    this.tableRefsId = TableId.of(tableRefs);
+    this.tableObjsId = TableId.of(tableObjs);
     this.closeClient = closeClient;
   }
 
@@ -125,8 +130,8 @@ public final class BigTableBackend implements Backend {
   public void setupSchema() {
     if (tableAdminClient == null) {
       // If BigTable admin client is not available, check at least that the required tables exist.
-      boolean refs = checkTableNoAdmin(tableRefs);
-      boolean objs = checkTableNoAdmin(tableObjs);
+      boolean refs = checkTableNoAdmin(tableRefsId);
+      boolean objs = checkTableNoAdmin(tableObjsId);
       checkState(
           refs && objs,
           "Not all required tables (%s and %s) are available in BigTable, cannot start.",
@@ -140,7 +145,7 @@ public final class BigTableBackend implements Backend {
     checkTable(tableObjs, FAMILY_OBJS);
   }
 
-  private boolean checkTableNoAdmin(String table) {
+  private boolean checkTableNoAdmin(TableId table) {
     try {
       dataClient.readRow(table, "dummy");
       return true;
@@ -190,12 +195,12 @@ public final class BigTableBackend implements Backend {
           repositoryIds.stream()
               .map(repoId -> copyFromUtf8(repoId + ':'))
               .collect(Collectors.toList());
-      eraseRepositoriesTable(tableRefs, prefixes);
-      eraseRepositoriesTable(tableObjs, prefixes);
+      eraseRepositoriesTable(tableRefsId, prefixes);
+      eraseRepositoriesTable(tableObjsId, prefixes);
     }
   }
 
-  private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {
+  private void eraseRepositoriesTable(TableId tableId, List<ByteString> prefixes) {
 
     Query query =
         Query.create(tableId)

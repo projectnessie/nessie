@@ -41,6 +41,7 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
 
   @Override
   public MergeResponse merge() throws NessieNotFoundException, NessieConflictException {
+    @SuppressWarnings("deprecation")
     ImmutableMerge.Builder merge =
         ImmutableMerge.builder()
             .fromHash(fromHash)

@@ -808,6 +808,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private MergeResponse createResponse(Boolean fetchAdditionalInfo, MergeResult<Commit> result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
@@ -921,7 +922,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       // apply filter as early as possible to avoid work (i.e. content loading, authz checks)
       // for entries that we will eventually throw away
-      final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
+      final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth;
       if (namespaceFilterDepth > 0) {
         BiPredicate<ContentKey, Content.Type> depthFilter =
             (key, type) -> key.getElementCount() >= namespaceFilterDepth;

@@ -30,6 +30,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link RefLogParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
+@SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
 @Deprecated
 public class RefLogParams extends AbstractParams<RefLogParams> {
 
@@ -78,6 +79,7 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
+  @SuppressWarnings("unused")
   public RefLogParams() {}
 
   @org.immutables.builder.Builder.Constructor
