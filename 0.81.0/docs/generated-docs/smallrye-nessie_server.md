@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.server.default-branch` | `main` | `String` | The default branch to use if not provided by the user.  |

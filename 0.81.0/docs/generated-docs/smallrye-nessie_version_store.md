@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.version.store.type` | `IN_MEMORY` | `IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE` | Sets which type of version store to use by Nessie.  |

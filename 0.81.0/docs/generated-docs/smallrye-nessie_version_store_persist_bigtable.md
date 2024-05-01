@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.version.store.persist.bigtable.instance-id` | `nessie` | `String` | Sets the instance-id to be used with Google BigTable.  |

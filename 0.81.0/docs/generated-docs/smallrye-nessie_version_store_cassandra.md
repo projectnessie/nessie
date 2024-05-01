@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.version.store.cassandra.dml-timeout` | `PT3S` | `Duration` | Timeout used for queries and updates.  |

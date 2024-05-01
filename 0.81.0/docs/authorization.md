@@ -1,6 +1,4 @@
 ---
-search:
-  exclude: true
 title: "Metadata Authorization"
 ---
 

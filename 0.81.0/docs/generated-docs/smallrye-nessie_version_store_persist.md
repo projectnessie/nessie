@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.version.store.persist.repository-id` | (empty) | `String` | Nessie repository ID (optional) that identifies a particular Nessie storage repository. <br><br>When remote (shared) database is used, multiple Nessie repositories may co-exist in the same  database (and in the same schema). In that case this configuration parameter can be used to  distinguish those repositories.  |
@@ -23,4 +17,4 @@ search:
 | `nessie.version.store.persist.cache-capacity-mb` |  | `int` | Fixed amount of heap used to cache objects, set to 0 to disable the cache entirely. Must not be  used with fractional cache sizing. See description for `cache-capacity-fraction-of-heap` for the default value.  |
 | `nessie.version.store.persist.cache-capacity-fraction-min-size-mb` |  | `int` | When using fractional cache sizing, this amount in MB is the minimum cache size.  |
 | `nessie.version.store.persist.cache-capacity-fraction-of-heap` |  | `double` | Fraction of Java’s max heap size to use for cache objects, set to 0 to disable. Must not be  used with fixed cache sizing. If neither this value nor a fixed size is configured, a default  of .7 (70%) is assumed.  |
-| `nessie.version.store.persist.cache-capacity-fraction-adjust-mb` |  | `int` | When using fractional cache sizing, this amount in MB of the heap will always be “kept free”  when calculating the cache size.   |
+| `nessie.version.store.persist.cache-capacity-fraction-adjust-mb` |  | `int` | When using fractional cache sizing, this amount in MB of the heap will always be "kept free"  when calculating the cache size.   |
