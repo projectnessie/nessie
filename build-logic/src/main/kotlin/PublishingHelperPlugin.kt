@@ -24,7 +24,6 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationVariant
 import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.SelfResolvingDependency
 import org.gradle.api.artifacts.component.ModuleComponentSelector
 import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.attributes.Bundling
@@ -289,7 +288,10 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
           if ((depNode as NodeList).isNotEmpty()) depNode[0] as Node
           else node.appendNode("dependencies")
         project.configurations.getByName("shadow").allDependencies.forEach {
-          if ((it is ProjectDependency) || it !is SelfResolvingDependency) {
+          @Suppress("DEPRECATION")
+          if (
+            (it is ProjectDependency) || it !is org.gradle.api.artifacts.SelfResolvingDependency
+          ) {
             val dependencyNode = dependenciesNode.appendNode("dependency")
             dependencyNode.appendNode("groupId", it.group)
             dependencyNode.appendNode("artifactId", it.name)
