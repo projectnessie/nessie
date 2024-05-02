@@ -13,38 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tests.smallrye;
+package org.projectnessie.nessie.docgen;
 
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
-import java.time.Duration;
+import com.sun.source.doctree.DocCommentTree;
+import javax.lang.model.element.Element;
 
-/**
- * The docs for {@code my.prefix}.
- *
- * <ul>
- *   <li>Some
- *   <li>unordered
- *   <li>list
- * </ul>
- *
- * Some more text.
- *
- * <ol>
- *   <li>one
- *   <li>two
- *   <li>three
- * </ol>
- */
-@ConfigMapping(prefix = "my.prefix")
-public interface MappedA extends IntOne {
-  @WithName("some-weird-name")
-  @WithDefault("some-default")
-  String configOptionFoo();
+public class MarkdownTypeFormatter extends MarkdownFormatter {
 
-  @Override
-  Duration someDuration();
-
-  OtherMapped nested();
+  public MarkdownTypeFormatter(Element element, DocCommentTree commentTree) {
+    super(element, commentTree);
+  }
 }

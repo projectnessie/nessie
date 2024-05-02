@@ -21,6 +21,11 @@ import io.smallrye.config.WithDefault;
 import java.time.Duration;
 import org.projectnessie.versioned.storage.cassandra.CassandraConfig;
 
+/**
+ * When setting {@code nessie.version.store.type=CASSANDRA} which enables Apache Cassandra or
+ * ScyllaDB as the version store used by the Nessie server, the following configurations are
+ * applicable.
+ */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.cassandra")
 public interface QuarkusCassandraConfig extends CassandraConfig {

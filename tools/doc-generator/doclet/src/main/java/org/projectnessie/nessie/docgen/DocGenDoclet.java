@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -128,6 +129,15 @@ public class DocGenDoclet implements Doclet {
           outputDirectory.resolve("smallrye-" + safeFileName(configMappingInfo.prefix) + ".md");
       try (BufferedWriter fw = Files.newBufferedWriter(file, UTF_8, CREATE, TRUNCATE_EXISTING);
           PrintWriter writer = new PrintWriter(fw)) {
+
+        TypeElement typeElem = configMappingInfo.element;
+        if (typeElem != null) {
+          MarkdownTypeFormatter typeFormatter =
+              new MarkdownTypeFormatter(configMappingInfo.element, configMappingInfo.typeComment);
+          writer.println(typeFormatter.description().trim());
+          writer.println();
+        }
+
         writer.println("| Property | Default Value | Type | Description |");
         writer.println("|----------|---------------|------|-------------|");
         configMappingInfo
