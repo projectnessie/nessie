@@ -213,7 +213,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
       writer.flush();
     }
 
-    return exitWithCode();
+    return getExitWithCode();
   }
 
   private void checkVersion() {
@@ -309,7 +309,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
 
       if (!parseAndExecuteSingleStatement(command)) {
         if (!commandsToRun.continueOnError) {
-          exitWithCode(1);
+          setExitWithCode(1);
           return;
         }
       }
@@ -565,7 +565,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
     }
 
     LineReader reader = readerBuilder.build();
-    while (exitWithCode() == null) {
+    while (getExitWithCode() == null) {
       String line;
       try {
         line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);

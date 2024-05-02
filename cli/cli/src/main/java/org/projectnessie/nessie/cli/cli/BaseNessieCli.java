@@ -44,11 +44,11 @@ public abstract class BaseNessieCli {
   private Reference currentReference;
   private Terminal terminal;
 
-  public Integer exitWithCode() {
+  public Integer getExitWithCode() {
     return exitWithCode;
   }
 
-  public void exitWithCode(int exitCode) {
+  public void setExitWithCode(int exitCode) {
     exitWithCode = exitCode;
   }
 
