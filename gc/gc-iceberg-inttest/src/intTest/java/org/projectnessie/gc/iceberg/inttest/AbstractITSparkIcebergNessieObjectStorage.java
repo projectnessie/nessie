@@ -153,8 +153,10 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
             .namespace("tc_3")
             .addSteps(
                 expiredDdl(
-                    "CREATE TABLE nessie.tc_3.tbl_a (`id\"` int, name string) "
-                        + "PARTITIONED BY (`id\"`)"))
+                    // Note: intentional special chars in the column name
+                    // TODO: debug why `#` breaks this test
+                    "CREATE TABLE nessie.tc_3.tbl_a (`id\"~!@$%^&*()/` int, name string) "
+                        + "PARTITIONED BY (`id\"~!@$%^&*()/`)"))
             .addSteps(expiredDml("INSERT INTO nessie.tc_3.tbl_a select 23, \"test\""))
             .addSteps(dml("INSERT INTO nessie.tc_3.tbl_a select 24, \"case\""))
             .putPolicies("main", numCommits(1))
