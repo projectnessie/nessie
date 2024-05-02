@@ -15,6 +15,9 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.jline.utils.AttributedStyle.CYAN;
+import static org.jline.utils.AttributedStyle.GREEN;
+
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import org.jline.utils.AttributedStringBuilder;
@@ -66,12 +69,9 @@ public abstract class NessieCommittingCommand<SPEC extends CommandSpec>
         new AttributedStringBuilder()
             .append("Target branch ")
             .append(
-                committed.getTargetBranch().getName(),
-                AttributedStyle.DEFAULT.foreground(0, 128, 0))
+                committed.getTargetBranch().getName(), AttributedStyle.DEFAULT.foreground(GREEN))
             .append(" is now at commit ")
-            .append(
-                committed.getTargetBranch().getHash(),
-                AttributedStyle.DEFAULT.foreground(0, 128, 128))
+            .append(committed.getTargetBranch().getHash(), AttributedStyle.DEFAULT.foreground(CYAN))
             .toAnsi(cli.terminal()));
   }
 

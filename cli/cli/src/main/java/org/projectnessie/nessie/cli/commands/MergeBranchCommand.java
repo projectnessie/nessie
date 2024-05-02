@@ -16,6 +16,9 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
+import static org.jline.utils.AttributedStyle.CYAN;
+import static org.jline.utils.AttributedStyle.GREEN;
+import static org.jline.utils.AttributedStyle.RED;
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
@@ -114,12 +117,12 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
       cli.setCurrentReference(newTarget);
     }
 
-    AttributedStyle styleSuccess = AttributedStyle.DEFAULT.foreground(0, 128, 0);
-    AttributedStyle styleFail = AttributedStyle.DEFAULT.bold().foreground(128, 0, 0);
-    AttributedStyle styleFailFaint = AttributedStyle.DEFAULT.foreground(128, 0, 0);
+    AttributedStyle styleSuccess = AttributedStyle.DEFAULT.foreground(GREEN);
+    AttributedStyle styleFail = AttributedStyle.DEFAULT.bold().foreground(RED);
+    AttributedStyle styleFailFaint = AttributedStyle.DEFAULT.foreground(RED);
     AttributedStyle styleFaint = AttributedStyle.DEFAULT.faint();
     AttributedStyle styleKey = AttributedStyle.DEFAULT.bold();
-    AttributedStyle styleInfo = AttributedStyle.DEFAULT.foreground(0, 128, 128);
+    AttributedStyle styleInfo = AttributedStyle.DEFAULT.foreground(CYAN);
 
     Terminal terminal = cli.terminal();
     @SuppressWarnings("resource")

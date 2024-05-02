@@ -15,7 +15,11 @@
  */
 package org.projectnessie.nessie.cli.cli;
 
+import static org.jline.utils.AttributedStyle.CYAN;
 import static org.jline.utils.AttributedStyle.DEFAULT;
+import static org.jline.utils.AttributedStyle.GREEN;
+import static org.jline.utils.AttributedStyle.RED;
+import static org.jline.utils.AttributedStyle.YELLOW;
 
 import java.util.regex.Pattern;
 import org.jline.reader.Highlighter;
@@ -34,10 +38,10 @@ import org.projectnessie.nessie.cli.grammar.ast.ReferenceTypes;
 
 class NessieCliHighlighter implements Highlighter {
 
-  private static final AttributedStyle STYLE_COMMAND = DEFAULT.foreground(0, 128, 0);
-  private static final AttributedStyle STYLE_REF_TYPE = DEFAULT.foreground(0, 128, 128);
-  private static final AttributedStyle STYLE_KEYWORD = DEFAULT.foreground(128, 128, 0);
-  private static final AttributedStyle STYLE_INVALID = DEFAULT.foreground(168, 0, 0);
+  private static final AttributedStyle STYLE_COMMAND = DEFAULT.foreground(GREEN);
+  private static final AttributedStyle STYLE_REF_TYPE = DEFAULT.foreground(CYAN);
+  private static final AttributedStyle STYLE_KEYWORD = DEFAULT.foreground(YELLOW);
+  private static final AttributedStyle STYLE_INVALID = DEFAULT.foreground(RED);
   private static final AttributedStyle STYLE_LITERAL = DEFAULT.bold().italic();
   private static final AttributedStyle STYLE_OTHER = DEFAULT;
 

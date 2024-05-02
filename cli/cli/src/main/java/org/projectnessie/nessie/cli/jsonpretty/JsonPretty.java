@@ -15,6 +15,10 @@
  */
 package org.projectnessie.nessie.cli.jsonpretty;
 
+import static org.jline.utils.AttributedStyle.CYAN;
+import static org.jline.utils.AttributedStyle.GREEN;
+import static org.jline.utils.AttributedStyle.YELLOW;
+
 import java.io.PrintWriter;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
@@ -27,13 +31,12 @@ public class JsonPretty {
   private final Terminal terminal;
   private final PrintWriter writer;
 
-  private final AttributedStyle styleBool = AttributedStyle.DEFAULT.bold().foreground(128, 128, 0);
-  private final AttributedStyle styleNull = AttributedStyle.DEFAULT.bold().foreground(128, 128, 0);
-  private final AttributedStyle styleString = AttributedStyle.DEFAULT.bold().foreground(0, 128, 0);
-  private final AttributedStyle styleNumber = AttributedStyle.DEFAULT.foreground(0, 128, 128);
+  private final AttributedStyle styleBool = AttributedStyle.DEFAULT.bold().foreground(YELLOW);
+  private final AttributedStyle styleNull = AttributedStyle.DEFAULT.bold().foreground(YELLOW);
+  private final AttributedStyle styleString = AttributedStyle.DEFAULT.bold().foreground(GREEN);
+  private final AttributedStyle styleNumber = AttributedStyle.DEFAULT.foreground(CYAN);
   private final AttributedStyle styleSeparator = AttributedStyle.DEFAULT;
   private final AttributedStyle styleBracketBrace = AttributedStyle.DEFAULT;
-  private final AttributedStyle styleComment = AttributedStyle.DEFAULT.foreground(0, 128, 0);
 
   public JsonPretty(Terminal terminal, PrintWriter writer) {
     this.terminal = terminal;

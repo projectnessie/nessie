@@ -15,6 +15,8 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.jline.utils.AttributedStyle.YELLOW;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,7 +58,7 @@ public class ShowLogCommand extends NessieListingCommand<ShowLogCommandSpec> {
       logStream = logStream.limit(spec.getLimit());
     }
 
-    AttributedStyle yellow = AttributedStyle.DEFAULT.foreground(128, 128, 0);
+    AttributedStyle yellow = AttributedStyle.DEFAULT.foreground(YELLOW);
     AttributedStyle faint = AttributedStyle.DEFAULT.faint();
 
     DateTimeFormatter dateTimeFormatter =

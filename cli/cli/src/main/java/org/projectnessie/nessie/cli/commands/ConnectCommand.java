@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
+import static org.jline.utils.AttributedStyle.YELLOW;
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
@@ -80,7 +81,7 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
         writer.println(
             new AttributedString(
                     "Connection request aborted or timed out.",
-                    AttributedStyle.DEFAULT.foreground(128, 128, 0))
+                    AttributedStyle.DEFAULT.foreground(YELLOW))
                 .toAnsi(cli.terminal()));
         writer.println();
         writer.flush();

@@ -15,6 +15,11 @@
  */
 package org.projectnessie.nessie.cli.syntax;
 
+import static org.jline.utils.AttributedStyle.CYAN;
+import static org.jline.utils.AttributedStyle.GREEN;
+import static org.jline.utils.AttributedStyle.RED;
+import static org.jline.utils.AttributedStyle.YELLOW;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,10 +87,10 @@ public class SyntaxTool {
     styleMap.put(SyntaxPrinter.Type.PRE, def);
     styleMap.put(SyntaxPrinter.Type.POST, def);
     styleMap.put(SyntaxPrinter.Type.SEP, def);
-    styleMap.put(SyntaxPrinter.Type.IDENTIFIER, bold.foreground(128, 128, 0));
-    styleMap.put(SyntaxPrinter.Type.TERMINAL, bold.foreground(0, 128, 128));
-    styleMap.put(SyntaxPrinter.Type.NON_TERMINAL, bold.foreground(0, 128, 0));
-    styleMap.put(SyntaxPrinter.Type.UNKNOWN, bold.foreground(192, 0, 0));
+    styleMap.put(SyntaxPrinter.Type.IDENTIFIER, bold.foreground(YELLOW));
+    styleMap.put(SyntaxPrinter.Type.TERMINAL, bold.foreground(CYAN));
+    styleMap.put(SyntaxPrinter.Type.NON_TERMINAL, bold.foreground(GREEN));
+    styleMap.put(SyntaxPrinter.Type.UNKNOWN, bold.foreground(RED));
     return styleMap;
   }
 
