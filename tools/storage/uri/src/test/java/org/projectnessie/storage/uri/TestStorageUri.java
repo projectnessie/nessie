@@ -173,11 +173,11 @@ class TestStorageUri {
 
   @ParameterizedTest
   @CsvSource({
-    "/base,/base/file,file",
-    "/base/,/base/file,file",
-    "/base/,/base//file,file",
-    "/base,/base////file,file",
-    "/ba,/base////file,file",
+    "/base,/base/file",
+    "/base/,/base/file",
+    "/base/,/base//file",
+    "/base,/base////file",
+    "/ba,/base////file",
     "file:///base/,file:/base/file",
     "file:///base,file:/base/file",
     "file:/ba,file:/base/file",
@@ -186,11 +186,17 @@ class TestStorageUri {
     "file:opaque/a,file:path",
     "file:opaque,file:/path",
     "file:opaque/a,file:/path",
-    "s3://b/path,s3://b/path/file,file",
-    "s3://b/path/,s3://b/path/file,file",
-    "s3://b/path/,s3://b///path/file,file",
-    "s3://b/,s3://b/path/file,path/file",
-    "s3://b,s3://b/path/file,path/file",
+    "s3://b/path,s3://b/path/file",
+    "s3://b/path/,s3://b/path/file",
+    "s3://b/path/,s3://b///path/file",
+    "s3://b/,s3://b/path/file",
+    "s3://b,s3://b/path/file",
+    "s3://b,/file/a/",
+    "s3://b/foo,/foo/a/",
+    "s3://b/foo,/path/a/",
+    "s3://b/base/,s3://c/base/file",
+    "s3://b/base/,file://b/base/file",
+    "s3://b/base/,file://c/base/file",
   })
   void testRelativize(String base, String other) {
     String expected = normalizedURI(base).relativize(normalizedURI(other)).toString();
