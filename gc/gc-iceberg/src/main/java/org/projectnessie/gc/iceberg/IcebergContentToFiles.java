@@ -191,8 +191,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   }
 
   /**
-   * All processed {@link URI}s must have a schema part and, if the schema is {@code file}, the path
-   * must be an absolute path.
+   * All processed {@link StorageUri}s must have a schema part and, if the schema is {@code file},
+   * the path must be an absolute path.
    */
   static StorageUri checkUri(String type, String location, ContentReference contentReference) {
     StorageUri loc = StorageUri.of(location);
