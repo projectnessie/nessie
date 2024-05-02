@@ -91,6 +91,11 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   public static final String OPTION_DUMB_TERMINAL = "--dumb-terminal";
 
   public static final String HISTORY_FILE_DEFAULT = "~/.nessie/nessie-cli.history";
+  public static final AttributedStyle STYLE_ERROR_HIGHLIGHT = STYLE_ERROR.italic().bold();
+  public static final AttributedStyle STYLE_ERROR_DELIGHT = STYLE_ERROR.italic().faint();
+  public static final AttributedStyle STYLE_ERROR_EMPHASIZE1 = STYLE_ERROR.italic().underline();
+  public static final AttributedStyle STYLE_ERROR_EMPHASIZE2 =
+      STYLE_ERROR.bold().italic().underline();
 
   private String prompt;
   private String rightPrompt;
@@ -457,13 +462,13 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
       String stackTrace = sw.toString();
       stackTrace = stackTrace.substring(stackTrace.indexOf('\n') + 1);
       errMsg
-          .append(e.toString(), STYLE_ERROR.italic().bold())
+          .append(e.toString(), STYLE_ERROR_HIGHLIGHT)
           .append('\n')
           .append(stackTrace, AttributedStyle.DEFAULT.italic().bold());
     } else {
       errMsg
-          .append(e.getClass().getSimpleName() + ": ", STYLE_ERROR.italic().faint())
-          .append(e.getMessage(), STYLE_ERROR.italic().bold());
+          .append(e.getClass().getSimpleName() + ": ", STYLE_ERROR_DELIGHT)
+          .append(e.getMessage(), STYLE_ERROR_HIGHLIGHT);
       String last = "";
       for (Throwable cause = e.getCause(); cause != null; cause = cause.getCause()) {
         String m = cause.toString();
@@ -492,8 +497,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
                 t.getBeginLine(), t.getBeginColumn(), t.getEndLine(), t.getEndColumn()),
             STYLE_ERROR)
         .append("\n\nFound: ")
-        .append(
-            input.substring(t.getBeginOffset(), t.getEndOffset()), STYLE_ERROR.italic().underline())
+        .append(input.substring(t.getBeginOffset(), t.getEndOffset()), STYLE_ERROR_EMPHASIZE1)
         .append("\nExpected one of the following: ");
     boolean first = true;
     for (Token.TokenType type : e.getExpectedTokenTypes()) {
@@ -507,9 +511,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
     errMsg
         .append("\n\n")
         .append(input.substring(0, t.getBeginOffset()))
-        .append(
-            input.substring(t.getBeginOffset(), t.getEndOffset()),
-            STYLE_ERROR.bold().italic().underline())
+        .append(input.substring(t.getBeginOffset(), t.getEndOffset()), STYLE_ERROR_EMPHASIZE2)
         .append(input.substring(t.getEndOffset()))
         .append("\n\n");
 
