@@ -71,6 +71,9 @@ public class TestDocGenTool {
 
     Path fileMyPrefix = dir.resolve("smallrye-my_prefix.md");
     Path fileMyTypes = dir.resolve("smallrye-my_types.md");
+    Path fileExtremelyNested = dir.resolve("smallrye-extremely_nested.md");
+    Path fileVeryNested = dir.resolve("smallrye-very_nested.md");
+
     soft.assertThat(fileMyPrefix)
         .isRegularFile()
         .content()
@@ -141,5 +144,29 @@ public class TestDocGenTool {
                 + "| `my.types.some-duration` |  | `Duration` | A duration of something.  |\n"
                 + "| `my.types.config-option-foo` |  | `String` | Something that configures something.  |\n"
                 + "| `my.types.some-int-thing` |  | `int` | Something int-ish.  |\n");
+    soft.assertThat(fileExtremelyNested)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `extremely.nested.extremely-nested` |  | `int` | Extremely nested.  |\n"
+                + "| `extremely.nested.nested-a1` |  | `int` | A1.  |\n"
+                + "| `extremely.nested.nested-a2` |  | `int` | A2.  |\n"
+                + "| `extremely.nested.nested-b1` |  | `int` | B1.  |\n"
+                + "| `extremely.nested.nested-a11` |  | `int` | A11.  |\n"
+                + "| `extremely.nested.nested-b12` |  | `int` | B12.  |\n");
+    soft.assertThat(fileVeryNested)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `very.nested.very-nested` |  | `int` | Very nested.  |\n"
+                + "| `very.nested.nested-a1` |  | `int` | A1.  |\n"
+                + "| `very.nested.nested-a2` |  | `int` | A2.  |\n"
+                + "| `very.nested.nested-b1` |  | `int` | B1.  |\n"
+                + "| `very.nested.nested-a11` |  | `int` | A11.  |\n"
+                + "| `very.nested.nested-b12` |  | `int` | B12.  |\n");
   }
 }

@@ -84,12 +84,13 @@ public class SmallryeConfigs {
 
             String className = e.getQualifiedName().toString();
 
+            Class<?> clazz;
             if (configMapping != null) {
               mappingInfo =
                   configMappingInfos.computeIfAbsent(
                       configMapping.prefix(), SmallRyeConfigMappingInfo::new);
 
-              Class<?> clazz = loadClass(className);
+              clazz = loadClass(className);
               try {
                 configMappingInterface = ConfigMappingInterface.getConfigurationInterface(clazz);
               } catch (RuntimeException ex) {
@@ -102,7 +103,7 @@ public class SmallryeConfigs {
               if (mappingInfo == null) {
                 return null;
               }
-              Class<?> clazz = loadClass(className);
+              clazz = loadClass(className);
               try {
                 configMappingInterface = ConfigMappingInterface.getConfigurationInterface(clazz);
               } catch (RuntimeException ex) {
@@ -112,12 +113,12 @@ public class SmallryeConfigs {
 
             mappingInfo.processType(env, configMappingInterface, e);
 
-            Set<ConfigMappingInterface> seen = new HashSet<>();
+            Set<Class<?>> seen = new HashSet<>();
             Deque<ConfigMappingInterface> remaining =
                 new ArrayDeque<>(asList(configMappingInterface.getSuperTypes()));
             while (!remaining.isEmpty()) {
               ConfigMappingInterface superType = remaining.removeFirst();
-              if (!seen.add(superType)) {
+              if (!seen.add(superType.getInterfaceType())) {
                 continue;
               }
 
@@ -126,6 +127,30 @@ public class SmallryeConfigs {
               TypeElement superTypeElement =
                   env.getElementUtils().getTypeElement(superType.getInterfaceType().getName());
               mappingInfo.processType(env, superType, superTypeElement);
+            }
+
+            // Under some (not really understood) circumstances,
+            // ConfigMappingInterface.getSuperTypes() does not return really all extended
+            // interfaces. So we traverse the super types via reflection here, skipping all the
+            // types that have been visited above.
+            Deque<Class<?>> remainingClasses = new ArrayDeque<>();
+            if (clazz.getSuperclass() != null) {
+              remainingClasses.add(clazz.getSuperclass());
+            }
+            remainingClasses.addAll(asList(clazz.getInterfaces()));
+            while (!remainingClasses.isEmpty()) {
+              Class<?> c = remainingClasses.removeFirst();
+              if (!seen.add(c)) {
+                continue;
+              }
+
+              TypeElement superTypeElement = env.getElementUtils().getTypeElement(c.getName());
+              mappingInfo.processType(env, configMappingInterface, superTypeElement);
+
+              if (c.getSuperclass() != null) {
+                remainingClasses.add(c.getSuperclass());
+              }
+              remainingClasses.addAll(asList(c.getInterfaces()));
             }
             break;
           default:

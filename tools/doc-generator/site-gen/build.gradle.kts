@@ -107,7 +107,7 @@ tasks.register("generateDocs", JavaExec::class.java) {
       "--classpath", classes.joinToString(":"),
       "--sourcepath", sources.joinToString(":"),
       "--destination", targetDir.get().toString()
-    )
+    ) + (if (logger.isInfoEnabled) listOf("--verbose") else listOf())
   })
 
   classpath(doclet)
