@@ -228,14 +228,12 @@ public class StorageUri implements Comparable<StorageUri> {
         "Parent and self-references are not supported: %s",
         rel.path);
 
-    String relPath = normalizedPath(rel.path);
-
-    if (relPath.startsWith("/")) { // absolute path
-      return new StorageUri(scheme, authority, relPath);
+    if (rel.path.startsWith("/")) { // absolute path
+      return new StorageUri(scheme, authority, rel.path);
     }
 
     if (path == null) {
-      return new StorageUri(scheme, authority, "/" + relPath);
+      return new StorageUri(scheme, authority, "/" + rel.path);
     }
 
     if (!path.startsWith("/")) { // `this` is an opaque URI
@@ -243,12 +241,12 @@ public class StorageUri implements Comparable<StorageUri> {
     }
 
     if (path.endsWith("/")) {
-      return new StorageUri(scheme, authority, path + relPath);
+      return new StorageUri(scheme, authority, path + rel.path);
     }
 
     int pos = path.lastIndexOf('/');
     String basePath = path.substring(0, pos + 1);
-    return new StorageUri(scheme, authority, basePath + relPath);
+    return new StorageUri(scheme, authority, basePath + rel.path);
   }
 
   public StorageUri resolve(String subPath) {
