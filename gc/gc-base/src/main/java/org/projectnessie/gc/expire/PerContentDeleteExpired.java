@@ -19,7 +19,6 @@ import com.google.common.hash.BloomFilter;
 import com.google.common.hash.PrimitiveSink;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -29,6 +28,7 @@ import org.projectnessie.gc.files.DeleteSummary;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.NessieFileIOException;
 import org.projectnessie.model.Content;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,10 +54,10 @@ public abstract class PerContentDeleteExpired {
   /** Returns a stream of files that can be expired. */
   @SuppressWarnings("UnstableApiUsage")
   public DeleteSummary expire() {
-    BloomFilter<URI> filter = createBloomFilter();
+    BloomFilter<StorageUri> filter = createBloomFilter();
 
-    Set<URI> baseLocations = new HashSet<>();
-    Consumer<URI> addBaseLocation =
+    Set<StorageUri> baseLocations = new HashSet<>();
+    Consumer<StorageUri> addBaseLocation =
         l -> {
           synchronized (baseLocations) {
             if (baseLocations.add(l)) {
@@ -107,7 +107,8 @@ public abstract class PerContentDeleteExpired {
    * Content} objects.
    */
   @SuppressWarnings("UnstableApiUsage")
-  private long identifyLiveFiles(BloomFilter<URI> filter, Consumer<URI> addBaseLocation) {
+  private long identifyLiveFiles(
+      BloomFilter<StorageUri> filter, Consumer<StorageUri> addBaseLocation) {
     LOGGER.debug(
         "live-set#{} content#{}: Start collecting files and base locations, max file modification time: {}.",
         expireParameters().liveContentSet().id(),
@@ -152,8 +153,8 @@ public abstract class PerContentDeleteExpired {
    */
   @SuppressWarnings("UnstableApiUsage")
   @MustBeClosed
-  private Stream<FileReference> identifyExpiredFiles(BloomFilter<URI> filter, URI baseLocation)
-      throws NessieFileIOException {
+  private Stream<FileReference> identifyExpiredFiles(
+      BloomFilter<StorageUri> filter, StorageUri baseLocation) throws NessieFileIOException {
     ExpireStats expireStats = new ExpireStats();
     long maxFileTime = expireParameters().maxFileModificationTime().toEpochMilli();
 
@@ -203,7 +204,7 @@ public abstract class PerContentDeleteExpired {
   }
 
   @SuppressWarnings("UnstableApiUsage")
-  BloomFilter<URI> createBloomFilter() {
+  BloomFilter<StorageUri> createBloomFilter() {
     return BloomFilter.create(
         PerContentDeleteExpired::funnel,
         expireParameters().expectedFileCount(),
@@ -212,18 +213,14 @@ public abstract class PerContentDeleteExpired {
 
   /**
    * Add URI components discretely to the {@link PrimitiveSink}, because that is more efficient than
-   * converting the {@code URI} to a {@code String}, especially since the {@code URI}s are almost
+   * converting the {@code StorageUri} to a {@code String}, especially since the URIs are almost
    * always relative and have only the path component.
    */
   @SuppressWarnings("UnstableApiUsage")
-  private static void funnel(URI uri, PrimitiveSink sink) {
-    funnelString(uri.getScheme(), sink);
-    funnelString(uri.getHost(), sink);
-    int port = uri.getPort();
-    if (port != 0) {
-      sink.putInt(uri.getPort());
-    }
-    funnelString(uri.getRawPath(), sink);
+  private static void funnel(StorageUri uri, PrimitiveSink sink) {
+    funnelString(uri.scheme(), sink);
+    funnelString(uri.authority(), sink);
+    funnelString(uri.path(), sink);
   }
 
   @SuppressWarnings("UnstableApiUsage")

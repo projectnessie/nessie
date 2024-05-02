@@ -17,7 +17,6 @@ package org.projectnessie.gc.iceberg.files;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -35,6 +34,7 @@ import org.projectnessie.objectstoragemock.Bucket.ListElement;
 import org.projectnessie.objectstoragemock.MockObject;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class TestIcebergS3Files {
 
@@ -42,7 +42,7 @@ public class TestIcebergS3Files {
 
   @Test
   public void icebergS3() throws Exception {
-    URI baseUri = icebergBaseUri("/path/");
+    StorageUri baseUri = icebergBaseUri("/path/");
 
     Set<String> keys = new TreeSet<>();
     keys.add("path/file-1");
@@ -54,7 +54,7 @@ public class TestIcebergS3Files {
     try (MockServer server = createServer(keys);
         IcebergFiles s3 = createIcebergFiles(server)) {
 
-      Set<URI> expect =
+      Set<StorageUri> expect =
           keys.stream()
               .map(TestIcebergS3Files::icebergBaseUri)
               .collect(Collectors.toCollection(HashSet::new));
@@ -103,7 +103,7 @@ public class TestIcebergS3Files {
   @ParameterizedTest
   @ValueSource(ints = {500})
   public void manyFiles(int numFiles) throws Exception {
-    URI baseUri = icebergBaseUri("/path/");
+    StorageUri baseUri = icebergBaseUri("/path/");
 
     Set<String> keys =
         IntStream.range(0, numFiles)
@@ -166,8 +166,8 @@ public class TestIcebergS3Files {
         .start();
   }
 
-  protected static URI icebergBaseUri(String path) {
-    return URI.create(String.format("s3://%s/", BUCKET)).resolve(path);
+  protected static StorageUri icebergBaseUri(String path) {
+    return StorageUri.of(String.format("s3://%s/", BUCKET)).resolve(path);
   }
 
   protected Configuration hadoopConfiguration(MockServer server) {

@@ -29,6 +29,7 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  api(project(":nessie-storage-uri"))
   implementation(project(":nessie-client"))
   implementation(libs.slf4j.api)
   implementation(libs.guava)

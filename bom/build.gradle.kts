@@ -56,6 +56,7 @@ dependencies {
     api(project(":nessie-services-config"))
     api(project(":nessie-server-store"))
     api(project(":nessie-server-store-proto"))
+    api(project(":nessie-storage-uri"))
     api(project(":nessie-content-generator"))
     api(project(":nessie-protobuf-relocated"))
     api(project(":nessie-tasks-api"))

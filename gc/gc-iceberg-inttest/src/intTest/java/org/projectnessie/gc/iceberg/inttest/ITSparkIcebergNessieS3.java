@@ -15,7 +15,6 @@
  */
 package org.projectnessie.gc.iceberg.inttest;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +26,7 @@ import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.minio.Minio;
 import org.projectnessie.minio.MinioAccess;
 import org.projectnessie.minio.MinioExtension;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -99,7 +99,7 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
   }
 
   @Override
-  protected URI bucketUri() {
-    return minio.s3BucketUri(S3_BUCKET_URI);
+  protected StorageUri bucketUri() {
+    return StorageUri.of(minio.s3BucketUri(S3_BUCKET_URI));
   }
 }

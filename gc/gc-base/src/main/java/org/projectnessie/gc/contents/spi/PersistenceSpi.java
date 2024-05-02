@@ -18,7 +18,6 @@ package org.projectnessie.gc.contents.spi;
 import com.google.errorprone.annotations.MustBeClosed;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
@@ -28,6 +27,7 @@ import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.contents.LiveContentSetNotFoundException;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * Interface to be implemented by Nessie GC persistence implementations. <em>Only</em> to be used by
@@ -65,13 +65,15 @@ public interface PersistenceSpi {
       @NotNull UUID liveSetId, @NotNull String contentId);
 
   void associateBaseLocations(
-      @NotNull UUID liveSetId, @NotNull String contentId, @NotNull Collection<URI> baseLocations);
+      @NotNull UUID liveSetId,
+      @NotNull String contentId,
+      @NotNull Collection<StorageUri> baseLocations);
 
   @MustBeClosed
-  Stream<URI> fetchBaseLocations(@NotNull UUID liveSetId, @NotNull String contentId);
+  Stream<StorageUri> fetchBaseLocations(@NotNull UUID liveSetId, @NotNull String contentId);
 
   @MustBeClosed
-  Stream<URI> fetchAllBaseLocations(@NotNull UUID liveSetId);
+  Stream<StorageUri> fetchAllBaseLocations(@NotNull UUID liveSetId);
 
   /**
    * Records the given files to be later returned by {@link #fetchFileDeletions(UUID)}, ignores

@@ -15,12 +15,12 @@
  */
 package org.projectnessie.gc.iceberg.inttest;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.testing.gcs.Gcs;
 import org.projectnessie.testing.gcs.GcsAccess;
 import org.projectnessie.testing.gcs.GcsExtension;
@@ -61,7 +61,7 @@ public class ITSparkIcebergNessieGCP extends AbstractITSparkIcebergNessieObjectS
   }
 
   @Override
-  protected URI bucketUri() {
-    return gcsAccess.bucketUri(BUCKET_URI);
+  protected StorageUri bucketUri() {
+    return StorageUri.of(gcsAccess.bucketUri(BUCKET_URI));
   }
 }

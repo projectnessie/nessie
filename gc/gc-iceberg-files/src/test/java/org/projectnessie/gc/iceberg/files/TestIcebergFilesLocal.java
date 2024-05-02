@@ -15,7 +15,6 @@
  */
 package org.projectnessie.gc.iceberg.files;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +24,7 @@ import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.files.tests.AbstractFiles;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class TestIcebergFilesLocal extends AbstractFiles {
 
@@ -49,8 +49,8 @@ public class TestIcebergFilesLocal extends AbstractFiles {
   }
 
   @Override
-  protected URI baseUri() {
-    return path.toUri();
+  protected StorageUri baseUri() {
+    return StorageUri.of(path.toUri());
   }
 
   @Override

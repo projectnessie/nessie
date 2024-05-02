@@ -21,7 +21,6 @@ import static org.projectnessie.gc.identify.CutoffPolicy.numCommits;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import com.google.common.collect.Maps;
-import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -64,6 +63,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestMarkAndSweep {
@@ -83,7 +83,7 @@ public class TestMarkAndSweep {
     final int numKeysAtCutOff;
     final long numExpired;
     final String cidPrefix = "cid-";
-    final URI basePath = URI.create("meep://host-and-port/data/lake/");
+    final StorageUri basePath = StorageUri.of("meep://host-and-port/data/lake/");
     final Instant now = Instant.now();
     final Instant maxFileModificationTime;
     final long newestToDeleteMillis;
@@ -122,7 +122,7 @@ public class TestMarkAndSweep {
       return cidPrefix + l;
     }
 
-    URI numToBaseLocation(long l) {
+    StorageUri numToBaseLocation(long l) {
       return basePath.resolve(l + "/");
     }
 
@@ -134,8 +134,8 @@ public class TestMarkAndSweep {
       return Long.parseLong(cid.substring(cidPrefix.length()));
     }
 
-    long baseLocationToNum(URI path) {
-      String p = path.getPath();
+    long baseLocationToNum(StorageUri path) {
+      String p = path.location();
       int l = p.lastIndexOf('/');
       int l1 = p.lastIndexOf('/', l - 1);
       return Long.parseLong(p.substring(l1 + 1, l));
@@ -286,7 +286,7 @@ public class TestMarkAndSweep {
         };
     FileDeleter deleter =
         fileObject -> {
-          soft.assertThat(fileObject.path().getPath()).endsWith("-unused");
+          soft.assertThat(fileObject.path().location()).endsWith("-unused");
           return DeleteResult.SUCCESS;
         };
 
@@ -302,7 +302,7 @@ public class TestMarkAndSweep {
                         contentReference ->
                             Stream.of(
                                 FileReference.of(
-                                    URI.create(contentReference.metadataLocation()),
+                                    StorageUri.of(contentReference.metadataLocation()),
                                     markAndSweep.numToBaseLocation(
                                         markAndSweep.contentIdToNum(contentReference.contentId())),
                                     -1L)))

@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.gc.files;
 
-import java.util.stream.Stream;
-import org.projectnessie.storage.uri.StorageUri;
+plugins {
+  id("nessie-conventions-iceberg8")
+  id("nessie-jacoco")
+}
 
-/** Function to delete a file. */
-public interface FileDeleter {
-  DeleteResult delete(FileReference fileReference);
+dependencies {
+  implementation(libs.guava)
 
-  /** Bulk file delete, default implementation iteratively calls {@link #delete(FileReference)}. */
-  default DeleteSummary deleteMultiple(StorageUri baseUri, Stream<FileReference> fileObjects) {
-    return fileObjects
-        .map(this::delete)
-        .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
-  }
+  testImplementation(libs.assertj.core)
 }

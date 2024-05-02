@@ -15,8 +15,8 @@
  */
 package org.projectnessie.gc.files;
 
-import java.net.URI;
 import org.immutables.value.Value;
+import org.projectnessie.storage.uri.StorageUri;
 
 /** References a file using a {@link #base()} URI plus a relative {@link #path()}. */
 @Value.Immutable
@@ -24,11 +24,11 @@ public interface FileReference {
 
   /** URI to the file/directory relative to {@link #base()}. */
   @Value.Parameter(order = 1)
-  URI path();
+  StorageUri path();
 
   /** Base location as from for example Iceberg's table-metadata. */
   @Value.Parameter(order = 2)
-  URI base();
+  StorageUri base();
 
   /** The file's last modification timestamp, if available, or {@code -1L} if not available. */
   @Value.Parameter(order = 3)
@@ -36,7 +36,7 @@ public interface FileReference {
   long modificationTimeMillisEpoch();
 
   @Value.NonAttribute
-  default URI absolutePath() {
+  default StorageUri absolutePath() {
     return base().resolve(path());
   }
 
@@ -44,7 +44,7 @@ public interface FileReference {
     return ImmutableFileReference.builder();
   }
 
-  static FileReference of(URI path, URI base, long modificationTimeMillisEpoch) {
+  static FileReference of(StorageUri path, StorageUri base, long modificationTimeMillisEpoch) {
     return ImmutableFileReference.of(path, base, modificationTimeMillisEpoch);
   }
 }

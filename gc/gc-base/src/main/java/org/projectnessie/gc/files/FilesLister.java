@@ -16,8 +16,8 @@
 package org.projectnessie.gc.files;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.net.URI;
 import java.util.stream.Stream;
+import org.projectnessie.storage.uri.StorageUri;
 
 /** Function to list files recursively. */
 public interface FilesLister {
@@ -28,5 +28,5 @@ public interface FilesLister {
    * argument.
    */
   @MustBeClosed
-  Stream<FileReference> listRecursively(URI path) throws NessieFileIOException;
+  Stream<FileReference> listRecursively(StorageUri path) throws NessieFileIOException;
 }

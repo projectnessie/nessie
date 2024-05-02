@@ -18,7 +18,6 @@ package org.projectnessie.gc.iceberg.files;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterators.AbstractSpliterator;
@@ -44,6 +43,7 @@ import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.files.NessieFileIOException;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,14 +63,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   }
 
   static Stream<String> filesAsStrings(Stream<FileReference> fileObjects) {
-    return fileObjects.map(FileReference::absolutePath).map(URI::toString);
-  }
-
-  static URI ensureTrailingSlash(URI uri) {
-    if (uri.getPath().endsWith("/")) {
-      return uri;
-    }
-    return URI.create(uri + "/");
+    return fileObjects.map(FileReference::absolutePath).map(StorageUri::location);
   }
 
   public interface Builder {
@@ -116,8 +109,8 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     }
   }
 
-  private boolean supportsBulkAndPrefixOperations(URI uri) {
-    switch (uri.getScheme()) {
+  private boolean supportsBulkAndPrefixOperations(StorageUri uri) {
+    switch (uri.scheme()) {
       case "s3":
       case "s3a":
       case "s3n":
@@ -132,8 +125,8 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
 
   @Override
   @MustBeClosed
-  public Stream<FileReference> listRecursively(URI path) throws NessieFileIOException {
-    URI basePath = ensureTrailingSlash(path);
+  public Stream<FileReference> listRecursively(StorageUri path) throws NessieFileIOException {
+    StorageUri basePath = path.withTrailingSeparator();
     if (supportsBulkAndPrefixOperations(path)) {
 
       @SuppressWarnings("resource")
@@ -142,16 +135,14 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
           .map(
               f ->
                   FileReference.of(
-                      basePath.relativize(URI.create(f.location())),
-                      basePath,
-                      f.createdAtMillis()));
+                      basePath.relativize(f.location()), basePath, f.createdAtMillis()));
     }
 
     return listHadoop(basePath);
   }
 
-  private Stream<FileReference> listHadoop(URI basePath) throws NessieFileIOException {
-    Path p = new Path(basePath);
+  private Stream<FileReference> listHadoop(StorageUri basePath) throws NessieFileIOException {
+    Path p = new Path(basePath.location());
     FileSystem fs;
     try {
       fs = p.getFileSystem(hadoopConfiguration());
@@ -179,7 +170,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
               if (status.isFile()) {
                 action.accept(
                     FileReference.of(
-                        basePath.relativize(status.getPath().toUri()),
+                        basePath.relativize(StorageUri.of(status.getPath().toUri())),
                         basePath,
                         status.getModificationTime()));
               }
@@ -196,7 +187,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @Override
   public DeleteResult delete(FileReference fileReference) {
     try {
-      URI absolutePath = fileReference.absolutePath();
+      StorageUri absolutePath = fileReference.absolutePath();
       @SuppressWarnings("resource")
       FileIO fileIO = resolvingFileIO();
       fileIO.deleteFile(absolutePath.toString());
@@ -208,7 +199,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   }
 
   @Override
-  public DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
+  public DeleteSummary deleteMultiple(StorageUri baseUri, Stream<FileReference> fileObjects) {
     Stream<String> filesAsStrings = filesAsStrings(fileObjects);
 
     if (supportsBulkAndPrefixOperations(baseUri)) {
