@@ -21,6 +21,11 @@ import io.smallrye.config.WithDefault;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.bigtable.BigTableClientsConfig;
 
+/**
+ * When setting {@code nessie.version.store.type=BIGTABLE} which enables Google BigTable as the
+ * version store used by the Nessie server, the following configurations are applicable in
+ * combination with {@code nessie.version.store.type}.
+ */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.bigtable")
 public interface QuarkusBigTableConfig extends BigTableClientsConfig {

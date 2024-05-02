@@ -48,6 +48,7 @@ public final class SmallRyeConfigMappingInfo {
   final Set<String> propertiesMethodNameOrder = new LinkedHashSet<>();
   final Map<String, ConfigMappingInterface.Property> methodNameToProperty = new LinkedHashMap<>();
   DocCommentTree typeComment;
+  TypeElement element;
 
   SmallRyeConfigMappingInfo(String prefix) {
     this.prefix = prefix;
@@ -121,6 +122,9 @@ public final class SmallRyeConfigMappingInfo {
     typeElement.accept(executablesVisitor, null);
     if (typeComment == null) {
       typeComment = env.getDocTrees().getDocCommentTree(typeElement);
+      if (typeComment != null) {
+        this.element = typeElement;
+      }
     }
   }
 

@@ -75,7 +75,19 @@ public class TestDocGenTool {
         .isRegularFile()
         .content()
         .isEqualTo(
-            "| Property | Default Value | Type | Description |\n"
+            "The docs for `my.prefix`. \n"
+                + "\n"
+                + " * Some    \n"
+                + " * unordered    \n"
+                + " * list  \n"
+                + "\n"
+                + "Some more text.   \n"
+                + "\n"
+                + " 1. one    \n"
+                + " 1. two    \n"
+                + " 1. three\n"
+                + "\n"
+                + "| Property | Default Value | Type | Description |\n"
                 + "|----------|---------------|------|-------------|\n"
                 + "| `my.prefix.some-weird-name` | `some-default` | `String` | Something that configures something.  |\n"
                 + "| `my.prefix.some-duration` |  | `Duration` | A duration of something.  |\n"
@@ -87,7 +99,9 @@ public class TestDocGenTool {
         .isRegularFile()
         .content()
         .isEqualTo(
-            "| Property | Default Value | Type | Description |\n"
+            "Documentation for `my.types`.\n"
+                + "\n"
+                + "| Property | Default Value | Type | Description |\n"
                 + "|----------|---------------|------|-------------|\n"
                 + "| `my.types.string` |  | `String` |  |\n"
                 + "| `my.types.optional-string` |  | `String` |  |\n"

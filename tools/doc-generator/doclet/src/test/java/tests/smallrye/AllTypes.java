@@ -26,6 +26,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
+/** Documentation for {@code my.types}. */
 @ConfigMapping(prefix = "my.types")
 public interface AllTypes extends IntOne {
   String string();
