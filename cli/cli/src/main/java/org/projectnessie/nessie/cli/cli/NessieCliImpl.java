@@ -87,8 +87,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   public static final String OPTION_HISTORY_FILE = "--history-file";
   public static final String OPTION_KEEP_RUNNING = "--keep-running";
   public static final String OPTION_CONTINUE_ON_ERROR = "--continue-on-error";
-  public static final String OPTION_DUMB = "--dumb";
-  public static final String OPTION_DUMB_TERMINAL = "--dumb-terminal";
+  public static final String OPTION_NON_ANSI = "--non-ansi";
 
   public static final String HISTORY_FILE_DEFAULT = "~/.nessie/nessie-cli.history";
   public static final AttributedStyle STYLE_ERROR_HIGHLIGHT = STYLE_ERROR.italic().bold();
@@ -110,7 +109,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   private CommandsToRun commandsToRun;
 
   @Option(
-      names = {OPTION_DUMB, OPTION_DUMB_TERMINAL},
+      names = OPTION_NON_ANSI,
       description = {
         "Allows disabling the (default) ANSI mode. Disabling ANSI support can be useful in non-interactive scripts."
       },

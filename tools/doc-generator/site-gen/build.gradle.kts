@@ -135,7 +135,7 @@ val cliHelp = tasks.register<JavaExec>("cliHelp") {
   classpath(cliRunner)
 
   mainClass = "org.projectnessie.nessie.cli.cli.NessieCliMain"
-  args("--help", "--dumb")
+  args("--help", "--non-ansi")
 
   doFirst {
     delete(cliHelpDir)
