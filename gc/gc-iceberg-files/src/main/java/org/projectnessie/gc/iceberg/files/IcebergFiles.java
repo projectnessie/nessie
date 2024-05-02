@@ -66,13 +66,6 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     return fileObjects.map(FileReference::absolutePath).map(StorageUri::location);
   }
 
-  static StorageUri ensureTrailingSlash(StorageUri uri) {
-    if (uri.location().endsWith("/")) {
-      return uri;
-    }
-    return StorageUri.of(uri + "/");
-  }
-
   public interface Builder {
     @CanIgnoreReturnValue
     Builder hadoopConfiguration(Configuration hadoopConfiguration);
@@ -133,7 +126,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @Override
   @MustBeClosed
   public Stream<FileReference> listRecursively(StorageUri path) throws NessieFileIOException {
-    StorageUri basePath = ensureTrailingSlash(path);
+    StorageUri basePath = path.withTrailingSeparator();
     if (supportsBulkAndPrefixOperations(path)) {
 
       @SuppressWarnings("resource")
