@@ -122,6 +122,29 @@ class TestStorageUri {
     soft.assertThat(s.toString()).isEqualTo(u.toString());
   }
 
+  @Test
+  void testUriComponents() {
+    StorageUri s = StorageUri.of("scheme://user@host:123/path");
+    soft.assertThat(s.scheme()).isEqualTo("scheme");
+    soft.assertThat(s.authority()).isEqualTo("user@host:123");
+    soft.assertThat(s.path()).isEqualTo("/path");
+
+    s = StorageUri.of("scheme:opaque/file");
+    soft.assertThat(s.scheme()).isEqualTo("scheme");
+    soft.assertThat(s.authority()).isNull();
+    // RFC3986 calls this "path", but java.lang.URI will say path is null in this case
+    soft.assertThat(s.path()).isEqualTo("opaque/file");
+
+    s = StorageUri.of("file:///path/file");
+    soft.assertThat(s.scheme()).isEqualTo("file");
+    soft.assertThat(s.authority()).isNull();
+    soft.assertThat(s.path()).isEqualTo("/path/file");
+    s = StorageUri.of("file:/path/file");
+    soft.assertThat(s.scheme()).isEqualTo("file");
+    soft.assertThat(s.authority()).isNull();
+    soft.assertThat(s.path()).isEqualTo("/path/file");
+  }
+
   @ParameterizedTest
   @CsvSource({
     "s3://bucket/\"file,s3://bucket/\"file",

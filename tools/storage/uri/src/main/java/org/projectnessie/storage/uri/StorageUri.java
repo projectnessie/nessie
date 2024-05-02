@@ -117,6 +117,16 @@ public class StorageUri implements Comparable<StorageUri> {
     return scheme;
   }
 
+  @Nullable
+  public String authority() {
+    return authority;
+  }
+
+  @Nullable
+  public String path() {
+    return path;
+  }
+
   public boolean isLocalFile() {
     return SCHEME_FILE.equalsIgnoreCase(scheme());
   }

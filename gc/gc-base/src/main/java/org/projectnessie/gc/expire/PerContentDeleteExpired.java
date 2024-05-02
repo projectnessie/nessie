@@ -213,12 +213,14 @@ public abstract class PerContentDeleteExpired {
 
   /**
    * Add URI components discretely to the {@link PrimitiveSink}, because that is more efficient than
-   * converting the {@code URI} to a {@code String}, especially since the {@code URI}s are almost
+   * converting the {@code StorageUri} to a {@code String}, especially since the URIs are almost
    * always relative and have only the path component.
    */
   @SuppressWarnings("UnstableApiUsage")
   private static void funnel(StorageUri uri, PrimitiveSink sink) {
-    funnelString(uri.location(), sink);
+    funnelString(uri.scheme(), sink);
+    funnelString(uri.authority(), sink);
+    funnelString(uri.path(), sink);
   }
 
   @SuppressWarnings("UnstableApiUsage")
