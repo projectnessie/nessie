@@ -20,14 +20,12 @@ import static java.util.Arrays.asList;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappingInterface;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
@@ -114,16 +112,6 @@ public class SmallryeConfigs {
             }
 
             mappingInfo.processType(env, configMappingInterface, e);
-
-            if (className.contains("Adls")) {
-              System.out.println(className);
-              System.out.println(
-                  " --> "
-                      + Arrays.stream(configMappingInterface.getSuperTypes())
-                          .map(ConfigMappingInterface::getInterfaceType)
-                          .map(Class::getName)
-                          .collect(Collectors.joining(", ")));
-            }
 
             Set<Class<?>> seen = new HashSet<>();
             Deque<ConfigMappingInterface> remaining =
