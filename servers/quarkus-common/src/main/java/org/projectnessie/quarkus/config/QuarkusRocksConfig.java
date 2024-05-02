@@ -24,8 +24,7 @@ import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendBaseConfig;
 
 /**
  * When setting {@code nessie.version.store.type=ROCKSDB} which enables RocksDB as the version store
- * used by the Nessie server, the following configurations are applicable in combination with {@code
- * nessie.version.store.type}.
+ * used by the Nessie server, the following configurations are applicable.
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.rocks")

@@ -21,8 +21,7 @@ import java.util.Optional;
 
 /**
  * When setting {@code nessie.version.store.type=DYNAMODB} which enables DynamoDB as the version
- * store used by the Nessie server, the following configurations are applicable in combination with
- * {@code nessie.version.store.type}.
+ * store used by the Nessie server, the following configurations are applicable.
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.dynamodb")

@@ -24,7 +24,7 @@ import org.projectnessie.versioned.storage.cassandra.CassandraConfig;
 /**
  * When setting {@code nessie.version.store.type=CASSANDRA} which enables Apache Cassandra or
  * ScyllaDB as the version store used by the Nessie server, the following configurations are
- * applicable in combination with {@code nessie.version.store.type}.
+ * applicable.
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.cassandra")

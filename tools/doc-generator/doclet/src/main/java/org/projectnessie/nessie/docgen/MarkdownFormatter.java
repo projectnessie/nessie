@@ -66,7 +66,7 @@ public abstract class MarkdownFormatter {
         switch (doc.getKind()) {
           case SEE:
             {
-              // @code
+              // @see
               SeeTree seeTree = (SeeTree) doc;
               List<? extends DocTree> reference = seeTree.getReference();
               this.javadocSee = format(reference);
