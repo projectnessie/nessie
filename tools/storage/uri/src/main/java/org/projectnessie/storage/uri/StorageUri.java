@@ -17,9 +17,8 @@ package org.projectnessie.storage.uri;
 
 import com.google.common.base.Preconditions;
 import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,12 +28,12 @@ import javax.annotation.Nullable;
  * many actual object store locations do not always match the URI syntax.
  */
 public class StorageUri implements Comparable<StorageUri> {
+  public static final String SCHEME_FILE = "file";
+
   public static final Comparator<StorageUri> COMPARATOR =
       Comparator.<StorageUri, String>comparing(u -> normalizedForCompare(u.scheme))
           .thenComparing(u -> normalizedForCompare(u.authority))
           .thenComparing(u -> normalizedForCompare(u.path));
-
-  private static final String SCHEME_FILE = "file";
 
   private final String scheme;
   private final String authority;
@@ -107,7 +106,7 @@ public class StorageUri implements Comparable<StorageUri> {
   private static String scheme(String location) {
     int schemePos = location.indexOf(':');
     if (schemePos > 0) {
-      return location.substring(0, schemePos);
+      return location.substring(0, schemePos).toLowerCase(Locale.ROOT);
     }
     return null;
   }
@@ -127,13 +126,14 @@ public class StorageUri implements Comparable<StorageUri> {
     return path;
   }
 
-  public boolean isLocalFile() {
-    return SCHEME_FILE.equalsIgnoreCase(scheme());
-  }
+  public StorageUri withTrailingSeparator() {
+    if (path == null) {
+      return new StorageUri(scheme, authority, "/");
+    } else if (!path.endsWith("/")) {
+      return new StorageUri(scheme, authority, path + "/");
+    }
 
-  public Path toLocalPath() {
-    Preconditions.checkArgument(isLocalFile(), "Not a local file: %s", location());
-    return Paths.get(URI.create(location()));
+    return this;
   }
 
   @Override

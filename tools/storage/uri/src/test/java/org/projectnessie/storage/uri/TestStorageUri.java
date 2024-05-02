@@ -17,8 +17,6 @@ package org.projectnessie.storage.uri;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -157,20 +155,6 @@ class TestStorageUri {
     soft.assertThat(StorageUri.of(input).toString()).isEqualTo(expected);
   }
 
-  @Test
-  void testLocalPath() {
-    Path local = Paths.get("/path/file");
-    soft.assertThat(StorageUri.of("file:/path/file").toLocalPath()).isEqualTo(local);
-    soft.assertThat(StorageUri.of("file:///path/file").toLocalPath()).isEqualTo(local);
-
-    soft.assertThatThrownBy(() -> StorageUri.of("/unspecified").toLocalPath())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Not a local file: /unspecified");
-    soft.assertThatThrownBy(() -> StorageUri.of("s3://bucket/path").toLocalPath())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Not a local file: s3://bucket/path");
-  }
-
   @ParameterizedTest
   @CsvSource({
     "/base,/base/file",
@@ -257,5 +241,26 @@ class TestStorageUri {
     soft.assertThatThrownBy(() -> base.resolve("./self"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Parent and self-references are not supported: ./self");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "file",
+        "file/",
+        "/file",
+        "/file/",
+        "file:///",
+        "file:///path",
+        "file:///path/a",
+        "file:///path/a/",
+        "s3://b/path",
+      })
+  void testWithTrailingSeparator(String input) {
+    StorageUri uri = StorageUri.of(input).withTrailingSeparator();
+    soft.assertThat(uri.path()).endsWith("/");
+    soft.assertThat(uri.path()).doesNotEndWith("//");
+    soft.assertThat(uri.location()).endsWith("/");
+    soft.assertThat(uri.location()).doesNotEndWith("//");
   }
 }

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.gc.iceberg;
 
+import static org.projectnessie.storage.uri.StorageUri.SCHEME_FILE;
+
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -207,7 +209,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
       return StorageUri.of("file://" + location);
     }
 
-    if (loc.isLocalFile()) {
+    if (SCHEME_FILE.equals(loc.scheme())) {
       URI uri = URI.create(location);
       Preconditions.checkArgument(
           uri.getSchemeSpecificPart().startsWith("/"),
