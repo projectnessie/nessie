@@ -34,6 +34,8 @@ class TestStorageUri {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   private static URI normalizedURI(String value) {
+    // URI remembers the original string values and only makes normalized components available via
+    // getters
     URI u = URI.create(value).normalize();
     try {
       if (u.isOpaque()) {
