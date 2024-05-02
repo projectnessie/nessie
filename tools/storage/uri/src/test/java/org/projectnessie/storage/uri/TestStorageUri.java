@@ -15,19 +15,23 @@
  */
 package org.projectnessie.storage.uri;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestStorageUri {
+
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   private static URI normalizedURI(String value) {
     URI u = URI.create(value).normalize();
@@ -51,10 +55,10 @@ class TestStorageUri {
 
   @Test
   void testScheme() {
-    assertThat(StorageUri.of("/path/to/file").scheme()).isNull();
-    assertThat(StorageUri.of("relative/to/file").scheme()).isNull();
-    assertThat(StorageUri.of("file:/path/to/file").scheme()).isEqualTo("file");
-    assertThat(StorageUri.of(URI.create("file:/path/to/file")).scheme()).isEqualTo("file");
+    soft.assertThat(StorageUri.of("/path/to/file").scheme()).isNull();
+    soft.assertThat(StorageUri.of("relative/to/file").scheme()).isNull();
+    soft.assertThat(StorageUri.of("file:/path/to/file").scheme()).isEqualTo("file");
+    soft.assertThat(StorageUri.of(URI.create("file:/path/to/file")).scheme()).isEqualTo("file");
   }
 
   @ParameterizedTest
@@ -82,10 +86,10 @@ class TestStorageUri {
     StorageUri s2 = StorageUri.of(v2);
     URI u1 = normalizedURI(v1);
     URI u2 = normalizedURI(v2);
-    assertThat(s1.equals(s2)).isEqualTo(u1.equals(u2));
-    assertThat(s2.equals(s1)).isEqualTo(u2.equals(u1));
-    assertThat(Integer.signum(s2.compareTo(s1))).isEqualTo(Integer.signum(u2.compareTo(u1)));
-    assertThat(Integer.signum(s1.compareTo(s2))).isEqualTo(Integer.signum(u1.compareTo(u2)));
+    soft.assertThat(s1.equals(s2)).isEqualTo(u1.equals(u2));
+    soft.assertThat(s2.equals(s1)).isEqualTo(u2.equals(u1));
+    soft.assertThat(Integer.signum(s2.compareTo(s1))).isEqualTo(Integer.signum(u2.compareTo(u1)));
+    soft.assertThat(Integer.signum(s1.compareTo(s2))).isEqualTo(Integer.signum(u1.compareTo(u2)));
   }
 
   @ParameterizedTest
@@ -114,8 +118,8 @@ class TestStorageUri {
   void testLocation(String input) {
     StorageUri s = StorageUri.of(input);
     URI u = normalizedURI(input);
-    assertThat(s.location()).isEqualTo(u.toString());
-    assertThat(s.toString()).isEqualTo(u.toString());
+    soft.assertThat(s.location()).isEqualTo(u.toString());
+    soft.assertThat(s.toString()).isEqualTo(u.toString());
   }
 
   @ParameterizedTest
@@ -124,20 +128,20 @@ class TestStorageUri {
     "s3://bucket/\000file,s3://bucket/\000file",
   })
   void testLocationSpecialChars(String input, String expected) {
-    assertThat(StorageUri.of(input).location()).isEqualTo(expected);
-    assertThat(StorageUri.of(input).toString()).isEqualTo(expected);
+    soft.assertThat(StorageUri.of(input).location()).isEqualTo(expected);
+    soft.assertThat(StorageUri.of(input).toString()).isEqualTo(expected);
   }
 
   @Test
   void testLocalPath() {
     Path local = Paths.get("/path/file");
-    assertThat(StorageUri.of("file:/path/file").toLocalPath()).isEqualTo(local);
-    assertThat(StorageUri.of("file:///path/file").toLocalPath()).isEqualTo(local);
+    soft.assertThat(StorageUri.of("file:/path/file").toLocalPath()).isEqualTo(local);
+    soft.assertThat(StorageUri.of("file:///path/file").toLocalPath()).isEqualTo(local);
 
-    assertThatThrownBy(() -> StorageUri.of("/unspecified").toLocalPath())
+    soft.assertThatThrownBy(() -> StorageUri.of("/unspecified").toLocalPath())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Not a local file: /unspecified");
-    assertThatThrownBy(() -> StorageUri.of("s3://bucket/path").toLocalPath())
+    soft.assertThatThrownBy(() -> StorageUri.of("s3://bucket/path").toLocalPath())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Not a local file: s3://bucket/path");
   }
@@ -165,8 +169,9 @@ class TestStorageUri {
   })
   void testRelativize(String base, String other) {
     String expected = normalizedURI(base).relativize(normalizedURI(other)).toString();
-    assertThat(StorageUri.of(base).relativize(StorageUri.of(other)).location()).isEqualTo(expected);
-    assertThat(StorageUri.of(base).relativize(other).location()).isEqualTo(expected);
+    soft.assertThat(StorageUri.of(base).relativize(StorageUri.of(other)).location())
+        .isEqualTo(expected);
+    soft.assertThat(StorageUri.of(base).relativize(other).location()).isEqualTo(expected);
   }
 
   @ParameterizedTest
@@ -208,17 +213,17 @@ class TestStorageUri {
   })
   void testResolve(String base, String rel) {
     String expected = normalizedURI(base).resolve(normalizedURI(rel)).toString();
-    assertThat(StorageUri.of(base).resolve(StorageUri.of(rel)).location()).isEqualTo(expected);
-    assertThat(StorageUri.of(base).resolve(rel).location()).isEqualTo(expected);
+    soft.assertThat(StorageUri.of(base).resolve(StorageUri.of(rel)).location()).isEqualTo(expected);
+    soft.assertThat(StorageUri.of(base).resolve(rel).location()).isEqualTo(expected);
   }
 
   @Test
   void testResolveInvalid() {
     StorageUri base = StorageUri.of("/base");
-    assertThatThrownBy(() -> base.resolve("../parent"))
+    soft.assertThatThrownBy(() -> base.resolve("../parent"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Parent and self-references are not supported: ../parent");
-    assertThatThrownBy(() -> base.resolve("./self"))
+    soft.assertThatThrownBy(() -> base.resolve("./self"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Parent and self-references are not supported: ./self");
   }
