@@ -31,13 +31,13 @@ import javax.annotation.Nullable;
 public class StorageUri implements Comparable<StorageUri> {
   public static final Comparator<StorageUri> COMPARATOR =
       Comparator.<StorageUri, String>comparing(u -> normalizedForCompare(u.scheme))
-          .thenComparing(u -> normalizedForCompare(u.host))
+          .thenComparing(u -> normalizedForCompare(u.authority))
           .thenComparing(u -> normalizedForCompare(u.path));
 
   private static final String SCHEME_FILE = "file";
 
   private final String scheme;
-  private final String host;
+  private final String authority;
   private final String path;
 
   private StorageUri(String location) {
@@ -49,25 +49,25 @@ public class StorageUri implements Comparable<StorageUri> {
       if (schemeSpecific.startsWith("//")) {
         int pathPos = schemeSpecific.indexOf('/', 2);
         if (pathPos < 0) {
-          this.host = normalizedHost(schemeSpecific.substring(2));
+          this.authority = emptyToNull(schemeSpecific.substring(2));
           this.path = null;
         } else {
-          this.host = normalizedHost(schemeSpecific.substring(2, pathPos));
+          this.authority = emptyToNull(schemeSpecific.substring(2, pathPos));
           this.path = normalizedPath(schemeSpecific.substring(pathPos));
         }
       } else {
-        this.host = null;
+        this.authority = null;
         this.path = normalizedPath(schemeSpecific);
       }
     } else {
-      this.host = null;
+      this.authority = null;
       this.path = normalizedPath(location);
     }
   }
 
-  private StorageUri(String scheme, String host, String path) {
+  private StorageUri(String scheme, String authority, String path) {
     this.scheme = scheme;
-    this.host = host;
+    this.authority = authority;
     this.path = path;
   }
 
@@ -78,9 +78,9 @@ public class StorageUri implements Comparable<StorageUri> {
       location.append(':');
     }
 
-    if (host != null) {
+    if (authority != null) {
       location.append("//");
-      location.append(host);
+      location.append(authority);
     }
 
     if (path != null) {
@@ -135,7 +135,7 @@ public class StorageUri implements Comparable<StorageUri> {
   public int hashCode() {
     int h = 1;
     h = 31 * h + (scheme == null ? 0 : scheme.hashCode());
-    h = 31 * h + (host == null ? 0 : host.hashCode());
+    h = 31 * h + (authority == null ? 0 : authority.hashCode());
     h = 31 * h + (path == null ? 0 : path.hashCode());
     return h;
   }
@@ -152,7 +152,7 @@ public class StorageUri implements Comparable<StorageUri> {
 
     StorageUri o = (StorageUri) other;
     return Objects.equals(this.scheme, o.scheme)
-        && Objects.equals(this.host, o.host)
+        && Objects.equals(this.authority, o.authority)
         && Objects.equals(this.path, o.path);
   }
 
@@ -160,7 +160,7 @@ public class StorageUri implements Comparable<StorageUri> {
     return value == null ? "" : value;
   }
 
-  private static String normalizedHost(String value) {
+  private static String emptyToNull(String value) {
     return (value == null || value.isEmpty()) ? null : value;
   }
 
@@ -185,7 +185,8 @@ public class StorageUri implements Comparable<StorageUri> {
   }
 
   public StorageUri relativize(StorageUri child) {
-    if (!Objects.equals(this.scheme, child.scheme) || !Objects.equals(this.host, child.host)) {
+    if (!Objects.equals(this.scheme, child.scheme)
+        || !Objects.equals(this.authority, child.authority)) {
       return child;
     }
 
@@ -220,11 +221,11 @@ public class StorageUri implements Comparable<StorageUri> {
     String relPath = normalizedPath(rel.path);
 
     if (relPath.startsWith("/")) { // absolute path
-      return new StorageUri(scheme, host, relPath);
+      return new StorageUri(scheme, authority, relPath);
     }
 
     if (path == null) {
-      return new StorageUri(scheme, host, "/" + relPath);
+      return new StorageUri(scheme, authority, "/" + relPath);
     }
 
     if (!path.startsWith("/")) { // `this` is an opaque URI
@@ -232,12 +233,12 @@ public class StorageUri implements Comparable<StorageUri> {
     }
 
     if (path.endsWith("/")) {
-      return new StorageUri(scheme, host, path + relPath);
+      return new StorageUri(scheme, authority, path + relPath);
     }
 
     int pos = path.lastIndexOf('/');
     String basePath = path.substring(0, pos + 1);
-    return new StorageUri(scheme, host, basePath + relPath);
+    return new StorageUri(scheme, authority, basePath + relPath);
   }
 
   public StorageUri resolve(String subPath) {
