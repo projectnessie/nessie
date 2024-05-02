@@ -33,5 +33,9 @@ dependencyResolutionManagement {
       url = URI("https://repository.apache.org/content/repositories/snapshots/")
       mavenContent { snapshotsOnly() }
     }
+    maven {
+      name = "Apache Iceberg Staging Repository"
+      url = URI("https://repository.apache.org/content/repositories/orgapacheiceberg-1163/")
+    }
   }
 }

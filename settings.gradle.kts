@@ -54,6 +54,10 @@ dependencyResolutionManagement {
         mavenPom()
       }
     }
+    maven {
+      name = "Apache Iceberg Staging Repository"
+      url = URI("https://repository.apache.org/content/repositories/orgapacheiceberg-1163/")
+    }
   }
 }
 
