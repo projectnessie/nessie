@@ -20,9 +20,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
-- GC: Fix handling of quoted column names in Iceberg
-
 ### Commits
+
+## [0.81.1] Release (2024-05-03)
+
+### Fixes
+
+- GC: Fix handling of quoted column names in Iceberg
 
 ## [0.81.0] Release (2024-05-01)
 
@@ -406,7 +410,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...HEAD
+[0.81.1]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...nessie-0.81.1
 [0.81.0]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...nessie-0.81.0
 [0.80.0]: https://github.com/projectnessie/nessie/compare/nessie-0.79.0...nessie-0.80.0
 [0.79.0]: https://github.com/projectnessie/nessie/compare/nessie-0.78.0...nessie-0.79.0

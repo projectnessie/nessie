@@ -2,6 +2,29 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.81.1 Release (May 03, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.81.1).
+
+### Fixes
+
+- GC: Fix handling of quoted column names in Iceberg
+
+### Commits
+* Ninja: changelog
+* Use custom class for handling storage URIs (#8420)
+* Site doc generator: respect Javadoc on type for smallrye-config (#8445)
+* Doc-gen: traverse really all supertypes (#8446)
+* Build: fix a bunch of deprecation warnings and no non-consumed apt arg (#8436)
+* Build: tackle Gradle deprecations (#8440)
+* Handle deprecation of Maven `DefaultServiceLocator` (#8431)
+* Nit: Eliminate deprecation warnings (#8430)
+* Build: Disable warnings about javac command line options for Java 21+ (#8432)
+* Build: Prevent log4j2 to register its MBean (#8433)
+* Build: Prevent unnecessary scala compile warning (#8437)
+* Build/Scala: replace deprecated `JavaConverters` with `CollectionConverters` (#8439)
+* Build: Remove no longer necessary Java toolchain "constraint" (#8438)
+
 ## 0.81.0 Release (May 01, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.81.0).

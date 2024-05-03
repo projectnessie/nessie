@@ -14,7 +14,7 @@ are not supported and must be avoided.
 
 | Rolling Upgrade Supported | _From_ Nessie version | _To_ Nessie version |
 |---------------------------|-----------------------|---------------------|
-| :heavy_check_mark:        | 0.61.0 or newer       | 0.81.0 or newer     |
+| :heavy_check_mark:        | 0.61.0 or newer       | 0.81.1 or newer     |
 | :x:                       | 0.40.0 or newer       | 0.61.0 or newer     |
 | :heavy_check_mark:        | 0.40.0 or newer       | 0.60.0 or newer     |
 | :x:                       | < 0.40.0              | 0.40.0 or newer     |
@@ -31,13 +31,13 @@ See [Releases](releases.md) for release notes.
 **Also read the [release notes on GitHub](https://github.com/projectnessie/nessie/releases) and the
 [release notes page](releases.md).**
 
-### Nessie 0.81.0
+### Nessie 0.81.1
 
 **The version store types `ROCKS`, `MONGO`, `DYNAMO`, `TRANSACTIONAL` and `INMEMORY` were deprecated for a long time
 and have been removed!**
 
 If you are using one of these version types migrate to one of the supported version store type mentioned above
-**before** upgrading to Nessie 0.81.0 or newer.
+**before** upgrading to Nessie 0.81.1 or newer.
 
 The migration process is described in the [migration guide](guides/migration.md).
 
