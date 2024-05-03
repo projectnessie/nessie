@@ -47,7 +47,7 @@ class TokenExchangeFlow extends AbstractFlow {
     Tokens response = invokeTokenEndpoint(request, TokensExchangeResponse.class);
     // Keycloak may return the same access token instead of a new one,
     // so we need to check if the access token is about to expire.
-    if (isAboutToExpire(response.getAccessToken())) {
+    if (isAboutToExpire(response.getAccessToken(), config.getDefaultAccessTokenLifespan())) {
       throw new MustFetchNewTokensException("Access token is about to expire");
     }
     return response;

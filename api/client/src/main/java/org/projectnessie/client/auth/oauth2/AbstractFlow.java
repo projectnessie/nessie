@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientUtils.tokenExpirationTime;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
@@ -84,10 +85,9 @@ abstract class AbstractFlow implements Flow {
     return response.readEntity(responseClass);
   }
 
-  protected boolean isAboutToExpire(Token token) {
+  protected boolean isAboutToExpire(Token token, Duration defaultLifespan) {
     Instant now = config.getClock().get();
-    Instant expirationTime =
-        tokenExpirationTime(now, token, config.getDefaultRefreshTokenLifespan());
+    Instant expirationTime = tokenExpirationTime(now, token, defaultLifespan);
     return expirationTime.isBefore(now.plus(config.getRefreshSafetyWindow()));
   }
 }
