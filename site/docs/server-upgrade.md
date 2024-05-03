@@ -31,13 +31,13 @@ See [Releases](releases.md) for release notes.
 **Also read the [release notes on GitHub](https://github.com/projectnessie/nessie/releases) and the
 [release notes page](releases.md).**
 
-### Nessie 0.81.1
+### "Legacy" version store types 
 
 **The version store types `ROCKS`, `MONGO`, `DYNAMO`, `TRANSACTIONAL` and `INMEMORY` were deprecated for a long time
-and have been removed!**
+and have been removed in Nessie 0.75.0!**
 
 If you are using one of these version types migrate to one of the supported version store type mentioned above
-**before** upgrading to Nessie 0.81.1 or newer.
+**before** upgrading to Nessie 0.75.0 or newer.
 
 The migration process is described in the [migration guide](guides/migration.md).
 
