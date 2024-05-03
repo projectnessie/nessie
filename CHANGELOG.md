@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: Fix handling of quoted column names in Iceberg
+
 ### Commits
 
 ## [0.81.0] Release (2024-05-01)
