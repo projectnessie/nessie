@@ -1,8 +1,4 @@
----
-search:
-  exclude: true
----
-<!--start-->
+Version store configuration.
 
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|

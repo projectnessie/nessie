@@ -1,8 +1,4 @@
----
-search:
-  exclude: true
----
-<!--start-->
+Configuration for Nessie authentication settings.
 
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|

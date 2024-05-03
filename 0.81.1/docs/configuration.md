@@ -1,6 +1,4 @@
 ---
-search:
-  exclude: true
 title: "Server Configuration"
 ---
 
@@ -75,8 +73,6 @@ Related Quarkus settings:
 
 #### BigTable Version Store Settings
 
-When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
-
 {% include './generated-docs/smallrye-nessie_version_store_persist_bigtable.md' %}
 
 Related Quarkus settings:
@@ -92,21 +88,13 @@ Related Quarkus settings:
 
 #### JDBC Version Store Settings
 
-Setting `nessie.version.store.type=JDBC` enables transactional/RDBMS as the version store used by the Nessie server.
-Configuration of the datastore will be done by Quarkus and depends on many factors, such as the actual database in use. 
-A complete set of JDBC configuration options can be found on [quarkus.io](https://quarkus.io/guides/datasource).
-
 {% include './generated-docs/smallrye-nessie_version_store_persist_jdbc.md' %}
 
 #### RocksDB Version Store Settings
 
-When setting `nessie.version.store.type=ROCKSDB` which enables RocksDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
-
 {% include './generated-docs/smallrye-nessie_version_store_persist_rocks.md' %}
 
 #### Cassandra Version Store Settings
-
-When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandra or ScyllaDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 {% include './generated-docs/smallrye-nessie_version_store_cassandra.md' %}
 
@@ -126,8 +114,6 @@ Related Quarkus settings:
 
 #### DynamoDB Version Store Settings
 
-When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
-
 {% include './generated-docs/smallrye-nessie_version_store_persist_dynamodb.md' %}
 
 Related Quarkus settings:
@@ -144,7 +130,7 @@ Related Quarkus settings:
 
 #### MongoDB Version Store Settings
 
-When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`.
 
 Related Quarkus settings:
 
