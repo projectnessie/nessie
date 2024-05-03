@@ -46,9 +46,10 @@ For more information on docker images, see [Docker image options](#docker-image-
 
 Related Quarkus settings:
 
-| Property                  | Default values | Type      | Description                           |
-|---------------------------|----------------|-----------|---------------------------------------|
-| `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port                    |
+| Property                  | Default values | Type      | Description                                                            |
+|---------------------------|----------------|-----------|------------------------------------------------------------------------|
+| `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port for the Nessie REST API endpoints.                  |
+| `quarkus.management.port` | `9000`         | `int`     | Sets the HTTP port for management endpoints (health, metrics, Swagger) |
 
 !!! info
     A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
