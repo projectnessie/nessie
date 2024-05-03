@@ -41,9 +41,11 @@ nav:
 
   - Docs:
     - Latest Release: '!include build/versions/latest/mkdocs.yml'
-    - Releases/Upgrade Notes:
-      - Release Notes: releases.md
-      - Upgrade Notes: server-upgrade.md
+    - Release Notes:
+      - Recent Releases: releases.md
+      - Archive v0.50.0 to v0.69.2: releases-0.69.md
+      - Archive v0.49.0 and older: releases-0.49.md
+    - Upgrade Notes: server-upgrade.md
     - Unreleased (nightly): '!include build/versions/nightly/mkdocs.yml'
 # Do NOT change, move or remove the following line!!
 # RELEASE_PLACEHOLDER_MARKER
