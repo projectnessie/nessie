@@ -29,9 +29,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @QuarkusTest
 @TestProfile(value = TestBasicAuthentication.Profile.class)
-public class TestHealthCheckAuthentication {
+public class TestHealthCheckNoAuthentication {
 
   private static RequestSpecification request() {
+    RestAssured.port = Integer.getInteger("quarkus.management.port");
     return given().when().baseUri(RestAssured.baseURI);
   }
 

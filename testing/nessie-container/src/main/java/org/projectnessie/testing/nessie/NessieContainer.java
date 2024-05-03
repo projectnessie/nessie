@@ -35,6 +35,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 public class NessieContainer extends GenericContainer<NessieContainer> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieContainer.class);
@@ -188,10 +189,14 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
   public NessieContainer(NessieConfig config) {
     super(config.dockerImage() + ":" + config.dockerTag());
 
-    withExposedPorts(19120);
+    withExposedPorts(19120, 9000);
     withNetworkAliases("nessie");
     Duration startupTimeout = Duration.ofMinutes(2);
-    waitingFor(Wait.forHttp("/q/health/live").forPort(19120).withStartupTimeout(startupTimeout));
+    waitingFor(
+        new WaitAllStrategy()
+            .withStrategy(Wait.forHttp("/q/health/live").forPort(9000))
+            .withStrategy(Wait.forListeningPorts(19120))
+            .withStartupTimeout(startupTimeout));
     withStartupTimeout(startupTimeout);
     withLogConsumer(new Slf4jLogConsumer(logger()));
 

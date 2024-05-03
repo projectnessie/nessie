@@ -12,6 +12,15 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+* The readiness, liveness, metrics and Swagger-UI endpoints starting with `/q/` have been moved from the
+  HTTP port exposing the REST endpoints to a different HTTP port (9000),
+  see [Quarkus management interface reference docs](https://quarkus.io/guides/management-interface-reference).
+  Any path starting with `/q/` can be safely removed from a possibly customized configuration
+  `nessie.server.authentication.anonymous-paths`.
+* The move of the above endpoints to the management port requires using the Nessie Helm chart for this
+  release or a newer release. Also, the Helm Chart for this release will not work with older Nessie
+  releases.
+
 ### New Features
 
 ### Changes
