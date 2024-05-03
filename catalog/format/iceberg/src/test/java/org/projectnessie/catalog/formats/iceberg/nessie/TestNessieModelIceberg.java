@@ -46,6 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergNamespace;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
@@ -54,8 +55,11 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTransform;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewVersion;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergType;
 import org.projectnessie.catalog.model.NessieTable;
+import org.projectnessie.catalog.model.NessieView;
 import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.catalog.model.schema.NessieField;
 import org.projectnessie.catalog.model.schema.NessieFieldTransform;
@@ -67,6 +71,7 @@ import org.projectnessie.catalog.model.schema.NessieSortDefinition;
 import org.projectnessie.catalog.model.schema.NessieSortDirection;
 import org.projectnessie.catalog.model.schema.types.NessieTypeSpec;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
+import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
 import org.projectnessie.catalog.model.snapshot.TableFormat;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -313,5 +318,119 @@ public class TestNessieModelIceberg {
 
   static Stream<IcebergType> icebergTypes() {
     return IcebergFixtures.icebergTypes();
+  }
+
+  @Test
+  public void collectTableLocations() {
+    String uuid = UUID.randomUUID().toString();
+    String location1 = "s3://mybucket/tables/my/table";
+    String location2 = "s3://otherbucket/tables/my/table";
+    String location3 = "s3://otherbucket/betttertables/my/table";
+
+    IcebergTableMetadata meta1 =
+        IcebergTableMetadata.builder()
+            .location(location1)
+            .tableUuid(uuid)
+            .formatVersion(2)
+            .lastUpdatedMs(1L)
+            .lastColumnId(0)
+            .currentSnapshotId(-1L)
+            .build();
+    IcebergTableMetadata meta2 =
+        IcebergTableMetadata.builder().from(meta1).location(location1).build();
+    IcebergTableMetadata meta3 =
+        IcebergTableMetadata.builder().from(meta1).location(location2).build();
+    IcebergTableMetadata meta4 =
+        IcebergTableMetadata.builder().from(meta1).location(location3).build();
+
+    NessieId snapshotId = NessieId.randomNessieId();
+    NessieTable table =
+        NessieTable.builder()
+            .tableFormat(TableFormat.ICEBERG)
+            .nessieContentId(uuid)
+            .icebergUuid(uuid)
+            .createdTimestamp(Instant.EPOCH)
+            .build();
+
+    NessieTableSnapshot snap1 =
+        NessieModelIceberg.icebergTableSnapshotToNessie(
+            snapshotId, null, table, meta1, IcebergSnapshot::manifestList);
+    NessieTableSnapshot snap2 =
+        NessieModelIceberg.icebergTableSnapshotToNessie(
+            snapshotId, snap1, table, meta2, IcebergSnapshot::manifestList);
+    NessieTableSnapshot snap3 =
+        NessieModelIceberg.icebergTableSnapshotToNessie(
+            snapshotId, snap2, table, meta3, IcebergSnapshot::manifestList);
+    NessieTableSnapshot snap4 =
+        NessieModelIceberg.icebergTableSnapshotToNessie(
+            snapshotId, snap3, table, meta4, IcebergSnapshot::manifestList);
+
+    soft.assertThat(snap1.icebergLocation()).isEqualTo(location1);
+    soft.assertThat(snap1.additionalKnownLocations()).isEmpty();
+    soft.assertThat(snap2.icebergLocation()).isEqualTo(location1);
+    soft.assertThat(snap2.additionalKnownLocations()).isEmpty();
+    soft.assertThat(snap3.icebergLocation()).isEqualTo(location2);
+    soft.assertThat(snap3.additionalKnownLocations()).containsExactlyInAnyOrder(location1);
+    soft.assertThat(snap4.icebergLocation()).isEqualTo(location3);
+    soft.assertThat(snap4.additionalKnownLocations())
+        .containsExactlyInAnyOrder(location1, location2);
+  }
+
+  @Test
+  public void collectViewLocations() {
+    String uuid = UUID.randomUUID().toString();
+    String location1 = "s3://mybucket/tables/my/table";
+    String location2 = "s3://otherbucket/tables/my/table";
+    String location3 = "s3://otherbucket/betttertables/my/table";
+
+    IcebergViewVersion version =
+        IcebergViewVersion.builder()
+            .versionId(1)
+            .timestampMs(1L)
+            .schemaId(1)
+            .defaultNamespace(IcebergNamespace.EMPTY_ICEBERG_NAMESPACE)
+            .build();
+    IcebergViewMetadata meta1 =
+        IcebergViewMetadata.builder()
+            .location(location1)
+            .viewUuid(uuid)
+            .formatVersion(2)
+            .currentVersionId(1)
+            .addVersions(version)
+            .build();
+    IcebergViewMetadata meta2 =
+        IcebergViewMetadata.builder().from(meta1).location(location1).build();
+    IcebergViewMetadata meta3 =
+        IcebergViewMetadata.builder().from(meta1).location(location2).build();
+    IcebergViewMetadata meta4 =
+        IcebergViewMetadata.builder().from(meta1).location(location3).build();
+
+    NessieId snapshotId = NessieId.randomNessieId();
+    NessieView view =
+        NessieView.builder()
+            .tableFormat(TableFormat.ICEBERG)
+            .nessieContentId(uuid)
+            .icebergUuid(uuid)
+            .createdTimestamp(Instant.EPOCH)
+            .build();
+
+    NessieViewSnapshot snap1 =
+        NessieModelIceberg.icebergViewSnapshotToNessie(snapshotId, null, view, meta1);
+    NessieViewSnapshot snap2 =
+        NessieModelIceberg.icebergViewSnapshotToNessie(snapshotId, snap1, view, meta2);
+    NessieViewSnapshot snap3 =
+        NessieModelIceberg.icebergViewSnapshotToNessie(snapshotId, snap2, view, meta3);
+    NessieViewSnapshot snap4 =
+        NessieModelIceberg.icebergViewSnapshotToNessie(snapshotId, snap3, view, meta4);
+
+    soft.assertThat(snap1.icebergLocation()).isEqualTo(location1);
+    soft.assertThat(snap1.additionalKnownLocations()).isEmpty();
+    soft.assertThat(snap2.icebergLocation()).isEqualTo(location1);
+    soft.assertThat(snap2.additionalKnownLocations()).isEmpty();
+    soft.assertThat(snap3.icebergLocation()).isEqualTo(location2);
+    soft.assertThat(snap3.additionalKnownLocations()).containsExactlyInAnyOrder(location1);
+    soft.assertThat(snap4.icebergLocation()).isEqualTo(location3);
+    soft.assertThat(snap4.additionalKnownLocations())
+        .containsExactlyInAnyOrder(location1, location2);
   }
 }
