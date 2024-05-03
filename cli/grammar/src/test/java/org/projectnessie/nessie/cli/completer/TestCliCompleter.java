@@ -119,7 +119,7 @@ public class TestCliCompleter {
   static Stream<Arguments> literalCompletions() {
     return Stream.of(
         arguments("show reference f", false, "f", false, CompletionType.REFERENCE_NAME, List.of()),
-        arguments("show log in f", false, "f", false, CompletionType.NONE, List.of()),
+        arguments("show log on f", false, "f", false, CompletionType.NONE, List.of()),
         arguments("create branch f", false, "f", false, CompletionType.NONE, List.of()),
         arguments("create branch \"f", true, "f", true, CompletionType.NONE, List.of()),
         arguments("create branch \"f\"", false, "f", true, CompletionType.NONE, List.of()),
@@ -375,24 +375,24 @@ public class TestCliCompleter {
             List.of(),
             List.of(),
             List.of(
-                "LIST CONTENTS IN",
+                "LIST CONTENTS ON",
                 "LIST CONTENTS AT",
                 "LIST CONTENTS FILTER",
                 "LIST CONTENTS STARTING",
                 "LIST CONTENTS CONTAINING"),
             CompletionType.NONE,
             List.of(
-                TokenType.IN,
+                TokenType.ON,
                 TokenType.AT,
                 TokenType.FILTER,
                 TokenType.STARTING,
                 TokenType.CONTAINING)),
         arguments(
-            "LIST CONTENTS IN",
+            "LIST CONTENTS ON",
             true,
             List.of(),
             List.of(),
-            List.of("LIST CONTENTS IN BRANCH", "LIST CONTENTS IN TAG"),
+            List.of("LIST CONTENTS ON BRANCH", "LIST CONTENTS ON TAG"),
             CompletionType.REFERENCE_NAME,
             List.of(TokenType.BRANCH, TokenType.TAG)),
         arguments(
@@ -403,6 +403,14 @@ public class TestCliCompleter {
             List.of("LIST CONTENTS STARTING WITH"),
             CompletionType.NONE,
             List.of()),
+        arguments(
+            "LIST CONTENTS AT ",
+            true,
+            List.of(),
+            List.of(),
+            List.of("LIST CONTENTS AT TIMESTAMP", "LIST CONTENTS AT COMMIT"),
+            CompletionType.NONE,
+            List.of(TokenType.TIMESTAMP, TokenType.COMMIT)),
         arguments(
             "LIST REFERENCES",
             false,
@@ -449,33 +457,41 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("show log IN", "show log AT", "show log LIMIT"),
+            List.of("show log ON", "show log AT", "show log LIMIT"),
             CompletionType.NONE,
-            List.of(TokenType.IN, TokenType.AT, TokenType.LIMIT)),
+            List.of(TokenType.ON, TokenType.AT, TokenType.LIMIT)),
         arguments(
             "show table ",
             true,
             List.of(),
             List.of(),
-            List.of("show table IN", "show table AT"),
+            List.of("show table ON", "show table AT"),
             CompletionType.NONE,
-            List.of(TokenType.IN, TokenType.AT)),
+            List.of(TokenType.ON, TokenType.AT)),
         arguments(
-            "show table in",
+            "show table on",
             true,
             List.of(),
             List.of(),
-            List.of("show table in BRANCH", "show table in TAG"),
+            List.of("show table on BRANCH", "show table on TAG"),
             CompletionType.REFERENCE_NAME,
             List.of(TokenType.BRANCH, TokenType.TAG)),
         arguments(
-            "show table in BRANCH",
+            "show table on BRANCH",
             true,
             List.of(),
             List.of(),
             List.of(),
             CompletionType.REFERENCE_NAME,
             List.of()),
+        arguments(
+            "show table on branch foo at",
+            true,
+            List.of(),
+            List.of(),
+            List.of("show table on branch foo at TIMESTAMP", "show table on branch foo at COMMIT"),
+            CompletionType.NONE,
+            List.of(TokenType.TIMESTAMP, TokenType.COMMIT)),
         arguments(
             "show r",
             true,
@@ -1007,10 +1023,10 @@ public class TestCliCompleter {
             "list contents;",
             List.of(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null))),
         arguments(
-            "list contents in baz filter bar;",
+            "list contents on baz filter bar;",
             List.of(ImmutableListContentsCommandSpec.of(null, "baz", null, "bar", null, null))),
         arguments(
-            "list contents in baz at 2024-04-26T10:31:05.271094723Z starting with \"foo\" containing bar;",
+            "list contents on baz at 2024-04-26T10:31:05.271094723Z starting with \"foo\" containing bar;",
             List.of(
                 ImmutableListContentsCommandSpec.of(
                     null, "baz", "2024-04-26T10:31:05.271094723Z", null, "foo", "bar"))),
@@ -1025,18 +1041,18 @@ public class TestCliCompleter {
             List.of(ImmutableListReferencesCommandSpec.of(null, "foo", null, null))),
         arguments("show log", List.of(ImmutableShowLogCommandSpec.of(null, null, null, null))),
         arguments(
-            "show log in bar;", List.of(ImmutableShowLogCommandSpec.of(null, "bar", null, null))),
+            "show log on bar;", List.of(ImmutableShowLogCommandSpec.of(null, "bar", null, null))),
         arguments(
-            "show log in bar at deadbeef limit 42;",
+            "show log on bar at deadbeef limit 42;",
             List.of(ImmutableShowLogCommandSpec.of(null, "bar", "deadbeef", 42))),
         arguments(
             "show table meep",
             List.of(ImmutableShowContentCommandSpec.of(null, "TABLE", null, null, "meep"))),
         arguments(
-            "show view in foo meep;",
+            "show view on foo meep;",
             List.of(ImmutableShowContentCommandSpec.of(null, "VIEW", "foo", null, "meep"))),
         arguments(
-            "show namespace in foo at deadbeef meep;",
+            "show namespace on foo at deadbeef meep;",
             List.of(
                 ImmutableShowContentCommandSpec.of(null, "NAMESPACE", "foo", "deadbeef", "meep"))),
         arguments(
@@ -1069,7 +1085,7 @@ public class TestCliCompleter {
             "create namespace foo.bar.baz;",
             List.of(ImmutableCreateNamespaceCommandSpec.of(null, "foo.bar.baz", null, Map.of()))),
         arguments(
-            "create namespace foo.bar.baz in blah;",
+            "create namespace foo.bar.baz on blah;",
             List.of(ImmutableCreateNamespaceCommandSpec.of(null, "foo.bar.baz", "blah", Map.of()))),
         arguments(
             "create namespace foo.bar.baz set x = y;",
@@ -1077,12 +1093,12 @@ public class TestCliCompleter {
                 ImmutableCreateNamespaceCommandSpec.of(
                     null, "foo.bar.baz", null, Map.of("x", "y")))),
         arguments(
-            "create namespace foo.bar.baz in blah set x = y;",
+            "create namespace foo.bar.baz on blah set x = y;",
             List.of(
                 ImmutableCreateNamespaceCommandSpec.of(
                     null, "foo.bar.baz", "blah", Map.of("x", "y")))),
         arguments(
-            "create namespace foo.bar.baz in blah set x = y and foo = meep;",
+            "create namespace foo.bar.baz on blah set x = y and foo = meep;",
             List.of(
                 ImmutableCreateNamespaceCommandSpec.of(
                     null, "foo.bar.baz", "blah", Map.of("x", "y", "foo", "meep")))),
@@ -1092,7 +1108,7 @@ public class TestCliCompleter {
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", null, Map.of(), Set.of()))),
         arguments(
-            "alter namespace foo.bar.baz in blah;",
+            "alter namespace foo.bar.baz on blah;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", "blah", Map.of(), Set.of()))),
@@ -1102,7 +1118,7 @@ public class TestCliCompleter {
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", null, Map.of("x", "y"), Set.of()))),
         arguments(
-            "alter namespace foo.bar.baz in blah set x = y;",
+            "alter namespace foo.bar.baz on blah set x = y;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", "blah", Map.of("x", "y"), Set.of()))),
@@ -1112,7 +1128,7 @@ public class TestCliCompleter {
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", null, Map.of(), Set.of("x")))),
         arguments(
-            "alter namespace foo.bar.baz in blah remove x;",
+            "alter namespace foo.bar.baz on blah remove x;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", "blah", Map.of(), Set.of("x")))),
@@ -1122,12 +1138,12 @@ public class TestCliCompleter {
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", null, Map.of("x", "y"), Set.of("a")))),
         arguments(
-            "alter namespace foo.bar.baz in blah set x = y remove a;",
+            "alter namespace foo.bar.baz on blah set x = y remove a;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
                     null, "foo.bar.baz", "blah", Map.of("x", "y"), Set.of("a")))),
         arguments(
-            "alter namespace foo.bar.baz in blah set x = y and y = z remove a and b and c;",
+            "alter namespace foo.bar.baz on blah set x = y and y = z remove a and b and c;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
                     null,
@@ -1139,14 +1155,14 @@ public class TestCliCompleter {
             "drop namespace foo.bar.baz;",
             List.of(ImmutableDropContentCommandSpec.of(null, "NAMESPACE", "foo.bar.baz", null))),
         arguments(
-            "drop namespace foo.bar.baz in blah;",
+            "drop namespace foo.bar.baz on blah;",
             List.of(ImmutableDropContentCommandSpec.of(null, "NAMESPACE", "foo.bar.baz", "blah"))),
         // ,
         arguments(
             "drop table foo.bar.baz;",
             List.of(ImmutableDropContentCommandSpec.of(null, "TABLE", "foo.bar.baz", null))),
         arguments(
-            "drop view foo.bar.baz in blah;",
+            "drop view foo.bar.baz on blah;",
             List.of(ImmutableDropContentCommandSpec.of(null, "VIEW", "foo.bar.baz", "blah"))),
         //
         arguments(

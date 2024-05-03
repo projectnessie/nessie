@@ -157,6 +157,6 @@ clauses.
 
 {% include './generated-docs/cli-help-ReferenceName.md' %}
 
-### **TimestampOrHash**
+### **TimestampOrCommit**
 
-{% include './generated-docs/cli-help-TimestampOrHash.md' %}
+{% include './generated-docs/cli-help-TimestampOrCommit.md' %}

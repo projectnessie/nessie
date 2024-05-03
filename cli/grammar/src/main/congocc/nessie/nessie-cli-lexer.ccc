@@ -40,7 +40,7 @@ TOKEN
 TOKEN #Keyword
   : <AT: "AT">
   | <IF: "IF">
-  | <IN: "IN">
+  | <ON: "ON">
   | <TO: "TO">
   | <AND: "AND">
   | <DRY: "DRY">
@@ -55,6 +55,7 @@ TOKEN #Keyword
   | <LIMIT: "LIMIT">
   | <TABLE: "TABLE">
   | <USING: "USING">
+  | <COMMIT: "COMMIT">
   | <EXISTS: "EXISTS">
   | <FILTER: "FILTER">
   | <NORMAL: "NORMAL">
@@ -65,6 +66,7 @@ TOKEN #Keyword
   | <STARTING: "STARTING">
   | <BEHAVIORS: "BEHAVIORS">
   | <NAMESPACE: "NAMESPACE">
+  | <TIMESTAMP: "TIMESTAMP">
   | <REFERENCE: "REFERENCE">
   | <REFERENCES: "REFERENCES">
   | <CONTAINING: "CONTAINING">

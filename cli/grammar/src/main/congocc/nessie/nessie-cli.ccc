@@ -102,8 +102,8 @@ HelpStatement
              { setOptionalNextTokenTypes(); }
            ]
          | <SHOW>
-           { setOptionalNextTokenTypes(TokenType.LOG, TokenType.CONTENT, TokenType.REFERENCE); }
-           [ <LOG> | <CONTENT> | <REFERENCE>
+           { setOptionalNextTokenTypes(TokenType.LOG, TokenType.TABLE, TokenType.VIEW, TokenType.NAMESPACE, TokenType.REFERENCE); }
+           [ <LOG> | <TABLE> | <VIEW> | <NAMESPACE> | <REFERENCE>
              { setOptionalNextTokenTypes(); }
            ]
          | <ASSIGN>
@@ -156,12 +156,16 @@ CreateStatement
 CreateNamespaceStatement
     : <NAMESPACE>
       /namespace/=ContentKey
-      { setOptionalNextTokenTypes(TokenType.IN, TokenType.SET); }
-      [ <IN>
+      { setOptionalNextTokenTypes(TokenType.ON, TokenType.SET); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
         { completionType = CompletionType.REFERENCE_NAME; }
         /ref/=ExistingReference
-        { completionType = CompletionType.NONE; }
-        { setOptionalNextTokenTypes(TokenType.SET); }
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.SET); }
       ]
       [ <SET>
         { setOptionalNextTokenTypes(); }
@@ -198,9 +202,12 @@ CreateReferenceStatement
           completionType = CompletionType.NONE;
         }
       ]
-      [<AT>
-        { setOptionalNextTokenTypes(); }
-        /at/=TimestampOrHash
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
       ]
     ;
 
@@ -214,8 +221,12 @@ AssignReferenceStatement
         [<TO>
           /to/=ExistingReference
           { setOptionalNextTokenTypes(TokenType.AT); }
-          [<AT>
-            /at/=TimestampOrHash]
+          [ <AT>
+            { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+            [ <TIMESTAMP> | <COMMIT>
+              { setOptionalNextTokenTypes(); }
+            ]
+            /at/=TimestampOrCommit]
           ]
     ;
 
@@ -229,11 +240,16 @@ AlterNamespaceStatement
       { completionType = CompletionType.CONTENT_KEY; }
       /namespace/=ContentKey
       { completionType = CompletionType.NONE;
-        setOptionalNextTokenTypes(TokenType.IN, TokenType.SET, TokenType.REMOVE); }
-      [ <IN>
+        setOptionalNextTokenTypes(TokenType.ON, TokenType.SET, TokenType.REMOVE); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
         { completionType = CompletionType.REFERENCE_NAME; }
         /ref/=ExistingReference
-        { completionType = CompletionType.NONE; }
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(); }
       ]
       { setOptionalNextTokenTypes(TokenType.SET, TokenType.REMOVE); }
       [ <SET>
@@ -288,11 +304,16 @@ DropContentStatement
       { completionType = CompletionType.CONTENT_KEY; }
       /contentKey/=ContentKey
       { completionType = CompletionType.NONE;
-        setOptionalNextTokenTypes(TokenType.IN); }
-      [ <IN>
+        setOptionalNextTokenTypes(TokenType.ON); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
         { completionType = CompletionType.REFERENCE_NAME; }
         /ref/=ExistingReference
-        { completionType = CompletionType.NONE; }
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(); }
       ]
     ;
 
@@ -316,17 +337,23 @@ ShowStatement
 
 ShowLogStatement
     : <LOG>
-      { setOptionalNextTokenTypes(TokenType.IN, TokenType.AT, TokenType.LIMIT); }
-      [ <IN>
-        { setOptionalNextTokenTypes();
-          completionType = CompletionType.REFERENCE_NAME; }
+      { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT, TokenType.LIMIT); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
         /ref/=ExistingReference
         { completionType = CompletionType.NONE;
           setOptionalNextTokenTypes(TokenType.AT, TokenType.LIMIT); }
       ]
       [ <AT>
-        { setOptionalNextTokenTypes(); }
-        /at/=TimestampOrHash
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
         { setOptionalNextTokenTypes(TokenType.LIMIT); }
       ]
       [ <LIMIT>
@@ -337,12 +364,12 @@ ShowLogStatement
 
 ShowContentStatement
     : /contentKind/=ContentKind
-    { setOptionalNextTokenTypes(TokenType.IN, TokenType.AT); }
-    [ <IN>
+    { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT); }
+    [ <ON>
       { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
       [ /type/=ReferenceType
         { setOptionalNextTokenTypes(); }
-      ]
+        ]
       { completionType = CompletionType.REFERENCE_NAME; }
       /ref/=ExistingReference
       { completionType = CompletionType.NONE;
@@ -350,8 +377,11 @@ ShowContentStatement
       }
     ]
     [ <AT>
-      { setOptionalNextTokenTypes(); }
-      /at/=TimestampOrHash
+      { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+      [ <TIMESTAMP> | <COMMIT>
+        { setOptionalNextTokenTypes(); }
+      ]
+      /at/=TimestampOrCommit
     ]
     /contentKey/=ContentKey
     ;
@@ -362,8 +392,11 @@ ShowReferenceStatement
       [ { completionType = CompletionType.REFERENCE_NAME; }
         [/ref/=ExistingReference] ]
       [ <AT>
-        { setOptionalNextTokenTypes(); }
-        /at/=TimestampOrHash
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
       ]
     ;
 
@@ -376,10 +409,12 @@ ListStatement
 
 ListContentsStatement
     : <CONTENTS>
-    { setOptionalNextTokenTypes(TokenType.IN, TokenType.AT, TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
-    [ <IN>
+    { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT, TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
+    [ <ON>
       { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
-      [ /type/=ReferenceType ]
+      [ /type/=ReferenceType
+        { setOptionalNextTokenTypes(); }
+        ]
       { completionType = CompletionType.REFERENCE_NAME; }
       /ref/=ExistingReference
       { completionType = CompletionType.NONE;
@@ -387,8 +422,11 @@ ListContentsStatement
       }
     ]
     [ <AT>
-      { setOptionalNextTokenTypes(); }
-      /at/=TimestampOrHash
+      { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+      [ <TIMESTAMP> | <COMMIT>
+        { setOptionalNextTokenTypes(); }
+      ]
+      /at/=TimestampOrCommit
       { setOptionalNextTokenTypes(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
     ]
     [ <FILTER>
@@ -437,8 +475,11 @@ MergeBranchStatement
         setOptionalNextTokenTypes(TokenType.AT, TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS);
       }
       [ <AT>
-        { setOptionalNextTokenTypes(); }
-        /at/=TimestampOrHash
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
         { setOptionalNextTokenTypes(TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS); }
       ]
       [ <INTO>
@@ -480,7 +521,7 @@ ReferenceType
   | <TAG>
   ;
 
-TimestampOrHash
+TimestampOrCommit
     // TODO define
     : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
 
