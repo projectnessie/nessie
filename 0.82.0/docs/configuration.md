@@ -1,6 +1,4 @@
 ---
-search:
-  exclude: true
 title: "Server Configuration"
 ---
 
@@ -48,9 +46,10 @@ For more information on docker images, see [Docker image options](#docker-image-
 
 Related Quarkus settings:
 
-| Property                  | Default values | Type      | Description                           |
-|---------------------------|----------------|-----------|---------------------------------------|
-| `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port                    |
+| Property                  | Default values | Type      | Description                                                            |
+|---------------------------|----------------|-----------|------------------------------------------------------------------------|
+| `quarkus.http.port`       | `19120`        | `int`     | Sets the HTTP port for the Nessie REST API endpoints.                  |
+| `quarkus.management.port` | `9000`         | `int`     | Sets the HTTP port for management endpoints (health, metrics, Swagger) |
 
 !!! info
     A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
@@ -206,7 +205,7 @@ running and that the URL is correct.
 
 ### Swagger UI
 The Swagger UI allows for testing the REST API and reading the API docs. It is available 
-via [localhost:19120/q/swagger-ui](http://localhost:19120/q/swagger-ui/)
+via [localhost:9000/q/swagger-ui](http://localhost:9000/q/swagger-ui/)
 
 # Docker image options
 

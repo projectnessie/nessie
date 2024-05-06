@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Description |
 |----------|-------------|
 | `nessie.transport.read-timeout` | Network level read timeout in milliseconds. When running with Java 11, this becomes a request  timeout. Default is 25000 ms.  |
