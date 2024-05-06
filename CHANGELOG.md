@@ -12,15 +12,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
-* The readiness, liveness, metrics and Swagger-UI endpoints starting with `/q/` have been moved from the
-  HTTP port exposing the REST endpoints to a different HTTP port (9000),
-  see [Quarkus management interface reference docs](https://quarkus.io/guides/management-interface-reference).
-  Any path starting with `/q/` can be safely removed from a possibly customized configuration
-  `nessie.server.authentication.anonymous-paths`.
-* The move of the above endpoints to the management port requires using the Nessie Helm chart for this
-  release or a newer release. Also, the Helm Chart for this release will not work with older Nessie
-  releases.
-
 ### New Features
 
 ### Changes
@@ -30,6 +21,19 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.82.0] Release (2024-05-06)
+
+### Breaking changes
+
+- The readiness, liveness, metrics and Swagger-UI endpoints starting with `/q/` have been moved from the
+  HTTP port exposing the REST endpoints to a different HTTP port (9000),
+  see [Quarkus management interface reference docs](https://quarkus.io/guides/management-interface-reference).
+  Any path starting with `/q/` can be safely removed from a possibly customized configuration
+  `nessie.server.authentication.anonymous-paths`.
+- The move of the above endpoints to the management port requires using the Nessie Helm chart for this
+  release or a newer release. Also, the Helm Chart for this release will not work with older Nessie
+  releases.
 
 ## [0.81.1] Release (2024-05-03)
 
@@ -419,7 +423,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...HEAD
+[0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
 [0.81.1]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...nessie-0.81.1
 [0.81.0]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...nessie-0.81.0
 [0.80.0]: https://github.com/projectnessie/nessie/compare/nessie-0.79.0...nessie-0.80.0

@@ -2,6 +2,29 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.82.0 Release (May 06, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.82.0).
+
+### Breaking changes
+
+- The readiness, liveness, metrics and Swagger-UI endpoints starting with `/q/` have been moved from the
+  HTTP port exposing the REST endpoints to a different HTTP port (9000),
+  see [Quarkus management interface reference docs](https://quarkus.io/guides/management-interface-reference).
+  Any path starting with `/q/` can be safely removed from a possibly customized configuration
+  `nessie.server.authentication.anonymous-paths`.
+- The move of the above endpoints to the management port requires using the Nessie Helm chart for this
+  release or a newer release. Also, the Helm Chart for this release will not work with older Nessie
+  releases.
+
+### Commits
+* Doc-gen: trim-right before style changes (#8459)
+* Site: Fix release-workflow version bump mistakes (#8454)
+* Site: split release notes pages (#8453)
+* Move management endpoints to separate HTTP port (#8207)
+* Site: let site use wider horizontal space (#8452)
+* OAuthClient: fix AbstractFlow.isAboutToExpire (#8423)
+
 ## 0.81.1 Release (May 03, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.81.1).
