@@ -132,14 +132,12 @@ jobs:
 
         echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u $ --password-stdin 
         tools/dockerbuild/build-push-images.sh \
-          -a "${ARTIFACTS}" \
           -g ":nessie-quarkus" \
           -p "servers/quarkus-server" \
           -d "Dockerfile-server" \
           ghcr.io/projectnessie/nessie
 
         tools/dockerbuild/build-push-images.sh \
-          -a "${ARTIFACTS}" \
           -g ":nessie-gc-tool" \
           -p "gc/gc-tool" \
           -d "Dockerfile-gctool" \
