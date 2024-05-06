@@ -258,6 +258,13 @@ public abstract class MarkdownFormatter {
       }
       text.append(' ');
     }
+
+    void trimRight() {
+      int l = text.length();
+      while (l > 0 && Character.isWhitespace(text.charAt(l - 1))) {
+        text.setLength(--l);
+      }
+    }
   }
 
   private class MDFormat {
@@ -491,9 +498,11 @@ public abstract class MarkdownFormatter {
                 break;
               case "em":
               case "i":
+                target.trimRight();
                 target.text.append('_');
                 break;
               case "b":
+                target.trimRight();
                 target.text.append("**");
                 break;
               case "ol":
