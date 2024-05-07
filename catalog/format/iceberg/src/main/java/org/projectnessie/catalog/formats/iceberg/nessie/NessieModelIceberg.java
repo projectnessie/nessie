@@ -120,8 +120,10 @@ import org.projectnessie.catalog.model.statistics.NessieIcebergBlobMetadata;
 import org.projectnessie.catalog.model.statistics.NessiePartitionStatisticsFile;
 import org.projectnessie.catalog.model.statistics.NessieStatisticsFile;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 
 public class NessieModelIceberg {
   private NessieModelIceberg() {}
@@ -755,7 +757,33 @@ public class NessieModelIceberg {
     return value != null ? value : defaultValue;
   }
 
-  public static NessieTableSnapshot newIcebergTableSnapshot(List<IcebergMetadataUpdate> updates) {
+  public static String defaultIcebergLocation(String warehouseLocation, ContentKey key) {
+    String baseLocation = warehouseLocation;
+    Namespace ns = key.getNamespace();
+    if (!ns.isEmpty()) {
+      baseLocation = concatLocation(warehouseLocation, ns.toString());
+    }
+    baseLocation = concatLocation(baseLocation, key.getName());
+    // Different tables with same table name can exist across references in Nessie.
+    // To avoid sharing same table path between two tables with same name, use uuid in the table
+    // path.
+    // TODO: support GZIP ??
+    // TODO: support TableProperties.WRITE_METADATA_LOCATION
+    String location =
+        String.format(
+            "%s_%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID(), randomUUID());
+    return location;
+  }
+
+  private static String concatLocation(String location, String key) {
+    if (location.endsWith("/")) {
+      return location + key;
+    }
+    return location + "/" + key;
+  }
+
+  public static NessieTableSnapshot newIcebergTableSnapshot(
+      List<IcebergMetadataUpdate> updates, String icebergLocation) {
     String icebergUuid =
         updates.stream()
             .filter(u -> u instanceof AssignUUID)
@@ -779,12 +807,14 @@ public class NessieModelIceberg {
         .id(nessieId)
         .entity(nessieTable)
         .lastUpdatedTimestamp(now)
+        .icebergLocation(icebergLocation)
         .icebergLastSequenceNumber(IcebergTableMetadata.INITIAL_SEQUENCE_NUMBER)
         .icebergLastPartitionId(INITIAL_PARTITION_ID)
         .build();
   }
 
-  public static NessieViewSnapshot newIcebergViewSnapshot(List<IcebergMetadataUpdate> updates) {
+  public static NessieViewSnapshot newIcebergViewSnapshot(
+      List<IcebergMetadataUpdate> updates, String icebergLocation) {
     String icebergUuid =
         updates.stream()
             .filter(u -> u instanceof AssignUUID)
@@ -807,6 +837,7 @@ public class NessieModelIceberg {
     return NessieViewSnapshot.builder()
         .id(nessieId)
         .entity(nessieView)
+        .icebergLocation(icebergLocation)
         .lastUpdatedTimestamp(now)
         .build();
   }
@@ -1500,10 +1531,9 @@ public class NessieModelIceberg {
     state.builder().icebergCurrentVersionId(versionId);
   }
 
-  public static Content icebergMetadataToContent(
-      String location, IcebergTableMetadata snapshot, String contentId) {
+  public static Content icebergMetadataToContent(IcebergTableMetadata snapshot, String contentId) {
     return IcebergTable.of(
-        location,
+        snapshot.location(),
         snapshot.currentSnapshotId(),
         safeUnbox(snapshot.currentSchemaId(), INITIAL_SCHEMA_ID),
         safeUnbox(snapshot.defaultSpecId(), INITIAL_SPEC_ID),
@@ -1511,11 +1541,10 @@ public class NessieModelIceberg {
         contentId);
   }
 
-  public static Content icebergMetadataToContent(
-      String location, IcebergViewMetadata snapshot, String contentId) {
+  public static Content icebergMetadataToContent(IcebergViewMetadata snapshot, String contentId) {
     IcebergViewVersion version = snapshot.currentVersion();
     return IcebergView.of(
-        contentId, location, snapshot.currentVersionId(), version.schemaId(), "", "");
+        contentId, snapshot.location(), snapshot.currentVersionId(), version.schemaId(), "", "");
   }
 
   public static String typeToEntityName(Content.Type type) {

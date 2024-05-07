@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate;
@@ -37,6 +38,10 @@ public interface IcebergCatalogOperation extends CatalogOperation {
 
   @Override
   Content.Type getType();
+
+  @Override
+  @Nullable
+  String warehouse();
 
   List<IcebergMetadataUpdate> updates();
 
@@ -65,6 +70,9 @@ public interface IcebergCatalogOperation extends CatalogOperation {
 
     @CanIgnoreReturnValue
     Builder type(Content.Type type);
+
+    @CanIgnoreReturnValue
+    Builder warehouse(String warehouse);
 
     @CanIgnoreReturnValue
     Builder addUpdate(IcebergMetadataUpdate element);

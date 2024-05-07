@@ -22,6 +22,7 @@ import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.unpartitioned;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.unsorted;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.defaultIcebergLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddPartitionSpec.addPartitionSpec;
@@ -31,7 +32,6 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultPartitionSpec.setDefaultPartitionSpec;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
@@ -74,7 +74,6 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.metrics.IcebergMetricsReport;
@@ -97,6 +96,7 @@ import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
+import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -210,13 +210,6 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     if (spec == null) {
       spec = unpartitioned();
     }
-    IcebergSchema schema = createTableRequest.schema();
-    String location = createTableRequest.location();
-    if (location == null) {
-      location = defaultTableLocation(createTableRequest.location(), tableRef);
-    }
-    checkArgument(
-        objectIO.isValidUri(StorageUri.of(location)), "Unsupported table location: " + location);
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createTableRequest.properties());
@@ -225,13 +218,12 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         Arrays.asList(
             assignUUID(randomUUID().toString()),
             upgradeFormatVersion(2),
-            addSchema(schema, 0),
+            addSchema(createTableRequest.schema(), 0),
             setCurrentSchema(-1),
             addPartitionSpec(spec),
             setDefaultPartitionSpec(-1),
             addSortOrder(sortOrder),
             setDefaultSortOrder(-1),
-            setLocation(location),
             setProperties(properties));
 
     GetMultipleContentsResponse contentResponse =
@@ -249,9 +241,13 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     checkBranch(contentResponse.getEffectiveReference());
 
     if (createTableRequest.stageCreate()) {
+
+      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
+      String icebergLocation = defaultIcebergLocation(warehouse.location(), tableRef.contentKey());
+
       NessieTableSnapshot snapshot =
           new IcebergTableMetadataUpdateState(
-                  newIcebergTableSnapshot(updates), tableRef.contentKey(), false)
+                  newIcebergTableSnapshot(updates, icebergLocation), tableRef.contentKey(), false)
               .applyUpdates(updates)
               .snapshot();
 
@@ -504,10 +500,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   Uni<SnapshotResponse> createOrUpdateTable(
       TableRef tableRef, IcebergUpdateTableRequest commitTableRequest) throws IOException {
 
-    boolean isCreate =
-        commitTableRequest.requirements().stream()
-            .anyMatch(IcebergUpdateRequirement.AssertCreate.class::isInstance);
-    if (isCreate) {
+    if (commitTableRequest.hasAssertCreate()) {
       List<IcebergUpdateRequirement> invalidRequirements =
           commitTableRequest.requirements().stream()
               .filter(req -> !(req instanceof IcebergUpdateRequirement.AssertCreate))
@@ -521,6 +514,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             .updates(commitTableRequest.updates())
             .requirements(commitTableRequest.requirements())
             .key(tableRef.contentKey())
+            .warehouse(tableRef.warehouse())
             .type(ICEBERG_TABLE)
             .build();
 

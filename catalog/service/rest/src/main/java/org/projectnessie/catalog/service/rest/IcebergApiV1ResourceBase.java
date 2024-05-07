@@ -17,7 +17,6 @@ package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.typeToEntityName;
@@ -30,11 +29,8 @@ import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import com.google.common.base.Splitter;
 import jakarta.inject.Inject;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -49,7 +45,6 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
-import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
@@ -257,66 +252,6 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     checkArgument(
         reference instanceof Branch, "Can only commit against a branch, but got " + reference);
     return (Branch) reference;
-  }
-
-  protected String defaultTableLocation(String location, TableRef tableRef) {
-    if (location != null) {
-      return location;
-    }
-
-    WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
-    ContentKey key = tableRef.contentKey();
-
-    Namespace ns = key.getNamespace();
-    if (!ns.isEmpty()) {
-      List<ContentKey> parentNamespaces = new ArrayList<>();
-      for (Namespace namespace = key.getNamespace();
-          !namespace.isEmpty();
-          namespace = namespace.getParentOrEmpty()) {
-        parentNamespaces.add(namespace.toContentKey());
-      }
-
-      String baseLocation = concatLocation(warehouse.location(), ns.toString());
-      try {
-        ParsedReference parsedRef = requireNonNull(tableRef.reference());
-        GetMultipleContentsResponse namespacesResp =
-            nessieApi
-                .getContent()
-                .reference(Branch.of(parsedRef.name(), parsedRef.hashWithRelativeSpec()))
-                .keys(parentNamespaces)
-                .getWithResponse();
-        Map<ContentKey, Content> namespacesMap = namespacesResp.toContentsMap();
-        for (ContentKey nsKey : parentNamespaces) {
-          Content namespace = namespacesMap.get(nsKey);
-          if (namespace instanceof Namespace) {
-            String namespaceLocation = ((Namespace) namespace).getProperties().get("location");
-            if (namespaceLocation != null) {
-              baseLocation = namespaceLocation;
-              break;
-            }
-          }
-        }
-      } catch (NessieNamespaceNotFoundException e) {
-        // ignore
-      } catch (NessieNotFoundException e) {
-        // do nothing we want the same behavior that if the location is not defined
-      }
-
-      location = concatLocation(baseLocation, key.getName());
-    } else {
-      location = concatLocation(warehouse.location(), key.getName());
-    }
-    // Different tables with same table name can exist across references in Nessie.
-    // To avoid sharing same table path between two tables with same name, use uuid in the table
-    // path.
-    return location + "_" + UUID.randomUUID();
-  }
-
-  private String concatLocation(String location, String key) {
-    if (location.endsWith("/")) {
-      return location + key;
-    }
-    return location + "/" + key;
   }
 
   protected String snapshotMetadataLocation(SnapshotResponse snap) {

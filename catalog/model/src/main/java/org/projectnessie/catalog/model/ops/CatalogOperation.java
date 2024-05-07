@@ -31,4 +31,12 @@ public interface CatalogOperation {
   ContentKey getKey();
 
   Content.Type getType();
+
+  /**
+   * The logical warehouse name where this operation will occur. Must correspond to a warehouse
+   * configured under {@code nessie.catalog.warehouses.<name>}.
+   *
+   * <p>If not set, the default warehouse will be used.
+   */
+  String warehouse();
 }
