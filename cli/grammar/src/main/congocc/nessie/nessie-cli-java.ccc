@@ -1,0 +1,613 @@
+/*
+ * Copyright (C) 2024 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+PARSER_PACKAGE="org.projectnessie.nessie.cli.grammar";
+PARSER_CLASS=NessieCliParser;
+LEXER_CLASS=NessieCliLexer;
+#if FT
+FAULT_TOLERANT;
+FAULT_TOLERANT_DEFAULT=false;
+#endif
+
+NODE_PACKAGE="org.projectnessie.nessie.cli.grammar.ast";
+
+INCLUDE "nessie-cli.ccc"
+
+INJECT PARSER_CLASS : implements ParserExtension;
+INJECT PARSER_CLASS :
+import java.util.*;
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  private CompletionType completionType = CompletionType.NONE;
+  private List<TokenType> optionalNextTokenTypes = Collections.emptyList();
+
+  private static final Map<TokenType, String> TOKEN_LITERAL_REPRESENTATION = new EnumMap<>(TokenType.class);
+  static {
+    TOKEN_LITERAL_REPRESENTATION.put(TokenType.EQUAL, "=");
+    TOKEN_LITERAL_REPRESENTATION.put(TokenType.SEMICOLON, ";");
+  }
+
+  @Override
+  public String tokenToLiteral(TokenType tokenType) {
+    return TOKEN_LITERAL_REPRESENTATION.getOrDefault(tokenType, tokenType.name());
+  }
+
+  @Override
+  public List<TokenType> optionalNextTokenTypes() {
+    return optionalNextTokenTypes;
+  }
+
+  void setOptionalNextTokenTypes(TokenType... tokenTypes) {
+    optionalNextTokenTypes = Arrays.asList(tokenTypes);
+  }
+
+  @Override
+  public CompletionType completionType() {
+    return completionType;
+  }
+}
+
+INJECT Script : implements CommandContainer;
+INJECT Script :
+import java.util.List;
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public List<CommandSpec> getCommandSpecs() {
+    return commandSpecs();
+  }
+}
+
+INJECT SingleStatement : implements CommandContainer;
+INJECT SingleStatement :
+import java.util.List;
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public CommandSpec getCommandSpec() {
+    List<CommandSpec> specs = commandSpecs();
+    return specs.isEmpty() ? null : specs.get(0);
+  }
+}
+
+INJECT Ident : implements IdentifierOrLiteral;
+INJECT Ident :
+{
+  @Override
+  public String getStringValue() {
+    return getSource();
+  }
+}
+
+INJECT StringLiteral : implements IdentifierOrLiteral;
+INJECT StringLiteral :
+{
+  @Override
+  public String getStringValue() {
+    String src = getSource();
+    // Remove quotes
+    return src.substring(1, src.length() - 1);
+  }
+}
+
+INJECT UriLiteral : implements IdentifierOrLiteral;
+INJECT UriLiteral :
+{
+  @Override
+  public String getStringValue() {
+    return getSource();
+  }
+}
+
+INJECT PositiveIntLiteral : implements IdentifierOrLiteral;
+INJECT PositiveIntLiteral :
+{
+  @Override
+  public String getStringValue() {
+    return getSource();
+  }
+}
+
+INJECT ConnectStatement : implements ConnectCommandSpec;
+INJECT ConnectStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  @Override
+  public String getUri() {
+    return stringValueOf("uri");
+  }
+
+  @Override
+  public String getInitialReference() {
+    return null;
+  }
+
+  @Override
+  public Map<String, String> getParameters() {
+    Map<String, String> params = new HashMap<>();
+    List<Node> children = children();
+    for (int i = 0; i < children.size(); i++) {
+      Node child = children.get(i);
+      if (child.getType() == USING) {
+        for (i++; i < children.size(); ) {
+          Node key = children.get(i++);
+          if (children.get(i++).getType() != EQUAL) {
+            throw new IllegalArgumentException("Syntax error, missing '='");
+          }
+          Node value = children.get(i++);
+
+          params.put(
+            ((IdentifierOrLiteral)key).getStringValue(),
+            ((IdentifierOrLiteral)value).getStringValue()
+          );
+
+          if (children.size() == i || children.get(i++).getType() != AND) {
+              break;
+          }
+        }
+        break;
+      }
+    }
+    return params;
+  }
+}
+
+INJECT CreateReferenceStatement : implements CreateReferenceCommandSpec;
+INJECT CreateReferenceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.CREATE);
+
+  @Override
+  public boolean isConditional() {
+    return getNamedChild("conditional")!=null;
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefType() {
+    return getNamedChild("type").getSource().toUpperCase();
+  }
+
+  @Override
+  public String getFromRef() {
+    return stringValueOf("from");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+}
+
+INJECT DropReferenceStatement : implements DropReferenceCommandSpec;
+INJECT DropReferenceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+INJECT DropReferenceStatement :
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.DROP);
+
+  @Override
+  public boolean isConditional() {
+    return getNamedChild("conditional")!=null;
+  }
+
+  @Override
+  public String getRefType() {
+    return getNamedChild("type").getSource().toUpperCase();
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+}
+
+INJECT AssignReferenceStatement : implements AssignReferenceCommandSpec;
+INJECT AssignReferenceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+INJECT AssignReferenceStatement :
+{
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefType() {
+    return getNamedChild("type").getSource().toUpperCase();
+  }
+
+  @Override
+  public String getTo() {
+    return stringValueOf("to");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+}
+
+INJECT UseReferenceStatement : implements UseReferenceCommandSpec;
+INJECT UseReferenceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+INJECT UseReferenceStatement :
+{
+  @Override
+  public String getRefType() {
+    Node type = getNamedChild("type");
+    return type != null ? type.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+}
+
+INJECT CreateNamespaceStatement : implements CreateNamespaceCommandSpec;
+INJECT CreateNamespaceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.CREATE);
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getNamespace() {
+    return stringValueOf("namespace");
+  }
+
+  @Override
+  public Map<String, String> setProperties() {
+    Map<String, String> params = new HashMap<>();
+    List<Node> children = children();
+    for (int i = 0; i < children.size(); i++) {
+      Node child = children.get(i);
+      if (child.getType() == SET) {
+        for (i++; i < children.size(); ) {
+          Node key = children.get(i++);
+          if (children.get(i++).getType() != EQUAL) {
+            throw new IllegalArgumentException("Syntax error, missing '='");
+          }
+          Node value = children.get(i++);
+
+          params.put(
+            ((IdentifierOrLiteral)key).getStringValue(),
+            ((IdentifierOrLiteral)value).getStringValue()
+          );
+
+          if (children.size() == i || children.get(i++).getType() != AND) {
+              break;
+          }
+        }
+        break;
+      }
+    }
+    return params;
+  }
+}
+
+INJECT AlterNamespaceStatement : implements AlterNamespaceCommandSpec;
+INJECT AlterNamespaceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.ALTER);
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getNamespace() {
+    return stringValueOf("namespace");
+  }
+
+  @Override
+  public Map<String, String> setProperties() {
+    Map<String, String> params = new HashMap<>();
+    List<Node> children = children();
+    for (int i = 0; i < children.size(); i++) {
+      Node child = children.get(i);
+      if (child.getType() == SET) {
+        for (i++; i < children.size(); ) {
+          Node key = children.get(i++);
+          NodeType nextType = children.get(i++).getType();
+          if (nextType == REMOVE) {
+            break;
+          }
+          if (nextType != EQUAL) {
+            throw new IllegalArgumentException("Syntax error, missing '='");
+          }
+          Node value = children.get(i++);
+
+          params.put(
+            ((IdentifierOrLiteral)key).getStringValue(),
+            ((IdentifierOrLiteral)value).getStringValue()
+          );
+
+          if (children.size() == i || children.get(i++).getType() != AND) {
+              break;
+          }
+        }
+        break;
+      }
+    }
+    return params;
+  }
+
+  @Override
+  public Set<String> removeProperties() {
+    Set<String> params = new HashSet<>();
+    List<Node> children = children();
+    for (int i = 0; i < children.size(); i++) {
+      Node child = children.get(i);
+      if (child.getType() == REMOVE) {
+        for (i++; i < children.size(); ) {
+          Node key = children.get(i++);
+
+          params.add(((IdentifierOrLiteral)key).getStringValue());
+
+          if (children.size() == i || children.get(i++).getType() != AND) {
+              break;
+          }
+        }
+        break;
+      }
+    }
+    return params;
+  }
+}
+
+INJECT DropContentStatement : implements DropContentCommandSpec;
+INJECT DropContentStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.DROP);
+
+  @Override
+  public String getContentKind() {
+    return getNamedChild("contentKind").getSource().toUpperCase();
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getContentKey() {
+    return stringValueOf("contentKey");
+  }
+}
+
+INJECT ListContentsStatement : implements ListContentsCommandSpec;
+INJECT ListContentsStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.LIST);
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+
+  @Override
+  public String getFilter() {
+    return stringValueOf("filter");
+  }
+
+  @Override
+  public String getStartsWith() {
+    return stringValueOf("startsWith");
+  }
+
+  @Override
+  public String getContains() {
+    return stringValueOf("contains");
+  }
+}
+
+INJECT ListReferencesStatement : implements ListReferencesCommandSpec;
+INJECT ListReferencesStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.LIST);
+
+  @Override
+  public String getFilter() {
+    return stringValueOf("filter");
+  }
+
+  @Override
+  public String getStartsWith() {
+    return stringValueOf("startsWith");
+  }
+
+  @Override
+  public String getContains() {
+    return stringValueOf("contains");
+  }
+}
+
+INJECT ShowContentStatement : implements ShowContentCommandSpec;
+INJECT ShowContentStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+  @Override
+  public String getContentKind() {
+    return getNamedChild("contentKind").getSource().toUpperCase();
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+
+  @Override
+  public String getContentKey() {
+    return stringValueOf("contentKey");
+  }
+}
+
+INJECT ShowReferenceStatement : implements ShowReferenceCommandSpec;
+INJECT ShowReferenceStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+}
+
+INJECT MergeBranchStatement : implements MergeBranchCommandSpec;
+INJECT MergeBranchStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  @Override
+  public String getRefType() {
+    Node type = getNamedChild("type");
+    return type != null ? type.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+
+  @Override
+  public String getInto() {
+    return stringValueOf("into");
+  }
+
+  @Override
+  public String getDefaultMergeBehavior() {
+    Node behavior = getNamedChild("defaultMergeBehavior");
+    return behavior != null ? behavior.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public boolean isDryRun() {
+    return getNamedChild("dryRun")!=null;
+  }
+
+  @Override
+  public Map<String, String> getKeyMergeBehaviors() {
+    Map<String, String> behaviors = new HashMap<>();
+    List<Node> children = children();
+    for (int i = 0; i < children.size(); i++) {
+      Node child = children.get(i);
+      if (child.getType() == BEHAVIORS) {
+        for (i++; i < children.size(); ) {
+          Node key = children.get(i++);
+          if (children.get(i++).getType() != EQUAL) {
+            throw new IllegalArgumentException("Syntax error, missing '='");
+          }
+          Node value = children.get(i++);
+
+          behaviors.put(
+            ((IdentifierOrLiteral)key).getStringValue(),
+            value.getSource().toUpperCase()
+          );
+
+          if (children.size() == i || children.get(i++).getType() != AND) {
+              break;
+          }
+        }
+        break;
+      }
+    }
+    return behaviors;
+  }
+}
+
+INJECT ShowLogStatement : implements ShowLogCommandSpec;
+INJECT ShowLogStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
+
+  @Override
+  public Integer getLimit() {
+    String limit = stringValueOf("limit");
+    return limit != null ? Integer.parseInt(limit) : null;
+  }
+}
+
+INJECT ExitStatement : implements ExitCommandSpec;
+INJECT ExitStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+
+INJECT HelpStatement : implements HelpCommandSpec;
+INJECT HelpStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  @Override
+  public List<Node> getArguments() {
+    List<Node> ch = children();
+    return ch.subList(1, ch.size());
+  }
+}
+
+INJECT ParseException :
+{
+  public Set<Token.TokenType> getExpectedTokenTypes() {
+    // expectedTypes is 'Set<? extends Node.NodeType> expectedTypes', but it's all TokenType, so...
+    Set x = expectedTypes;
+    return x;
+  }
+}

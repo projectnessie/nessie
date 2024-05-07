@@ -1,0 +1,11 @@
+
+Welcome to the Nessie CLI REPL!
+
+Use HELP to get information about available commands.
+Commands can be autocompleted by pressing TAB.
+
+History file in \$HOME/.nessie/nessie-cli.history will record all statements.
+Tip: lines that start with a space (' ') are not recorded in the history.
+
+Tip: Ctrl-C cannot be used to exit the REPL or paged output. Use Ctrl-D instead.
+

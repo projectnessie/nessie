@@ -49,6 +49,7 @@ cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version = 
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.4.4" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
+congocc = { module = "org.congocc:org.congocc.parser.generator", version = "2.0.0-RC7" }
 docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.3.6" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
@@ -88,6 +89,7 @@ javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "4.0.5" }
 jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "3.1.6" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "24.1.0" }
+jline = { module = "org.jline:jline", version = "3.25.1" }
 jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

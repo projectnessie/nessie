@@ -1,0 +1,567 @@
+/*
+ * Copyright (C) 2024 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+IGNORE_CASE;
+// see https://parsers.org/javacc21/nested-lookahead-redux/
+LEGACY_GLITCHY_LOOKAHEAD=false;
+
+DEACTIVATE_TOKENS=IDENTIFIER,STRING_LITERAL,URI,POSITIVE_INT;
+
+INCLUDE "nessie-cli-lexer.ccc"
+
+/**
+ * Nessie-CLI REPL syntax.
+ *
+ * No two statements must start with the same token (e.g. CREATE or DROP), those are
+ * grouped in parent statements (e.g. CreateStatement, DropStatement). Otherwise
+ * auto-completion cannot collect all possible completions (only the one of the "first"
+ * statement).
+ *
+ * `setOptionalNextTokenTypes()` is used to inform auto-completion about _optinal_
+ * following tokens. Missing optional tokens do natually not cause a parse exception,
+ * so congocc does not return those via `ParseException.getExpectedTokenTypes()`.
+ *
+ * `completionType` is a hint for auto-completion of literals, telling what kind of
+ * literal (connect-option, reference name) is expected.
+ */
+
+Script :
+   Statement!
+   (<SEMICOLON> Statement =>||)*!
+   [<SEMICOLON>]
+   <EOF>
+   ;
+
+SingleStatement :
+  Statement
+  [<SEMICOLON>]
+  <EOF>
+  ;
+
+Statement
+  : ConnectStatement
+  | CreateStatement
+  | AlterStatement
+  | DropStatement
+  | AssignReferenceStatement
+  | UseReferenceStatement
+  | ListStatement
+  | ShowStatement
+  | MergeBranchStatement
+  | ExitStatement
+  | HelpStatement
+  ;
+
+HelpStatement
+    : <HELP>
+      { setOptionalNextTokenTypes(
+          TokenType.USE,
+          TokenType.CONNECT,
+          TokenType.CREATE,
+          TokenType.ALTER,
+          TokenType.DROP,
+          TokenType.LIST,
+          TokenType.SHOW,
+          TokenType.ASSIGN,
+          TokenType.MERGE,
+          TokenType.HELP,
+          TokenType.EXIT
+          ); }
+      [
+           <USE>
+         | <CONNECT>
+         | <CREATE>
+           { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG, TokenType.NAMESPACE); }
+           [ (<BRANCH> | <TAG> | <NAMESPACE>)
+             { setOptionalNextTokenTypes(); }
+           ]
+         | <ALTER>
+           { setOptionalNextTokenTypes(TokenType.NAMESPACE); }
+           [ <NAMESPACE> ]
+         | <DROP>
+           { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG, TokenType.NAMESPACE, TokenType.TABLE, TokenType.VIEW); }
+           [ <BRANCH> | <TAG> | <NAMESPACE> | <TABLE> | <VIEW>
+             { setOptionalNextTokenTypes(); }
+           ]
+         | <LIST>
+           { setOptionalNextTokenTypes(TokenType.CONTENTS, TokenType.REFERENCES); }
+           [ <CONTENTS> | <REFERENCES>
+             { setOptionalNextTokenTypes(); }
+           ]
+         | <SHOW>
+           { setOptionalNextTokenTypes(TokenType.LOG, TokenType.TABLE, TokenType.VIEW, TokenType.NAMESPACE, TokenType.REFERENCE); }
+           [ <LOG> | <TABLE> | <VIEW> | <NAMESPACE> | <REFERENCE>
+             { setOptionalNextTokenTypes(); }
+           ]
+         | <ASSIGN>
+           { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+           [ <BRANCH> | <TAG>
+             { setOptionalNextTokenTypes(); }
+           ]
+         | <MERGE>
+         | <HELP>
+         | <EXIT>
+      ]
+    ;
+
+ExitStatement
+    : <EXIT>
+    ;
+
+ConnectStatement
+    : <CONNECT>
+      <TO> /uri/=Uri
+      { setOptionalNextTokenTypes(TokenType.USING); }
+      [ <USING>
+        { setOptionalNextTokenTypes();
+          completionType = CompletionType.CONNECT_OPTIONS; }
+        ParamKey
+        <EQUAL>
+        { completionType = CompletionType.NONE; }
+        Value
+        { setOptionalNextTokenTypes(TokenType.AND); }
+        (
+          <AND>
+          { setOptionalNextTokenTypes();
+            completionType = CompletionType.CONNECT_OPTIONS; }
+          ParamKey
+          <EQUAL>
+          { completionType = CompletionType.NONE; }
+          Value
+          { setOptionalNextTokenTypes(TokenType.AND); }
+        )*
+      ]
+    ;
+
+CreateStatement
+    : <CREATE>
+    ( CreateReferenceStatement
+    | CreateNamespaceStatement
+    )
+    ;
+
+CreateNamespaceStatement
+    : <NAMESPACE>
+      /namespace/=ContentKey
+      { setOptionalNextTokenTypes(TokenType.ON, TokenType.SET); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
+        /ref/=ExistingReference
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.SET); }
+      ]
+      [ <SET>
+        { setOptionalNextTokenTypes(); }
+        ParamKey
+        <EQUAL>
+        Value
+        { setOptionalNextTokenTypes(TokenType.AND); }
+        (
+          <AND>
+          { setOptionalNextTokenTypes(); }
+          ParamKey
+          <EQUAL>
+          Value
+          { setOptionalNextTokenTypes(TokenType.AND); }
+        )*
+      ]
+    ;
+
+CreateReferenceStatement
+    : /type/=ReferenceType
+      { setOptionalNextTokenTypes(TokenType.IF); }
+      [ /conditional/=<IF>
+        { setOptionalNextTokenTypes(); }
+        <NOT> <EXISTS>
+      ]
+      /ref/=ReferenceName
+      { setOptionalNextTokenTypes(TokenType.FROM, TokenType.AT); }
+      [ <FROM>
+        { setOptionalNextTokenTypes();
+          completionType = CompletionType.REFERENCE_NAME;
+        }
+        /from/=ExistingReference
+        { setOptionalNextTokenTypes(TokenType.AT);
+          completionType = CompletionType.NONE;
+        }
+      ]
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
+      ]
+    ;
+
+AssignReferenceStatement
+    : <ASSIGN>
+        /type/=ReferenceType
+        { completionType = CompletionType.REFERENCE_NAME; }
+        [/ref/=ExistingReference]
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.TO); }
+        [<TO>
+          /to/=ExistingReference
+          { setOptionalNextTokenTypes(TokenType.AT); }
+          [ <AT>
+            { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+            [ <TIMESTAMP> | <COMMIT>
+              { setOptionalNextTokenTypes(); }
+            ]
+            /at/=TimestampOrCommit]
+          ]
+    ;
+
+AlterStatement
+    : <ALTER>
+    ( AlterNamespaceStatement )
+    ;
+
+AlterNamespaceStatement
+    : <NAMESPACE>
+      { completionType = CompletionType.CONTENT_KEY; }
+      /namespace/=ContentKey
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.ON, TokenType.SET, TokenType.REMOVE); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
+        /ref/=ExistingReference
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(); }
+      ]
+      { setOptionalNextTokenTypes(TokenType.SET, TokenType.REMOVE); }
+      [ <SET>
+        { setOptionalNextTokenTypes(); }
+        ParamKey
+        <EQUAL>
+        Value
+        { setOptionalNextTokenTypes(TokenType.AND, TokenType.REMOVE); }
+        (
+          <AND>
+          { setOptionalNextTokenTypes(); }
+          ParamKey
+          <EQUAL>
+          Value
+          { setOptionalNextTokenTypes(TokenType.AND, TokenType.REMOVE); }
+        )*
+      ]
+      [ <REMOVE>
+        { setOptionalNextTokenTypes(); }
+        ParamKey
+        { setOptionalNextTokenTypes(TokenType.AND); }
+        (
+          <AND>
+          { setOptionalNextTokenTypes(); }
+          ParamKey
+          { setOptionalNextTokenTypes(TokenType.AND); }
+        )*
+      ]
+    ;
+
+DropStatement
+    : <DROP>
+    ( DropReferenceStatement
+    | DropContentStatement )
+    ;
+
+DropReferenceStatement
+    : /type/=ReferenceType
+      { completionType = CompletionType.REFERENCE_NAME; }
+      { setOptionalNextTokenTypes(TokenType.IF); }
+      [ /conditional/=<IF>
+        { setOptionalNextTokenTypes(); }
+        <EXISTS>
+      ]
+      /ref/=ExistingReference
+      { completionType = CompletionType.REFERENCE_NAME;
+        setOptionalNextTokenTypes(); }
+    ;
+
+DropContentStatement
+    : /contentKind/=ContentKind
+      { completionType = CompletionType.CONTENT_KEY; }
+      /contentKey/=ContentKey
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.ON); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
+        /ref/=ExistingReference
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(); }
+      ]
+    ;
+
+UseReferenceStatement
+    : <USE>
+      { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+      /type/=ReferenceType
+      { setOptionalNextTokenTypes();
+        completionType = CompletionType.REFERENCE_NAME; }
+      /ref/=ExistingReference
+      { completionType = CompletionType.NONE; }
+    ;
+
+ShowStatement
+    : <SHOW>
+    ( ShowLogStatement
+    | ShowContentStatement
+    | ShowReferenceStatement
+    )
+    ;
+
+ShowLogStatement
+    : <LOG>
+      { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT, TokenType.LIMIT); }
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
+        /ref/=ExistingReference
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.AT, TokenType.LIMIT); }
+      ]
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
+        { setOptionalNextTokenTypes(TokenType.LIMIT); }
+      ]
+      [ <LIMIT>
+        { setOptionalNextTokenTypes(); }
+        /limit/=PositiveInt
+      ]
+    ;
+
+ShowContentStatement
+    : /contentKind/=ContentKind
+    { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT); }
+    [ <ON>
+      { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+      [ /type/=ReferenceType
+        { setOptionalNextTokenTypes(); }
+        ]
+      { completionType = CompletionType.REFERENCE_NAME; }
+      /ref/=ExistingReference
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.AT);
+      }
+    ]
+    [ <AT>
+      { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+      [ <TIMESTAMP> | <COMMIT>
+        { setOptionalNextTokenTypes(); }
+      ]
+      /at/=TimestampOrCommit
+    ]
+    /contentKey/=ContentKey
+    ;
+
+ShowReferenceStatement
+    : <REFERENCE>
+      { setOptionalNextTokenTypes(TokenType.AT); }
+      [ { completionType = CompletionType.REFERENCE_NAME; }
+        [/ref/=ExistingReference] ]
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
+      ]
+    ;
+
+ListStatement
+    : <LIST>
+      ( ListReferencesStatement
+      | ListContentsStatement
+      )
+    ;
+
+ListContentsStatement
+    : <CONTENTS>
+    { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT, TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
+    [ <ON>
+      { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+      [ /type/=ReferenceType
+        { setOptionalNextTokenTypes(); }
+        ]
+      { completionType = CompletionType.REFERENCE_NAME; }
+      /ref/=ExistingReference
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.AT, TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING);
+      }
+    ]
+    [ <AT>
+      { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+      [ <TIMESTAMP> | <COMMIT>
+        { setOptionalNextTokenTypes(); }
+      ]
+      /at/=TimestampOrCommit
+      { setOptionalNextTokenTypes(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
+    ]
+    [ <FILTER>
+      { setOptionalNextTokenTypes(); }
+      /filter/=Value
+    | [ <STARTING>
+        { setOptionalNextTokenTypes(); }
+        <WITH> /startsWith/=Value
+        { setOptionalNextTokenTypes(TokenType.CONTAINING); }
+      ]
+      [ <CONTAINING>
+        { setOptionalNextTokenTypes(); }
+        /contains/=Value
+      ]
+    ]
+    ;
+
+ListReferencesStatement
+    : <REFERENCES>
+    { setOptionalNextTokenTypes(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
+    [ <FILTER>
+      { setOptionalNextTokenTypes(); }
+      /filter/=Value
+    | [ <STARTING>
+        { setOptionalNextTokenTypes(); }
+        <WITH> /startsWith/=Value
+        { setOptionalNextTokenTypes(TokenType.CONTAINING); }
+      ]
+      [ <CONTAINING>
+        { setOptionalNextTokenTypes(); }
+        /contains/=Value
+      ]
+    ]
+    ;
+
+MergeBranchStatement
+    : <MERGE>
+      { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG, TokenType.DRY); }
+      [ /dryRun/=<DRY>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        ]
+      [ /type/=ReferenceType ]
+      { completionType = CompletionType.REFERENCE_NAME; }
+      /ref/=ExistingReference
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.AT, TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS);
+      }
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
+        { setOptionalNextTokenTypes(TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS); }
+      ]
+      [ <INTO>
+        { setOptionalNextTokenTypes();
+          completionType = CompletionType.REFERENCE_NAME; }
+        /into/=ExistingReference
+        { setOptionalNextTokenTypes(TokenType.BEHAVIOR, TokenType.BEHAVIORS);
+          completionType = CompletionType.NONE; }
+        ]
+      [ <BEHAVIOR>
+        { setOptionalNextTokenTypes(); }
+        /defaultMergeBehavior/=MergeBehaviorKind
+        { setOptionalNextTokenTypes(TokenType.BEHAVIORS); }
+        ]
+      [ /behaviors/=<BEHAVIORS>
+        { setOptionalNextTokenTypes(); }
+        ContentKey
+        <EQUAL>
+        MergeBehaviorKind
+        { setOptionalNextTokenTypes(TokenType.AND); }
+        ( <AND>
+          { setOptionalNextTokenTypes(); }
+          ContentKey
+          <EQUAL>
+          MergeBehaviorKind
+          { setOptionalNextTokenTypes(TokenType.AND); }
+        )*
+        ]
+    ;
+
+ContentKind
+  : <TABLE>
+  | <VIEW>
+  | <NAMESPACE>
+  ;
+
+ReferenceType
+  : <BRANCH>
+  | <TAG>
+  ;
+
+TimestampOrCommit
+    // TODO define
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+ContentKey
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+ReferenceName
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+ExistingReference
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+Uri
+    : ACTIVATE_TOKENS URI, STRING_LITERAL (UriIdentifier) =>||;
+
+ParamKey
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+Value
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+PositiveInt
+    : ACTIVATE_TOKENS POSITIVE_INT (PositiveInteger) =>||;
+
+UriIdentifier
+  : <URI>
+  | <STRING_LITERAL>
+  ;
+
+Identifier
+  : <IDENTIFIER>
+  | <STRING_LITERAL>
+  ;
+
+PositiveInteger
+  : <POSITIVE_INT>
+  ;
+
+MergeBehaviorKind
+  : <NORMAL>
+  | <FORCE>
+  | <DROP>
+  ;

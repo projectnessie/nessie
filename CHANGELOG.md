@@ -8,6 +8,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
+  SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
+  and reference names, syntax highlighting, paging of long results, command history.
+
 ### Upgrade notes
 
 ### Breaking changes

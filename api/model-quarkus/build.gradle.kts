@@ -20,12 +20,12 @@ import io.smallrye.openapi.gradleplugin.SmallryeOpenApiTask
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-  id("nessie-conventions-quarkus")
+  id("nessie-conventions-server")
   id("nessie-jacoco")
   alias(libs.plugins.smallrye.openapi)
 }
 
-extra["maven.name"] = "Nessie - Model - Variant only for Java 17+ consumers"
+extra["maven.name"] = "Nessie - Model - Variant only for Java 11+ consumers"
 
 description =
   "nessie-model-jakarta is effectively the same as nessie-model, but it is _not_ a " +

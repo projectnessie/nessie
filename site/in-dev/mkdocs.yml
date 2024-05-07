@@ -18,3 +18,4 @@ nav:
   - export_import.md
   - gc.md
   - cli.md
+  - pynessie.md
