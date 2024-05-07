@@ -78,7 +78,7 @@ public class LocalFiles implements FilesLister, FileDeleter {
                       basePath,
                       e.getValue().lastModifiedTime().toMillis()));
     } catch (IOException e) {
-      throw new NessieFileIOException(e);
+      throw new NessieFileIOException("Failed to list files in " + path, e);
     }
   }
 

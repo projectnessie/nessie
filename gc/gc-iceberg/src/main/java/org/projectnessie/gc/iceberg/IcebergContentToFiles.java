@@ -114,7 +114,19 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
         return Stream.empty();
       }
 
-      throw new RuntimeException(notFoundCandidate);
+      String msg =
+          "Failed to extract content of "
+              + contentReference.contentType()
+              + " "
+              + contentReference.contentKey()
+              + ", content-ID "
+              + contentReference.contentId()
+              + " at commit "
+              + contentReference.commitId()
+              + " via "
+              + contentReference.metadataLocation();
+      LOGGER.error("{}", msg, notFoundCandidate);
+      throw new RuntimeException(msg, notFoundCandidate);
     }
 
     long snapshotId =
@@ -135,10 +147,26 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
                   // .flatMap() for lazy loading
                   .flatMap(
                       x -> {
-                        @SuppressWarnings("MustBeClosedChecker")
-                        Stream<StorageUri> r =
-                            allManifestsAndDataFiles(io, snapshot, contentReference);
-                        return r;
+                        try {
+                          @SuppressWarnings("MustBeClosedChecker")
+                          Stream<StorageUri> r =
+                              allManifestsAndDataFiles(io, snapshot, contentReference);
+                          return r;
+                        } catch (Exception e) {
+                          String msg =
+                              "Failed to get manifest files for "
+                                  + contentReference.contentType()
+                                  + " "
+                                  + contentReference.contentKey()
+                                  + ", content-ID "
+                                  + contentReference.contentId()
+                                  + " at commit "
+                                  + contentReference.commitId()
+                                  + " via "
+                                  + contentReference.metadataLocation();
+                          LOGGER.error("{}", msg, e);
+                          throw new RuntimeException(msg, e);
+                        }
                       }));
     }
 
@@ -179,7 +207,13 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   @MustBeClosed
   static Stream<StorageUri> allDataAndDeleteFiles(
       FileIO io, ManifestFile manifestFile, ContentReference contentReference) {
-    CloseableIterable<String> iter = ManifestReaderUtil.readPathsFromManifest(manifestFile, io);
+    CloseableIterable<String> iter;
+    try {
+      iter = ManifestReaderUtil.readPathsFromManifest(manifestFile, io);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Failed to get paths from manifest file " + manifestFile.path(), e);
+    }
     return StreamSupport.stream(iter.spliterator(), false)
         .map(dataFilePath -> dataFileUri(dataFilePath, contentReference))
         .onClose(

@@ -95,8 +95,10 @@ public abstract class PerContentDeleteExpired {
             baseLocation -> {
               try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
                 return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
-              } catch (NessieFileIOException e) {
-                throw new RuntimeException(e);
+              } catch (Exception e) {
+                String msg = "Failed to expire objects in base location " + baseLocation;
+                LOGGER.error("{}", msg, e);
+                throw new RuntimeException(msg, e);
               }
             })
         .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
