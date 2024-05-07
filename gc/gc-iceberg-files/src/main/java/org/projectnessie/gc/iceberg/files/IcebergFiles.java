@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.iceberg.aws.s3.S3FileIO;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.ResolvingFileIO;
 import org.apache.iceberg.io.SupportsBulkOperations;
 import org.apache.iceberg.io.SupportsPrefixOperations;
@@ -131,7 +132,13 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
 
       @SuppressWarnings("resource")
       SupportsPrefixOperations fileIo = (SupportsPrefixOperations) resolvingFileIO();
-      return StreamSupport.stream(fileIo.listPrefix(basePath.toString()).spliterator(), false)
+      Iterable<FileInfo> fileInfos;
+      try {
+        fileInfos = fileIo.listPrefix(basePath.toString());
+      } catch (Exception e) {
+        throw new NessieFileIOException("Failed to list prefix of " + path, e);
+      }
+      return StreamSupport.stream(fileInfos.spliterator(), false)
           .map(
               f ->
                   FileReference.of(
@@ -147,7 +154,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     try {
       fs = p.getFileSystem(hadoopConfiguration());
     } catch (IOException e) {
-      throw new NessieFileIOException(e);
+      throw new NessieFileIOException("Failed to get Hadoop file system " + basePath, e);
     }
 
     return StreamSupport.stream(
@@ -177,7 +184,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
 
               return true;
             } catch (IOException e) {
-              throw new RuntimeException(e);
+              throw new RuntimeException("Failed to list (via Hadoop) " + basePath, e);
             }
           }
         },
