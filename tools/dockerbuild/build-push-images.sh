@@ -28,7 +28,6 @@ set -e
 IMAGE_NAME=""
 GITHUB=0
 LOCAL=0
-ARTIFACTS=""
 GRADLE_PROJECT=""
 PROJECT_DIR=""
 DOCKERFILE="Dockerfile-server"
@@ -47,7 +46,6 @@ function usage() {
       -p | --project-dir <dir>          Directory of the Gradle project, relative to the root of the repository
       -d | --dockerfile <file>          Dockerfile to use (default: Dockerfile-server)
       -gh | --github                    GitHub actions mode
-      -a | --artifacts-dir <dir>        Directory to place uber-jars in
       -l | --local                      Only build the image for local use (not multi-platform),
                                         not pushed to a registry. Can build with 'docker' and 'podman'.
       -t | --tool                       Name of the podman/docker/podman-remote tool to use.
@@ -90,10 +88,6 @@ while [[ $# -gt 0 ]]; do
     DOCKERFILE="$2"
     shift
     ;;
-  -a | --artifacts-dir)
-    ARTIFACTS="$2"
-    shift
-    ;;
   -gh | --github)
     GITHUB=1
     ;;
@@ -119,12 +113,6 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if [[ ${GITHUB} == 1 ]] ; then
-  if [[ -z $ARTIFACTS ]] ; then
-    usage
-    exit 1
-  fi
-fi
 if [[ -z $IMAGE_NAME || -z $GRADLE_PROJECT || -z $PROJECT_DIR || ! -d $PROJECT_DIR ]] ; then
   usage
   exit 1
@@ -132,12 +120,6 @@ fi
 
 BASE_DIR="$(cd "$(dirname "$0")/../.." ; pwd)"
 cd "$BASE_DIR"
-
-if [[ -z ${ARTIFACTS} ]]; then
-  mkdir -p "$BASE_DIR/build"
-  # WARNING: mktemp -p is not available on macOS: you must provide the --artifacts option
-  ARTIFACTS="$(mktemp -p "$BASE_DIR/build" -d dockerbuild-artifacts-XXXXX)"
-fi
 
 #
 # Prepare
@@ -148,8 +130,6 @@ IMAGE_TAG="$(cat version.txt)"
 IMAGE_TAG_BASE="${IMAGE_TAG%-SNAPSHOT}"
 echo "Image name: ${IMAGE_NAME}"
 echo "Tag base: ${IMAGE_TAG_BASE}"
-echo "Placing binaries in: ${ARTIFACTS}"
-mkdir -p "${ARTIFACTS}"
 gh_endgroup
 
 if [[ ${LOCAL} == 0 ]] ; then

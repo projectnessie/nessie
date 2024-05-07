@@ -655,27 +655,18 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Docker images publishing
-        env:
-          ARTIFACTS: ../build-artifacts
         run: |
-          rm -rf "${ARTIFACTS}"
-          mkdir -p "${ARTIFACTS}"
-
           tools/dockerbuild/build-push-images.sh \
-            -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
             -d "Dockerfile-server" \
             ${DOCKER_IMAGE}
 
           tools/dockerbuild/build-push-images.sh \
-            -a "${ARTIFACTS}" \
             -g ":nessie-gc-tool" \
             -p "gc/gc-tool" \
             -d "Dockerfile-gctool" \
             ${DOCKER_GC_IMAGE}
-
-          rm -rf "${ARTIFACTS}"
 
       - name: Cleanup buildx
         run: |

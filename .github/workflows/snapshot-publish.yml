@@ -54,23 +54,14 @@ jobs:
             ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
 
       - name: Docker images publishing
-        env:
-          ARTIFACTS: ../build-artifacts
         run: |
-          rm -rf "${ARTIFACTS}"
-          mkdir -p "${ARTIFACTS}"
-
           echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u $ --password-stdin 
           tools/dockerbuild/build-push-images.sh \
-            -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
             ghcr.io/projectnessie/nessie-unstable
           tools/dockerbuild/build-push-images.sh \
-            -a "${ARTIFACTS}" \
             -g ":nessie-gc-tool" \
             -p "gc/gc-tool" \
             -d "Dockerfile-gctool" \
             ghcr.io/projectnessie/nessie-gc-unstable
-
-          rm -rf "${ARTIFACTS}"
