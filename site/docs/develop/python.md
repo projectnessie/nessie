@@ -8,10 +8,7 @@ pip install pynessie
 ## Configuration
 
 When you install pynessie, you get the Python client along with a Python CLI. Configuration 
-for both is covered in our reference for the [command line interface](../nessie-latest/pynessie.md).
-
-!!! warn
-    pynessie CLI has been deprecated in favor of the new [Nessie CLI/REPL tool](../nessie-latest/cli.md)!
+for both is covered in our reference for the [command line interface](../nessie-latest/cli.md). 
 
 ## Usage
 
