@@ -107,8 +107,8 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commit(
                 branch,
                 fromMessage("some awkward message"),
-                Put.of(hello, IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")),
-                Put.of(ollah, IcebergView.of("path2", 1, 1, "Spark", "SELECT ALL THE THINGS")))
+                Put.of(hello, IcebergView.of("path1", 1, 1)),
+                Put.of(ollah, IcebergView.of("path2", 1, 1)))
             .getTargetBranch();
 
     soft.assertThat(

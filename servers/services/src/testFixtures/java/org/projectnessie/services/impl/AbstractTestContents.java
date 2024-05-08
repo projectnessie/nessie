@@ -89,12 +89,9 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 ContentKey.of("a", "iceberg"), IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
-            Put.of(
-                ContentKey.of("a", "view"),
-                IcebergView.of("/iceberg/view", 1, 1, "dial", "SELECT foo FROM table"))),
+            Put.of(ContentKey.of("a", "view"), IcebergView.of("/iceberg/view", 1, 1))),
         new ContentAndOperationType(
-            Content.Type.UDF,
-            Put.of(ContentKey.of("a", "udf"), UDF.of("dial", "SELECT foo FROM table"))),
+            Content.Type.UDF, Put.of(ContentKey.of("a", "udf"), UDF.of("/udf-meta", 42))),
         new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Put.of(
@@ -118,23 +115,19 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
         new ContentAndOperationType(
             Content.Type.UDF,
             Delete.of(ContentKey.of("a", "udf_delete")),
-            Put.of(ContentKey.of("a", "udf_delete"), UDF.of("dial", "sql"))),
+            Put.of(ContentKey.of("a", "udf_delete"), UDF.of("/udf-metadata", 42))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
             Delete.of(ContentKey.of("a", "view_delete")),
-            Put.of(
-                ContentKey.of("a", "view_delete"),
-                IcebergView.of("/iceberg/view", 42, 42, "dial", "sql"))),
+            Put.of(ContentKey.of("a", "view_delete"), IcebergView.of("/iceberg/view", 42, 42))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
             Unchanged.of(ContentKey.of("a", "view_unchanged")),
-            Put.of(
-                ContentKey.of("a", "view_unchanged"),
-                IcebergView.of("/iceberg/view", 42, 42, "dial", "sql"))),
+            Put.of(ContentKey.of("a", "view_unchanged"), IcebergView.of("/iceberg/view", 42, 42))),
         new ContentAndOperationType(
             Content.Type.UDF,
             Unchanged.of(ContentKey.of("a", "udf_unchanged")),
-            Put.of(ContentKey.of("a", "udf_unchanged"), UDF.of("dial", "sql"))),
+            Put.of(ContentKey.of("a", "udf_unchanged"), UDF.of("/udf-meta-data", 42))),
         new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Delete.of(ContentKey.of("a", "delta_delete")),

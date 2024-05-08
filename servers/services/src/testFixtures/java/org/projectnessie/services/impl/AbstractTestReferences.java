@@ -294,23 +294,17 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
     commit(
         createBranch("refs.branch.1"),
         fromMessage("some awkward message"),
-        Put.of(
-            ContentKey.of("hello.world.BaseTable"),
-            IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")));
+        Put.of(ContentKey.of("hello.world.BaseTable"), IcebergView.of("path1", 1, 1)));
     Branch b2 =
         commit(
                 createBranch("other-development"),
                 fromMessage("invent awesome things"),
-                Put.of(
-                    ContentKey.of("cool.stuff.Caresian"),
-                    IcebergView.of("path2", 1, 1, "Spark", "CARTESIAN JOINS ARE AWESOME")))
+                Put.of(ContentKey.of("cool.stuff.Caresian"), IcebergView.of("path2", 1, 1)))
             .getTargetBranch();
     commit(
         createBranch("archive"),
         fromMessage("boring old stuff"),
-        Put.of(
-            ContentKey.of("super.old.Numbers"),
-            IcebergView.of("path3", 1, 1, "Spark", "AGGREGATE EVERYTHING")));
+        Put.of(ContentKey.of("super.old.Numbers"), IcebergView.of("path3", 1, 1)));
     Tag t1 = createTag("my-tag", b2);
 
     soft.assertThat(allReferences(MINIMAL, "ref.name == 'other-development'"))

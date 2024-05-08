@@ -113,7 +113,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     Namespace namespace2 = Namespace.of(keyNamespace2);
     IcebergTable table1 = IcebergTable.of("foo", 42, 42, 42, 42);
     IcebergTable table2 = IcebergTable.of("bar", 42, 42, 42, 42);
-    UDF unrelated = UDF.of("meep", "sql");
+    UDF unrelated = UDF.of("udf-meta", 42);
 
     Branch common = createBranch("common");
     CommitResponse commonResponse =

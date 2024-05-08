@@ -86,10 +86,10 @@ public class TestGenericContent {
     return Stream.of(
         IcebergTable.of("meta", 1, 2, 3, 4),
         IcebergTable.of("meta", 1, 2, 3, 4, "cid"),
-        IcebergView.of("meta", 1, 2, "awesome-db", "select what_i_want"),
-        IcebergView.of("cid", "meta", 1, 2, "awesome-db", "select what_i_want"),
-        UDF.of("awesome-db", "select what_i_want"),
-        UDF.of("cid", "awesome-db", "select what_i_want"),
+        IcebergView.of("meta", 1, 2),
+        IcebergView.of("cid", "meta", 1, 2),
+        UDF.of("/udf-metadata", 666),
+        UDF.of("cid", "/udf-metadata", 42),
         Namespace.of("foo", "bar"),
         Namespace.builder().from(Namespace.of("foo", "bar")).id("cid").build());
   }
