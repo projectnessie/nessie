@@ -39,6 +39,9 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Reference;
+import org.projectnessie.nessie.cli.grammar.NessieCliLexer;
+import org.projectnessie.nessie.cli.grammar.NessieCliParser;
+import org.projectnessie.nessie.cli.grammar.Token;
 
 public abstract class BaseNessieCli {
 
@@ -171,6 +174,13 @@ public abstract class BaseNessieCli {
       throw new NotConnectedException();
     }
     return icebergClient;
+  }
+
+  public NessieCliParser newParserForSource(String source) {
+    NessieCliLexer lexer = new NessieCliLexer(source);
+    NessieCliParser parser = new NessieCliParser(lexer);
+    parser.deactivateTokenType(Token.TokenType.IN);
+    return parser;
   }
 
   public void verifyAnyConnected() {

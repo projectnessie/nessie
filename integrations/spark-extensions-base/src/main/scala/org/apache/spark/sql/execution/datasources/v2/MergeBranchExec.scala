@@ -20,12 +20,23 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
+import org.projectnessie.model.{
+  Branch,
+  ContentKey,
+  MergeBehavior,
+  MergeKeyBehavior,
+  Tag
+}
 
 case class MergeBranchExec(
     output: Seq[Attribute],
-    branch: Option[String],
-    currentCatalog: CatalogPlugin,
+    ref: Option[String],
+    refTimestampOrHash: Option[String],
     toRefName: Option[String],
+    dryRun: Boolean,
+    defaultMergeBehavior: Option[String],
+    keyMergeBehaviors: java.util.Map[String, String],
+    currentCatalog: CatalogPlugin,
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
     with LeafV2CommandExec {
@@ -33,15 +44,25 @@ case class MergeBranchExec(
   override protected def runInternal(
       bridge: CatalogBridge
   ): Seq[InternalRow] = {
-    val from = bridge.api.getReference
+    var from = bridge.api.getReference
       .refName(
-        branch
+        ref
           .map(unquoteRefName)
           .getOrElse(
             bridge.getCurrentRef.getName
           )
       )
-    bridge.api
+      .get()
+    if (refTimestampOrHash.isDefined) {
+      if (from.isInstanceOf[Branch]) {
+        from = Branch.of(from.getName, refTimestampOrHash.get)
+      }
+      if (from.isInstanceOf[Tag]) {
+        from = Tag.of(from.getName, refTimestampOrHash.get)
+      }
+    }
+
+    val merge = bridge.api
       .mergeRefIntoBranch()
       .branchName(
         toRefName
@@ -54,10 +75,20 @@ case class MergeBranchExec(
           .map(r => bridge.api.getReference.refName(r).get.getHash)
           .getOrElse(bridge.api.getDefaultBranch.getHash)
       )
-      .fromRef(from.get)
-      .merge()
+      .fromRef(from)
+      .dryRun(dryRun)
 
-    val ref = bridge.api.getReference.refName(
+    defaultMergeBehavior.foreach(b =>
+      merge.defaultMergeMode(MergeBehavior.valueOf(b))
+    )
+    keyMergeBehaviors.forEach((k, v) => {
+      val key = ContentKey.fromPathString(k)
+      merge.mergeKeyBehavior(MergeKeyBehavior.of(key, MergeBehavior.valueOf(v)))
+    })
+
+    merge.merge()
+
+    val refObj = bridge.api.getReference.refName(
       toRefName
         .map(unquoteRefName)
         .getOrElse(bridge.api.getDefaultBranch.getName)
@@ -65,13 +96,13 @@ case class MergeBranchExec(
 
     Seq(
       InternalRow(
-        UTF8String.fromString(ref.get.getName),
-        UTF8String.fromString(ref.get.getHash)
+        UTF8String.fromString(refObj.get.getName),
+        UTF8String.fromString(refObj.get.getHash)
       )
     )
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"MergeBranchExec ${catalog.getOrElse(currentCatalog.name())} ${branch.map(unquoteRefName)} "
+    s"MergeBranchExec ${catalog.getOrElse(currentCatalog.name())} ${ref.map(unquoteRefName)} "
   }
 }

@@ -74,7 +74,11 @@ public class TestCliCompleter {
       boolean expectedQuoted,
       CompletionType expectedCompletionType) {
     CliCompleter completer =
-        new CliCompleter(input, input.length(), NessieCliParser::SingleStatement) {
+        new CliCompleter(
+            input,
+            input.length(),
+            TestCliCompleter::sourceParser,
+            NessieCliParser::SingleStatement) {
           @Override
           protected void completeWithLiteral(
               CompletionType completionType, String preceding, String toComplete, boolean quoted) {
@@ -109,8 +113,26 @@ public class TestCliCompleter {
         arguments("create branch f", false, "f", false, CompletionType.NONE, List.of()),
         arguments("create branch \"f", true, "f", true, CompletionType.NONE, List.of()),
         arguments("create branch \"f\"", false, "f", true, CompletionType.NONE, List.of()),
+        arguments("create branch 'f", true, "f", true, CompletionType.NONE, List.of()),
+        arguments("create branch 'f'", false, "f", true, CompletionType.NONE, List.of()),
+        arguments("create branch `f", true, "f", true, CompletionType.NONE, List.of()),
+        arguments("create branch `f`", false, "f", true, CompletionType.NONE, List.of()),
         arguments(
             "create branch \"foo non_keyword",
+            true,
+            "foo non_keyword",
+            true,
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "create branch 'foo non_keyword",
+            true,
+            "foo non_keyword",
+            true,
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "create branch `foo non_keyword",
             true,
             "foo non_keyword",
             true,
@@ -139,7 +161,11 @@ public class TestCliCompleter {
     List<String> other = new ArrayList<>();
     AtomicReference<List<TokenType>> optionalTypes = new AtomicReference<>(List.of());
     CliCompleter completer =
-        new CliCompleter(input, input.length(), NessieCliParser::SingleStatement) {
+        new CliCompleter(
+            input,
+            input.length(),
+            TestCliCompleter::sourceParser,
+            NessieCliParser::SingleStatement) {
           @Override
           protected void completeWithLiteral(
               CompletionType completionType, String preceding, String toComplete, boolean quoted) {
@@ -180,6 +206,11 @@ public class TestCliCompleter {
     soft.assertThat(other)
         .describedAs("completion/other")
         .containsExactlyInAnyOrderElementsOf(expectedOther);
+  }
+
+  private static NessieCliParser sourceParser(String source) {
+    NessieCliLexer lexer = new NessieCliLexer(source);
+    return new NessieCliParser(lexer);
   }
 
   static Stream<Arguments> completer() {
@@ -552,9 +583,12 @@ public class TestCliCompleter {
             List.of(),
             List.of(),
             List.of(
-                "LIST REFERENCES FILTER", "LIST REFERENCES STARTING", "LIST REFERENCES CONTAINING"),
+                "LIST REFERENCES FILTER",
+                "LIST REFERENCES STARTING",
+                "LIST REFERENCES CONTAINING",
+                "LIST REFERENCES IN"),
             CompletionType.NONE,
-            List.of(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING)),
+            List.of(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING, TokenType.IN)),
         arguments(
             "LIST REFERENCES STARTING ",
             true,
@@ -592,9 +626,9 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("show log ON", "show log AT", "show log LIMIT"),
+            List.of("show log ON", "show log AT", "show log LIMIT", "show log IN"),
             CompletionType.NONE,
-            List.of(TokenType.ON, TokenType.AT, TokenType.LIMIT)),
+            List.of(TokenType.ON, TokenType.AT, TokenType.LIMIT, TokenType.IN)),
         arguments(
             "show table ",
             true,
@@ -640,9 +674,9 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("create branch f FROM", "create branch f AT"),
+            List.of("create branch f IN", "create branch f FROM", "create branch f AT"),
             CompletionType.NONE,
-            List.of(TokenType.FROM, TokenType.AT)),
+            List.of(TokenType.IN, TokenType.FROM, TokenType.AT)),
         arguments(
             "create branch",
             true,
@@ -664,9 +698,9 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("create branch \"f\" FROM", "create branch \"f\" AT"),
+            List.of("create branch \"f\" IN", "create branch \"f\" FROM", "create branch \"f\" AT"),
             CompletionType.NONE,
-            List.of(TokenType.FROM, TokenType.AT)),
+            List.of(TokenType.IN, TokenType.FROM, TokenType.AT)),
         arguments(
             "create branch \"foo non_keyword",
             true,
@@ -888,19 +922,19 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of(),
+            List.of("USE\n BRANCH\n main\n AT", "USE\n BRANCH\n main\n IN"),
             // Must not reset the completion type in the parser, so this value is expected here
             CompletionType.NONE,
-            List.of()),
+            List.of(TokenType.AT, TokenType.IN)),
         arguments(
             "USE\n BRANCH\n \"main\"\n",
             false,
             List.of(),
             List.of(),
-            List.of(),
+            List.of("USE\n BRANCH\n \"main\"\nAT", "USE\n BRANCH\n \"main\"\nIN"),
             // Must not reset the completion type in the parser, so this value is expected here
             CompletionType.NONE,
-            List.of()),
+            List.of(TokenType.AT, TokenType.IN)),
         arguments(
             "CREATE BRANCH IF",
             true,
@@ -996,9 +1030,18 @@ public class TestCliCompleter {
             List.of(),
             List.of(),
             List.of(
-                "MERGE foop AT", "MERGE foop INTO", "MERGE foop BEHAVIOR", "MERGE foop BEHAVIORS"),
+                "MERGE foop AT",
+                "MERGE foop INTO",
+                "MERGE foop BEHAVIOR",
+                "MERGE foop BEHAVIORS",
+                "MERGE foop IN"),
             CompletionType.NONE,
-            List.of(TokenType.AT, TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS)),
+            List.of(
+                TokenType.AT,
+                TokenType.INTO,
+                TokenType.BEHAVIOR,
+                TokenType.BEHAVIORS,
+                TokenType.IN)),
         arguments(
             "MERGE foop AT daedbeef",
             false,
@@ -1007,17 +1050,21 @@ public class TestCliCompleter {
             List.of(
                 "MERGE foop AT daedbeef INTO",
                 "MERGE foop AT daedbeef BEHAVIOR",
-                "MERGE foop AT daedbeef BEHAVIORS"),
+                "MERGE foop AT daedbeef BEHAVIORS",
+                "MERGE foop AT daedbeef IN"),
             CompletionType.NONE,
-            List.of(TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS)),
+            List.of(TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS, TokenType.IN)),
         arguments(
             "MERGE foop INTO meep",
             false,
             List.of(),
             List.of(),
-            List.of("MERGE foop INTO meep BEHAVIOR", "MERGE foop INTO meep BEHAVIORS"),
+            List.of(
+                "MERGE foop INTO meep BEHAVIOR",
+                "MERGE foop INTO meep BEHAVIORS",
+                "MERGE foop INTO meep IN"),
             CompletionType.NONE,
-            List.of(TokenType.BEHAVIOR, TokenType.BEHAVIORS)),
+            List.of(TokenType.BEHAVIOR, TokenType.BEHAVIORS, TokenType.IN)),
         arguments(
             "MERGE foop BEHAVIOR",
             true,
@@ -1034,9 +1081,9 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("MERGE foop BEHAVIOR NORMAL BEHAVIORS"),
+            List.of("MERGE foop BEHAVIOR NORMAL BEHAVIORS", "MERGE foop BEHAVIOR NORMAL IN"),
             CompletionType.NONE,
-            List.of(TokenType.BEHAVIORS)),
+            List.of(TokenType.BEHAVIORS, TokenType.IN)),
         arguments(
             "MERGE foop BEHAVIOR DROP BEHAVIORS",
             true,
@@ -1069,9 +1116,11 @@ public class TestCliCompleter {
             false,
             List.of(),
             List.of(),
-            List.of("MERGE foop BEHAVIOR DROP BEHAVIORS xyz = FORCE AND"),
+            List.of(
+                "MERGE foop BEHAVIOR DROP BEHAVIORS xyz = FORCE AND",
+                "MERGE foop BEHAVIOR DROP BEHAVIORS xyz = FORCE IN"),
             CompletionType.NONE,
-            List.of(TokenType.AND)),
+            List.of(TokenType.AND, TokenType.IN)),
         arguments(
             "MERGE foop BEHAVIOR DROP BEHAVIORS xyz = FORCE AND",
             true,
@@ -1140,6 +1189,54 @@ public class TestCliCompleter {
   static Stream<Arguments> parse() {
     return Stream.of(
         arguments(
+            "MERGE BRANCH foo IN nessie",
+            List.of(
+                ImmutableMergeBranchCommandSpec.builder()
+                    .ref("foo")
+                    .refType("BRANCH")
+                    .inCatalog("nessie")
+                    .build())),
+        arguments(
+            "/* some comment here */ USE // blah\nREFERENCE -- meep\ntestComments IN nessie -- and there",
+            List.of(
+                ImmutableUseReferenceCommandSpec.builder()
+                    .inCatalog("nessie")
+                    .ref("testComments")
+                    .build())),
+        arguments(
+            "/* some comment here */ USE /* comment */ REFERENCE testComments IN nessie // and there",
+            List.of(
+                ImmutableUseReferenceCommandSpec.builder()
+                    .inCatalog("nessie")
+                    .ref("testComments")
+                    .build())),
+        arguments(
+            "-- leading \n CREATE BRANCH /* inner */ IF NOT /* inner \ninner \ninner \n */ EXISTS testComments_other IN nessie",
+            List.of(
+                ImmutableCreateReferenceCommandSpec.builder()
+                    .inCatalog("nessie")
+                    .ref("testComments_other")
+                    .refType("BRANCH")
+                    .isConditional(true)
+                    .build())),
+        arguments(
+            " -- leading \n -- leading \n-- leading \n CREATE BRANCH IF NOT EXISTS testComments_other IN nessie",
+            List.of(
+                ImmutableCreateReferenceCommandSpec.builder()
+                    .inCatalog("nessie")
+                    .ref("testComments_other")
+                    .refType("BRANCH")
+                    .isConditional(true)
+                    .build())),
+        arguments(
+            "USE REFERENCE throwWhenUseShowReferencesAtTimestampWithoutTimeZone AT `2024-08-02T10:58:34.486427033` IN nessie",
+            List.of(
+                ImmutableUseReferenceCommandSpec.builder()
+                    .inCatalog("nessie")
+                    .ref("throwWhenUseShowReferencesAtTimestampWithoutTimeZone")
+                    .refTimestampOrHash("2024-08-02T10:58:34.486427033")
+                    .build())),
+        arguments(
             "REVERT CONTENT OF foo AND bar AND \"baz.blah\" TO STATE AT COMMIT deadbeef",
             List.of(
                 ImmutableRevertContentCommandSpec.builder()
@@ -1147,7 +1244,7 @@ public class TestCliCompleter {
                     .sourceRefTimestampOrHash("deadbeef")
                     .build())),
         arguments(
-            "REVERT CONTENT DRY OF foo AND bar AND \"baz.blah\" TO STATE AT COMMIT deadbeef ALLOW DELETES",
+            "REVERT CONTENT DRY OF foo AND `bar` AND 'baz.blah' TO STATE AT COMMIT deadbeef ALLOW DELETES",
             List.of(
                 ImmutableRevertContentCommandSpec.builder()
                     .isDryRun(true)
@@ -1207,131 +1304,143 @@ public class TestCliCompleter {
         // arguments("HELP create;", List.of(ImmutableHelpCommandSpec.builder().build())),
         arguments(
             "list contents;",
-            List.of(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null))),
+            List.of(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null, null))),
         arguments(
             "list contents on baz filter bar;",
-            List.of(ImmutableListContentsCommandSpec.of(null, "baz", null, "bar", null, null))),
+            List.of(
+                ImmutableListContentsCommandSpec.of(null, null, "baz", null, "bar", null, null))),
         arguments(
             "list contents on baz at 2024-04-26T10:31:05.271094723Z starting with \"foo\" containing bar;",
             List.of(
                 ImmutableListContentsCommandSpec.of(
-                    null, "baz", "2024-04-26T10:31:05.271094723Z", null, "foo", "bar"))),
+                    null, null, "baz", "2024-04-26T10:31:05.271094723Z", null, "foo", "bar"))),
         arguments(
             "list references;",
-            List.of(ImmutableListReferencesCommandSpec.of(null, null, null, null))),
+            List.of(ImmutableListReferencesCommandSpec.of(null, null, null, null, null))),
         arguments(
             "list references starting with \"foo\" containing bar;",
-            List.of(ImmutableListReferencesCommandSpec.of(null, null, "foo", "bar"))),
+            List.of(ImmutableListReferencesCommandSpec.of(null, null, null, "foo", "bar"))),
         arguments(
             "list references filter \"foo\";",
-            List.of(ImmutableListReferencesCommandSpec.of(null, "foo", null, null))),
-        arguments("show log", List.of(ImmutableShowLogCommandSpec.of(null, null, null, null))),
+            List.of(ImmutableListReferencesCommandSpec.of(null, null, "foo", null, null))),
         arguments(
-            "show log on bar;", List.of(ImmutableShowLogCommandSpec.of(null, "bar", null, null))),
+            "show log", List.of(ImmutableShowLogCommandSpec.of(null, null, null, null, null))),
+        arguments(
+            "show log on bar;",
+            List.of(ImmutableShowLogCommandSpec.of(null, null, "bar", null, null))),
         arguments(
             "show log on bar at deadbeef limit 42;",
-            List.of(ImmutableShowLogCommandSpec.of(null, "bar", "deadbeef", 42))),
+            List.of(ImmutableShowLogCommandSpec.of(null, null, "bar", "deadbeef", 42))),
         arguments(
             "show table meep",
-            List.of(ImmutableShowContentCommandSpec.of(null, "TABLE", null, null, "meep"))),
+            List.of(ImmutableShowContentCommandSpec.of(null, null, "TABLE", null, null, "meep"))),
         arguments(
             "show view on foo meep;",
-            List.of(ImmutableShowContentCommandSpec.of(null, "VIEW", "foo", null, "meep"))),
+            List.of(ImmutableShowContentCommandSpec.of(null, null, "VIEW", "foo", null, "meep"))),
         arguments(
             "show namespace on foo at deadbeef meep;",
             List.of(
-                ImmutableShowContentCommandSpec.of(null, "NAMESPACE", "foo", "deadbeef", "meep"))),
+                ImmutableShowContentCommandSpec.of(
+                    null, null, "NAMESPACE", "foo", "deadbeef", "meep"))),
         arguments(
-            "show reference", List.of(ImmutableShowReferenceCommandSpec.of(null, null, null))),
+            "show reference",
+            List.of(ImmutableShowReferenceCommandSpec.of(null, null, null, null))),
         arguments(
             "show reference bar;",
-            List.of(ImmutableShowReferenceCommandSpec.of(null, "bar", null))),
+            List.of(ImmutableShowReferenceCommandSpec.of(null, null, "bar", null))),
         arguments(
             "cReAtE bRaNcH \"foo\";",
             List.of(
-                ImmutableCreateReferenceCommandSpec.of(null, "BRANCH", "foo", null, null, false))),
+                ImmutableCreateReferenceCommandSpec.of(
+                    null, null, "BRANCH", "foo", null, null, false))),
         arguments(
             "use bRaNcH \"foo\";",
-            List.of(ImmutableUseReferenceCommandSpec.of(null, "BRANCH", "foo"))),
+            List.of(ImmutableUseReferenceCommandSpec.of(null, null, "BRANCH", "foo", null))),
         arguments(
             "DROP TAG bar;",
-            List.of(ImmutableDropReferenceCommandSpec.of(null, "TAG", "bar", false))),
+            List.of(ImmutableDropReferenceCommandSpec.of(null, null, "TAG", "bar", false))),
         arguments(
             "CREATE BRANCH if not exists foo; DROP TAG bar;",
             List.of(
-                ImmutableCreateReferenceCommandSpec.of(null, "BRANCH", "foo", null, null, true),
-                ImmutableDropReferenceCommandSpec.of(null, "TAG", "bar", false))),
+                ImmutableCreateReferenceCommandSpec.of(
+                    null, null, "BRANCH", "foo", null, null, true),
+                ImmutableDropReferenceCommandSpec.of(null, null, "TAG", "bar", false))),
         arguments(
             "create branch foo; drop tag bar;",
             List.of(
-                ImmutableCreateReferenceCommandSpec.of(null, "BRANCH", "foo", null, null, false),
-                ImmutableDropReferenceCommandSpec.of(null, "TAG", "bar", false))),
+                ImmutableCreateReferenceCommandSpec.of(
+                    null, null, "BRANCH", "foo", null, null, false),
+                ImmutableDropReferenceCommandSpec.of(null, null, "TAG", "bar", false))),
         //
         arguments(
             "create namespace foo.bar.baz;",
-            List.of(ImmutableCreateNamespaceCommandSpec.of(null, "foo.bar.baz", null, Map.of()))),
+            List.of(
+                ImmutableCreateNamespaceCommandSpec.of(null, null, "foo.bar.baz", null, Map.of()))),
         arguments(
             "create namespace foo.bar.baz on blah;",
-            List.of(ImmutableCreateNamespaceCommandSpec.of(null, "foo.bar.baz", "blah", Map.of()))),
+            List.of(
+                ImmutableCreateNamespaceCommandSpec.of(
+                    null, null, "foo.bar.baz", "blah", Map.of()))),
         arguments(
             "create namespace foo.bar.baz set x = y;",
             List.of(
                 ImmutableCreateNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", null, Map.of("x", "y")))),
+                    null, null, "foo.bar.baz", null, Map.of("x", "y")))),
         arguments(
             "create namespace foo.bar.baz on blah set x = y;",
             List.of(
                 ImmutableCreateNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", "blah", Map.of("x", "y")))),
+                    null, null, "foo.bar.baz", "blah", Map.of("x", "y")))),
         arguments(
             "create namespace foo.bar.baz on blah set x = y and foo = meep;",
             List.of(
                 ImmutableCreateNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", "blah", Map.of("x", "y", "foo", "meep")))),
+                    null, null, "foo.bar.baz", "blah", Map.of("x", "y", "foo", "meep")))),
         arguments(
             "alter namespace foo.bar.baz;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", null, Map.of(), Set.of()))),
+                    null, null, "foo.bar.baz", null, Map.of(), Set.of()))),
         arguments(
             "alter namespace foo.bar.baz on blah;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", "blah", Map.of(), Set.of()))),
+                    null, null, "foo.bar.baz", "blah", Map.of(), Set.of()))),
         arguments(
             "alter namespace foo.bar.baz set x = y;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", null, Map.of("x", "y"), Set.of()))),
+                    null, null, "foo.bar.baz", null, Map.of("x", "y"), Set.of()))),
         arguments(
             "alter namespace foo.bar.baz on blah set x = y;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", "blah", Map.of("x", "y"), Set.of()))),
+                    null, null, "foo.bar.baz", "blah", Map.of("x", "y"), Set.of()))),
         arguments(
             "alter namespace foo.bar.baz remove x;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", null, Map.of(), Set.of("x")))),
+                    null, null, "foo.bar.baz", null, Map.of(), Set.of("x")))),
         arguments(
             "alter namespace foo.bar.baz on blah remove x;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", "blah", Map.of(), Set.of("x")))),
+                    null, null, "foo.bar.baz", "blah", Map.of(), Set.of("x")))),
         arguments(
             "alter namespace foo.bar.baz set x = y remove a;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", null, Map.of("x", "y"), Set.of("a")))),
+                    null, null, "foo.bar.baz", null, Map.of("x", "y"), Set.of("a")))),
         arguments(
             "alter namespace foo.bar.baz on blah set x = y remove a;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
-                    null, "foo.bar.baz", "blah", Map.of("x", "y"), Set.of("a")))),
+                    null, null, "foo.bar.baz", "blah", Map.of("x", "y"), Set.of("a")))),
         arguments(
             "alter namespace foo.bar.baz on blah set x = y and y = z remove a and b and c;",
             List.of(
                 ImmutableAlterNamespaceCommandSpec.of(
+                    null,
                     null,
                     "foo.bar.baz",
                     "blah",
@@ -1339,32 +1448,44 @@ public class TestCliCompleter {
                     Set.of("a", "b", "c")))),
         arguments(
             "drop namespace foo.bar.baz;",
-            List.of(ImmutableDropContentCommandSpec.of(null, "NAMESPACE", "foo.bar.baz", null))),
+            List.of(
+                ImmutableDropContentCommandSpec.of(null, null, "NAMESPACE", "foo.bar.baz", null))),
         arguments(
             "drop namespace foo.bar.baz on blah;",
-            List.of(ImmutableDropContentCommandSpec.of(null, "NAMESPACE", "foo.bar.baz", "blah"))),
+            List.of(
+                ImmutableDropContentCommandSpec.of(
+                    null, null, "NAMESPACE", "foo.bar.baz", "blah"))),
         // ,
         arguments(
             "drop table foo.bar.baz;",
-            List.of(ImmutableDropContentCommandSpec.of(null, "TABLE", "foo.bar.baz", null))),
+            List.of(ImmutableDropContentCommandSpec.of(null, null, "TABLE", "foo.bar.baz", null))),
         arguments(
             "drop view foo.bar.baz on blah;",
-            List.of(ImmutableDropContentCommandSpec.of(null, "VIEW", "foo.bar.baz", "blah"))),
+            List.of(ImmutableDropContentCommandSpec.of(null, null, "VIEW", "foo.bar.baz", "blah"))),
         //
         arguments(
             "merge branch that_branch at deadbeef;",
             List.of(
                 ImmutableMergeBranchCommandSpec.of(
-                    null, false, "BRANCH", "that_branch", "deadbeef", null, null, emptyMap()))),
+                    null,
+                    null,
+                    false,
+                    "BRANCH",
+                    "that_branch",
+                    "deadbeef",
+                    null,
+                    null,
+                    emptyMap()))),
         arguments(
             "merge dry tag that_branch into foo_baz behavior force;",
             List.of(
                 ImmutableMergeBranchCommandSpec.of(
-                    null, true, "TAG", "that_branch", null, "foo_baz", "FORCE", emptyMap()))),
+                    null, null, true, "TAG", "that_branch", null, "foo_baz", "FORCE", emptyMap()))),
         arguments(
             "merge dry tag my_tag into foo_baz behaviors ns.key = force;",
             List.of(
                 ImmutableMergeBranchCommandSpec.of(
+                    null,
                     null,
                     true,
                     "TAG",
@@ -1378,6 +1499,7 @@ public class TestCliCompleter {
             List.of(
                 ImmutableMergeBranchCommandSpec.of(
                     null,
+                    null,
                     true,
                     "BRANCH",
                     "that_branch",
@@ -1389,6 +1511,7 @@ public class TestCliCompleter {
             "merge dry branch that_branch at cafebabe into meep behavior drop behaviors ns.key = force and ns.foo = normal;",
             List.of(
                 ImmutableMergeBranchCommandSpec.of(
+                    null,
                     null,
                     true,
                     "BRANCH",

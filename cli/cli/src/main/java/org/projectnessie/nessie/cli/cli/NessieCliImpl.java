@@ -57,7 +57,6 @@ import org.projectnessie.model.Tag;
 import org.projectnessie.nessie.cli.cmdspec.CommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableConnectCommandSpec;
 import org.projectnessie.nessie.cli.commands.NessieCommand;
-import org.projectnessie.nessie.cli.grammar.NessieCliLexer;
 import org.projectnessie.nessie.cli.grammar.NessieCliParser;
 import org.projectnessie.nessie.cli.grammar.Node;
 import org.projectnessie.nessie.cli.grammar.ParseException;
@@ -350,8 +349,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
 
   boolean parseAndExecuteScript(
       String scriptSource, boolean continueOnError, boolean echoStatement) {
-    NessieCliLexer lexer = new NessieCliLexer(scriptSource);
-    NessieCliParser parser = new NessieCliParser(lexer);
+    NessieCliParser parser = newParserForSource(scriptSource);
 
     try {
       parser.Script();
@@ -386,8 +384,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   }
 
   boolean parseAndExecuteSingleStatement(String line) {
-    NessieCliLexer lexer = new NessieCliLexer(line);
-    NessieCliParser parser = new NessieCliParser(lexer);
+    NessieCliParser parser = newParserForSource(line);
     try {
       parser.SingleStatement();
       Node root = parser.rootNode();

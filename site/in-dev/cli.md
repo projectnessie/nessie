@@ -38,7 +38,7 @@ See [`CONNECT` statement](#connect) below.
 ## REPL Commands
 
 The following syntax descriptions illustrate how commands are used and the order of
-clauses.
+the clauses.
 
 !!! info
     `CODE` style means the term is a keyword.

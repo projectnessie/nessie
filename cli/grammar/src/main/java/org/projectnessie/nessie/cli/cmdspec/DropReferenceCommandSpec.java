@@ -20,11 +20,14 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-@SuppressWarnings("immutables:subtype")
-public interface DropReferenceCommandSpec extends RefWithTypeCommandSpec {
+public interface DropReferenceCommandSpec extends RefWithTypeCommandSpec, InCatalog {
   default CommandType commandType() {
     return CommandType.DROP_REFERENCE;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override

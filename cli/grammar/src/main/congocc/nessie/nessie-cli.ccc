@@ -265,7 +265,12 @@ CreateReferenceStatement
         <NOT> <EXISTS>
       ]
       /ref/=ReferenceName
-      { setOptionalNextTokenTypes(TokenType.FROM, TokenType.AT); }
+      { setOptionalNextTokenTypes(TokenType.IN, TokenType.FROM, TokenType.AT); }
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName
+        { setOptionalNextTokenTypes(TokenType.FROM, TokenType.AT); }
+      ]
+      #endif
       [ <FROM>
         { setOptionalNextTokenTypes();
           completionType = CompletionType.REFERENCE_NAME;
@@ -281,6 +286,7 @@ CreateReferenceStatement
           { setOptionalNextTokenTypes(); }
         ]
         /at/=TimestampOrCommit
+        { setOptionalNextTokenTypes(); }
       ]
     ;
 
@@ -290,10 +296,10 @@ AssignReferenceStatement
         { completionType = CompletionType.REFERENCE_NAME; }
         [/ref/=ExistingReference]
         { completionType = CompletionType.NONE;
-          setOptionalNextTokenTypes(TokenType.TO); }
+          setOptionalNextTokenTypes(TokenType.TO, TokenType.IN); }
         [<TO>
           /to/=ExistingReference
-          { setOptionalNextTokenTypes(TokenType.AT); }
+          { setOptionalNextTokenTypes(TokenType.AT, TokenType.IN); }
           [ <AT>
             { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
             [ <TIMESTAMP> | <COMMIT>
@@ -301,6 +307,9 @@ AssignReferenceStatement
             ]
             /at/=TimestampOrCommit]
           ]
+        #if !omitSparkSql
+        [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+        #endif
     ;
 
 AlterStatement
@@ -369,7 +378,10 @@ DropReferenceStatement
       ]
       /ref/=ExistingReference
       { completionType = CompletionType.REFERENCE_NAME;
-        setOptionalNextTokenTypes(); }
+        setOptionalNextTokenTypes(TokenType.IN); }
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+      #endif
     ;
 
 DropContentStatement
@@ -393,11 +405,23 @@ DropContentStatement
 UseReferenceStatement
     : <USE>
       { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
-      /type/=ReferenceType
+      ( /type/=ReferenceType | <REFERENCE> )
       { setOptionalNextTokenTypes();
         completionType = CompletionType.REFERENCE_NAME; }
       /ref/=ExistingReference
       { completionType = CompletionType.NONE; }
+      { setOptionalNextTokenTypes(TokenType.AT, TokenType.IN); }
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /at/=TimestampOrCommit
+        { setOptionalNextTokenTypes(TokenType.IN); }
+      ]
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+      #endif
     ;
 
 ShowStatement
@@ -410,16 +434,17 @@ ShowStatement
 
 ShowLogStatement
     : <LOG>
-      { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT, TokenType.LIMIT); }
-      [ <ON>
-        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
-        [ /type/=ReferenceType
-          { setOptionalNextTokenTypes(); }
-          ]
+      { setOptionalNextTokenTypes(TokenType.ON, TokenType.AT, TokenType.LIMIT, TokenType.IN); }
+      [ [ <ON>
+          { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+          [ /type/=ReferenceType
+            { setOptionalNextTokenTypes(); }
+            ]
+        ]
         { completionType = CompletionType.REFERENCE_NAME; }
         /ref/=ExistingReference
         { completionType = CompletionType.NONE;
-          setOptionalNextTokenTypes(TokenType.AT, TokenType.LIMIT); }
+          setOptionalNextTokenTypes(TokenType.AT, TokenType.LIMIT, TokenType.IN); }
       ]
       [ <AT>
         { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
@@ -427,12 +452,16 @@ ShowLogStatement
           { setOptionalNextTokenTypes(); }
         ]
         /at/=TimestampOrCommit
-        { setOptionalNextTokenTypes(TokenType.LIMIT); }
+        { setOptionalNextTokenTypes(TokenType.LIMIT, TokenType.IN); }
       ]
       [ <LIMIT>
         { setOptionalNextTokenTypes(); }
         /limit/=PositiveInt
+        { setOptionalNextTokenTypes(TokenType.IN); }
       ]
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+      #endif
     ;
 
 ShowContentStatement
@@ -461,16 +490,19 @@ ShowContentStatement
 
 ShowReferenceStatement
     : <REFERENCE>
-      { setOptionalNextTokenTypes(TokenType.AT); }
+      { setOptionalNextTokenTypes(TokenType.AT, TokenType.IN); }
       [ { completionType = CompletionType.REFERENCE_NAME; }
         /ref/=ExistingReference ]
       [ <AT>
-        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT, TokenType.IN); }
         [ <TIMESTAMP> | <COMMIT>
           { setOptionalNextTokenTypes(); }
         ]
         /at/=TimestampOrCommit
       ]
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+      #endif
     ;
 
 ListStatement
@@ -519,20 +551,25 @@ ListContentsStatement
 
 ListReferencesStatement
     : <REFERENCES>
-    { setOptionalNextTokenTypes(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING); }
+    { setOptionalNextTokenTypes(TokenType.FILTER, TokenType.STARTING, TokenType.CONTAINING, TokenType.IN); }
     [ <FILTER>
       { setOptionalNextTokenTypes(); }
       /filter/=Value
+      { setOptionalNextTokenTypes(TokenType.IN); }
     | [ <STARTING>
         { setOptionalNextTokenTypes(); }
         <WITH> /startsWith/=Value
-        { setOptionalNextTokenTypes(TokenType.CONTAINING); }
+        { setOptionalNextTokenTypes(TokenType.CONTAINING, TokenType.IN); }
       ]
       [ <CONTAINING>
         { setOptionalNextTokenTypes(); }
         /contains/=Value
+        { setOptionalNextTokenTypes(TokenType.IN); }
       ]
     ]
+    #if !omitSparkSql
+    [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+    #endif
     ;
 
 MergeBranchStatement
@@ -545,7 +582,7 @@ MergeBranchStatement
       { completionType = CompletionType.REFERENCE_NAME; }
       /ref/=ExistingReference
       { completionType = CompletionType.NONE;
-        setOptionalNextTokenTypes(TokenType.AT, TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS);
+        setOptionalNextTokenTypes(TokenType.AT, TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS, TokenType.IN);
       }
       [ <AT>
         { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
@@ -553,34 +590,37 @@ MergeBranchStatement
           { setOptionalNextTokenTypes(); }
         ]
         /at/=TimestampOrCommit
-        { setOptionalNextTokenTypes(TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS); }
+        { setOptionalNextTokenTypes(TokenType.INTO, TokenType.BEHAVIOR, TokenType.BEHAVIORS, TokenType.IN); }
       ]
       [ <INTO>
         { setOptionalNextTokenTypes();
           completionType = CompletionType.REFERENCE_NAME; }
         /into/=ExistingReference
-        { setOptionalNextTokenTypes(TokenType.BEHAVIOR, TokenType.BEHAVIORS);
+        { setOptionalNextTokenTypes(TokenType.BEHAVIOR, TokenType.BEHAVIORS, TokenType.IN);
           completionType = CompletionType.NONE; }
         ]
       [ <BEHAVIOR>
         { setOptionalNextTokenTypes(); }
         /defaultMergeBehavior/=MergeBehaviorKind
-        { setOptionalNextTokenTypes(TokenType.BEHAVIORS); }
+        { setOptionalNextTokenTypes(TokenType.BEHAVIORS, TokenType.IN); }
         ]
       [ /behaviors/=<BEHAVIORS>
         { setOptionalNextTokenTypes(); }
         ContentKey
         <EQUAL>
         MergeBehaviorKind
-        { setOptionalNextTokenTypes(TokenType.AND); }
+        { setOptionalNextTokenTypes(TokenType.AND, TokenType.IN); }
         ( <AND>
           { setOptionalNextTokenTypes(); }
           ContentKey
           <EQUAL>
           MergeBehaviorKind
-          { setOptionalNextTokenTypes(TokenType.AND); }
+          { setOptionalNextTokenTypes(TokenType.AND, TokenType.IN); }
         )*
         ]
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+      #endif
     ;
 
 ContentKind
@@ -602,6 +642,9 @@ ContentKey
     : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
 
 ReferenceName
+    : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
+
+CatalogName
     : ACTIVATE_TOKENS IDENTIFIER, STRING_LITERAL (Identifier) =>||;
 
 ExistingReference

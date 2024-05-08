@@ -229,6 +229,11 @@ tasks.register<Sync>("generateDocs") {
     include("org/projectnessie/nessie/cli/syntax/*.md")
     eachFile { path = if (name.endsWith(".help.txt")) "cli-help-${name.replace(".help.txt", ".md")}" else "cli-syntax-$name" }
   }
+  from(provider { zipTree(cliGrammar.singleFile) }) {
+    include("org/projectnessie/nessie/cli/spark-syntax/*.help.txt")
+    include("org/projectnessie/nessie/cli/spark-syntax/*.md")
+    eachFile { path = if (name.endsWith(".help.txt")) "cli-help-${name.replace(".help.txt", ".md")}" else "spark-sql-syntax-$name" }
+  }
 
   duplicatesStrategy = DuplicatesStrategy.FAIL
 

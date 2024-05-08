@@ -28,7 +28,8 @@ import org.projectnessie.model.{Branch, Tag}
 
 case class CreateReferenceExec(
     output: Seq[Attribute],
-    branch: String,
+    ref: String,
+    refTimestampOrHash: Option[String],
     currentCatalog: CatalogPlugin,
     isBranch: Boolean,
     catalog: Option[String],
@@ -56,15 +57,15 @@ case class CreateReferenceExec(
             )
         }
       }
-    val refName = unquoteRefName(branch)
-    val ref = {
+    val refName = unquoteRefName(ref)
+    val refObj = {
       if (isBranch) Branch.of(refName, sourceRef.getHash)
       else Tag.of(refName, sourceRef.getHash)
     }
     val result =
       try {
         bridge.api.createReference
-          .reference(ref)
+          .reference(refObj)
           .sourceRefName(sourceRef.getName)
           .create()
       } catch {
@@ -72,7 +73,7 @@ case class CreateReferenceExec(
           if (failOnCreate) {
             throw e
           }
-          bridge.api.getReference.refName(ref.getName).get()
+          bridge.api.getReference.refName(refObj.getName).get()
       }
 
     singleRowForRef(result)
@@ -80,7 +81,7 @@ case class CreateReferenceExec(
 
   override def simpleString(maxFields: Int): String = {
     s"CreateReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${if (isBranch) "BRANCH"
-      else "TAG"} ${unquoteRefName(branch)} " +
+      else "TAG"} ${unquoteRefName(ref)} " +
       s"${createdFrom.map(unquoteRefName)}"
   }
 

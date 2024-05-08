@@ -71,7 +71,7 @@ public class TestRevertContent extends BaseTestCommand {
       t2c2 = t2c2.withId(c2.toAddedContentsMap().get(t2));
 
       ListContentsCommandSpec listContents =
-          ImmutableListContentsCommandSpec.of(null, null, null, null, null, null);
+          ImmutableListContentsCommandSpec.of(null, null, null, null, null, null, null);
       soft.assertThat(cli.execute(listContents))
           .containsExactly("  ICEBERG_TABLE t1", "  ICEBERG_TABLE t2", "  ICEBERG_TABLE t3");
 

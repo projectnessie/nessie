@@ -52,6 +52,8 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 - Catalog: Only general object store configurations are returned via the `/iceberg/v1/config` endpoint.
 - Catalog: Table specific options are returned for each individual table, including scoped-down S3
   credentials, if applicable.
+- The Nessie Spark SQL extensions are now based on the same syntax and options that are provided by the
+  Nessie CLI. A reference docs page for the Nessie Spark SQL command syntax was added to the web site.
 
 ### Deprecations
 

@@ -17,11 +17,6 @@
 PARSER_PACKAGE="org.projectnessie.nessie.cli.grammar";
 PARSER_CLASS=NessieCliParser;
 LEXER_CLASS=NessieCliLexer;
-#if FT
-FAULT_TOLERANT;
-FAULT_TOLERANT_DEFAULT=false;
-#endif
-
 NODE_PACKAGE="org.projectnessie.nessie.cli.grammar.ast";
 
 INCLUDE "nessie-cli.ccc"
@@ -38,6 +33,10 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   static {
     TOKEN_LITERAL_REPRESENTATION.put(TokenType.EQUAL, "=");
     TOKEN_LITERAL_REPRESENTATION.put(TokenType.SEMICOLON, ";");
+  }
+
+  public boolean isTokenActive(TokenType tokenType) {
+    return token_source.activeTokenTypes.contains(tokenType);
   }
 
   @Override
@@ -57,6 +56,14 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   @Override
   public CompletionType completionType() {
     return completionType;
+  }
+
+  public void activateTokenType(TokenType type) {
+    activateTokenTypes(type);
+  }
+
+  public void deactivateTokenType(TokenType type) {
+    deactivateTokenTypes(type);
   }
 }
 
@@ -169,6 +176,11 @@ import org.projectnessie.nessie.cli.cmdspec.*;
 {
 
   @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
   public boolean isDryRun() {
     return getNamedChild("dryRun")!=null;
   }
@@ -237,6 +249,11 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.CREATE);
 
   @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
   public boolean isConditional() {
     return getNamedChild("conditional")!=null;
   }
@@ -270,6 +287,11 @@ INJECT DropReferenceStatement :
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.DROP);
 
   @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
   public boolean isConditional() {
     return getNamedChild("conditional")!=null;
   }
@@ -290,6 +312,12 @@ INJECT AssignReferenceStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 INJECT AssignReferenceStatement :
 {
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
   @Override
   public String getRef() {
     return stringValueOf("ref");
@@ -316,6 +344,12 @@ INJECT UseReferenceStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 INJECT UseReferenceStatement :
 {
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
   @Override
   public String getRefType() {
     Node type = getNamedChild("type");
@@ -326,6 +360,11 @@ INJECT UseReferenceStatement :
   public String getRef() {
     return stringValueOf("ref");
   }
+
+  @Override
+  public String getRefTimestampOrHash() {
+    return stringValueOf("at");
+  }
 }
 
 INJECT CreateNamespaceStatement : implements CreateNamespaceCommandSpec;
@@ -333,6 +372,11 @@ INJECT CreateNamespaceStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 {
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.CREATE);
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
 
   @Override
   public String getRef() {
@@ -379,6 +423,11 @@ INJECT AlterNamespaceStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 {
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.ALTER);
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
 
   @Override
   public String getRef() {
@@ -453,6 +502,11 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.DROP);
 
   @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
   public String getContentKind() {
     return getNamedChild("contentKind").getSource().toUpperCase();
   }
@@ -473,6 +527,11 @@ INJECT ListContentsStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 {
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.LIST);
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
 
   @Override
   public String getRef() {
@@ -507,6 +566,11 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.LIST);
 
   @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
   public String getFilter() {
     return stringValueOf("filter");
   }
@@ -527,6 +591,11 @@ INJECT ShowContentStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 {
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
 
   @Override
   public String getContentKind() {
@@ -556,6 +625,11 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
 
   @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
   public String getRef() {
     return stringValueOf("ref");
   }
@@ -570,6 +644,12 @@ INJECT MergeBranchStatement : implements MergeBranchCommandSpec;
 INJECT MergeBranchStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 {
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
   @Override
   public String getRefType() {
     Node type = getNamedChild("type");
@@ -637,6 +717,11 @@ INJECT ShowLogStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
 {
   public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
 
   @Override
   public String getRef() {

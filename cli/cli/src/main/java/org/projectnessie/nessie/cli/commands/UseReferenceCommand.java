@@ -15,6 +15,8 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
 import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 
@@ -22,7 +24,10 @@ import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.util.List;
 import org.jline.utils.AttributedStringBuilder;
+import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.cli.cli.BaseNessieCli;
 import org.projectnessie.nessie.cli.cmdspec.UseReferenceCommandSpec;
@@ -37,9 +42,20 @@ public class UseReferenceCommand extends NessieCommand<UseReferenceCommandSpec> 
     @SuppressWarnings("resource")
     NessieApiV2 api = cli.mandatoryNessieApi();
 
-    // TODO handle `commandSpec.getRefType()`
+    GetEntriesBuilder getAny =
+        api.getEntries().key(ContentKey.of("non", "existing")).maxRecords(1).refName(spec.getRef());
+    if (spec.getRefTimestampOrHash() != null) {
+      getAny.hashOnRef(spec.getRefTimestampOrHash());
+    }
+    EntriesResponse response = getAny.get();
+    Reference ref = requireNonNull(response.getEffectiveReference());
 
-    Reference ref = api.getReference().refName(spec.getRef()).get();
+    if (spec.getRefType() != null) {
+      if (Reference.ReferenceType.valueOf(spec.getRefType()) != ref.getType()) {
+        throw new IllegalArgumentException(
+            format("'%s' is not a %s but a %s.", spec.getRef(), spec.getRefType(), ref.getType()));
+      }
+    }
 
     cli.setCurrentReference(ref);
 

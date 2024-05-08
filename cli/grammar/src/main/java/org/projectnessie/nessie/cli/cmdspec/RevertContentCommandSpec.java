@@ -21,10 +21,14 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface RevertContentCommandSpec extends RefWithTypeCommandSpec {
+public interface RevertContentCommandSpec extends RefWithTypeCommandSpec, InCatalog {
   default CommandType commandType() {
     return CommandType.REVERT_CONTENT;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override

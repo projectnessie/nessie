@@ -44,8 +44,8 @@ public class Syntax {
   /** Intentionally hard coded and short so that lines on the website do not break. */
   private static final int SPLIT_LINE_LENGTH = 60;
 
-  public Syntax(Path grammarFile) throws IOException {
-    this.grammar = new Grammar(null, "java", 17, false, Map.of());
+  public Syntax(Path grammarFile, Map<String, String> preprocessorSymbols) throws IOException {
+    this.grammar = new Grammar(null, "java", 17, false, preprocessorSymbols);
     this.level = "    ";
 
     grammar.parse(grammarFile, true);

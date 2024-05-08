@@ -20,11 +20,15 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-@SuppressWarnings("immutables:subtype")
-public interface CreateReferenceCommandSpec extends RefWithTypeCommandSpec, RefWithHashCommandSpec {
+public interface CreateReferenceCommandSpec
+    extends RefWithTypeCommandSpec, RefWithHashCommandSpec, InCatalog {
   default CommandType commandType() {
     return CommandType.CREATE_REFERENCE;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override

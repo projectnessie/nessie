@@ -26,7 +26,7 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
 
-  implementation(nessieProject("nessie-spark-extensions-grammar"))
+  implementation(nessieProject("nessie-cli-grammar"))
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }

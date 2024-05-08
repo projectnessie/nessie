@@ -19,6 +19,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 
 case class CreateReferenceCommand(
     reference: String,
+    refTimestampOrHash: Option[String],
     isBranch: Boolean,
     catalog: Option[String],
     fromReference: Option[String],

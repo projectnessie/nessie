@@ -20,10 +20,14 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface ShowContentCommandSpec extends RefWithHashCommandSpec {
+public interface ShowContentCommandSpec extends RefWithHashCommandSpec, InCatalog {
   default CommandType commandType() {
     return CommandType.SHOW_CONTENT;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override

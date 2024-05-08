@@ -25,7 +25,8 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
 
     case c @ CreateReferenceCommand(
-          branch,
+          ref,
+          refTimestampOrHash,
           isBranch,
           catalog,
           reference,
@@ -33,7 +34,8 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
         ) =>
       CreateReferenceExec(
         c.output,
-        branch,
+        ref,
+        refTimestampOrHash,
         spark.sessionState.catalogManager.currentCatalog,
         isBranch,
         catalog,
@@ -60,34 +62,52 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
         catalog
       ) :: Nil
 
-    case c @ ListReferenceCommand(catalog) =>
+    case c @ ListReferenceCommand(filter, startsWith, contains, catalog) =>
       ListReferenceExec(
         c.output,
         spark.sessionState.catalogManager.currentCatalog,
+        filter,
+        startsWith,
+        contains,
         catalog
       ) :: Nil
 
-    case c @ ShowReferenceCommand(catalog) =>
+    case c @ ShowReferenceCommand(refName, timestampOrHash, catalog) =>
       ShowReferenceExec(
         c.output,
+        refName,
+        timestampOrHash,
         spark.sessionState.catalogManager.currentCatalog,
         catalog
       ) :: Nil
 
-    case c @ MergeBranchCommand(branch, toRefName, catalog) =>
+    case c @ MergeBranchCommand(
+          ref,
+          refTimestampOrHash,
+          toRefName,
+          dryRun,
+          defaultMergeBehavior,
+          keyMergeBehaviors,
+          catalog
+        ) =>
       MergeBranchExec(
         c.output,
-        branch,
-        spark.sessionState.catalogManager.currentCatalog,
+        ref,
+        refTimestampOrHash,
         toRefName,
+        dryRun,
+        defaultMergeBehavior,
+        keyMergeBehaviors,
+        spark.sessionState.catalogManager.currentCatalog,
         catalog
       ) :: Nil
 
-    case c @ ShowLogCommand(refName, timestampOrHash, catalog) =>
+    case c @ ShowLogCommand(refName, timestampOrHash, limit, catalog) =>
       ShowLogExec(
         c.output,
         refName,
         timestampOrHash,
+        limit,
         spark.sessionState.catalogManager.currentCatalog,
         catalog
       ) :: Nil
