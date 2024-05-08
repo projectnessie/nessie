@@ -76,11 +76,11 @@ Exported Nessie repository, 100 commits into 1 files, 1 named references into 1 
 Once the
 export process has completed, the ZIP file will be available at `/tmp/export-<date>.zip`.
 
-Download the `nessie-quarkus-cli-x.y.z-runner.jar` corresponding to the **new** Nessie version, here
-we assume version 0.75.0:
+Download the `nessie-server-admin-tool-x.y.z-runner.jar` corresponding to the **new** Nessie version, here
+we assume version {{ versions.nessie }} (note: older versions have this tool under the name of `nessie-quarkus-cli`):
 
 ```bash
-curl -L https://github.com/projectnessie/nessie/releases/download/nessie-0.75.0/nessie-quarkus-cli-0.75.0-runner.jar -o nessie-quarkus-cli-0.75.0-runner.jar
+curl -L https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-server-admin-tool-{{ versions.nessie }}-runner.jar -o nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
 ```
 
 Create the MongoDB database to host the new Nessie repository. In this example we assume that the 
@@ -94,7 +94,7 @@ java \
   -Dnessie.version.store.type=MONGODB \
   -Dquarkus.mongodb.database=nessie \
   -Dquarkus.mongodb.connection-string=mongodb://nessie.example.com:27017 \
-  -jar nessie-quarkus-cli-0.75.0-runner.jar import \
+  -jar nessie-server-admin-tool-{{ versions.nessie }}-runner.jar import \
   --path "/tmp/export-$(date +'%Y-%d-%m').zip" \
   --commit-batch-size 1000
 ```

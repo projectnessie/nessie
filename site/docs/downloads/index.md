@@ -77,9 +77,9 @@ java -jar https://github.com/projectnessie/nessie/releases/download/nessie-{{ ve
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-quarkus-cli-{{ versions.nessie }}-runner.jar \
-  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-quarkus-cli-{{ versions.nessie }}-runner.jar
-java -jar nessie-quarkus-cli-{{ versions.nessie }}-runner.jar
+curl -o nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
+java -jar nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
 ```
 
 ## Nessie REST API 
