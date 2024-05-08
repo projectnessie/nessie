@@ -27,6 +27,17 @@
       labels: [],
     },
 
+    // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
+    {
+      matchManagers: ["dockerfile"],
+      matchUpdateTypes: ["major", "minor", "patch"],
+      matchPackageNames: [
+        "gcr.io/google.com/cloudsdktool/google-cloud-cli"
+      ],
+      automerge: true,
+      platformAutomerge: true
+    },
+
     // Check for updates, merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile"],
