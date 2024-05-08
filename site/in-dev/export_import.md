@@ -15,18 +15,17 @@ such as:
 ## Usage
 
 The Nessie Quarkus CLI too requires direct access to the database used by Nessie. The executable is
-named `nessie-quarkus-cli-x.y.z-runner.jar` and can be downloaded from the
-[release page on GitHub](https://github.com/projectnessie/nessie/releases) and is available
-for Nessie 0.43.0 or newer.
+named `nessie-server-admin-tool-x.y.z-runner.jar` and can be downloaded from the
+[release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
 !!! note
-    The Nessie Quarkus CLI tool is an executable jar that can be used to interact with a Nessie
+    The Nessie Server Admin Tool is an executable jar that can be used to interact with a Nessie
     database directly. It should not be confused with the [Nessie CLI tool], which is a Python
     Nessie client that is used to interact with Nessie servers.
 
 [Nessie CLI tool]: cli.md
 
-The Nessie Quarkus CLI tool `nessie-quarkus-cli-x.y.z-runner.jar` should use the same configuration
+The Nessie Server Admin Tool `nessie-server-admin-tool-x.y.z-runner.jar` should use the same configuration
 settings as the Nessie Quarkus server. These settings should be passed to the CLI tool using
 system properties, environment variables or a configuration file. The most relevant settings are
 those related to the [database connection](configuration.md#version-store-settings).
@@ -34,7 +33,7 @@ those related to the [database connection](configuration.md#version-store-settin
 A help command is available to list all available commands and options:
 
 ```bash
-java -jar nessie-quarkus-cli-x.y.z-runner.jar help
+java -jar nessie-server-admin-tool-x.y.z-runner.jar help
 ```
 
 ### Repository information
@@ -49,7 +48,7 @@ java \
   -Dnessie.version.store.type=MONGODB \
   -Dquarkus.mongodb.database=nessie \
   -Dquarkus.mongodb.connection-string=mongodb://<user>:<password>@nessie.example.com:27017 \
-  -jar nessie-quarkus-cli-runner.jar \
+  -jar nessie-server-admin-tool-runner.jar \
   info
 ```
 
@@ -74,7 +73,7 @@ The following command (replace `x.y.z` with the version you're using) exports yo
 to a single ZIP file called `my-export-file.zip`,
 
 ```bash
-java -jar nessie-quarkus-cli-x.y.z-runner.jar export --path my-export-file.zip
+java -jar nessie-server-admin-tool-x.y.z-runner.jar export --path my-export-file.zip
 ```
 
 A ZIP file export contains all necessary repository information in a single, compressed file.
@@ -85,7 +84,7 @@ the `--output-format` option.
 !!! note
     Please use the following command for advanced options.
     ```bash
-    java -jar nessie-quarkus-cli-x.y.z-runner.jar help export
+    java -jar nessie-server-admin-tool-x.y.z-runner.jar help export
     ```
 
 ### Importing
@@ -94,7 +93,7 @@ The following command (replace `x.y.z` with the version you're using) imports yo
 from a single ZIP file called `my-export-file.zip`,
 
 ```bash
-java -jar nessie-quarkus-cli-x.y.z-runner.jar import --path my-export-file.zip
+java -jar nessie-server-admin-tool-x.y.z-runner.jar import --path my-export-file.zip
 ```
 
 The import will fail, if the target Nessie repository exists and is not empty. If you intentionally
@@ -103,7 +102,7 @@ want to overwrite an existing Nessie repository, then use the `--erase-before-im
 !!! note
     Please use the following command for advanced options.
     ```bash
-    java -jar nessie-quarkus-cli-x.y.z-runner.jar help import
+    java -jar nessie-server-admin-tool-x.y.z-runner.jar help import
     ```
 
 ### Migrating from a legacy version store type
@@ -182,7 +181,7 @@ However, exported commits do contain information about the commit-sequence-numbe
 created-at-timestamp.
 
 !!! note
-    The `nessie-quarkus-cli` tool's `import` command performs a commit-log optimization after all
+    The `nessie-server-admin-tool`'s `import` command performs a commit-log optimization after all
     commits and named references have been created. This optimization populates missing
     aggregated key-lists and commit-parents. Running commit-log optimization is necessary for good
     performance to access contents and commit logs, but not strictly necessary.
