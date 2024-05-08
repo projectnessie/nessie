@@ -22,6 +22,7 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
+import org.projectnessie.model.ImmutableUDF;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.UDF;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -68,7 +69,20 @@ abstract class BaseSerializer<C extends Content> implements LegacyContentSeriali
 
   static UDF valueFromStoreUDF(ObjectTypes.Content content) {
     ObjectTypes.UDF udf = content.getUdf();
-    return UDF.of(content.getId(), udf.getDialect(), udf.getSqlText());
+    ImmutableUDF.Builder builder = ImmutableUDF.builder().id(content.getId());
+    if (udf.hasDialect()) {
+      builder.dialect(udf.getDialect());
+    }
+    if (udf.hasSqlText()) {
+      builder.sqlText(udf.getSqlText());
+    }
+    if (udf.hasMetadataLocation()) {
+      builder.metadataLocation(udf.getMetadataLocation());
+    }
+    if (udf.hasVersionId()) {
+      builder.versionId(udf.getVersionId());
+    }
+    return builder.build();
   }
 
   static Namespace valueFromStoreNamespace(ObjectTypes.Content content) {
@@ -111,9 +125,13 @@ abstract class BaseSerializer<C extends Content> implements LegacyContentSeriali
             .metadataLocation(metadataLocation)
             .versionId(view.getVersionId())
             .schemaId(view.getSchemaId())
-            .dialect(view.getDialect())
-            .sqlText(view.getSqlText())
             .id(content.getId());
+    if (view.hasDialect()) {
+      viewBuilder.dialect(view.getDialect());
+    }
+    if (view.hasSqlText()) {
+      viewBuilder.sqlText(view.getSqlText());
+    }
 
     return viewBuilder.build();
   }

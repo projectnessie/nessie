@@ -48,9 +48,11 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
+import org.projectnessie.model.ImmutableUDF;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.UDF;
 import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator;
 import picocli.CommandLine.Command;
@@ -342,6 +344,7 @@ public class GenerateContent extends CommittingCommand {
       return deltaBuilder.build();
     }
     if (contentType.equals(Content.Type.ICEBERG_VIEW)) {
+      @SuppressWarnings("deprecation")
       ImmutableIcebergView.Builder viewBuilder =
           ImmutableIcebergView.builder()
               .metadataLocation("metadata " + random.nextLong())
@@ -356,6 +359,17 @@ public class GenerateContent extends CommittingCommand {
         viewBuilder.id(contentId);
       }
       return viewBuilder.build();
+    }
+    if (contentType.equals(Content.Type.UDF)) {
+      ImmutableUDF.Builder udfBuilder =
+          UDF.builder().metadataLocation("metadata " + random.nextLong());
+      if (currentContents != null) {
+        udfBuilder.id(currentContents.getId());
+      }
+      if (contentId != null) {
+        udfBuilder.id(contentId);
+      }
+      return udfBuilder.build();
     }
     throw new UnsupportedOperationException(
         String.format("Content type %s not supported", contentType.name()));

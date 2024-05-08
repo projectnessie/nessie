@@ -1706,7 +1706,7 @@ public abstract class BaseTestNessieApi {
     ContentKey a = ContentKey.of("a");
     ContentKey b = ContentKey.of("b");
     IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
-    IcebergView tb = IcebergView.of("pathx", 1, 1, "select * from table", "Dremio");
+    IcebergView tb = IcebergView.of("pathx", 1, 1);
     branch =
         api()
             .commitMultipleOperations()

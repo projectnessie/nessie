@@ -62,7 +62,7 @@ import org.projectnessie.server.events.fixtures.MockEventSubscriber;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractQuarkusEvents {
 
-  private final Put putInitial = Put.of(ContentKey.of("foo"), UDF.of("foo", "bar"));
+  private final Put putInitial = Put.of(ContentKey.of("foo"), UDF.of("udf-meta", 42));
   private final Put put = Put.of(ContentKey.of("key1"), IcebergTable.of("somewhere", 1, 1, 3, 4));
   private final CommitMeta commitMeta = CommitMeta.fromMessage("test commit");
 
