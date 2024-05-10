@@ -104,9 +104,7 @@ jobs:
         run: ./gradlew assemble --scan
 
       - name: Gradle / License Check
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: checkLicense
+        run: ./gradlew licenseReportZip --scan
 
       - name: Gradle / Publish to Maven local
         run: ./gradlew publishToMavenLocal --scan
