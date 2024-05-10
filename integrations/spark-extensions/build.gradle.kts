@@ -17,7 +17,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  alias(libs.plugins.nessie.run)
   id("nessie-conventions-spark")
   id("nessie-shadow-jar")
   id("nessie-jacoco")
@@ -25,6 +24,8 @@ plugins {
 }
 
 val sparkScala = getSparkScalaVersionsForProject()
+
+val nessieQuarkusServer by configurations.creating
 
 dependencies {
   // picks the right dependencies for scala compilation
@@ -49,6 +50,10 @@ dependencies {
   testFixturesImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-aws:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-aws-bundle:$versionIceberg")
+  intTestRuntimeOnly(libs.hadoop.client)
+  intTestRuntimeOnly(libs.hadoop.aws)
 
   testFixturesRuntimeOnly(libs.logback.classic) {
     version { strictly(libs.versions.logback.compat.get()) }
@@ -65,14 +70,10 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  nessieQuarkusServer(nessieQuarkusServerRunner())
-}
+  testFixturesApi(nessieProject("nessie-object-storage-mock"))
+  testFixturesApi(libs.nessie.runner.common)
 
-nessieQuarkusApp {
-  includeTask(tasks.named<Test>("intTest"))
-  environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
-  jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
-  systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
+  nessieQuarkusServer(nessieProject("nessie-quarkus", "quarkusRunner"))
 }
 
 forceJavaVersionForTests(sparkScala.runtimeJavaVersion)
@@ -82,4 +83,17 @@ tasks.named<ShadowJar>("shadowJar").configure {
     include(dependency("org.projectnessie.nessie:.*:.*"))
     include(dependency("org.projectnessie.nessie-integrations:.*:.*"))
   }
+}
+
+tasks.named<Test>("intTest").configure {
+  // Spark keeps a lot of stuff around in the JVM, breaking tests against different Iceberg catalogs, so give every test class its own JVM
+  forkEvery = 1
+  inputs.files(nessieQuarkusServer)
+  val execJarProvider = configurations.named("nessieQuarkusServer").map { c ->
+    val file = c.fileCollection(*c.dependencies.toTypedArray()).files.first()
+    listOf("-Dnessie.exec-jar=${file.absolutePath}")
+  }
+  jvmArgumentProviders.add(CommandLineArgumentProvider {
+    execJarProvider.get()
+  })
 }

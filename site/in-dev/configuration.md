@@ -54,6 +54,32 @@ Related Quarkus settings:
 !!! info
     A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
 
+### Catalog and Iceberg REST Settings
+
+{% include './generated-docs/smallrye-nessie_catalog.md' %}
+
+#### S3 settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_s3.md' %}
+
+#### Google Cloud Storage settings
+
+!!! note
+    Support for GCS is experimental.
+
+{% include './generated-docs/smallrye-nessie_catalog_service_gcs.md' %}
+
+#### ADLS settings
+
+!!! note
+    Support for ADLS is experimental.
+
+{% include './generated-docs/smallrye-nessie_catalog_service_adls.md' %}
+
+#### Advanced catalog settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service.md' %}
+
 ### Version Store Settings
 
 {% include './generated-docs/smallrye-nessie_version_store.md' %}

@@ -27,9 +27,12 @@ plugins {
   id("nessie-testing")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release = 8 }
+tasks.withType<JavaCompile>().configureEach {
+  options.release = if (this.name == "compileJava") 8 else 11
+}
 
 tasks.withType<ScalaCompile>().configureEach {
-  options.release = 8
-  scalaCompileOptions.additionalParameters.add("-release:8")
+  val version = if (this.name == "compileScala") 8 else 11
+  options.release = version
+  scalaCompileOptions.additionalParameters.add("-release:$version")
 }

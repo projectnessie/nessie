@@ -2,7 +2,9 @@
 nav:
   - Guides:
     - guides/index.md
+    - guides/try-nessie.md
     - guides/about.md
+    - guides/introduction.md
     - Setting up Nessie:
       - guides/docker.md
       - guides/kubernetes.md
