@@ -1,0 +1,119 @@
+
+version: '3'
+
+services:
+
+  ## IMPORTANT
+  ##
+  ##
+  ## 1. Generate the Nessie Catalog image, run:
+  ##
+  ##      tools/dockerbuild/build-push-images.sh --gradle-project :nessie-quarkus  --project-dir servers/quarkus-server --local localhost/projectnessie/nessie
+  ##
+  ## 2. Start the pods:
+  ##
+  ##      podman compose -f docker/catalog-full/docker-compose.yml up
+  ##
+  ## 3. Once the Nessie Catalog pod is up, you can run:
+  ##
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws
+  ##
+  ##    Run the "standard smoketest SQL":
+  ##      CREATE NAMESPACE nessie.testing;
+  ##      CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+  ##      INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment');
+  ##
+  nessie:
+    image: localhost/projectnessie/nessie:latest
+    ports:
+      - "19120:19120"
+    depends_on:
+      jaeger:
+        # This should ideally be 'service_healthy', but that doesn't work on macOS
+        condition: service_started
+      minio:
+        # This should ideally be 'service_healthy', but that doesn't work on macOS
+        condition: service_started
+      #minio-setup:
+      #  condition: service_started
+      keycloak:
+        # This should ideally be 'service_healthy', but that doesn't work on macOS
+        condition: service_started
+    environment:
+      - nessie.version.store.type=IN_MEMORY # Ephemeral storage, data is lost during reset.
+      # AuthN
+      #- nessie.server.authentication.enabled=true
+      #- quarkus.oidc.enabled=true
+      #- quarkus.oidc.auth-server-url=http://keycloak:8080/realms/master
+      #- quarkus.oidc.client-id=projectnessie
+      # Object store
+      - nessie.catalog.service.s3.cloud=private
+      - nessie.catalog.service.s3.region=us-east-1
+        # MinIO endpoint for Nessie server
+      - nessie.catalog.service.s3.endpoint=http://minio:9000/
+        # MinIO endpoint for clients (on the Podman/Docker host)
+      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
+      - nessie.catalog.service.s3.path-style-access=true
+      - nessie.catalog.service.s3.access-key-id-ref=accessKeyRefId
+      - nessie.catalog.service.s3.secret-access-key-ref=awsSecretAccessKeyRefId
+      - nessie.catalog.secrets.accessKeyRefId=minioadmin
+      - nessie.catalog.secrets.awsSecretAccessKeyRefId=minioadmin
+      - nessie.catalog.default-warehouse.name=warehouse
+      - nessie.catalog.default-warehouse.location=s3://demobucket/
+      # Telemetry
+      - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
+    #healthcheck:
+    #  # Bummer - there's no `curl` in the container on macOS/ARM
+    #  test: curl -qf http://localhost:19120/ || exit 1
+
+  # Jaeger
+  jaeger:
+    image: quay.io/jaegertracing/all-in-one:1.56.0
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317"   # OTLP gRPC receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    #healthcheck:
+    #  # Bummer - there's no `curl` in the container on macOS/ARM
+    #  test: curl -qf http://localhost:16686/ || exit 1
+
+  # MinIO
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-04-06T05-26-02Z
+    ports:
+      - "9000:9000"   # API
+      - "9090:9090"   # Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ADDRESS=:9000
+      - MINIO_CONSOLE_ADDRESS=:9090
+    command: server /data
+    #healthcheck:
+    #  # Bummer - there's no `curl` in the container on macOS/ARM
+    #  test: "curl -f http://localhost:9000/minio/health/live || exit 1"
+
+  # Create MinIO bucket (dumb approach)
+  minio-setup:
+    image: quay.io/minio/minio:RELEASE.2024-04-06T05-26-02Z
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: /bin/bash
+    command: [
+      "-c",
+      "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket"
+      ]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev --features=preview,token-exchange --hostname-admin-url http://127.0.0.1:8080/ --hostname-url http://127.0.0.1:8080/
+    #healthcheck:
+    #  # Bummer - there's no `curl` in the container on macOS/ARM
+    #  test: curl -f http://localhost:8080/ || exit 1

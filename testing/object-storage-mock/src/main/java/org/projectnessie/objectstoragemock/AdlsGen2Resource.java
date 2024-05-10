@@ -22,6 +22,7 @@ import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 import static org.projectnessie.objectstoragemock.adlsgen2.DataLakeStorageError.dataLakeStorageErrorObj;
 import static org.projectnessie.objectstoragemock.s3.S3Constants.RANGE;
 
+import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -57,6 +58,7 @@ import org.projectnessie.objectstoragemock.util.StartAfterSpliterator;
 @Path("/adlsgen2/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@IfBuildProfile("never-include")
 public class AdlsGen2Resource {
   @Inject ObjectStorageMock mockServer;
 

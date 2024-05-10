@@ -15,4 +15,23 @@
  */
 package org.projectnessie.spark.extensions;
 
-public class ITNessieStatements extends AbstractNessieSparkSqlExtensionTest {}
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+
+public class ITNessieStatements extends AbstractNessieSparkSqlExtensionTest {
+
+  @BeforeAll
+  public static void start() throws Exception {
+    NessieProcess.start();
+  }
+
+  @AfterAll
+  public static void stop() {
+    NessieProcess.stop();
+  }
+
+  @Override
+  protected String nessieApiUri() {
+    return NessieProcess.baseUri + "api/v2";
+  }
+}
