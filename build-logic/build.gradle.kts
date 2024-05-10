@@ -22,7 +22,6 @@ dependencies {
   implementation(baselibs.jandex)
   implementation(baselibs.idea.ext)
   implementation(baselibs.shadow)
-  implementation(baselibs.shadow.bis)
   implementation(baselibs.errorprone)
   implementation(baselibs.license.report)
 
