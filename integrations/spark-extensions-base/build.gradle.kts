@@ -25,6 +25,15 @@ dependencies {
   // picks the right dependencies for scala compilation
   forScala(sparkScala.scalaVersion)
 
+  compileOnly(platform(libs.iceberg.bom))
+  compileOnly("org.apache.iceberg:iceberg-api")
+  compileOnly("org.apache.iceberg:iceberg-core")
+
+  val versionIceberg = libs.versions.iceberg.get()
+  compileOnly(
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg"
+  )
+
   implementation(nessieProject("nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)

@@ -20,7 +20,6 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
 
 case class MergeBranchExec(
     output: Seq[Attribute],
@@ -32,32 +31,36 @@ case class MergeBranchExec(
     with LeafV2CommandExec {
 
   override protected def runInternal(
-      api: NessieApiV1
+      bridge: CatalogBridge
   ): Seq[InternalRow] = {
-    val from = api.getReference
+    val from = bridge.api.getReference
       .refName(
         branch
           .map(unquoteRefName)
           .getOrElse(
-            NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
+            bridge.getCurrentRef.getName
           )
       )
-    api
+    bridge.api
       .mergeRefIntoBranch()
       .branchName(
-        toRefName.map(unquoteRefName).getOrElse(api.getDefaultBranch.getName)
+        toRefName
+          .map(unquoteRefName)
+          .getOrElse(bridge.api.getDefaultBranch.getName)
       )
       .hash(
         toRefName
           .map(unquoteRefName)
-          .map(r => api.getReference.refName(r).get.getHash)
-          .getOrElse(api.getDefaultBranch.getHash)
+          .map(r => bridge.api.getReference.refName(r).get.getHash)
+          .getOrElse(bridge.api.getDefaultBranch.getHash)
       )
       .fromRef(from.get)
       .merge()
 
-    val ref = api.getReference.refName(
-      toRefName.map(unquoteRefName).getOrElse(api.getDefaultBranch.getName)
+    val ref = bridge.api.getReference.refName(
+      toRefName
+        .map(unquoteRefName)
+        .getOrElse(bridge.api.getDefaultBranch.getName)
     )
 
     Seq(

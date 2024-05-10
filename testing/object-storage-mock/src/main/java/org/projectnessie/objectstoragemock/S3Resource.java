@@ -36,6 +36,7 @@ import static org.projectnessie.objectstoragemock.s3.S3Constants.X_AMZ_REQUEST_I
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -90,6 +91,7 @@ import org.projectnessie.objectstoragemock.util.StartAfterSpliterator;
 @Path("/")
 @Produces(MediaType.APPLICATION_XML)
 @Consumes(MediaType.APPLICATION_XML)
+@IfBuildProfile("never-include")
 public class S3Resource {
   @Inject ObjectStorageMock mockServer;
 
