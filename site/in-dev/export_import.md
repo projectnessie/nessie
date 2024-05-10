@@ -1,10 +1,10 @@
 ---
-title: "Export/Import Tool"
+title: "Nessie Server Admin Tool"
 ---
 
-# Export/Import Tool
+# Nessie Server Admin Tool
 
-This page explains how to use the Nessie Quarkus CLI tool to perform repository maintenance tasks
+This page explains how to use the Nessie Server Admin Tool to perform repository maintenance tasks
 such as:
 
 * Obtaining [information](#repository-information) about a Nessie repository;
@@ -14,19 +14,19 @@ such as:
 
 ## Usage
 
-The Nessie Quarkus CLI too requires direct access to the database used by Nessie. The executable is
+The Nessie Server Admin Tool requires direct access to the database used by Nessie. The executable is
 named `nessie-server-admin-tool-x.y.z-runner.jar` and can be downloaded from the
 [release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
 !!! note
     The Nessie Server Admin Tool is an executable jar that can be used to interact with a Nessie
-    database directly. It should not be confused with the [Nessie CLI tool], which is a Python
-    Nessie client that is used to interact with Nessie servers.
+    database directly. It should not be confused with the [Nessie CLI tool], which interacts with
+    Nessie servers via the REST API.
 
 [Nessie CLI tool]: cli.md
 
 The Nessie Server Admin Tool `nessie-server-admin-tool-x.y.z-runner.jar` should use the same configuration
-settings as the Nessie Quarkus server. These settings should be passed to the CLI tool using
+settings as the Nessie Quarkus server. These settings should be passed to the tool using
 system properties, environment variables or a configuration file. The most relevant settings are
 those related to the [database connection](configuration.md#version-store-settings).
 
@@ -107,7 +107,7 @@ want to overwrite an existing Nessie repository, then use the `--erase-before-im
 
 ### Migrating from a legacy version store type
 
-The CLI tool can be used to fully migrate a Nessie repository from one version store type to 
+The admin tool can be used to fully migrate a Nessie repository from one version store type to 
 another, see [Migration](../guides/migration.md) for a detailed example.
 
 ## Building blocks
