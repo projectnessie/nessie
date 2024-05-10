@@ -162,8 +162,24 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         ""
       })
   public void testNotFoundUrls(String path) {
-    rest().get(path).then().statusCode(404);
-    rest().head(path).then().statusCode(404);
+    rest()
+        .filter(
+            (req, resp, ctx) -> {
+              req.removeHeader("Content-Type");
+              return ctx.next(req, resp);
+            })
+        .get(path)
+        .then()
+        .statusCode(404);
+    rest()
+        .filter(
+            (req, resp, ctx) -> {
+              req.removeHeader("Content-Type");
+              return ctx.next(req, resp);
+            })
+        .head(path)
+        .then()
+        .statusCode(404);
   }
 
   @Test

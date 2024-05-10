@@ -15,13 +15,16 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import static java.lang.Long.parseUnsignedLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.deserializeObjId;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteAccessor;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromBytes;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromLongs;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 
@@ -30,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assumptions;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -121,11 +125,35 @@ public class TestObjId {
 
   @ParameterizedTest
   @MethodSource("hashOfString")
+  void fromByteAccessor(String s, Class<? extends ObjId> type) {
+    byte[] bytes = new byte[s.length() / 2];
+    fromHex(s, false).get(bytes);
+
+    ObjId h = objIdFromByteAccessor(bytes.length, i -> bytes[i]);
+    verify(s, type, h);
+  }
+
+  @ParameterizedTest
+  @MethodSource("hashOfString")
   void fromByteArray(String s, Class<? extends ObjId> type) {
     byte[] bytes = new byte[s.length() / 2];
     fromHex(s, false).get(bytes);
 
     ObjId h = objIdFromByteArray(bytes);
+    verify(s, type, h);
+  }
+
+  @ParameterizedTest
+  @MethodSource("hashOfString")
+  void fromLongs(String s, Class<? extends ObjId> type) {
+    Assumptions.assumeThat(s.length()).isEqualTo(64);
+
+    long l0 = parseUnsignedLong(s.substring(0, 16), 16);
+    long l1 = parseUnsignedLong(s.substring(16, 32), 16);
+    long l2 = parseUnsignedLong(s.substring(32, 48), 16);
+    long l3 = parseUnsignedLong(s.substring(48), 16);
+
+    ObjId h = objIdFromLongs(l0, l1, l2, l3);
     verify(s, type, h);
   }
 
