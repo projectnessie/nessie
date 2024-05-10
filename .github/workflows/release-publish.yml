@@ -131,7 +131,7 @@ jobs:
           ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
           ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
         mv servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
-        mv servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+        mv servers/quarkus-cli/build/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
         echo "::endgroup::"
 
         echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u $ --password-stdin 
@@ -153,7 +153,7 @@ jobs:
         cp gc/gc-tool/build/executable/nessie-gc.jar gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}.jar
 
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-        echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "GC_UBER_JAR=gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}.jar" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
         echo "LICENSE_REPORTS=tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip" >> ${GITHUB_ENV}
