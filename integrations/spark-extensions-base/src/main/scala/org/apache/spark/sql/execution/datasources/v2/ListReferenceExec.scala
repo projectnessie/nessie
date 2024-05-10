@@ -18,7 +18,6 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.projectnessie.client.api.NessieApiV1
 
 import scala.jdk.CollectionConverters._
 
@@ -30,9 +29,9 @@ case class ListReferenceExec(
     with LeafV2CommandExec {
 
   override protected def runInternal(
-      api: NessieApiV1
+      bridge: CatalogBridge
   ): Seq[InternalRow] = {
-    api.getAllReferences
+    bridge.api.getAllReferences
       .stream()
       .iterator()
       .asScala
