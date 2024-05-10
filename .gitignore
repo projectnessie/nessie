@@ -68,3 +68,6 @@ __pycache__/
 
 #jEnv, see https://github.com/jenv/jenv
 .java-version
+
+# Spark / Hive
+metastore_db/

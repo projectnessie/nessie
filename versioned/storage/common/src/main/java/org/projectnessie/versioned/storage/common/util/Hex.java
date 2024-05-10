@@ -51,6 +51,10 @@ public final class Hex {
     return (int) (v >> (60 - index * 4L)) & 0xf;
   }
 
+  public static byte byteFromLong(long v, int index) {
+    return (byte) (v >> (56 - index * 8L));
+  }
+
   public static byte nibble(char c) {
     if (c >= '0' && c <= '9') {
       return (byte) (c - '0');

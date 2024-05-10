@@ -20,7 +20,6 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.error.NessieReferenceNotFoundException
 
 case class DropReferenceExec(
@@ -34,15 +33,15 @@ case class DropReferenceExec(
     with LeafV2CommandExec {
 
   override protected def runInternal(
-      api: NessieApiV1
+      bridge: CatalogBridge
   ): Seq[InternalRow] = {
     val refName = unquoteRefName(branch)
     try {
-      val hash = api.getReference.refName(refName).get().getHash
+      val hash = bridge.api.getReference.refName(refName).get().getHash
       if (isBranch) {
-        api.deleteBranch().branchName(refName).hash(hash).delete()
+        bridge.api.deleteBranch().branchName(refName).hash(hash).delete()
       } else {
-        api.deleteTag().tagName(refName).hash(hash).delete()
+        bridge.api.deleteTag().tagName(refName).hash(hash).delete()
       }
     } catch {
       case e: NessieReferenceNotFoundException =>

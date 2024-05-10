@@ -34,7 +34,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
-import org.apache.spark.sql.execution.datasources.v2.NessieUtils;
+import org.apache.spark.sql.execution.datasources.v2.CatalogBridge;
+import org.apache.spark.sql.execution.datasources.v2.CatalogUtils;
 import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -59,7 +60,6 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
-import scala.None$;
 
 public abstract class SparkSqlTestBase {
 
@@ -68,8 +68,7 @@ public abstract class SparkSqlTestBase {
 
   protected static SparkSession spark;
 
-  protected boolean first = true;
-
+  protected Branch mainBeforeTest;
   protected Branch initialDefaultBranch;
 
   protected String refName;
@@ -84,13 +83,30 @@ public abstract class SparkSqlTestBase {
             "Required system property quarkus.http.test-url is not set"));
   }
 
+  protected String icebergApiUri() {
+    return format(
+        "%s/iceberg/",
+        requireNonNull(
+            System.getProperty("quarkus.http.test-url"),
+            "Required system property quarkus.http.test-url is not set"));
+  }
+
   protected abstract String warehouseURI();
 
   protected Map<String, String> sparkHadoop() {
     return emptyMap();
   }
 
+  protected boolean useIcebergREST() {
+    return false;
+  }
+
   protected Map<String, String> nessieParams() {
+    if (useIcebergREST()) {
+      return ImmutableMap.of(
+          "uri", format("%s%s", icebergApiUri(), defaultBranch()), "type", "rest");
+    }
+
     return ImmutableMap.of(
         "ref",
         defaultBranch(),
@@ -119,9 +135,9 @@ public abstract class SparkSqlTestBase {
     refName = testInfo.getTestMethod().map(Method::getName).get();
     additionalRefName = refName + "_other";
 
-    initialDefaultBranch = api.getDefaultBranch();
+    mainBeforeTest = initialDefaultBranch = api.getDefaultBranch();
 
-    if (first && requiresCommonAncestor()) {
+    if (requiresCommonAncestor()) {
       initialDefaultBranch =
           api.commitMultipleOperations()
               .branch(initialDefaultBranch)
@@ -134,7 +150,6 @@ public abstract class SparkSqlTestBase {
               .commitMeta(CommitMeta.fromMessage("INFRA: common ancestor"))
               .operation(Delete.of(ContentKey.of("dummy")))
               .commit();
-      first = false;
     }
 
     sparkHadoop().forEach((k, v) -> conf.set(format("spark.hadoop.%s", k), v));
@@ -174,10 +189,9 @@ public abstract class SparkSqlTestBase {
     @SuppressWarnings("resource")
     CatalogPlugin sparkCatalog =
         SparkSession.active().sessionState().catalogManager().catalog("nessie");
-    // *sing*
-    // Oh, Scala, your lovely Java bindings make me cry...
-    NessieUtils.setCurrentRefForSpark(
-        sparkCatalog, None$.<String>empty(), Branch.of(defaultBranch(), null), false);
+    try (CatalogBridge bridge = CatalogUtils.buildBridge(sparkCatalog, "nessie")) {
+      bridge.setCurrentRefForSpark(Branch.of(defaultBranch(), null), false);
+    }
 
     if (api != null) {
       Branch defaultBranch = api.getDefaultBranch();
@@ -187,7 +201,7 @@ public abstract class SparkSqlTestBase {
           api.deleteReference().reference(ref).delete();
         }
       }
-      api.assignReference().assignTo(initialDefaultBranch).reference(defaultBranch).assign();
+      api.assignReference().assignTo(mainBeforeTest).reference(defaultBranch).assign();
       api.close();
       api = null;
     }

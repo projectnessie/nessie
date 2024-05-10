@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
+import static org.projectnessie.versioned.storage.common.util.Hex.byteFromLong;
 import static org.projectnessie.versioned.storage.common.util.Hex.hexChar;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibble;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibbleFromLong;
@@ -44,6 +45,25 @@ public abstract class ObjId {
     return ObjIdEmpty.INSTANCE;
   }
 
+  public static ObjId objIdFromLongs(long l0, long l1, long l2, long l3) {
+    return new ObjId256(l0, l1, l2, l3);
+  }
+
+  public static ObjId objIdFromByteAccessor(int size, ByteAccessor byteAt) {
+    switch (size) {
+      case 32:
+        return ObjId256.fromByteAccessor(byteAt);
+      case 0:
+        return zeroLengthObjId();
+      default:
+        byte[] bytes = new byte[size];
+        for (int i = 0; i < size; i++) {
+          bytes[i] = byteAt.get(i);
+        }
+        return ObjIdGeneric.objIdFromByteArray(bytes);
+    }
+  }
+
   /**
    * Gets the bytes representation of the hash.
    *
@@ -52,6 +72,10 @@ public abstract class ObjId {
   public abstract ByteBuffer asByteBuffer();
 
   public abstract byte[] asByteArray();
+
+  public abstract byte byteAt(int index);
+
+  public abstract long longAt(int index);
 
   public ByteString asBytes() {
     return unsafeWrap(asByteArray());
@@ -212,6 +236,16 @@ public abstract class ObjId {
     }
 
     @Override
+    public byte byteAt(int index) {
+      throw new IllegalArgumentException("Invalid index " + index);
+    }
+
+    @Override
+    public long longAt(int index) {
+      throw new IllegalArgumentException("Invalid index " + index);
+    }
+
+    @Override
     public ByteBuffer serializeTo(ByteBuffer target) {
       return target.put((byte) 0);
     }
@@ -293,6 +327,26 @@ public abstract class ObjId {
       return new ObjId256(tlr.nextLong(), tlr.nextLong(), tlr.nextLong(), tlr.nextLong());
     }
 
+    static ObjId fromByteAccessor(ByteAccessor byteAt) {
+      long l0 = longFromByteAccessor(byteAt, 0);
+      long l1 = longFromByteAccessor(byteAt, 8);
+      long l2 = longFromByteAccessor(byteAt, 16);
+      long l3 = longFromByteAccessor(byteAt, 24);
+      return new ObjId256(l0, l1, l2, l3);
+    }
+
+    private static long longFromByteAccessor(ByteAccessor byteAt, int offset) {
+      long l = (((long) byteAt.get(offset++)) & 0xffL) << 56;
+      l |= (((long) byteAt.get(offset++)) & 0xffL) << 48;
+      l |= (((long) byteAt.get(offset++)) & 0xffL) << 40;
+      l |= (((long) byteAt.get(offset++)) & 0xffL) << 32;
+      l |= (((long) byteAt.get(offset++)) & 0xffL) << 24;
+      l |= (((long) byteAt.get(offset++)) & 0xffL) << 16;
+      l |= (((long) byteAt.get(offset++)) & 0xffL) << 8;
+      l |= ((long) byteAt.get(offset)) & 0xffL;
+      return l;
+    }
+
     @Override
     public int nibbleAt(int nibbleIndex) {
       if (nibbleIndex >= 0) {
@@ -310,6 +364,41 @@ public abstract class ObjId {
         }
       }
       throw new IllegalArgumentException("Invalid nibble index " + nibbleIndex);
+    }
+
+    @Override
+    public byte byteAt(int index) {
+      if (index >= 0) {
+        if (index < 8) {
+          return byteFromLong(l0, index);
+        }
+        if (index < 16) {
+          return byteFromLong(l1, index - 8);
+        }
+        if (index < 24) {
+          return byteFromLong(l2, index - 16);
+        }
+        if (index < 32) {
+          return byteFromLong(l3, index - 24);
+        }
+      }
+      throw new IllegalArgumentException("Invalid byte index " + index);
+    }
+
+    @Override
+    public long longAt(int index) {
+      switch (index) {
+        case 0:
+          return l0;
+        case 1:
+          return l1;
+        case 2:
+          return l2;
+        case 3:
+          return l3;
+        default:
+          throw new IllegalArgumentException("Invalid long index " + index);
+      }
     }
 
     @Override
@@ -447,6 +536,26 @@ public abstract class ObjId {
     }
 
     @Override
+    public byte byteAt(int index) {
+      return bytes[index];
+    }
+
+    @Override
+    public long longAt(int index) {
+      index *= 4;
+      long l = 0;
+      l |= (((long) byteAt(index++)) & 0xffL) << 56;
+      l |= (((long) byteAt(index++)) & 0xffL) << 48;
+      l |= (((long) byteAt(index++)) & 0xffL) << 40;
+      l |= (((long) byteAt(index++)) & 0xffL) << 32;
+      l |= (((long) byteAt(index++)) & 0xffL) << 24;
+      l |= (((long) byteAt(index++)) & 0xffL) << 16;
+      l |= (((long) byteAt(index++)) & 0xffL) << 8;
+      l |= ((long) byteAt(index)) & 0xffL;
+      return l;
+    }
+
+    @Override
     public int size() {
       return bytes.length;
     }
@@ -532,5 +641,10 @@ public abstract class ObjId {
       ObjIdGeneric that = (ObjIdGeneric) obj;
       return Arrays.equals(this.bytes, that.bytes);
     }
+  }
+
+  @FunctionalInterface
+  public interface ByteAccessor {
+    byte get(int index);
   }
 }
