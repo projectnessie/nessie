@@ -66,7 +66,6 @@ google-cloud-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connect
 google-cloud-nio = { module = "com.google.cloud:google-cloud-nio", version = "0.127.18" }
 google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.39.0" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
-grpc-bom = { module = "io.grpc:grpc-bom", version = "1.57.1" }
 guava = { module = "com.google.guava:guava", version = "33.2.0-jre" }
 h2 = { module = "com.h2database:h2", version = "2.2.224" }
 hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
@@ -140,9 +139,6 @@ slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf
 slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
 smallrye-mutiny = { module = "io.smallrye.reactive:mutiny", version = "2.5.3" }
 smallrye-config-core = { module = "io.smallrye.config:smallrye-config-core", version.ref = "smallryeConfig" }
-smallrye-config-crypto = { module = "io.smallrye.config:smallrye-config-crypto", version.ref = "smallryeConfig" }
-smallrye-config-source-yaml = { module = "io.smallrye.config:smallrye-config-source-yaml", version.ref = "smallryeConfig" }
-smallrye-config-validator = { module = "io.smallrye.config:smallrye-config-validator", version.ref = "smallryeConfig" }
 snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.5" }
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
