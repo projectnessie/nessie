@@ -132,6 +132,22 @@ pullOpenApiSpec.configure {
   from(openapiSource) { include("openapi.yaml") }
 }
 
+val noticeDir = project.layout.buildDirectory.dir("notice")
+
+val includeNoticeFile by
+  tasks.registering(Sync::class) {
+    destinationDir = noticeDir.get().asFile
+    from(rootProject.projectDir) {
+      into("META-INF/resources")
+      include("NOTICE")
+      rename { "NOTICE.txt" }
+    }
+  }
+
+sourceSets.named("main") { resources.srcDir(noticeDir) }
+
+tasks.named("processResources") { dependsOn(includeNoticeFile) }
+
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
   quarkusBuildProperties.put(

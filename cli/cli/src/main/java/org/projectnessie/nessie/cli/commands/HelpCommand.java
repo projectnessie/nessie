@@ -48,6 +48,12 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
 
     List<Node.NodeType> argTypes = args.stream().map(Node::getType).collect(Collectors.toList());
 
+    if (argTypes.size() == 1) {
+      if (argTypes.get(0) == Token.TokenType.LICENSE) {
+        return licenseInfo();
+      }
+    }
+
     List<CommandType> matches =
         Arrays.stream(CommandType.values())
             .filter(
@@ -66,6 +72,12 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
     }
 
     return output;
+  }
+
+  private static Stream<String> licenseInfo() {
+    Stream<String> heading = Stream.of("", "Nessie 3rd party licenses NOTICE", "");
+    return Stream.concat(
+        heading, Arrays.stream(fetchResource("META-INF/resources/NOTICE.txt").split("\n")));
   }
 
   private static Stream<String> listAll(BaseNessieCli cli, List<CommandType> matches) {
@@ -113,12 +125,12 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
     for (String nonTerminalRef : nonTerminalRefs(commandType.statementName())) {
       // .trim() would remove trailing ESC chars as well, but we need those for proper ANSI output.
       String refSyntax =
-          fetchResource(nonTerminalRef + extension).replaceAll("^\\s", "").replaceAll("\\s$", "");
-      String refSyntaxPlain = fetchResource(nonTerminalRef + extensionPlain).trim();
+          fetchSyntaxHelp(nonTerminalRef + extension).replaceAll("^\\s", "").replaceAll("\\s$", "");
+      String refSyntaxPlain = fetchSyntaxHelp(nonTerminalRef + extensionPlain).trim();
 
       boolean isCommand = commandType.statementName().equals(nonTerminalRef);
 
-      String help = fetchResource(nonTerminalRef + ".help.txt").trim();
+      String help = fetchSyntaxHelp(nonTerminalRef + ".help.txt").trim();
 
       boolean showSyntax =
           !refSyntaxPlain.isEmpty()
@@ -172,18 +184,19 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
     while (!deque.isEmpty()) {
       String name = deque.removeFirst();
       if (allRefs.add(name)) {
-        deque.addAll(asList(fetchResource(nonTerminalName + ".refs").split("\n")));
+        deque.addAll(asList(fetchSyntaxHelp(nonTerminalName + ".refs").split("\n")));
       }
     }
 
     return allRefs;
   }
 
+  private static String fetchSyntaxHelp(String resource) {
+    return fetchResource("org/projectnessie/nessie/cli/syntax/" + resource);
+  }
+
   private static String fetchResource(String resource) {
-    URL url =
-        HelpCommand.class
-            .getClassLoader()
-            .getResource("org/projectnessie/nessie/cli/syntax/" + resource);
+    URL url = HelpCommand.class.getClassLoader().getResource(resource);
     if (url == null) {
       return "";
     }

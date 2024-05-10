@@ -78,7 +78,8 @@ HelpStatement
           TokenType.ASSIGN,
           TokenType.MERGE,
           TokenType.HELP,
-          TokenType.EXIT
+          TokenType.EXIT,
+          TokenType.LICENSE
           ); }
       [
            <USE>
@@ -114,6 +115,7 @@ HelpStatement
          | <MERGE>
          | <HELP>
          | <EXIT>
+         | <LICENSE>
       ]
     ;
 

@@ -302,7 +302,8 @@ public class TestCliCompleter {
                 "help ALTER",
                 "help MERGE",
                 "help HELP",
-                "help EXIT"),
+                "help EXIT",
+                "help LICENSE"),
             CompletionType.NONE,
             List.of(
                 TokenType.USE,
@@ -315,7 +316,8 @@ public class TestCliCompleter {
                 TokenType.ASSIGN,
                 TokenType.MERGE,
                 TokenType.HELP,
-                TokenType.EXIT)),
+                TokenType.EXIT,
+                TokenType.LICENSE)),
         arguments(
             "help u",
             true,
@@ -331,7 +333,8 @@ public class TestCliCompleter {
                 "help ASSIGN",
                 "help MERGE",
                 "help HELP",
-                "help EXIT"),
+                "help EXIT",
+                "help LICENSE"),
             CompletionType.NONE,
             List.of(
                 TokenType.USE,
@@ -344,7 +347,8 @@ public class TestCliCompleter {
                 TokenType.ASSIGN,
                 TokenType.MERGE,
                 TokenType.HELP,
-                TokenType.EXIT)),
+                TokenType.EXIT,
+                TokenType.LICENSE)),
         arguments(
             "help create ",
             false,
