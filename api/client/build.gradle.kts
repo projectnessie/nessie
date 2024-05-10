@@ -43,7 +43,7 @@ dependencies {
 
   compileOnly(libs.httpclient5)
 
-  implementation(libs.slf4j.api)
+  implementation(libs.slf4j.api) { version { require(libs.versions.slf4j.compat.get()) } }
   compileOnly(libs.errorprone.annotations)
 
   compileOnly(project(":nessie-doc-generator-annotations"))
@@ -78,7 +78,11 @@ dependencies {
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
   testFixturesApi(libs.httpclient5)
-  testFixturesImplementation(libs.logback.classic)
+  testFixturesImplementation(libs.logback.classic) {
+    version { require(libs.versions.logback.compat.get()) }
+    // Logback 1.3 brings Slf4j 2.0, which doesn't work with Spark up to 3.3
+    exclude("org.slf4j", "slf4j-api")
+  }
 
   testImplementation(libs.wiremock)
 
