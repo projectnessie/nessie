@@ -26,8 +26,6 @@ plugins {
 
 extra["maven.name"] = "Nessie - Quarkus Server"
 
-description = "Nessie Catalog Server with Nessie Core (Quarkus)"
-
 val quarkusRunner by
   configurations.creating {
     description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
