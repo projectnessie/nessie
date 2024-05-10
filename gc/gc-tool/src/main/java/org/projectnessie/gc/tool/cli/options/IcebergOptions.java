@@ -24,14 +24,56 @@ public class IcebergOptions {
   @CommandLine.Option(
       names = {"-I", "--iceberg"},
       split = ",",
-      description = "Iceberg properties used to configure the FileIO.")
+      description = {
+        "Iceberg properties used to configure the FileIO.",
+        "The following properties are almost always required.",
+        "",
+        "For S3:",
+        "- s3.access-key-id",
+        "- s3.secret-access-key",
+        "- s3.endpoint, if you use an S3 compatible object store like MinIO",
+        "",
+        "For GCS:",
+        "- io-impl=org.apache.iceberg.gcp.gcs.GCSFileIO",
+        "- gcs.project-id",
+        "- gcs.oauth2.token",
+        "",
+        "For ADLS:",
+        "- io-impl=org.apache.iceberg.azure.adlsv2.ADLSFileIO",
+        "- adls.auth.shared-key.account.name",
+        "- adls.auth.shared-key.account.key",
+      })
   Map<String, String> icebergProperties = new HashMap<>();
 
   @CommandLine.Option(
       names = {"-H", "--hadoop"},
       split = ",",
-      description =
-          "Hadoop configuration option, required when using an Iceberg FileIO that is not S3.")
+      description = {
+        "Hadoop configuration option, required when using an Iceberg FileIO that is not S3FileIO.",
+        "The following configuration settings might be required.",
+        "",
+        "For S3:",
+        "- fs.s3.impl=org.apache.hadoop.fs.s3a.S3AFileSystem",
+        "- fs.s3a.access.key",
+        "- fs.s3a.secret.key",
+        "- fs.s3a.endpoint, if you use an S3 compatible object store like MinIO",
+        "",
+        "For GCS:",
+        "- fs.gs.impl=com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem",
+        "- fs.AbstractFileSystem.gs.impl=com.google.cloud.hadoop.fs.gcs.GoogleHadoopFS",
+        "- fs.gs.project.id",
+        "- fs.gs.auth.type=USER_CREDENTIALS",
+        "- fs.gs.auth.client.id",
+        "- fs.gs.auth.client.secret",
+        "- fs.gs.auth.refresh.token",
+        "",
+        "For ADLS:",
+        "- fs.azure.impl=org.apache.hadoop.fs.azure.AzureNativeFileSystemStore",
+        "- fs.AbstractFileSystem.azure.impl=org.apache.hadoop.fs.azurebfs.Abfs",
+        "- fs.azure.storage.emulator.account.name",
+        "- fs.azure.account.auth.type=SharedKey",
+        "- fs.azure.account.key.<account>=<base-64-encoded-secret>",
+      })
   Map<String, String> hadoopConf = new HashMap<>();
 
   public Map<String, String> getIcebergProperties() {
