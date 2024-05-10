@@ -49,7 +49,7 @@ public class IcebergOptions {
       names = {"-H", "--hadoop"},
       split = ",",
       description = {
-        "Hadoop configuration option, required when using an Iceberg FileIO that is not S3.",
+        "Hadoop configuration option, required when using an Iceberg FileIO that is not S3FileIO.",
         "The following configuration settings might be required.",
         "",
         "For S3:",
