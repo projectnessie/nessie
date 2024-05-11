@@ -23,6 +23,7 @@ dependencies {
   implementation(baselibs.idea.ext)
   implementation(baselibs.shadow)
   implementation(baselibs.errorprone)
+  implementation(baselibs.license.report)
 
   testImplementation(platform(baselibs.junit.bom))
   testImplementation(baselibs.assertj.core)

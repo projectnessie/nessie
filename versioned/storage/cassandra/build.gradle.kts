@@ -39,7 +39,10 @@ dependencies {
   implementation(libs.slf4j.api)
 
   implementation(platform(libs.cassandra.driver.bom))
-  implementation("com.datastax.oss:java-driver-core")
+  implementation("com.datastax.oss:java-driver-core") {
+    // spotbugs-annotations has only a GPL license!
+    exclude("com.github.spotbugs", "spotbugs-annotations")
+  }
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)

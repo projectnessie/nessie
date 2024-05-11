@@ -105,3 +105,6 @@ java -jar nessie-quarkus-cli-::NESSIE_VERSION::-runner.jar
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=Maven%20Central&logo=apachemaven&color=3f6ec6&style=for-the-badge&logoColor=white)](https://search.maven.org/artifact/org.projectnessie.nessie/nessie)
 
+### License Reports
+
+License reports for this release are [available via this link (zip file)](https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-aggregated-license-report-::NESSIE_VERSION::.zip).

@@ -121,6 +121,10 @@ jobs:
           ./gradlew compileAll jar testClasses 
         echo "::endgroup::"
 
+        echo "::group::Check Licenses"
+        ./gradlew aggregatedLicenseReportsZip
+        echo "::endgroup::"
+
         echo "::group::Publish to Sonatype"
         # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
         ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
@@ -152,6 +156,7 @@ jobs:
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "GC_UBER_JAR=gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}.jar" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
+        echo "LICENSE_REPORTS=tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip" >> ${GITHUB_ENV}
 
         echo "## Successfully released ${RELEASE_VERSION} to Sonatype" >> $GITHUB_STEP_SUMMARY
 
@@ -249,7 +254,8 @@ jobs:
           "${CLI_UBER_JAR}" \
           "${GC_UBER_JAR}" \
           "${NESSIE_OPENAPI}" \
-          "${NESSIE_HELM_CHART}"
+          "${NESSIE_HELM_CHART}" \
+          "${LICENSE_REPORTS}"
 
     - name: Update SwaggerHub
       uses: smartbear/swaggerhub-cli@v0.9.0
