@@ -32,6 +32,7 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-gc-repository-jdbc"))
+  implementation(nessieProject("nessie-notice"))
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)

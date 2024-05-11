@@ -42,6 +42,7 @@ dependencies {
   implementation(project(":nessie-versioned-transfer"))
   implementation(project(":nessie-versioned-transfer-proto"))
   implementation(project(":nessie-model-quarkus"))
+  implementation(project(":nessie-notice"))
 
   implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-storage-bigtable"))

@@ -31,7 +31,8 @@ afterEvaluate {
         LicenseBundleNormalizer(
           "${rootProject.projectDir}/gradle/license/normalizer-bundle.json",
           false
-        )
+        ),
+        NoticeReportValidation()
       )
     allowedLicensesFile = rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
     renderers =
@@ -48,35 +49,40 @@ afterEvaluate {
   }
 }
 
-tasks.named("generateLicenseReport") {
-  inputs
-    .files(
-      rootProject.projectDir.resolve("gradle/license/normalizer-bundle.json"),
-      rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
-    )
-    .withPathSensitivity(PathSensitivity.RELATIVE)
-  inputs.property("renderersHash", Arrays.hashCode(licenseReport.renderers))
-  inputs.property("filtersHash", Arrays.hashCode(licenseReport.filters))
-  inputs.property("excludesHash", Arrays.hashCode(licenseReport.excludes))
-  inputs.property("excludeGroupsHash", Arrays.hashCode(licenseReport.excludeGroups))
-}
+val generateLicenseReport =
+  tasks.named("generateLicenseReport") {
+    inputs
+      .files(
+        rootProject.projectDir.resolve("gradle/license/normalizer-bundle.json"),
+        rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
+      )
+      .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.property("renderersHash", Arrays.hashCode(licenseReport.renderers))
+    inputs.property("filtersHash", Arrays.hashCode(licenseReport.filters))
+    inputs.property("excludesHash", Arrays.hashCode(licenseReport.excludes))
+    inputs.property("excludeGroupsHash", Arrays.hashCode(licenseReport.excludeGroups))
+  }
 
-tasks.register<Zip>("licenseReportZip") {
-  from(tasks.named("generateLicenseReport"))
-  archiveClassifier.set("license-report")
-  archiveExtension.set("zip")
-}
+val licenseReportZip =
+  tasks.register<Zip>("licenseReportZip") {
+    group = "documentation"
+    description = "License report as a ZIP"
+    dependsOn("checkLicense")
+    from(generateLicenseReport)
+    archiveClassifier.set("license-report")
+    archiveExtension.set("zip")
+  }
 
 val licenseReports by
   configurations.creating {
     isCanBeConsumed = true
     isCanBeResolved = false
     description = "License report files"
-    outgoing { artifact(tasks.named("licenseReportZip")) }
+    outgoing { artifact(licenseReportZip) }
   }
 
 plugins.withType<MavenPublishPlugin>().configureEach {
   configure<PublishingExtension> {
-    publications { named<MavenPublication>("maven") { artifact(tasks.named("licenseReportZip")) } }
+    publications { named<MavenPublication>("maven") { artifact(licenseReportZip) } }
   }
 }

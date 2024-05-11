@@ -97,16 +97,11 @@ jobs:
             ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
             ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan
 
-      - name: Gradle / Checkstyle
-        run: ./gradlew checkstyle --scan
+      - name: Gradle / Code checks
+        run: ./gradlew codeChecks --scan
 
       - name: Gradle / Assemble
         run: ./gradlew assemble --scan
-
-      - name: Gradle / License Check
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: checkLicense
 
       - name: Gradle / Publish to Maven local
         run: ./gradlew publishToMavenLocal --scan

@@ -51,6 +51,7 @@ dependencies {
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-notice"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
