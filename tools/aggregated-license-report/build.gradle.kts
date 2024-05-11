@@ -22,7 +22,7 @@ val licenseReports by configurations.creating { description = "Used to reference
 
 dependencies {
   licenseReports(nessieProject("nessie-quarkus", "licenseReports"))
-  licenseReports(nessieProject("nessie-quarkus-cli", "licenseReports"))
+  licenseReports(nessieProject("nessie-server-admin-tool", "licenseReports"))
   licenseReports(nessieProject("nessie-gc-tool", "licenseReports"))
   licenseReports(nessieProject("nessie-content-generator", "licenseReports"))
   licenseReports(nessieProject("nessie-cli", "licenseReports"))
