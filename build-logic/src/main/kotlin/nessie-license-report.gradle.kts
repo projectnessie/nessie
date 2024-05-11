@@ -31,16 +31,12 @@ afterEvaluate {
         LicenseBundleNormalizer(
           "${rootProject.projectDir}/gradle/license/normalizer-bundle.json",
           false
-        )
+        ),
+        NoticeReportValidation()
       )
     allowedLicensesFile = rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
     renderers =
-      arrayOf(
-        InventoryHtmlReportRenderer("index.html"),
-        JsonReportRenderer(),
-        XmlReportRenderer(),
-        NoticeReportValidationRenderer()
-      )
+      arrayOf(InventoryHtmlReportRenderer("index.html"), JsonReportRenderer(), XmlReportRenderer())
     excludeBoms = true
     excludes =
       arrayOf(
@@ -69,6 +65,9 @@ val generateLicenseReport =
 
 val licenseReportZip =
   tasks.register<Zip>("licenseReportZip") {
+    group = "documentation"
+    description = "License report as a ZIP"
+    dependsOn("checkLicense")
     from(generateLicenseReport)
     archiveClassifier.set("license-report")
     archiveExtension.set("zip")
@@ -79,7 +78,7 @@ val licenseReports by
     isCanBeConsumed = true
     isCanBeResolved = false
     description = "License report files"
-    outgoing { artifact(tasks.named("licenseReportZip")) }
+    outgoing { artifact(licenseReportZip) }
   }
 
 plugins.withType<MavenPublishPlugin>().configureEach {

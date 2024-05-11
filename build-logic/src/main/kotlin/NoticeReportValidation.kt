@@ -15,21 +15,28 @@
  */
 
 import com.github.jk1.license.ProjectData
-import com.github.jk1.license.render.ReportRenderer
+import com.github.jk1.license.filter.DependencyFilter
 import gradle.kotlin.dsl.accessors._0f44f690aca8d7bb8fae2d09020d267b.licenseReport
 import java.io.File
 import org.gradle.api.GradleException
 
-class NoticeReportValidationRenderer : ReportRenderer {
+/**
+ * Validates that all dependencies with MIT/BSD/Go/UPL/ISC licenses, which do not have an Apache
+ * license, are mentioned in the `NOTICE` file.
+ */
+class NoticeReportValidation : DependencyFilter {
   fun needsNoNotice(license: String?): Boolean = license != null && (license.contains("Apache"))
 
   fun needsNotice(license: String?): Boolean =
-    license != null && (license.contains("MIT") || license.contains("BSD"))
+    license != null &&
+      (license.contains("MIT") ||
+        license.contains("BSD") ||
+        license.contains("Go") ||
+        license.contains("ISC") ||
+        license.contains("Universal Permissive"))
 
-  override fun render(data: ProjectData?) {
-    if (data == null) {
-      return
-    }
+  override fun filter(data: ProjectData?): ProjectData {
+    data!!
 
     val rootNoticeFile = data.project.rootProject.file("NOTICE").readText()
 
@@ -71,5 +78,7 @@ class NoticeReportValidationRenderer : ReportRenderer {
         "License information for the following artifacts is missing in the root NOTICE file: ${missing.map { it.value }.joinToString("\n")}"
       )
     }
+
+    return data
   }
 }

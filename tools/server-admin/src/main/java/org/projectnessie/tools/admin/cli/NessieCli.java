@@ -32,7 +32,8 @@ import picocli.CommandLine.HelpCommand;
       CheckContent.class,
       EraseRepository.class,
       ExportRepository.class,
-      ImportRepository.class
+      ImportRepository.class,
+      ThirdPartyLicenses.class
     })
 public class NessieCli extends BaseCommand {
 

@@ -32,6 +32,7 @@ dependencies {
   implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-client"))
   implementation(project(":nessie-cli-grammar"))
+  implementation(project(":nessie-notice"))
 
   implementation(libs.jline)
   implementation(libs.picocli)
@@ -62,24 +63,6 @@ dependencies {
 
   testCompileOnly(libs.immutables.value.annotations)
 }
-
-val noticeDir = project.layout.buildDirectory.dir("notice")
-
-val includeNoticeFile by
-  tasks.registering(Sync::class) {
-    destinationDir = noticeDir.get().asFile
-    from(rootProject.projectDir) {
-      into("META-INF/resources")
-      include("NOTICE")
-      rename { "NOTICE.txt" }
-    }
-  }
-
-sourceSets.named("main") { resources.srcDir(noticeDir) }
-
-tasks.named("processResources") { dependsOn(includeNoticeFile) }
-
-tasks.named("sourcesJar") { dependsOn(includeNoticeFile) }
 
 tasks.withType<ProcessResources>().configureEach {
   from("src/main/resources") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }

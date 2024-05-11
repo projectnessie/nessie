@@ -51,6 +51,7 @@ dependencies {
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-notice"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
@@ -131,22 +132,6 @@ pullOpenApiSpec.configure {
   destinationDir = openApiSpecDir.get().asFile
   from(openapiSource) { include("openapi.yaml") }
 }
-
-val noticeDir = project.layout.buildDirectory.dir("notice")
-
-val includeNoticeFile by
-  tasks.registering(Sync::class) {
-    destinationDir = noticeDir.get().asFile
-    from(rootProject.projectDir) {
-      into("META-INF/resources")
-      include("NOTICE")
-      rename { "NOTICE.txt" }
-    }
-  }
-
-sourceSets.named("main") { resources.srcDir(noticeDir) }
-
-tasks.named("processResources") { dependsOn(includeNoticeFile) }
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())

@@ -32,6 +32,7 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-gc-repository-jdbc"))
+  implementation(nessieProject("nessie-notice"))
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
@@ -106,24 +107,6 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 }
-
-val noticeDir = project.layout.buildDirectory.dir("notice")
-
-val includeNoticeFile by
-  tasks.registering(Sync::class) {
-    destinationDir = noticeDir.get().asFile
-    from(rootProject.projectDir) {
-      into("META-INF/resources")
-      include("NOTICE")
-      rename { "NOTICE.txt" }
-    }
-  }
-
-sourceSets.named("main") { resources.srcDir(noticeDir) }
-
-tasks.named("processResources") { dependsOn(includeNoticeFile) }
-
-tasks.named("sourcesJar") { dependsOn(includeNoticeFile) }
 
 tasks.named<Test>("test").configure { systemProperty("expectedNessieVersion", project.version) }
 
