@@ -16,7 +16,7 @@ logLevel: INFO
 # -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE.
 # (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using
 # one of these legacy version store types, migrate your existing repositories to the new version
-# store types using the nessie-quarkus-cli tool's export/import functionality.)
+# store types using the nessie-server-admin-tool's export/import functionality.)
 versionStoreType: IN_MEMORY
 
 # Cassandra settings. Only required when using CASSANDRA version store type; ignored otherwise.

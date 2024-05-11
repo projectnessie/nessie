@@ -86,16 +86,16 @@ jobs:
             spotlessCheck \
             compileAll \
             -x :nessie-quarkus:compileAll \
-            -x :nessie-quarkus-cli:compileAll \
+            -x :nessie-server-admin-tool:compileAll \
             -x :nessie-events-quarkus:compileAll \
             --scan
 
       - name: Gradle / Compile Quarkus
         run: |
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan
+          ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan
 
       - name: Gradle / Checkstyle
         run: ./gradlew checkstyle --scan
@@ -146,7 +146,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
 
       - name: Gradle / test
-        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-quarkus-cli:test -x :nessie-events-quarkus:test --scan
+        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v4
@@ -266,7 +266,7 @@ jobs:
 
           ./gradlew intTest \
             -x :nessie-quarkus:intTest \
-            -x :nessie-quarkus-cli:intTest \
+            -x :nessie-server-admin-tool:intTest \
             -x :nessie-events-quarkus:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
@@ -413,9 +413,9 @@ jobs:
       - name: Gradle / intTest Quarkus CLI
         run:
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus-cli:intTest --scan || \
-            ./gradlew :nessie-quarkus-cli:intTest --scan || \
-            ./gradlew :nessie-quarkus-cli:intTest --scan
+          ./gradlew :nessie-server-admin-tool:intTest --scan || \
+            ./gradlew :nessie-server-admin-tool:intTest --scan || \
+            ./gradlew :nessie-server-admin-tool:intTest --scan
 
       - name: Gradle / intTest Quarkus Events
         run:

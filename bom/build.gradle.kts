@@ -49,7 +49,7 @@ dependencies {
     api(project(":nessie-nessie-testcontainer"))
     api(project(":nessie-quarkus-auth"))
     api(project(":nessie-quarkus-common"))
-    api(project(":nessie-quarkus-cli"))
+    api(project(":nessie-server-admin-tool"))
     api(project(":nessie-quarkus"))
     api(project(":nessie-quarkus-tests"))
     api(project(":nessie-rest-common"))
