@@ -30,3 +30,10 @@ sync:
   - source: ghcr.io/projectnessie/nessie-gc
     target: quay.io/projectnessie/nessie-gc
     type: repository
+  # Server Admin Tool
+  - source: ghcr.io/projectnessie/nessie-server-admin-unstable
+    target: quay.io/projectnessie/nessie-server-admin-unstable
+    type: repository
+  - source: ghcr.io/projectnessie/nessie-server-admin
+    target: quay.io/projectnessie/nessie-server-admin
+    type: repository
