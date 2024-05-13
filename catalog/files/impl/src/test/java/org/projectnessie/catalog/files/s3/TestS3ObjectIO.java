@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,6 +32,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.catalog.files.api.BackendThrottledException;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Utilities;
@@ -51,7 +51,7 @@ public class TestS3ObjectIO {
     Instant now = Instant.now();
     Clock clock = Clock.fixed(now, ZoneId.of("UTC"));
     Duration defaultRetryAfter = Duration.of(10, SECONDS);
-    URI location = URI.create("s3://hello/foo/bar");
+    StorageUri location = StorageUri.of("s3://hello/foo/bar");
 
     when(s3client.utilities())
         .thenReturn(S3Utilities.builder().region(Region.EU_CENTRAL_1).build());

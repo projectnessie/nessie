@@ -18,19 +18,19 @@ package org.projectnessie.catalog.files.s3;
 import static org.projectnessie.catalog.files.gcs.GcsClients.buildSharedHttpTransportFactory;
 
 import com.google.auth.http.HttpTransportFactory;
-import java.net.URI;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.files.gcs.GcsObjectIO;
 import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class TestGcsClients extends AbstractClients {
 
   @Override
-  protected URI buildURI(String bucket, String key) {
-    return URI.create(String.format("gs://%s/%s", bucket, key));
+  protected StorageUri buildURI(String bucket, String key) {
+    return StorageUri.of(String.format("gs://%s/%s", bucket, key));
   }
 
   @Override

@@ -22,8 +22,8 @@ import com.azure.storage.file.datalake.options.DataLakeFileOutputStreamOptions;
 import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class AdlsObjectIO implements ObjectIO {
 
@@ -34,7 +34,7 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public InputStream readObject(URI uri) {
+  public InputStream readObject(StorageUri uri) {
     DataLakeFileClient file = clientSupplier.fileClientForLocation(uri);
     DataLakeFileInputStreamOptions options = new DataLakeFileInputStreamOptions();
     clientSupplier.adlsOptions().readBlockSize().ifPresent(options::setBlockSize);
@@ -42,7 +42,7 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public OutputStream writeObject(URI uri) {
+  public OutputStream writeObject(StorageUri uri) {
     DataLakeFileClient file = clientSupplier.fileClientForLocation(uri);
     DataLakeFileOutputStreamOptions options = new DataLakeFileOutputStreamOptions();
     ParallelTransferOptions transferOptions = new ParallelTransferOptions();
@@ -52,7 +52,7 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public boolean isValidUri(URI uri) {
-    return uri != null && ("abfs".equals(uri.getScheme()) || "abfss".equals(uri.getScheme()));
+  public boolean isValidUri(StorageUri uri) {
+    return uri != null && ("abfs".equals(uri.scheme()) || "abfss".equals(uri.scheme()));
   }
 }

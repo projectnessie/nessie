@@ -21,7 +21,6 @@ import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.time.Clock;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -37,6 +36,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
 
 /** Microbenchmark to identify the resource footprint when using {@link S3ClientSupplier}. */
@@ -85,13 +85,13 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3client(BenchmarkParam param, Blackhole bh) {
-    bh.consume(param.clientSupplier.getClient(URI.create("s3://bucket/key")));
+    bh.consume(param.clientSupplier.getClient(StorageUri.of("s3://bucket/key")));
   }
 
   @Benchmark
   public void s3Get(BenchmarkParam param, Blackhole bh) throws IOException {
     S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, Clock.systemUTC());
-    try (InputStream in = objectIO.readObject(URI.create("s3://bucket/key"))) {
+    try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/key"))) {
       bh.consume(in.readAllBytes());
     }
   }
@@ -99,7 +99,7 @@ public class S3ClientResourceBench {
   @Benchmark
   public void s3Get250k(BenchmarkParam param, Blackhole bh) throws IOException {
     S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, Clock.systemUTC());
-    try (InputStream in = objectIO.readObject(URI.create("s3://bucket/s-256000"))) {
+    try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/s-256000"))) {
       bh.consume(in.readAllBytes());
     }
   }
@@ -107,7 +107,7 @@ public class S3ClientResourceBench {
   @Benchmark
   public void s3Get4M(BenchmarkParam param, Blackhole bh) throws IOException {
     S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, Clock.systemUTC());
-    try (InputStream in = objectIO.readObject(URI.create("s3://bucket/s-4194304"))) {
+    try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/s-4194304"))) {
       bh.consume(in.readAllBytes());
     }
   }

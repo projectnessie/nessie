@@ -20,28 +20,29 @@ import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.util.Optional;
+import org.projectnessie.storage.uri.StorageUri;
 
 public final class AdlsLocation {
 
-  private final URI uri;
+  private final StorageUri uri;
   private final String storageAccount;
   private final String container;
   private final String path;
 
-  private AdlsLocation(URI uri, String storageAccount, String container, String path) {
+  private AdlsLocation(StorageUri uri, String storageAccount, String container, String path) {
     this.uri = uri;
     this.storageAccount = requireNonNull(storageAccount);
     this.container = container;
     this.path = requireNonNull(path);
   }
 
-  public static AdlsLocation adlsLocation(URI location) {
+  public static AdlsLocation adlsLocation(StorageUri location) {
     checkArgument(location != null, "Invalid location: null");
-    String scheme = location.getScheme();
+    String scheme = location.scheme();
     checkArgument(
         "abfs".equals(scheme) || "abfss".equals(scheme), "Invalid ADLS scheme: %s", location);
 
-    String authority = location.getAuthority();
+    String authority = location.requiredAuthority();
     String[] parts = authority.split("@", -1);
     String container;
     String storageAccount;
@@ -53,11 +54,11 @@ public final class AdlsLocation {
       storageAccount = authority;
     }
 
-    return new AdlsLocation(location, storageAccount, container, location.getPath());
+    return new AdlsLocation(location, storageAccount, container, location.path());
   }
 
   public URI getUri() {
-    return uri;
+    return uri.asURI();
   }
 
   /** The fully-qualified storage account name, e.g. {@code "myaccount.dfs.core.windows.net"}. */

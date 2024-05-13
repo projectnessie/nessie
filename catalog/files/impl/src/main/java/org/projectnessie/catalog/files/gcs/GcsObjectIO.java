@@ -26,11 +26,11 @@ import com.google.cloud.storage.Storage.BlobSourceOption;
 import com.google.cloud.storage.Storage.BlobWriteOption;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class GcsObjectIO implements ObjectIO {
   private final GcsStorageSupplier storageSupplier;
@@ -40,7 +40,7 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
-  public InputStream readObject(URI uri) {
+  public InputStream readObject(StorageUri uri) {
     GcsLocation location = gcsLocation(uri);
     GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
     Storage client = storageSupplier.forLocation(bucketOptions);
@@ -60,7 +60,7 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
-  public OutputStream writeObject(URI uri) {
+  public OutputStream writeObject(StorageUri uri) {
     GcsLocation location = gcsLocation(uri);
     GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
     Storage client = storageSupplier.forLocation(bucketOptions);
@@ -80,7 +80,7 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
-  public boolean isValidUri(URI uri) {
-    return uri != null && "gs".equals(uri.getScheme());
+  public boolean isValidUri(StorageUri uri) {
+    return uri != null && "gs".equals(uri.scheme());
   }
 }

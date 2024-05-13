@@ -17,6 +17,7 @@ package org.projectnessie.storage.uri;
 
 import com.google.common.base.Preconditions;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
@@ -70,6 +71,14 @@ public class StorageUri implements Comparable<StorageUri> {
     this.path = path;
   }
 
+  public URI asURI() {
+    try {
+      return new URI(scheme, authority, path, null, null);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
+
   public String location() {
     StringBuilder location = new StringBuilder();
     if (scheme != null) {
@@ -121,9 +130,20 @@ public class StorageUri implements Comparable<StorageUri> {
     return authority;
   }
 
+  @Nonnull
+  public String requiredAuthority() {
+    return Preconditions.checkNotNull(
+        authority, "Missing required authority in storage location: %s", this);
+  }
+
   @Nullable
   public String path() {
     return path;
+  }
+
+  @Nonnull
+  public String requiredPath() {
+    return Preconditions.checkNotNull(path, "Missing required path in storage location: %s", this);
   }
 
   public StorageUri withTrailingSeparator() {
