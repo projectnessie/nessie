@@ -26,7 +26,7 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
 
 @QuarkusMainTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
-class TestNessieCli {
+class TestNessieServerAdminTool {
 
   @Test
   @Launch("--help")

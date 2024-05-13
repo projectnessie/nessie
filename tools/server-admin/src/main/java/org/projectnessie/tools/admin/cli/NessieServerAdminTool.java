@@ -22,10 +22,10 @@ import picocli.CommandLine.HelpCommand;
 
 @TopCommand
 @Command(
-    name = "nessie-cli",
+    name = "nessie-server-admin-tool-runner.jar",
     mixinStandardHelpOptions = true,
     versionProvider = NessieVersionProvider.class,
-    description = "Nessie repository CLI",
+    description = "Nessie Server Admin Tool",
     subcommands = {
       NessieInfo.class,
       HelpCommand.class,
@@ -35,7 +35,7 @@ import picocli.CommandLine.HelpCommand;
       ImportRepository.class,
       ThirdPartyLicenses.class
     })
-public class NessieCli extends BaseCommand {
+public class NessieServerAdminTool extends BaseCommand {
 
   @Override
   public Integer call() {
@@ -47,7 +47,7 @@ public class NessieCli extends BaseCommand {
 
     PrintWriter out = spec.commandLine().getOut();
 
-    out.println("Nessie repository information & maintenance tool.");
+    out.println("Nessie server information & maintenance tool.");
     out.println("Use the 'help' command.");
     out.println();
     return 0;
