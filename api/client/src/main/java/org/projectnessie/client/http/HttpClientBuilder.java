@@ -104,8 +104,10 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
   }
 
   @Override
-  public HttpClientBuilder withSSLNoCertificateVerification(boolean noCertificateVerification) {
-    return (HttpClientBuilder) super.withSSLNoCertificateVerification(noCertificateVerification);
+  public HttpClientBuilder withSSLCertificateVerificationDisabled(
+      boolean certificateVerificationDisabled) {
+    return (HttpClientBuilder)
+        super.withSSLCertificateVerificationDisabled(certificateVerificationDisabled);
   }
 
   @Override

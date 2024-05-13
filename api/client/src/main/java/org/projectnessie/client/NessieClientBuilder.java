@@ -166,7 +166,8 @@ public interface NessieClientBuilder {
    * purposes, not recommended for production systems.
    */
   @CanIgnoreReturnValue
-  NessieClientBuilder withSSLNoCertificateVerification(boolean noCertificateVerification);
+  NessieClientBuilder withSSLCertificateVerificationDisabled(
+      boolean certificateVerificationDisabled);
 
   /**
    * Optionally configure a specific {@link SSLContext}, currently only the Java 11+ accepts this
@@ -350,7 +351,7 @@ public interface NessieClientBuilder {
 
       s = configuration.apply(CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION);
       if (s != null) {
-        withSSLNoCertificateVerification(Boolean.parseBoolean(s));
+        withSSLCertificateVerificationDisabled(Boolean.parseBoolean(s));
       }
 
       SSLParameters sslParameters = new SSLParameters();
@@ -453,7 +454,8 @@ public interface NessieClientBuilder {
     }
 
     @Override
-    public NessieClientBuilder withSSLNoCertificateVerification(boolean noCertificateVerification) {
+    public NessieClientBuilder withSSLCertificateVerificationDisabled(
+        boolean certificateVerificationDisabled) {
       return this;
     }
 

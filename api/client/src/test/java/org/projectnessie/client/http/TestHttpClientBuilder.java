@@ -200,11 +200,11 @@ public class TestHttpClientBuilder {
     assertThatIllegalArgumentException()
         .isThrownBy(() -> builder1.build().close())
         .withMessage(
-            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and with an explicitly configured SSLContext");
+            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and an explicitly configured SSLContext");
     assertThatIllegalArgumentException()
         .isThrownBy(() -> builder1.copy().build().close())
         .withMessage(
-            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and with an explicitly configured SSLContext");
+            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and an explicitly configured SSLContext");
   }
 
   static HttpTestServer.RequestHandler handlerForHeaderTest(

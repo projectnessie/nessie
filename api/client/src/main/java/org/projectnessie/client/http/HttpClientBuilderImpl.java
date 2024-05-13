@@ -255,7 +255,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     if (sslNoCertificateVerification) {
       checkArgument(
           sslCtx == null,
-          "Cannot construct Http client, must not combine %s and with an explicitly configured SSLContext",
+          "Cannot construct Http client, must not combine %s and an explicitly configured SSLContext",
           CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION);
       try {
         sslCtx = SSLContext.getInstance("TLS");
