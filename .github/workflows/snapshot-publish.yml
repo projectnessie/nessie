@@ -65,3 +65,8 @@ jobs:
             -p "gc/gc-tool" \
             -d "Dockerfile-gctool" \
             ghcr.io/projectnessie/nessie-gc-unstable
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-server-admin-tool" \
+            -p "tools/server-admin" \
+            -d "Dockerfile-admintool" \
+            ghcr.io/projectnessie/nessie-server-admin-unstable

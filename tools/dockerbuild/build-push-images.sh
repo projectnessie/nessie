@@ -58,6 +58,7 @@ function usage() {
   $0 --local --dockerfile Dockerfile-server --gradle-project :nessie-quarkus --project-dir servers/quarkus-server nessie-local
   $0 --dockerfile Dockerfile-server --gradle-project :nessie-quarkus --project-dir servers/quarkus-server nessie-unstable
   $0 --dockerfile Dockerfile-gctool --gradle-project :nessie-gc-tool --project-dir gc/gc-tool nessie-gc-unstable
+  $0 --dockerfile Dockerfile-admintool --gradle-project :nessie-server-admin-tool --project-dir tools/server-admin nessie-admin-unstable
 !
 }
 

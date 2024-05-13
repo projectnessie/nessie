@@ -650,6 +650,7 @@ jobs:
           echo "BUILDX_CONFIG=--config ${buildkitd_conf}" >> ${GITHUB_ENV}
           echo "DOCKER_IMAGE=${DOCKER_REGISTRY}:5000/nessie-testing" >> ${GITHUB_ENV}
           echo "DOCKER_GC_IMAGE=${DOCKER_REGISTRY}:5000/nessie-gc-testing" >> ${GITHUB_ENV}
+          echo "DOCKER_SERVER_ADMIN_IMAGE=${DOCKER_REGISTRY}:5000/nessie-server-admin-testing" >> ${GITHUB_ENV}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
@@ -668,6 +669,12 @@ jobs:
             -d "Dockerfile-gctool" \
             ${DOCKER_GC_IMAGE}
 
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-server-admin-tool" \
+            -p "tools/server-admin" \
+            -d "Dockerfile-admintool" \
+            ${DOCKER_SERVER_ADMIN_IMAGE}
+
       - name: Cleanup buildx
         run: |
           docker buildx use default
@@ -683,6 +690,10 @@ jobs:
           docker pull ${DOCKER_GC_IMAGE}:latest-java
           docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}
           docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}-java
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:latest
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:${DOCKER_VERSION}
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:${DOCKER_VERSION}-java
           cat <<! >> $GITHUB_STEP_SUMMARY
           ## Docker images
           
@@ -727,6 +738,23 @@ jobs:
 
             \`\`\`
             $(docker logs nessie-gc)
+            \`\`\`
+          !
+            exit 1
+          fi
+
+      - name: Check if Server Admin Tool Docker Java image works
+        run: |
+          if docker run --rm --name nessie-server-admin ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java --help | grep -q "Usage: nessie-server-admin"; then
+            echo "## Server Admin Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "Server Admin Tool Java Docker image smoke test: PASSED"
+          else
+           echo "Server Admin Tool Java Docker image smoke test: FAILED" > /dev/stderr
+            cat <<! >> $GITHUB_STEP_SUMMARY
+            ## Server Admin Tool Java Docker image FAILED
+
+            \`\`\`
+            $(docker logs nessie-server-admin)
             \`\`\`
           !
             exit 1
