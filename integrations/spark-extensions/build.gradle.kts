@@ -52,7 +52,9 @@ dependencies {
   testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-aws:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-aws-bundle:$versionIceberg")
-  intTestRuntimeOnly(libs.hadoop.client)
+  intTestRuntimeOnly(libs.hadoop.client) {
+    exclude("org.slf4j", "slf4j-reload4j")
+  }
   intTestRuntimeOnly(libs.hadoop.aws)
 
   testFixturesRuntimeOnly(libs.logback.classic) {
