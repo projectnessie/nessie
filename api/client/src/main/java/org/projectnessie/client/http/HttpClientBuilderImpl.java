@@ -16,6 +16,8 @@
 package org.projectnessie.client.http;
 
 import static java.util.Locale.ROOT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION;
+import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -40,7 +42,6 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.impl.HttpClientFactory;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
-import org.projectnessie.client.http.impl.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -246,14 +247,18 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
 
   @Override
   public HttpClient build() {
-    HttpUtils.checkArgument(
+    checkArgument(
         mapper != null, "Cannot construct Http client. Must have a non-null object mapper");
 
+    SSLContext sslCtx = this.sslContext;
+
     if (sslNoCertificateVerification) {
-      HttpUtils.checkArgument(
-          sslContext == null, "Cannot construct Http client, must not combine %s and ");
+      checkArgument(
+          sslCtx == null,
+          "Cannot construct Http client, must not combine %s and with an explicitly configured SSLContext",
+          CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION);
       try {
-        sslContext = SSLContext.getInstance("TLS");
+        sslCtx = SSLContext.getInstance("TLS");
         TrustManager trustManager =
             new X509ExtendedTrustManager() {
               @Override
@@ -283,16 +288,16 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
               public void checkServerTrusted(
                   X509Certificate[] chain, String authType, SSLEngine engine) {}
             };
-        sslContext.init(null, new TrustManager[] {trustManager}, new SecureRandom());
+        sslCtx.init(null, new TrustManager[] {trustManager}, new SecureRandom());
       } catch (KeyManagementException | NoSuchAlgorithmException e) {
         throw new HttpClientException(
             "Cannot construct Http Client, unable to configure noop trust-manager", e);
       }
     }
 
-    if (sslContext == null) {
+    if (sslCtx == null) {
       try {
-        sslContext = SSLContext.getDefault();
+        sslCtx = SSLContext.getDefault();
       } catch (NoSuchAlgorithmException e) {
         throw new HttpClientException(
             "Cannot construct Http Client. Default SSL config is invalid.", e);
@@ -312,7 +317,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .readTimeoutMillis(readTimeoutMillis)
             .connectionTimeoutMillis(connectionTimeoutMillis)
             .isDisableCompression(disableCompression)
-            .sslContext(sslContext)
+            .sslContext(sslCtx)
             .sslParameters(sslParameters)
             .addAllRequestFilters(requestFilters)
             .addAllResponseFilters(responseFilters)
