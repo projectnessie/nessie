@@ -253,6 +253,13 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
     }
 
     @Override
+    public NessieHttpClientBuilder withSSLNoCertificateVerification(
+        boolean noCertificateVerification) {
+      return (NessieHttpClientBuilder)
+          super.withSSLNoCertificateVerification(noCertificateVerification);
+    }
+
+    @Override
     public NessieHttpClientBuilder withSSLContext(SSLContext sslContext) {
       return (NessieHttpClientBuilder) super.withSSLContext(sslContext);
     }

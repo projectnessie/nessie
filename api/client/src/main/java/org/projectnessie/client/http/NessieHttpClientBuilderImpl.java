@@ -151,6 +151,14 @@ public class NessieHttpClientBuilderImpl
     return this;
   }
 
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilderImpl withSSLNoCertificateVerification(
+      boolean noCertificateVerification) {
+    builder.setSslNoCertificateVerification(noCertificateVerification);
+    return this;
+  }
+
   /**
    * Set the SSL context for this client.
    *

@@ -23,6 +23,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_HOSTS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_MATCHER;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_CIPHER_SUITES;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_PROTOCOLS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
@@ -159,6 +160,13 @@ public interface NessieClientBuilder {
   /** Disables compression for remote requests. */
   @CanIgnoreReturnValue
   NessieClientBuilder withDisableCompression(boolean disableCompression);
+
+  /**
+   * Optional, disables certificate verifications, if set to {@code true}. Can be useful for testing
+   * purposes, not recommended for production systems.
+   */
+  @CanIgnoreReturnValue
+  NessieClientBuilder withSSLNoCertificateVerification(boolean noCertificateVerification);
 
   /**
    * Optionally configure a specific {@link SSLContext}, currently only the Java 11+ accepts this
@@ -340,6 +348,11 @@ public interface NessieClientBuilder {
         withDisableCompression(Boolean.parseBoolean(s));
       }
 
+      s = configuration.apply(CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION);
+      if (s != null) {
+        withSSLNoCertificateVerification(Boolean.parseBoolean(s));
+      }
+
       SSLParameters sslParameters = new SSLParameters();
       boolean hasSslParameters = false;
       s = configuration.apply(CONF_NESSIE_SSL_CIPHER_SUITES);
@@ -436,6 +449,11 @@ public interface NessieClientBuilder {
 
     @Override
     public NessieClientBuilder withDisableCompression(boolean disableCompression) {
+      return this;
+    }
+
+    @Override
+    public NessieClientBuilder withSSLNoCertificateVerification(boolean noCertificateVerification) {
       return this;
     }
 
