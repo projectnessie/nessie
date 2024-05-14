@@ -60,7 +60,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -109,6 +108,7 @@ import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation;
+import org.projectnessie.storage.uri.StorageUri;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with tables. */
 @RequestScoped
@@ -216,7 +216,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       location = defaultTableLocation(createTableRequest.location(), tableRef);
     }
     checkArgument(
-        objectIO.isValidUri(URI.create(location)), "Unsupported table location: " + location);
+        objectIO.isValidUri(StorageUri.of(location)), "Unsupported table location: " + location);
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createTableRequest.properties());
@@ -349,7 +349,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     IcebergTableMetadata tableMetadata;
     try (InputStream metadataInput =
-        objectIO.readObject(URI.create(registerTableRequest.metadataLocation()))) {
+        objectIO.readObject(StorageUri.of(registerTableRequest.metadataLocation()))) {
       tableMetadata =
           IcebergJson.objectMapper().readValue(metadataInput, IcebergTableMetadata.class);
     }

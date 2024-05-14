@@ -18,7 +18,7 @@ package org.projectnessie.catalog.files.gcs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.net.URI;
+import org.projectnessie.storage.uri.StorageUri;
 
 public final class GcsLocation {
   private final String bucket;
@@ -33,14 +33,14 @@ public final class GcsLocation {
     return new GcsLocation(bucket, path);
   }
 
-  public static GcsLocation gcsLocation(URI location) {
+  public static GcsLocation gcsLocation(StorageUri location) {
     checkArgument(location != null, "Invalid location: null");
-    String scheme = location.getScheme();
+    String scheme = location.scheme();
     checkArgument("gs".equals(scheme), "Invalid GCS scheme: %s", location);
 
-    String bucket = location.getAuthority();
+    String bucket = location.authority();
 
-    String path = location.getPath();
+    String path = location.path();
     path = path == null ? "" : path.startsWith("/") ? path.substring(1) : path;
 
     return new GcsLocation(bucket, path);
