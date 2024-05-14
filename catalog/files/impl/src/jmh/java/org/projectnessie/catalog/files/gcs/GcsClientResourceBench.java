@@ -23,7 +23,6 @@ import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
 import com.google.auth.http.HttpTransportFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,6 +37,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 
 /** Microbenchmark to identify the resource footprint when using {@link GcsStorageSupplier}. */
 @Warmup(iterations = 3, time = 2000, timeUnit = MILLISECONDS)
@@ -85,7 +85,7 @@ public class GcsClientResourceBench {
   @Benchmark
   public void gcsGet(BenchmarkParam param, Blackhole bh) throws IOException {
     GcsObjectIO objectIO = new GcsObjectIO(param.storageSupplier);
-    try (InputStream in = objectIO.readObject(URI.create("gs://bucket/key"))) {
+    try (InputStream in = objectIO.readObject(StorageUri.of("gs://bucket/key"))) {
       bh.consume(in.readAllBytes());
     }
   }
@@ -93,7 +93,7 @@ public class GcsClientResourceBench {
   @Benchmark
   public void gcsGet250k(BenchmarkParam param, Blackhole bh) throws IOException {
     GcsObjectIO objectIO = new GcsObjectIO(param.storageSupplier);
-    try (InputStream in = objectIO.readObject(URI.create("gs://bucket/s-256000"))) {
+    try (InputStream in = objectIO.readObject(StorageUri.of("gs://bucket/s-256000"))) {
       bh.consume(in.readAllBytes());
     }
   }
@@ -101,7 +101,7 @@ public class GcsClientResourceBench {
   @Benchmark
   public void gcsGet4M(BenchmarkParam param, Blackhole bh) throws IOException {
     GcsObjectIO objectIO = new GcsObjectIO(param.storageSupplier);
-    try (InputStream in = objectIO.readObject(URI.create("gs://bucket/s-4194304"))) {
+    try (InputStream in = objectIO.readObject(StorageUri.of("gs://bucket/s-4194304"))) {
       bh.consume(in.readAllBytes());
     }
   }

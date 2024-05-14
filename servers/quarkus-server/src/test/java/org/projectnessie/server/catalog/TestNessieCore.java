@@ -62,6 +62,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
+import org.projectnessie.storage.uri.StorageUri;
 
 @QuarkusTest
 @TestProfile(value = S3UnitTestProfile.class)
@@ -136,7 +137,7 @@ public class TestNessieCore {
     return (name, data) -> {
       URI location =
           name.isAbsolute() ? name : URI.create(currentBase + "/" + name.getPath()).normalize();
-      try (OutputStream output = objectIO.writeObject(location)) {
+      try (OutputStream output = objectIO.writeObject(StorageUri.of(location))) {
         output.write(data);
       } catch (IOException e) {
         throw new RuntimeException(e);
