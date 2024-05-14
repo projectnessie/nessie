@@ -18,7 +18,6 @@ package org.projectnessie.catalog.files.adls;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import java.net.URI;
 import java.util.Optional;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -57,8 +56,8 @@ public final class AdlsLocation {
     return new AdlsLocation(location, storageAccount, container, location.path());
   }
 
-  public URI getUri() {
-    return uri.asURI();
+  public StorageUri getUri() {
+    return uri;
   }
 
   /** The fully-qualified storage account name, e.g. {@code "myaccount.dfs.core.windows.net"}. */
