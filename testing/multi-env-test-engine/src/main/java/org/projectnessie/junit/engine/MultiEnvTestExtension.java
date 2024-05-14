@@ -43,7 +43,7 @@ public interface MultiEnvTestExtension extends Extension {
    * UniqueID. Higher numbers will appear earlier in the JUnit UniqueId. For extensions with the
    * same order value, the segmentType will be sorted alphabetically.
    */
-  default int getOrder() {
+  default int segmentPriority() {
     return 0;
   }
 }

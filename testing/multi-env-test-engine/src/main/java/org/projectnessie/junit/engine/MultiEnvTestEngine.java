@@ -102,7 +102,7 @@ public class MultiEnvTestEngine implements TestEngine {
               originalRoot, discoveryRequest.getConfigurationParameters());
       registry.stream()
           .sorted(
-              Comparator.comparing(MultiEnvTestExtension::getOrder)
+              Comparator.comparing(MultiEnvTestExtension::segmentPriority)
                   .reversed()
                   .thenComparing(MultiEnvTestExtension::segmentType))
           .forEach(tree::appendDescriptorsForExtension);

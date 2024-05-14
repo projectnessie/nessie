@@ -475,7 +475,7 @@ class TestMultiEnvTestEngine {
     }
 
     @Override
-    public int getOrder() {
+    public int segmentPriority() {
       return 1;
     }
   }
