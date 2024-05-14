@@ -22,6 +22,7 @@ plugins {
 extra["maven.name"] = "Nessie - Catalog - Files API"
 
 dependencies {
+  api(project(":nessie-storage-uri"))
   implementation(project(":nessie-catalog-model"))
   implementation(libs.guava)
 

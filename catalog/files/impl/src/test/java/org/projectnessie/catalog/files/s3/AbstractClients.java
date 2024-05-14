@@ -20,7 +20,6 @@ import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStora
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -30,6 +29,7 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.objectstoragemock.Bucket;
 import org.projectnessie.objectstoragemock.MockObject;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractClients {
@@ -48,7 +48,7 @@ public abstract class AbstractClients {
 
       ObjectIO objectIO = buildObjectIO(server1, null);
 
-      URI uri = buildURI(BUCKET_1, "mykey");
+      StorageUri uri = buildURI(BUCKET_1, "mykey");
 
       try (OutputStream output = objectIO.writeObject(uri)) {
         output.write("hello world".getBytes(UTF_8));
@@ -117,7 +117,7 @@ public abstract class AbstractClients {
     }
   }
 
-  protected abstract URI buildURI(String bucket, String key);
+  protected abstract StorageUri buildURI(String bucket, String key);
 
   protected abstract ObjectIO buildObjectIO(
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2);

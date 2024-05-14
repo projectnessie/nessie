@@ -28,9 +28,9 @@ import com.azure.storage.common.policy.RetryPolicyType;
 import com.azure.storage.file.datalake.DataLakeFileClient;
 import com.azure.storage.file.datalake.DataLakeFileSystemClient;
 import com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder;
-import java.net.URI;
 import java.util.Optional;
 import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.storage.uri.StorageUri;
 
 public final class AdlsClientSupplier {
   private final HttpClient httpClient;
@@ -48,11 +48,11 @@ public final class AdlsClientSupplier {
     return adlsOptions;
   }
 
-  public DataLakeFileClient fileClientForLocation(URI uri) {
+  public DataLakeFileClient fileClientForLocation(StorageUri uri) {
     AdlsLocation location = adlsLocation(uri);
 
     DataLakeFileSystemClient fileSystem = fileSystemClient(location);
-    String path = uri.getPath();
+    String path = uri.requiredPath();
     if (path.startsWith("/")) {
       path = path.substring(1);
     }

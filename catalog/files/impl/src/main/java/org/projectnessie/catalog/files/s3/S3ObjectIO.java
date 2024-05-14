@@ -22,16 +22,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import org.projectnessie.catalog.files.api.BackendThrottledException;
 import org.projectnessie.catalog.files.api.NonRetryableException;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Uri;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -46,18 +45,17 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
-  public InputStream readObject(URI uri) throws IOException {
+  public InputStream readObject(StorageUri uri) throws IOException {
     checkArgument(uri != null, "Invalid location: null");
-    checkArgument("s3".equals(uri.getScheme()), "Invalid S3 scheme: %s", uri);
+    checkArgument("s3".equals(uri.scheme()), "Invalid S3 scheme: %s", uri);
 
     S3Client s3client = s3clientSupplier.getClient(uri);
-    S3Uri s3uri = s3client.utilities().parseUri(uri);
 
     try {
       return s3client.getObject(
           GetObjectRequest.builder()
-              .bucket(s3uri.bucket().orElseThrow())
-              .key(s3uri.key().orElseThrow())
+              .bucket(uri.requiredAuthority())
+              .key(uri.requiredPath())
               .build());
     } catch (SdkServiceException e) {
       if (e.isThrottlingException()) {
@@ -73,9 +71,9 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
-  public OutputStream writeObject(URI uri) {
+  public OutputStream writeObject(StorageUri uri) {
     checkArgument(uri != null, "Invalid location: null");
-    checkArgument("s3".equals(uri.getScheme()), "Invalid S3 scheme: %s", uri);
+    checkArgument("s3".equals(uri.scheme()), "Invalid S3 scheme: %s", uri);
 
     return new ByteArrayOutputStream() {
       @Override
@@ -83,12 +81,11 @@ public class S3ObjectIO implements ObjectIO {
         super.close();
 
         S3Client s3client = s3clientSupplier.getClient(uri);
-        S3Uri s3uri = s3client.utilities().parseUri(uri);
 
         s3client.putObject(
             PutObjectRequest.builder()
-                .bucket(s3uri.bucket().orElseThrow())
-                .key(s3uri.key().orElseThrow())
+                .bucket(uri.requiredAuthority())
+                .key(uri.requiredPath())
                 .build(),
             RequestBody.fromBytes(toByteArray()));
       }
@@ -96,7 +93,7 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
-  public boolean isValidUri(URI uri) {
-    return uri != null && "s3".equals(uri.getScheme());
+  public boolean isValidUri(StorageUri uri) {
+    return uri != null && "s3".equals(uri.scheme());
   }
 }
