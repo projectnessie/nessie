@@ -31,7 +31,6 @@ import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Uri;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -51,13 +50,12 @@ public class S3ObjectIO implements ObjectIO {
     checkArgument("s3".equals(uri.scheme()), "Invalid S3 scheme: %s", uri);
 
     S3Client s3client = s3clientSupplier.getClient(uri);
-    S3Uri s3uri = s3client.utilities().parseUri(uri.asURI());
 
     try {
       return s3client.getObject(
           GetObjectRequest.builder()
-              .bucket(s3uri.bucket().orElseThrow())
-              .key(s3uri.key().orElseThrow())
+              .bucket(uri.requiredAuthority())
+              .key(uri.requiredPath())
               .build());
     } catch (SdkServiceException e) {
       if (e.isThrottlingException()) {
@@ -83,12 +81,11 @@ public class S3ObjectIO implements ObjectIO {
         super.close();
 
         S3Client s3client = s3clientSupplier.getClient(uri);
-        S3Uri s3uri = s3client.utilities().parseUri(uri.asURI());
 
         s3client.putObject(
             PutObjectRequest.builder()
-                .bucket(s3uri.bucket().orElseThrow())
-                .key(s3uri.key().orElseThrow())
+                .bucket(uri.requiredAuthority())
+                .key(uri.requiredPath())
                 .build(),
             RequestBody.fromBytes(toByteArray()));
       }
