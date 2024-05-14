@@ -430,6 +430,14 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_CLIENT_BUILDER_IMPL = "nessie.client-builder-impl";
 
   /**
+   * Optional, disables certificate verifications, if set to {@code true}. Can be useful for testing
+   * purposes, not recommended for production systems.
+   */
+  @ConfigItem(section = "Network")
+  public static final String CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION =
+      "nessie.ssl.no-certificate-verification";
+
+  /**
    * Optional, list of comma-separated cipher suites for SSL connections.
    *
    * <p>This parameter only works on Java 11 and newer with the Java HTTP client.

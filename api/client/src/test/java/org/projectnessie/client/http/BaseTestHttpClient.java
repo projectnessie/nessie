@@ -86,9 +86,28 @@ public abstract class BaseTestHttpClient {
 
   protected abstract boolean supportsHttp2();
 
+  enum SSLMode {
+    NONE(false),
+    SSL_VERIFIED(true),
+    SSL_UNVERIFIED(true),
+    ;
+    final boolean enabled;
+
+    SSLMode(boolean enabled) {
+      this.enabled = enabled;
+    }
+  }
+
   @ParameterizedTest
-  @CsvSource({"false, false", "false, true", "true, false", "true, true"})
-  void testHttpCombinations(boolean ssl, boolean http2) throws Exception {
+  @CsvSource({
+    "NONE, false",
+    "NONE, true",
+    "SSL_VERIFIED, false",
+    "SSL_VERIFIED, true",
+    "SSL_UNVERIFIED, false",
+    "SSL_UNVERIFIED, true"
+  })
+  void testHttpCombinations(SSLMode ssl, boolean http2) throws Exception {
     // Old URLConnection based client cannot handle HTTP/2
     assumeThat(!http2 || supportsHttp2()).isTrue();
 
@@ -105,13 +124,22 @@ public abstract class BaseTestHttpClient {
             MAPPER.writeValue(os, r);
           }
         };
-    try (HttpTestServer server = new HttpTestServer("/", handler, ssl);
+    try (HttpTestServer server = new HttpTestServer("/", handler, ssl.enabled);
         HttpClient client =
             createClient(
                 server.getUri(),
                 b -> {
-                  if (ssl) {
-                    b.setSslContext(server.getSslContext());
+                  switch (ssl) {
+                    case NONE:
+                      break;
+                    case SSL_VERIFIED:
+                      b.setSslContext(server.getSslContext());
+                      break;
+                    case SSL_UNVERIFIED:
+                      b.setSslNoCertificateVerification(true);
+                      break;
+                    default:
+                      throw new UnsupportedOperationException();
                   }
                   b.setHttp2Upgrade(http2);
                 })) {
@@ -119,10 +147,10 @@ public abstract class BaseTestHttpClient {
       JsonNode result = client.newRequest().get().readEntity(JsonNode.class);
       soft.assertThat(result)
           .containsExactly(
-              BooleanNode.valueOf(ssl),
+              BooleanNode.valueOf(ssl.enabled),
               TextNode.valueOf(http2 ? "HTTP/2.0" : "HTTP/1.1"),
               TextNode.valueOf("GET"),
-              TextNode.valueOf(ssl ? "https" : "http"));
+              TextNode.valueOf(ssl.enabled ? "https" : "http"));
     }
   }
 

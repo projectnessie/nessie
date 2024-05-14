@@ -75,6 +75,9 @@ public interface HttpClient extends AutoCloseable {
     Builder setResponseFactory(HttpResponseFactory responseFactory);
 
     @CanIgnoreReturnValue
+    Builder setSslNoCertificateVerification(boolean noCertificateVerification);
+
+    @CanIgnoreReturnValue
     Builder setSslContext(SSLContext sslContext);
 
     @CanIgnoreReturnValue
