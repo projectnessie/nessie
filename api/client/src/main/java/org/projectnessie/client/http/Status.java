@@ -60,6 +60,8 @@ public enum Status {
   HTTP_VERSION_NOT_SUPPORTED(505, "HTTP Version Not Supported"),
   NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required");
 
+  private static final Status[] STATUS_VALUES = values();
+
   private final int code;
   private final String reason;
 
@@ -76,7 +78,7 @@ public enum Status {
    * @throws UnsupportedOperationException if unknown status code
    */
   public static Status fromCode(int code) {
-    return Arrays.stream(Status.values())
+    return Arrays.stream(STATUS_VALUES)
         .filter(x -> x.code == code)
         .findFirst()
         .orElseThrow(
