@@ -18,12 +18,12 @@ package org.projectnessie.catalog.files.api;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
+import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
-  InputStream readObject(URI uri) throws IOException;
+  InputStream readObject(StorageUri uri) throws IOException;
 
-  OutputStream writeObject(URI uri) throws IOException;
+  OutputStream writeObject(StorageUri uri) throws IOException;
 
-  boolean isValidUri(URI uri);
+  boolean isValidUri(StorageUri uri);
 }

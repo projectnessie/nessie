@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.s3;
 
 import com.azure.core.http.HttpClient;
-import java.net.URI;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsClients;
 import org.projectnessie.catalog.files.adls.AdlsConfig;
@@ -24,12 +23,13 @@ import org.projectnessie.catalog.files.adls.AdlsObjectIO;
 import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class TestAdlsClients extends AbstractClients {
 
   @Override
-  protected URI buildURI(String bucket, String key) {
-    return URI.create(String.format("abfs://%s@storageAccount/%s", bucket, key));
+  protected StorageUri buildURI(String bucket, String key) {
+    return StorageUri.of(String.format("abfs://%s@storageAccount/%s", bucket, key));
   }
 
   @Override
