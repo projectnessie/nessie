@@ -34,9 +34,7 @@ public class MultiEnvExtensionRegistry {
   private MutableExtensionRegistry registry;
 
   public MultiEnvExtensionRegistry() {
-    this.registry =
-        MutableExtensionRegistry.createRegistryWithDefaultExtensions(
-            new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
+    clear();
   }
 
   public void registerExtensions(Class<?> testClass) {
