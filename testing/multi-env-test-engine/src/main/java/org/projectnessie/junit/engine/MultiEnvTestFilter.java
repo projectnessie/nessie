@@ -47,7 +47,8 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
   }
 
   private FilterResult filter(Class<?> testClass, UniqueId id) {
-    // Keep separate registry from MultiEnvTestEngine in case we are running on another engine and still need to filter.
+    // Keep separate registry from MultiEnvTestEngine in case we are running on another engine and
+    // still need to filter.
     registry.registerExtensions(testClass);
     if (id.getEngineId().map("junit-jupiter"::equals).orElse(false)) {
       if (registry.stream(testClass).findAny().isPresent()) {

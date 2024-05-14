@@ -68,7 +68,8 @@ public class MultiEnvExtensionRegistry {
   }
 
   public void clear() {
-    registry = MutableExtensionRegistry.createRegistryWithDefaultExtensions(
-      new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
+    registry =
+        MutableExtensionRegistry.createRegistryWithDefaultExtensions(
+            new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
   }
 }

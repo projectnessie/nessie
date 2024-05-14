@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.EngineDiscoveryRequest;
@@ -34,23 +33,26 @@ import org.slf4j.LoggerFactory;
  * This is a JUnit5 Test Engine that delegates test discovery to {@link JupiterTestEngine} and
  * replicates the discovered tests for execution in multiple test environments.
  *
- * <p>When multiple {@link MultiEnvTestExtension}s are applied to the same test, performs a cartesian
- * product of available environments and their IDs.
+ * <p>When multiple {@link MultiEnvTestExtension}s are applied to the same test, performs a
+ * cartesian product of available environments and their IDs.
  *
  * <p>For example:
+ *
  * <ul>
- *   <li>MultiEnvTestExtension segmentA with IDs 1, 2, 3</li>
- *   <li>MultiEnvTestExtension segmentB with IDs 1, 2</li>
- *   <li>MultiEnvTestExtension segmentC with ID 1</li>
+ *   <li>MultiEnvTestExtension segmentA with IDs 1, 2, 3
+ *   <li>MultiEnvTestExtension segmentB with IDs 1, 2
+ *   <li>MultiEnvTestExtension segmentC with ID 1
  * </ul>
+ *
  * will result in the following IDs:
+ *
  * <ul>
- *   <li>[engine:nessie-multi-env][segmentA:1][segmentB:1][segmentC:1]</li>
- *   <li>[engine:nessie-multi-env][segmentA:1][segmentB:2][segmentC:1]</li>
- *   <li>[engine:nessie-multi-env][segmentA:2][segmentB:1][segmentC:1]</li>
- *   <li>[engine:nessie-multi-env][segmentA:2][segmentB:2][segmentC:1]</li>
- *   <li>[engine:nessie-multi-env][segmentA:3][segmentB:1][segmentC:1]</li>
- *   <li>[engine:nessie-multi-env][segmentA:3][segmentB:2][segmentC:1]</li>
+ *   <li>[engine:nessie-multi-env][segmentA:1][segmentB:1][segmentC:1]
+ *   <li>[engine:nessie-multi-env][segmentA:1][segmentB:2][segmentC:1]
+ *   <li>[engine:nessie-multi-env][segmentA:2][segmentB:1][segmentC:1]
+ *   <li>[engine:nessie-multi-env][segmentA:2][segmentB:2][segmentC:1]
+ *   <li>[engine:nessie-multi-env][segmentA:3][segmentB:1][segmentC:1]
+ *   <li>[engine:nessie-multi-env][segmentA:3][segmentB:2][segmentC:1]
  * </ul>
  *
  * <p>Actual test environments are expected to be managed by JUnit 5 extensions, implementing the
@@ -95,9 +97,14 @@ public class MultiEnvTestEngine implements TestEngine {
       originalChildren.forEach(originalRoot::removeChild);
 
       // Append each extension's IDs in a new, nested, layer
-      MultiEnvTestDescriptorTree tree = new MultiEnvTestDescriptorTree(originalRoot, discoveryRequest.getConfigurationParameters());
+      MultiEnvTestDescriptorTree tree =
+          new MultiEnvTestDescriptorTree(
+              originalRoot, discoveryRequest.getConfigurationParameters());
       registry.stream()
-          .sorted(Comparator.comparing(MultiEnvTestExtension::getOrder).reversed().thenComparing(MultiEnvTestExtension::segmentType))
+          .sorted(
+              Comparator.comparing(MultiEnvTestExtension::getOrder)
+                  .reversed()
+                  .thenComparing(MultiEnvTestExtension::segmentType))
           .forEach(tree::appendDescriptorsForExtension);
 
       // Migrate the actual tests from the root to each of the leaves of the new tree
