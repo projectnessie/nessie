@@ -16,10 +16,14 @@
 package org.projectnessie.junit.engine;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.UniqueId;
+import org.junit.platform.engine.UniqueId.Segment;
 import org.junit.platform.launcher.PostDiscoveryFilter;
 
 /**
@@ -58,14 +62,16 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
       }
     } else {
       // check whether any of the extensions declared by the test recognize the version segment
-      boolean matched =
-          registry.stream(testClass)
-              .anyMatch(
-                  ext ->
-                      id.getSegments().stream()
-                          .anyMatch(s -> ext.segmentType().equals(s.getType())));
+      Set<String> registeredMultiEnvSegmentTypes = registry.stream(testClass)
+        .map(MultiEnvTestExtension::segmentType)
+        .collect(Collectors.toUnmodifiableSet());
 
-      if (matched) {
+      Stream<String> segmentTypesInTestId = id.getSegments().stream()
+        .map(Segment::getType);
+
+      boolean atLeastOneSegmentTypeIsMultiEnv = segmentTypesInTestId.anyMatch(registeredMultiEnvSegmentTypes::contains);
+
+      if (atLeastOneSegmentTypeIsMultiEnv) {
         return FilterResult.included(null);
       } else {
         return FilterResult.excluded("Excluding unmatched multi-env test: " + id);
