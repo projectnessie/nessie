@@ -18,19 +18,19 @@ package org.projectnessie.catalog.files;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.storage.uri.StorageUri;
 
 public abstract class DelegatingObjectIO implements ObjectIO {
-  protected abstract ObjectIO resolve(URI uri);
+  protected abstract ObjectIO resolve(StorageUri uri);
 
   @Override
-  public OutputStream writeObject(URI uri) throws IOException {
+  public OutputStream writeObject(StorageUri uri) throws IOException {
     return resolve(uri).writeObject(uri);
   }
 
   @Override
-  public InputStream readObject(URI uri) throws IOException {
+  public InputStream readObject(StorageUri uri) throws IOException {
     return resolve(uri).readObject(uri);
   }
 }

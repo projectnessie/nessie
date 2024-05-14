@@ -42,6 +42,7 @@ import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.storage.uri.StorageUri;
 
 @RequestScoped
 public class IcebergConfigurer {
@@ -123,7 +124,7 @@ public class IcebergConfigurer {
           .ifPresent(uri -> config.put(OAUTH2_TOKEN_ENDPOINT, uri.toString()));
     }
     config.putAll(uriInfo.icebergConfigOverrides());
-    config.putAll(storeConfigOverrides(URI.create(warehouseConfig.location())));
+    config.putAll(storeConfigOverrides(StorageUri.of(warehouseConfig.location())));
     config.putAll(catalogConfig.icebergConfigOverrides());
     config.putAll(warehouseConfig.icebergConfigOverrides());
     // Marker property telling clients that the backend is a Nessie Catalog.
@@ -171,21 +172,21 @@ public class IcebergConfigurer {
     return configDefaults;
   }
 
-  public Map<String, String> storeConfigOverrides(URI warehouseLocation) {
-    if (Objects.equals(warehouseLocation.getScheme(), "s3")) {
+  public Map<String, String> storeConfigOverrides(StorageUri warehouseLocation) {
+    if (Objects.equals(warehouseLocation.scheme(), "s3")) {
       return s3ConfigOverrides(warehouseLocation);
-    } else if (Objects.equals(warehouseLocation.getScheme(), "gs")) {
+    } else if (Objects.equals(warehouseLocation.scheme(), "gs")) {
       return gcsConfigOverrides(warehouseLocation);
-    } else if (Objects.equals(warehouseLocation.getScheme(), "abfs")
-        || Objects.equals(warehouseLocation.getScheme(), "abfss")) {
+    } else if (Objects.equals(warehouseLocation.scheme(), "abfs")
+        || Objects.equals(warehouseLocation.scheme(), "abfss")) {
       return adlsConfigOverrides(warehouseLocation);
     }
     return Map.of();
   }
 
-  private Map<String, String> s3ConfigOverrides(URI warehouseLocation) {
+  private Map<String, String> s3ConfigOverrides(StorageUri warehouseLocation) {
     Map<String, String> configOverrides = new HashMap<>();
-    String bucket = warehouseLocation.getAuthority();
+    String bucket = warehouseLocation.requiredAuthority();
     S3BucketOptions s3BucketOptions = s3Options.effectiveOptionsForBucket(Optional.of(bucket));
     s3BucketOptions.region().ifPresent(r -> configOverrides.put(S3_CLIENT_REGION, r));
     if (s3BucketOptions.externalEndpoint().isPresent()) {
@@ -227,9 +228,9 @@ public class IcebergConfigurer {
     return configOverrides;
   }
 
-  private Map<String, String> gcsConfigOverrides(URI warehouseLocation) {
+  private Map<String, String> gcsConfigOverrides(StorageUri warehouseLocation) {
     Map<String, String> configOverrides = new HashMap<>();
-    String bucket = warehouseLocation.getAuthority();
+    String bucket = warehouseLocation.requiredAuthority();
     GcsBucketOptions gcsBucketOptions = gcsOptions.effectiveOptionsForBucket(Optional.of(bucket));
     gcsBucketOptions.projectId().ifPresent(p -> configOverrides.put(GCS_PROJECT_ID, p));
     gcsBucketOptions.clientLibToken().ifPresent(t -> configOverrides.put(GCS_CLIENT_LIB_TOKEN, t));
@@ -266,7 +267,7 @@ public class IcebergConfigurer {
     return configOverrides;
   }
 
-  private Map<String, String> adlsConfigOverrides(URI warehouseLocation) {
+  private Map<String, String> adlsConfigOverrides(StorageUri warehouseLocation) {
     Map<String, String> configOverrides = new HashMap<>();
     AdlsLocation location = adlsLocation(warehouseLocation);
     Optional<String> fileSystem = location.container();

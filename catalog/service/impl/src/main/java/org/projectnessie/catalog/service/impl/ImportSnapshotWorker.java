@@ -26,7 +26,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.obj
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -46,6 +45,7 @@ import org.projectnessie.catalog.model.snapshot.TableFormat;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -104,10 +104,10 @@ final class ImportSnapshotWorker {
 
     if (snapshot == null) {
       IcebergTableMetadata tableMetadata;
-      URI metadataLocation = URI.create(content.getMetadataLocation());
+      StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
       try {
         InputStream input = taskRequest.objectIO().readObject(metadataLocation);
-        if (metadataLocation.getPath().endsWith(".gz")) {
+        if (metadataLocation.requiredPath().endsWith(".gz")) {
           input = new GZIPInputStream(input);
         }
         tableMetadata = IcebergJson.objectMapper().readValue(input, IcebergTableMetadata.class);
@@ -187,11 +187,11 @@ final class ImportSnapshotWorker {
 
     if (snapshot == null) {
       IcebergViewMetadata viewMetadata;
-      URI metadataLocation = URI.create(content.getMetadataLocation());
+      StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
       try {
 
         InputStream input = taskRequest.objectIO().readObject(metadataLocation);
-        if (metadataLocation.getPath().endsWith(".gz")) {
+        if (metadataLocation.requiredPath().endsWith(".gz")) {
           input = new GZIPInputStream(input);
         }
         viewMetadata = IcebergJson.objectMapper().readValue(input, IcebergViewMetadata.class);

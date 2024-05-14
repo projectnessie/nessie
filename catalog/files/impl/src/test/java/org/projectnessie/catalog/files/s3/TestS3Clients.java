@@ -15,12 +15,12 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import java.net.URI;
 import java.time.Clock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
 
 public class TestS3Clients extends AbstractClients {
@@ -74,7 +74,7 @@ public class TestS3Clients extends AbstractClients {
   }
 
   @Override
-  protected URI buildURI(String bucket, String key) {
-    return URI.create(String.format("s3://%s/%s", bucket, key));
+  protected StorageUri buildURI(String bucket, String key) {
+    return StorageUri.of(String.format("s3://%s/%s", bucket, key));
   }
 }

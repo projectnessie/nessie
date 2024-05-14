@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.files;
 
-import java.net.URI;
 import java.time.Clock;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsObjectIO;
@@ -24,6 +23,7 @@ import org.projectnessie.catalog.files.gcs.GcsObjectIO;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class ResolvingObjectIO extends DelegatingObjectIO {
   private final S3ObjectIO s3ObjectIO;
@@ -40,8 +40,8 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
   }
 
   @Override
-  protected ObjectIO resolve(URI uri) {
-    String scheme = uri.getScheme();
+  protected ObjectIO resolve(StorageUri uri) {
+    String scheme = uri.scheme();
     if (scheme == null) {
       scheme = "file";
     }
@@ -59,8 +59,8 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
   }
 
   @Override
-  public boolean isValidUri(URI uri) {
-    String scheme = uri.getScheme();
+  public boolean isValidUri(StorageUri uri) {
+    String scheme = uri.scheme();
     if (scheme == null) {
       return false;
     }

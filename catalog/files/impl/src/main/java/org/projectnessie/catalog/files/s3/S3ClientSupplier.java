@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.function.Function;
 import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkField;
@@ -73,11 +74,11 @@ public class S3ClientSupplier {
    * per-bucket config, which derives from the global config. References to the secrets that contain
    * the actual S3 access-key-ID and secret-access-key are present in the S3 options as well.
    */
-  public S3Client getClient(URI location) {
+  public S3Client getClient(StorageUri location) {
 
-    String scheme = location.getScheme();
+    String scheme = location.scheme();
     checkArgument("s3".equals(scheme), "Invalid S3 scheme: %s", location);
-    String bucketName = location.getAuthority();
+    String bucketName = location.requiredAuthority();
 
     // Supply an empty profile file
 
