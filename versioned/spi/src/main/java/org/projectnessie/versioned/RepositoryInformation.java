@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
@@ -28,19 +28,15 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface RepositoryInformation {
   @Nullable
-  @jakarta.annotation.Nullable
   String getDefaultBranch();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String getNoAncestorHash();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Instant getRepositoryCreationTimestamp();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Instant getOldestPossibleCommitTimestamp();
 
   Map<String, String> getAdditionalProperties();

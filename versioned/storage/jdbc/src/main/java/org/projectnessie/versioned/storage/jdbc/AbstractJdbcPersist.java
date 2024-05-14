@@ -26,8 +26,10 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENC
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ_CONDITIONAL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS_TYPED;
@@ -46,6 +48,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,8 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Object2IntHashMap;
@@ -74,6 +76,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializers;
 
@@ -113,7 +116,6 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return JdbcBackendFactory.NAME;
@@ -121,22 +123,16 @@ abstract class AbstractJdbcPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreConfig config() {
     return config;
   }
 
-  protected final Reference findReference(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull String name) {
+  protected final Reference findReference(@Nonnull Connection conn, @Nonnull String name) {
     return findReferences(conn, new String[] {name})[0];
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  protected final Reference[] findReferences(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull String[] names) {
+  protected final Reference[] findReferences(@Nonnull Connection conn, @Nonnull String[] names) {
     Object2IntHashMap<String> nameToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
     Reference[] r = new Reference[names.length];
@@ -176,10 +172,7 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  protected final Reference addReference(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference)
+  protected final Reference addReference(@Nonnull Connection conn, @Nonnull Reference reference)
       throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
@@ -216,10 +209,8 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   protected final Reference markReferenceAsDeleted(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference)
+      @Nonnull Connection conn, @Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try (PreparedStatement ps =
         conn.prepareStatement(referencesDml(MARK_REFERENCE_AS_DELETED, reference))) {
@@ -252,9 +243,7 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  protected final void purgeReference(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference)
+  protected final void purgeReference(@Nonnull Connection conn, @Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try (PreparedStatement ps = conn.prepareStatement(referencesDml(PURGE_REFERENCE, reference))) {
       int idx = 1;
@@ -284,11 +273,8 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   protected final Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+      @Nonnull Connection conn, @Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     try (PreparedStatement ps =
         conn.prepareStatement(referencesDml(UPDATE_REFERENCE_POINTER, reference))) {
@@ -346,16 +332,12 @@ abstract class AbstractJdbcPersist implements Persist {
     return r;
   }
 
-  protected final Obj fetchObj(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull ObjId id)
+  protected final Obj fetchObj(@Nonnull Connection conn, @Nonnull ObjId id)
       throws ObjNotFoundException {
     return fetchObjs(conn, new ObjId[] {id})[0];
   }
 
-  protected ObjType fetchObjType(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull ObjId id)
+  protected ObjType fetchObjType(@Nonnull Connection conn, @Nonnull ObjId id)
       throws ObjNotFoundException {
     try (PreparedStatement ps = conn.prepareStatement(sqlSelectMultiple(FETCH_OBJ_TYPE, 1))) {
       ps.setString(1, config.repositoryId());
@@ -373,20 +355,14 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  protected final Obj[] fetchObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
+  protected final Obj[] fetchObjs(@Nonnull Connection conn, @Nonnull ObjId[] ids)
       throws ObjNotFoundException {
     return fetchObjs(conn, ids, null);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   protected final Obj[] fetchObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull ObjId[] ids,
-      @Nullable @jakarta.annotation.Nullable ObjType type)
+      @Nonnull Connection conn, @Nonnull ObjId[] ids, @Nullable ObjType type)
       throws ObjNotFoundException {
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -450,49 +426,65 @@ abstract class AbstractJdbcPersist implements Persist {
   private Obj deserializeObj(ResultSet rs) throws SQLException {
     ObjId id = deserializeObjId(rs, COL_OBJ_ID);
     String objType = rs.getString(COL_OBJ_TYPE);
+    String versionToken = rs.getString(COL_OBJ_VERS);
     ObjType type = ObjTypes.forName(objType);
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
-    return serializer.deserialize(rs, id);
+    return serializer.deserialize(rs, type, id, versionToken);
   }
 
   protected final boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj obj,
-      boolean ignoreSoftSizeRestrictions)
+      @Nonnull Connection conn, @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions, true)[0];
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  protected final boolean[] storeObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  protected final boolean[] storeObjs(@Nonnull Connection conn, @Nonnull Obj[] objs)
       throws ObjTooLargeException {
     return upsertObjs(conn, objs, false, true);
   }
 
-  protected final Void updateObj(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj obj)
+  protected final Void updateObj(@Nonnull Connection conn, @Nonnull Obj obj)
       throws ObjTooLargeException {
     updateObjs(conn, new Obj[] {obj});
     return null;
   }
 
-  protected final Void updateObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  protected final Void updateObjs(@Nonnull Connection conn, @Nonnull Obj[] objs)
       throws ObjTooLargeException {
     upsertObjs(conn, objs, false, false);
     return null;
   }
 
+  protected final boolean deleteConditional(@Nonnull Connection conn, @Nonnull UpdateableObj obj) {
+    try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ_CONDITIONAL)) {
+      ps.setString(1, config.repositoryId());
+      serializeObjId(ps, 2, obj.id(), databaseSpecific);
+      ps.setString(3, obj.type().name());
+      ps.setString(4, obj.versionToken());
+      return ps.executeUpdate() == 1;
+    } catch (SQLException e) {
+      throw unhandledSQLException(e);
+    }
+  }
+
+  protected final boolean updateConditional(
+      @Nonnull Connection conn, @Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    // See comment in upsertObjs() why this is implemented this way.
+    return deleteConditional(conn, expected)
+        && upsertObjs(conn, new Obj[] {newValue}, false, true)[0];
+  }
+
   @Nonnull
-  @jakarta.annotation.Nonnull
   private boolean[] upsertObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
+      @Nonnull Connection conn,
+      @Nonnull Obj[] objs,
       boolean ignoreSoftSizeRestrictions,
       boolean insert)
       throws ObjTooLargeException {
@@ -539,6 +531,11 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
         serializeObjId(ps, storeObjSqlParams.get(COL_OBJ_ID), id, databaseSpecific);
         ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
+        if (obj instanceof UpdateableObj) {
+          ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), ((UpdateableObj) obj).versionToken());
+        } else {
+          ps.setNull(storeObjSqlParams.get(COL_OBJ_VERS), Types.VARCHAR);
+        }
 
         ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
         serializer.serialize(
@@ -580,9 +577,7 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  protected final void deleteObj(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  protected final void deleteObj(@Nonnull Connection conn, @Nonnull ObjId id) {
     try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ)) {
       ps.setString(1, config.repositoryId());
       serializeObjId(ps, 2, id, databaseSpecific);
@@ -593,9 +588,7 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  protected final void deleteObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  protected final void deleteObjs(@Nonnull Connection conn, @Nonnull ObjId[] ids) {
     if (ids.length == 0) {
       return;
     }
@@ -623,10 +616,6 @@ abstract class AbstractJdbcPersist implements Persist {
 
     } catch (SQLException e) {
       throw unhandledSQLException(e);
-    }
-
-    for (ObjId id : ids) {
-      deleteObj(conn, id);
     }
   }
 
@@ -713,7 +702,6 @@ abstract class AbstractJdbcPersist implements Persist {
     }
 
     @Nullable
-    @jakarta.annotation.Nullable
     @Override
     protected R computeNext() {
       try {

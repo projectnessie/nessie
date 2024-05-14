@@ -16,12 +16,15 @@
 package org.projectnessie.gc.contents.jdbc;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -29,15 +32,40 @@ import java.util.function.Supplier;
 public final class JdbcHelper {
   private JdbcHelper() {}
 
-  public static void createTables(Connection connection) throws SQLException {
+  public static void createTables(Connection connection, boolean ifNotExists) throws SQLException {
     try (Statement st = connection.createStatement()) {
-      for (String createTable : getCreateTableStatements()) {
-        st.execute(createTable);
+      Map<String, String> createTableStatements = getCreateTableStatements();
+      for (String tableName : createTableStatements.keySet()) {
+        if (!ifNotExists || !tableExists(connection, tableName)) {
+          st.execute(createTableStatements.get(tableName));
+        }
       }
     }
   }
 
-  public static List<String> getCreateTableStatements() {
+  public static void dropTables(Connection connection) throws SQLException {
+    try (Statement st = connection.createStatement()) {
+      for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
+        if (tableExists(connection, tableName)) {
+          st.execute("DROP TABLE " + tableName);
+        }
+      }
+    }
+  }
+
+  private static boolean tableExists(Connection connection, String tableName) throws SQLException {
+    DatabaseMetaData meta = connection.getMetaData();
+    if (meta.storesUpperCaseIdentifiers()) {
+      tableName = tableName.toUpperCase(Locale.ROOT);
+    }
+    String catalog = connection.getCatalog();
+    String schema = connection.getSchema();
+    try (ResultSet rs = meta.getTables(catalog, schema, tableName, new String[] {"TABLE"})) {
+      return rs.next();
+    }
+  }
+
+  public static Map<String, String> getCreateTableStatements() {
     return SqlDmlDdl.ALL_CREATES;
   }
 

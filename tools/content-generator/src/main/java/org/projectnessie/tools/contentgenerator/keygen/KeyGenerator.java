@@ -37,16 +37,15 @@ public class KeyGenerator {
     void apply(Random random, StringBuilder target);
   }
 
-  public static KeyGenerator newKeyGenerator(@Nonnull @jakarta.annotation.Nonnull String pattern) {
+  public static KeyGenerator newKeyGenerator(@Nonnull String pattern) {
     return newKeyGenerator(ImmutableParams.builder().pattern(pattern).build());
   }
 
-  public static KeyGenerator newKeyGenerator(
-      long seed, @Nonnull @jakarta.annotation.Nonnull String pattern) {
+  public static KeyGenerator newKeyGenerator(long seed, @Nonnull String pattern) {
     return newKeyGenerator(ImmutableParams.builder().seed(seed).pattern(pattern).build());
   }
 
-  public static KeyGenerator newKeyGenerator(@Nonnull @jakarta.annotation.Nonnull Params params) {
+  public static KeyGenerator newKeyGenerator(@Nonnull Params params) {
     PatternParser parser = new PatternParser(params.pattern());
     List<Func> generators = parser.parse();
     return new KeyGenerator(params, generators);
@@ -56,9 +55,7 @@ public class KeyGenerator {
   private final Random random;
   private final List<Func> generators;
 
-  private KeyGenerator(
-      @Nonnull @jakarta.annotation.Nonnull Params params,
-      @Nonnull @jakarta.annotation.Nonnull List<Func> generators) {
+  private KeyGenerator(@Nonnull Params params, @Nonnull List<Func> generators) {
     this.params = params;
     this.random = new Random(params.seed());
     this.generators = generators;

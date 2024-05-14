@@ -18,9 +18,9 @@ package org.projectnessie.versioned.storage.common.persist;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -133,6 +133,14 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
+  public Obj getImmediate(@Nonnull ObjId id) {
+    return delegate.getImmediate(id);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
   @Nonnull
   public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
@@ -213,6 +221,23 @@ public class ObservingPersist implements Persist {
   @Timed(value = PREFIX, histogram = true)
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     delegate.upsertObjs(objs);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    return delegate.deleteConditional(obj);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    return delegate.updateConditional(expected, newValue);
   }
 
   @WithSpan

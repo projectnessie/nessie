@@ -15,12 +15,12 @@
  */
 package org.projectnessie.gc.identify;
 
+import jakarta.annotation.Nonnull;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Locale;
-import javax.annotation.Nonnull;
 
 /**
  * Defines the cutoff point for a reference, which can be a fixed timestamp, a number of commits to
@@ -41,9 +41,9 @@ public interface CutoffPolicy {
     return NO_TIMESTAMP;
   }
 
-  boolean isCutoff(@Nonnull @jakarta.annotation.Nonnull Instant commitTime, int numCommits);
+  boolean isCutoff(@Nonnull Instant commitTime, int numCommits);
 
-  static CutoffPolicy atTimestamp(@Nonnull @jakarta.annotation.Nonnull Instant cutoffTimestamp) {
+  static CutoffPolicy atTimestamp(@Nonnull Instant cutoffTimestamp) {
     return new TimestampCutoffPolicy(cutoffTimestamp);
   }
 

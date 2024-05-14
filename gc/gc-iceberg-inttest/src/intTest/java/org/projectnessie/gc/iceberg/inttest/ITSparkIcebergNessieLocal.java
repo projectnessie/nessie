@@ -19,7 +19,6 @@ import static org.projectnessie.gc.iceberg.inttest.Util.expire;
 import static org.projectnessie.gc.iceberg.inttest.Util.identifyLiveContents;
 
 import java.io.File;
-import java.net.URI;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +41,7 @@ import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.gc.identify.CutoffPolicy;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
@@ -74,7 +74,7 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       sql("insert into nessie.db1.t1 select 42");
       sql("insert into nessie.db1.t1 select 42");
 
-      Set<URI> filesBefore = allFiles(icebergFiles);
+      Set<StorageUri> filesBefore = allFiles(icebergFiles);
 
       Instant maxFileModificationTime = Instant.now();
 
@@ -89,7 +89,7 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       // ... and sweep
       DeleteSummary deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
       soft.assertThat(deleteSummary.deleted()).isEqualTo(0L);
-      Set<URI> filesAfter = allFiles(icebergFiles);
+      Set<StorageUri> filesAfter = allFiles(icebergFiles);
       soft.assertThat(filesAfter).containsExactlyElementsOf(filesBefore);
 
       // Only the last commit is considered live:
@@ -104,12 +104,12 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
       soft.assertThat(deleteSummary.deleted()).isEqualTo(3L);
       filesAfter = allFiles(icebergFiles);
-      Set<URI> removedFiles = new HashSet<>(filesBefore);
+      Set<StorageUri> removedFiles = new HashSet<>(filesBefore);
       removedFiles.removeAll(filesAfter);
       // The first and second table-metadata and the manifest-list from the second table metadata
       // got cleaned up.
       soft.assertThat(removedFiles)
-          .allMatch(u -> u.getPath().endsWith(".json") || u.getPath().endsWith(".avro"));
+          .allMatch(u -> u.location().endsWith(".json") || u.location().endsWith(".avro"));
 
       // Run GC another time, but this time assuming that all commits are live. This triggers a
       // read-attempt against a previously deleted table-metadata, which is equal to "no files
@@ -149,7 +149,7 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
               + "'true'))");
       // only one compacted data file will be live after this.
 
-      Set<URI> filesBefore = allFiles(icebergFiles);
+      Set<StorageUri> filesBefore = allFiles(icebergFiles);
       soft.assertThat(filesBefore).hasSize(18);
 
       Instant maxFileModificationTime = Instant.now();
@@ -165,16 +165,17 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       // ... and sweep
       DeleteSummary deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
       soft.assertThat(deleteSummary.deleted()).isEqualTo(13L);
-      Set<URI> filesAfter = allFiles(icebergFiles);
-      Set<URI> removedFiles = new HashSet<>(filesBefore);
+      Set<StorageUri> filesAfter = allFiles(icebergFiles);
+      Set<StorageUri> removedFiles = new HashSet<>(filesBefore);
       removedFiles.removeAll(filesAfter);
       // make sure expired delete file (parquet) is also removed from GC.
-      soft.assertThat(removedFiles).anyMatch(u -> u.getPath().endsWith("-deletes.parquet"));
+      soft.assertThat(removedFiles).anyMatch(u -> u.location().endsWith("-deletes.parquet"));
     }
   }
 
-  private Set<URI> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
-    try (Stream<FileReference> list = icebergFiles.listRecursively(tempFile.toURI())) {
+  private Set<StorageUri> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
+    try (Stream<FileReference> list =
+        icebergFiles.listRecursively(StorageUri.of(tempFile.toURI()))) {
       return list.map(FileReference::absolutePath).collect(Collectors.toCollection(TreeSet::new));
     }
   }

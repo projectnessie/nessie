@@ -1,60 +1,55 @@
-## Nessie Site
+# Nessie Site
 
 This directory contains the source for the Nessie docs site.
 
 * Site structure is maintained in mkdocs.yml
 * Pages are maintained in markdown in the `docs/` folder
+* Versioned docs are in the `docs/docs/` folder - do not edit those, because those live in a different branch
+  than `main`.
 * Links use bare page names: `[link text](target-page)`
 
-### Installation
+## Installation
 
-The site is built using mkdocs. To install mkdocs and the theme, run:
+Requirements: local installation of Python 3.11
 
-```
-# Activate the virtual environment (if installed)
-cd site/
-. venv/bin/activate
-# Install or update the dependencies
-pip install -r ./requirements.txt
-```
+The site is built using mkdocs, with some tooling around.
 
-It is easier to use `virtualenv` to keep the Python dependencies for `site/`
-separate from your other projects and/or distinct from system managed Python
-dependencies.
+Tip: You do not need to setup a Python virtualenv yourself.
 
-* To use `virtualenv`, you need Python 3.7/3.8 installed locally.
-  * For Ubuntu: `apt-get install python3 virtualenv`
-  * For MacOS/brew: `brew install python pyenv-virtualenv`
-* Install the virtual environment:
-  ```
-  # cd to the site/ directory
-  cd site/
-  # setup the virtual environment (only needed once)
-  virtualenv -p $(which python3) venv
-  # activate the virtual environment
-  . venv/bin/activate
-  # Install or update the dependencies as usual
-  pip install -r ./requirements.txt
-  ```
+1. Build the site locally. This step will create a virtualenv and install the Python dependencies. It does also
+   fetch the versioned docs from GitHub.
+   ```bash
+   make build
+   ```
+2. Serve the site locally:
+   ```bash
+   make serve
+   ```
 
-### Local Changes
+## Directories and their meanings
 
-To see changes locally before committing, use mkdocs to run a local server from this directory.
+* `.cache/` - Cache for the mkdocs privacy plugin (ignored by Git)
+* `bin/` - Shell scripts to help developing, building, deploying and releasing the site
+* `build/` - Contents of the remote branches `site-docs` + `site-javadoc` (ignored by Git)
+* `docs/` - Non-Nessie version dependent docs
+* `in-dev/` - Version dependent docs - for the current "in-development/nightly/snapshot".
+  Eventually becomes the content for the next release.
+* `overrides/` - mkdocs overrides
+* `venv/` - Python virtual environment (ignored by Git)
 
-```
-mkdocs serve
-```
+## _Current_ state of the documentation (aka in-development / nightly / snapshot)
 
-### Publishing
+The `in-dev/` folder appears on the projectnessie.org site under `nessie-nightly`:
+[projectnessie.org/versions/nightly](https://projectnessie.org/nessie-nightly/) !
 
-We have a GitHub action that will automatically deploy any changes to the site.
+The `mkdocs.yml` here is used for each version - it contains the _navigation_ for the Nessie version.
 
-### Generate python API docs
+Hints:
 
-1. Enter into `python` directory and activate venv. 
-2. Run `make docs`.
-
-### Generate java API docs
-
-1. from root run `mvn javadoc:aggregate`
-2. `cp -R target/site/apidocs/* site/docs/javadoc`
+* Mkdocs `extras` CANNOT be changed in an included [`mkdocs.yml`](./mkdocs.yml). Since the docs of Nessie versions are
+  _included_ (see [nav.yml](../../nav.yml)), all pages would refer to the _latest_ Nessie release defined in the [top
+  level `mkdocs.yml`](../../mkdocs.yml). Therefore the version of a release is replaced using good-old `sed` when a
+  release is cut. Use the marker `::NESSIE_VERSION::` placeholder to let the tools replace it with the right version
+  string.
+* The `index.md` in `in-dev/docs/` contains the markdown for nightlies/snapshots.
+* The `index-release.md` in `in-dev/docs/` will replace the `index.md` for Nessie releases.

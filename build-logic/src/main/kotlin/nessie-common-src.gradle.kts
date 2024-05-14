@@ -30,8 +30,11 @@ plugins {
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Checkstyle
 
+val noCheckstyle =
+  project.name.endsWith("-proto") || project.extra.has("duplicated-project-sources")
+
 // Exclude projects that only generate Java from protobuf
-if (project.name.endsWith("-proto") || project.extra.has("duplicated-project-sources")) {
+if (noCheckstyle) {
   tasks.withType<Checkstyle>().configureEach { enabled = false }
 } else {
   checkstyle {
@@ -39,6 +42,24 @@ if (project.name.endsWith("-proto") || project.extra.has("duplicated-project-sou
     config = MemoizedCheckstyleConfig.checkstyleConfig(rootProject)
     isShowViolations = true
     isIgnoreFailures = false
+  }
+
+  configurations.configureEach {
+    // Avoids dependency resolution error:
+    // Could not resolve all task dependencies for configuration '...:checkstyle'.
+    //   > Module 'com.google.guava:guava' has been rejected:
+    //     Cannot select module with conflict on capability
+    //         'com.google.collections:google-collections:33.0.0-jre'
+    //         also provided by [com.google.collections:google-collections:1.0(runtime)]
+    //   > Module 'com.google.collections:google-collections' has been rejected:
+    //     Cannot select module with conflict on capability
+    //         'com.google.collections:google-collections:1.0'
+    //         also provided by [com.google.guava:guava:33.0.0-jre(jreRuntimeElements)]
+    resolutionStrategy.capabilitiesResolution.withCapability(
+      "com.google.collections:google-collections"
+    ) {
+      selectHighestVersion()
+    }
   }
 
   tasks.withType<Checkstyle>().configureEach {
@@ -86,9 +107,9 @@ private class MemoizedCheckstyleConfig {
 
 tasks.withType<JavaCompile>().configureEach {
   if (!project.extra.has("duplicated-project-sources")) {
-    options.errorprone.disableAllChecks.set(true)
+    options.errorprone.disableAllChecks = true
   } else {
-    options.errorprone.disableWarningsInGeneratedCode.set(true)
+    options.errorprone.disableWarningsInGeneratedCode = true
 
     val errorproneRules = rootProject.projectDir.resolve("codestyle/errorprone-rules.properties")
     inputs.file(errorproneRules).withPathSensitivity(PathSensitivity.RELATIVE)
@@ -99,7 +120,7 @@ tasks.withType<JavaCompile>().configureEach {
         .convention(provider { MemoizedErrorproneRules.rules(rootProject, errorproneRules) })
 
     options.errorprone.checks.putAll(checksMapProperty)
-    options.errorprone.excludedPaths.set(".*/build/[generated|tmp].*")
+    options.errorprone.excludedPaths = ".*/build/[generated|tmp].*"
   }
 }
 
@@ -198,6 +219,20 @@ class MemoizedGitInfo {
         rootProject.extra["gitReleaseInfo"] = info
         return info
       }
+    }
+  }
+}
+
+afterEvaluate {
+  tasks.register("codeChecks").configure {
+    group = "build"
+    description = "Runs code style and license checks"
+    dependsOn("spotlessCheck")
+    if (!noCheckstyle) {
+      dependsOn("checkstyle")
+    }
+    if (tasks.names.contains("checkLicense")) {
+      dependsOn("checkLicense")
     }
   }
 }

@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.cassandra;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.projectnessie.versioned.storage.cassandratests.ScyllaDBBackendTestFactory;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 

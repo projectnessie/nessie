@@ -36,7 +36,7 @@ gradle.sharedServices.registerIfAbsent(
       "nessie.intTestParallelism",
       (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1)
     )
-  maxParallelUsages.set(intTestParallelism)
+  maxParallelUsages = intTestParallelism
 }
 
 gradle.sharedServices.registerIfAbsent(
@@ -48,7 +48,7 @@ gradle.sharedServices.registerIfAbsent(
       "nessie.testParallelism",
       (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     )
-  maxParallelUsages.set(intTestParallelism)
+  maxParallelUsages = intTestParallelism
 }
 
 // Do not publish test fixtures via Maven. Shared, reusable test code should be published as
@@ -79,12 +79,22 @@ tasks.withType<Test>().configureEach {
   systemProperty("user.language", "en")
   systemProperty("user.country", "US")
   systemProperty("user.variant", "")
+
   jvmArgumentProviders.add(
-    CommandLineArgumentProvider { listOf("-Dtest.log.level=${testLogLevel()}") }
+    CommandLineArgumentProvider {
+      listOf(
+        "-Dtest.log.level=${testLogLevel()}",
+        "-Djunit.platform.reporting.open.xml.enabled=true",
+        "-Djunit.platform.reporting.output.dir=${reports.junitXml.outputLocation.get().asFile.absolutePath}",
+        "-Djunit.jupiter.execution.timeout.default=5m"
+      )
+    }
   )
   environment("TESTCONTAINERS_REUSE_ENABLE", "true")
 
   if (plugins.hasPlugin("io.quarkus")) {
+    systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+
     jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
     // Log-levels are required to be able to parse the HTTP listen URL
     jvmArgumentProviders.add(
@@ -125,7 +135,7 @@ testing {
     register<JvmTestSuite>("intTest") {
       useJUnitJupiter(libsRequiredVersion("junit"))
 
-      testType.set(TestSuiteType.INTEGRATION_TEST)
+      testType = TestSuiteType.INTEGRATION_TEST
 
       dependencies { implementation.add(project()) }
 

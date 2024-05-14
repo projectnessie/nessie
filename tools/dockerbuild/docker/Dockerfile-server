@@ -1,0 +1,40 @@
+####
+#
+# This Dockerfile is used in order to build a container that runs a Quarkus application in JVM mode.
+#
+# Before building the container image, build the Quarkus application using the "fast-jar" packaging,
+# which is the default packaging type. For example:
+#    ./gradlew :nessie-quarkus:quarkusBuild
+#
+#
+# FOLLOWING DESCRIPTION AND CONTENT "BORROWED" FROM QUARKUS SOURCE.
+# source file: https://github.com/quarkusio/quarkus/blob/main/integration-tests/maven/src/test/resources-filtered/projects/codegen-config-factory/app/src/main/docker/Dockerfile.jvm
+#
+#
+#
+#
+# This image uses the `run-java.sh` script to run the application.
+# This scripts computes the command line to execute your Java application, and
+# includes memory/GC tuning.
+#
+# (See site/docs/try/configuration.md)
+#
+###
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.18-4
+
+LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
+LABEL org.opencontainers.image.description="Projectnessie Nessie Core Server"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
+ENV LANGUAGE='en_US:en'
+
+# We make four distinct layers so if there are application changes the library layers can be re-used
+COPY --chown=185 build/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 build/quarkus-app/*.jar /deployments/
+COPY --chown=185 build/quarkus-app/app/ /deployments/app/
+COPY --chown=185 build/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 19120
+USER 185
+ENV AB_JOLOKIA_OFF=""
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"

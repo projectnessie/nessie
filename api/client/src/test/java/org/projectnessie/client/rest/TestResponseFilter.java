@@ -15,8 +15,10 @@
  */
 package org.projectnessie.client.rest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -29,6 +31,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
+import com.google.common.base.Strings;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -46,6 +50,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
+import org.projectnessie.client.rest.ResponseCheckFilter.CapturingInputStream;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
@@ -327,6 +332,37 @@ public class TestResponseFilter {
   @Test
   void testGood() {
     assertDoesNotThrow(() -> ResponseCheckFilter.checkResponse(new TestResponseContext(Status.OK)));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void capturingInputStream(int blockSize, byte[] source, String expected) throws Exception {
+    CapturingInputStream capturing = new CapturingInputStream(new ByteArrayInputStream(source));
+    if (blockSize == 0) {
+      while (capturing.read() >= 0) {
+        // noop
+      }
+    } else {
+      byte[] tmp = new byte[blockSize * 2];
+      while (capturing.read(tmp, 8, blockSize) >= 0) {
+        // noop
+      }
+    }
+    if (expected.length() > CapturingInputStream.CAPTURE_LEN) {
+      expected = expected.substring(0, CapturingInputStream.CAPTURE_LEN);
+    }
+    assertThat(capturing.captured()).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> capturingInputStream() {
+    String longString = Strings.repeat("hello world", 500);
+    return Stream.of(
+        arguments(0, new byte[0], ""),
+        arguments(16, new byte[0], ""),
+        arguments(0, "hello world".getBytes(UTF_8), "hello world"),
+        arguments(16, "hello world".getBytes(UTF_8), "hello world"),
+        arguments(0, longString.getBytes(UTF_8), longString),
+        arguments(16, longString.getBytes(UTF_8), longString));
   }
 
   private static Stream<Arguments> provider() {

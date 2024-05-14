@@ -50,7 +50,7 @@ public class JdbcDumpSchema implements Callable<Integer> {
   }
 
   private void dumpStatements(Writer out) throws IOException {
-    for (String statement : JdbcHelper.getCreateTableStatements()) {
+    for (String statement : JdbcHelper.getCreateTableStatements().values()) {
       out.write(statement);
       out.write(";\n\n");
     }

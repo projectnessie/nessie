@@ -15,8 +15,45 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
+import static org.projectnessie.versioned.storage.commontests.AbstractBasePersistTests.randomContentId;
+
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.persist.Obj;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessiePersistCache;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 @NessiePersistCache
-public class TestCachingInmemoryPersist extends AbstractPersistTests {}
+public class TestCachingInmemoryPersist extends AbstractPersistTests {
+
+  @Nested
+  @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+  public class CacheSpecific {
+    @InjectSoftAssertions protected SoftAssertions soft;
+
+    @NessiePersist protected Persist persist;
+
+    @Test
+    public void getImmediate() throws Exception {
+      Obj obj = contentValue(randomObjId(), randomContentId(), 1, ByteString.copyFromUtf8("hello"));
+      soft.assertThat(persist.getImmediate(obj.id())).isNull();
+      persist.storeObj(obj);
+      soft.assertThat(persist.getImmediate(obj.id())).isEqualTo(obj);
+      persist.deleteObj(obj.id());
+      soft.assertThat(persist.getImmediate(obj.id())).isNull();
+      persist.storeObj(obj);
+      persist.fetchObj(obj.id());
+      soft.assertThat(persist.getImmediate(obj.id())).isEqualTo(obj);
+    }
+  }
+}

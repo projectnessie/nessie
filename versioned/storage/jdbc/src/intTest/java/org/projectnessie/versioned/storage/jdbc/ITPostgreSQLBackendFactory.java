@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import org.projectnessie.versioned.storage.jdbctests.AbstractJdbcBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbctests.PostgreSQLBackendTestFactory;
+
 public class ITPostgreSQLBackendFactory extends AbstractTestJdbcBackendFactory {
 
   @Override

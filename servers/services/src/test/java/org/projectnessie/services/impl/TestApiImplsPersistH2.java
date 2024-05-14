@@ -16,7 +16,7 @@
 package org.projectnessie.services.impl;
 
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.jdbc.H2BackendTestFactory;
+import org.projectnessie.versioned.storage.jdbctests.H2BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 

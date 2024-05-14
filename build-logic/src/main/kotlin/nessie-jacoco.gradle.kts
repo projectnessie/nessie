@@ -40,8 +40,8 @@ plugins {
 
 tasks.withType<JacocoReport>().configureEach {
   reports {
-    html.required.set(true)
-    xml.required.set(true)
+    html.required = true
+    xml.required = true
   }
 }
 

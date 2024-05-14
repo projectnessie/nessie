@@ -21,21 +21,20 @@ plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
+  id("nessie-license-report")
 }
 
 dependencies {
   implementation(project(":nessie-client"))
+  runtimeOnly(libs.httpclient5)
 
   implementation(libs.picocli)
   // TODO help picocli to make their annotation-processor incremental
   annotationProcessor(libs.picocli.codegen)
   implementation(libs.guava)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.microprofile.openapi)
   runtimeOnly(libs.slf4j.api)
@@ -57,10 +56,11 @@ dependencies {
   testFixturesCompileOnly(libs.picocli)
   testFixturesCompileOnly(platform(libs.jackson.bom))
   testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testFixturesApi(libs.httpclient5)
 
   testImplementation(project(":nessie-jaxrs-testextension"))
 
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }

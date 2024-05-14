@@ -15,21 +15,18 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import javax.annotation.Nonnull;
 
 public interface ExportFileSupplier extends AutoCloseable {
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   Path getTargetPath();
 
   void preValidate() throws IOException;
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  OutputStream newFileOutput(@Nonnull @jakarta.annotation.Nonnull String fileName)
-      throws IOException;
+  OutputStream newFileOutput(@Nonnull String fileName) throws IOException;
 }

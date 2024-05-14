@@ -22,13 +22,13 @@ import static java.nio.file.Files.exists;
 import static java.nio.file.Files.isDirectory;
 import static java.nio.file.Files.newOutputStream;
 
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** Nessie exporter that writes to individual files into an empty target directory. */
@@ -49,7 +49,6 @@ public abstract class FileExporter implements ExportFileSupplier {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Path getTargetPath() {
     return targetDirectory();
   }
@@ -70,9 +69,7 @@ public abstract class FileExporter implements ExportFileSupplier {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public OutputStream newFileOutput(@Nonnull @jakarta.annotation.Nonnull String fileName)
-      throws IOException {
+  public OutputStream newFileOutput(@Nonnull String fileName) throws IOException {
     checkArgument(
         fileName.indexOf('/') == -1 && fileName.indexOf('\\') == -1, "Directories not supported");
     Path f = Paths.get(fileName);

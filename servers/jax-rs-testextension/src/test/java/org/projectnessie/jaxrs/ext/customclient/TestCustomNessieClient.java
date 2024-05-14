@@ -29,7 +29,7 @@ import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.client.ext.NessieClientNameResolver;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.versioned.storage.common.persist.Persist;
-import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;

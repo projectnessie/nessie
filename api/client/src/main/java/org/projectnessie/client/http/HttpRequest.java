@@ -15,6 +15,11 @@
  */
 package org.projectnessie.client.http;
 
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
+import static org.projectnessie.client.http.impl.HttpUtils.isHttpUri;
+
+import java.net.URI;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.impl.HttpHeaders;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
@@ -29,15 +34,36 @@ public abstract class HttpRequest
   protected final HttpHeaders headers = new HttpHeaders();
   protected String contentsType = "application/json; charset=utf-8";
   protected String accept = "application/json; charset=utf-8";
+  protected HttpAuthentication auth;
 
-  protected HttpRequest(HttpRuntimeConfig config) {
-    this.uriBuilder = new UriBuilder(config.getBaseUri());
+  protected HttpRequest(HttpRuntimeConfig config, URI baseUri) {
+    requireNonNull(baseUri, "Base URI cannot be null");
+    checkArgument(
+        isHttpUri(baseUri), "Base URI must be a valid http or https address: %s", baseUri);
+    this.uriBuilder = new UriBuilder(baseUri);
     this.config = config;
 
     int clientSpec = config.getClientSpec();
     if (clientSpec > 0) {
       headers.put("Nessie-Client-Spec", Integer.toString(clientSpec));
     }
+  }
+
+  /**
+   * Sets the authentication to use for this request. A non-null value will override the
+   * authentication object set on the {@link HttpClient} level, if any.
+   *
+   * <p>The passed authentication object will be {@linkplain HttpAuthentication#start() started}
+   * when this request is prepared, and will be {@linkplain HttpAuthentication#close() closed}
+   * immediately after this request is {@linkplain HttpRequest#executeRequest(Method, Object)
+   * executed}.
+   *
+   * @param auth the authentication to use
+   * @return this request
+   */
+  public HttpRequest authentication(HttpAuthentication auth) {
+    this.auth = auth;
+    return this;
   }
 
   public HttpRequest contentsType(String contentType) {

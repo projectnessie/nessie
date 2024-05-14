@@ -22,8 +22,11 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ_CONDITIONAL;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.EXPECTED_SUFFIX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_REFERENCES;
@@ -42,6 +45,8 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -51,8 +56,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackend.BatchedQuery;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.cassandra.serializers.ObjSerializers;
@@ -69,6 +72,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 public class CassandraPersist implements Persist {
 
@@ -81,28 +85,25 @@ public class CassandraPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return CassandraBackendFactory.NAME;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public StoreConfig config() {
     return config;
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     return fetchReferences(new String[] {name})[0];
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     try (BatchedQuery<String, Reference> batchedQuery =
         backend.newBatchedQuery(
             keys ->
@@ -125,10 +126,8 @@ public class CassandraPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
     byte[] serializedPreviousPointers = serializePreviousPointers(reference.previousPointers());
@@ -151,9 +150,8 @@ public class CassandraPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     BoundStatement stmt =
         backend.buildStatement(
@@ -177,7 +175,7 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     BoundStatement stmt =
         backend.buildStatement(
@@ -198,11 +196,8 @@ public class CassandraPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     Reference updated = reference.forNewPointer(newPointer, config);
     byte[] serializedPreviousPointers = serializePreviousPointers(updated.previousPointers());
@@ -233,9 +228,7 @@ public class CassandraPersist implements Persist {
   @SuppressWarnings("unused")
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = fetchObjs(new ObjId[] {id}, type)[0];
 
@@ -246,16 +239,13 @@ public class CassandraPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     return fetchObjs(new ObjId[] {id})[0];
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     BoundStatement stmt =
         backend.buildStatement(
             FETCH_OBJ_TYPE, config.repositoryId(), singletonList(serializeObjId(id)));
@@ -268,19 +258,13 @@ public class CassandraPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     return fetchObjs(ids, null);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Obj[] fetchObjs(
-      @Nonnull @jakarta.annotation.Nonnull ObjId[] ids,
-      @Nullable @jakarta.annotation.Nullable ObjType type)
-      throws ObjNotFoundException {
+  Obj[] fetchObjs(@Nonnull ObjId[] ids, @Nullable ObjType type) throws ObjNotFoundException {
     Function<List<ObjId>, List<String>> idsToStrings =
         queryIds -> queryIds.stream().map(ObjId::toString).collect(Collectors.toList());
 
@@ -293,7 +277,8 @@ public class CassandraPersist implements Persist {
         row -> {
           ObjType objType = ObjTypes.forName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
           ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
-          return ObjSerializers.forType(objType).deserialize(row, id);
+          String versionToken = row.getString(COL_OBJ_VERS.name());
+          return ObjSerializers.forType(objType).deserialize(row, objType, id, versionToken);
         };
 
     Obj[] r;
@@ -328,35 +313,70 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     return persistObjs(objs, false);
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     writeSingleObj(obj, true, false, backend::execute);
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     persistObjs(objs, true);
   }
 
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  private boolean[] persistObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs, boolean upsert)
+  @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            DELETE_OBJ_CONDITIONAL,
+            config.repositoryId(),
+            serializeObjId(obj.id()),
+            obj.type().name(),
+            obj.versionToken());
+    return backend.executeCas(stmt);
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
       throws ObjTooLargeException {
+    ObjId id = expected.id();
+    ObjType type = expected.type();
+    String expectedVersion = expected.versionToken();
+    String newVersion = newValue.versionToken();
+
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(type.equals(newValue.type()));
+    checkArgument(!expectedVersion.equals(newVersion));
+
+    ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
+
+    BoundStatementBuilder stmt =
+        backend
+            .newBoundStatementBuilder(serializer.updateConditionalCql())
+            .setString(COL_REPO_ID.name(), config.repositoryId())
+            .setString(COL_OBJ_ID.name(), serializeObjId(id))
+            .setString(COL_OBJ_TYPE.name() + EXPECTED_SUFFIX, type.name())
+            .setString(COL_OBJ_VERS.name() + EXPECTED_SUFFIX, expectedVersion)
+            .setString(COL_OBJ_VERS.name(), newVersion);
+
+    serializer.serialize(
+        newValue, stmt, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
+
+    return backend.executeCas(stmt.build());
+  }
+
+  @Nonnull
+  private boolean[] persistObjs(@Nonnull Obj[] objs, boolean upsert) throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
     try (LimitedConcurrentRequests requests =
@@ -402,13 +422,15 @@ public class CassandraPersist implements Persist {
   }
 
   private <R> R writeSingleObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj,
+      @Nonnull Obj obj,
       boolean upsert,
       boolean ignoreSoftSizeRestrictions,
       WriteSingleObj<R> consumer)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     ObjType type = obj.type();
+    String versionToken =
+        (obj instanceof UpdateableObj) ? ((UpdateableObj) obj).versionToken() : null;
 
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
@@ -417,7 +439,8 @@ public class CassandraPersist implements Persist {
             .newBoundStatementBuilder(serializer.insertCql(upsert))
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
-            .setString(COL_OBJ_TYPE.name(), type.name());
+            .setString(COL_OBJ_TYPE.name(), type.name())
+            .setString(COL_OBJ_VERS.name(), versionToken);
 
     serializer.serialize(
         obj,
@@ -429,14 +452,14 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     BoundStatement stmt =
         backend.buildStatement(DELETE_OBJ, config.repositoryId(), serializeObjId(id));
     backend.execute(stmt);
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     try (LimitedConcurrentRequests requests =
         new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
       String repoId = config.repositoryId();
@@ -456,9 +479,7 @@ public class CassandraPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
@@ -478,7 +499,6 @@ public class CassandraPersist implements Persist {
     public void close() {}
 
     @Nullable
-    @jakarta.annotation.Nullable
     @Override
     protected Obj computeNext() {
       while (true) {
@@ -493,7 +513,8 @@ public class CassandraPersist implements Persist {
         }
 
         ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
-        return ObjSerializers.forType(type).deserialize(row, id);
+        String versionToken = row.getString(COL_OBJ_VERS.name());
+        return ObjSerializers.forType(type).deserialize(row, type, id, versionToken);
       }
     }
   }

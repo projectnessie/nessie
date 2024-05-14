@@ -32,6 +32,7 @@ import org.projectnessie.gc.tool.cli.commands.MarkAndSweep;
 import org.projectnessie.gc.tool.cli.commands.MarkLive;
 import org.projectnessie.gc.tool.cli.commands.ShowLiveSet;
 import org.projectnessie.gc.tool.cli.commands.Sweep;
+import org.projectnessie.gc.tool.cli.commands.ThirdPartyLicenses;
 import picocli.CommandLine;
 import picocli.CommandLine.HelpCommand;
 
@@ -40,7 +41,7 @@ import picocli.CommandLine.HelpCommand;
  * PerContentDeleteExpired sweep} Nessie GC cycle.
  */
 @CommandLine.Command(
-    name = "nessie-gc",
+    name = "nessie-gc.jar",
     mixinStandardHelpOptions = true,
     versionProvider = NessieVersionProvider.class,
     subcommands = {
@@ -55,11 +56,17 @@ import picocli.CommandLine.HelpCommand;
       ShowLiveSet.class,
       JdbcDumpSchema.class,
       JdbcCreateSchema.class,
-      CompletionScript.class
+      CompletionScript.class,
+      ThirdPartyLicenses.class
     })
 public class CLI {
 
   public static void main(String... arguments) {
+
+    // There's no easy, better way :(
+    // Setting the usage-width to 100 chars so that URLs are not line-wrapped.
+    System.setProperty("picocli.usage.width", "100");
+
     System.exit(runMain(arguments));
   }
 

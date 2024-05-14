@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -30,24 +30,19 @@ public interface CommitConflict {
 
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   CommitOp op();
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   CommitOp existing();
 
   static CommitConflict commitConflict(
-      StoreKey key, ConflictType conflictType, @Nullable @jakarta.annotation.Nullable CommitOp op) {
+      StoreKey key, ConflictType conflictType, @Nullable CommitOp op) {
     return commitConflict(key, conflictType, op, null);
   }
 
   static CommitConflict commitConflict(
-      StoreKey key,
-      ConflictType conflictType,
-      @Nullable @jakarta.annotation.Nullable CommitOp op,
-      @Nullable @jakarta.annotation.Nullable CommitOp existing) {
+      StoreKey key, ConflictType conflictType, @Nullable CommitOp op, @Nullable CommitOp existing) {
     return ImmutableCommitConflict.of(key, conflictType, op, existing);
   }
 

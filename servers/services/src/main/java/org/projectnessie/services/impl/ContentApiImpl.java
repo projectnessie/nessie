@@ -15,10 +15,8 @@
  */
 package org.projectnessie.services.impl;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -31,6 +29,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -49,11 +48,8 @@ import org.projectnessie.versioned.WithHash;
 public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   public ContentApiImpl(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
-    super(config, store, authorizer, principal);
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    super(config, store, authorizer, accessContext);
   }
 
   @Override

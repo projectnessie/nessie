@@ -33,10 +33,29 @@ public final class UDFSerializer extends BaseSerializer<UDF> {
     return 5;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   protected void toStoreOnRefState(UDF udf, ObjectTypes.Content.Builder builder) {
-    ObjectTypes.UDF.Builder stateBuilder =
-        ObjectTypes.UDF.newBuilder().setDialect(udf.getDialect()).setSqlText(udf.getSqlText());
+    ObjectTypes.UDF.Builder stateBuilder = ObjectTypes.UDF.newBuilder();
+
+    String dialect = udf.getDialect();
+    if (dialect != null) {
+      stateBuilder.setDialect(udf.getDialect());
+    }
+    String sqlText = udf.getSqlText();
+    if (sqlText != null) {
+      stateBuilder.setSqlText(udf.getSqlText());
+    }
+
+    String metadata = udf.getMetadataLocation();
+    if (metadata != null) {
+      stateBuilder.setMetadataLocation(udf.getMetadataLocation());
+    }
+
+    Long version = udf.getVersionId();
+    if (version != null) {
+      stateBuilder.setVersionId(version);
+    }
 
     builder.setUdf(stateBuilder);
   }

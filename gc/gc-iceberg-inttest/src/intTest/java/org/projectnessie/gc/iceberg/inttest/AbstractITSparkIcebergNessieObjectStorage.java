@@ -23,7 +23,7 @@ import static org.projectnessie.gc.iceberg.inttest.Util.expire;
 import static org.projectnessie.gc.iceberg.inttest.Util.identifyLiveContents;
 import static org.projectnessie.gc.identify.CutoffPolicy.numCommits;
 
-import java.net.URI;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -58,6 +57,7 @@ import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.spark.extensions.NessieSparkSessionExtensions;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSqlTestBase {
@@ -97,7 +97,6 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
 
     @Value.Parameter(order = 1)
     @Nullable
-    @jakarta.annotation.Nullable
     String branch();
 
     @Value.Parameter(order = 2)
@@ -148,6 +147,19 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
             .addSteps(dml("INSERT INTO nessie.tc_2.tbl_a select 24, \"case\""))
             .putPolicies("main", numCommits(1))
             .putPolicies("branch_tc_2", numCommits(1))
+            .build(),
+        // 3
+        testCase()
+            .namespace("tc_3")
+            .addSteps(
+                expiredDdl(
+                    // Note: intentional special chars in the column name
+                    // TODO: debug why `#` breaks this test
+                    "CREATE TABLE nessie.tc_3.tbl_a (`id\"~!@$%^&*()/` int, name string) "
+                        + "PARTITIONED BY (`id\"~!@$%^&*()/`)"))
+            .addSteps(expiredDml("INSERT INTO nessie.tc_3.tbl_a select 23, \"test\""))
+            .addSteps(dml("INSERT INTO nessie.tc_3.tbl_a select 24, \"case\""))
+            .putPolicies("main", numCommits(1))
             .build());
   }
 
@@ -170,8 +182,8 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
           .hadoopConfiguration()
           .set("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
 
-      Set<URI> expiredSnapshots = new HashSet<>();
-      Set<URI> survivingSnapshots = new HashSet<>();
+      Set<StorageUri> expiredSnapshots = new HashSet<>();
+      Set<StorageUri> survivingSnapshots = new HashSet<>();
       int expectedDeletes = 0;
 
       Set<String> branches = new HashSet<>();
@@ -194,7 +206,7 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
 
         IcebergTable icebergTable = icebergTableFromLastCommit(branch);
         (step.expired() ? expiredSnapshots : survivingSnapshots)
-            .add(URI.create(icebergTable.getMetadataLocation()));
+            .add(StorageUri.of(icebergTable.getMetadataLocation()));
         if (step.expired()) {
           expectedDeletes++;
         }
@@ -203,7 +215,7 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
         }
       }
 
-      Set<URI> filesBefore = allFiles(icebergFiles);
+      Set<StorageUri> filesBefore = allFiles(icebergFiles);
 
       PerRefCutoffPolicySupplier cutOffPolicySupplier =
           ref -> testCase.policies().getOrDefault(ref.getName(), CutoffPolicy.NONE);
@@ -219,8 +231,8 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
       // ... and sweep
       DeleteSummary deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
 
-      Set<URI> filesAfter = allFiles(icebergFiles);
-      Set<URI> removedFiles = new TreeSet<>(filesBefore);
+      Set<StorageUri> filesAfter = allFiles(icebergFiles);
+      Set<StorageUri> removedFiles = new TreeSet<>(filesBefore);
       removedFiles.removeAll(filesAfter);
 
       soft.assertThat(removedFiles).hasSize(expectedDeletes).containsAll(expiredSnapshots);
@@ -260,11 +272,11 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
     return (IcebergTable) put.getContent();
   }
 
-  protected Set<URI> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
-    try (Stream<FileReference> list = icebergFiles.listRecursively(s3BucketUri())) {
+  protected Set<StorageUri> allFiles(IcebergFiles icebergFiles) throws NessieFileIOException {
+    try (Stream<FileReference> list = icebergFiles.listRecursively(bucketUri())) {
       return list.map(FileReference::absolutePath).collect(Collectors.toCollection(TreeSet::new));
     }
   }
 
-  protected abstract URI s3BucketUri();
+  protected abstract StorageUri bucketUri();
 }

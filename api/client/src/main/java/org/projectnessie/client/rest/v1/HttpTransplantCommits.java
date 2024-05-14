@@ -31,6 +31,7 @@ final class HttpTransplantCommits extends BaseTransplantCommitsBuilder {
 
   @Override
   public MergeResponse transplant() throws NessieNotFoundException, NessieConflictException {
+    @SuppressWarnings("deprecation")
     ImmutableTransplant.Builder transplant =
         ImmutableTransplant.builder()
             .fromRefName(fromRefName)

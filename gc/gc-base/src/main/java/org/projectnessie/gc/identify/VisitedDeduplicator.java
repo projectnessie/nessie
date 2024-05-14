@@ -15,14 +15,12 @@
  */
 package org.projectnessie.gc.identify;
 
+import jakarta.annotation.Nonnull;
 import java.time.Instant;
-import javax.annotation.Nonnull;
 
 @FunctionalInterface
 public interface VisitedDeduplicator {
   VisitedDeduplicator NOOP = (cutOffTimestamp, commitId) -> false;
 
-  boolean alreadyVisited(
-      @Nonnull @jakarta.annotation.Nonnull Instant cutOffTimestamp,
-      @Nonnull @jakarta.annotation.Nonnull String commitId);
+  boolean alreadyVisited(@Nonnull Instant cutOffTimestamp, @Nonnull String commitId);
 }

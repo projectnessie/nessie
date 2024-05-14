@@ -57,12 +57,13 @@ jobs:
   code-checks:
     name: CI Code Checks et al
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -80,46 +81,35 @@ jobs:
           java-version: ${{ matrix.java-version }}
 
       - name: Gradle / Compile
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            spotlessCheck
-            compileAll
-            -x :nessie-quarkus:compileAll
-            -x :nessie-quarkus-cli:compileAll
-            -x :nessie-events-quarkus:compileAll
+        run: |
+          ./gradlew \
+            spotlessCheck \
+            compileAll \
+            -x :nessie-quarkus:compileAll \
+            -x :nessie-server-admin-tool:compileAll \
+            -x :nessie-events-quarkus:compileAll \
             --scan
 
       - name: Gradle / Compile Quarkus
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            :nessie-quarkus:compileAll
-            :nessie-quarkus-cli:compileAll
-            :nessie-events-quarkus:compileAll
-            --scan
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan
 
-      - name: Gradle / Checkstyle
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: checkstyle --scan
+      - name: Gradle / Code checks
+        run: ./gradlew codeChecks --scan
 
       - name: Gradle / Assemble
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: assemble --scan
+        run: ./gradlew assemble --scan
 
       - name: Gradle / Publish to Maven local
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: publishToMavenLocal --scan
+        run: ./gradlew publishToMavenLocal --scan
 
       # This is a rather quick one and uses the output of 'publishToMavenLocal', which uses the
       # outputs of 'assemble'
       - name: Gradle / build tools integration tests
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: buildToolsIntegrationTest
+        run: ./gradlew buildToolsIntegrationTest
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
@@ -131,12 +121,13 @@ jobs:
   test:
     name: CI Test
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -150,19 +141,10 @@ jobs:
           java-version: ${{ matrix.java-version }}
 
       - name: Gradle / test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            test
-            :nessie-client:check 
-            -x :nessie-client:intTest 
-            -x :nessie-quarkus:test
-            -x :nessie-quarkus-cli:test
-            -x :nessie-events-quarkus:test
-            --scan
+        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-test-reports
@@ -181,12 +163,13 @@ jobs:
   test-quarkus:
     name: CI Test Quarkus
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -199,14 +182,19 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - name: Gradle / Test Quarkus
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            :nessie-client:test
-            :nessie-quarkus:test
-            :nessie-events-quarkus:test
-            --scan
+      - name: Gradle / Test Quarkus Server
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus:test --scan || \
+            ./gradlew :nessie-quarkus:test --scan || \
+            ./gradlew :nessie-quarkus:test --scan
+
+      - name: Gradle / Test Quarkus Events
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-events-quarkus:test --scan || \
+            ./gradlew :nessie-events-quarkus:test --scan || \
+            ./gradlew :nessie-events-quarkus:test --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -218,7 +206,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-test-quarkus-reports
@@ -238,6 +226,7 @@ jobs:
   int-test:
     name: CI intTest
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
@@ -245,7 +234,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -272,7 +261,7 @@ jobs:
 
           ./gradlew intTest \
             -x :nessie-quarkus:intTest \
-            -x :nessie-quarkus-cli:intTest \
+            -x :nessie-server-admin-tool:intTest \
             -x :nessie-events-quarkus:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
@@ -280,7 +269,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-reports
@@ -299,12 +288,13 @@ jobs:
   int-test-stores:
     name: CI intTest versioned/stores
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -330,7 +320,7 @@ jobs:
           ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-stores-reports
@@ -349,10 +339,11 @@ jobs:
   int-test-integrations:
     name: CI intTest integrations
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -370,7 +361,7 @@ jobs:
           ./gradlew $(cat ../spark-prjs.txt) --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-integrations-reports
@@ -388,12 +379,13 @@ jobs:
   int-test-quarkus:
     name: CI intTest Quarkus
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       max-parallel: 2
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -406,14 +398,26 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - name: Gradle / intTest Quarkus
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            :nessie-quarkus:intTest
-            :nessie-quarkus-cli:intTest
-            :nessie-events-quarkus:intTest
-            --scan
+      - name: Gradle / intTest Quarkus Server
+        run:
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-quarkus:intTest --scan || \
+            ./gradlew :nessie-quarkus:intTest --scan || \
+            ./gradlew :nessie-quarkus:intTest --scan
+
+      - name: Gradle / intTest Quarkus CLI
+        run:
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-server-admin-tool:intTest --scan || \
+            ./gradlew :nessie-server-admin-tool:intTest --scan || \
+            ./gradlew :nessie-server-admin-tool:intTest --scan
+
+      - name: Gradle / intTest Quarkus Events
+        run:
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-events-quarkus:intTest --scan || \
+            ./gradlew :nessie-events-quarkus:intTest --scan || \
+            ./gradlew :nessie-events-quarkus:intTest --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -425,7 +429,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-reports
@@ -445,12 +449,12 @@ jobs:
   determine-jobs:
     name: CI Determine jobs
     runs-on: ubuntu-22.04
+    timeout-minutes: 5
     outputs:
       # Each "conditional" job has a mapped output here, also a "non-PR" case and a "PR" case
       # with label and globs (at the end of the script).
       docker: ${{ steps.determine.outputs.docker }}
       nesqueit: ${{ steps.determine.outputs.nesqueit }}
-      helm: ${{ steps.determine.outputs.helm }}
     steps:
       - name: install minimatch
         shell: bash
@@ -520,7 +524,6 @@ jobs:
               // Yield default values for all event payload types, except pull_request
               core.setOutput('docker', true);
               core.setOutput('nesqueit', false); // handled in a scheduled job
-              core.setOutput('helm', true);
               return true;
             }
 
@@ -539,7 +542,7 @@ jobs:
             core.startGroup('PR job check / Docker');
             core.setOutput('docker', checkLabelOrGlobs(pr, changedFiles,
               'pr-docker',
-              ['gradle/wrapper/**', 'tools/dockerbuild/**', '.github/**']));
+              ['gradle/wrapper/**', 'tools/dockerbuild/**', 'helm/**', '.github/**']));
             core.endGroup();
 
             core.startGroup('PR job check / NesQuEIT');
@@ -548,21 +551,16 @@ jobs:
               ['gradle/wrapper/**', 'integrations/**', 'api/**', '.github/**']));
             core.endGroup();
 
-            core.startGroup('PR job check / Helm');
-            core.setOutput('helm', checkLabelOrGlobs(pr, changedFiles,
-              'pr-helm',
-              ['helm/**', '.github/**']));
-            core.endGroup();
-
   docker-testing:
-    name: CI Docker build and publishing
+    name: CI Docker and Helm checks
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs:
       - determine-jobs
     if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
         with:
           fetch-depth: 0
       - name: Setup runner
@@ -570,75 +568,132 @@ jobs:
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
-      - name: Setup docker-registry
+      - name: Extract version
         run: |
-          sudo apt-get install -y docker-registry apache2-utils 
-          cat <<! > config.yml
-          version: 0.1
-          log:
-            fields:
-              service: registry
-          storage:
-            cache:
-              blobdescriptor: inmemory
-            filesystem:
-              rootdirectory: /var/lib/docker-registry
-            delete:
-              enabled: true
-          http:
-            addr: 127.0.0.1:5000
-            headers:
-              X-Content-Type-Options: [nosniff]
-          auth:
-            htpasswd:
-              realm: basic-realm
-              path: /etc/docker/registry/htpasswd
-          health:
-            storagedriver:
-              enabled: true
-              interval: 10s
-              threshold: 3
-          !
-          sudo mv config.yml /etc/docker/registry/config.yml
-          sudo htpasswd -cBb /etc/docker/registry/htpasswd micky mouse 
-          
-          sudo service docker-registry restart
-          
-          echo mouse | docker login -u micky --password-stdin localhost:5000
-
           VERSION="$(cat version.txt)"
           DOCKER_VERSION="${VERSION%-SNAPSHOT}"
+          echo ${DOCKER_VERSION}
           echo "DOCKER_VERSION=${DOCKER_VERSION}" >> ${GITHUB_ENV}
-          echo "DOCKER_IMAGE=localhost:5000/nessie-testing" >> ${GITHUB_ENV}
+
+      # Free disk space (minikube warning: "Docker is nearly out of disk space, which may cause
+      # deployments to fail! (85% of capacity)")
+      - name: Free disk space
+        uses: ./.github/actions/free-disk-space
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          # https://helm.sh/docs/topics/version_skew/
+          version: 'v3.11.3'
+
+      - name: Setup chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup & Start Minikube
+        uses: medyagh/setup-minikube@v0.0.16
+        with:
+          # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
+          kubernetes-version: stable
+          cache: false
+          # This _should_ work, but doesn't somehow (the image push fails). It errors out looking for a coredns pod
+          # with these settings...
+          #addons: 'registry'
+          #insecure-registry: '192.168.0.0/16'
+
+      - name: Setup Docker registry
+        run: |
+          echo "::group::Get registry IP"
+          DOCKER_REGISTRY="$(minikube ip)"
+          echo "Registry IP is ${DOCKER_REGISTRY}"
+          echo "::endgroup::"
+
+          echo "::group::Update buildkitd_conf for 'docker buildx build'"
+          # Use 'http' instead of 'https' during 'docker buildx build' in 'tools/dockerbuild/build-push-images.sh'
+          cat <<EOF > ../buildkitd.toml                                                                                                                                                                                                                                                                                            
+          [registry."${DOCKER_REGISTRY}:5000"]                                                                                                                                                                                                                                                                                 
+            http = true
+          EOF
+          buildkitd_conf="$(pwd)/../buildkitd.toml"
+          echo "::endgroup::"
+
+          echo "::group::Update /etc/docker/daemon.json for 'docker pull'"
+          cp /etc/docker/daemon.json ..
+          cat ../daemon.json | \
+            jq ". + {\"insecure-registries\": [\"${DOCKER_REGISTRY}:5000\"]}" | \
+            sudo tee /etc/docker/daemon.json
+          echo "::endgroup::"
+
+          # minikube restart, because:
+          #   1. required after docker daemon restart 
+          #   2. tweak the "registry addon" into the start command
+          #   3. tweak the "insecure-registry" setting into the start command
+          # Must delete the minikube cluster to let the insecure-registry setting take effect.
+          # See 'Enabling Insecure Registries' in https://minikube.sigs.k8s.io/docs/handbook/registry/
+          echo "::group::Stop minikube"
+          minikube stop
+          echo "::endgroup::"
+          echo "::group::Delete minikube" 
+          minikube delete
+          echo "::endgroup::"
+          echo "::group::Restart docker daemon"
+          sudo systemctl restart docker
+          echo "::endgroup::"
+          echo "::group::Start minikube"
+          minikube start --insecure-registry="${DOCKER_REGISTRY}:5000" --addons=registry
+          echo "::endgroup::"
+
+          echo "BUILDX_CONFIG=--config ${buildkitd_conf}" >> ${GITHUB_ENV}
+          echo "DOCKER_IMAGE=${DOCKER_REGISTRY}:5000/nessie-testing" >> ${GITHUB_ENV}
+          echo "DOCKER_GC_IMAGE=${DOCKER_REGISTRY}:5000/nessie-gc-testing" >> ${GITHUB_ENV}
+          echo "DOCKER_SERVER_ADMIN_IMAGE=${DOCKER_REGISTRY}:5000/nessie-server-admin-testing" >> ${GITHUB_ENV}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Docker images publishing
-        env:
-          ARTIFACTS: ../build-artifacts
         run: |
-          rm -rf "${ARTIFACTS}"
-          mkdir -p "${ARTIFACTS}"
-
           tools/dockerbuild/build-push-images.sh \
-            -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
+            -d "Dockerfile-server" \
             ${DOCKER_IMAGE}
-          rm -rf "${ARTIFACTS}"
+
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-gc-tool" \
+            -p "gc/gc-tool" \
+            -d "Dockerfile-gctool" \
+            ${DOCKER_GC_IMAGE}
+
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-server-admin-tool" \
+            -p "tools/server-admin" \
+            -d "Dockerfile-admintool" \
+            ${DOCKER_SERVER_ADMIN_IMAGE}
 
       - name: Cleanup buildx
         run: |
           docker buildx use default
           docker buildx rm nessiebuild
 
-      - name: Docker images exist test
+      - name: Check if expected Docker images exist
         run: |
           docker pull ${DOCKER_IMAGE}:latest
           docker pull ${DOCKER_IMAGE}:latest-java
           docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}
           docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}-java
+          docker pull ${DOCKER_GC_IMAGE}:latest
+          docker pull ${DOCKER_GC_IMAGE}:latest-java
+          docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}
+          docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}-java
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:latest
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:${DOCKER_VERSION}
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:${DOCKER_VERSION}-java
           cat <<! >> $GITHUB_STEP_SUMMARY
           ## Docker images
           
@@ -647,9 +702,9 @@ jobs:
           \`\`\`
           !
 
-      - name: Check if Docker Java image works
+      - name: Check if Server Docker Java image works
         run: |
-          docker run --detach --name nessie ${DOCKER_IMAGE}:latest-java
+          docker run --rm --detach --name nessie ${DOCKER_IMAGE}:latest-java
           echo "Let Nessie Java Docker image run for one minute (to make sure it starts up fine)..."
           for i in {1..60}; do
             STATUS="$(docker container inspect nessie | jq -r '.[0].State.Status')"
@@ -670,11 +725,64 @@ jobs:
           echo "## Nessie Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
           echo "Nessie Java Docker image smoke test: PASSED"
           docker stop nessie
-          docker rm nessie
+
+      - name: Check if GC Tool Docker Java image works
+        run: |
+          if docker run --rm --name nessie-gc ${DOCKER_GC_IMAGE}:latest-java --help | grep -q "Usage: nessie-gc.jar"; then
+            echo "## GC Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "GC Tool Java Docker image smoke test: PASSED"
+          else
+           echo "GC Tool Java Docker image smoke test: FAILED" > /dev/stderr
+            cat <<! >> $GITHUB_STEP_SUMMARY
+            ## GC Tool Java Docker image FAILED
+
+            \`\`\`
+            $(docker logs nessie-gc)
+            \`\`\`
+          !
+            exit 1
+          fi
+
+      - name: Check if Server Admin Tool Docker Java image works
+        run: |
+          if docker run --rm --name nessie-server-admin ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java --help | grep -q "Usage: nessie-server-admin"; then
+            echo "## Server Admin Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "Server Admin Tool Java Docker image smoke test: PASSED"
+          else
+           echo "Server Admin Tool Java Docker image smoke test: FAILED" > /dev/stderr
+            cat <<! >> $GITHUB_STEP_SUMMARY
+            ## Server Admin Tool Java Docker image FAILED
+
+            \`\`\`
+            $(docker logs nessie-server-admin)
+            \`\`\`
+          !
+            exit 1
+          fi
+
+      - name: Run chart-testing (list-changed)
+        run: |
+          ct list-changed --target-branch ${{ github.event.repository.default_branch }}
+
+      - name: Run chart-testing (lint)
+        run: ct lint --debug --charts ./helm/nessie
+
+      - name: Show pods
+        run: kubectl get pods -A
+
+      - name: Run chart-testing (install)
+        run: |
+          echo "Using image: ${DOCKER_IMAGE}"
+          echo "        tag: ${DOCKER_VERSION}"
+      
+          ct install \
+            --helm-extra-set-args "--set=image.repository=${DOCKER_IMAGE} --set=image.tag=${DOCKER_VERSION}" \
+            --debug --charts ./helm/nessie
 
   nesqueit:
     name: CI NesQuEIT
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs:
       - determine-jobs
     # Only run NesQuEIT tests for PRs, if requested. This job can easily run for 30+ minutes.
@@ -698,7 +806,7 @@ jobs:
           git config --global user.name "Integrations Testing [Bot]"
 
       - name: Checkout NeQuEIT repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
         with:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}
@@ -732,7 +840,7 @@ jobs:
           patch-branch: ${{env.ICEBERG_PATCH_BRANCH}}
           work-branch: iceberg-integration-patched
 
-      - name: Set up JDK ${{ matrix.java-version }}
+      - name: Setup JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -741,36 +849,25 @@ jobs:
             11
             17
 
-      - name: Iceberg Nessie test
-        uses: gradle/gradle-build-action@v2
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: true
-          arguments: :iceberg:iceberg-nessie:test --scan
 
-      - name: Nessie Spark 3.2 / 2.12 Extensions test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest --scan
+      - name: Iceberg Nessie test
+        run: ./gradlew :iceberg:iceberg-nessie:test --scan
 
       - name: Nessie Spark 3.3 / 2.12 Extensions test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
+        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
       - name: Nessie Spark 3.4 / 2.13 Extensions test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
+        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
 
       - name: Nessie Spark 3.5 / 2.13 Extensions test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
+        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
 
       #- name: Publish Nessie + Iceberg to local Maven repo
-      #  uses: gradle/gradle-build-action@v2
-      #  with:
-      #    arguments: publishLocal --scan
+      #  run: ./gradlew publishLocal --scan
       #
       #- name: Gather locally published versions
       #  run: |
@@ -786,104 +883,38 @@ jobs:
       #    !
 
       - name: Tools & Integrations tests
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: intTest --scan
-
-  helm-testing:
-    name: CI Lint & Test Helm chart
-    runs-on: ubuntu-22.04
-    needs:
-      - determine-jobs
-    if: needs.determine-jobs.outputs.helm == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        with:
-          fetch-depth: 0
-
-      # Skip remaining steps, if current Nessie release version is not available
-      - name: Precheck
-        run: |
-          EXPECT_VERSION="$(cat helm/nessie/Chart.yaml | grep -E '^version: ')"
-          curl https://charts.projectnessie.org/index.yaml 2>/dev/null | grep -q "${EXPECT_VERSION}" || (
-            echo "Skipping Helm checks, because Nessie Helm chart version ${EXPECT_VERSION} is not available"
-            echo "WF_EXEC=false" >> ${GITHUB_ENV}  
-          )
-
-      - name: Set up Helm
-        if: env.WF_EXEC != 'false'
-        uses: azure/setup-helm@v3
-        with:
-          # https://helm.sh/docs/topics/version_skew/
-          version: 'v3.11.3'
-
-      - name: Setup Python
-        if: env.WF_EXEC != 'false'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Set up chart-testing
-        if: env.WF_EXEC != 'false'
-        uses: helm/chart-testing-action@v2.6.1
-        with:
-          # https://github.com/adrienverge/yamllint/tags
-          # default is 1.27.1, but leads to Python install issues
-          yamllint_version: 1.31.0
-          # https://github.com/23andMe/Yamale/releases
-          # default is 3.0.4, just bump to current latest patch version
-          yamale_version: 3.0.8
-
-      - name: Run chart-testing (list-changed)
-        if: env.WF_EXEC != 'false'
-        run: |
-          ct list-changed --target-branch ${{ github.event.repository.default_branch }}
-
-      - name: Run chart-testing (lint)
-        if: env.WF_EXEC != 'false'
-        run: ct lint --debug --charts ./helm/nessie
-
-      - name: Set up & Start Minikube
-        if: env.WF_EXEC != 'false'
-        uses: medyagh/setup-minikube@v0.0.14
-        with:
-          # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
-          kubernetes-version: stable
-          cache: false
-
-      - name: Show pods
-        if: env.WF_EXEC != 'false'
-        run: kubectl get pods -A
-
-      - name: Run chart-testing (install)
-        if: env.WF_EXEC != 'false'
-        run: ct install --debug --charts ./helm/nessie
+        run: ./gradlew intTest --scan
 
   site:
     name: CI Website
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
+        uses: ./.github/actions/dev-tool-java
+        with:
+          java-version: 17
+      - name: Prepare Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          java-version: 17
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
-          python-version: '3.8'
-      - name: Upgrade pip
-        run: |
-          # install pip=>20.1 to use "pip cache dir"
-          python3 -m pip install --upgrade pip
-      - name: Install dependencies
-        run: python3 -m pip install -r ./site/requirements.txt
+          python-version: '3.11'
+
+      - name: Generate Static Site
+        run: make build
+        working-directory: ./site
       - name: Check code block indentation
         run: python3 check_code_indent.py
         working-directory: ./site
-      - name: Generate Static Site
-        run: mkdocs build
-        working-directory: ./site
       - name: Deploy Static Site to GitHub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'projectnessie/nessie'
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           external_repository: projectnessie/projectnessie.github.io
           publish_branch: main
@@ -895,6 +926,7 @@ jobs:
     # Store the Gradle cache to GH cache as soon as all relevant Nessie/Gradle jobs have finished.
     name: CI Store Cache
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       # Only include jobs that use Nessie's Gradle cache, especially excluding NesQuEIT, which
@@ -912,7 +944,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle

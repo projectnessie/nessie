@@ -1,5 +1,5 @@
 # -- The number of replicas to deploy (horizontal scaling).
-# Beware that replicas are stateless; don't set this number > 1 when using INMEMORY or ROCKS version store types.
+# Beware that replicas are stateless; don't set this number > 1 when using IN_MEMORY or ROCKSDB version store types.
 replicaCount: 1
 
 image:
@@ -16,9 +16,10 @@ logLevel: INFO
 # -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE.
 # (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using
 # one of these legacy version store types, migrate your existing repositories to the new version
-# store types using the nessie-quarkus-cli tool's export/import functionality.)
+# store types using the nessie-server-admin-tool's export/import functionality.)
 versionStoreType: IN_MEMORY
 
+# Cassandra settings. Only required when using CASSANDRA version store type; ignored otherwise.
 cassandra:
   keyspace: nessie
   contactPoints:
@@ -28,7 +29,7 @@ cassandra:
     # username:
     # password:
 
-# RocksDB settings. Only required when using ROCKS version store type; ignored otherwise.
+# RocksDB settings. Only required when using ROCKSDB version store type; ignored otherwise.
 rocksdb:
   # -- The storage class name of the persistent volume claim to create.
   storageClassName: standard
@@ -41,19 +42,23 @@ rocksdb:
     # app.kubernetes.io/name: nessie
     # app.kubernetes.io/instance: RELEASE-NAME
 
-# DynamoDB settings. Only required when using DYNAMO version store type; ignored otherwise.
+# DynamoDB settings. Only required when using DYNAMODB version store type; ignored otherwise.
 dynamodb:
   # -- The AWS region to use.
   region: us-west-2
+  # -- The name of the profile that should be used, when loading AWS credentials from a profile
+  # file. Required only if no secret is provided below.
+  profile: default
   secret:
-    # -- The secret name to pull AWS credentials from.
+    # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
+    # credentials provider chain is used.
     name: awscreds
     # -- The secret key storing the AWS secret key id.
     awsAccessKeyId: aws_access_key_id
     # -- The secret key storing the AWS secret access key.
     awsSecretAccessKey: aws_secret_access_key
 
-## Mongo DB settings. Only required when using MONGO version store type; ignored otherwise.
+## Mongo DB settings. Only required when using MONGODB version store type; ignored otherwise.
 mongodb:
   # -- The MongoDB database name.
   name: nessie
@@ -67,7 +72,7 @@ mongodb:
     # -- The secret key storing the MongoDB password.
     password: mongodb_password
 
-# Postgres settings. Only required when using TRANSACTIONAL version store type; ignored otherwise.
+# Postgres settings. Only required when using JDBC version store type; ignored otherwise.
 postgres:
   # -- The Postgres JDBC connection string.
   jdbcUrl: jdbc:postgresql://localhost:5432/my_database
@@ -224,14 +229,31 @@ service:
   type: ClusterIP
   # -- The port on which the service should listen.
   port: 19120
+  # -- The session affinity for the service. Valid values are: None, ClientIP.
+  # ClientIP enables sticky sessions based on the client's IP address.
+  # This is generally beneficial to Nessie deployments, but some testing may be
+  # required in order to make sure that the load is distributed evenly among the pods.
+  # Also, this setting affects only internal clients, not external ones.
+  # If Ingress is enabled, it is recommended to set sessionAffinity to None.
+  sessionAffinity: None
   # -- Annotations to add to the service.
   annotations: {}
 
+# Nessie Ingress settings.
+# These settings generate an Ingress resource that routes external traffic to the Nessie service.
+# Consider enabling sticky sessions based on the remote client's IP address;
+# this is generally beneficial to Nessie deployments, but some testing may be
+# required in order to make sure that the load is distributed evenly among the pods.
+# Check your ingress controller's documentation.
 ingress:
+  # -- Specifies the ingressClassName; leave empty if you don't want to customize it
+  className: ""
   # -- Specifies whether an ingress should be created.
   enabled: false
   # -- Annotations to add to the ingress.
-  annotations: {}
+  annotations: {
+    # nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
+  }
   # -- A list of host paths used to configure the ingress.
   hosts:
     - host: chart-example.local
@@ -260,7 +282,7 @@ resources:
 
 autoscaling:
   # -- Specifies whether automatic horizontal scaling should be enabled.
-  # Do not enable this when using ROCKS version store type.
+  # Do not enable this when using ROCKSDB version store type.
   enabled: false
   # -- The minimum number of replicas to maintain.
   minReplicas: 1

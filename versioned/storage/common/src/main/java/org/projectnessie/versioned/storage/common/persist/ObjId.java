@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.common.persist;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 import static org.projectnessie.versioned.storage.common.util.Hex.hexChar;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibble;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibbleFromLong;
@@ -27,21 +28,17 @@ import static org.projectnessie.versioned.storage.common.util.Ser.readVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.varIntLen;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.hash.Hashing;
+import jakarta.annotation.Nonnull;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
-import javax.annotation.Nonnull;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 public abstract class ObjId {
   // TODO Should this class actually be merged with the existing `Hash` class,
   //  need to move `Hash` to somewhere else though (project dependency issue ATM).
 
-  @SuppressWarnings("UnstableApiUsage")
-  public static final ObjId EMPTY_OBJ_ID =
-      ObjId.objIdFromByteArray(
-          Hashing.sha256().newHasher().putString("empty", StandardCharsets.UTF_8).hash().asBytes());
+  public static final ObjId EMPTY_OBJ_ID = objIdHasher("empty").generate();
 
   public static ObjId zeroLengthObjId() {
     return ObjIdEmpty.INSTANCE;
@@ -73,6 +70,9 @@ public abstract class ObjId {
   /** Return the size of the hash in bytes. */
   public abstract int size();
 
+  /** Estimated object size on heap. */
+  public abstract int heapSize();
+
   public abstract int serializedSize();
 
   /**
@@ -83,7 +83,7 @@ public abstract class ObjId {
    * @throws IllegalArgumentException if {@code hash} is not a valid representation of a hash
    * @throws NullPointerException if {@code hash} is {@code null}
    */
-  public static ObjId objIdFromString(@Nonnull @jakarta.annotation.Nonnull String hash) {
+  public static ObjId objIdFromString(@Nonnull String hash) {
     requireNonNull(hash);
     int len = hash.length();
     checkArgument(len % 2 == 0, "hash length needs to be a multiple of two, was %s", len);
@@ -138,7 +138,7 @@ public abstract class ObjId {
    * @return a {@link ObjId} instance
    * @throws NullPointerException if {@code bytes} is {@code null}
    */
-  public static ObjId objIdFromByteBuffer(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+  public static ObjId objIdFromByteBuffer(@Nonnull ByteBuffer bytes) {
     int len = bytes.remaining();
     return fromBytes(len, bytes);
   }
@@ -156,12 +156,12 @@ public abstract class ObjId {
    * @return a {@link ObjId} instance
    * @throws NullPointerException if {@code bytes} is {@code null}
    */
-  public static ObjId deserializeObjId(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+  public static ObjId deserializeObjId(@Nonnull ByteBuffer bytes) {
     int len = readVarInt(bytes);
     return fromBytes(len, bytes);
   }
 
-  public static void skipObjId(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+  public static void skipObjId(@Nonnull ByteBuffer bytes) {
     int len = readVarInt(bytes);
     bytes.position(bytes.position() + len);
   }
@@ -229,6 +229,20 @@ public abstract class ObjId {
     @Override
     public int serializedSize() {
       return 1;
+    }
+
+    @Override
+    public int heapSize() {
+      /*
+      org.projectnessie.versioned.storage.common.persist.ObjId$ObjIdEmpty object internals:
+      OFF  SZ   TYPE DESCRIPTION               VALUE
+        0   8        (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
+        8   4        (object header: class)    0x010cd918
+       12   4        (object alignment gap)
+      Instance size: 16 bytes
+      Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
+      */
+      return 16;
     }
 
     @Override
@@ -309,6 +323,24 @@ public abstract class ObjId {
     }
 
     @Override
+    public int heapSize() {
+      /*
+      org.projectnessie.versioned.storage.common.persist.ObjId$ObjId256 object internals:
+      OFF  SZ   TYPE DESCRIPTION               VALUE
+        0   8        (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
+        8   4        (object header: class)    0x010cb000
+       12   4        (alignment/padding gap)
+       16   8   long ObjId256.l0               0
+       24   8   long ObjId256.l1               0
+       32   8   long ObjId256.l2               0
+       40   8   long ObjId256.l3               0
+      Instance size: 48 bytes
+      Space losses: 4 bytes internal + 0 bytes external = 4 bytes total
+      */
+      return 48;
+    }
+
+    @Override
     public String toString() {
       StringBuilder sb = new StringBuilder(64);
       longToString(sb, l0);
@@ -381,7 +413,7 @@ public abstract class ObjId {
 
   @VisibleForTesting
   static final class ObjIdGeneric extends ObjId {
-    private final ByteBuffer bytes;
+    private final byte[] bytes;
 
     private ObjIdGeneric(String hash) {
       int len = hash.length();
@@ -392,11 +424,13 @@ public abstract class ObjId {
         bytes[i] = value;
       }
       checkArgument(bytes.length <= 256, "Hashes longer than 256 bytes are not supported");
-      this.bytes = ByteBuffer.wrap(bytes);
+      this.bytes = bytes;
     }
 
     private ObjIdGeneric(ByteBuffer bytes) {
-      this.bytes = bytes;
+      int length = bytes.remaining();
+      this.bytes = new byte[length];
+      bytes.duplicate().get(this.bytes, 0, length);
     }
 
     private ObjIdGeneric(ByteString bytes) {
@@ -405,7 +439,7 @@ public abstract class ObjId {
 
     @Override
     public int nibbleAt(int nibbleIndex) {
-      byte b = bytes.get(bytes.position() + (nibbleIndex >> 1));
+      byte b = bytes[nibbleIndex >> 1];
       if ((nibbleIndex & 1) == 0) {
         b >>= 4;
       }
@@ -414,7 +448,7 @@ public abstract class ObjId {
 
     @Override
     public int size() {
-      return bytes.remaining();
+      return bytes.length;
     }
 
     @Override
@@ -424,11 +458,27 @@ public abstract class ObjId {
     }
 
     @Override
+    public int heapSize() {
+      /*
+      org.projectnessie.versioned.storage.common.persist.ObjId$ObjIdGeneric object internals:
+      OFF  SZ     TYPE DESCRIPTION               VALUE
+        0   8          (object header: mark)     N/A
+        8   4          (object header: class)    N/A
+       12   4   byte[] ObjIdGeneric.bytes        N/A
+      Instance size: 16 bytes
+      Space losses: 0 bytes internal + 0 bytes external = 0 bytes total
+
+      Array overhead: 16 bytes
+      */
+      return 16 + 16 + size();
+    }
+
+    @Override
     public String toString() {
-      int len = bytes.remaining();
+      int len = bytes.length;
       StringBuilder sb = new StringBuilder(2 * len);
-      for (int p = bytes.position(), i = 0; i < len; i++, p++) {
-        byte b = bytes.get(p);
+      for (int p = 0, i = 0; i < len; i++, p++) {
+        byte b = bytes[p];
         sb.append(hexChar((byte) (b >> 4)));
         sb.append(hexChar(b));
       }
@@ -437,41 +487,39 @@ public abstract class ObjId {
 
     @Override
     public ByteBuffer asByteBuffer() {
-      return bytes.duplicate();
+      return ByteBuffer.wrap(bytes);
     }
 
     @Override
     public byte[] asByteArray() {
-      byte[] r = new byte[bytes.remaining()];
-      ByteBuffer.wrap(r).put(bytes.duplicate());
-      return r;
+      return Arrays.copyOf(bytes, bytes.length);
     }
 
     @Override
     public ByteBuffer serializeTo(ByteBuffer target) {
-      return putVarInt(target, bytes.remaining()).put(bytes.duplicate());
+      return putVarInt(target, bytes.length).put(bytes, 0, bytes.length);
     }
 
     @Override
     public int hashCode() {
-      int r = bytes.remaining();
-      int p = bytes.position();
+      int r = bytes.length;
 
+      int p = 0;
       int h = 0;
       if (r > 0) {
-        h |= (bytes.get(p++) & 0xff) << 24;
+        h |= (bytes[p++] & 0xff) << 24;
         r--;
       }
       if (r > 0) {
-        h |= ((bytes.get(p++) & 0xff) << 16);
+        h |= ((bytes[p++] & 0xff) << 16);
         r--;
       }
       if (r > 0) {
-        h |= ((bytes.get(p++) & 0xff) << 8);
+        h |= ((bytes[p++] & 0xff) << 8);
         r--;
       }
       if (r > 0) {
-        h |= (bytes.get(p) & 0xff);
+        h |= (bytes[p] & 0xff);
       }
       return h;
     }
@@ -482,7 +530,7 @@ public abstract class ObjId {
         return false;
       }
       ObjIdGeneric that = (ObjIdGeneric) obj;
-      return this.bytes.equals(that.bytes);
+      return Arrays.equals(this.bytes, that.bytes);
     }
   }
 }

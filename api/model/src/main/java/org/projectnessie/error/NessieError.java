@@ -21,8 +21,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -85,12 +83,28 @@ public interface NessieError {
    *
    * <p>This {@link Exception} generally represents any errors related to the decoding of the
    * payload returned by the server to describe the error.
+   *
+   * @deprecated Use {@link #getClientProcessingError()}
+   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @JsonIgnore
+  @Value.Auxiliary
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Deprecated
+  Exception getClientProcessingException();
+
+  /**
+   * Client-side error message related to the processing of the error response.
+   *
+   * <p>This generally represents any errors related to the decoding of the payload returned by the
+   * server to describe the error.
    */
   @JsonIgnore
   @Value.Auxiliary
   @Nullable
   @jakarta.annotation.Nullable
-  Exception getClientProcessingException();
+  String getClientProcessingError();
 
   /**
    * The full error message, including HTTP status, reason, server- and client-side exception stack
@@ -111,13 +125,14 @@ public interface NessieError {
       sb.append("\n").append(getServerStackTrace());
     }
 
-    if (getClientProcessingException() != null) {
-      StringWriter sw =
-          new StringWriter()
-              .append(
-                  "\nAdditionally, the client-side exception below was caught while decoding the HTTP response:\n");
-      getClientProcessingException().printStackTrace(new PrintWriter(sw));
-      sb.append("\n").append(sw);
+    if (getClientProcessingError() != null) {
+      sb.append(
+              "\nAdditionally, the client-side error below was caught while decoding the HTTP response: ")
+          .append(getClientProcessingError());
+    } else if (getClientProcessingException() != null) {
+      sb.append(
+              "\nAdditionally, the client-side exception below was caught while decoding the HTTP response: ")
+          .append(getClientProcessingException());
     }
 
     return sb.toString();

@@ -28,8 +28,8 @@ Nessie supports Iceberg Tables/Views. Additionally, Nessie is focused on working
 
 You can quickly get started with Nessie by using our small, fast docker image.
 
-**IMPORTANT NOTE** Nessie moves away from `docker.io` to GitHub's container registry `ghcr.io`,
-and also `quay.io`. Previous releases are already available on both ghcr.io and quay.io. Please
+**IMPORTANT NOTE** Nessie has moved away from `docker.io` to GitHub's container registry `ghcr.io`,
+and also `quay.io`. Recent releases are already only available on both ghcr.io and quay.io. Please
 update references to `projectnessie/nessie` in your code to either `ghcr.io/projectnessie/nessie`
 or `quay.io/projectnessie/nessie`.
 
@@ -106,9 +106,9 @@ Refer to [CONTRIBUTING](./CONTRIBUTING.md) for build instructions.
 
 Nessie Iceberg's integration is compatible with Iceberg as in the following table:
 
-| Nessie version | Iceberg version | Spark version                                                                                      | Hive version | Flink version          | Presto version                      | Trino version |
-|----------------|-----------------|----------------------------------------------------------------------------------------------------|--------------|------------------------|-------------------------------------|---------------|
-| 0.74.0         | 1.3.0           | 3.2.x (Scala 2.12+2.13), 3.3.x (Scala 2.12+2.13), 3.4.x (Scala 2.12+2.13), 3.5.x (Scala 2.12+2.13) | n/a          | 1.15.x, 1.16.x, 1.17.x | 0.277, 0.278.x, 0.279, 0.280, 0.281 | 419           |
+| Nessie version | Iceberg version | Spark version (Scala 2.12+2.13) | Hive version | Flink version          | Presto version                      | Trino version |
+|----------------|-----------------|---------------------------------|--------------|------------------------|-------------------------------------|---------------|
+| 0.82.0         | 1.5.0           | 3.3.x, 3.4.x, 3.5.x             | n/a          | 1.16.x, 1.17.x, 1.18.x | 0.277, 0.278.x, 0.279, 0.280, 0.281 | 419           |
 
 ### Distribution
 To run:
@@ -127,7 +127,7 @@ build a docker image for testing purposes, simply run the following command:
 
 ```shell
 ./gradlew :nessie-quarkus:clean :nessie-quarkus:quarkusBuild
-docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-unstable:latest ./servers/quarkus-server 
+docker build -f ./tools/dockerbuild/docker/Dockerfile-server -t nessie-unstable:latest ./servers/quarkus-server 
 ```
 
 Check that your image is available locally:

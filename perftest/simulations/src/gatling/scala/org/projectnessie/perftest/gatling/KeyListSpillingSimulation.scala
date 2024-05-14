@@ -120,8 +120,8 @@ class KeyListSpillingSimulation extends Simulation {
 
             // Delete the test branch
             client
-              .deleteBranch()
-              .branchName(testBranchName)
+              .deleteReference()
+              .refName(testBranchName)
               .hash(testBranch.getHash)
               .delete()
           } catch {
@@ -185,8 +185,8 @@ class KeyListSpillingSimulation extends Simulation {
 
       if (null != ref) {
         nessieProtocol.client
-          .deleteBranch()
-          .branch(Branch.of(params.getBaseBranchName, ref.getHash))
+          .deleteReference()
+          .reference(Branch.of(params.getBaseBranchName, ref.getHash))
           .delete()
       }
     } catch {

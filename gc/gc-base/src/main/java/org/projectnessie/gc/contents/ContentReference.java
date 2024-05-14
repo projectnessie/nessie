@@ -15,8 +15,8 @@
  */
 package org.projectnessie.gc.contents;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -54,20 +54,18 @@ public interface ContentReference {
   /** Value from {@link IcebergTable#getMetadataLocation()}. */
   @Value.Parameter(order = 5)
   @Nullable
-  @jakarta.annotation.Nullable
   String metadataLocation();
 
   /** Value from {@link IcebergTable#getSnapshotId()}. */
   @Value.Parameter(order = 6)
   @Nullable
-  @jakarta.annotation.Nullable
   Long snapshotId();
 
   static ContentReference icebergTable(
-      @NotNull @jakarta.validation.constraints.NotNull String contentId,
-      @NotNull @jakarta.validation.constraints.NotNull String commitId,
-      @NotNull @jakarta.validation.constraints.NotNull ContentKey contentKey,
-      @NotNull @jakarta.validation.constraints.NotNull String metadataLocation,
+      @NotNull String contentId,
+      @NotNull String commitId,
+      @NotNull ContentKey contentKey,
+      @NotNull String metadataLocation,
       long snapshotId) {
     return ImmutableContentReference.of(
         contentId, commitId, contentKey, Content.Type.ICEBERG_TABLE, metadataLocation, snapshotId);

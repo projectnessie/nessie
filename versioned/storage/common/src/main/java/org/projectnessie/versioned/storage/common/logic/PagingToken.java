@@ -19,7 +19,7 @@ import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.u
 import static org.projectnessie.versioned.storage.common.util.Hex.hexChar;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibble;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
@@ -34,7 +34,6 @@ public interface PagingToken {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   default String asString() {
     ByteString t = token();
     int size = t.size();
@@ -48,8 +47,7 @@ public interface PagingToken {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static PagingToken fromString(@Nonnull @jakarta.annotation.Nonnull String tokenAsString) {
+  static PagingToken fromString(@Nonnull String tokenAsString) {
     int len = tokenAsString.length();
     if ((len & 1) == 1) {
       throw new IllegalArgumentException("Invalid token string representation");
@@ -64,8 +62,7 @@ public interface PagingToken {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static PagingToken pagingToken(@Nonnull @jakarta.annotation.Nonnull ByteString token) {
+  static PagingToken pagingToken(@Nonnull ByteString token) {
     return ImmutablePagingToken.of(token);
   }
 

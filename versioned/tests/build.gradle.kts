@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server8") }
+plugins { id("nessie-conventions-server") }
 
 extra["maven.name"] = "Nessie - Versioned Store Integration Tests"
 
@@ -31,11 +31,8 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   implementation(platform(libs.junit.bom))
   implementation(libs.bundles.junit.testing)

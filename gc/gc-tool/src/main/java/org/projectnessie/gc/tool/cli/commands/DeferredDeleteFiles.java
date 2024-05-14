@@ -15,7 +15,6 @@
  */
 package org.projectnessie.gc.tool.cli.commands;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -28,6 +27,7 @@ import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.gc.tool.cli.options.EnvironmentDefaultProvider;
 import org.projectnessie.gc.tool.cli.options.IcebergOptions;
+import org.projectnessie.storage.uri.StorageUri;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Help.Ansi;
@@ -96,11 +96,12 @@ public class DeferredDeleteFiles extends BaseLiveSetCommand {
     private final int bufferSize;
     private final FileDeleter deleter;
     private final List<FileReference> buffer;
-    private final BiConsumer<URI, DeleteSummary> progress;
-    private URI currentBase = URI.create("nope://nope");
+    private final BiConsumer<StorageUri, DeleteSummary> progress;
+    private StorageUri currentBase = StorageUri.of("nope://nope");
     private DeleteSummary summary = DeleteSummary.EMPTY;
 
-    BatchDelete(int bufferSize, FileDeleter deleter, BiConsumer<URI, DeleteSummary> progress) {
+    BatchDelete(
+        int bufferSize, FileDeleter deleter, BiConsumer<StorageUri, DeleteSummary> progress) {
       this.bufferSize = bufferSize;
       this.deleter = deleter;
       this.progress = progress;

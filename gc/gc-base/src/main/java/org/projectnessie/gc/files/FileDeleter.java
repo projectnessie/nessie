@@ -15,15 +15,15 @@
  */
 package org.projectnessie.gc.files;
 
-import java.net.URI;
 import java.util.stream.Stream;
+import org.projectnessie.storage.uri.StorageUri;
 
 /** Function to delete a file. */
 public interface FileDeleter {
   DeleteResult delete(FileReference fileReference);
 
   /** Bulk file delete, default implementation iteratively calls {@link #delete(FileReference)}. */
-  default DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
+  default DeleteSummary deleteMultiple(StorageUri baseUri, Stream<FileReference> fileObjects) {
     return fileObjects
         .map(this::delete)
         .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);

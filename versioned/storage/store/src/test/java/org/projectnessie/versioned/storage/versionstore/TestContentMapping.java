@@ -78,8 +78,8 @@ public class TestContentMapping {
   static Stream<Content> contentSamples() {
     return Stream.of(
         IcebergTable.of("/dev/null", 42, 43, 44, 45),
-        IcebergView.of("/dev/null", 42, 43, "dial", "sql"),
-        UDF.of("dial", "sql"),
+        IcebergView.of("/dev/null", 42, 43),
+        UDF.of("udf-meta", 42),
         Namespace.of("foo", "bar"),
         OnRefOnly.newOnRef("value"),
         ImmutableDeltaLakeTable.builder()

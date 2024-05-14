@@ -25,11 +25,8 @@ extra["maven.name"] = "Nessie - Storage - Common"
 description = "Storage interfaces and logic implementations."
 
 dependencies {
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.opentelemetry.instrumentation.bom.alpha))
   compileOnly("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations")
@@ -58,10 +55,6 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-api")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 
-  testCompileOnly(libs.immutables.builder)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
-
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
@@ -77,4 +70,4 @@ tasks.named("processJmhJandexIndex").configure { enabled = false }
 
 tasks.named("processTestJandexIndex").configure { enabled = false }
 
-jmh { jmhVersion.set(libs.versions.jmh.get()) }
+jmh { jmhVersion = libs.versions.jmh.get() }

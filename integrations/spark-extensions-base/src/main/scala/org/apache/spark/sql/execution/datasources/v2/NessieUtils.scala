@@ -32,7 +32,8 @@ import java.lang.Boolean.parseBoolean
 import java.time.format.DateTimeParseException
 import java.time.{Instant, ZonedDateTime}
 import java.util.Collections
-import scala.collection.JavaConverters._
+
+import scala.jdk.CollectionConverters._
 
 object NessieUtils {
 

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import jakarta.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
@@ -51,12 +51,12 @@ public class EventsVersionStore implements VersionStore {
 
   @Override
   public CommitResult<Commit> commit(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
-      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
+      @Nonnull CommitValidator validator,
+      @Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     CommitResult<Commit> result =
         delegate.commit(branch, referenceHash, metadata, operations, validator, addedContents);
@@ -110,7 +110,6 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public RepositoryInformation getRepositoryInformation() {
     return delegate.getRepositoryInformation();
@@ -126,7 +125,6 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Hash noAncestorHash() {
     return delegate.noAncestorHash();

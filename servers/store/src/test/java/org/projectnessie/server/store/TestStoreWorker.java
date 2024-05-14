@@ -177,6 +177,7 @@ class TestStoreWorker {
         .containsExactly("metadata-location", 42L);
   }
 
+  @SuppressWarnings("deprecation")
   static Stream<Arguments> requiresGlobalStateModelType() {
     return Stream.of(
         Arguments.of(
@@ -184,6 +185,15 @@ class TestStoreWorker {
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setUdf(ObjectTypes.UDF.newBuilder().setDialect("dialect").setSqlText("sqlText")),
+            null,
+            Content.Type.UDF),
+        //
+        Arguments.of(
+            UDF.of(CID, "metadata", 42),
+            ObjectTypes.Content.newBuilder()
+                .setId(CID)
+                .setUdf(
+                    ObjectTypes.UDF.newBuilder().setMetadataLocation("metadata").setVersionId(42)),
             null,
             Content.Type.UDF),
         //

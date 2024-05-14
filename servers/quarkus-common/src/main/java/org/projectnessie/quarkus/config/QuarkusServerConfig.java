@@ -21,7 +21,6 @@ import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import org.projectnessie.services.config.ServerConfig;
 
-/** Nessie server config for Quarkus. */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.server")
 public interface QuarkusServerConfig extends ServerConfig {

@@ -22,7 +22,8 @@ plugins {
 extra["maven.name"] = "Nessie - GC - Iceberg content functionality"
 
 dependencies {
-  implementation(libs.iceberg.core)
+  implementation(platform(libs.iceberg.bom))
+  implementation("org.apache.iceberg:iceberg-core")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
@@ -38,11 +39,8 @@ dependencies {
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
   compileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   testImplementation(nessieProject("nessie-gc-iceberg-mock"))
   testRuntimeOnly(libs.logback.classic)

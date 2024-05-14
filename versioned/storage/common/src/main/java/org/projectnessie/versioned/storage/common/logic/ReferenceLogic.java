@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
@@ -38,13 +38,10 @@ public interface ReferenceLogic {
    * values in the returned list.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  List<Reference> getReferences(@Nonnull @jakarta.annotation.Nonnull List<String> references);
+  List<Reference> getReferences(@Nonnull List<String> references);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  default Reference getReference(@Nonnull @jakarta.annotation.Nonnull String name)
-      throws RefNotFoundException {
+  default Reference getReference(@Nonnull String name) throws RefNotFoundException {
     List<Reference> refs = getReferences(Collections.singletonList(name));
     Reference ref = refs.get(0);
     if (ref == null) {
@@ -58,9 +55,7 @@ public interface ReferenceLogic {
    * which should really depend on the serialized result of the query result in a "public API".
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  PagedResult<Reference, String> queryReferences(
-      @Nonnull @jakarta.annotation.Nonnull ReferencesQuery referencesQuery);
+  PagedResult<Reference, String> queryReferences(@Nonnull ReferencesQuery referencesQuery);
 
   /**
    * Creates a new reference with the given name and pointer.
@@ -70,11 +65,8 @@ public interface ReferenceLogic {
    * @return the created reference
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
   Reference createReference(
-      @Nonnull @jakarta.annotation.Nonnull String name,
-      @Nonnull @jakarta.annotation.Nonnull ObjId pointer,
-      @Nullable @jakarta.annotation.Nullable ObjId extendedInfoObj)
+      @Nonnull String name, @Nonnull ObjId pointer, @Nullable ObjId extendedInfoObj)
       throws RefAlreadyExistsException, RetryTimeoutException;
 
   /**
@@ -83,9 +75,7 @@ public interface ReferenceLogic {
    * @param name name of the reference to be deleted
    * @param expectedPointer expected pointer of the reference to be deleted
    */
-  void deleteReference(
-      @Nonnull @jakarta.annotation.Nonnull String name,
-      @Nonnull @jakarta.annotation.Nonnull ObjId expectedPointer)
+  void deleteReference(@Nonnull String name, @Nonnull ObjId expectedPointer)
       throws RefNotFoundException, RefConditionFailedException, RetryTimeoutException;
 
   /**
@@ -98,9 +88,6 @@ public interface ReferenceLogic {
    *     {@code null} otherwise.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Reference assignReference(
-      @Nonnull @jakarta.annotation.Nonnull Reference current,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  Reference assignReference(@Nonnull Reference current, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException;
 }

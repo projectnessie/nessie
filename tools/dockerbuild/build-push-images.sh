@@ -27,9 +27,12 @@ set -e
 
 IMAGE_NAME=""
 GITHUB=0
-ARTIFACTS=""
+LOCAL=0
 GRADLE_PROJECT=""
 PROJECT_DIR=""
+DOCKERFILE="Dockerfile-server"
+
+TOOL="$(which docker > /dev/null && echo docker || echo podman)"
 
 if [[ -n ${GITHUB_ENV} ]]; then
   GITHUB=1
@@ -40,13 +43,22 @@ function usage() {
   Usage: $0 [options] <docker-image-base-name>
 
       -g | --gradle-project <project>   Gradle project name, for example :nessie-quarkus
-      -p | --project-dir <dir>          Directory of the Gradle project
+      -p | --project-dir <dir>          Directory of the Gradle project, relative to the root of the repository
+      -d | --dockerfile <file>          Dockerfile to use (default: Dockerfile-server)
       -gh | --github                    GitHub actions mode
-      -a | --artifacts-dir <dir>        Directory to place uber-jars in
+      -l | --local                      Only build the image for local use (not multi-platform),
+                                        not pushed to a registry. Can build with 'docker' and 'podman'.
+      -t | --tool                       Name of the podman/docker/podman-remote tool to use.
+
+  Note: multiplatform builds only work with docker buildx, not implemented for podman.
 
   GitHub mode is automatically enabled, when GITHUB_ENV is present. -a is mandatory in GitHub mode.
 
-  Example: $0 -g :nessie-quarkus -p servers/quarkus-server nessie-unstable
+  Examples:
+  $0 --local --dockerfile Dockerfile-server --gradle-project :nessie-quarkus --project-dir servers/quarkus-server nessie-local
+  $0 --dockerfile Dockerfile-server --gradle-project :nessie-quarkus --project-dir servers/quarkus-server nessie-unstable
+  $0 --dockerfile Dockerfile-gctool --gradle-project :nessie-gc-tool --project-dir gc/gc-tool nessie-gc-unstable
+  $0 --dockerfile Dockerfile-admintool --gradle-project :nessie-server-admin-tool --project-dir tools/server-admin nessie-admin-unstable
 !
 }
 
@@ -73,12 +85,19 @@ while [[ $# -gt 0 ]]; do
     PROJECT_DIR="$2"
     shift
     ;;
-  -a | --artifacts-dir)
-    ARTIFACTS="$2"
+  -d | --dockerfile)
+    DOCKERFILE="$2"
     shift
     ;;
   -gh | --github)
     GITHUB=1
+    ;;
+  -l | --local)
+    LOCAL=1
+    ;;
+  -t | --TOOL)
+    TOOL="$2"
+    shift
     ;;
   -h | --help)
     usage
@@ -95,12 +114,6 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if [[ ${GITHUB} == 1 ]] ; then
-  if [[ -z $ARTIFACTS ]] ; then
-    usage
-    exit 1
-  fi
-fi
 if [[ -z $IMAGE_NAME || -z $GRADLE_PROJECT || -z $PROJECT_DIR || ! -d $PROJECT_DIR ]] ; then
   usage
   exit 1
@@ -108,12 +121,6 @@ fi
 
 BASE_DIR="$(cd "$(dirname "$0")/../.." ; pwd)"
 cd "$BASE_DIR"
-
-if [[ -z ${ARTIFACTS} ]]; then
-  mkdir -p "$BASE_DIR/build"
-  # WARNING: mktemp -p is not available on macOS: you must provide the --artifacts option
-  ARTIFACTS="$(mktemp -p "$BASE_DIR/build" -d dockerbuild-artifacts-XXXXX)"
-fi
 
 #
 # Prepare
@@ -124,51 +131,61 @@ IMAGE_TAG="$(cat version.txt)"
 IMAGE_TAG_BASE="${IMAGE_TAG%-SNAPSHOT}"
 echo "Image name: ${IMAGE_NAME}"
 echo "Tag base: ${IMAGE_TAG_BASE}"
-echo "Placing binaries in: ${ARTIFACTS}"
-mkdir -p "${ARTIFACTS}"
 gh_endgroup
 
-gh_group "Prepare buildx"
-docker buildx use default
-docker buildx create \
-  --platform linux/amd64,linux/arm64 \
-  --use \
-  --name nessiebuild \
-  --driver-opt network=host || docker buildx use nessiebuild
-# Note: '--driver-opt network=host' is needed to be able to push to a local registry (e.g. localhost:5000)
-gh_endgroup
+if [[ ${LOCAL} == 0 ]] ; then
+  gh_group "Prepare buildx"
+  ${TOOL} buildx use default
+  ${TOOL} buildx create \
+    --platform linux/amd64,linux/arm64 \
+    ${BUILDX_CONFIG} \
+    --use \
+    --name nessiebuild \
+    --driver-opt network=host || docker buildx use nessiebuild
+  # Note: '--driver-opt network=host' is needed to be able to push to a local registry (e.g. localhost:5000)
+  gh_endgroup
 
-gh_group "Docker buildx info"
-docker buildx inspect
-gh_endgroup
+  gh_group "Docker buildx info"
+  ${TOOL} buildx inspect
+  gh_endgroup
+fi
 
 #
-# Java multiplatform image
+# Gradle Build
 #
-
-gh_group "Build Java linux/amd64"
-./gradlew "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:quarkusBuild"
+gh_group "Build Java"
+./gradlew "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:build" -x "${GRADLE_PROJECT}:check"
 gh_endgroup
 
-gh_group "Docker buildx build"
-# All the platforms that are available
-PLATFORMS="linux/amd64,linux/arm64/v8,linux/ppc64le,linux/s390x"
-docker buildx build \
-  -f "${BASE_DIR}/tools/dockerbuild/docker/Dockerfile-jvm" \
-  --platform "${PLATFORMS}" \
-  -t "${IMAGE_NAME}:latest" \
-  -t "${IMAGE_NAME}:latest-java" \
-  -t "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
-  -t "${IMAGE_NAME}:${IMAGE_TAG_BASE}-java" \
-  "${BASE_DIR}/${PROJECT_DIR}" \
-  --push \
-  --provenance=false --sbom=false \
-  --output type=registry
-  # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
-  # Note: '--provenance=false --sbom=false' work around UI issues in ghcr + quay showing 'unknown/unknown' architectures
-  gh_summary "## Java image tags, built for ${PLATFORMS}"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:latest\`"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:latest-java\`"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}\`"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}-java\`"
-gh_endgroup
+if [[ ${LOCAL} == 1 ]] ; then
+  gh_group "Docker build"
+  ${TOOL} build \
+    --file "${BASE_DIR}/tools/dockerbuild/docker/${DOCKERFILE}" \
+    --tag "${IMAGE_NAME}:latest" \
+    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
+    "${BASE_DIR}/${PROJECT_DIR}"
+  gh_endgroup
+else
+  gh_group "Docker buildx build"
+  # All the platforms that are available
+  PLATFORMS="linux/amd64,linux/arm64/v8,linux/ppc64le,linux/s390x"
+  ${TOOL} buildx build \
+    --file "${BASE_DIR}/tools/dockerbuild/docker/${DOCKERFILE}" \
+    --platform "${PLATFORMS}" \
+    --tag "${IMAGE_NAME}:latest" \
+    --tag "${IMAGE_NAME}:latest-java" \
+    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
+    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}-java" \
+    "${BASE_DIR}/${PROJECT_DIR}" \
+    --push \
+    --provenance=false --sbom=false \
+    --output type=registry
+    # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
+    # Note: '--provenance=false --sbom=false' work around UI issues in ghcr + quay showing 'unknown/unknown' architectures
+    gh_summary "## Java image tags, built for ${PLATFORMS}"
+    gh_summary "* \`docker pull ${IMAGE_NAME}:latest\`"
+    gh_summary "* \`docker pull ${IMAGE_NAME}:latest-java\`"
+    gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}\`"
+    gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}-java\`"
+  gh_endgroup
+fi

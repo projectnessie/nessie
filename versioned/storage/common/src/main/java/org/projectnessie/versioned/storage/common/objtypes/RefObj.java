@@ -15,20 +15,19 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.refHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
  * Describes the <em>internal</em> state of a reference when it has been created, managed by {@link
- * ReferenceLogic} implementations, not available/tracked for transactional {@link Persist}
- * instances.
+ * ReferenceLogic} implementations.
  */
 @Value.Immutable
 public interface RefObj extends Obj {
@@ -44,7 +43,6 @@ public interface RefObj extends Obj {
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   /**
@@ -61,7 +59,6 @@ public interface RefObj extends Obj {
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId extendedInfoObj();
 
   static RefObj ref(
@@ -72,7 +69,11 @@ public interface RefObj extends Obj {
   static RefObj ref(
       String name, ObjId initialPointer, long createdAtMicros, ObjId extendedInfoObj) {
     return ref(
-        refHash(name, initialPointer, createdAtMicros),
+        objIdHasher(REF)
+            .hash(name)
+            .hash(initialPointer.asByteArray())
+            .hash(createdAtMicros)
+            .generate(),
         name,
         initialPointer,
         createdAtMicros,

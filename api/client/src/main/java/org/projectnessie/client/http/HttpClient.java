@@ -18,6 +18,7 @@ package org.projectnessie.client.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
+import java.util.concurrent.CompletionStage;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
@@ -36,7 +37,11 @@ public interface HttpClient extends AutoCloseable {
     DELETE;
   }
 
-  HttpRequest newRequest();
+  default HttpRequest newRequest() {
+    return newRequest(getBaseUri());
+  }
+
+  HttpRequest newRequest(URI baseUri);
 
   static Builder builder() {
     return new HttpClientBuilderImpl();
@@ -50,6 +55,7 @@ public interface HttpClient extends AutoCloseable {
   interface Builder {
     Builder copy();
 
+    @SuppressWarnings("unused")
     @CanIgnoreReturnValue
     Builder setClientSpec(int clientSpec);
 
@@ -69,6 +75,9 @@ public interface HttpClient extends AutoCloseable {
     Builder setResponseFactory(HttpResponseFactory responseFactory);
 
     @CanIgnoreReturnValue
+    Builder setSslNoCertificateVerification(boolean noCertificateVerification);
+
+    @CanIgnoreReturnValue
     Builder setSslContext(SSLContext sslContext);
 
     @CanIgnoreReturnValue
@@ -83,8 +92,13 @@ public interface HttpClient extends AutoCloseable {
     @CanIgnoreReturnValue
     Builder setFollowRedirects(String followRedirects);
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @CanIgnoreReturnValue
+    @Deprecated
     Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient);
+
+    @CanIgnoreReturnValue
+    Builder setHttpClientName(String clientName);
 
     @CanIgnoreReturnValue
     Builder setReadTimeoutMillis(int readTimeoutMillis);
@@ -117,7 +131,10 @@ public interface HttpClient extends AutoCloseable {
      * remove tracing once it is added.
      */
     @CanIgnoreReturnValue
-    public Builder addTracing();
+    Builder addTracing();
+
+    @CanIgnoreReturnValue
+    Builder setCancellationFuture(CompletionStage<?> cancellationFuture);
 
     /** Construct an HttpClient from builder settings. */
     HttpClient build();

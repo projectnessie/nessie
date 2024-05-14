@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -23,11 +23,11 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 /** Cache primitives for a specific repository ID, used for one {@link Persist} instance. */
 public interface ObjCache {
 
-  Obj get(@Nonnull @jakarta.annotation.Nonnull ObjId id);
+  Obj get(@Nonnull ObjId id);
 
-  void put(@Nonnull @jakarta.annotation.Nonnull Obj obj);
+  void put(@Nonnull Obj obj);
 
-  void remove(@Nonnull @jakarta.annotation.Nonnull ObjId id);
+  void remove(@Nonnull ObjId id);
 
   void clear();
 }

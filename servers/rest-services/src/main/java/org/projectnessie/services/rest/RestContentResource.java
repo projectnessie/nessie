@@ -16,8 +16,9 @@
 package org.projectnessie.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
@@ -29,7 +30,7 @@ import org.projectnessie.services.spi.ContentService;
 
 /** REST endpoint for the content-API. */
 @RequestScoped
-@jakarta.enterprise.context.RequestScoped
+@Path("api/v1/contents")
 public class RestContentResource implements HttpContentApi {
   // Cannot extend the ContentApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpContentApi or the plain ContentApi. This can lead
@@ -44,7 +45,6 @@ public class RestContentResource implements HttpContentApi {
   }
 
   @Inject
-  @jakarta.inject.Inject
   public RestContentResource(ContentService contentService) {
     this.contentService = contentService;
   }

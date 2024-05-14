@@ -26,9 +26,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>8</maven.compiler.release>
-    <versionMavenResolver>1.9.18</versionMavenResolver>
-    <versionMaven>3.9.6</versionMaven>
-    <nessie.version>0.74.0</nessie.version>
+    <versionMavenResolver>1.9.20</versionMavenResolver>
+    <nessie.version>0.82.0</nessie.version>
   </properties>
 
   <dependencyManagement>
@@ -43,7 +42,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.10.1</version>
+        <version>5.10.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -65,7 +64,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-storage-inmemory</artifactId>
+      <artifactId>nessie-versioned-storage-inmemory-tests</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
@@ -73,7 +72,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-storage-rocksdb</artifactId>
+      <artifactId>nessie-versioned-storage-rocksdb-tests</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
@@ -101,31 +100,13 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.24.2</version>
+      <version>3.25.3</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-resolver-provider</artifactId>
-      <version>${versionMaven}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.maven.resolver</groupId>
-      <artifactId>maven-resolver-connector-basic</artifactId>
-      <version>${versionMavenResolver}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.resolver</groupId>
-      <artifactId>maven-resolver-transport-file</artifactId>
-      <version>${versionMavenResolver}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.resolver</groupId>
-      <artifactId>maven-resolver-transport-http</artifactId>
+      <artifactId>maven-resolver-supplier</artifactId>
       <version>${versionMavenResolver}</version>
       <scope>test</scope>
     </dependency>
@@ -137,12 +118,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.11.0</version>
+          <version>3.13.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.2.2</version>
+          <version>3.2.5</version>
         </plugin>
       </plugins>
     </pluginManagement>

@@ -15,12 +15,12 @@
  */
 package org.projectnessie.versioned.storage.common.indexes;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -80,7 +80,7 @@ public interface StoreIndex<V> extends Iterable<StoreIndexElement<V>> {
    * @return {@code true} if the {@link StoreKey} didn't exist or {@code false} if the key was
    *     already present and the operation only updated the {@link ObjId}.
    */
-  boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element);
+  boolean add(@Nonnull StoreIndexElement<V> element);
 
   /**
    * Functionality to update all element values in this data structure.
@@ -98,20 +98,17 @@ public interface StoreIndex<V> extends Iterable<StoreIndexElement<V>> {
    * @return {@code true} if the {@link StoreKey} did exist and was removed, {@code false}
    *     otherwise.
    */
-  boolean remove(@Nonnull @jakarta.annotation.Nonnull StoreKey key);
+  boolean remove(@Nonnull StoreKey key);
 
-  boolean contains(@Nonnull @jakarta.annotation.Nonnull StoreKey key);
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  StoreIndexElement<V> get(@Nonnull @jakarta.annotation.Nonnull StoreKey key);
+  boolean contains(@Nonnull StoreKey key);
 
   @Nullable
-  @jakarta.annotation.Nullable
+  StoreIndexElement<V> get(@Nonnull StoreKey key);
+
+  @Nullable
   StoreKey first();
 
   @Nullable
-  @jakarta.annotation.Nullable
   StoreKey last();
 
   /** A read-only view to the {@link StoreKey}s in this data structure. */
@@ -140,13 +137,9 @@ public interface StoreIndex<V> extends Iterable<StoreIndexElement<V>> {
    *     false}, when using result paging.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
   Iterator<StoreIndexElement<V>> iterator(
-      @Nullable @jakarta.annotation.Nullable StoreKey begin,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch);
+      @Nullable StoreKey begin, @Nullable StoreKey end, boolean prefetch);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   ByteString serialize();
 }

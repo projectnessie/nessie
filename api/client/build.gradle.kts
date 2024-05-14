@@ -41,8 +41,12 @@ dependencies {
   compileOnly(libs.jakarta.ws.rs.api)
   compileOnly(libs.javax.ws.rs)
 
-  implementation(libs.slf4j.api)
+  compileOnly(libs.httpclient5)
+
+  implementation(libs.slf4j.api) { version { require(libs.versions.slf4j.compat.get()) } }
   compileOnly(libs.errorprone.annotations)
+
+  compileOnly(project(":nessie-doc-generator-annotations"))
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
@@ -73,13 +77,21 @@ dependencies {
   testFixturesApi("software.amazon.awssdk:auth")
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
-  testFixturesImplementation(libs.logback.classic)
+  testFixturesApi(libs.httpclient5)
+  testFixturesImplementation(libs.logback.classic) {
+    version { require(libs.versions.logback.compat.get()) }
+    // Logback 1.3 brings Slf4j 2.0, which doesn't work with Spark up to 3.3
+    exclude("org.slf4j", "slf4j-api")
+  }
 
   testImplementation(libs.wiremock)
+
+  testRuntimeOnly(libs.logback.classic)
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
   intTestImplementation("org.testcontainers:junit-jupiter")
+  intTestImplementation(libs.keycloak.admin.client)
   intTestImplementation(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
   }
@@ -89,9 +101,9 @@ jandex { skipDefaultProcessing() }
 
 val jacksonTestVersions =
   setOf(
-    "2.11.4", // Spark 3.?.? (reason unknown)
-    "2.12.3", // Spark 3.2.1+3.2.2
-    "2.13.3" // Spark 3.3.0
+    "2.13.4", // Spark 3.3
+    "2.14.2", // Spark 3.4
+    "2.15.2", // Spark 3.5
   )
 
 @Suppress("UnstableApiUsage")
@@ -122,9 +134,7 @@ fun JvmTestSuite.useJava8() {
     all {
       testTask.configure {
         val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-        javaLauncher.set(
-          javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
-        )
+        javaLauncher = javaToolchains!!.launcherFor { languageVersion = JavaLanguageVersion.of(8) }
       }
     }
   }
@@ -143,6 +153,25 @@ testing {
 
     configurations.named("testJava8Implementation") {
       extendsFrom(configurations.getByName("testImplementation"))
+    }
+
+    register("testNoApacheHttp", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      sources { java.srcDirs(sourceSets.getByName("testNoApacheHttp").java.srcDirs) }
+
+      targets {
+        all {
+          testTask.configure { useJUnitPlatform { includeTags("NoApacheHttp") } }
+
+          tasks.named("check").configure { dependsOn(testTask) }
+        }
+      }
+    }
+
+    configurations.named("testNoApacheHttpImplementation") {
+      extendsFrom(configurations.getByName("testImplementation"))
+      exclude(group = "org.apache.httpcomponents.client5")
     }
 
     jacksonTestVersions.forEach { jacksonVersion ->
@@ -175,7 +204,7 @@ testing {
 annotationStripper {
   registerDefault().configure {
     annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
+    unmodifiedClassesForJavaVersion = 11
   }
 }
 

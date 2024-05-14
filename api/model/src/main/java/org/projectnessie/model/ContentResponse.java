@@ -40,10 +40,10 @@ public interface ContentResponse {
 
   /**
    * The effective reference (for example a branch or tag) including the commit ID from which the
-   * entries were fetched.
+   * entries were fetched. Never null.
    */
-  @Nullable
-  @jakarta.annotation.Nullable
+  @NotNull
+  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 

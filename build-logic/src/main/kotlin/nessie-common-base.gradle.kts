@@ -24,7 +24,7 @@ plugins {
 
 apply<PublishingHelperPlugin>()
 
-jandex { toolVersion.set(libsRequiredVersion("jandex")) }
+jandex { toolVersion = libsRequiredVersion("jandex") }
 
 val sourceSets: SourceSetContainer? by project
 
@@ -34,7 +34,7 @@ sourceSets?.withType(SourceSet::class.java)?.configureEach {
     val jandexTaskName = sourceSet.getTaskName("process", "jandexIndex")
     tasks.named(jandexTaskName, JandexProcessResources::class.java).configure {
       // No Jandex for non-main
-      jandexBuildAction.set(JandexBuildAction.NONE)
+      jandexBuildAction = JandexBuildAction.NONE
       enabled = false
     }
   }

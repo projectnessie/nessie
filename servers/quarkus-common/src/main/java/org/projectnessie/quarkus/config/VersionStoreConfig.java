@@ -35,24 +35,17 @@ public interface VersionStoreConfig {
     BIGTABLE
   }
 
+  /** Sets which type of version store to use by Nessie. */
   @WithName("type")
-  @WithDefault("INMEMORY")
+  @WithDefault("IN_MEMORY")
   VersionStoreType getVersionStoreType();
 
   /**
-   * Whether events for the version-store are enabled (enabled by default). In order for events to
-   * be published, it's not enough to enable them in the configuration; you also need to provide at
-   * least one implementation of Nessie's EventListener SPI.
+   * Sets whether events for the version-store are enabled. In order for events to be published,
+   * it's not enough to enable them in the configuration; you also need to provide at least one
+   * implementation of Nessie's EventListener SPI.
    */
   @WithName("events.enable")
   @WithDefault("true")
   boolean isEventsEnabled();
-
-  @StaticInitSafe
-  @ConfigMapping(prefix = "nessie.version.store.rocks")
-  interface RocksVersionStoreConfig {
-    @WithName("db-path")
-    @WithDefault("/tmp/nessie-rocksdb")
-    String getDbPath();
-  }
 }

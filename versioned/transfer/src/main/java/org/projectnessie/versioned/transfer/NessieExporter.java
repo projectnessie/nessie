@@ -18,9 +18,9 @@ package org.projectnessie.versioned.transfer;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.time.Clock;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;

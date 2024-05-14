@@ -40,8 +40,8 @@ import org.projectnessie.client.http.impl.RequestContextImpl;
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
 final class UrlConnectionRequest extends BaseHttpRequest {
 
-  UrlConnectionRequest(HttpRuntimeConfig config) {
-    super(config);
+  UrlConnectionRequest(HttpRuntimeConfig config, URI baseUri) {
+    super(config, baseUri);
   }
 
   @Override
@@ -102,6 +102,8 @@ final class UrlConnectionRequest extends BaseHttpRequest {
     } catch (IOException e) {
       throw new HttpClientException(
           String.format("Failed to execute %s request against '%s'.", method, uri), e);
+    } finally {
+      cleanUp();
     }
   }
 

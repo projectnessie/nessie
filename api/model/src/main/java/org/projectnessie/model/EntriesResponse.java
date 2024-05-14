@@ -40,9 +40,9 @@ public interface EntriesResponse extends PaginatedResponse {
 
   /**
    * The effective reference (for example a branch or tag) including the commit ID from which the
-   * entries were fetched.
+   * entries were fetched. Never null when using REST API v2.
    */
-  @Nullable
+  @Nullable // Only nullable in V1
   @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveReference();

@@ -15,20 +15,33 @@
  */
 package org.projectnessie.client.http;
 
+import static java.util.Locale.ROOT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION;
+import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.net.Socket;
 import java.net.URI;
+import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Function;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import org.projectnessie.client.NessieConfigConstants;
+import org.projectnessie.client.http.impl.HttpClientFactory;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
-import org.projectnessie.client.http.impl.HttpUtils;
-import org.projectnessie.client.http.impl.jdk11.JavaHttpClient;
-import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +52,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   private ObjectMapper mapper;
   private Class<?> jsonView;
   private HttpResponseFactory responseFactory = HttpResponse::new;
+  private boolean sslNoCertificateVerification;
   private SSLContext sslContext;
   private SSLParameters sslParameters;
   private HttpAuthentication authentication;
@@ -55,7 +69,9 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   private boolean http2Upgrade;
   private String followRedirects;
   private boolean forceUrlConnectionClient;
+  private String httpClientName;
   private int clientSpec = 2;
+  private CompletionStage<?> cancellationFuture;
 
   HttpClientBuilderImpl() {}
 
@@ -64,6 +80,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     this.mapper = other.mapper;
     this.jsonView = other.jsonView;
     this.responseFactory = other.responseFactory;
+    this.sslNoCertificateVerification = other.sslNoCertificateVerification;
     this.sslContext = other.sslContext;
     this.sslParameters = other.sslParameters;
     this.authentication = other.authentication;
@@ -75,7 +92,9 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     this.http2Upgrade = other.http2Upgrade;
     this.followRedirects = other.followRedirects;
     this.forceUrlConnectionClient = other.forceUrlConnectionClient;
+    this.httpClientName = other.httpClientName;
     this.clientSpec = other.clientSpec;
+    this.cancellationFuture = other.cancellationFuture;
   }
 
   /** Creates a (shallow) copy of this builder. */
@@ -121,6 +140,12 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
+  public HttpClient.Builder setSslNoCertificateVerification(boolean noCertificateVerification) {
+    this.sslNoCertificateVerification = noCertificateVerification;
+    return this;
+  }
+
+  @Override
   public HttpClient.Builder setSslContext(SSLContext sslContext) {
     this.sslContext = sslContext;
     return this;
@@ -151,8 +176,15 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
+  @Deprecated
   public HttpClient.Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient) {
     this.forceUrlConnectionClient = forceUrlConnectionClient;
+    return this;
+  }
+
+  @Override
+  public HttpClient.Builder setHttpClientName(String httpClientName) {
+    this.httpClientName = httpClientName;
     return this;
   }
 
@@ -208,14 +240,64 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
+  public HttpClient.Builder setCancellationFuture(CompletionStage<?> cancellationFuture) {
+    this.cancellationFuture = cancellationFuture;
+    return this;
+  }
+
+  @Override
   public HttpClient build() {
-    HttpUtils.checkArgument(
-        baseUri != null, "Cannot construct Http client. Must have a non-null uri");
-    HttpUtils.checkArgument(
+    checkArgument(
         mapper != null, "Cannot construct Http client. Must have a non-null object mapper");
-    if (sslContext == null) {
+
+    SSLContext sslCtx = this.sslContext;
+
+    if (sslNoCertificateVerification) {
+      checkArgument(
+          sslCtx == null,
+          "Cannot construct Http client, must not combine %s and an explicitly configured SSLContext",
+          CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION);
       try {
-        sslContext = SSLContext.getDefault();
+        sslCtx = SSLContext.getInstance("TLS");
+        TrustManager trustManager =
+            new X509ExtendedTrustManager() {
+              @Override
+              public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[] {};
+              }
+
+              @Override
+              public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+              @Override
+              public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+              @Override
+              public void checkClientTrusted(
+                  X509Certificate[] chain, String authType, Socket socket) {}
+
+              @Override
+              public void checkServerTrusted(
+                  X509Certificate[] chain, String authType, Socket socket) {}
+
+              @Override
+              public void checkClientTrusted(
+                  X509Certificate[] chain, String authType, SSLEngine engine) {}
+
+              @Override
+              public void checkServerTrusted(
+                  X509Certificate[] chain, String authType, SSLEngine engine) {}
+            };
+        sslCtx.init(null, new TrustManager[] {trustManager}, new SecureRandom());
+      } catch (KeyManagementException | NoSuchAlgorithmException e) {
+        throw new HttpClientException(
+            "Cannot construct Http Client, unable to configure noop trust-manager", e);
+      }
+    }
+
+    if (sslCtx == null) {
+      try {
+        sslCtx = SSLContext.getDefault();
       } catch (NoSuchAlgorithmException e) {
         throw new HttpClientException(
             "Cannot construct Http Client. Default SSL config is invalid.", e);
@@ -235,37 +317,80 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
             .readTimeoutMillis(readTimeoutMillis)
             .connectionTimeoutMillis(connectionTimeoutMillis)
             .isDisableCompression(disableCompression)
-            .sslContext(sslContext)
+            .sslContext(sslCtx)
             .sslParameters(sslParameters)
             .addAllRequestFilters(requestFilters)
             .addAllResponseFilters(responseFilters)
             .isHttp11Only(!http2Upgrade)
             .followRedirects(followRedirects)
-            .forceUrlConnectionClient(forceUrlConnectionClient)
+            .authentication(authentication)
             .build();
 
-    return ImplSwitch.FACTORY.apply(config);
+    String clientName = httpClientName;
+    // "HTTP" is the name for `org.projectnessie.client.http.NessieHttpClientBuilderImpl`
+    if ("HTTP".equalsIgnoreCase(clientName)) {
+      // fall back to default
+      clientName = null;
+    }
+
+    if (forceUrlConnectionClient) {
+      if (clientName != null && !"URLConnection".equalsIgnoreCase(clientName)) {
+        LOGGER.warn(
+            "Both forceUrlConnectionClient and httpClientName are specified with incompatible values, migrate to httpClientName");
+      }
+      // forced use of URLConnectionClient
+      clientName = "URLConnection";
+    }
+
+    HttpClientFactory httpClientFactory =
+        clientName != null
+            ? ImplSwitch.IMPLEMENTATIONS.get(clientName.toLowerCase(ROOT))
+            : ImplSwitch.PREFERRED;
+    if (httpClientFactory == null) {
+      throw new IllegalArgumentException(
+          "No HTTP client factory for name '" + clientName + "' found");
+    }
+    HttpClient client = httpClientFactory.buildClient(config);
+    if (cancellationFuture != null) {
+      cancellationFuture.thenRun(client::close);
+    }
+
+    if (authentication != null) {
+      try {
+        authentication.start();
+      } catch (RuntimeException e) {
+        try {
+          client.close();
+        } catch (RuntimeException e2) {
+          e.addSuppressed(e2);
+        }
+        throw e;
+      }
+    }
+
+    return client;
+  }
+
+  static Set<String> clientNames() {
+    return ImplSwitch.IMPLEMENTATIONS.keySet();
   }
 
   static class ImplSwitch {
-    static final Function<HttpRuntimeConfig, HttpClient> FACTORY;
+    static final Map<String, HttpClientFactory> IMPLEMENTATIONS;
+    static final HttpClientFactory PREFERRED;
 
     static {
-      Function<HttpRuntimeConfig, HttpClient> factory;
-      try {
-        Class.forName("java.net.http.HttpClient");
-        factory =
-            config ->
-                // Need the system property for tests, "normal" users can use standard
-                // configuration options.
-                Boolean.getBoolean("nessie.client.force-url-connection-client")
-                        || config.forceUrlConnectionClient()
-                    ? new UrlConnectionClient(config)
-                    : new JavaHttpClient(config);
-      } catch (ClassNotFoundException e) {
-        factory = UrlConnectionClient::new;
+      IMPLEMENTATIONS = new HashMap<>();
+      HttpClientFactory preferred = null;
+      for (HttpClientFactory s : ServiceLoader.load(HttpClientFactory.class)) {
+        if (s.available()) {
+          if (preferred == null || preferred.priority() > s.priority()) {
+            preferred = s;
+          }
+          IMPLEMENTATIONS.put(s.name().toLowerCase(ROOT), s);
+        }
       }
-      FACTORY = factory;
+      PREFERRED = preferred;
     }
   }
 }

@@ -29,18 +29,17 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  api(project(":nessie-storage-uri"))
   implementation(project(":nessie-client"))
   implementation(libs.slf4j.api)
   implementation(libs.guava)
   implementation(libs.agrona)
+  implementation(libs.httpclient5)
 
   compileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
@@ -48,15 +47,13 @@ dependencies {
   testImplementation(project(":nessie-gc-base-tests"))
   testImplementation(project(":nessie-jaxrs-testextension"))
 
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
 
   testRuntimeOnly(libs.logback.classic)
 
   testCompileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   testCompileOnly(libs.jakarta.validation.api)
-  testCompileOnly(libs.javax.validation.api)
 
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)

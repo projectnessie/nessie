@@ -15,11 +15,12 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.uniqueIdHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
+import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
@@ -36,13 +37,12 @@ public interface UniqueIdObj extends Obj {
 
   @Override
   default ObjType type() {
-    return StandardObjType.UNIQUE;
+    return UNIQUE;
   }
 
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   /** The "ID space", for example {@code content-id}. */
@@ -66,7 +66,10 @@ public interface UniqueIdObj extends Obj {
   }
 
   static UniqueIdObj uniqueId(String space, ByteString value) {
-    return uniqueId(uniqueIdHash(space, value), space, value);
+    return uniqueId(
+        objIdHasher(UNIQUE).hash(space).hash(value.asReadOnlyByteBuffer()).generate(),
+        space,
+        value);
   }
 
   static UniqueIdObj uniqueId(String space, UUID value) {

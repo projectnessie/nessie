@@ -17,28 +17,24 @@ package org.projectnessie.gc.iceberg.files;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URI;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.aws.HttpClientProperties;
-import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.gc.files.DeleteSummary;
 import org.projectnessie.gc.files.FileReference;
-import org.projectnessie.s3mock.IcebergS3Mock;
-import org.projectnessie.s3mock.IcebergS3Mock.S3MockServer;
-import org.projectnessie.s3mock.MockObject;
-import org.projectnessie.s3mock.S3Bucket;
-import org.projectnessie.s3mock.S3Bucket.ListElement;
+import org.projectnessie.objectstoragemock.Bucket;
+import org.projectnessie.objectstoragemock.Bucket.ListElement;
+import org.projectnessie.objectstoragemock.MockObject;
+import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class TestIcebergS3Files {
 
@@ -46,7 +42,7 @@ public class TestIcebergS3Files {
 
   @Test
   public void icebergS3() throws Exception {
-    URI baseUri = icebergBaseUri("/path/");
+    StorageUri baseUri = icebergBaseUri("/path/");
 
     Set<String> keys = new TreeSet<>();
     keys.add("path/file-1");
@@ -55,10 +51,10 @@ public class TestIcebergS3Files {
     keys.add("path/dir-1/file-4");
     keys.add("path/dir-1/dir-2/file-5");
 
-    try (S3MockServer server = createServer(keys);
+    try (MockServer server = createServer(keys);
         IcebergFiles s3 = createIcebergFiles(server)) {
 
-      Set<URI> expect =
+      Set<StorageUri> expect =
           keys.stream()
               .map(TestIcebergS3Files::icebergBaseUri)
               .collect(Collectors.toCollection(HashSet::new));
@@ -107,14 +103,14 @@ public class TestIcebergS3Files {
   @ParameterizedTest
   @ValueSource(ints = {500})
   public void manyFiles(int numFiles) throws Exception {
-    URI baseUri = icebergBaseUri("/path/");
+    StorageUri baseUri = icebergBaseUri("/path/");
 
     Set<String> keys =
         IntStream.range(0, numFiles)
             .mapToObj(i -> String.format("path/%d/%d", i % 100, i))
             .collect(Collectors.toCollection(HashSet::new));
 
-    try (S3MockServer server = createServer(keys);
+    try (MockServer server = createServer(keys);
         IcebergFiles s3 = createIcebergFiles(server)) {
 
       try (Stream<FileReference> files = s3.listRecursively(baseUri)) {
@@ -136,20 +132,20 @@ public class TestIcebergS3Files {
     }
   }
 
-  private IcebergFiles createIcebergFiles(S3MockServer server) {
+  private IcebergFiles createIcebergFiles(MockServer server) {
     return IcebergFiles.builder()
-        .properties(icebergProperties(server))
+        .properties(server.icebergProperties())
         .hadoopConfiguration(hadoopConfiguration(server))
         .build();
   }
 
-  private static S3MockServer createServer(Set<String> keys) {
-    return IcebergS3Mock.builder()
+  private static MockServer createServer(Set<String> keys) {
+    return ObjectStorageMock.builder()
         .putBuckets(
             BUCKET,
-            S3Bucket.builder()
+            Bucket.builder()
                 .lister(
-                    (String prefix) ->
+                    (String prefix, String offset) ->
                         keys.stream()
                             .map(
                                 key ->
@@ -164,30 +160,19 @@ public class TestIcebergS3Files {
                                         return MockObject.builder().build();
                                       }
                                     }))
-                .deleter(o -> keys.remove(o.key()))
+                .deleter(keys::remove)
                 .build())
         .build()
         .start();
   }
 
-  protected static URI icebergBaseUri(String path) {
-    return URI.create(String.format("s3://%s/", BUCKET)).resolve(path);
+  protected static StorageUri icebergBaseUri(String path) {
+    return StorageUri.of(String.format("s3://%s/", BUCKET)).resolve(path);
   }
 
-  protected Map<String, String> icebergProperties(S3MockServer server) {
-    Map<String, String> props = new HashMap<>();
-    props.put(S3FileIOProperties.ACCESS_KEY_ID, "accessKey");
-    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, "secretKey");
-    props.put(S3FileIOProperties.ENDPOINT, server.getBaseUri().toString());
-    props.put(HttpClientProperties.CLIENT_TYPE, HttpClientProperties.CLIENT_TYPE_URLCONNECTION);
-    return props;
-  }
-
-  protected Configuration hadoopConfiguration(S3MockServer server) {
+  protected Configuration hadoopConfiguration(MockServer server) {
     Configuration conf = new Configuration();
-    conf.set("fs.s3a.access.key", "accessKey");
-    conf.set("fs.s3a.secret.key", "secretKey");
-    conf.set("fs.s3a.endpoint", server.getBaseUri().toString());
+    server.hadoopConfiguration().forEach(conf::set);
     return conf;
   }
 }

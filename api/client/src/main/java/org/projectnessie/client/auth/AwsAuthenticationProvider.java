@@ -28,7 +28,6 @@ import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
-import org.projectnessie.client.http.RequestFilter;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.signer.Aws4Signer;
@@ -85,6 +84,7 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
   private static class AwsAuthentication implements HttpAuthentication {
     private final Region region;
     private final AwsCredentialsProvider awsCredentialsProvider;
+    private final ObjectMapper objectMapper;
 
     private AwsAuthentication(Region region, String profile) {
       this.region = region;
@@ -95,28 +95,35 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
       }
 
       this.awsCredentialsProvider = provider.build();
-    }
-
-    @Override
-    public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(new AwsHttpAuthenticationFilter(region, awsCredentialsProvider));
-    }
-  }
-
-  private static class AwsHttpAuthenticationFilter implements RequestFilter {
-    private final ObjectMapper objectMapper;
-    private final Aws4Signer signer;
-    private final AwsCredentialsProvider awsCredentialsProvider;
-    private final Region region;
-
-    private AwsHttpAuthenticationFilter(Region region, AwsCredentialsProvider credentialsProvider) {
-      this.awsCredentialsProvider = credentialsProvider;
       this.objectMapper =
           new ObjectMapper()
               .disable(SerializationFeature.INDENT_OUTPUT)
               .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-      this.region = region;
-      this.signer = Aws4Signer.create();
+    }
+
+    @Override
+    public void applyToHttpClient(HttpClient.Builder client) {
+      client.addRequestFilter(this::applyToHttpRequest);
+    }
+
+    @Override
+    public void applyToHttpRequest(RequestContext context) {
+      SdkHttpFullRequest modifiedRequest =
+          Aws4Signer.create()
+              .sign(
+                  prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
+                  Aws4SignerParams.builder()
+                      .signingName("execute-api")
+                      .awsCredentials(awsCredentialsProvider.resolveCredentials())
+                      .signingRegion(region)
+                      .build());
+      for (Map.Entry<String, List<String>> entry :
+          modifiedRequest.toBuilder().headers().entrySet()) {
+        if (context.containsHeader(entry.getKey())) {
+          continue;
+        }
+        entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
+      }
     }
 
     private SdkHttpFullRequest prepareRequest(
@@ -143,25 +150,6 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
         return builder.build();
       } catch (Throwable t) {
         throw new RuntimeException(t);
-      }
-    }
-
-    @Override
-    public void filter(RequestContext context) {
-      SdkHttpFullRequest modifiedRequest =
-          signer.sign(
-              prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
-              Aws4SignerParams.builder()
-                  .signingName("execute-api")
-                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                  .signingRegion(region)
-                  .build());
-      for (Map.Entry<String, List<String>> entry :
-          modifiedRequest.toBuilder().headers().entrySet()) {
-        if (context.containsHeader(entry.getKey())) {
-          continue;
-        }
-        entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
       }
     }
   }

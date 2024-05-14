@@ -28,12 +28,11 @@ import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
+import org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestRocksDBBackendTestFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
-
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
 
   @Test
   public void backendTestFactory() throws Exception {
@@ -48,7 +47,7 @@ public class TestRocksDBBackendTestFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(RocksDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(RocksDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -62,7 +61,7 @@ public class TestRocksDBBackendTestFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(RocksDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(RocksDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -80,7 +79,7 @@ public class TestRocksDBBackendTestFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(RocksDBPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(RocksDBPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);

@@ -27,13 +27,13 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.refere
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
@@ -64,11 +64,11 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 final class TransplantIndividualImpl extends BaseCommitHelper implements Transplant {
 
   TransplantIndividualImpl(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull Persist persist,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nullable @jakarta.annotation.Nullable CommitObj head)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull Persist persist,
+      @Nonnull Reference reference,
+      @Nullable CommitObj head)
       throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
   }

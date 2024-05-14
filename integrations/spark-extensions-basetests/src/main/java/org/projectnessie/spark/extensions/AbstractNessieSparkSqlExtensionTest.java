@@ -90,6 +90,25 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(sql("DROP BRANCH `%s` IN nessie", branchName)).hasSize(1).containsExactly(row("OK"));
   }
 
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "USE REFERENCE %s IN nessie",
+        "/* leading */ CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
+        "/* some comment here */ USE REFERENCE %s IN nessie /* and there */ ",
+        "/* some comment here */ USE REFERENCE %s IN nessie -- and there",
+        "/* some comment here */\nUSE REFERENCE %s IN nessie\n-- and there",
+        "/* \nsome \ncomment \nhere */\nUSE REFERENCE %s IN nessie\n-- and there",
+        "/* leading -- leading \n */ CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
+        "-- leading \n CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
+        " -- leading \n -- leading \n -- leading \n CREATE BRANCH IF NOT EXISTS %s_other IN nessie",
+      })
+  @SuppressWarnings("FormatStringAnnotation")
+  public void testComments(String sql) throws NessieNotFoundException {
+    createBranchForTest(refName);
+    sql(sql, refName);
+  }
+
   @Test
   public void testRefreshAfterMergeWithIcebergTableCaching()
       throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {

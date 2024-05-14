@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.storage.cassandra.serializers;
 
+import jakarta.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -50,8 +50,7 @@ public final class ObjSerializers {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static ObjSerializer<Obj> forType(@Nonnull @jakarta.annotation.Nonnull ObjType type) {
+  public static ObjSerializer<Obj> forType(@Nonnull ObjType type) {
     ObjSerializer<?> serializer = CustomObjSerializer.INSTANCE;
     if (type instanceof StandardObjType) {
       switch ((StandardObjType) type) {

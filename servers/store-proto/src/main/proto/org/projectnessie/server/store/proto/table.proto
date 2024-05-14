@@ -100,8 +100,8 @@ message IcebergRefState {
 message IcebergViewState {
   int64 version_id = 1;
   int32 schema_id = 2;
-  string sql_text = 3;
-  string dialect = 4;
+  optional string sql_text = 3;
+  optional string dialect = 4;
 
   // See above for the rules how to retrieve metadata.
 
@@ -152,6 +152,9 @@ message Namespace {
 }
 
 message UDF {
-  string sql_text = 1;
-  string dialect = 2;
+  optional string sql_text = 1;
+  optional string dialect = 2;
+
+  optional int64 version_id = 3;
+  optional string metadata_location = 4;
 }

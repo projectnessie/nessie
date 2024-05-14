@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.indexes;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 @FunctionalInterface
 public interface IndexLoader<V> {
@@ -34,6 +34,5 @@ public interface IndexLoader<V> {
    *     (input) instance.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  StoreIndex<V>[] loadIndexes(@Nonnull @jakarta.annotation.Nonnull StoreIndex<V>[] indexes);
+  StoreIndex<V>[] loadIndexes(@Nonnull StoreIndex<V>[] indexes);
 }

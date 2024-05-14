@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.condi
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.keyPrefix;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.BATCH_GET_LIMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CONDITION_COMMON;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_REFERENCES_DELETED;
@@ -36,6 +37,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CON
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.CONDITION_STORE_REF;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.ITEM_SIZE_LIMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.KEY_NAME;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBSerde.attributeToString;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializePreviousPointers;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 import static software.amazon.awssdk.core.SdkBytes.fromByteArray;
@@ -47,6 +49,8 @@ import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.
 import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.IN;
 
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,8 +58,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -71,14 +74,17 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializers;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.ExpectedAttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
@@ -96,7 +102,6 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return DynamoDBBackendFactory.NAME;
@@ -108,17 +113,14 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public StoreConfig config() {
     return config;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
     try {
@@ -136,9 +138,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       reference = reference.withDeleted(false);
@@ -155,11 +156,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     try {
       reference = reference.withDeleted(false);
@@ -176,7 +174,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
     String condition = referenceCondition(reference);
@@ -203,8 +201,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(backend.tableRefs).key(referenceKeyMap(name)));
     if (!item.hasItem()) {
@@ -213,7 +210,7 @@ public class DynamoDBPersist implements Persist {
 
     Map<String, AttributeValue> i = item.item();
 
-    String createdAtStr = DynamoDBSerde.attributeToString(i, COL_REFERENCES_CREATED_AT);
+    String createdAtStr = attributeToString(i, COL_REFERENCES_CREATED_AT);
     long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
     return reference(
         name,
@@ -225,9 +222,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     List<Map<String, AttributeValue>> keys =
         new ArrayList<>(Math.min(names.length, BATCH_GET_LIMIT));
     Object2IntHashMap<String> nameToIndex =
@@ -270,8 +266,7 @@ public class DynamoDBPersist implements Persist {
         .forEach(
             item -> {
               String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
-              String createdAtStr =
-                  DynamoDBSerde.attributeToString(item, COL_REFERENCES_CREATED_AT);
+              String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
               long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
               Reference reference =
                   reference(
@@ -299,8 +294,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
     if (!item.hasItem()) {
@@ -312,9 +306,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
@@ -334,9 +326,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     GetItemResponse item =
         backend
             .client()
@@ -353,10 +343,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     List<Map<String, AttributeValue>> keys = new ArrayList<>(Math.min(ids.length, BATCH_GET_LIMIT));
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -419,10 +407,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
@@ -435,8 +421,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -466,12 +451,12 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     backend.client().deleteItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (ObjId id : ids) {
         if (id != null) {
@@ -482,7 +467,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
@@ -501,8 +486,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
       for (Obj obj : objs) {
@@ -518,11 +502,75 @@ public class DynamoDBPersist implements Persist {
     }
   }
 
-  @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    ObjId id = obj.id();
+
+    Map<String, ExpectedAttributeValue> expectedValues = conditionalUpdateExpectedValues(obj);
+
+    try {
+      backend
+          .client()
+          .deleteItem(
+              b -> b.tableName(backend.tableObjs).key(objKeyMap(id)).expected(expectedValues));
+      return true;
+    } catch (ConditionalCheckFailedException checkFailedException) {
+      return false;
+    }
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    Map<String, ExpectedAttributeValue> expectedValues = conditionalUpdateExpectedValues(expected);
+
+    Map<String, AttributeValueUpdate> updates =
+        objToItem(newValue, id, false).entrySet().stream()
+            .filter(e -> !COL_OBJ_TYPE.equals(e.getKey()) && !KEY_NAME.equals(e.getKey()))
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> AttributeValueUpdate.builder().value(e.getValue()).build()));
+
+    try {
+      // Although '.attributeUpdates()' + '.expected()' are deprecated those functionalities do
+      // work, unlike the recommended expression(s) approach, which fails with HTTP/550 for our
+      // 'updateConditional()'.
+      backend
+          .client()
+          .updateItem(
+              b ->
+                  b.tableName(backend.tableObjs)
+                      .key(objKeyMap(id))
+                      .attributeUpdates(updates)
+                      .expected(expectedValues));
+      return true;
+    } catch (ConditionalCheckFailedException checkFailedException) {
+      return false;
+    }
+  }
+
+  private static Map<String, ExpectedAttributeValue> conditionalUpdateExpectedValues(
+      UpdateableObj expected) {
+    Map<String, ExpectedAttributeValue> expectedValues = new HashMap<>();
+    expectedValues.put(
+        COL_OBJ_TYPE,
+        ExpectedAttributeValue.builder().value(fromS(expected.type().shortName())).build());
+    expectedValues.put(
+        COL_OBJ_VERS,
+        ExpectedAttributeValue.builder().value(fromS(expected.versionToken())).build());
+    return expectedValues;
+  }
+
+  @Nonnull
+  @Override
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
@@ -537,14 +585,13 @@ public class DynamoDBPersist implements Persist {
     ObjType type = ObjTypes.forShortName(attributeValue.s());
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Map<String, AttributeValue> inner = item.get(serializer.attributeName()).m();
-    return serializer.fromMap(id, inner);
+    String versionToken = attributeToString(item, COL_OBJ_VERS);
+    return serializer.fromMap(id, type, inner, versionToken);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   private Map<String, AttributeValue> objToItem(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, ObjId id, boolean ignoreSoftSizeRestrictions)
-      throws ObjTooLargeException {
+      @Nonnull Obj obj, ObjId id, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
     ObjType type = obj.type();
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
@@ -552,6 +599,9 @@ public class DynamoDBPersist implements Persist {
     Map<String, AttributeValue> inner = new HashMap<>();
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
+    if (obj instanceof UpdateableObj) {
+      item.put(COL_OBJ_VERS, fromS(((UpdateableObj) obj).versionToken()));
+    }
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =
@@ -568,9 +618,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private Map<String, AttributeValue> referenceAttributeValues(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference) {
+  private Map<String, AttributeValue> referenceAttributeValues(@Nonnull Reference reference) {
     Map<String, AttributeValue> item = new HashMap<>();
     item.put(KEY_NAME, referenceKey(reference.name()));
     DynamoDBSerde.objIdToAttribute(item, COL_REFERENCES_POINTER, reference.pointer());
@@ -586,8 +634,7 @@ public class DynamoDBPersist implements Persist {
     return item;
   }
 
-  private void conditionalReferencePut(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference, Reference expected) {
+  private void conditionalReferencePut(@Nonnull Reference reference, Reference expected) {
     String condition = referenceCondition(expected);
     Map<String, AttributeValue> values = referenceConditionAttributes(expected);
 
@@ -626,27 +673,22 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private AttributeValue referenceKey(@Nonnull @jakarta.annotation.Nonnull String reference) {
+  private AttributeValue referenceKey(@Nonnull String reference) {
     return fromS(keyPrefix + reference);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private Map<String, AttributeValue> referenceKeyMap(
-      @Nonnull @jakarta.annotation.Nonnull String reference) {
+  private Map<String, AttributeValue> referenceKeyMap(@Nonnull String reference) {
     return singletonMap(KEY_NAME, referenceKey(reference));
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private AttributeValue objKey(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  private AttributeValue objKey(@Nonnull ObjId id) {
     return fromS(keyPrefix + id);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private Map<String, AttributeValue> objKeyMap(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  private Map<String, AttributeValue> objKeyMap(@Nonnull ObjId id) {
     return singletonMap(KEY_NAME, objKey(id));
   }
 

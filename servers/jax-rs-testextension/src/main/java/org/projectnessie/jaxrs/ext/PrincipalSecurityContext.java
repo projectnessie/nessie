@@ -15,8 +15,8 @@
  */
 package org.projectnessie.jaxrs.ext;
 
+import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
-import javax.ws.rs.core.SecurityContext;
 
 public class PrincipalSecurityContext implements SecurityContext {
   private final Principal principal;

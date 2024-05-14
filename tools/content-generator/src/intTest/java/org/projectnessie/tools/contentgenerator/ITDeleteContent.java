@@ -36,6 +36,9 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.FetchOption;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
@@ -176,6 +179,77 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
           api.getCommitLog().refName(branch.getName()).get().getLogEntries().get(0).getCommitMeta();
       assertThat(commitMeta.getMessage()).contains("test-message-123");
       assertThat(commitMeta.getAuthor()).isEqualTo("Test Author 123 <test@example.com>");
+    }
+  }
+
+  @Test
+  void deleteRecursive() throws NessieNotFoundException, NessieConflictException {
+    try (NessieApiV2 api = buildNessieApi()) {
+      IcebergTable table = IcebergTable.of("testMeta", 1, 2, 3, 4);
+      Namespace nested = Namespace.of(CONTENT_KEY.getElements().get(0), "nested");
+      branch =
+          api.commitMultipleOperations()
+              .branchName(branch.getName())
+              .hash(branch.getHash())
+              .commitMeta(CommitMeta.fromMessage(COMMIT_MSG))
+              .operation(Operation.Put.of(nested.toContentKey(), nested))
+              .operation(Operation.Put.of(ContentKey.of(nested, "t1"), table))
+              .operation(Operation.Put.of(ContentKey.of(nested, "t2"), table))
+              .commit();
+    }
+
+    ProcessResult proc =
+        runGeneratorCmd(
+            "delete",
+            "--uri",
+            NESSIE_API_URI,
+            "--batch",
+            "1", // validate deleting keys before namespaces
+            "--branch",
+            branch.getName(),
+            "--recursive",
+            "--key",
+            CONTENT_KEY.getElements().get(0));
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+
+    try (NessieApiV2 api = buildNessieApi()) {
+      assertThat(api.getEntries().refName(branch.getName()).stream()).isEmpty();
+    }
+  }
+
+  @Test
+  void deleteAllRecursive() throws NessieNotFoundException {
+
+    ProcessResult proc =
+        runGeneratorCmd(
+            "delete",
+            "--uri",
+            NESSIE_API_URI,
+            "--all",
+            "--recursive",
+            "--key",
+            CONTENT_KEY.getElements().get(0));
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+
+    try (NessieApiV2 api = buildNessieApi()) {
+      assertThat(api.getEntries().refName(branch.getName()).stream()).isEmpty();
+      assertThat(api.getEntries().reference(api.getDefaultBranch()).stream()).isEmpty();
+    }
+  }
+
+  @Test
+  void deleteNothing() throws NessieNotFoundException {
+    Branch main;
+    try (NessieApiV2 api = buildNessieApi()) {
+      main = api.getDefaultBranch();
+    }
+
+    ProcessResult proc =
+        runGeneratorCmd("delete", "--uri", NESSIE_API_URI, "--recursive", "--key", "non-existent");
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+
+    try (NessieApiV2 api = buildNessieApi()) {
+      assertThat(api.getDefaultBranch()).isEqualTo(main); // no changes committed
     }
   }
 }

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.bigtable;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
@@ -29,8 +29,7 @@ final class BigTablePersistFactory implements PersistFactory {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Persist newPersist(@Nonnull @jakarta.annotation.Nonnull StoreConfig config) {
+  public Persist newPersist(@Nonnull StoreConfig config) {
     return new BigTablePersist(backend, config);
   }
 }

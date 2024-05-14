@@ -15,12 +15,16 @@
  */
 package org.projectnessie.testing.keycloak;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +35,7 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -61,7 +66,8 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     return ImmutableKeycloakConfig.builder();
   }
 
-  public static ClientRepresentation createServiceClient(String clientId) {
+  public static ClientRepresentation createServiceClient(
+      String clientId, List<String> clientScopes) {
     ClientRepresentation client = new ClientRepresentation();
 
     client.setClientId(clientId);
@@ -69,6 +75,15 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     client.setSecret(CLIENT_SECRET);
     client.setDirectAccessGrantsEnabled(true);
     client.setServiceAccountsEnabled(true);
+    client.setDefaultClientScopes(clientScopes);
+
+    // required for authorization code grant
+    client.setStandardFlowEnabled(true);
+    client.setRedirectUris(List.of("http://localhost:*"));
+
+    // required for device code grant
+    client.setAttributes(Map.of("oauth2.device.authorization.grant.enabled", "true"));
+
     client.setEnabled(true);
 
     return client;
@@ -90,10 +105,14 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     UserRepresentation user = new UserRepresentation();
 
     user.setUsername(username);
+    user.setFirstName(username);
+    user.setLastName(username);
     user.setEnabled(true);
     user.setCredentials(new ArrayList<>());
     user.setRealmRoles(realmRoles);
     user.setEmail(username + "@gmail.com");
+    user.setEmailVerified(true);
+    user.setRequiredActions(Collections.emptyList());
 
     CredentialRepresentation credential = new CredentialRepresentation();
 
@@ -108,14 +127,35 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
   @Value.Immutable
   public abstract static class KeycloakConfig {
+
+    public static final String DEFAULT_IMAGE;
+    public static final String DEFAULT_TAG;
+
+    static {
+      URL resource = KeycloakConfig.class.getResource("Dockerfile-keycloak-version");
+      try (InputStream in = resource.openConnection().getInputStream()) {
+        String[] imageTag =
+            Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
+                .map(String::trim)
+                .filter(l -> l.startsWith("FROM "))
+                .map(l -> l.substring(5).trim().split(":"))
+                .findFirst()
+                .orElseThrow();
+        DEFAULT_IMAGE = imageTag[0];
+        DEFAULT_TAG = imageTag[1];
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to extract tag from " + resource, e);
+      }
+    }
+
     @Value.Default
     public String dockerImage() {
-      return "quay.io/keycloak/keycloak";
+      return DEFAULT_IMAGE;
     }
 
     @Value.Default
     public String dockerTag() {
-      return "latest";
+      return DEFAULT_TAG;
     }
 
     @Value.Default
@@ -204,6 +244,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
     withNetworkAliases("keycloak");
     withFeaturesEnabled(config.featuresEnabled().toArray(new String[0]));
+    withStartupAttempts(3);
 
     // This will force all token issuer claims for the configured realm to be
     // equal to getInternalRealmUri(), and in turn equal to getTokenIssuerUri(),
@@ -229,9 +270,15 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     super.start();
     LOGGER.info("Keycloak started, creating realm {}...", config.realmName());
 
-    Keycloak adminClient = getKeycloakAdminClient();
     RealmRepresentation realm = createRealm();
-    adminClient.realms().create(realm);
+    Retry.execute(
+        () -> {
+          try (Keycloak adminClient = getKeycloakAdminClient()) {
+            adminClient.realms().create(realm);
+          }
+        },
+        5,
+        1000);
 
     LOGGER.info("Finished setting up Keycloak, external realm auth url: {}", getExternalRealmUri());
   }
@@ -268,8 +315,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
   @Override
   public void stop() {
     try {
-      Keycloak adminClient = getKeycloakAdminClient();
-      if (adminClient != null) {
+      try (Keycloak adminClient = getKeycloakAdminClient()) {
         RealmResource realm = adminClient.realm(config.realmName());
         realm.remove();
       }

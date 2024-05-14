@@ -1,13 +1,15 @@
+
+INHERIT: nav.yml
+
 site_name: "Project Nessie: Transactional Catalog for Data Lakes with Git-like semantics"
 site_description: "Project Nessie is a cloud native OSS service that works with Apache Iceberg to give your data lake cross-table transactions and a Git-like experience to data history."
 site_url: "https://projectnessie.org"
-edit_uri: ""
+repo_url: https://github.com/projectnessie/nessie
 strict: true
 remote_name: origin
 remote_branch: gh-pages
 use_directory_urls: true
-#include_search_page: false
-#search_index_only: true
+
 theme:
   name: material
   custom_dir: overrides
@@ -16,16 +18,23 @@ theme:
 
   features:
     - navigation.tabs
-    - navigation.expand
-    - navigation.instant
+    - navigation.tabs.sticky
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+
 extra_css:
   - stylesheets/extra.css
 
 extra:
   versions:
-    java: 0.74.0
-    python: v0.74.0
-    iceberg: 1.3.0
+    nessie: 0.82.0
+    iceberg: 1.5.0
   analytics:
     provider: google
     property: UA-177850801-1
@@ -35,21 +44,66 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
     - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/projectnessie/nessie
+      link: https://ghcr.io/projectnessie/nessie
     - icon: fontawesome/brands/github
       link: https://github.com/projectnessie/nessie
     - icon: fontawesome/brands/youtube
       link: https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ?view_as=subscriber
-repo_url: https://github.com/projectnessie/nessie
+
 plugins:
   - search
+  - monorepo
+  - privacy
   - awesome-pages:
-      filename: _config
+  - blog:
+      authors_file: ./blog/.authors.yml
+      post_excerpt: required
+      pagination_per_page: 5
+  - include-markdown:
+      start: "<!--start-->"
   - macros:
       on_error_fail: true
       module_name: macros
   - minify:
       minify_html: true
+  - redirects:
+      redirect_maps:
+        blog/incident-2022-05.md: blog/posts/2022-05-incident.md
+        blog/namespace-enforcement.md: blog/posts/2023-05-namespace-enforcement.md
+        develop/nessie_vs_git.md: guides/nessie_vs_git.md
+        features/best-practices.md: guides/best-practices.md
+        features/gc.md: nessie-latest/gc.md
+        features/intro.md: guides/index.md
+        features/management.md: guides/management.md
+        features/metadata_authorization.md: nessie-latest/authorization.md
+        features/security.md: nessie-latest/security.md
+        features/transactions.md: guides/transactions.md
+        features/index.md: guides/about.md
+        tables/iceberg.md: iceberg/iceberg.md
+        tables/views.md: iceberg/views.md
+        tables/index.md: guides/tables-views.md
+        tools/auth_config.md: nessie-latest/client_config.md
+        tools/cli.md: nessie-latest/cli.md
+        tools/client_config.md: nessie-latest/client_config.md
+        tools/export_import.md: nessie-latest/export_import.md
+        tools/iceberg/flink.md: iceberg/flink.md
+        tools/iceberg/hive.md: iceberg/hive.md
+        tools/iceberg/trino.md: iceberg/trino.md
+        tools/iceberg/index.md: iceberg/iceberg.md
+        tools/iceberg/spark.md: iceberg/spark.md
+        tools/index.md: nessie-latest/index.md
+        tools/migration.md: guides/migration.md
+        tools/sql.md: guides/sql.md
+        tools/ui.md: guides/ui.md
+        try/authentication.md: nessie-latest/authentication.md
+        try/configuration.md: nessie-latest/configuration.md
+        try/docker.md: guides/docker.md
+        try/grafana.md: guides/grafana.md
+        try/kubernetes.md: guides/kubernetes.md
+        try/releases.md: releases.md
+        try/server-upgrade.md: server-upgrade.md
+        try/index.md: guides/index.md
+
 markdown_extensions:
   - smarty
   - sane_lists
@@ -60,6 +114,8 @@ markdown_extensions:
   - markdown.extensions.def_list
   - markdown.extensions.footnotes
   - meta
+  - toc:
+      permalink: 🔗
   - markdown.extensions.toc:
       permalink: true
   - pymdownx.arithmatex:
@@ -88,7 +144,14 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+
+watch:
+  - in-dev
+  - overrides
+  - nav.yml
+  - macros.py

@@ -20,7 +20,6 @@ import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.Action
-import org.gradle.api.DefaultTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -29,25 +28,19 @@ import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.FileTree
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.resources.TextResource
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
-import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.module
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
@@ -78,6 +71,12 @@ fun DependencyHandlerScope.forScala(scalaVersion: String) {
   // Note: Quarkus contains Scala dependencies since 2.9.0
   add("implementation", "org.scala-lang:scala-library:$scalaVersion!!")
   add("implementation", "org.scala-lang:scala-reflect:$scalaVersion!!")
+  if (scalaVersion.startsWith("2.12")) {
+    // We only need this dependency for Scala 2.12, which does not have
+    // scala.jdk.CollectionConverters,
+    // but the deprecated JavaConverters.
+    add("implementation", "org.scala-lang.modules:scala-collection-compat_2.12:2.12.0!!")
+  }
 }
 
 /** Forces all [Test] tasks to use the given Java version. */
@@ -233,7 +232,8 @@ fun DependencyHandlerScope.nessieProject(
   return if (!isIncludedInNesQuEIT(project(":").dependencyProject.gradle)) {
     project(":$artifactId", configuration)
   } else {
-    module(NessieProjects.groupIdForArtifact(artifactId), artifactId, configuration = configuration)
+    val groupId = NessieProjects.groupIdForArtifact(artifactId)
+    create(groupId, artifactId, configuration = configuration)
   }
 }
 
@@ -289,7 +289,7 @@ fun Project.useBuildSubDirectory(buildSubDir: String) {
 fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkScala = project.name.split("-").last().split("_")
 
-  val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.2"
+  val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.3"
   val scalaMajorVersion = sparkScala[1]
 
   useBuildSubDirectory(scalaMajorVersion)
@@ -350,7 +350,6 @@ fun Project.useSparkScalaVersionsForProject(
 fun javaVersionForSpark(sparkMajorVersion: String): Int {
   val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
   return when (sparkMajorVersion) {
-    "3.2" -> 11
     "3.3",
     "3.4",
     "3.5" ->
@@ -372,29 +371,6 @@ class SparkScalaVersions(
   val scalaVersion: String,
   val runtimeJavaVersion: Int
 )
-
-abstract class UnixExecutableTask : DefaultTask() {
-  @get:OutputFile abstract val executable: RegularFileProperty
-
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val template: RegularFileProperty
-
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val sourceJar: RegularFileProperty
-
-  @TaskAction
-  fun exec() {
-    val exec = executable.get().asFile
-    exec.parentFile.mkdirs()
-    exec.outputStream().use { out ->
-      template.get().asFile.inputStream().use { i -> i.transferTo(out) }
-      sourceJar.get().asFile.inputStream().use { i -> i.transferTo(out) }
-    }
-    exec.setExecutable(true)
-  }
-}
 
 class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>) : Action<Task> {
   override fun execute(task: Task) {

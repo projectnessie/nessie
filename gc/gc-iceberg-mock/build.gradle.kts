@@ -19,7 +19,8 @@ plugins { id("nessie-conventions-iceberg") }
 extra["maven.name"] = "Nessie - GC - Mocked Iceberg data for tests"
 
 dependencies {
-  compileOnly(libs.iceberg.core)
+  compileOnly(platform(libs.iceberg.bom))
+  compileOnly("org.apache.iceberg:iceberg-core")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
@@ -35,15 +36,13 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   testRuntimeOnly(libs.logback.classic)
 
-  testImplementation(libs.iceberg.core)
+  testImplementation(platform(libs.iceberg.bom))
+  testImplementation("org.apache.iceberg:iceberg-core")
 
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)

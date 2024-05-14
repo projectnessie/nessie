@@ -15,9 +15,8 @@
  */
 package org.projectnessie.gc.contents.jdbc;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import org.intellij.lang.annotations.Language;
 
 final class SqlDmlDdl {
@@ -169,19 +168,10 @@ final class SqlDmlDdl {
           + "    FROM gc_live_set_contents \n"
           + "    WHERE live_set_id = ? AND content_id = ?";
 
-  static final List<String> ALL_CREATES =
-      Collections.unmodifiableList(
-          Arrays.asList(
-              CREATE_LIVE_SETS,
-              CREATE_LIVE_SET_CONTENTS,
-              CREATE_LIVE_SET_LOCATIONS,
-              CREATE_FILE_DELETIONS));
-
-  static final List<String> ALL_TABLE_NAMES =
-      Collections.unmodifiableList(
-          Arrays.asList(
-              "gc_live_set_content_locations",
-              "gc_live_set_contents",
-              "gc_live_sets",
-              "gc_file_deletions"));
+  static final Map<String, String> ALL_CREATES =
+      ImmutableMap.of(
+          "gc_live_sets", CREATE_LIVE_SETS,
+          "gc_live_set_contents", CREATE_LIVE_SET_CONTENTS,
+          "gc_live_set_content_locations", CREATE_LIVE_SET_LOCATIONS,
+          "gc_file_deletions", CREATE_FILE_DELETIONS);
 }

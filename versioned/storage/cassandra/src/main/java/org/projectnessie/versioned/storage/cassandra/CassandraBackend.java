@@ -59,8 +59,10 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.servererrors.CASWriteUnknownException;
+import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -74,17 +76,16 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class CassandraBackend implements Backend {
+public final class CassandraBackend implements Backend {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CassandraBackend.class);
 
@@ -94,7 +95,7 @@ final class CassandraBackend implements Backend {
   private final Map<String, PreparedStatement> statements = new ConcurrentHashMap<>();
   private final CqlSession session;
 
-  CassandraBackend(CassandraBackendConfig config, boolean closeClient) {
+  public CassandraBackend(CassandraBackendConfig config, boolean closeClient) {
     this.config = config;
     this.session = requireNonNull(config.client());
     this.closeClient = closeClient;
@@ -298,7 +299,7 @@ final class CassandraBackend implements Backend {
     }
   }
 
-  @NotNull
+  @Nonnull
   BoundStatement buildStatement(String cql, Object... values) {
     PreparedStatement prepared =
         statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));
@@ -310,7 +311,7 @@ final class CassandraBackend implements Backend {
         .build();
   }
 
-  @NotNull
+  @Nonnull
   BoundStatementBuilder newBoundStatementBuilder(String cql) {
     PreparedStatement prepared =
         statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));
@@ -357,7 +358,6 @@ final class CassandraBackend implements Backend {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public PersistFactory createFactory() {
     return new CassandraPersistFactory(this);
   }
@@ -426,13 +426,17 @@ final class CassandraBackend implements Backend {
           tableName,
           createTable);
 
-      checkState(
-          checkColumns(table.get(), expectedColumns),
-          "Expected columns %s do not contain all columns %s for table '%s'. DDL template:\n%s",
-          expectedColumns,
-          table.get().getColumns().keySet(),
-          tableName,
-          createTable);
+      List<String> missingColumns = checkColumns(table.get(), expectedColumns);
+      if (!missingColumns.isEmpty()) {
+        throw new IllegalStateException(
+            format(
+                "The database table %s is missing mandatory columns %s.%nFound columns : %s%nExpected columns : %s%nDDL template:\n%s",
+                tableName,
+                sortedColumnNames(missingColumns),
+                sortedColumnNames(table.get().getColumns().keySet()),
+                sortedColumnNames(expectedColumns),
+                createTable));
+      }
 
       // Existing table looks compatible
       return;
@@ -441,6 +445,10 @@ final class CassandraBackend implements Backend {
     SimpleStatement stmt =
         SimpleStatement.builder(createTable).setTimeout(config.ddlTimeout()).build();
     session.execute(stmt);
+  }
+
+  private static String sortedColumnNames(Collection<?> input) {
+    return input.stream().map(Object::toString).sorted().collect(Collectors.joining(","));
   }
 
   private boolean checkPrimaryKey(TableMetadata table, List<CqlColumn> expectedPrimaryKey) {
@@ -459,13 +467,14 @@ final class CassandraBackend implements Backend {
     return false;
   }
 
-  private boolean checkColumns(TableMetadata table, Set<CqlColumn> expectedColumns) {
+  private List<String> checkColumns(TableMetadata table, Set<CqlColumn> expectedColumns) {
+    List<String> missing = new ArrayList<>();
     for (CqlColumn expectedColumn : expectedColumns) {
       if (table.getColumn(expectedColumn.name()).isEmpty()) {
-        return false;
+        missing.add(expectedColumn.name());
       }
     }
-    return true;
+    return missing;
   }
 
   @Override

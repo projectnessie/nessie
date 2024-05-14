@@ -3,6 +3,9 @@
 In this guide we walk through the process of configuring a Nessie Service with secure HTTPS transport in
 [Minikube](https://minikube.sigs.k8s.io/docs/).
 
+Please familiarize yourself with the [Nessie Helm chart](../guides/kubernetes.md) and with our
+general-purpose [Minikube guide](./minikube.md) before proceeding.
+
 ## Setting up Minikube
 
 1. Start Minikube cluster: `minikube start`

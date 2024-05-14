@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.74.0](https://img.shields.io/badge/Version-0.74.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.82.0](https://img.shields.io/badge/Version-0.82.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -23,6 +23,11 @@ A Helm chart for Nessie.
 ## Source Code
 
 * <https://github.com/projectnessie/nessie>
+
+## Documentation
+
+See [Nessie on Kubernetes](https://projectnessie.org/try/kubernetes/)
+for more information.
 
 ## Installation
 
@@ -58,7 +63,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | authentication.oidcClientId | string | `"nessie"` | Set the OIDC client ID when authentication.enabled=true. Each application has a client ID that is used to identify the application |
 | authorization.enabled | bool | `false` | Specifies whether authorization for the nessie server should be enabled. |
 | authorization.rules | object | `{}` | The authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules |
-| autoscaling.enabled | bool | `false` | Specifies whether automatic horizontal scaling should be enabled. Do not enable this when using ROCKS version store type. |
+| autoscaling.enabled | bool | `false` | Specifies whether automatic horizontal scaling should be enabled. Do not enable this when using ROCKSDB version store type. |
 | autoscaling.maxReplicas | int | `3` | The maximum number of replicas to maintain. |
 | autoscaling.minReplicas | int | `1` | The minimum number of replicas to maintain. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Optional; set to zero or empty to disable. |
@@ -71,15 +76,17 @@ $ helm uninstall --namespace nessie-ns nessie
 | cassandra.contactPoints | string | `nil` |  |
 | cassandra.keyspace | string | `"nessie"` |  |
 | cassandra.localDatacenter | string | `nil` |  |
+| dynamodb.profile | string | `"default"` | The name of the profile that should be used, when loading AWS credentials from a profile file. Required only if no secret is provided below. |
 | dynamodb.region | string | `"us-west-2"` | The AWS region to use. |
 | dynamodb.secret.awsAccessKeyId | string | `"aws_access_key_id"` | The secret key storing the AWS secret key id. |
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
-| dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. |
+| dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. Optional; if not present, the default AWS credentials provider chain is used. |
 | extraEnv | list | `[]` | Advanced configuration via Environment Variables. Extra environment variables to add to the Nessie server container. You can pass here any valid EnvVar object: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core This can be useful to get configuration values from Kubernetes secrets or config maps. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart version. |
 | ingress.annotations | object | `{}` | Annotations to add to the ingress. |
+| ingress.className | string | `""` | Specifies the ingressClassName; leave empty if you don't want to customize it |
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
@@ -97,7 +104,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | postgres.secret.name | string | `"postgres-creds"` | The secret name to pull Postgres credentials from. |
 | postgres.secret.password | string | `"postgres_password"` | The secret key storing the Postgres password. |
 | postgres.secret.username | string | `"postgres_username"` | The secret key storing the Postgres username. |
-| replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using INMEMORY or ROCKS version store types. |
+| replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using IN_MEMORY or ROCKSDB version store types. |
 | resources | object | `{}` | Configures the resources requests and limits for nessie pods. We usually recommend not to specify default resources and to leave this as a conscious choice for the user. This also increases chances charts run on environments with little resources, such as Minikube. If you do want to specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'resources:'. |
 | rocksdb.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |
@@ -105,6 +112,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | securityContext | object | `{}` | Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
 | service.annotations | object | `{}` | Annotations to add to the service. |
 | service.port | int | `19120` | The port on which the service should listen. |
+| service.sessionAffinity | string | `"None"` | The session affinity for the service. Valid values are: None, ClientIP. ClientIP enables sticky sessions based on the client's IP address. This is generally beneficial to Nessie deployments, but some testing may be required in order to make sure that the load is distributed evenly among the pods. Also, this setting affects only internal clients, not external ones. If Ingress is enabled, it is recommended to set sessionAffinity to None. |
 | service.type | string | `"ClusterIP"` | The type of service to create. |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
@@ -117,173 +125,4 @@ $ helm uninstall --namespace nessie-ns nessie
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
 | tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
 | tracing.sample | string | `"1.0d"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and "1.0d" (inclusive). E.g. "0.5d" means that 50% of the requests will be sampled. |
-| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-quarkus-cli tool's export/import functionality.) |
-
-## Using secrets
-
-### Providing secrets for Dynamo Version Store
-
-* Make sure you have a Secret in the following form:
-```
-> cat $PWD/awscreds
-aws_access_key_id=YOURACCESSKEYDATA
-aws_secret_access_key=YOURSECRETKEYDATA
-```
-
-* Create the secret from the given file
-  `kubectl create secret generic awscreds --from-env-file="$PWD/awscreds"`
-
-* Now you can use `DYNAMO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=DYNAMO`.
-
-### Providing secrets for MongoDB
-
-* Providing secrets for MongoDB is strongly recommended, but not enforced.
-* Make sure you have a Secret in the following form:
-```
-> cat $PWD/mongodb-creds
-mongodb_username=YOUR_USERNAME
-mongodb_password=YOUR_PASSWORD
-```
-
-* Create the secret from the given file
-  `kubectl create secret generic mongodb-creds --from-env-file="$PWD/mongodb-creds"`
-
-* The `mongodb-creds` secret will now be picked up when you use `MONGO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=MONGO`.
-
-### Providing secrets for Transactional Version Store
-
-* Make sure you have a Secret in the following form:
-```
-> cat $PWD/postgres-creds
-postgres_username=YOUR_USERNAME
-postgres_password=YOUR_PASSWORD
-```
-
-* Create the secret from the given file
-  `kubectl create secret generic postgres-creds --from-env-file="$PWD/postgres-creds"`
-
-* Now you can use `TRANSACTIONAL` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=TRANSACTIONAL`.
-
-## Dev installation
-
-* Install Minikube as described in https://minikube.sigs.k8s.io/docs/start/
-* Install Helm as described in https://helm.sh/docs/intro/install/
-* Start Minikube cluster: `minikube start`
-* Create K8s Namespace: `kubectl create namespace nessie-ns`
-* Install Nessie Helm chart: `helm install nessie -n nessie-ns helm/nessie`
-
-### Ingress with Minikube
-
-This is broadly following the example from https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
-
-* Start Minikube cluster: `minikube start`
-* Enable NGINX Ingress controller: `minikube addons enable ingress`
-* Verify Ingress controller is running: `kubectl get pods -n ingress-nginx`
-* Create K8s Namespace: `kubectl create namespace nessie-ns`
-* Install Nessie Helm chart with Ingress enabled:
-  ```bash
-  helm install nessie -n nessie-ns helm/nessie \
-    --set ingress.enabled=true \
-    --set ingress.hosts[0].host='chart-example.local' \
-    --set ingress.hosts[0].paths[0]='/'
-  ```
-
-* Verify that the IP address is set:
-  ```bash
-  kubectl get ingress -n nessie-ns
-  NAME     CLASS   HOSTS   ADDRESS        PORTS   AGE
-  nessie   nginx   *       192.168.49.2   80      4m35s
-  ```
-* Use the IP from the above output and add it to `/etc/hosts` via `echo "192.168.49.2 chart-example.local" | sudo tee /etc/hosts`
-* Verify that `curl chart-example.local` works
-
-### OpenTelemetry Collector with Minikube
-
-* Start Minikube cluster: `minikube start`
-* Create K8s Namespace: `kubectl create namespace nessie-ns`
-* Install cert-manager:
-
-```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
-```
-
-* Install Jaeger Operator:
-
-```bash
-kubectl create namespace observability
-kubectl apply -f https://github.com/jaegertracing/jaeger-operator/releases/download/v1.42.0/jaeger-operator.yaml -n observability
-```
-
-If the above command fails with "failed to call webhook [...] connection refused", then cert-manager
-was not yet ready. Wait a few seconds and try again.
-
-* Create a Jaeger instance in Nessie's namespace:
-
-```bash
-kubectl apply -n nessie-ns -f - <<EOF
-apiVersion: jaegertracing.io/v1
-kind: Jaeger
-metadata:
-  name: jaeger
-EOF
-```
-
-If the above command fails with "failed to call webhook [...] connection refused", then the Jaeger
-Operator was not yet ready. Wait a few seconds and try again.
-
-* Install Nessie Helm chart with OpenTelemetry Collector enabled:
-
-```bash
-helm install nessie -n nessie-ns helm/nessie \
-  --set tracing.enabled=true \
-  --set tracing.endpoint=http://jaeger-collector:4317
-```
-
-* Forward ports to Jaeger UI and Nessie UI:
-
-```bash
-kubectl port-forward -n nessie-ns service/nessie 19120:19120 &
-kubectl port-forward -n nessie-ns service/jaeger-query 16686:16686 &
-```
-
-* Open the following URLs in your browser:
-  * Nessie UI (to generate some traces): http://localhost:19120
-  * Jaeger UI (to retrieve the traces): http://localhost:16686/search
-
-To kill the port forwarding processes, run:
-
-```bash
-killall -9 kubectl
-```
-
-### Custom Docker images for Nessie with Minikube
-
-You can modify Nessie's code and deploy it to Minikube.
-
-Once you've satisfied with your changes, build the project with:
-
-```bash
-./gradlew :nessie-quarkus:quarkusBuild
-```
-
-Then build the Docker image and deploy it as follows:
-
-```bash
-eval $(minikube docker-env)
-docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-test:latest ./servers/quarkus-server
-```
-
-Then deploy Nessie with the custom Docker image:
-
-```bash
-helm install nessie -n nessie-ns helm/nessie \
-  --set image.repository=nessie-test \
-  --set image.tag=latest
-```
-
-### Stop/Uninstall everything in Dev
-
-```sh
-helm uninstall --namespace nessie-ns nessie
-minikube delete
-```
+| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-server-admin-tool's export/import functionality.) |

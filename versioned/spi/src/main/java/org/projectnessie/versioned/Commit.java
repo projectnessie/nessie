@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.CommitMeta;
 
@@ -32,10 +32,8 @@ public interface Commit extends Hashable {
   CommitMeta getCommitMeta();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Hash getParentHash();
 
   @Nullable
-  @jakarta.annotation.Nullable
   List<Operation> getOperations();
 }

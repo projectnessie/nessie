@@ -22,21 +22,16 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-spi"))
 
-  // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)
-  compileOnly(libs.javax.ws.rs)
-  compileOnly(libs.javax.ws.rs21)
   compileOnly(libs.jakarta.enterprise.cdi.api)
-  compileOnly(libs.javax.enterprise.cdi.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
 
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
@@ -59,21 +54,6 @@ dependencies {
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-util")
   implementation(
     "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-external"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jdk-http"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-simple"
-  )
-  implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty"
   )
 
   implementation("org.jboss.weld.se:weld-se-core")

@@ -15,8 +15,11 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
@@ -47,5 +50,14 @@ public class DeleteContent extends BulkCommittingCommand {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  protected Iterator<List<ContentKey>> partitionKeys(Stream<ContentKey> input, int batchSize) {
+    // Note: Nessie Servers generally return entries in the natural order of ContentKey, so sorting
+    // the stream in the reverse order could have a significant memory impact. At this point the
+    // task of allocating enough heap and/or providing command args to limit the size of the stream
+    // is left to the user.
+    return super.partitionKeys(input.sorted(Comparator.reverseOrder()), batchSize);
   }
 }

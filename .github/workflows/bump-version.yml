@@ -53,7 +53,7 @@ jobs:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       with:
         ref: ${{ env.BUMP_ON_BRANCH }}
     - name: Setup Java, Gradle
@@ -63,8 +63,8 @@ jobs:
     - name: Get previous version information
       run: echo "PREVIOUS_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
 
-    - name: Bump to version
-      uses: gradle/gradle-build-action@v2
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
       env:
         # Same as for ci.yml
         GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17
@@ -72,17 +72,14 @@ jobs:
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
         cache-read-only: true
-        arguments: :bumpVersion --bumpType ${{ env.BUMP_TYPE }}
+
+    - name: Bump to version
+      run: ./gradlew :bumpVersion --bumpType ${{ env.BUMP_TYPE }}
 
     - name: Get bumped version information
       run: |
         echo "BUMPED_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
         echo "BUMPED_VERSION_NO_SNAPSHOT=${BUMPED_VERSION%-SNAPSHOT}" >> ${GITHUB_ENV}
-
-    - name: Bump versions for Python, site/, helm and UI
-      uses: ./.github/actions/bump-versions
-      with:
-        new-version: ${{ env.BUMPED_VERSION_NO_SNAPSHOT }}
 
     - name: Configure bump-version-bot-user in git config
       run: |

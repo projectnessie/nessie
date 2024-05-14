@@ -17,26 +17,85 @@ package org.projectnessie.server;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.ResourceArg;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.keycloak.client.KeycloakTestClient;
+import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
+import java.util.Properties;
+import org.projectnessie.client.auth.oauth2.AuthorizationCodeResourceOwnerEmulator;
+import org.projectnessie.client.auth.oauth2.DeviceCodeResourceOwnerEmulator;
+import org.projectnessie.client.auth.oauth2.GrantType;
+import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusIntegrationTest
 @QuarkusTestResource(
     restrictToAnnotatedClass = true,
-    value = KeycloakTestResourceLifecycleManager.class)
+    value = KeycloakTestResourceLifecycleManager.class,
+    initArgs =
+        @ResourceArg(
+            name = KeycloakTestResourceLifecycleManager.KEYCLOAK_CLIENT_SCOPES,
+            value = "scope1,scope2"))
 @TestProfile(ITOAuth2Authentication.Profile.class)
 public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
 
   private final KeycloakTestClient keycloakClient = new KeycloakTestClient();
 
   @Override
-  protected String tokenEndpoint() {
-    return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/token";
+  protected Properties clientCredentialsConfig() {
+    Properties config = super.clientCredentialsConfig();
+    String issuerUrl = keycloakClient.getAuthServerUrl();
+    config.setProperty("nessie.authentication.oauth2.issuer-url", issuerUrl);
+    return config;
+  }
+
+  @Override
+  protected Properties deviceCodeConfig() {
+    Properties config = super.deviceCodeConfig();
+    // Keycloak advertises the token endpoint using whichever hostname was provided in the request,
+    // but the authentication endpoints are always advertised at keycloak:8080, which is
+    // the configured KC_HOSTNAME_URL env var and corresponds to the Docker internal network
+    // address. This works for the authorization code flow because ResourceOwnerEmulator knows how
+    // to deal with this; but for the device flow we need to use a different hostname, so endpoint
+    // discovery is not an option here.
+    config.setProperty(
+        "nessie.authentication.oauth2.device-auth-endpoint",
+        keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/auth/device");
+    return config;
+  }
+
+  @Override
+  protected ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException {
+    return switch (grantType) {
+      case CLIENT_CREDENTIALS, PASSWORD -> ResourceOwnerEmulator.INACTIVE;
+      case AUTHORIZATION_CODE -> newAuthorizationCodeResourceOwner();
+      case DEVICE_CODE -> newDeviceCodeResourceOwner();
+      default -> throw new IllegalArgumentException("Unsupported grant type: " + grantType);
+    };
+  }
+
+  private AuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
+      throws IOException {
+    AuthorizationCodeResourceOwnerEmulator resourceOwner =
+        new AuthorizationCodeResourceOwnerEmulator("alice", "alice");
+    resourceOwner.replaceSystemOut();
+    resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
+    resourceOwner.setErrorListener(e -> api().close());
+    return resourceOwner;
+  }
+
+  private DeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
+    DeviceCodeResourceOwnerEmulator resourceOwner =
+        new DeviceCodeResourceOwnerEmulator("alice", "alice");
+    resourceOwner.replaceSystemOut();
+    resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
+    resourceOwner.setErrorListener(e -> api().close());
+    return resourceOwner;
   }
 
   public static class Profile implements QuarkusTestProfile {

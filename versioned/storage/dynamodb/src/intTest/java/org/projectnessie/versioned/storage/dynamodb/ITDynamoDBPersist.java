@@ -35,6 +35,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
+import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;

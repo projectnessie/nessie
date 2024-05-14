@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.mongodb;
 
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
+import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(MongoDBBackendTestFactory.class)

@@ -30,10 +30,10 @@ public class TestClassesAvailability {
     "org.projectnessie.versioned.storage.serialize.ProtoSerialization",
     // from nessie-versioned-storage-store
     "org.projectnessie.versioned.storage.versionstore.VersionStoreImpl",
-    // from nessie-versioned-storage-inmemory
-    "org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory",
-    // from nessie-versioned-storage-rocksdb
-    "org.projectnessie.versioned.storage.rocksdb.RocksDBBackendTestFactory",
+    // from nessie-versioned-storage-inmemory-tests
+    "org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory",
+    // from nessie-versioned-storage-rocksdb-tests
+    "org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory",
     // from nessie-versioned-storage-mongodb
     "org.projectnessie.versioned.storage.mongodb.MongoDBBackendFactory",
     // from nessie-versioned-storage-cache

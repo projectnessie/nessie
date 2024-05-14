@@ -30,11 +30,8 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.agrona)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
@@ -64,7 +61,6 @@ dependencies {
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  // javax/jakarta
   testCompileOnly(libs.jakarta.validation.api)
   testCompileOnly(libs.jakarta.annotation.api)
 

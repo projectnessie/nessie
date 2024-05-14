@@ -71,6 +71,11 @@ spec:
             - name: AWS_REGION
               value: {{ .Values.dynamodb.region }}
             {{- end }}
+            {{- if .Values.dynamodb.profile }}
+            - name: AWS_PROFILE
+              value: {{ .Values.dynamodb.profile }}
+            {{- end }}
+            {{- if .Values.dynamodb.secret }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -81,6 +86,7 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.dynamodb.secret.name }}
                   key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
+            {{- end }}
             {{- end }}
 
             {{- if eq .Values.versionStoreType "CASSANDRA" }}
@@ -172,8 +178,8 @@ spec:
               value: {{ .Values.authentication.oidcClientId }}
             {{- end }}
             {{- else }}
-            - name: QUARKUS_LOG_CATEGORY__IO_QUARKUS_OIDC__LEVEL
-              value: "ERROR"
+            - name: QUARKUS_OIDC_TENANT_ENABLED
+              value: "false"
             {{- end }}
 
             {{- if .Values.authorization.enabled }}
@@ -191,20 +197,20 @@ spec:
             - name: QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.tracing.endpoint | quote }}
             {{- if .Values.tracing.attributes }}
-            - name: QUARKUS_OTEL_TRACER_RESOURCE_ATTRIBUTES
+            - name: QUARKUS_OTEL_RESOURCE_ATTRIBUTES
               value: "{{- include "nessie.dictToString" .Values.tracing.attributes }}"
             {{- end }}
             {{- if .Values.tracing.sample }}
             {{ if eq .Values.tracing.sample "all" }}
-            - name: QUARKUS_OTEL_TRACER_SAMPLER
+            - name: QUARKUS_OTEL_TRACES_SAMPLER
               value: "parentbased_always_on"
             {{- else if eq .Values.tracing.sample "none" }}
-            - name: QUARKUS_OTEL_TRACER_SAMPLER
+            - name: QUARKUS_OTEL_TRACES_SAMPLER
               value: "always_off"
             {{- else }}
-            - name: QUARKUS_OTEL_TRACER_SAMPLER
+            - name: QUARKUS_OTEL_TRACES_SAMPLER
               value: "parentbased_traceidratio"
-            - name: QUARKUS_OTEL_TRACER_SAMPLER_ARG
+            - name: QUARKUS_OTEL_TRACES_SAMPLER_ARG
               value: {{ .Values.tracing.sample | quote }}
             {{- end }}
             {{- end }}
@@ -222,11 +228,14 @@ spec:
             - name: nessie-server
               containerPort: 19120
               protocol: TCP
+            - name: nessie-mgmt
+              containerPort: 9000
+              protocol: TCP
           livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /q/health/live
-              port: 19120
+              port: 9000
               scheme: HTTP
             initialDelaySeconds: 2
             periodSeconds: 30
@@ -236,7 +245,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /q/health/ready
-              port: 19120
+              port: 9000
               scheme: HTTP
             initialDelaySeconds: 3
             periodSeconds: 45

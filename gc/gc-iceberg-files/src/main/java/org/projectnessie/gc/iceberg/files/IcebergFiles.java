@@ -15,9 +15,9 @@
  */
 package org.projectnessie.gc.iceberg.files;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterators.AbstractSpliterator;
@@ -33,7 +33,10 @@ import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.iceberg.aws.s3.S3FileIO;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.ResolvingFileIO;
+import org.apache.iceberg.io.SupportsBulkOperations;
+import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.immutables.value.Value;
 import org.projectnessie.gc.files.DeleteResult;
 import org.projectnessie.gc.files.DeleteSummary;
@@ -41,6 +44,7 @@ import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.files.NessieFileIOException;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,23 +64,20 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   }
 
   static Stream<String> filesAsStrings(Stream<FileReference> fileObjects) {
-    return fileObjects.map(FileReference::absolutePath).map(URI::toString);
-  }
-
-  static URI ensureTrailingSlash(URI uri) {
-    if (uri.getPath().endsWith("/")) {
-      return uri;
-    }
-    return URI.create(uri + "/");
+    return fileObjects.map(FileReference::absolutePath).map(StorageUri::location);
   }
 
   public interface Builder {
+    @CanIgnoreReturnValue
     Builder hadoopConfiguration(Configuration hadoopConfiguration);
 
+    @CanIgnoreReturnValue
     Builder putProperties(String key, String value);
 
+    @CanIgnoreReturnValue
     Builder putAllProperties(Map<String, ? extends String> entries);
 
+    @CanIgnoreReturnValue
     Builder properties(Map<String, ? extends String> entries);
 
     IcebergFiles build();
@@ -92,9 +93,6 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @SuppressWarnings("immutables:incompat")
   private volatile boolean hasResolvingFileIO;
 
-  @SuppressWarnings("immutables:incompat")
-  private volatile boolean hasS3FileIO;
-
   @Value.Lazy
   public FileIO resolvingFileIO() {
     ResolvingFileIO fileIO = new ResolvingFileIO();
@@ -105,32 +103,21 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     return fileIO;
   }
 
-  @Value.Lazy
-  S3FileIO s3() {
-    S3FileIO fileIO = new S3FileIO();
-    fileIO.initialize(properties());
-    hasS3FileIO = true;
-    LOGGER.debug("Instantiated Iceberg's S3FileIO");
-    return fileIO;
-  }
-
   @Override
   public void close() {
-    try {
-      if (hasS3FileIO) {
-        s3().close();
-      }
-    } finally {
-      if (hasResolvingFileIO) {
-        resolvingFileIO().close();
-      }
+    if (hasResolvingFileIO) {
+      resolvingFileIO().close();
     }
   }
 
-  private boolean isS3(URI uri) {
-    switch (uri.getScheme()) {
+  private boolean supportsBulkAndPrefixOperations(StorageUri uri) {
+    switch (uri.scheme()) {
       case "s3":
       case "s3a":
+      case "s3n":
+      case "gs":
+      case "abfs":
+      case "abfss":
         return true;
       default:
         return false;
@@ -139,31 +126,35 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
 
   @Override
   @MustBeClosed
-  public Stream<FileReference> listRecursively(URI path) throws NessieFileIOException {
-    URI basePath = ensureTrailingSlash(path);
-    if (isS3(path)) {
+  public Stream<FileReference> listRecursively(StorageUri path) throws NessieFileIOException {
+    StorageUri basePath = path.withTrailingSeparator();
+    if (supportsBulkAndPrefixOperations(path)) {
 
       @SuppressWarnings("resource")
-      S3FileIO fileIo = s3();
-      return StreamSupport.stream(fileIo.listPrefix(basePath.toString()).spliterator(), false)
+      SupportsPrefixOperations fileIo = (SupportsPrefixOperations) resolvingFileIO();
+      Iterable<FileInfo> fileInfos;
+      try {
+        fileInfos = fileIo.listPrefix(basePath.toString());
+      } catch (Exception e) {
+        throw new NessieFileIOException("Failed to list prefix of " + path, e);
+      }
+      return StreamSupport.stream(fileInfos.spliterator(), false)
           .map(
               f ->
                   FileReference.of(
-                      basePath.relativize(URI.create(f.location())),
-                      basePath,
-                      f.createdAtMillis()));
+                      basePath.relativize(f.location()), basePath, f.createdAtMillis()));
     }
 
     return listHadoop(basePath);
   }
 
-  private Stream<FileReference> listHadoop(URI basePath) throws NessieFileIOException {
-    Path p = new Path(basePath);
+  private Stream<FileReference> listHadoop(StorageUri basePath) throws NessieFileIOException {
+    Path p = new Path(basePath.location());
     FileSystem fs;
     try {
       fs = p.getFileSystem(hadoopConfiguration());
     } catch (IOException e) {
-      throw new NessieFileIOException(e);
+      throw new NessieFileIOException("Failed to get Hadoop file system " + basePath, e);
     }
 
     return StreamSupport.stream(
@@ -186,14 +177,14 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
               if (status.isFile()) {
                 action.accept(
                     FileReference.of(
-                        basePath.relativize(status.getPath().toUri()),
+                        basePath.relativize(StorageUri.of(status.getPath().toUri())),
                         basePath,
                         status.getModificationTime()));
               }
 
               return true;
             } catch (IOException e) {
-              throw new RuntimeException(e);
+              throw new RuntimeException("Failed to list (via Hadoop) " + basePath, e);
             }
           }
         },
@@ -203,9 +194,9 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   @Override
   public DeleteResult delete(FileReference fileReference) {
     try {
-      URI absolutePath = fileReference.absolutePath();
+      StorageUri absolutePath = fileReference.absolutePath();
       @SuppressWarnings("resource")
-      FileIO fileIO = isS3(absolutePath) ? s3() : resolvingFileIO();
+      FileIO fileIO = resolvingFileIO();
       fileIO.deleteFile(absolutePath.toString());
       return DeleteResult.SUCCESS;
     } catch (Exception e) {
@@ -215,10 +206,10 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   }
 
   @Override
-  public DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
+  public DeleteSummary deleteMultiple(StorageUri baseUri, Stream<FileReference> fileObjects) {
     Stream<String> filesAsStrings = filesAsStrings(fileObjects);
 
-    if (isS3(baseUri)) {
+    if (supportsBulkAndPrefixOperations(baseUri)) {
       return s3DeleteMultiple(filesAsStrings);
     }
     return hadoopDeleteMultiple(filesAsStrings);
@@ -226,7 +217,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
 
   private DeleteSummary s3DeleteMultiple(Stream<String> filesAsStrings) {
     @SuppressWarnings("resource")
-    S3FileIO fileIo = s3();
+    SupportsBulkOperations fileIo = (SupportsBulkOperations) resolvingFileIO();
 
     List<String> files = filesAsStrings.collect(Collectors.toList());
     long failed = 0L;

@@ -19,13 +19,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singleton;
 
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -37,6 +38,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 
 class InmemoryPersist implements ValidatingPersist {
@@ -63,7 +65,6 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return InmemoryBackendFactory.NAME;
@@ -71,20 +72,18 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public StoreConfig config() {
     return config;
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     return inmemory.references.get(compositeKey(name));
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     Reference[] r = new Reference[names.length];
     for (int i = 0; i < names.length; i++) {
       String name = names[i];
@@ -97,9 +96,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
     Reference ex = inmemory.references.putIfAbsent(compositeKey(reference.name()), reference);
@@ -111,8 +108,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     Reference[] result = new Reference[1];
 
@@ -136,7 +132,7 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     Reference[] result = new Reference[1];
     inmemory.references.computeIfPresent(
@@ -157,10 +153,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     Reference asUpdated = reference.forNewPointer(newPointer, config);
 
@@ -190,8 +183,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj obj = inmemory.objects.get(compositeKey(id));
     if (obj == null) {
       throw new ObjNotFoundException(id);
@@ -201,9 +193,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = inmemory.objects.get(compositeKey(id));
     if (obj == null || !obj.type().equals(type)) {
@@ -216,9 +206,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj obj = inmemory.objects.get(compositeKey(id));
     if (obj == null) {
       throw new ObjNotFoundException(id);
@@ -228,9 +216,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     Obj[] r = new Obj[ids.length];
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
@@ -254,8 +240,7 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
@@ -269,9 +254,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       if (objs[i] != null) {
@@ -282,12 +265,12 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     inmemory.objects.remove(compositeKey(id));
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     for (ObjId id : ids) {
       if (id != null) {
         deleteObj(id);
@@ -296,14 +279,13 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     verifySoftRestrictions(obj);
     inmemory.objects.put(compositeKey(obj.id()), obj);
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     for (Obj obj : objs) {
       if (obj != null) {
         upsertObj(obj);
@@ -312,15 +294,57 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    return updateDeleteConditional(obj, null);
+  }
+
+  @Override
+  public boolean updateConditional(
+      @Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue) {
+    ObjId id = expected.id();
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    return updateDeleteConditional(expected, newValue);
+  }
+
+  private boolean updateDeleteConditional(UpdateableObj expected, UpdateableObj newValue) {
+    AtomicBoolean result = new AtomicBoolean();
+    inmemory.objects.compute(
+        compositeKey(expected.id()),
+        (k, v) -> {
+          if (v == null) {
+            // not present
+            return null;
+          } else {
+            if (!v.type().equals(expected.type())) {
+              // another object type - don't touch
+              return v;
+            }
+
+            UpdateableObj uv = (UpdateableObj) v;
+            if (!uv.versionToken().equals(expected.versionToken())) {
+              // different version - don't touch
+              return v;
+            }
+
+            // same version-token --> remove
+            result.set(true);
+            return newValue;
+          }
+        });
+    return result.get();
+  }
+
+  @Override
   public void erase() {
     inmemory.eraseRepositories(singleton(config().repositoryId()));
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes::contains);
   }
 

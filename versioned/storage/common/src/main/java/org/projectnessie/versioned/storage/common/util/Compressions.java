@@ -22,6 +22,8 @@ import java.io.OutputStream;
 import java.util.function.Consumer;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterOutputStream;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.xerial.snappy.SnappyInputStream;
@@ -38,7 +40,7 @@ public final class Compressions {
       compression.accept(Compression.NONE);
       return bytes;
     }
-    Compression compr = Compression.SNAPPY;
+    Compression compr = Compression.GZIP;
     compression.accept(compr);
     return compress(compr, bytes);
   }
@@ -47,6 +49,8 @@ public final class Compressions {
     switch (compression) {
       case NONE:
         return uncompressed;
+      case GZIP:
+        return gzip(uncompressed);
       case DEFLATE:
         return deflate(uncompressed);
       case SNAPPY:
@@ -60,6 +64,8 @@ public final class Compressions {
     switch (compression) {
       case NONE:
         return compressed;
+      case GZIP:
+        return gunzip(compressed);
       case DEFLATE:
         return inflate(compressed);
       case SNAPPY:
@@ -67,6 +73,26 @@ public final class Compressions {
       default:
         throw new IllegalArgumentException("Compression " + compression + " not implemented");
     }
+  }
+
+  private static byte[] gzip(byte[] uncompressed) {
+    ByteArrayOutputStream out = new ByteArrayOutputStream(uncompressed.length);
+    try (OutputStream def = new GZIPOutputStream(out)) {
+      def.write(uncompressed);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return out.toByteArray();
+  }
+
+  private static byte[] gunzip(byte[] compressed) {
+    ByteArrayOutputStream out = new ByteArrayOutputStream(compressed.length * 2);
+    try (InputStream gz = new GZIPInputStream(new ByteArrayInputStream(compressed))) {
+      gz.transferTo(out);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return out.toByteArray();
   }
 
   private static byte[] deflate(byte[] uncompressed) {

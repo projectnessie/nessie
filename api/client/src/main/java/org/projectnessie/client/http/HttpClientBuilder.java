@@ -57,6 +57,7 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
     return (HttpClientBuilder) super.withUri(uri);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public HttpClientBuilder fromSystemProperties() {
     return (HttpClientBuilder) super.fromSystemProperties();
@@ -103,6 +104,13 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
   }
 
   @Override
+  public HttpClientBuilder withSSLCertificateVerificationDisabled(
+      boolean certificateVerificationDisabled) {
+    return (HttpClientBuilder)
+        super.withSSLCertificateVerificationDisabled(certificateVerificationDisabled);
+  }
+
+  @Override
   public HttpClientBuilder withSSLContext(SSLContext sslContext) {
     return (HttpClientBuilder) super.withSSLContext(sslContext);
   }
@@ -123,8 +131,15 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
   }
 
   @Override
+  @Deprecated
+  @SuppressWarnings("deprecation")
   public HttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient) {
     return (HttpClientBuilder) super.withForceUrlConnectionClient(forceUrlConnectionClient);
+  }
+
+  @Override
+  public HttpClientBuilder withClientName(String clientName) {
+    return (HttpClientBuilder) super.withClientName(clientName);
   }
 
   @Override
@@ -135,6 +150,16 @@ public class HttpClientBuilder extends NessieHttpClientBuilderImpl {
   @Override
   public HttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory) {
     return (HttpClientBuilder) super.withResponseFactory(responseFactory);
+  }
+
+  @Override
+  public HttpClientBuilder addRequestFilter(RequestFilter filter) {
+    return (HttpClientBuilder) super.addRequestFilter(filter);
+  }
+
+  @Override
+  public HttpClientBuilder addResponseFilter(ResponseFilter filter) {
+    return (HttpClientBuilder) super.addResponseFilter(filter);
   }
 
   @Override

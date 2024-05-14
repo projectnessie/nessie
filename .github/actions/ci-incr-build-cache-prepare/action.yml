@@ -28,14 +28,17 @@ runs:
           echo "GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE=${{ inputs.job-instance }}" >> ${GITHUB_ENV}
         fi
 
-    - name: Gradle / Init
-      uses: gradle/gradle-build-action@v2
+    - name: Gradle / Setup
+      uses: gradle/actions/setup-gradle@v3
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
-        arguments: -h
+
+    - name: Gradle / Init
+      shell: bash
+      run: ./gradlew -h
 
     - name: Download existing workflow artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       # Just in case, don't know the exact inner workings of Gradle's build cache and whether
       # the download-action complains about duplicate files.
       continue-on-error: true

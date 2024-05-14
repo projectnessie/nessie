@@ -15,14 +15,15 @@
  */
 package org.projectnessie.client;
 
+import static java.util.Collections.singleton;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_HOSTS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_MATCHER;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_CIPHER_SUITES;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_PROTOCOLS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
@@ -39,6 +40,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -59,6 +62,11 @@ public interface NessieClientBuilder {
    * client.
    */
   String name();
+
+  /** Client names supported by this implementation. */
+  default Set<String> names() {
+    return singleton(name());
+  }
 
   /**
    * Priority ordinal used to select the most relevant {@link NessieClientBuilder} implementation.
@@ -154,6 +162,14 @@ public interface NessieClientBuilder {
   NessieClientBuilder withDisableCompression(boolean disableCompression);
 
   /**
+   * Optional, disables certificate verifications, if set to {@code true}. Can be useful for testing
+   * purposes, not recommended for production systems.
+   */
+  @CanIgnoreReturnValue
+  NessieClientBuilder withSSLCertificateVerificationDisabled(
+      boolean certificateVerificationDisabled);
+
+  /**
    * Optionally configure a specific {@link SSLContext}, currently only the Java 11+ accepts this
    * option.
    */
@@ -163,6 +179,28 @@ public interface NessieClientBuilder {
   /** Optionally configure specific {@link SSLParameters}. */
   @CanIgnoreReturnValue
   NessieClientBuilder withSSLParameters(SSLParameters sslParameters);
+
+  /**
+   * Registers a future to cancel an ongoing, blocking client setup.
+   *
+   * <p>When using "blocking" authentication, for example OAuth2 device or code flows, is being
+   * used, users may want to cancel an ongoing authentication. An application can register a
+   * callback that can be called asynchronously, for example from a SIGINT handler.
+   *
+   * <p>To implement cancellation:
+   *
+   * <pre>{@code
+   * CompletableFuture<?> cancel = new CompletableFuture<>();
+   *
+   * registerYourInterruptHandler(cancel::complete);
+   *
+   * NessieClientBuilder.createClientBuilderFromSystemSettings(...)
+   *   .withCancellationFuture(cancel);
+   * }</pre>
+   */
+  @SuppressWarnings("unused")
+  @CanIgnoreReturnValue
+  NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture);
 
   /**
    * Builds a new {@link NessieApi}.
@@ -185,7 +223,8 @@ public interface NessieClientBuilder {
     NessieClientConfigSource configSource = mainConfigSource.fallbackTo(defaultConfigSources());
     String clientName = configSource.getValue(CONF_NESSIE_CLIENT_NAME);
     @SuppressWarnings("deprecation")
-    String clientBuilderImpl = configSource.getValue(CONF_NESSIE_CLIENT_BUILDER_IMPL);
+    String clientBuilderImpl =
+        configSource.getValue(NessieConfigConstants.CONF_NESSIE_CLIENT_BUILDER_IMPL);
     return createClientBuilder(clientName, clientBuilderImpl).fromConfig(configSource.asFunction());
   }
 
@@ -195,9 +234,9 @@ public interface NessieClientBuilder {
    *
    * <p>Nessie clients are discovered using Java's {@link ServiceLoader service loader} mechanism.
    *
-   * <p>The selection mechanism uses the given {@link NessieClientBuilder#name() Nessie client name}
-   * or Nessie client builder implementation class name to select the client builder from the list
-   * of available implementations.
+   * <p>The selection mechanism uses the given {@link NessieClientBuilder#names() Nessie client
+   * name} or Nessie client builder implementation class name to select the client builder from the
+   * list of available implementations.
    *
    * <p>If neither a name nor an implementation class are specified, aka both parameters are {@code
    * null}, the Nessie client builder with the highest {@link NessieClientBuilder#priority()} will
@@ -207,7 +246,7 @@ public interface NessieClientBuilder {
    * discouraged.
    *
    * @param clientName the name of the Nessie client, as returned by {@link
-   *     NessieClientBuilder#name()}, or {@code null}
+   *     NessieClientBuilder#names()}, or {@code null}
    * @param clientBuilderImpl the class that implements the Nessie client builder, or {@code null}
    * @return Nessie client builder for the requested name or implementation class.
    * @throws IllegalArgumentException if no Nessie client matching the requested name and/or
@@ -222,7 +261,7 @@ public interface NessieClientBuilder {
     List<NessieClientBuilder> builders = new ArrayList<>();
     for (NessieClientBuilder clientBuilder : implementations) {
       builders.add(clientBuilder);
-      if (clientBuilder.name().equals(clientName)) {
+      if (clientBuilder.names().contains(clientName)) {
         if (clientBuilderImpl != null
             && !clientBuilderImpl.isEmpty()
             && !clientBuilder.getClass().getName().equals(clientBuilderImpl)) {
@@ -308,6 +347,11 @@ public interface NessieClientBuilder {
       s = configuration.apply(CONF_NESSIE_DISABLE_COMPRESSION);
       if (s != null) {
         withDisableCompression(Boolean.parseBoolean(s));
+      }
+
+      s = configuration.apply(CONF_NESSIE_SSL_NO_CERTIFICATE_VERIFICATION);
+      if (s != null) {
+        withSSLCertificateVerificationDisabled(Boolean.parseBoolean(s));
       }
 
       SSLParameters sslParameters = new SSLParameters();
@@ -410,12 +454,23 @@ public interface NessieClientBuilder {
     }
 
     @Override
+    public NessieClientBuilder withSSLCertificateVerificationDisabled(
+        boolean certificateVerificationDisabled) {
+      return this;
+    }
+
+    @Override
     public NessieClientBuilder withSSLContext(SSLContext sslContext) {
       return this;
     }
 
     @Override
     public NessieClientBuilder withSSLParameters(SSLParameters sslParameters) {
+      return this;
+    }
+
+    @Override
+    public NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture) {
       return this;
     }
   }

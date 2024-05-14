@@ -43,6 +43,8 @@ import static org.projectnessie.versioned.storage.versionstore.VersionStoreImpl.
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,8 +56,6 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
@@ -101,11 +101,11 @@ class CommitImpl extends BaseCommitHelper {
   private final CommitLogic commitLogic;
 
   CommitImpl(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull Persist persist,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nullable @jakarta.annotation.Nullable CommitObj head)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull Persist persist,
+      @Nonnull Reference reference,
+      @Nullable CommitObj head)
       throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
     commitLogic = commitLogic(persist);
@@ -148,11 +148,11 @@ class CommitImpl extends BaseCommitHelper {
   }
 
   CommitResult<Commit> commit(
-      @Nonnull @jakarta.annotation.Nonnull Optional<?> retryState,
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
-      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
+      @Nonnull Optional<?> retryState,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
+      @Nonnull CommitValidator validator,
+      @Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException,
           ReferenceConflictException,
           RetryException,
@@ -519,8 +519,7 @@ class CommitImpl extends BaseCommitHelper {
             exists ? UPDATE : CREATE));
   }
 
-  private String contentIdFromContent(@Nonnull @jakarta.annotation.Nonnull ObjId contentValueId)
-      throws ObjNotFoundException {
+  private String contentIdFromContent(@Nonnull ObjId contentValueId) throws ObjNotFoundException {
     // Ideally this should pre-load all required objects, so they are bulk-loaded and in turn
     // available via the cache. But the probability of this function being called is effectively 0,
     // so it is not worth the effort.

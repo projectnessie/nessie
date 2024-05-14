@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -35,17 +35,13 @@ public interface CommitLogQuery extends PageableQuery {
   Optional<ObjId> endCommitId();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static CommitLogQuery commitLogQuery(@Nonnull @jakarta.annotation.Nonnull ObjId commitId) {
+  static CommitLogQuery commitLogQuery(@Nonnull ObjId commitId) {
     return commitLogQuery(null, commitId, null);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   static CommitLogQuery commitLogQuery(
-      @Nullable @jakarta.annotation.Nullable PagingToken pagingToken,
-      @Nonnull @jakarta.annotation.Nonnull ObjId commitId,
-      @Nullable @jakarta.annotation.Nullable ObjId endCommitId) {
+      @Nullable PagingToken pagingToken, @Nonnull ObjId commitId, @Nullable ObjId endCommitId) {
     return ImmutableCommitLogQuery.of(
         Optional.ofNullable(pagingToken), commitId, Optional.ofNullable(endCommitId));
   }

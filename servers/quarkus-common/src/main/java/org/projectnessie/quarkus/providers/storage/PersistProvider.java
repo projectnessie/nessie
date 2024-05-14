@@ -18,7 +18,9 @@ package org.projectnessie.quarkus.providers.storage;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Disposes;
@@ -30,10 +32,11 @@ import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.NotObserved;
-import org.projectnessie.quarkus.providers.WIthInitializedRepository;
+import org.projectnessie.quarkus.providers.UninitializedRepository;
 import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
+import org.projectnessie.versioned.storage.cache.CacheConfig;
 import org.projectnessie.versioned.storage.cache.CacheSizing;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -91,10 +94,22 @@ public class PersistProvider {
 
   @Produces
   @Singleton
-  @WIthInitializedRepository
-  public Persist produceWithInitializedRepository(@Default Persist persist) {
+  @Default
+  public Persist produceWithInitializedRepository(@UninitializedRepository Persist persist) {
     repositoryLogic(persist).initialize(serverConfig.getDefaultBranch());
     return persist;
+  }
+
+  /**
+   * Eagerly initialize the not-observed {@link Persist} instance.
+   *
+   * <p>{@link io.quarkus.runtime.Startup @Startup} mustn't be used with {@link Produces @Produces},
+   * instead an event-observer for {@link StartupEvent} shall be used, taking the produced bean as
+   * an argument.
+   */
+  public void eagerPersistInitialization(
+      @Observes StartupEvent event, @NotObserved Persist persist) {
+    LOGGER.debug("Eager initialization of persist implementation '{}'", persist.name());
   }
 
   @Produces
@@ -127,11 +142,16 @@ public class PersistProvider {
             .fractionOfMaxHeapSize(storeConfig.cacheCapacityFractionOfHeap())
             .heapSizeAdjustmentMB(storeConfig.cacheCapacityFractionAdjustMB())
             .build();
-    int effectiveCacheSizeMB = cacheSizing.calculateEffectiveSizeInMB();
+    int effectiveCacheSizeMB = cacheSizing.effectiveSizeInMB();
 
     String cacheInfo;
     if (effectiveCacheSizeMB > 0) {
-      CacheBackend cacheBackend = PersistCaches.newBackend(effectiveCacheSizeMB, meterRegistry);
+      CacheConfig cacheConfig =
+          CacheConfig.builder()
+              .capacityMb(effectiveCacheSizeMB)
+              .meterRegistry(meterRegistry)
+              .build();
+      CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig);
       persist = cacheBackend.wrap(persist);
       cacheInfo = "with " + effectiveCacheSizeMB + " MB objects cache";
     } else {

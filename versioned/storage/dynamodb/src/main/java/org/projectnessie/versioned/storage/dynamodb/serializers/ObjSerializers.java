@@ -17,9 +17,9 @@ package org.projectnessie.versioned.storage.dynamodb.serializers;
 
 import static java.util.Objects.requireNonNull;
 
+import jakarta.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.objtypes.StandardObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -50,9 +50,8 @@ public final class ObjSerializers {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static ObjSerializer<Obj> forType(@Nonnull @jakarta.annotation.Nonnull ObjType type) {
-    ObjSerializer<?> serializer = CustomObjSerializer.INSTANCE;
+  public static ObjSerializer<Obj> forType(@Nonnull ObjType type) {
+    ObjSerializer<?> serializer;
     if (type instanceof StandardObjType) {
       switch ((StandardObjType) type) {
         case COMMIT:
@@ -82,6 +81,8 @@ public final class ObjSerializers {
         default:
           throw new IllegalArgumentException("Unknown standard object type: " + type);
       }
+    } else {
+      serializer = CustomObjSerializer.INSTANCE;
     }
     @SuppressWarnings("unchecked")
     ObjSerializer<Obj> cast = (ObjSerializer<Obj>) serializer;

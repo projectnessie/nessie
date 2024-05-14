@@ -15,14 +15,13 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.apache.tools.ant.taskdefs.condition.Os
-import org.apache.tools.ant.util.NullOutputStream
 
 plugins {
   id("com.github.johnrengelman.shadow")
   id("nessie-conventions-iceberg")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
@@ -33,16 +32,18 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-gc-repository-jdbc"))
+  implementation(nessieProject("nessie-notice"))
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  implementation(libs.iceberg.core)
-  runtimeOnly(libs.iceberg.hive.metastore)
-  runtimeOnly(libs.iceberg.aws)
-  runtimeOnly(libs.iceberg.gcp)
-  runtimeOnly(libs.iceberg.azure)
+  implementation(platform(libs.iceberg.bom))
+  implementation("org.apache.iceberg:iceberg-core")
+  runtimeOnly("org.apache.iceberg:iceberg-hive-metastore")
+  runtimeOnly("org.apache.iceberg:iceberg-aws")
+  runtimeOnly("org.apache.iceberg:iceberg-gcp")
+  runtimeOnly("org.apache.iceberg:iceberg-azure")
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))
@@ -84,11 +85,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   runtimeOnly(libs.h2)
   runtimeOnly(libs.postgresql)
@@ -96,7 +94,7 @@ dependencies {
   testCompileOnly(platform(libs.jackson.bom))
 
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
-  testImplementation(nessieProject("nessie-versioned-storage-inmemory"))
+  testImplementation(nessieProject("nessie-versioned-storage-inmemory-tests"))
 
   testRuntimeOnly(libs.logback.classic)
 
@@ -128,7 +126,7 @@ val generateAutoComplete by
 
     doFirst { mkdir(completionScriptsDir) }
 
-    mainClass.set("picocli.AutoComplete")
+    mainClass = "picocli.AutoComplete"
     classpath(configurations.named("runtimeClasspath"), compileJava)
     args(
       "--force",
@@ -150,36 +148,18 @@ listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-val unixExecutable by tasks.registering(UnixExecutableTask::class)
+val copyUberJar by tasks.registering(Copy::class)
 
-val nessieGcExecutable = layout.buildDirectory.file("executable/nessie-gc")
-
-unixExecutable.configure {
+copyUberJar.configure {
   group = "build"
-  description = "Generates the Unix executable"
-
+  description = "Copies the uber-jar to build/executable"
   dependsOn(shadowJar)
-  executable.set(nessieGcExecutable)
-  template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
-  sourceJar.set(shadowJar.get().archiveFile)
+  from(shadowJar.get().archiveFile)
+  into(project.layout.buildDirectory.dir("executable"))
+  rename { "nessie-gc.jar" }
 }
 
 shadowJar.configure {
   manifest { attributes["Main-Class"] = mainClassName }
-  finalizedBy(unixExecutable)
+  finalizedBy(copyUberJar)
 }
-
-val execSmokeTest by tasks.registering(Exec::class)
-
-execSmokeTest.configure {
-  description = "Verify that the generated nessie-gc executable works"
-  enabled = Os.isFamily(Os.FAMILY_UNIX)
-  val exec = nessieGcExecutable.get()
-  inputs.file(exec).withPathSensitivity(PathSensitivity.RELATIVE)
-  dependsOn(unixExecutable)
-  executable(exec)
-  args("help")
-  standardOutput = NullOutputStream.INSTANCE
-}
-
-tasks.named("check").configure { dependsOn(execSmokeTest) }

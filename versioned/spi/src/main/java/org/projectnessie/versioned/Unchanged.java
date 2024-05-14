@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 
@@ -44,8 +44,7 @@ public interface Unchanged extends Operation {
    * @return a unchanged operation for the key
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static Unchanged of(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+  static Unchanged of(@Nonnull ContentKey key) {
     return ImmutableUnchanged.builder().key(key).build();
   }
 }

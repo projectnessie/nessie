@@ -1,8 +1,0 @@
-title: Tools & Integrations
-arrange:
-  - index.md
-  - iceberg
-  - client_config.md
-  - cli.md
-  - export_import.md
-  - ui.md

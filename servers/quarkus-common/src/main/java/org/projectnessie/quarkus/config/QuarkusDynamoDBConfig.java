@@ -19,8 +19,13 @@ import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import java.util.Optional;
 
+/**
+ * When setting {@code nessie.version.store.type=DYNAMODB} which enables DynamoDB as the version
+ * store used by the Nessie server, the following configurations are applicable.
+ */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.dynamodb")
 public interface QuarkusDynamoDBConfig {
+  /** Prefix for tables, default is no prefix. */
   Optional<String> tablePrefix();
 }

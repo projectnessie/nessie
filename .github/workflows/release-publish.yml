@@ -45,6 +45,7 @@ jobs:
   publish-release:
     name: Publish release
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     if: github.repository == 'projectnessie/nessie'
     # Runs in the `release` environment, which has the necessary secrets and defines the reviewers.
     # See https://docs.github.com/en/actions/reference/environments
@@ -73,12 +74,12 @@ jobs:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       if: ${{ github.event_name == 'push' }}
       with:
         fetch-depth: '0'
     - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
       if: ${{ github.event_name == 'workflow_dispatch' }}
       with:
         fetch-depth: '0'
@@ -90,7 +91,7 @@ jobs:
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
     - name: Install Helm
-      uses: azure/setup-helm@v3
+      uses: azure/setup-helm@v4
       with:
         version: v3.6.3
     ### END runner setup
@@ -120,31 +121,48 @@ jobs:
           ./gradlew compileAll jar testClasses 
         echo "::endgroup::"
 
+        echo "::group::Check Licenses"
+        ./gradlew aggregatedLicenseReportsZip
+        echo "::endgroup::"
+
         echo "::group::Publish to Sonatype"
         # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
         ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
           ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
           ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
         mv servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
-        mv servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+        mv tools/server-admin/build/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+        mv gc/gc-tool/build/executable/nessie-gc.jar "${ARTIFACTS}"/nessie-gc-${RELEASE_VERSION}.jar
         echo "::endgroup::"
 
         echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u $ --password-stdin 
         tools/dockerbuild/build-push-images.sh \
-          -a "${ARTIFACTS}" \
           -g ":nessie-quarkus" \
           -p "servers/quarkus-server" \
+          -d "Dockerfile-server" \
           ghcr.io/projectnessie/nessie
+
+        tools/dockerbuild/build-push-images.sh \
+          -g ":nessie-gc-tool" \
+          -p "gc/gc-tool" \
+          -d "Dockerfile-gctool" \
+          ghcr.io/projectnessie/nessie-gc
+
+        tools/dockerbuild/build-push-images.sh \
+          -g ":nessie-server-admin-tool" \
+          -p "tools/server-admin" \
+          -d "Dockerfile-admintool" \
+          ghcr.io/projectnessie/nessie-server-admin
 
         # Add version to the openapi file name
         cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
-        cp gc/gc-tool/build/executable/nessie-gc gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}
-
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-        echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-        echo "GC_EXEC=gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}" >> ${GITHUB_ENV}
+        echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "GC_UBER_JAR=${ARTIFACTS}/nessie-gc-${RELEASE_VERSION}.jar" >> ${GITHUB_ENV}
+        echo "SERVER_ADMIN_UBER_JAR=${ARTIFACTS}/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
+        echo "LICENSE_REPORTS=tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip" >> ${GITHUB_ENV}
 
         echo "## Successfully released ${RELEASE_VERSION} to Sonatype" >> $GITHUB_STEP_SUMMARY
 
@@ -192,8 +210,9 @@ jobs:
 
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
 
-        Q_GC_EXEC="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-gc-${RELEASE_VERSION}"
+        Q_GC_TOOL_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-gc-${RELEASE_VERSION}.jar"
         Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
+        Q_SERVER_ADMIN_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar"
         Q_HELM_CHART_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-helm-${RELEASE_VERSION}.tgz"
         Q_MC_URL="https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}"
 
@@ -215,13 +234,11 @@ jobs:
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
         \`\`\`
 
-        Nessie GC tool is attached as [\`nessie-gc-${RELEASE_VERSION}\`](${Q_GC_EXEC}), which is an executable.
-        (\`chmod 744 nessie-gc-${RELEASE_VERSION}\` after download.)
-        Can also be run using \`java -jar nessie-gc-${RELEASE_VERSION}\`, because it is actually a Java archive.
-        Shell completion can be generated from the \`nessie-gc\` tool.
+        Nessie GC tool is attached as [\`nessie-gc-${RELEASE_VERSION}.jar\`](${Q_GC_TOOL_URL}), which is a standalone uber-jar file that runs on Java 11 or newer. Shell completion can be generated from the tool, check its \`help\` command. Nessie GC tool is also available as a Docker image: \`docker run --rm ghcr.io/projectnessie/nessie-gc:${RELEASE_VERSION} --help\`.
 
-        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
-        There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
+        Nessie Server Admin tool is attached as [\`nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar\`](${Q_SERVER_ADMIN_URL}), which is a standalone uber-jar file that runs on Java 17 or newer. Shell completion can be generated from the tool, check its \`help\` command. Nessie Server Admin tool is also available as a Docker image: \`docker run --rm ghcr.io/projectnessie/nessie-server-admin:${RELEASE_VERSION} --help\`.
+
+        The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm. There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
 
         ## Changelog
         
@@ -244,12 +261,14 @@ jobs:
           --title "Nessie ${RELEASE_VERSION}" \
           "${QUARKUS_UBER_JAR}" \
           "${CLI_UBER_JAR}" \
-          "${GC_EXEC}" \
+          "${GC_UBER_JAR}" \
+          "${SERVER_ADMIN_UBER_JAR}" \
           "${NESSIE_OPENAPI}" \
-          "${NESSIE_HELM_CHART}"
+          "${NESSIE_HELM_CHART}" \
+          "${LICENSE_REPORTS}"
 
     - name: Update SwaggerHub
-      uses: smartbear/swaggerhub-cli@v0.8.1
+      uses: smartbear/swaggerhub-cli@v0.9.0
       env:
         XDG_CONFIG_HOME: "/tmp"
         SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}

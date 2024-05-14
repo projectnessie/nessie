@@ -34,12 +34,45 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
 
   @Override
   public HttpAuthentication build(Function<String, String> configSupplier) {
-    OAuth2ClientParams params = OAuth2ClientParams.fromConfig(configSupplier);
-    OAuth2Client client = new OAuth2Client(params);
-    client.start();
-    return create(client);
+    return create(newAuthenticator(configSupplier));
   }
 
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given config supplier.
+   *
+   * <p>The returned authenticator is not started yet.
+   */
+  public static OAuth2Authenticator newAuthenticator(Function<String, String> configSupplier) {
+    return newAuthenticator(OAuth2AuthenticatorConfig.fromConfigSupplier(configSupplier));
+  }
+
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given config.
+   *
+   * <p>The returned authenticator is not started yet.
+   */
+  public static OAuth2Authenticator newAuthenticator(OAuth2AuthenticatorConfig config) {
+    OAuth2ClientConfig clientConfig =
+        config instanceof OAuth2ClientConfig
+            ? (OAuth2ClientConfig) config
+            : OAuth2ClientConfig.builder().from(config).build();
+    return new OAuth2Client(clientConfig);
+  }
+
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given config.
+   *
+   * <p>The returned authentication is not started yet.
+   */
+  public static HttpAuthentication create(OAuth2AuthenticatorConfig config) {
+    return create(newAuthenticator(config));
+  }
+
+  /**
+   * Creates a new {@link OAuth2Authenticator} from the given authenticator.
+   *
+   * <p>The returned authentication is not started yet.
+   */
   public static HttpAuthentication create(OAuth2Authenticator authenticator) {
     return new OAuth2Authentication(authenticator);
   }
@@ -56,18 +89,24 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
     }
 
     @Override
-    public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(this::addAuthHeader);
+    public void start() {
+      authenticator.start();
     }
 
-    void addAuthHeader(RequestContext ctx) {
+    @Override
+    public void applyToHttpClient(HttpClient.Builder client) {
+      client.addRequestFilter(this::applyToHttpRequest);
+    }
+
+    @Override
+    public void applyToHttpRequest(RequestContext context) {
       AccessToken token = authenticator.authenticate();
       if (!token.getTokenType().toLowerCase(Locale.ROOT).equals("bearer")) {
         throw new IllegalArgumentException(
             "OAuth2 token type returned from the authenticating server must be 'Bearer', but was: "
                 + token.getTokenType());
       }
-      ctx.putHeader("Authorization", "Bearer " + token.getPayload());
+      context.putHeader("Authorization", "Bearer " + token.getPayload());
     }
 
     @Override

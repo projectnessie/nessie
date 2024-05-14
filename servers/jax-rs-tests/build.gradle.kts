@@ -26,11 +26,8 @@ dependencies {
   implementation(libs.guava)
   api(libs.rest.assured)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.microprofile.openapi)
 
@@ -43,8 +40,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
-  testImplementation(project(":nessie-versioned-storage-jdbc"))
+  testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
+  testImplementation(project(":nessie-versioned-storage-jdbc-tests"))
   testRuntimeOnly(libs.agroal.pool)
 
   testImplementation(project(":nessie-jaxrs-testextension"))

@@ -22,13 +22,16 @@ val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
 shadowJar.configure {
   outputs.cacheIf { false } // do not cache uber/shaded jars
-  archiveClassifier.set("")
+  archiveClassifier = ""
   mergeServiceFiles()
 }
 
 tasks.named<Jar>("jar").configure {
   dependsOn(shadowJar)
-  archiveClassifier.set("raw")
+  archiveClassifier = "raw"
 }
 
-tasks.withType<ShadowJar>().configureEach { exclude("META-INF/jandex.idx") }
+tasks.withType<ShadowJar>().configureEach {
+  exclude("META-INF/jandex.idx")
+  isZip64 = true
+}

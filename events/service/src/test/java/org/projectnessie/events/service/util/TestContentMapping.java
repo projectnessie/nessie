@@ -52,6 +52,7 @@ class TestContentMapping {
     assertThat(actual).isEqualTo(expected);
   }
 
+  @SuppressWarnings("deprecation")
   public static Stream<Arguments> mapContent() {
     return Stream.of(
         Arguments.of(
@@ -130,6 +131,18 @@ class TestContentMapping {
                 .putProperty("checkpointLocationHistory", Collections.singletonList("checkpoint"))
                 .putProperty("metadataLocationHistory", Collections.singletonList("metadata"))
                 .putProperty("lastCheckpoint", "lastCheckpoint")
+                .build()),
+        Arguments.of(
+            org.projectnessie.model.ImmutableUDF.builder()
+                .id("id")
+                .metadataLocation("metadataLocation")
+                .versionId(1L)
+                .build(),
+            ImmutableContent.builder()
+                .id("id")
+                .type("UDF")
+                .putProperty("metadataLocation", "metadataLocation")
+                .putProperty("versionId", 1L)
                 .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableUDF.builder()

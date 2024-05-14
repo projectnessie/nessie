@@ -18,13 +18,13 @@ package org.projectnessie.versioned.storage.common.indexes;
 import static java.util.Collections.singletonList;
 
 import com.google.common.collect.AbstractIterator;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /**
@@ -106,20 +106,18 @@ final class LayeredIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean contains(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean contains(@Nonnull StoreKey key) {
     return updates.contains(key) || reference.contains(key);
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public StoreIndexElement<V> get(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public StoreIndexElement<V> get(@Nonnull StoreKey key) {
     StoreIndexElement<V> v = updates.get(key);
     return v != null ? v : reference.get(key);
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey first() {
     StoreKey f = reference.first();
@@ -134,7 +132,6 @@ final class LayeredIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   public StoreKey last() {
     StoreKey f = reference.last();
@@ -149,12 +146,9 @@ final class LayeredIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public Iterator<StoreIndexElement<V>> iterator(
-      @Nullable @jakarta.annotation.Nullable StoreKey begin,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch) {
+      @Nullable StoreKey begin, @Nullable StoreKey end, boolean prefetch) {
     return new AbstractIterator<>() {
       final Iterator<StoreIndexElement<V>> fullIter = reference.iterator(begin, end, prefetch);
       final Iterator<StoreIndexElement<V>> incrementalIter = updates.iterator(begin, end, prefetch);
@@ -213,14 +207,13 @@ final class LayeredIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public ByteString serialize() {
     throw unsupported();
   }
 
   @Override
-  public boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element) {
+  public boolean add(@Nonnull StoreIndexElement<V> element) {
     throw unsupported();
   }
 
@@ -230,7 +223,7 @@ final class LayeredIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean remove(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean remove(@Nonnull StoreKey key) {
     throw unsupported();
   }
 

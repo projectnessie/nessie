@@ -26,7 +26,7 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
  * <p>Assumptions: - always send/receive JSON - set headers accordingly by default - very simple
  * interactions w/ API - no cookies - no caching of connections. Could be slow
  */
-public final class UrlConnectionClient implements HttpClient {
+final class UrlConnectionClient implements HttpClient {
 
   public static final String UNSUPPORTED_CONFIG_MESSAGE =
       "Nessie's URLConnection client does not support the configuration options to specify SSL parameters. Switch to Java 11 instead.";
@@ -38,7 +38,7 @@ public final class UrlConnectionClient implements HttpClient {
    *
    * @param config http client configuration
    */
-  public UrlConnectionClient(HttpRuntimeConfig config) {
+  UrlConnectionClient(HttpRuntimeConfig config) {
     this.config = config;
     if (config.getSslParameters() != null) {
       throw new IllegalArgumentException(UNSUPPORTED_CONFIG_MESSAGE);
@@ -46,8 +46,8 @@ public final class UrlConnectionClient implements HttpClient {
   }
 
   @Override
-  public HttpRequest newRequest() {
-    return new UrlConnectionRequest(config);
+  public HttpRequest newRequest(URI baseUri) {
+    return new UrlConnectionRequest(config, baseUri);
   }
 
   @Override

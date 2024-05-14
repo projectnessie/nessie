@@ -113,7 +113,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     Namespace namespace2 = Namespace.of(keyNamespace2);
     IcebergTable table1 = IcebergTable.of("foo", 42, 42, 42, 42);
     IcebergTable table2 = IcebergTable.of("bar", 42, 42, 42, 42);
-    UDF unrelated = UDF.of("meep", "sql");
+    UDF unrelated = UDF.of("udf-meta", 42);
 
     Branch common = createBranch("common");
     CommitResponse commonResponse =
@@ -450,5 +450,33 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
     }
+  }
+
+  @Test
+  public void testCheckReadContentKeyOnDeletedEntity() throws Exception {
+    Branch main = createBranch("testCheckReadContentKeyOnDeletedEntity");
+
+    main =
+        commit(
+                main,
+                CommitMeta.fromMessage("commit 1"),
+                Put.of(ContentKey.of("t1"), IcebergTable.of("m1", 1, 2, 3, 4)))
+            .getTargetBranch();
+
+    main =
+        commit(main, CommitMeta.fromMessage("commit 2"), Delete.of(ContentKey.of("t1")))
+            .getTargetBranch();
+
+    Set<Check> checks = recordAccessChecks();
+    commitLog(main.getName(), ALL, null);
+
+    assertThat(checks)
+        .satisfiesOnlyOnce(
+            check -> {
+              assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
+              assertThat(check.key()).isEqualTo(ContentKey.of("t1"));
+              assertThat(check.identifiedKey()).isNotNull();
+              assertThat(check.contentId()).isNotNull();
+            });
   }
 }

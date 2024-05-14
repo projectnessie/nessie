@@ -37,7 +37,8 @@ public interface CacheSizing {
 
   OptionalInt heapSizeAdjustmentMB();
 
-  default int calculateEffectiveSizeInMB() {
+  @Value.Derived
+  default int effectiveSizeInMB() {
     return calculateEffectiveSizeInMB(Runtime.getRuntime().maxMemory());
   }
 

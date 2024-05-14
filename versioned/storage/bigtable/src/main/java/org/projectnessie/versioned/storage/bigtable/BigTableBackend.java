@@ -37,57 +37,65 @@ import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
+import com.google.cloud.bigtable.data.v2.models.TableId;
 import com.google.protobuf.ByteString;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class BigTableBackend implements Backend {
+public final class BigTableBackend implements Backend {
   private static final Logger LOGGER = LoggerFactory.getLogger(BigTableBackend.class);
   static final ByteString REPO_REGEX_SUFFIX = copyFromUtf8("\\C*");
 
+  private final BigTableBackendConfig config;
   private final BigtableDataClient dataClient;
   private final BigtableTableAdminClient tableAdminClient;
   private final boolean closeClient;
 
   final String tableRefs;
   final String tableObjs;
+  final TableId tableRefsId;
+  final TableId tableObjsId;
 
-  BigTableBackend(
-      @Nonnull @jakarta.annotation.Nonnull BigTableBackendConfig config, boolean closeClient) {
+  public BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
+    this.config = config;
     this.dataClient = config.dataClient();
     this.tableAdminClient = config.tableAdminClient();
     this.tableRefs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_REFS).orElse(TABLE_REFS);
     this.tableObjs =
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
+    this.tableRefsId = TableId.of(tableRefs);
+    this.tableObjsId = TableId.of(tableObjs);
     this.closeClient = closeClient;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
+  public BigTableBackendConfig config() {
+    return config;
+  }
+
+  @Nonnull
   BigtableDataClient client() {
     return dataClient;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   BigtableTableAdminClient adminClient() {
     return tableAdminClient;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public PersistFactory createFactory() {
     return new BigTablePersistFactory(this);
   }
@@ -122,8 +130,8 @@ final class BigTableBackend implements Backend {
   public void setupSchema() {
     if (tableAdminClient == null) {
       // If BigTable admin client is not available, check at least that the required tables exist.
-      boolean refs = checkTableNoAdmin(tableRefs);
-      boolean objs = checkTableNoAdmin(tableObjs);
+      boolean refs = checkTableNoAdmin(tableRefsId);
+      boolean objs = checkTableNoAdmin(tableObjsId);
       checkState(
           refs && objs,
           "Not all required tables (%s and %s) are available in BigTable, cannot start.",
@@ -137,7 +145,7 @@ final class BigTableBackend implements Backend {
     checkTable(tableObjs, FAMILY_OBJS);
   }
 
-  private boolean checkTableNoAdmin(String table) {
+  private boolean checkTableNoAdmin(TableId table) {
     try {
       dataClient.readRow(table, "dummy");
       return true;
@@ -187,12 +195,12 @@ final class BigTableBackend implements Backend {
           repositoryIds.stream()
               .map(repoId -> copyFromUtf8(repoId + ':'))
               .collect(Collectors.toList());
-      eraseRepositoriesTable(tableRefs, prefixes);
-      eraseRepositoriesTable(tableObjs, prefixes);
+      eraseRepositoriesTable(tableRefsId, prefixes);
+      eraseRepositoriesTable(tableObjsId, prefixes);
     }
   }
 
-  private void eraseRepositoriesTable(String tableId, List<ByteString> prefixes) {
+  private void eraseRepositoriesTable(TableId tableId, List<ByteString> prefixes) {
 
     Query query =
         Query.create(tableId)

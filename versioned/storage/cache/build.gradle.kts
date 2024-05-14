@@ -27,11 +27,8 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-common-serialize"))
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.errorprone.annotations)
 
@@ -46,6 +43,14 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-common-tests"))
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
+
+  testCompileOnly(libs.immutables.builder)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
+
+  testImplementation(platform(libs.jackson.bom))
+  testImplementation("com.fasterxml.jackson.core:jackson-annotations")
+  testImplementation("com.fasterxml.jackson.core:jackson-databind")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

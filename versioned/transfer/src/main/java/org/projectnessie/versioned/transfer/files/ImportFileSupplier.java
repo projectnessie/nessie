@@ -15,12 +15,11 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.annotation.Nonnull;
 
 public interface ImportFileSupplier extends AutoCloseable {
   @Nonnull
-  @jakarta.annotation.Nonnull
-  InputStream newFileInput(@Nonnull @jakarta.annotation.Nonnull String fileName) throws IOException;
+  InputStream newFileInput(@Nonnull String fileName) throws IOException;
 }

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.mongodb;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class MongoDBBackendFactory implements BackendFactory<MongoDBBackendConfig> {
@@ -24,23 +24,19 @@ public class MongoDBBackendFactory implements BackendFactory<MongoDBBackendConfi
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public String name() {
     return NAME;
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public MongoDBBackendConfig newConfigInstance() {
     return MongoDBBackendConfig.builder().build();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public MongoDBBackend buildBackend(
-      @Nonnull @jakarta.annotation.Nonnull MongoDBBackendConfig config) {
+  public MongoDBBackend buildBackend(@Nonnull MongoDBBackendConfig config) {
     return new MongoDBBackend(config, false);
   }
 }

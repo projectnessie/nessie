@@ -18,7 +18,6 @@ package org.projectnessie.gc.contents.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
@@ -29,7 +28,7 @@ import org.projectnessie.gc.contents.tests.AbstractPersistenceSpi;
 
 public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi {
 
-  private static DataSource dataSource;
+  static DataSource dataSource;
 
   static void initDataSource(String jdbcUrl) throws Exception {
     AgroalJdbcDataSourceProvider dsProvider =
@@ -58,25 +57,21 @@ public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi 
   @BeforeEach
   void setup() throws Exception {
     try (Connection conn = dataSource.getConnection()) {
-      JdbcHelper.createTables(conn);
+      JdbcHelper.createTables(conn, false);
     }
   }
 
   @AfterEach
   void tearDown() throws Exception {
     try (Connection conn = dataSource.getConnection()) {
-      try (Statement st = conn.createStatement()) {
-        for (String tableName : SqlDmlDdl.ALL_TABLE_NAMES) {
-          st.execute(String.format("DROP TABLE %s", tableName));
-        }
-      }
+      JdbcHelper.dropTables(conn);
     }
   }
 
   @Override
   protected void assertDeleted(UUID id) throws Exception {
     try (Connection conn = dataSource.getConnection()) {
-      for (String tableName : SqlDmlDdl.ALL_TABLE_NAMES) {
+      for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
         try (PreparedStatement st =
             conn.prepareStatement(
                 String.format("SELECT * FROM %s WHERE live_set_id = ?", tableName))) {

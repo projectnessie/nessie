@@ -16,7 +16,8 @@
 package org.projectnessie.versioned.storage.common.objtypes;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.contentValueHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import org.immutables.value.Value;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -29,7 +30,7 @@ public interface ContentValueObj extends Obj {
 
   @Override
   default ObjType type() {
-    return StandardObjType.VALUE;
+    return VALUE;
   }
 
   @Override
@@ -51,6 +52,14 @@ public interface ContentValueObj extends Obj {
   }
 
   static ContentValueObj contentValue(String contentId, int payload, ByteString data) {
-    return contentValue(contentValueHash(contentId, payload, data), contentId, payload, data);
+    return contentValue(
+        objIdHasher(VALUE)
+            .hash(contentId)
+            .hash(payload)
+            .hash(data.asReadOnlyByteBuffer())
+            .generate(),
+        contentId,
+        payload,
+        data);
   }
 }

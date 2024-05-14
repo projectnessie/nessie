@@ -18,7 +18,7 @@ package org.projectnessie.services.hash;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.NamedRef;
@@ -54,8 +54,7 @@ public final class HashValidator {
    * @param namedRef the namedRef, required.
    * @param parsed the parsed hash, or {@code null} if no hash was provided.
    */
-  public void validate(
-      NamedRef namedRef, @Nullable @jakarta.annotation.Nullable ParsedHash parsed) {
+  public void validate(NamedRef namedRef, @Nullable ParsedHash parsed) {
     if (refMustBeBranch) {
       checkArgument(namedRef instanceof BranchName, "%s must be a branch.", refDescription);
     }

@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.versioned.storage.mongodb.MongoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
 
 /**
  * Simulates a rolling-upgrade situation with one Nessie instance running an old version and another

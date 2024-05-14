@@ -22,30 +22,26 @@ group 'org.projectnessie.nessie.build-tool-integration-tests'
 version '0.0.2-SNAPSHOT'
 
 def nessieVersion = file("../version.txt").text.trim()
-def versionMavenResolver = "1.9.18"
-def versionMaven = "3.9.6"
+def versionMavenResolver = "1.9.20"
 
 dependencies {
   implementation(enforcedPlatform("org.projectnessie.nessie:nessie-bom:$nessieVersion"))
   implementation("org.projectnessie.nessie:nessie-jaxrs-testextension")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-cache")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-common-serialize")
-  implementation("org.projectnessie.nessie:nessie-versioned-storage-inmemory")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-inmemory-tests")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-mongodb")
-  implementation("org.projectnessie.nessie:nessie-versioned-storage-rocksdb")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-rocksdb-tests")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-store")
   implementation("org.projectnessie.nessie:nessie-versioned-storage-testextension")
 
-  testImplementation(platform("org.junit:junit-bom:5.10.1"))
+  testImplementation(platform("org.junit:junit-bom:5.10.2"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-  testImplementation("org.assertj:assertj-core:3.24.2")
+  testImplementation("org.assertj:assertj-core:3.25.3")
 
-  testImplementation("org.apache.maven:maven-resolver-provider:$versionMaven")
-  testImplementation("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
-  testImplementation("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")
-  testImplementation("org.apache.maven.resolver:maven-resolver-transport-http:$versionMavenResolver")
+  testImplementation("org.apache.maven.resolver:maven-resolver-supplier:$versionMavenResolver")
 }
 
 tasks.withType(Test).configureEach {

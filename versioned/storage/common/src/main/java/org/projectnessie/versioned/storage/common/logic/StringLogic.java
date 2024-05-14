@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import jakarta.annotation.Nullable;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
@@ -54,7 +54,6 @@ public interface StringLogic {
    *     stored on the reference.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   StringValue updateStringOnRef(
       Reference reference,
       StoreKey storeKey,

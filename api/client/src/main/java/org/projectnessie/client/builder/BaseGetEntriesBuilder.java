@@ -38,7 +38,6 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   protected ContentKey maxKey;
   protected ContentKey prefixKey;
   protected String filter;
-  protected Integer namespaceDepth;
   protected boolean withContent;
 
   protected BaseGetEntriesBuilder(BiFunction<PARAMS, String, PARAMS> paramsForPage) {
@@ -90,12 +89,6 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   @Override
   public GetEntriesBuilder filter(String filter) {
     this.filter = filter;
-    return this;
-  }
-
-  @Override
-  public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
-    this.namespaceDepth = namespaceDepth;
     return this;
   }
 

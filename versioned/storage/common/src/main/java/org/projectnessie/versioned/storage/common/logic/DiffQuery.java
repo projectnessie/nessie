@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Optional;
 import java.util.function.Predicate;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
@@ -31,12 +31,10 @@ public interface DiffQuery extends PageableQuery {
   Optional<PagingToken> pagingToken();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   CommitObj fromCommit();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 3)
   CommitObj toCommit();
 
@@ -54,13 +52,11 @@ public interface DiffQuery extends PageableQuery {
    * restrictions
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 4)
   StoreKey start();
 
   /** Optional start condition, see {@link #start()}. */
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 5)
   StoreKey end();
 
@@ -73,31 +69,28 @@ public interface DiffQuery extends PageableQuery {
   boolean prefetch();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 7)
   Predicate<StoreKey> filter();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   static DiffQuery diffQuery(
-      @Nullable @jakarta.annotation.Nullable PagingToken pagingToken,
-      @Nullable @jakarta.annotation.Nullable CommitObj fromCommit,
-      @Nullable @jakarta.annotation.Nullable CommitObj toCommit,
-      @Nullable @jakarta.annotation.Nullable StoreKey start,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
+      @Nullable PagingToken pagingToken,
+      @Nullable CommitObj fromCommit,
+      @Nullable CommitObj toCommit,
+      @Nullable StoreKey start,
+      @Nullable StoreKey end,
       boolean prefetch,
-      @Nullable @jakarta.annotation.Nullable Predicate<StoreKey> filter) {
+      @Nullable Predicate<StoreKey> filter) {
     return ImmutableDiffQuery.of(
         Optional.ofNullable(pagingToken), fromCommit, toCommit, start, end, prefetch, filter);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   static DiffQuery diffQuery(
-      @Nullable @jakarta.annotation.Nullable CommitObj fromCommit,
-      @Nullable @jakarta.annotation.Nullable CommitObj toCommit,
+      @Nullable CommitObj fromCommit,
+      @Nullable CommitObj toCommit,
       boolean prefetch,
-      @Nullable @jakarta.annotation.Nullable Predicate<StoreKey> filter) {
+      @Nullable Predicate<StoreKey> filter) {
     return diffQuery(null, fromCommit, toCommit, null, null, prefetch, filter);
   }
 }

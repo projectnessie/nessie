@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** A named reference representing a branch. */
@@ -27,7 +27,6 @@ public interface DetachedRef extends NamedRef {
   DetachedRef INSTANCE = ImmutableDetachedRef.builder().build();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   @Value.Redacted
   default String getName() {

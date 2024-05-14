@@ -16,13 +16,15 @@
 package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
  * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
- * the {@value #GRANT_TYPE} grant type to obtain a new access token.
+ * the "password" grant type to obtain a new access token.
  *
  * <p>Example:
  *
@@ -38,16 +40,14 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutablePasswordTokensRequest.class)
 @JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
-interface PasswordTokensRequest extends TokensRequestBase {
-
-  String GRANT_TYPE = "password";
+@JsonTypeName(GrantType.Constants.PASSWORD)
+interface PasswordTokensRequest extends TokensRequestBase, PublicClientRequest {
 
   /** REQUIRED. Value MUST be set to "password". */
-  @Value.Default
-  @JsonProperty("grant_type")
+  @Value.Derived
   @Override
-  default String getGrantType() {
-    return GRANT_TYPE;
+  default GrantType getGrantType() {
+    return GrantType.PASSWORD;
   }
 
   /** REQUIRED. The resource owner username. */
@@ -57,4 +57,18 @@ interface PasswordTokensRequest extends TokensRequestBase {
   /** REQUIRED. The resource owner password. */
   @JsonProperty("password")
   String getPassword();
+
+  static Builder builder() {
+    return ImmutablePasswordTokensRequest.builder();
+  }
+
+  interface Builder
+      extends TokensRequestBase.Builder<PasswordTokensRequest>,
+          PublicClientRequest.Builder<PasswordTokensRequest> {
+    @CanIgnoreReturnValue
+    Builder username(String username);
+
+    @CanIgnoreReturnValue
+    Builder password(String password);
+  }
 }

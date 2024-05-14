@@ -38,13 +38,15 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   @Value.Check
   default void check() {
     URI baseUri = getBaseUri();
-    if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
+    if (baseUri != null && !HttpUtils.isHttpUri(baseUri)) {
       throw new IllegalArgumentException(
           String.format(
               "Cannot start http client. %s must be a valid http or https address", baseUri));
     }
   }
 
+  @Nullable
+  @jakarta.annotation.Nullable
   URI getBaseUri();
 
   ObjectMapper getMapper();
@@ -91,11 +93,6 @@ public interface HttpRuntimeConfig extends AutoCloseable {
     //  Quarkus is not affected by the above issue.
 
     return true;
-  }
-
-  @Value.Default
-  default boolean forceUrlConnectionClient() {
-    return false;
   }
 
   @Value.Default

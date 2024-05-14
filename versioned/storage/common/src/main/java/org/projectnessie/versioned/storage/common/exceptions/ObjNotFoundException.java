@@ -17,9 +17,9 @@ package org.projectnessie.versioned.storage.common.exceptions;
 
 import static java.util.Arrays.asList;
 
+import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -27,12 +27,12 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 public class ObjNotFoundException extends Exception {
   private final ObjId[] objIds;
 
-  public ObjNotFoundException(@Nonnull @jakarta.annotation.Nonnull ObjId objId) {
+  public ObjNotFoundException(@Nonnull ObjId objId) {
     super("Object with ID " + objId + " not found");
     this.objIds = new ObjId[] {objId};
   }
 
-  public ObjNotFoundException(@Nonnull @jakarta.annotation.Nonnull List<ObjId> objIds) {
+  public ObjNotFoundException(@Nonnull List<ObjId> objIds) {
     super(
         objIds.size() == 1
             ? "Object with ID " + objIds.get(0) + " not found"

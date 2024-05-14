@@ -30,6 +30,17 @@ dependencies {
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-smile")
 
+  // required for custom object serialization tests
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-guava")
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+
+  testImplementation(project(":nessie-versioned-storage-common-tests"))
+
+  testCompileOnly(libs.immutables.builder)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
+
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 }

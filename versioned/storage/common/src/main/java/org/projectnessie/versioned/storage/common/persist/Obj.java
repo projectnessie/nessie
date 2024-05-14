@@ -15,13 +15,18 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_ID_KEY;
+
+import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface Obj {
 
   /** The ID of this object. */
   @JsonIgnore
+  @JacksonInject(OBJ_ID_KEY)
   ObjId id();
 
+  @JsonIgnore
   ObjType type();
 }

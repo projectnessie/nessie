@@ -17,6 +17,8 @@ package org.projectnessie.versioned;
 
 import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADATA_REWRITER;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +27,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
@@ -45,7 +45,6 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 public interface VersionStore {
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   RepositoryInformation getRepositoryInformation();
 
   /**
@@ -76,7 +75,6 @@ public interface VersionStore {
    * for different backends and even for different instances of the same backend.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
   Hash noAncestorHash();
 
   /**
@@ -100,19 +98,19 @@ public interface VersionStore {
    * @throws NullPointerException if one of the argument is {@code null}
    */
   CommitResult<Commit> commit(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
-      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
+      @Nonnull CommitValidator validator,
+      @Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   default CommitResult<Commit> commit(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
-      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return commit(branch, referenceHash, metadata, operations, x -> {}, (k, c) -> {});
   }
@@ -344,22 +342,18 @@ public interface VersionStore {
 
     /** Optional, if not {@code null}: the minimum key to return. */
     @Nullable
-    @jakarta.annotation.Nullable
     ContentKey minKey();
 
     /** Optional, if not {@code null}: the maximum key to return. */
     @Nullable
-    @jakarta.annotation.Nullable
     ContentKey maxKey();
 
     /** Optional, if not {@code null}: the prefix of the keys to return. */
     @Nullable
-    @jakarta.annotation.Nullable
     ContentKey prefixKey();
 
     /** Filter predicate, can be {@code null}. */
     @Nullable
-    @jakarta.annotation.Nullable
     BiPredicate<ContentKey, Content.Type> contentKeyPredicate();
 
     static ImmutableKeyRestrictions.Builder builder() {

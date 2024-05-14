@@ -21,6 +21,7 @@ plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
   id("nessie-jacoco")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - Quarkus Server"
@@ -33,37 +34,38 @@ val quarkusRunner by
 val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
-configurations.configureEach {
-  // Avoids dependency resolution error since Quarkus 3.3:
-  // Cannot select module with conflict on capability 'com.google.guava:listenablefuture:1.0' also
-  //   provided by
-  //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
-  resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
-    select("com.google.guava:guava:0")
-  }
-}
+// Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
+// resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
+// for clients, we have to live with :nessie-model producing an MR-jar. See
+// https://github.com/quarkusio/quarkus/issues/40236 and
+// https://github.com/projectnessie/nessie/issues/8390.
+configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
 
 dependencies {
-  implementation(project(":nessie-model"))
+  implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
+  implementation(project(":nessie-quarkus-auth"))
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-events-quarkus"))
+  implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-notice"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
-  implementation("org.jboss.resteasy:resteasy-core-spi")
-  implementation("io.quarkus:quarkus-resteasy")
-  implementation("io.quarkus:quarkus-resteasy-jackson")
+  implementation("io.quarkus:quarkus-resteasy-reactive")
+  implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
   implementation("io.quarkus:quarkus-reactive-routes")
-  implementation("io.quarkus:quarkus-elytron-security-properties-file")
-  implementation("io.quarkus:quarkus-smallrye-health")
-  implementation("io.quarkus:quarkus-oidc")
-  implementation("io.quarkus:quarkus-smallrye-openapi")
-  implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-core-deployment")
+  implementation("io.quarkus:quarkus-hibernate-validator")
+  implementation("io.quarkus:quarkus-smallrye-health")
+  implementation("io.quarkus:quarkus-smallrye-openapi")
+  implementation("io.quarkus:quarkus-elytron-security-properties-file")
+  implementation("io.quarkus:quarkus-oidc")
+  implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
@@ -82,11 +84,17 @@ dependencies {
     implementation("io.quarkus:quarkus-minikube")
   }
 
-  openapiSource(project(":nessie-model", "openapiSource"))
+  openapiSource(project(":nessie-model-quarkus", "openapiSource"))
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 
   testFixturesApi(project(":nessie-client"))
+  testFixturesApi(project(":nessie-model-quarkus"))
+  testFixturesApi(testFixtures(project(":nessie-client")))
   testFixturesApi(project(":nessie-client-testextension"))
   testFixturesApi(project(":nessie-jaxrs-tests"))
+  testFixturesApi(project(":nessie-quarkus-auth"))
   testFixturesApi(project(":nessie-quarkus-common"))
   testFixturesApi(project(":nessie-quarkus-tests"))
   testFixturesApi(project(":nessie-events-api"))
@@ -105,19 +113,15 @@ dependencies {
   }
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
-  testFixturesApi("io.quarkus:quarkus-rest-client")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
   testFixturesImplementation(libs.guava)
   testFixturesImplementation(libs.microprofile.openapi)
   testFixturesImplementation(libs.awaitility)
-
-  testFixturesApi(platform(libs.junit.bom))
-  testFixturesApi(libs.bundles.junit.testing)
+  testFixturesApi(libs.jakarta.validation.api)
 
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
-  intTestImplementation(libs.keycloak.admin.client)
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)
@@ -157,21 +161,12 @@ quarkus {
 }
 
 val quarkusAppPartsBuild = tasks.named("quarkusAppPartsBuild")
+val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
 quarkusAppPartsBuild.configure {
   dependsOn(pullOpenApiSpec)
   inputs.files(openapiSource)
 }
-
-tasks.withType<Test>().configureEach {
-  systemProperty(
-    "it.nessie.container.postgres.tag",
-    System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
-  )
-  systemProperty("keycloak.docker.tag", libs.versions.keycloak.get())
-}
-
-val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.

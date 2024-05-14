@@ -17,13 +17,13 @@ package org.projectnessie.versioned.storage.common.indexes;
 
 import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
@@ -113,7 +113,7 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean add(@Nonnull @jakarta.annotation.Nonnull StoreIndexElement<V> element) {
+  public boolean add(@Nonnull StoreIndexElement<V> element) {
     return loaded().add(element);
   }
 
@@ -123,12 +123,12 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
-  public boolean remove(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean remove(@Nonnull StoreKey key) {
     return loaded().remove(key);
   }
 
   @Override
-  public boolean contains(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public boolean contains(@Nonnull StoreKey key) {
     if (!loaded && (key.equals(firstKey) || key.equals(lastKey))) {
       return true;
     }
@@ -137,14 +137,12 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  public StoreIndexElement<V> get(@Nonnull @jakarta.annotation.Nonnull StoreKey key) {
+  public StoreIndexElement<V> get(@Nonnull StoreKey key) {
     return loaded().get(key);
   }
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
   public StoreKey first() {
     if (loaded || firstKey == null) {
       return loaded().first();
@@ -154,7 +152,6 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
   public StoreKey last() {
     if (loaded || lastKey == null) {
       return loaded().last();
@@ -169,24 +166,19 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Iterator<StoreIndexElement<V>> iterator() {
     return loaded().iterator();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Iterator<StoreIndexElement<V>> iterator(
-      @Nullable @jakarta.annotation.Nullable StoreKey begin,
-      @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch) {
+      @Nullable StoreKey begin, @Nullable StoreKey end, boolean prefetch) {
     return loaded().iterator(begin, end, prefetch);
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public ByteString serialize() {
     return loaded().serialize();
   }

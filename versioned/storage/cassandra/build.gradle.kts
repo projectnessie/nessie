@@ -30,11 +30,8 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common-proto"))
   implementation(project(":nessie-versioned-storage-common-serialize"))
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.errorprone.annotations)
   implementation(libs.agrona)
@@ -42,26 +39,21 @@ dependencies {
   implementation(libs.slf4j.api)
 
   implementation(platform(libs.cassandra.driver.bom))
-  implementation("com.datastax.oss:java-driver-core")
-
-  compileOnly(platform(libs.testcontainers.bom))
-  compileOnly("org.testcontainers:cassandra") {
-    exclude("com.datastax.cassandra", "cassandra-driver-core")
+  implementation("com.datastax.oss:java-driver-core") {
+    // spotbugs-annotations has only a GPL license!
+    exclude("com.github.spotbugs", "spotbugs-annotations")
   }
-  compileOnly(libs.docker.java.api)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly(project(":nessie-versioned-storage-testextension"))
-
+  intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:cassandra")
-  intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

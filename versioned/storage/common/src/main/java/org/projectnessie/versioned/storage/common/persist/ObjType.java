@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import java.util.function.LongSupplier;
+
 public interface ObjType {
 
   /** Must be unique among all registered object types. */
@@ -25,4 +27,21 @@ public interface ObjType {
 
   /** The target class that objects of this type should be serialized from and deserialized to. */
   Class<? extends Obj> targetClass();
+
+  /**
+   * Allows an object type to define how long a particular object instance can be cached.
+   *
+   * <p>{@value #CACHE_UNLIMITED}, which is the default implementation, defines that an object
+   * instance can be cached forever.
+   *
+   * <p>{@value #NOT_CACHED} defines that an object instance must never be cached.
+   *
+   * <p>A positive value defines the maximum age of an object
+   */
+  default long cachedObjectExpiresAtMicros(Obj obj, LongSupplier clock) {
+    return CACHE_UNLIMITED;
+  }
+
+  long CACHE_UNLIMITED = -1L;
+  long NOT_CACHED = 0L;
 }

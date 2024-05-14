@@ -162,21 +162,25 @@ final class CombinedClientImpl implements NessieApiV2 {
   }
 
   @Override
+  @Deprecated
   public AssignTagBuilder assignTag() {
     return new CombinedAssignTag(treeApi);
   }
 
   @Override
+  @Deprecated
   public AssignBranchBuilder assignBranch() {
     return new CombinedAssignBranch(treeApi);
   }
 
   @Override
+  @Deprecated
   public DeleteTagBuilder deleteTag() {
     return new CombinedDeleteTag(treeApi);
   }
 
   @Override
+  @Deprecated
   public DeleteBranchBuilder deleteBranch() {
     return new CombinedDeleteBranch(treeApi);
   }

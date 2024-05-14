@@ -38,19 +38,20 @@ concurrency:
 jobs:
   java:
     name: Java/Gradle macOS
-    runs-on: macos-13
+    runs-on: macos-14
+    timeout-minutes: 60
     if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
       SPARK_LOCAL_IP: localhost
       CI_MAC: "true"
 
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
-    - name: Gradle / compile
-      uses: gradle/gradle-build-action@v2
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
       env:
         # Same as for ci.yml
         GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17
@@ -58,17 +59,17 @@ jobs:
         GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
       with:
         cache-read-only: true
-        arguments: assemble --scan
+
+    - name: Gradle / compile
+      run: ./gradlew assemble --scan
 
     - name: Gradle / unit test
-      uses: gradle/gradle-build-action@v2
       env:
         SPARK_LOCAL_IP: localhost
-      with:
-        arguments: test --scan
+      run: ./gradlew test --scan
 
     - name: Capture Test Reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
         name: test-results

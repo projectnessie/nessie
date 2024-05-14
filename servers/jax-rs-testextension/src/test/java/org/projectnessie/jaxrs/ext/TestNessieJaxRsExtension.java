@@ -27,7 +27,7 @@ import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.storage.common.persist.Persist;
-import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;

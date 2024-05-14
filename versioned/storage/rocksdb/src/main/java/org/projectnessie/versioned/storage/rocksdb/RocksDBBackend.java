@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
 import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
 
+import jakarta.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -45,7 +45,7 @@ import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 
-final class RocksDBBackend implements Backend {
+public final class RocksDBBackend implements Backend {
   public static final String CF_REFERENCES = "nessie_refs";
   public static final String CF_OBJECTS = "nessie_objects";
 
@@ -59,7 +59,7 @@ final class RocksDBBackend implements Backend {
 
   private final Map<String, RocksDBRepo> repositories = new ConcurrentHashMap<>();
 
-  RocksDBBackend(RocksDBBackendConfig config) {
+  public RocksDBBackend(RocksDBBackendConfig config) {
     RocksDB.loadLibrary();
     this.config = config;
   }
@@ -149,7 +149,6 @@ final class RocksDBBackend implements Backend {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public PersistFactory createFactory() {
     initialize();

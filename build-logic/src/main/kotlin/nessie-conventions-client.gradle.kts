@@ -34,9 +34,9 @@ tasks.withType<JavaCompile>().configureEach {
     targetCompatibility = "1.8"
   } else if (name == "compileJava") {
     // Client production code must be compatible with Java 8
-    options.release.set(8)
+    options.release = 8
   } else {
     // Test code may depend on server code for in-JVM tests, so need Java 11 for test code
-    options.release.set(11)
+    options.release = 11
   }
 }

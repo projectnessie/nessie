@@ -16,11 +16,11 @@
 package org.projectnessie.versioned.storage.cassandra;
 
 import static java.lang.String.format;
-import static org.projectnessie.versioned.storage.cassandra.AbstractCassandraBackendTestFactory.KEYSPACE_FOR_TEST;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_NAME;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_REFS;
+import static org.projectnessie.versioned.storage.cassandratests.AbstractCassandraBackendTestFactory.KEYSPACE_FOR_TEST;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.datastax.oss.driver.api.core.CqlSession;
@@ -33,6 +33,7 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.versioned.storage.cassandratests.AbstractCassandraBackendTestFactory;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
@@ -45,8 +46,6 @@ import org.projectnessie.versioned.storage.common.persist.PersistLoader;
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractTestCassandraBackendFactory {
   @InjectSoftAssertions protected SoftAssertions soft;
-
-  static StoreConfig DEFAULT_CONFIG = new StoreConfig() {};
 
   @Test
   public void productionLike() throws Exception {
@@ -66,7 +65,7 @@ public abstract class AbstractTestCassandraBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -80,7 +79,7 @@ public abstract class AbstractTestCassandraBackendFactory {
           backend.setupSchema();
           PersistFactory persistFactory = backend.createFactory();
           soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-          Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+          Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
           soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -108,7 +107,7 @@ public abstract class AbstractTestCassandraBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -122,7 +121,7 @@ public abstract class AbstractTestCassandraBackendFactory {
         backend.setupSchema();
         PersistFactory persistFactory = backend.createFactory();
         soft.assertThat(persistFactory).isNotNull().isInstanceOf(CassandraPersistFactory.class);
-        Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
+        Persist persist = persistFactory.newPersist(StoreConfig.Adjustable.empty());
         soft.assertThat(persist).isNotNull().isInstanceOf(CassandraPersist.class);
 
         RepositoryLogic repositoryLogic = repositoryLogic(persist);
@@ -191,13 +190,13 @@ public abstract class AbstractTestCassandraBackendFactory {
         soft.assertThat(backend).isNotNull().isInstanceOf(CassandraBackend.class);
         soft.assertThatIllegalStateException()
             .isThrownBy(backend::setupSchema)
-            .withMessageStartingWith("Expected columns [")
-            .withMessageContaining("] do not contain all columns [")
-            .withMessageContaining(
-                "] for table '"
+            .withMessageStartingWith(
+                "The database table "
                     + TABLE_REFS
-                    + "'. DDL template:\nCREATE TABLE nessie."
-                    + TABLE_REFS);
+                    + " is missing mandatory columns created_at,deleted,ext_info,pointer,prev_ptr.\n"
+                    + "Found columns : boo,meep,ref_name,repo\n"
+                    + "Expected columns : ")
+            .withMessageContaining("DDL template:\nCREATE TABLE nessie." + TABLE_REFS);
       }
 
       executeDDL(client, "DROP TABLE IF EXISTS nessie." + TABLE_REFS);

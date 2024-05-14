@@ -126,6 +126,7 @@ public class BigTableBackendBuilder implements BackendBuilder {
               .dataClient(dataClient)
               .tableAdminClient(tableAdminClient)
               .tablePrefix(bigTableConfig.tablePrefix())
+              .totalApiTimeout(bigTableConfig.totalTimeout())
               .build();
       return factory.buildBackend(c);
     } catch (Exception e) {

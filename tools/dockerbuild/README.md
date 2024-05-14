@@ -4,10 +4,10 @@ The `build-push-images.sh` script is meant to build Java and optionally native i
 restricted to (or specialized for) `:nessie-quarkus`, but can be used with basically any Quarkus
 application.
 
-Minimal options (use `./build-push-images.sh -h` for an up-to-date listing) are:
+Minimal options (use `./build-push-images.sh --help` for an up-to-date listing) are:
 
-* `-g <gradle-project-name>` in the `:my-project-name` syntax
-* `-p <gradle-project-directory>` like `servers/quarkus-server`
+* `--gradle-project <gradle-project-name>` in the `:my-project-name` syntax
+* `--project-dir <gradle-project-directory>` like `servers/quarkus-server`
 * the image name as an argument, for example `projectnessie/nessie`
 
 The image name also defines where the built images are pushed to. By (Docker) default, it's Docker
@@ -20,12 +20,22 @@ example (see local Docker registry notes below):
 
 ```bash
 tools/dockerbuild/build-push-images.sh \
-  -g :nessie-quarkus \
-  -p servers/quarkus-server \
+  --gradle-project :nessie-quarkus \
+  --project-dir servers/quarkus-server \
   localhost:5000/projectnessie/nessie-local
 ```
 
 Hint: The images are pushed to the local registry, those will **not** show up in `docker images`.
+
+## Build an image for local use
+
+```bash
+tools/dockerbuild/build-push-images.sh \
+  --gradle-project :nessie-quarkus \
+  --project-dir servers/quarkus-server \
+  --local \
+  localhost/projectnessie/nessie-local
+```
 
 ## Updating your local Docker registry
 

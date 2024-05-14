@@ -15,11 +15,12 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.objtypes.Hashes.indexSegmentsHash;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX_SEGMENTS;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -30,30 +31,24 @@ public interface IndexSegmentsObj extends Obj {
 
   @Override
   default ObjType type() {
-    return StandardObjType.INDEX_SEGMENTS;
+    return INDEX_SEGMENTS;
   }
 
   @Override
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   ObjId id();
 
   @Value.Parameter(order = 2)
   List<IndexStripe> stripes();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static IndexSegmentsObj indexSegments(
-      @Nullable @jakarta.annotation.Nullable ObjId id,
-      @Nonnull @jakarta.annotation.Nonnull List<IndexStripe> stripes) {
+  static IndexSegmentsObj indexSegments(@Nullable ObjId id, @Nonnull List<IndexStripe> stripes) {
     return ImmutableIndexSegmentsObj.of(id, stripes);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  static IndexSegmentsObj indexSegments(
-      @Nonnull @jakarta.annotation.Nonnull List<IndexStripe> stripes) {
-    return indexSegments(indexSegmentsHash(stripes), stripes);
+  static IndexSegmentsObj indexSegments(@Nonnull List<IndexStripe> stripes) {
+    return indexSegments(objIdHasher(INDEX_SEGMENTS).hashCollection(stripes).generate(), stripes);
   }
 }

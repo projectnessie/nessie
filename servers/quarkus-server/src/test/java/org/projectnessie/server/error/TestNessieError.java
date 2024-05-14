@@ -69,7 +69,7 @@ class TestNessieError {
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     client =
         HttpClient.builder()
-            .setBaseUri(uri.resolve("nessieErrorTest"))
+            .setBaseUri(uri.resolve("../nessieErrorTest"))
             .setObjectMapper(mapper)
             .addResponseFilter(new NessieHttpResponseFilter())
             .build();
@@ -122,7 +122,7 @@ class TestNessieError {
             () -> unwrap(() -> client.newRequest().path("unsupportedMediaTypePut").put("foo")))
         .isInstanceOf(NessieUnsupportedMediaTypeException.class)
         .hasMessage(
-            "Unsupported Media Type (HTTP/415): RESTEASY003065: Cannot consume content type");
+            "Unsupported Media Type (HTTP/415): The content-type header value did not match the value in @Consumes");
   }
 
   @Test

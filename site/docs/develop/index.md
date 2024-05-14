@@ -15,7 +15,7 @@ creators.
 The Iceberg format relies on a set of metadata files stored with (or near) the actual
 data tables. This allows Iceberg to fulfill the same role as the Hive Metastore for transactions without the need for
 expensive metadata scans or centralized planning (see [Iceberg
-performance](https://iceberg.apache.org/performance/)). This includes
+performance](https://iceberg.apache.org/docs/latest/performance/)). This includes
 things such as partitioning (including hidden partitions), schema migrations, appends and deletes.  It does however
 require a pointer to the active metadata set to function. This pointer allows the Iceberg client to acquire and read the
 current schema, files and partitions in the dataset. Iceberg currently relies on the Hive metastore or hdfs to perform

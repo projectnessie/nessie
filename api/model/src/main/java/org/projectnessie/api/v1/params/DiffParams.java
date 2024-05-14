@@ -30,8 +30,6 @@ public class DiffParams {
 
   private static final char HASH_SEPARATOR = '*';
 
-  @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   @jakarta.validation.constraints.Pattern(
       regexp = Validation.REF_NAME_REGEX,
@@ -46,8 +44,6 @@ public class DiffParams {
       message = Validation.HASH_MESSAGE)
   private String fromHashOnRef;
 
-  @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   @jakarta.validation.constraints.Pattern(
       regexp = Validation.REF_NAME_REGEX,
@@ -62,7 +58,27 @@ public class DiffParams {
       message = Validation.HASH_MESSAGE)
   private String toHashOnRef;
 
+  @Parameter(
+      description = "The 'from' reference (and optional hash) to start the diff from",
+      examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
+  @PathParam("fromRefWithHash")
+  @jakarta.ws.rs.PathParam("fromRefWithHash")
+  private String fromRefWithHash;
+
+  @Parameter(
+      description = "The 'to' reference (and optional hash) to end the diff at.",
+      examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
+  @PathParam("toRefWithHash")
+  @jakarta.ws.rs.PathParam("toRefWithHash")
+  private String toRefWithHash;
+
   public DiffParams() {}
+
+  // for testing
+  DiffParams(String fromRefWithHash, String toRefWithHash) {
+    this.fromRefWithHash = fromRefWithHash;
+    this.toRefWithHash = toRefWithHash;
+  }
 
   @org.immutables.builder.Builder.Constructor
   DiffParams(
@@ -76,26 +92,6 @@ public class DiffParams {
     this.toHashOnRef = toHashOnRef;
   }
 
-  @Parameter(
-      description = "The 'from' reference (and optional hash) to start the diff from",
-      examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
-  @PathParam("fromRefWithHash")
-  @jakarta.ws.rs.PathParam("fromRefWithHash")
-  public void setFromRefWithHash(String value) {
-    this.fromRef = parseRefName(value);
-    this.fromHashOnRef = parseHash(value);
-  }
-
-  @Parameter(
-      description = "The 'to' reference (and optional hash) to end the diff at.",
-      examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
-  @PathParam("toRefWithHash")
-  @jakarta.ws.rs.PathParam("toRefWithHash")
-  public void setToRefWithHash(String value) {
-    this.toRef = parseRefName(value);
-    this.toHashOnRef = parseHash(value);
-  }
-
   private String parseRefName(String param) {
     int idx = param.indexOf(HASH_SEPARATOR);
     return idx == 0 ? null : idx < 0 ? param : param.substring(0, idx);
@@ -107,22 +103,42 @@ public class DiffParams {
   }
 
   public String getFromRef() {
+    if (fromRefWithHash != null) {
+      this.fromRef = parseRefName(fromRefWithHash);
+      this.fromHashOnRef = parseHash(fromRefWithHash);
+      fromRefWithHash = null;
+    }
     return fromRef;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
   public String getFromHashOnRef() {
+    if (fromRefWithHash != null) {
+      this.fromRef = parseRefName(fromRefWithHash);
+      this.fromHashOnRef = parseHash(fromRefWithHash);
+      fromRefWithHash = null;
+    }
     return emptyToNull(fromHashOnRef);
   }
 
   public String getToRef() {
+    if (toRefWithHash != null) {
+      this.toRef = parseRefName(toRefWithHash);
+      this.toHashOnRef = parseHash(toRefWithHash);
+      toRefWithHash = null;
+    }
     return toRef;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
   public String getToHashOnRef() {
+    if (toRefWithHash != null) {
+      this.toRef = parseRefName(toRefWithHash);
+      this.toHashOnRef = parseHash(toRefWithHash);
+      toRefWithHash = null;
+    }
     return emptyToNull(toHashOnRef);
   }
 

@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import org.projectnessie.versioned.storage.jdbctests.AbstractJdbcBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbctests.H2BackendTestFactory;
+
 public class TestH2BackendFactory extends AbstractTestJdbcBackendFactory {
 
   @Override

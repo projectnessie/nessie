@@ -23,10 +23,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
@@ -132,6 +133,7 @@ public class KeycloakTestResourceLifecycleManager
   public static final String KEYCLOAK_WEB_APP_CLIENT = "keycloak.web-app.client";
   public static final String TOKEN_USER_ROLES = "keycloak.token.user-roles";
   public static final String TOKEN_ADMIN_ROLES = "keycloak.token.admin-roles";
+  public static final String KEYCLOAK_CLIENT_SCOPES = "keycloak.client.scopes";
 
   private static CustomKeycloakContainer keycloak;
 
@@ -144,6 +146,7 @@ public class KeycloakTestResourceLifecycleManager
   private String webAppClientId;
   private List<String> tokenUserRoles;
   private List<String> tokenAdminRoles;
+  private List<String> clientScopes;
 
   private CustomKeycloakContainer.KeycloakConfig containerConfig;
 
@@ -158,6 +161,10 @@ public class KeycloakTestResourceLifecycleManager
     webAppClientId = initArg(initArgs, KEYCLOAK_WEB_APP_CLIENT, "quarkus-web-app");
     tokenUserRoles = List.of(initArg(initArgs, TOKEN_USER_ROLES, "user").split(","));
     tokenAdminRoles = List.of(initArg(initArgs, TOKEN_ADMIN_ROLES, "user,admin").split(","));
+    clientScopes =
+        List.of(
+            initArg(initArgs, KEYCLOAK_CLIENT_SCOPES, "openid,email,profile,catalog,sign")
+                .split(","));
 
     CustomKeycloakContainer.KeycloakConfig.Builder configBuilder =
         CustomKeycloakContainer.builder().fromProperties(initArgs);
@@ -205,14 +212,25 @@ public class KeycloakTestResourceLifecycleManager
     realm.getRoles().getRealm().add(new RoleRepresentation("admin", null, false));
     realm.getRoles().getRealm().add(new RoleRepresentation("confidential", null, false));
 
-    realm.getClients().add(CustomKeycloakContainer.createServiceClient(serviceClientId));
+    realm
+        .getClients()
+        .add(CustomKeycloakContainer.createServiceClient(serviceClientId, clientScopes));
     realm.getClients().add(CustomKeycloakContainer.createWebAppClient(webAppClientId));
 
     realm.getUsers().add(CustomKeycloakContainer.createUser("alice", tokenUserRoles));
     realm.getUsers().add(CustomKeycloakContainer.createUser("admin", tokenAdminRoles));
-    realm
-        .getUsers()
-        .add(CustomKeycloakContainer.createUser("jdoe", Arrays.asList("user", "confidential")));
+
+    List<ClientScopeRepresentation> scopes =
+        clientScopes.stream()
+            .map(
+                scopeName -> {
+                  ClientScopeRepresentation scope = new ClientScopeRepresentation();
+                  scope.setName(scopeName);
+                  scope.setProtocol("openid-connect");
+                  return scope;
+                })
+            .collect(Collectors.toList());
+    realm.setClientScopes(scopes);
   }
 
   @Override

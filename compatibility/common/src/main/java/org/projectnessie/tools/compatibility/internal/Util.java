@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.platform.engine.UniqueId;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.tools.compatibility.api.Version;
 
 final class Util {
 
@@ -71,8 +72,11 @@ final class Util {
     }
   }
 
-  static URI resolveNessieUri(URI base, Class<? extends NessieApi> apiType) {
+  static URI resolveNessieUri(URI base, Version version, Class<? extends NessieApi> apiType) {
     String suffix = NessieApiV2.class.isAssignableFrom(apiType) ? "v2" : "v1";
+    if (version.isGreaterThanOrEqual(Version.NESSIE_URL_API_SUFFIX)) {
+      suffix = "api/" + suffix;
+    }
     return base.resolve(suffix);
   }
 }

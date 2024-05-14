@@ -17,24 +17,22 @@ package org.projectnessie.quarkus.config;
 
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithConverter;
-import io.smallrye.config.WithDefault;
-import io.smallrye.config.WithName;
+import java.util.Optional;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 
+/**
+ * Setting {@code nessie.version.store.type=JDBC} enables transactional/RDBMS as the version store
+ * used by the Nessie server. Configuration of the datastore will be done by Quarkus and depends on
+ * many factors, such as the actual database in use. A complete set of JDBC configuration options
+ * can be found on <a href="https://quarkus.io/guides/datasource">quarkus.io</a>.
+ */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.jdbc")
 public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
 
-  @WithName("catalog")
-  @WithDefault("")
-  @WithConverter(RepoIdConverter.class)
   @Override
-  String catalog();
+  Optional<String> catalog();
 
-  @WithName("schema")
-  @WithDefault("")
-  @WithConverter(RepoIdConverter.class)
   @Override
-  String schema();
+  Optional<String> schema();
 }

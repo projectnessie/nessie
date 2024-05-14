@@ -20,7 +20,7 @@ import java.time.Duration;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface CassandraBackendConfig {
+public interface CassandraBackendConfig extends CassandraConfig {
   CqlSession client();
 
   @Value.Default
@@ -28,21 +28,17 @@ public interface CassandraBackendConfig {
     return "nessie";
   }
 
-  /** Timeout used when creating tables. */
+  @Override
   @Value.Default
   default Duration ddlTimeout() {
     return Duration.parse(DEFAULT_DDL_TIMEOUT);
   }
 
-  /** Timeout used for queries and updates. */
+  @Override
   @Value.Default
   default Duration dmlTimeout() {
     return Duration.parse(DEFAULT_DML_TIMEOUT);
   }
-
-  String DEFAULT_DDL_TIMEOUT = "PT5S";
-
-  String DEFAULT_DML_TIMEOUT = "PT3S";
 
   static ImmutableCassandraBackendConfig.Builder builder() {
     return ImmutableCassandraBackendConfig.builder();

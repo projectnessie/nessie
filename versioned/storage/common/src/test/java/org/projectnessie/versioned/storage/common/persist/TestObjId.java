@@ -23,6 +23,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.deseriali
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromBytes;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 
 import com.google.common.hash.Hashing;
 import java.nio.ByteBuffer;
@@ -115,13 +116,7 @@ public class TestObjId {
   @MethodSource("hashOfString")
   void fromString(String s, Class<? extends ObjId> type) {
     ObjId h = objIdFromString(s);
-    soft.assertThat(h).isInstanceOf(type);
-    soft.assertThat(h.size()).isEqualTo(s.length() / 2);
-    soft.assertThat(h.serializedSize()).isEqualTo(h.size() + 1);
-    soft.assertThat(h.asByteArray()).hasSize(h.size()).isEqualTo(fromHex(s, false).array());
-    soft.assertThat(h.asByteBuffer()).isEqualTo(fromHex(s, false));
-    soft.assertThat(h.toString()).isEqualTo(s.toLowerCase(Locale.US));
-    soft.assertThat(h).isEqualTo(deserializeObjId(fromHex(s, true)));
+    verify(s, type, h);
   }
 
   @ParameterizedTest
@@ -131,13 +126,7 @@ public class TestObjId {
     fromHex(s, false).get(bytes);
 
     ObjId h = objIdFromByteArray(bytes);
-    soft.assertThat(h).isInstanceOf(type);
-    soft.assertThat(h.size()).isEqualTo(s.length() / 2);
-    soft.assertThat(h.serializedSize()).isEqualTo(h.size() + 1);
-    soft.assertThat(h.asByteArray()).hasSize(h.size()).isEqualTo(fromHex(s, false).array());
-    soft.assertThat(h.asByteBuffer()).isEqualTo(fromHex(s, false));
-    soft.assertThat(h.toString()).isEqualTo(s.toLowerCase(Locale.US));
-    soft.assertThat(h).isEqualTo(deserializeObjId(fromHex(s, true)));
+    verify(s, type, h);
   }
 
   @ParameterizedTest
@@ -146,14 +135,43 @@ public class TestObjId {
     byte[] bytes = new byte[s.length() / 2];
     fromHex(s, false).get(bytes);
 
-    ObjId h = objIdFromBytes(ByteString.copyFrom(bytes));
+    ByteString byteString = ByteString.copyFrom(bytes);
+    ObjId h = objIdFromBytes(byteString);
+    verify(s, type, h);
+    soft.assertThat(h.asBytes()).isEqualTo(byteString);
+  }
+
+  @ParameterizedTest
+  @MethodSource("hashOfString")
+  void serializeTo(String s, @SuppressWarnings("unused") Class<? extends ObjId> type) {
+    byte[] bytes = new byte[s.length() / 2];
+    fromHex(s, false).get(bytes);
+
+    ObjId h = objIdFromByteArray(bytes);
+
+    ByteBuffer target = ByteBuffer.allocate(h.size() + 1);
+    h.serializeTo(target);
+    target = target.flip();
+    ByteBuffer reference = ByteBuffer.allocate(h.size() + 1);
+    putVarInt(reference, h.size());
+    reference.put(bytes);
+    reference = reference.flip();
+    soft.assertThat(target).isEqualTo(reference);
+
+    ObjId.skipObjId(target);
+    soft.assertThat(target.position()).isEqualTo(target.limit());
+  }
+
+  private void verify(String s, Class<? extends ObjId> type, ObjId h) {
     soft.assertThat(h).isInstanceOf(type);
     soft.assertThat(h.size()).isEqualTo(s.length() / 2);
     soft.assertThat(h.serializedSize()).isEqualTo(h.size() + 1);
     soft.assertThat(h.asByteArray()).hasSize(h.size()).isEqualTo(fromHex(s, false).array());
     soft.assertThat(h.asByteBuffer()).isEqualTo(fromHex(s, false));
+    soft.assertThat(ObjId.objIdFromByteBuffer(h.asByteBuffer())).isEqualTo(h);
     soft.assertThat(h.toString()).isEqualTo(s.toLowerCase(Locale.US));
     soft.assertThat(h).isEqualTo(deserializeObjId(fromHex(s, true)));
+    soft.assertThat(h.heapSize()).isGreaterThan(h.size());
   }
 
   static Stream<Arguments> hashCodes() {

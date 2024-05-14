@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.lang.String.format;
 import static org.projectnessie.versioned.storage.jdbc.AbstractJdbcPersist.sqlSelectMultiple;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.BIGINT;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.BOOL;
@@ -37,11 +38,14 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_REFS;
 
 import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -49,26 +53,27 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 
-final class JdbcBackend implements Backend {
+public final class JdbcBackend implements Backend {
 
   private final DatabaseSpecific databaseSpecific;
   private final DataSource dataSource;
   private final boolean closeDataSource;
-  private final JdbcBackendConfig config;
   private final String createTableRefsSql;
   private final String createTableObjsSql;
+  private String catalog;
+  private String schema;
 
-  JdbcBackend(
-      @Nonnull @jakarta.annotation.Nonnull JdbcBackendConfig config,
-      @Nonnull @jakarta.annotation.Nonnull DatabaseSpecific databaseSpecific,
+  public JdbcBackend(
+      @Nonnull JdbcBackendConfig config,
+      @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {
-    this.config = config;
     this.dataSource = config.dataSource();
+    this.catalog = config.catalog().orElse(null);
+    this.schema = config.schema().orElse(null);
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
     createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
@@ -159,7 +164,6 @@ final class JdbcBackend implements Backend {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public PersistFactory createFactory() {
     return new JdbcPersistFactory(this);
@@ -174,6 +178,12 @@ final class JdbcBackend implements Backend {
   @Override
   public void setupSchema() {
     try (Connection conn = borrowConnection()) {
+      if (catalog == null || catalog.isEmpty()) {
+        catalog = conn.getCatalog();
+      }
+      if (schema == null || schema.isEmpty()) {
+        schema = conn.getSchema();
+      }
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
       createTableIfNotExists(
@@ -210,10 +220,6 @@ final class JdbcBackend implements Backend {
       Map<String, Integer> expectedPrimaryKey)
       throws SQLException {
 
-    // TODO implement catalog + schema stuff...
-    String catalog = config.catalog();
-    String schema = config.schema();
-
     try (Statement st = conn.createStatement()) {
       if (conn.getMetaData().storesLowerCaseIdentifiers()) {
         tableName = tableName.toLowerCase(Locale.ROOT);
@@ -248,13 +254,18 @@ final class JdbcBackend implements Backend {
               primaryKey.keySet(),
               tableName,
               createTable);
-          checkState(
-              columns.keySet().containsAll(expectedColumns),
-              "Expected columns %s do not match the existing columns %s for table '%s'. DDL template:\n%s",
-              expectedColumns,
-              columns.keySet(),
-              tableName,
-              createTable);
+          Set<String> missingColumns = new HashSet<>(expectedColumns);
+          missingColumns.removeAll(columns.keySet());
+          if (!missingColumns.isEmpty()) {
+            throw new IllegalStateException(
+                format(
+                    "The database table %s is missing mandatory columns %s.%nFound columns : %s%nExpected columns : %s%nDDL template:\n%s",
+                    tableName,
+                    sortedColumnNames(missingColumns),
+                    sortedColumnNames(columns.keySet()),
+                    sortedColumnNames(expectedColumns),
+                    createTable));
+          }
 
           // Existing table looks compatible
           return;
@@ -265,14 +276,18 @@ final class JdbcBackend implements Backend {
     }
   }
 
+  private static String sortedColumnNames(Collection<?> input) {
+    return input.stream().map(Object::toString).sorted().collect(Collectors.joining(","));
+  }
+
   @Override
   public String configInfo() {
     StringBuilder info = new StringBuilder();
-    String s = config.catalog();
+    String s = catalog;
     if (s != null && !s.isEmpty()) {
       info.append("catalog: ").append(s);
     }
-    s = config.schema();
+    s = schema;
     if (s != null && !s.isEmpty()) {
       if (info.length() > 0) {
         info.append(", ");

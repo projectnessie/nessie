@@ -29,6 +29,8 @@ import static java.time.temporal.ChronoField.YEAR;
 import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,8 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -66,14 +66,12 @@ public final class TypeMapping {
   private TypeMapping() {}
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static ObjId hashToObjId(@Nonnull @jakarta.annotation.Nonnull Hash hash) {
+  public static ObjId hashToObjId(@Nonnull Hash hash) {
     return ObjId.objIdFromBytes(hash.asBytes());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static Hash objIdToHash(@Nonnull @jakarta.annotation.Nonnull ObjId objId) {
+  public static Hash objIdToHash(@Nonnull ObjId objId) {
     return Hash.of(objId.asBytes());
   }
 
@@ -89,8 +87,7 @@ public final class TypeMapping {
    * by {@code (char)1}, followed by {@code (char)0}, followed by the "variant".
    */
   @Nullable
-  @jakarta.annotation.Nullable
-  public static ContentKey storeKeyToKey(@Nonnull @jakarta.annotation.Nonnull StoreKey storeKey) {
+  public static ContentKey storeKeyToKey(@Nonnull StoreKey storeKey) {
     String universe;
     List<String> keyElements;
     String variant;
@@ -131,68 +128,54 @@ public final class TypeMapping {
    * as a {@link #CONTENT_DISCRIMINATOR content object}.
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKey(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+  public static StoreKey keyToStoreKey(@Nonnull ContentKey key) {
     return keyToStoreKeyVariant(key, CONTENT_DISCRIMINATOR);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKey(
-      @Nonnull @jakarta.annotation.Nonnull List<String> keyElements) {
+  public static StoreKey keyToStoreKey(@Nonnull List<String> keyElements) {
     return keyToStoreKeyVariant(keyElements, CONTENT_DISCRIMINATOR);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKeyNoVariant(
-      @Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+  public static StoreKey keyToStoreKeyNoVariant(@Nonnull ContentKey key) {
     return StoreKey.keyFromString(keyToStoreKeyPrepare(key).toString());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKeyVariant(
-      @Nonnull @jakarta.annotation.Nonnull ContentKey key, String discriminator) {
+  public static StoreKey keyToStoreKeyVariant(@Nonnull ContentKey key, String discriminator) {
     return keyToStoreKeyVariant(key.getElements(), discriminator);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   public static StoreKey keyToStoreKeyVariant(
-      @Nonnull @jakarta.annotation.Nonnull List<String> keyElements, String discriminator) {
+      @Nonnull List<String> keyElements, String discriminator) {
     StringBuilder sb = keyToStoreKeyPrepare(keyElements);
     sb.append((char) 0).append(discriminator);
     return StoreKey.keyFromString(sb.toString());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKeyMin(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+  public static StoreKey keyToStoreKeyMin(@Nonnull ContentKey key) {
     StringBuilder sb = keyToStoreKeyPrepare(key);
     return StoreKey.keyFromString(sb.toString());
   }
 
   /** Computes the max-key. */
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKeyMax(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+  public static StoreKey keyToStoreKeyMax(@Nonnull ContentKey key) {
     StringBuilder sb = keyToStoreKeyPrepare(key);
     sb.append((char) 0).append((char) 255);
     return StoreKey.keyFromString(sb.toString());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private static StringBuilder keyToStoreKeyPrepare(
-      @Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+  private static StringBuilder keyToStoreKeyPrepare(@Nonnull ContentKey key) {
     return keyToStoreKeyPrepare(key.getElements());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  private static StringBuilder keyToStoreKeyPrepare(
-      @Nonnull @jakarta.annotation.Nonnull List<String> keyElements) {
+  private static StringBuilder keyToStoreKeyPrepare(@Nonnull List<String> keyElements) {
     // Note: the relative values of outer and inner (key elements) separators affect the correctness
     // of StoreKey comparisons WRT to ContentKey comparisons. The inner separator must be greater
     // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
@@ -216,9 +199,7 @@ public final class TypeMapping {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static CommitHeaders headersFromCommitMeta(
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta commitMeta) {
+  public static CommitHeaders headersFromCommitMeta(@Nonnull CommitMeta commitMeta) {
     CommitHeaders.Builder headers = newCommitHeaders();
     if (commitMeta.getCommitTime() != null) {
       headers.add(COMMIT_TIME, instantToHeaderValue(commitMeta.getCommitTime()));
@@ -240,8 +221,7 @@ public final class TypeMapping {
   }
 
   public static ImmutableCommitMeta.Builder headersToCommitMeta(
-      @Nonnull @jakarta.annotation.Nonnull CommitHeaders headers,
-      @Nonnull @jakarta.annotation.Nonnull ImmutableCommitMeta.Builder commitMeta) {
+      @Nonnull CommitHeaders headers, @Nonnull ImmutableCommitMeta.Builder commitMeta) {
     for (String header : headers.keySet()) {
       String v = headers.getFirst(header);
       switch (header) {
@@ -269,14 +249,12 @@ public final class TypeMapping {
   }
 
   public static void fromCommitMeta(
-      @Nonnull @jakarta.annotation.Nonnull CommitMeta commitMeta,
-      @Nonnull @jakarta.annotation.Nonnull CreateCommit.Builder commit) {
+      @Nonnull CommitMeta commitMeta, @Nonnull CreateCommit.Builder commit) {
     commit.headers(headersFromCommitMeta(commitMeta)).message(commitMeta.getMessage());
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public static CommitMeta toCommitMeta(@Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
+  public static CommitMeta toCommitMeta(@Nonnull CommitObj commit) {
     ImmutableCommitMeta.Builder commitMeta =
         CommitMeta.builder()
             .message(commit.message())

@@ -15,11 +15,10 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
 public interface PersistFactory {
   @Nonnull
-  @jakarta.annotation.Nonnull
-  Persist newPersist(@Nonnull @jakarta.annotation.Nonnull StoreConfig config);
+  Persist newPersist(@Nonnull StoreConfig config);
 }

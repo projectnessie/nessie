@@ -16,13 +16,12 @@
 package org.projectnessie.gc.contents;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.net.URI;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.files.DeleteResult;
@@ -30,6 +29,7 @@ import org.projectnessie.gc.files.DeleteSummary;
 import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * Represents a set of identified live contents from an {@link
@@ -53,21 +53,17 @@ public abstract class LiveContentSet {
   public abstract Instant created();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Instant identifyCompleted();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Instant expiryStarted();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Instant expiryCompleted();
 
   public abstract Status status();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String errorMessage();
 
   public void delete() {
@@ -84,35 +80,31 @@ public abstract class LiveContentSet {
   }
 
   @MustBeClosed
-  public Stream<ContentReference> fetchContentReferences(
-      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
+  public Stream<ContentReference> fetchContentReferences(@NotNull String contentId) {
     return persistenceSpi().fetchContentReferences(id(), contentId);
   }
 
-  public void associateBaseLocations(String contentId, Collection<URI> baseLocations) {
+  public void associateBaseLocations(String contentId, Collection<StorageUri> baseLocations) {
     // TODO detect duplicate base locations for different content-IDs
     persistenceSpi().associateBaseLocations(id(), contentId, baseLocations);
   }
 
   @MustBeClosed
-  public Stream<URI> fetchAllBaseLocations() {
+  public Stream<StorageUri> fetchAllBaseLocations() {
     return persistenceSpi().fetchAllBaseLocations(id());
   }
 
   @MustBeClosed
-  public Stream<URI> fetchBaseLocations(
-      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
+  public Stream<StorageUri> fetchBaseLocations(@NotNull String contentId) {
     return persistenceSpi().fetchBaseLocations(id(), contentId);
   }
 
-  public LiveContentSet startExpireContents(
-      @NotNull @jakarta.validation.constraints.NotNull Instant started) {
+  public LiveContentSet startExpireContents(@NotNull Instant started) {
     return persistenceSpi().startExpireContents(id(), started);
   }
 
   public LiveContentSet finishedExpireContents(
-      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      @NotNull Instant finished, @Nullable Throwable failure) {
     return persistenceSpi().finishedExpireContents(id(), finished, failure);
   }
 
@@ -144,7 +136,7 @@ public abstract class LiveContentSet {
       }
 
       @Override
-      public DeleteSummary deleteMultiple(URI baseUri, Stream<FileReference> fileObjects) {
+      public DeleteSummary deleteMultiple(StorageUri baseUri, Stream<FileReference> fileObjects) {
         long count = addFileDeletions(fileObjects);
         return DeleteSummary.of(count, 0);
       }

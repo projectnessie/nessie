@@ -15,7 +15,6 @@
  */
 package org.projectnessie.gc.contentes;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
@@ -31,6 +30,7 @@ import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestLiveContentSet {
@@ -45,10 +45,10 @@ public class TestLiveContentSet {
     persistenceSpi.startExpireContents(id, Instant.now());
     LiveContentSet liveContentSet = persistenceSpi.getLiveContentSet(id);
 
-    URI base = dir.toUri();
-    URI path = URI.create("foo");
-    URI path2 = URI.create("foo2");
-    URI path3 = URI.create("foo3");
+    StorageUri base = StorageUri.of(dir.toUri());
+    StorageUri path = StorageUri.of("foo");
+    StorageUri path2 = StorageUri.of("foo2");
+    StorageUri path3 = StorageUri.of("foo3");
 
     FileReference ref = FileReference.of(path, base, -1L);
     FileReference ref2 = FileReference.of(path2, base, -1L);

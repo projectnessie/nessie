@@ -45,7 +45,7 @@ import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.security.Principal;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,9 +61,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
@@ -99,6 +97,7 @@ import org.projectnessie.model.ReferenceHistoryState;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -138,11 +137,8 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   public TreeApiImpl(
-      ServerConfig config,
-      VersionStore store,
-      Authorizer authorizer,
-      Supplier<Principal> principal) {
-    super(config, store, authorizer, principal);
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    super(config, store, authorizer, accessContext);
   }
 
   @Override
@@ -513,12 +509,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
     Set<Check> checks = newHashSetWithExpectedSize(operations.size());
     for (Operation op : operations) {
-      if (op instanceof Operation.Put) {
-        checks.add(canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey())));
-      } else if (op instanceof Operation.Delete) {
-        checks.add(canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey())));
-      } else {
+      if (!(op instanceof Operation.Put) && !(op instanceof Operation.Delete)) {
         throw new IllegalStateException("Unknown operation " + op);
+      }
+      IdentifiedContentKey identifiedKey = identifiedKeys.get(op.getKey());
+      if (identifiedKey != null) {
+        checks.add(canReadContentKey(endRef.getValue(), identifiedKey));
+      } else {
+        checks.add(canReadContentKey(endRef.getValue(), op.getKey()));
       }
     }
 
@@ -533,13 +531,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     Map<Check, String> failures = anyCheck ? accessCheck.check() : emptyMap();
 
     for (Operation op : operations) {
-      Check check;
-      if (op instanceof Operation.Put) {
-        check = canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey()));
-      } else if (op instanceof Operation.Delete) {
-        check = canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey()));
-      } else {
+      if (!(op instanceof Operation.Put) && !(op instanceof Operation.Delete)) {
         throw new IllegalStateException("Unknown operation " + op);
+      }
+      IdentifiedContentKey identifiedKey = identifiedKeys.get(op.getKey());
+      Check check;
+      if (identifiedKey != null) {
+        check = canReadContentKey(endRef.getValue(), identifiedKey);
+      } else {
+        check = canReadContentKey(endRef.getValue(), op.getKey());
       }
       if (failures.containsKey(check)) {
         failedChecks.add(check);
@@ -624,7 +624,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public MergeResponse transplantCommitsIntoBranch(
       String branchName,
       String expectedHash,
-      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
+      @Nullable CommitMeta commitMeta,
       List<String> hashesToTransplant,
       String fromRefName,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
@@ -720,7 +720,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String expectedHash,
       String fromRefName,
       String fromHash,
-      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
+      @Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeBehavior,
       Boolean dryRun,
@@ -808,6 +808,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private MergeResponse createResponse(Boolean fetchAdditionalInfo, MergeResult<Commit> result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
@@ -921,7 +922,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       // apply filter as early as possible to avoid work (i.e. content loading, authz checks)
       // for entries that we will eventually throw away
-      final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth.intValue();
+      final int namespaceFilterDepth = namespaceDepth == null ? 0 : namespaceDepth;
       if (namespaceFilterDepth > 0) {
         BiPredicate<ContentKey, Content.Type> depthFilter =
             (key, type) -> key.getElementCount() >= namespaceFilterDepth;
@@ -1138,7 +1139,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   private static ReferenceMetadata extractReferenceMetadata(ReferenceInfo<CommitMeta> refWithHash) {
     ImmutableReferenceMetadata.Builder builder = ImmutableReferenceMetadata.builder();
     boolean found = false;

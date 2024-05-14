@@ -40,9 +40,9 @@ public interface MergeKeyBehavior {
    * <p>This parameter is not supported when multiple commits will be generated, which means only
    * merge operations.
    *
-   * <p>Supplying a {@link #getResolvedContent() resolved content} requires setting this attribute.
-   * The merge operation will result in a "conflict", if current value on the target branch is
-   * different from this value.
+   * <p>Supplying a {@linkplain #getResolvedContent() resolved content} requires setting this
+   * attribute. The merge operation will result in a "conflict", if current value on the target
+   * branch is different from this value.
    */
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
@@ -55,13 +55,11 @@ public interface MergeKeyBehavior {
    * the merge operation instead of detecting and potentially raising a merge-conflict, assuming the
    * content-type is the same.
    *
-   * <p>This functionality is not implemented for the "legacy" storage model, using this option with
-   * the "legacy" storage model will result in an error.
-   *
    * <p>This parameter is not supported when multiple commits will be generated, which means only
    * merge operations.
    *
-   * <p>It is mandatory to supply the {@link #getExpectedTargetContent() expected content value},
+   * <p>It is mandatory to supply the {@linkplain #getExpectedTargetContent() expected content
+   * value}.
    */
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
@@ -75,8 +73,8 @@ public interface MergeKeyBehavior {
    * <p>This parameter is not supported when multiple commits will be generated, which means only
    * merge operations.
    *
-   * <p>Supplying a {@link #getResolvedDocumentation() resolved documentation} requires setting this
-   * attribute. The merge operation will result in a "conflict", if current value on the target
+   * <p>Supplying a {@linkplain #getResolvedDocumentation() resolved documentation} requires setting
+   * this attribute. The merge operation will result in a "conflict", if current value on the target
    * branch is different from this value.
    */
   @JsonInclude(Include.NON_NULL)
@@ -90,14 +88,11 @@ public interface MergeKeyBehavior {
    * persisted via the merge operation instead of detecting and potentially raising a
    * merge-conflict, assuming the content-type is the same.
    *
-   * <p>This functionality is not implemented for the "legacy" storage model, using this option with
-   * the "legacy" storage model will result in an error.
-   *
    * <p>This parameter is not supported when multiple commits will be generated, which means only
    * merge operations.
    *
-   * <p>It is mandatory to supply the {@link #getExpectedTargetDocumentation() expected
-   * documentation value},
+   * <p>It is mandatory to supply the {@linkplain #getExpectedTargetDocumentation() expected
+   * documentation value}.
    */
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)

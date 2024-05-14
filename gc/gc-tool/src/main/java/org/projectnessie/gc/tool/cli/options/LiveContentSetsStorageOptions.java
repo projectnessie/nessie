@@ -15,6 +15,7 @@
  */
 package org.projectnessie.gc.tool.cli.options;
 
+import java.sql.Connection;
 import javax.sql.DataSource;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
@@ -78,6 +79,12 @@ public class LiveContentSetsStorageOptions {
   private PersistenceSpi createJdbcPersistenceSpi(Closeables closeables, JdbcOptions jdbc)
       throws Exception {
     DataSource dataSource = closeables.maybeAdd(jdbc.createDataSource());
+    SchemaCreateStrategy schemaCreateStrategy = jdbc.getSchemaCreateStrategy();
+    if (schemaCreateStrategy != null) {
+      try (Connection conn = dataSource.getConnection()) {
+        schemaCreateStrategy.apply(conn);
+      }
+    }
     return JdbcPersistenceSpi.builder().dataSource(dataSource).build();
   }
 }

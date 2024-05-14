@@ -16,16 +16,14 @@
 package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.CASSANDRA;
-import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig.DEFAULT_DDL_TIMEOUT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig.DEFAULT_DML_TIMEOUT;
 
 import com.datastax.oss.quarkus.runtime.api.session.QuarkusCqlSession;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
-import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.quarkus.config.QuarkusCassandraConfig;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendFactory;
@@ -41,17 +39,7 @@ public class CassandraBackendBuilder implements BackendBuilder {
   @ConfigProperty(name = "quarkus.cassandra.keyspace")
   String keyspace;
 
-  @Inject
-  @ConfigProperty(
-      name = "nessie.version.store.cassandra.ddl-timeout",
-      defaultValue = DEFAULT_DDL_TIMEOUT)
-  Duration ddlTimeout;
-
-  @Inject
-  @ConfigProperty(
-      name = "nessie.version.store.cassandra.dml-timeout",
-      defaultValue = DEFAULT_DML_TIMEOUT)
-  Duration dmlTimeout;
+  @Inject QuarkusCassandraConfig config;
 
   @Override
   public Backend buildBackend() {
@@ -61,8 +49,8 @@ public class CassandraBackendBuilder implements BackendBuilder {
           CassandraBackendConfig.builder()
               .client(client.toCompletableFuture().get())
               .keyspace(keyspace)
-              .ddlTimeout(ddlTimeout)
-              .dmlTimeout(dmlTimeout)
+              .ddlTimeout(config.ddlTimeout())
+              .dmlTimeout(config.dmlTimeout())
               .build();
       return factory.buildBackend(c);
     } catch (InterruptedException | ExecutionException e) {

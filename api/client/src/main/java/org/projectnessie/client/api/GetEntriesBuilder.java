@@ -29,6 +29,7 @@ public interface GetEntriesBuilder
         PagingBuilder<GetEntriesBuilder, EntriesResponse, EntriesResponse.Entry>,
         OnReferenceBuilder<GetEntriesBuilder> {
 
+  @Deprecated
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
   GetEntriesBuilder withContent(boolean withContent);

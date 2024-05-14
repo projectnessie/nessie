@@ -23,13 +23,13 @@ import static java.nio.file.Files.isRegularFile;
 import static java.nio.file.Files.move;
 import static java.nio.file.Files.newOutputStream;
 
+import jakarta.annotation.Nonnull;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** Nessie exporter that creates a ZIP file. */
@@ -68,16 +68,13 @@ public abstract class ZipArchiveExporter implements ExportFileSupplier {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
   public Path getTargetPath() {
     return outputFile();
   }
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public OutputStream newFileOutput(@Nonnull @jakarta.annotation.Nonnull String fileName)
-      throws IOException {
+  public OutputStream newFileOutput(@Nonnull String fileName) throws IOException {
     checkArgument(
         fileName.indexOf('/') == -1 && fileName.indexOf('\\') == -1, "Directories not supported");
     checkArgument(!fileName.isEmpty(), "Invalid file name argument");

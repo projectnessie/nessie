@@ -55,6 +55,7 @@ public interface LogResponse extends PaginatedResponse {
     @jakarta.validation.constraints.NotNull
     CommitMeta getCommitMeta();
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @JsonView(Views.V1.class)
     @Deprecated // for removal - duplicated in CommitMeta
     @JsonInclude(Include.NON_EMPTY)

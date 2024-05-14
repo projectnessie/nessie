@@ -49,7 +49,7 @@ as the so-called _on-reference-state_.
 !!! note
     The term _all information in all Nessie commits_ used above precisely means all information
     in all Nessie commits _that are considered "live"_, have not been garbage-collected by Nessie.
-    See also [Management Services](../features/management.md).
+    See also [Management Services](../guides/management.md).
 
 #### Content Id
 
@@ -94,7 +94,7 @@ local cache and using `id` to look up that auxiliary data.
 ### Content Types
 
 Nessie is designed to support various table formats, and currently supports the following types.
-See also [Tables & Views](../tables/index.md).
+See also [Tables & Views](../guides/tables-views.md).
 
 #### Iceberg Table
 

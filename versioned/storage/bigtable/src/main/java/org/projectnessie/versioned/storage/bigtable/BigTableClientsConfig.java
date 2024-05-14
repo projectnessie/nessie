@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
  * Settings used to create and configure BigTable clients (data and table admin).
@@ -30,52 +31,72 @@ import java.util.OptionalInt;
  */
 public interface BigTableClientsConfig {
 
+  /** Sets the instance-id to be used with Google BigTable. */
   default String instanceId() {
     return "nessie";
   }
 
+  /** Sets the profile-id to be used with Google BigTable. */
   Optional<String> appProfileId();
 
+  /** Google BigTable quote project ID (optional). */
   Optional<String> quotaProjectId();
 
+  /** Google BigTable endpoint (if not default). */
   Optional<String> endpoint();
 
+  /** Google BigTable MTLS endpoint (if not default). */
   Optional<String> mtlsEndpoint();
 
+  /** When using the BigTable emulator, used to configure the host. */
   Optional<String> emulatorHost();
 
+  /** When using the BigTable emulator, used to configure the port. */
   default int emulatorPort() {
     return 8086;
   }
 
+  /** Google BigTable JWT audience mappings (if necessary). */
+  @ConfigPropertyName("mapping")
   Map<String, String> jwtAudienceMapping();
 
+  /** Initial retry delay. */
   Optional<Duration> initialRetryDelay();
 
+  /** Max retry-delay. */
   Optional<Duration> maxRetryDelay();
 
   OptionalDouble retryDelayMultiplier();
 
+  /** Maximum number of attempts for each Bigtable API call (including retries). */
   OptionalInt maxAttempts();
 
+  /** Initial RPC timeout. */
   Optional<Duration> initialRpcTimeout();
 
   Optional<Duration> maxRpcTimeout();
 
   OptionalDouble rpcTimeoutMultiplier();
 
+  /** Total timeout (including retries) for Bigtable API calls. */
   Optional<Duration> totalTimeout();
 
+  /** Minimum number of gRPC channels. Refer to Google docs for details. */
   OptionalInt minChannelCount();
 
+  /** Maximum number of gRPC channels. Refer to Google docs for details. */
   OptionalInt maxChannelCount();
 
+  /** Initial number of gRPC channels. Refer to Google docs for details */
   OptionalInt initialChannelCount();
 
+  /** Minimum number of RPCs per channel. Refer to Google docs for details. */
   OptionalInt minRpcsPerChannel();
 
+  /** Maximum number of RPCs per channel. Refer to Google docs for details. */
   OptionalInt maxRpcsPerChannel();
 
+  /** Enables telemetry with OpenCensus. */
   default boolean enableTelemetry() {
     return true;
   }

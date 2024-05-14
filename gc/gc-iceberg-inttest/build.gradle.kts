@@ -26,10 +26,12 @@ val sparkScala = useSparkScalaVersionsForProject("3.4", "2.12")
 
 dependencies {
   implementation(libs.hadoop.client)
-  implementation(libs.iceberg.core)
-  implementation(libs.iceberg.aws)
-  implementation(libs.iceberg.gcp)
-  implementation(libs.iceberg.azure)
+
+  implementation(platform(libs.iceberg.bom))
+  implementation("org.apache.iceberg:iceberg-core")
+  implementation("org.apache.iceberg:iceberg-aws")
+  implementation("org.apache.iceberg:iceberg-gcp")
+  implementation("org.apache.iceberg:iceberg-azure")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.microprofile.openapi)
@@ -40,8 +42,8 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg"))
   implementation(nessieProject("nessie-gc-iceberg-mock"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
-  implementation(nessieProject("nessie-s3mock"))
-  implementation(nessieProject("nessie-s3minio"))
+  implementation(nessieProject("nessie-object-storage-mock"))
+  implementation(nessieProject("nessie-minio-testcontainer"))
 
   implementation(platform(libs.jackson.bom))
 
@@ -57,6 +59,9 @@ dependencies {
       "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
     )
   )
+  intTestImplementation(
+    nessieProject("nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")
+  )
 
   intTestImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
@@ -68,19 +73,21 @@ dependencies {
     forSpark(sparkScala.sparkVersion)
   }
 
-  intTestRuntimeOnly(libs.iceberg.nessie)
-  intTestRuntimeOnly(libs.iceberg.core)
+  intTestRuntimeOnly(platform(libs.iceberg.bom))
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-nessie")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-core")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-hive-metastore")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-aws")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-gcp")
+  intTestRuntimeOnly("org.apache.iceberg:iceberg-azure")
+  // Reference the exact Iceberg version here, because the iceberg-bom might not contain all
+  // Spark/Flink deps :(
   intTestRuntimeOnly(
     "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
   intTestRuntimeOnly(
     "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
-
-  intTestRuntimeOnly(libs.iceberg.hive.metastore)
-  intTestRuntimeOnly(libs.iceberg.aws)
-  intTestRuntimeOnly(libs.iceberg.gcp)
-  intTestRuntimeOnly(libs.iceberg.azure)
 
   intTestRuntimeOnly(libs.hadoop.client)
   intTestRuntimeOnly(libs.hadoop.aws)
@@ -100,6 +107,7 @@ dependencies {
   intTestRuntimeOnly(libs.google.cloud.gcs.connector)
 
   intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
+  intTestImplementation(nessieProject("nessie-gcs-testcontainer"))
   intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly(libs.immutables.builder)
@@ -108,7 +116,6 @@ dependencies {
 
   intTestRuntimeOnly(libs.logback.classic)
 
-  // javax/jakarta
   intTestCompileOnly(libs.jakarta.validation.api)
   intTestCompileOnly(libs.jakarta.annotation.api)
 
@@ -128,6 +135,9 @@ nessieQuarkusApp {
 }
 
 forceJavaVersionForTests(sparkScala.runtimeJavaVersion)
+
+// Spark stuff is veeery sticky
+tasks.named<Test>("intTest").configure { forkEvery = 1 }
 
 tasks.withType(Test::class.java).configureEach {
   systemProperty("aws.region", "us-east-1")

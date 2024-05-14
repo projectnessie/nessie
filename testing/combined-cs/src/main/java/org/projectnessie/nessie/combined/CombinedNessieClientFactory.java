@@ -17,11 +17,11 @@ package org.projectnessie.nessie.combined;
 
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilder;
 
+import jakarta.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -104,7 +104,6 @@ public class CombinedNessieClientFactory
       return new ClientFactory(apiVersion, persist) {
         @Override // Note: this object is not serializable
         @Nonnull
-        @jakarta.annotation.Nonnull
         public NessieApiV1 make(NessieClientCustomizer customizer) {
           return super.make(
               (builder, version) ->
@@ -172,7 +171,6 @@ public class CombinedNessieClientFactory
 
     @Override
     @Nonnull
-    @jakarta.annotation.Nonnull
     public NessieApiV1 make(NessieClientCustomizer customizer) {
       NessieClientBuilder clientBuilder =
           createClientBuilder("Combined", null)

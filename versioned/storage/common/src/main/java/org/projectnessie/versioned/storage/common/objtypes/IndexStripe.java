@@ -17,10 +17,12 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.persist.Hashable;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 
 @Value.Immutable
-public interface IndexStripe {
+public interface IndexStripe extends Hashable {
 
   @Value.Parameter(order = 1)
   StoreKey firstKey();
@@ -33,5 +35,13 @@ public interface IndexStripe {
 
   static IndexStripe indexStripe(StoreKey firstKey, StoreKey lastKey, ObjId segment) {
     return ImmutableIndexStripe.of(firstKey, lastKey, segment);
+  }
+
+  @Override
+  default void hash(ObjIdHasher idHasher) {
+    idHasher
+        .hash(firstKey().rawString())
+        .hash(lastKey().rawString())
+        .hash(segment().asByteBuffer());
   }
 }

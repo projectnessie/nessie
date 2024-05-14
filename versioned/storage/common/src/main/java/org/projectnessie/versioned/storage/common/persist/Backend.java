@@ -15,15 +15,14 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import jakarta.annotation.Nonnull;
 import java.util.Set;
-import javax.annotation.Nonnull;
 
 public interface Backend extends AutoCloseable {
 
   void setupSchema();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   PersistFactory createFactory();
 
   String configInfo();

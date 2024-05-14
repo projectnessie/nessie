@@ -39,10 +39,7 @@ import org.projectnessie.model.MergeResponse.ContentKeyDetails;
 public class TestEnums {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @SuppressWarnings({
-    "unused",
-    "JUnit3StyleTestMethodInJUnit4Class"
-  }) // IntelliJ false positive warnings :(
+  @SuppressWarnings("unused")
   abstract class AbstractEnum<E extends Enum<E>> {
     final Function<String, E> parse;
     final E unknownValue;
@@ -161,6 +158,7 @@ public class TestEnums {
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Nested
   public class TestContentKeyConflict extends AbstractEnum<ContentKeyConflict> {
     TestContentKeyConflict() {

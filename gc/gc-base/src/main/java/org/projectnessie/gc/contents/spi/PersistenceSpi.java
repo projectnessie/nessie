@@ -16,18 +16,18 @@
 package org.projectnessie.gc.contents.spi;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.net.URI;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.contents.LiveContentSetNotFoundException;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * Interface to be implemented by Nessie GC persistence implementations. <em>Only</em> to be used by
@@ -41,53 +41,39 @@ public interface PersistenceSpi {
   @MustBeClosed
   Stream<LiveContentSet> getAllLiveContents();
 
-  void startIdentifyLiveContents(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull Instant created);
+  void startIdentifyLiveContents(@NotNull UUID liveSetId, @NotNull Instant created);
 
   long addIdentifiedLiveContent(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull Stream<ContentReference> contentReference);
+      @NotNull UUID liveSetId, @NotNull Stream<ContentReference> contentReference);
 
   void finishedIdentifyLiveContents(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure);
+      @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure);
 
-  LiveContentSet startExpireContents(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull Instant started);
+  LiveContentSet startExpireContents(@NotNull UUID liveSetId, @NotNull Instant started);
 
   LiveContentSet finishedExpireContents(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
-      @Nullable @jakarta.annotation.Nullable Throwable failure);
+      @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure);
 
-  LiveContentSet getLiveContentSet(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId)
-      throws LiveContentSetNotFoundException;
+  LiveContentSet getLiveContentSet(@NotNull UUID liveSetId) throws LiveContentSetNotFoundException;
 
-  long fetchDistinctContentIdCount(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
+  long fetchDistinctContentIdCount(@NotNull UUID liveSetId);
 
   @MustBeClosed
-  Stream<String> fetchContentIds(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
+  Stream<String> fetchContentIds(@NotNull UUID liveSetId);
 
   Stream<ContentReference> fetchContentReferences(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull String contentId);
+      @NotNull UUID liveSetId, @NotNull String contentId);
 
   void associateBaseLocations(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull String contentId,
-      @NotNull @jakarta.validation.constraints.NotNull Collection<URI> baseLocations);
+      @NotNull UUID liveSetId,
+      @NotNull String contentId,
+      @NotNull Collection<StorageUri> baseLocations);
 
   @MustBeClosed
-  Stream<URI> fetchBaseLocations(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull String contentId);
+  Stream<StorageUri> fetchBaseLocations(@NotNull UUID liveSetId, @NotNull String contentId);
 
   @MustBeClosed
-  Stream<URI> fetchAllBaseLocations(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
+  Stream<StorageUri> fetchAllBaseLocations(@NotNull UUID liveSetId);
 
   /**
    * Records the given files to be later returned by {@link #fetchFileDeletions(UUID)}, ignores
@@ -95,15 +81,12 @@ public interface PersistenceSpi {
    *
    * @return the number of actually added files
    */
-  long addFileDeletions(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
-      @NotNull @jakarta.validation.constraints.NotNull Stream<FileReference> files);
+  long addFileDeletions(@NotNull UUID liveSetId, @NotNull Stream<FileReference> files);
 
   /**
    * Returns the {@link #addFileDeletions(UUID, Stream)} recorded file deletions (aka deferred
    * deletes) grouped by base path.
    */
   @MustBeClosed
-  Stream<FileReference> fetchFileDeletions(
-      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
+  Stream<FileReference> fetchFileDeletions(@NotNull UUID liveSetId);
 }

@@ -20,10 +20,10 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogi
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -45,11 +45,11 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
 
   MergeSquashImpl(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull Persist persist,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nullable @jakarta.annotation.Nullable CommitObj head)
+      @Nonnull BranchName branch,
+      @Nonnull Optional<Hash> referenceHash,
+      @Nonnull Persist persist,
+      @Nonnull Reference reference,
+      @Nullable CommitObj head)
       throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
   }
@@ -90,9 +90,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   }
 
   private MergeTransplantContext loadSourceCommitsForMerge(
-      @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId,
-      @Nonnull @jakarta.annotation.Nonnull MergeOp mergeOp) {
+      @Nonnull ObjId startCommitId, @Nonnull ObjId endCommitId, @Nonnull MergeOp mergeOp) {
     CommitObj[] startEndCommits;
     try {
       startEndCommits = commitLogic(persist).fetchCommits(startCommitId, endCommitId);

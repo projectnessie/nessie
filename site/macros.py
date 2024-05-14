@@ -34,7 +34,7 @@ def define_env(env):
             version
         )
 
-    __latest_nessie_version = env.variables.versions['java']
+    __latest_nessie_version = env.variables.versions['nessie']
 
     @env.macro
     def nessie_spark_extensions(spark="3.3", scala="2.12", version=__latest_nessie_version):

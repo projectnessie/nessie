@@ -16,8 +16,8 @@
 package org.projectnessie.versioned;
 
 import com.google.common.base.Preconditions;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IdentifiedContentKey;
@@ -29,7 +29,6 @@ public interface KeyEntry {
   IdentifiedContentKey getKey();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   Content getContent();
 
@@ -56,8 +55,7 @@ public interface KeyEntry {
     return ImmutableKeyEntry.of(key, null);
   }
 
-  static KeyEntry of(
-      IdentifiedContentKey key, @NotNull @jakarta.validation.constraints.NotNull Content content) {
+  static KeyEntry of(IdentifiedContentKey key, @NotNull Content content) {
     return ImmutableKeyEntry.of(key, content);
   }
 }

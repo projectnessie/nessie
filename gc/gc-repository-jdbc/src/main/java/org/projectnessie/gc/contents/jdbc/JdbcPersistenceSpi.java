@@ -39,7 +39,6 @@ import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.START_IDENTIFY;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,6 +71,7 @@ import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.types.ContentTypes;
+import org.projectnessie.storage.uri.StorageUri;
 
 @Value.Immutable
 public abstract class JdbcPersistenceSpi implements PersistenceSpi {
@@ -258,13 +258,13 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   @Override
   public void associateBaseLocations(
-      UUID liveSetId, String contentId, Collection<URI> baseLocations) {
+      UUID liveSetId, String contentId, Collection<StorageUri> baseLocations) {
     singleStatement(
         INSERT_CONTENT_LOCATION,
         (conn, stmt) -> {
           stmt.setString(1, liveSetId.toString());
           stmt.setString(2, contentId);
-          for (URI baseLocation : baseLocations) {
+          for (StorageUri baseLocation : baseLocations) {
             stmt.setString(3, baseLocation.toString());
             stmt.executeUpdate();
           }
@@ -275,23 +275,23 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   @Override
   @MustBeClosed
-  public Stream<URI> fetchBaseLocations(UUID liveSetId, String contentId) {
+  public Stream<StorageUri> fetchBaseLocations(UUID liveSetId, String contentId) {
     return streamingResult(
         SELECT_CONTENT_LOCATION,
         stmt -> {
           stmt.setString(1, liveSetId.toString());
           stmt.setString(2, contentId);
         },
-        rs -> URI.create(rs.getString(1)));
+        rs -> StorageUri.of(rs.getString(1)));
   }
 
   @Override
   @MustBeClosed
-  public Stream<URI> fetchAllBaseLocations(UUID liveSetId) {
+  public Stream<StorageUri> fetchAllBaseLocations(UUID liveSetId) {
     return streamingResult(
         SELECT_CONTENT_LOCATION_ALL,
         stmt -> stmt.setString(1, liveSetId.toString()),
-        rs -> URI.create(rs.getString(1)));
+        rs -> StorageUri.of(rs.getString(1)));
   }
 
   @Override
@@ -386,7 +386,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   static FileReference fileObject(ResultSet rs) throws SQLException {
     return FileReference.of(
-        URI.create(rs.getString(2)), URI.create(rs.getString(1)), rs.getLong(3));
+        StorageUri.of(rs.getString(2)), StorageUri.of(rs.getString(1)), rs.getLong(3));
   }
 
   static ContentReference contentReference(ResultSet rs) throws SQLException {

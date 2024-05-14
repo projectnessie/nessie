@@ -15,10 +15,10 @@
  */
 package org.projectnessie.gc.iceberg.inttest;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +26,7 @@ import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.minio.Minio;
 import org.projectnessie.minio.MinioAccess;
 import org.projectnessie.minio.MinioExtension;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -47,12 +48,7 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
 
   @Override
   protected Map<String, String> sparkHadoop() {
-    Map<String, String> r = new HashMap<>();
-    r.put("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-    r.put("fs.s3a.access.key", minio.accessKey());
-    r.put("fs.s3a.secret.key", minio.secretKey());
-    r.put("fs.s3a.endpoint", minio.s3endpoint());
-    return r;
+    return minio.hadoopConfig();
   }
 
   @Override
@@ -94,14 +90,16 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
 
   @Override
   IcebergFiles icebergFiles() {
+    Configuration conf = new Configuration();
+    minio.hadoopConfig().forEach(conf::set);
     return IcebergFiles.builder()
         .properties(minio.icebergProperties())
-        .hadoopConfiguration(minio.hadoopConfiguration())
+        .hadoopConfiguration(conf)
         .build();
   }
 
   @Override
-  protected URI s3BucketUri() {
-    return minio.s3BucketUri(S3_BUCKET_URI);
+  protected StorageUri bucketUri() {
+    return StorageUri.of(minio.s3BucketUri(S3_BUCKET_URI));
   }
 }

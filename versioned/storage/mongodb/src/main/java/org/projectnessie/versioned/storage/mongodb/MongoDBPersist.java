@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toList;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_TYPE;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_CREATED_AT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_DELETED;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_REFERENCES_EXTENDED_INFO;
@@ -54,16 +55,17 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.bson.Document;
@@ -82,6 +84,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializers;
 
@@ -96,14 +99,12 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public String name() {
     return MongoDBBackendFactory.NAME;
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
   public StoreConfig config() {
     return config;
@@ -128,10 +129,8 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference addReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     checkArgument(!reference.deleted(), "Deleted references must not be added");
 
     Document doc = new Document();
@@ -162,9 +161,8 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference markReferenceAsDeleted(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(false);
     UpdateResult result =
@@ -202,11 +200,8 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference updateReferencePointer(
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nonnull @jakarta.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(false);
 
@@ -236,7 +231,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public void purgeReference(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
     DeleteResult result = backend.refs().deleteOne(referenceCondition(reference));
@@ -250,7 +245,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     FindIterable<Document> result = backend.refs().find(eq(ID_PROPERTY_NAME, idRefDoc(name)));
 
     Document doc = result.first();
@@ -275,9 +270,8 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     List<Document> nameIdDocs =
         Arrays.stream(names).filter(Objects::nonNull).map(this::idRefDoc).collect(toList());
     FindIterable<Document> result = backend.refs().find(in(ID_PROPERTY_NAME, nameIdDocs));
@@ -308,8 +302,7 @@ public class MongoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
+  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
 
     Document doc = result.first();
@@ -322,9 +315,7 @@ public class MongoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
+  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     FindIterable<Document> result =
         backend
@@ -345,9 +336,7 @@ public class MongoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
 
     Document doc = result.first();
@@ -359,10 +348,8 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public Obj[] fetchObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
+  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
     List<Document> list = new ArrayList<>(ids.length);
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(ids.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -408,8 +395,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     Document doc = objToDoc(obj, ignoreSoftSizeRestrictions);
     try {
@@ -425,10 +411,8 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
     for (Obj obj : objs) {
       if (obj != null) {
@@ -488,12 +472,12 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     backend.objs().deleteOne(eq(ID_PROPERTY_NAME, idObjDoc(id)));
   }
 
   @Override
-  public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     List<Document> list =
         Stream.of(ids).filter(Objects::nonNull).map(this::idObjDoc).collect(toList());
     if (list.isEmpty()) {
@@ -503,7 +487,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
@@ -526,8 +510,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     ReplaceOptions options = upsertOptions();
 
     List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
@@ -549,11 +532,56 @@ public class MongoDBPersist implements Persist {
     }
   }
 
-  @Nonnull
-  @jakarta.annotation.Nonnull
   @Override
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public boolean deleteConditional(@Nonnull UpdateableObj obj) {
+    ObjId id = obj.id();
+    ObjType type = obj.type();
+
+    return backend
+            .objs()
+            .findOneAndDelete(
+                and(
+                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                    eq(COL_OBJ_TYPE, type.shortName()),
+                    eq(COL_OBJ_VERS, obj.versionToken())))
+        != null;
+  }
+
+  @Override
+  public boolean updateConditional(@Nonnull UpdateableObj expected, @Nonnull UpdateableObj newValue)
+      throws ObjTooLargeException {
+    ObjId id = expected.id();
+    ObjType type = expected.type();
+    String expectedVersion = expected.versionToken();
+
+    checkArgument(id != null && id.equals(newValue.id()));
+    checkArgument(expected.type().equals(newValue.type()));
+    checkArgument(!expected.versionToken().equals(newValue.versionToken()));
+
+    Document doc = objToDoc(newValue, false);
+
+    List<Bson> updates =
+        doc.entrySet().stream()
+            .filter(e -> !ID_PROPERTY_NAME.equals(e.getKey()))
+            .map(e -> set(e.getKey(), e.getValue()))
+            .collect(toList());
+
+    Bson update = Updates.combine(updates);
+
+    return backend
+            .objs()
+            .findOneAndUpdate(
+                and(
+                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                    eq(COL_OBJ_TYPE, type.shortName()),
+                    eq(COL_OBJ_VERS, expectedVersion)),
+                update)
+        != null;
+  }
+
+  @Nonnull
+  @Override
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
@@ -567,15 +595,15 @@ public class MongoDBPersist implements Persist {
     return docToObj(id, doc);
   }
 
-  private Obj docToObj(@Nonnull @jakarta.annotation.Nonnull ObjId id, Document doc) {
+  private Obj docToObj(@Nonnull ObjId id, Document doc) {
     ObjType type = ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
     ObjSerializer<?> serializer = ObjSerializers.forType(type);
     Document inner = doc.get(serializer.fieldName(), Document.class);
-    return serializer.docToObj(id, inner);
+    String versionToken = doc.getString(COL_OBJ_VERS);
+    return serializer.docToObj(id, type, inner, versionToken);
   }
 
-  private Document objToDoc(
-      @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  private Document objToDoc(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -587,6 +615,9 @@ public class MongoDBPersist implements Persist {
     Document inner = new Document();
     doc.put(ID_PROPERTY_NAME, idObjDoc(id));
     doc.put(COL_OBJ_TYPE, type.shortName());
+    if (obj instanceof UpdateableObj) {
+      doc.put(COL_OBJ_VERS, ((UpdateableObj) obj).versionToken());
+    }
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =

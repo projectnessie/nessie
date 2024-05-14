@@ -15,15 +15,15 @@
  */
 package org.projectnessie.tools.compatibility.jersey;
 
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.util.TypeLiteral;
 import java.security.Principal;
-import java.util.function.Supplier;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.util.TypeLiteral;
+import org.projectnessie.services.authz.AccessContext;
 
 /**
  * A CDI extension that always produces {@code null} {@link Principal} objects simulating execution
@@ -32,12 +32,12 @@ import javax.enterprise.util.TypeLiteral;
 public class PrincipalExtension implements Extension {
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-    Supplier<Principal> principal = () -> null;
+    AccessContext accessContext = () -> () -> null;
 
     abd.addBean()
-        .addType(new TypeLiteral<Supplier<Principal>>() {})
+        .addType(new TypeLiteral<AccessContext>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(RequestScoped.class)
-        .produceWith(i -> principal);
+        .produceWith(i -> accessContext);
   }
 }

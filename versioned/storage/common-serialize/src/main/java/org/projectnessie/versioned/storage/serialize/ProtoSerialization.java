@@ -54,7 +54,10 @@ import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitProto;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes.CommitTypeProto;
@@ -205,7 +208,8 @@ public final class ProtoSerialization {
     return result;
   }
 
-  public static byte[] serializeObj(Obj obj, int incrementalIndexSizeLimit, int indexSizeLimit)
+  public static byte[] serializeObj(
+      Obj obj, int incrementalIndexSizeLimit, int indexSizeLimit, boolean includeVersionToken)
       throws ObjTooLargeException {
     if (obj == null) {
       return null;
@@ -239,35 +243,35 @@ public final class ProtoSerialization {
           throw new UnsupportedOperationException("Unknown standard object type " + obj.type());
       }
     } else {
-      return b.setCustom(serializeCustom(obj)).build().toByteArray();
+      return b.setCustom(serializeCustom(obj, includeVersionToken)).build().toByteArray();
     }
   }
 
-  public static Obj deserializeObj(ObjId id, ByteBuffer serialized) {
+  public static Obj deserializeObj(ObjId id, ByteBuffer serialized, String versionToken) {
     if (serialized == null) {
       return null;
     }
     try {
       ObjProto obj = ObjProto.parseFrom(serialized);
-      return deserializeObjProto(id, obj);
+      return deserializeObjProto(id, obj, versionToken);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static Obj deserializeObj(ObjId id, byte[] serialized) {
+  public static Obj deserializeObj(ObjId id, byte[] serialized, String versionToken) {
     if (serialized == null) {
       return null;
     }
     try {
       ObjProto obj = ObjProto.parseFrom(serialized);
-      return deserializeObjProto(id, obj);
+      return deserializeObjProto(id, obj, versionToken);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static Obj deserializeObjProto(ObjId id, ObjProto obj) {
+  public static Obj deserializeObjProto(ObjId id, ObjProto obj, String versionToken) {
     if (obj.hasCommit()) {
       return deserializeCommit(id, obj.getCommit());
     }
@@ -293,7 +297,7 @@ public final class ProtoSerialization {
       return deserializeUniqueId(id, obj.getUniqueId());
     }
     if (obj.hasCustom()) {
-      return deserializeCustom(id, obj.getCustom());
+      return deserializeCustom(id, obj.getCustom(), versionToken);
     }
     throw new UnsupportedOperationException("Cannot deserialize " + obj);
   }
@@ -337,7 +341,7 @@ public final class ProtoSerialization {
             .setCreated(obj.created())
             .setSeq(obj.seq())
             .setMessage(obj.message())
-            .setIncrementalIndex(verifyStoreIndexSize(obj.incrementalIndex(), indexSizeLimit))
+            .setIncrementalIndex(verifySize(obj.incrementalIndex(), indexSizeLimit))
             .setIncompleteIndex(obj.incompleteIndex())
             .setCommitType(CommitTypeProto.valueOf(obj.commitType().name()));
     serializeObjIds(obj.tail(), b::addTail);
@@ -357,15 +361,6 @@ public final class ProtoSerialization {
               .setSegment(serializeObjId(indexStripe.segment())));
     }
     return b;
-  }
-
-  private static ByteString verifyStoreIndexSize(ByteString storeIndex, int indexSizeLimit)
-      throws ObjTooLargeException {
-    int serializedSize = storeIndex.size();
-    if (serializedSize > indexSizeLimit) {
-      throw new ObjTooLargeException(serializedSize, indexSizeLimit);
-    }
-    return storeIndex;
   }
 
   private static ByteString verifySize(ByteString index, int indexSizeLimit)
@@ -509,17 +504,21 @@ public final class ProtoSerialization {
     return UniqueIdProto.newBuilder().setSpace(obj.space()).setValue(obj.value());
   }
 
-  private static Obj deserializeCustom(ObjId id, CustomProto custom) {
+  private static Obj deserializeCustom(ObjId id, CustomProto custom, String versionToken) {
+    ObjType type = ObjTypes.forShortName(custom.getObjType());
     return SmileSerialization.deserializeObj(
         id,
+        versionToken != null ? versionToken : custom.getVersionToken(),
         custom.getData().toByteArray(),
-        custom.getTargetClass(),
+        type.targetClass(),
         custom.getCompression().name());
   }
 
-  private static CustomProto.Builder serializeCustom(Obj obj) {
-    CustomProto.Builder builder =
-        CustomProto.newBuilder().setTargetClass(obj.type().targetClass().getName());
+  private static CustomProto.Builder serializeCustom(Obj obj, boolean includeVersionToken) {
+    CustomProto.Builder builder = CustomProto.newBuilder().setObjType(obj.type().shortName());
+    if (obj instanceof UpdateableObj && includeVersionToken) {
+      builder.setVersionToken(((UpdateableObj) obj).versionToken());
+    }
     byte[] bytes =
         SmileSerialization.serializeObj(
             obj,

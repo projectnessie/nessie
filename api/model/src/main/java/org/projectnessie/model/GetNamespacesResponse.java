@@ -32,8 +32,12 @@ public interface GetNamespacesResponse {
   @jakarta.validation.constraints.NotNull
   List<Namespace> getNamespaces();
 
+  /**
+   * The effective reference (for example a branch or tag) including the commit ID from which the
+   * namespaces were fetched. Cannot be null when using REST API v2.
+   */
   @JsonView(Views.V2.class)
-  @Nullable
+  @Nullable // Only nullable in V1
   @jakarta.annotation.Nullable
   Reference getEffectiveReference();
 

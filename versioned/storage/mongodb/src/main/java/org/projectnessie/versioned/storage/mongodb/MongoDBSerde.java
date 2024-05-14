@@ -21,10 +21,10 @@ import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.u
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -97,7 +97,6 @@ public final class MongoDBSerde {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   public static List<Document> stripesToDocs(List<IndexStripe> stripes) {
     List<Document> stripesDocs = new ArrayList<>();
     for (IndexStripe stripe : stripes) {

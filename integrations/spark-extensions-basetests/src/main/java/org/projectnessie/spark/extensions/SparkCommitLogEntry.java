@@ -38,11 +38,9 @@ abstract class SparkCommitLogEntry {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract String getHash();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract String getMessage();
 
   @Value.Default
@@ -51,11 +49,9 @@ abstract class SparkCommitLogEntry {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract Timestamp getAuthorTime();
 
   @Nullable
-  @jakarta.annotation.Nullable
   abstract Timestamp getCommitTime();
 
   abstract Map<String, String> getProperties();

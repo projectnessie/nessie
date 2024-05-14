@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -53,7 +54,7 @@ class TestUriBuilder {
   @Test
   void addMissingSlash() {
     assertEquals(
-        "http://localhost/", new UriBuilder(URI.create("http://localhost")).build().toString());
+        "http://localhost", new UriBuilder(URI.create("http://localhost")).build().toString());
     assertEquals(
         "http://localhost/foo/bar",
         new UriBuilder(URI.create("http://localhost")).path("foo").path("bar").build().toString());
@@ -84,6 +85,27 @@ class TestUriBuilder {
 
     builder = builder.path("some spaces in here");
     assertEquals("http://localhost/foo/bar/some%20spaces%20in%20here", builder.build().toString());
+  }
+
+  @Test
+  void slashesInPaths() {
+    URI expected = URI.create("http://localhost/a/b/c");
+    assertThat(new UriBuilder(URI.create("http://localhost")).path("a/b/c").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost/")).path("a/b/c").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost")).path("/a/b/c").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost/")).path("/a/b/c").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost")).path("a/b/c/").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost/")).path("a/b/c/").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost")).path("/a/b/c/").build())
+        .isEqualTo(expected);
+    assertThat(new UriBuilder(URI.create("http://localhost/")).path("/a/b/c/").build())
+        .isEqualTo(expected);
   }
 
   @Test

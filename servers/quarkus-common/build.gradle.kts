@@ -21,20 +21,12 @@ plugins {
 
 extra["maven.name"] = "Nessie - Quarkus Common"
 
-configurations.configureEach {
-  // Avoids dependency resolution error since Quarkus 3.3:
-  // Cannot select module with conflict on capability 'com.google.guava:listenablefuture:1.0' also
-  //   provided by
-  //   [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(runtime)]
-  resolutionStrategy.capabilitiesResolution.withCapability("com.google.guava:listenablefuture") {
-    select("com.google.guava:guava:0")
-  }
-}
-
 dependencies {
   implementation(project(":nessie-model"))
+  implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
 
   implementation(project(":nessie-versioned-storage-bigtable"))
@@ -57,13 +49,17 @@ dependencies {
   implementation("io.quarkus:quarkus-micrometer")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
+  implementation("software.amazon.awssdk:sts")
   implementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }
   implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-bigtable")
   implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
-  implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
+  implementation("com.datastax.oss.quarkus:cassandra-quarkus-client") {
+    // spotbugs-annotations has only a GPL license!
+    exclude("com.github.spotbugs", "spotbugs-annotations")
+  }
 
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable
@@ -71,9 +67,7 @@ dependencies {
 
   implementation(libs.guava)
 
-  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")

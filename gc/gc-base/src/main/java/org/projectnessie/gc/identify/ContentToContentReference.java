@@ -15,7 +15,7 @@
  */
 package org.projectnessie.gc.identify;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -24,7 +24,5 @@ import org.projectnessie.model.ContentKey;
 @FunctionalInterface
 public interface ContentToContentReference {
   ContentReference contentToReference(
-      @NotNull @jakarta.validation.constraints.NotNull Content content,
-      @NotNull @jakarta.validation.constraints.NotNull String commitId,
-      @NotNull @jakarta.validation.constraints.NotNull ContentKey key);
+      @NotNull Content content, @NotNull String commitId, @NotNull ContentKey key);
 }

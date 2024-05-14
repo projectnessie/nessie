@@ -16,11 +16,11 @@
 package org.projectnessie.nessie.combined;
 
 import java.security.Principal;
-import java.util.function.Supplier;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
@@ -74,19 +74,26 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
 
     VersionStore versionStore = new VersionStoreImpl(persist);
     Authorizer authorizer = c -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
-    Supplier<Principal> principalSupplier = () -> null;
+
+    AccessContext accessContext =
+        new AccessContext() {
+          @Override
+          public Principal user() {
+            return null;
+          }
+        };
 
     ConfigApiImpl configService =
-        new ConfigApiImpl(serverConfig, versionStore, authorizer, principalSupplier, 2);
+        new ConfigApiImpl(serverConfig, versionStore, authorizer, accessContext, 2);
     TreeApiImpl treeService =
-        new TreeApiImpl(serverConfig, versionStore, authorizer, principalSupplier);
+        new TreeApiImpl(serverConfig, versionStore, authorizer, accessContext);
     ContentApiImpl contentService =
-        new ContentApiImpl(serverConfig, versionStore, authorizer, principalSupplier);
+        new ContentApiImpl(serverConfig, versionStore, authorizer, accessContext);
     DiffApiImpl diffService =
-        new DiffApiImpl(serverConfig, versionStore, authorizer, principalSupplier);
+        new DiffApiImpl(serverConfig, versionStore, authorizer, accessContext);
 
     RestV2ConfigResource configResource =
-        new RestV2ConfigResource(serverConfig, versionStore, authorizer, principalSupplier);
+        new RestV2ConfigResource(serverConfig, versionStore, authorizer, accessContext);
     RestV2TreeResource treeResource =
         new RestV2TreeResource(configService, treeService, contentService, diffService);
 

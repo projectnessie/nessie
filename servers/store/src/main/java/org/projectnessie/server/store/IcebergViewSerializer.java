@@ -34,14 +34,24 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   protected void toStoreOnRefState(IcebergView view, ObjectTypes.Content.Builder builder) {
     ObjectTypes.IcebergViewState.Builder stateBuilder =
         ObjectTypes.IcebergViewState.newBuilder()
             .setVersionId(view.getVersionId())
-            .setSchemaId(view.getSchemaId())
-            .setDialect(view.getDialect())
-            .setSqlText(view.getSqlText())
-            .setMetadataLocation(view.getMetadataLocation());
+            .setSchemaId(view.getSchemaId());
+    String dialect = view.getDialect();
+    String sqlText = view.getSqlText();
+    String metadataLocation = view.getMetadataLocation();
+    if (dialect != null) {
+      stateBuilder.setDialect(dialect);
+    }
+    if (sqlText != null) {
+      stateBuilder.setSqlText(sqlText);
+    }
+    if (metadataLocation != null) {
+      stateBuilder.setMetadataLocation(metadataLocation);
+    }
 
     builder.setIcebergViewState(stateBuilder);
   }

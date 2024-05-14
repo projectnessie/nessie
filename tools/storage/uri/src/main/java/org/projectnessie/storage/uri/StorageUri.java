@@ -1,0 +1,255 @@
+/*
+ * Copyright (C) 2024 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.storage.uri;
+
+import com.google.common.base.Preconditions;
+import java.net.URI;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.Objects;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+/**
+ * A utility class for working with file storage locations to be used instead of {@link URI} since
+ * many actual object store locations do not always match the URI syntax.
+ */
+public class StorageUri implements Comparable<StorageUri> {
+  public static final String SCHEME_FILE = "file";
+
+  public static final Comparator<StorageUri> COMPARATOR =
+      Comparator.<StorageUri, String>comparing(u -> normalizedForCompare(u.scheme))
+          .thenComparing(u -> normalizedForCompare(u.authority))
+          .thenComparing(u -> normalizedForCompare(u.path));
+
+  private final String scheme;
+  private final String authority;
+  private final String path;
+
+  private StorageUri(String location) {
+    // `file:` URIs may come in different forms that are considered equivalent by java.net.URI
+    // Convert to the form used by File.toURI().toString()
+    this.scheme = scheme(location);
+    if (scheme != null) {
+      String schemeSpecific = location.substring(scheme.length() + 1);
+      if (schemeSpecific.startsWith("//")) {
+        int pathPos = schemeSpecific.indexOf('/', 2);
+        if (pathPos < 0) {
+          this.authority = emptyToNull(schemeSpecific.substring(2));
+          this.path = null;
+        } else {
+          this.authority = emptyToNull(schemeSpecific.substring(2, pathPos));
+          this.path = normalizedPath(schemeSpecific.substring(pathPos));
+        }
+      } else {
+        this.authority = null;
+        this.path = normalizedPath(schemeSpecific);
+      }
+    } else {
+      this.authority = null;
+      this.path = normalizedPath(location);
+    }
+  }
+
+  private StorageUri(String scheme, String authority, String path) {
+    this.scheme = scheme;
+    this.authority = authority;
+    this.path = path;
+  }
+
+  public String location() {
+    StringBuilder location = new StringBuilder();
+    if (scheme != null) {
+      location.append(scheme);
+      location.append(':');
+    }
+
+    if (authority != null) {
+      location.append("//");
+      location.append(authority);
+    }
+
+    if (path != null) {
+      location.append(path);
+    }
+
+    return location.toString();
+  }
+
+  public static StorageUri of(String location) {
+    return new StorageUri(location);
+  }
+
+  public static StorageUri of(URI uri) {
+    return of(uri.toString());
+  }
+
+  @Override
+  public String toString() {
+    return location();
+  }
+
+  @Nullable
+  private static String scheme(String location) {
+    int schemePos = location.indexOf(':');
+    if (schemePos > 0) {
+      return location.substring(0, schemePos).toLowerCase(Locale.ROOT);
+    }
+    return null;
+  }
+
+  @Nullable
+  public String scheme() {
+    return scheme;
+  }
+
+  @Nullable
+  public String authority() {
+    return authority;
+  }
+
+  @Nullable
+  public String path() {
+    return path;
+  }
+
+  public StorageUri withTrailingSeparator() {
+    if (path == null) {
+      return new StorageUri(scheme, authority, "/");
+    } else if (!path.endsWith("/")) {
+      return new StorageUri(scheme, authority, path + "/");
+    }
+
+    return this;
+  }
+
+  @Override
+  public int compareTo(@Nonnull StorageUri other) {
+    return COMPARATOR.compare(this, other);
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h = 31 * h + (scheme == null ? 0 : scheme.hashCode());
+    h = 31 * h + (authority == null ? 0 : authority.hashCode());
+    h = 31 * h + (path == null ? 0 : path.hashCode());
+    return h;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+
+    if (!(other instanceof StorageUri)) {
+      return false;
+    }
+
+    StorageUri o = (StorageUri) other;
+    return Objects.equals(this.scheme, o.scheme)
+        && Objects.equals(this.authority, o.authority)
+        && Objects.equals(this.path, o.path);
+  }
+
+  private static String normalizedForCompare(String value) {
+    return value == null ? "" : value;
+  }
+
+  private static String emptyToNull(String value) {
+    return (value == null || value.isEmpty()) ? null : value;
+  }
+
+  private static String normalizedPath(String loc) {
+    StringBuilder norm = new StringBuilder(loc.length());
+    for (int pos = 0; pos < loc.length(); ) {
+      int idx = loc.indexOf('/', pos);
+      if (idx < 0) {
+        idx = loc.length();
+      } else {
+        idx++; // skip the '/'
+      }
+
+      norm.append(loc, pos, idx);
+      // drop excessive path separators
+      while (idx < loc.length() && loc.charAt(idx) == '/') {
+        idx++;
+      }
+      pos = idx;
+    }
+    return norm.toString();
+  }
+
+  public StorageUri relativize(StorageUri child) {
+    if (!Objects.equals(this.scheme, child.scheme)
+        || !Objects.equals(this.authority, child.authority)) {
+      return child;
+    }
+
+    String nested = child.path == null ? "/" : child.path;
+    String base = path == null ? "/" : path;
+    if (!base.endsWith("/")) {
+      base += "/";
+    }
+
+    if (!nested.startsWith(base)) {
+      return child;
+    }
+
+    String rel = nested.substring(base.length());
+    return of(rel);
+  }
+
+  public StorageUri relativize(String subLocation) {
+    return relativize(StorageUri.of(subLocation));
+  }
+
+  public StorageUri resolve(StorageUri rel) {
+    if (rel.scheme() != null) {
+      return rel; // `rel` is not relative
+    }
+
+    Preconditions.checkArgument(
+        !normalizedForCompare(rel.path).startsWith("."),
+        "Parent and self-references are not supported: %s",
+        rel.path);
+
+    if (rel.path.startsWith("/")) { // absolute path
+      return new StorageUri(scheme, authority, rel.path);
+    }
+
+    if (path == null) {
+      return new StorageUri(scheme, authority, "/" + rel.path);
+    }
+
+    if (!path.startsWith("/")) { // `this` is an opaque URI
+      return rel;
+    }
+
+    if (path.endsWith("/")) {
+      return new StorageUri(scheme, authority, path + rel.path);
+    }
+
+    int pos = path.lastIndexOf('/');
+    String basePath = path.substring(0, pos + 1);
+    return new StorageUri(scheme, authority, basePath + rel.path);
+  }
+
+  public StorageUri resolve(String subPath) {
+    return resolve(StorageUri.of(subPath));
+  }
+}

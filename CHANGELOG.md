@@ -8,6 +8,172 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
+  SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
+  and reference names, syntax highlighting, paging of long results, command history.
+
+### Upgrade notes
+
+### Breaking changes
+
+### New Features
+
+- More verbose exceptions from Nessie GC.
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.82.0] Release (2024-05-06)
+
+### Breaking changes
+
+- The readiness, liveness, metrics and Swagger-UI endpoints starting with `/q/` have been moved from the
+  HTTP port exposing the REST endpoints to a different HTTP port (9000),
+  see [Quarkus management interface reference docs](https://quarkus.io/guides/management-interface-reference).
+  Any path starting with `/q/` can be safely removed from a possibly customized configuration
+  `nessie.server.authentication.anonymous-paths`.
+- The move of the above endpoints to the management port requires using the Nessie Helm chart for this
+  release or a newer release. Also, the Helm Chart for this release will not work with older Nessie
+  releases.
+
+## [0.81.1] Release (2024-05-03)
+
+### Fixes
+
+- GC: Fix handling of quoted column names in Iceberg
+
+## [0.81.0] Release (2024-05-01)
+
+### Highlights
+
+- The Nessie client now supports public clients when using OAuth 2 authentication. Public clients 
+  are clients that do not have a client secret; they are compatible with the `password`, 
+  `authorization_code`, and `device_code` grant types. See the
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
+### New Features
+
+- The Nessie Helm chart now supports AWS profiles. There are now two ways to configure AWS 
+  credentials in the Helm chart:
+  - Using a secret. The secret name can be set in the `dynamodb.secret` value.
+  - Using an AWS profile (new). The profile name can be set in the `dynamodb.profile` value.
+
+## [0.80.0] Release (2024-04-21)
+
+### Upgrade notes
+
+- GC Tool: the Nessie GC tool is not published anymore as a Unix executable file, but as a regular 
+  jar named `nessie-gc.jar`. Instead of running `nessie-gc`, you now run `java -jar nessie-gc.jar`.
+
+### New Features
+
+- Nessie clients can now use the Apache HTTP client, if it's available on the classpath
+- Nessie clients now return more readable error messages
+
+### Fixes
+
+- Helm chart: Fix incorrect OpenTelemetry variable names
+- SQL extensions: Respect comments in SQL
+- GC tool: perform commit after schema creation
+
+## [0.79.0] Release (2024-03-12)
+
+### New Features
+
+- Iceberg bumped to 1.5.0
+
+### Changes
+
+- SQL extensions for Spark 3.2 have been removed
+- Experimental iceberg-views module has been removed
+
+## [0.78.0] Release (2024-03-07)
+
+### New Features
+
+- GC Tool: ability to skip creating existing tables (IF NOT EXISTS)
+- Make `Authorizer` pluggable
+- Helm chart: add option to set sessionAffinity on Service
+
+### Fixes
+
+- Handle re-added keys when creating squash commits
+- JDBC backend: infer catalog and schema if not specified
+
+## [0.77.0] Release (2024-02-14)
+
+### Highlights
+
+- The Nessie GC tool is now published as a Docker image. See the [GC Tool documentation
+  page](https://projectnessie.org/features/gc) for more.
+- Remove synchronizing to docker.io container registry, only publish to ghcr.io and quay.io.
+
+### Upgrade notes
+
+- Projectnessie no longer publishes container images to docker.io/Docker Hub. Container images are
+  available from ghcr.io and quay.io.
+
+### New Features
+
+- Add some configuration checks to highlight probably production issues
+- Publish Docker images for the GC tool
+
+### Changes
+
+- Disable default OIDC tenant when authentication is disabled
+- Disable OpenTelemetry SDK when no endpoint is defined
+
+### Fixes
+
+- Fix VersionStore panels of the Grafana dashboard
+
+## [0.76.4] Release (2024-01-26)
+
+### Changes
+
+- Nessie Docker images now contain Java 21
+- Helm: Make ingressClassName configurable
+- Helm: Use auto scaling
+- Improve error message when JDBC/C* columns are missing
+
+## [0.76.0] Release (2024-01-02)
+
+### Highlights
+
+- The Nessie client supports two new authentication flows when using OAuth 2 authentication:
+  the Authorization Code flow and the Device Code flow. These flows are well suited for use within 
+  a command line program, such as a Spark SQL shell, where a user is interacting with Nessie using a
+  terminal. In these flows, the user must use their web browser to authenticate with the identity
+  provider. See the 
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details. The two new flows are enabled by the following new grant types:
+  - `authorization_code`: enables the Authorization Code flow; this flow can only be used with
+    a local shell session running on the user's machine.
+  - `device_code`: enables the Device Code flow; this flow can be used with either a local or a 
+    remote shell session. 
+- The Nessie client now supports endpoint discovery when using OAuth 2 authentication. If an 
+  identity provider supports the OpenID Connect Discovery mechanism, the Nessie client can be 
+  configured to use it to discover the OAuth 2 endpoints. See the 
+  [Nessie documentation](https://projectnessie.org/tools/client_config/#authentication-settings) 
+  for details.
+
+### New Features
+
+- Nessie client: the OAUTH2 authentication provider now supports programmatic configuration. See the 
+  [Nessie documentation](https://projectnessie.org/develop/java/#authentication) for details.
+
+### Fixes
+
+- Fix potential NPE when fetching commit log with fetch option `ALL` and access checks enabled.
+
+## [0.75.0] Release (2023-12-15)
+
 ### Upgrade notes
 
 - Nessie Quarkus parts are now built against Java 17 and Java 17 is required to run Nessie Quarkus Server directly.
@@ -41,16 +207,6 @@ as necessary. Empty sections will not end in the release notes.
 
 - The deprecated version-store implementations based on "database datapter" have been removed from the
   code base.
-
-### New Features
-
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
 
 ## [0.74.0] Release (2023-11-21)
 
@@ -273,7 +429,17 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...HEAD
+[0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
+[0.81.1]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...nessie-0.81.1
+[0.81.0]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...nessie-0.81.0
+[0.80.0]: https://github.com/projectnessie/nessie/compare/nessie-0.79.0...nessie-0.80.0
+[0.79.0]: https://github.com/projectnessie/nessie/compare/nessie-0.78.0...nessie-0.79.0
+[0.78.0]: https://github.com/projectnessie/nessie/compare/nessie-0.77.0...nessie-0.78.0
+[0.77.0]: https://github.com/projectnessie/nessie/compare/nessie-0.76.4...nessie-0.77.0
+[0.76.4]: https://github.com/projectnessie/nessie/compare/nessie-0.76.0...nessie-0.76.4
+[0.76.0]: https://github.com/projectnessie/nessie/compare/nessie-0.75.0...nessie-0.76.0
+[0.75.0]: https://github.com/projectnessie/nessie/compare/nessie-0.74.0...nessie-0.75.0
 [0.74.0]: https://github.com/projectnessie/nessie/compare/nessie-0.73.0...nessie-0.74.0
 [0.73.0]: https://github.com/projectnessie/nessie/compare/nessie-0.72.4...nessie-0.73.0
 [0.72.4]: https://github.com/projectnessie/nessie/compare/nessie-0.72.2...nessie-0.72.4

@@ -21,13 +21,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.client.rest.v1.HttpApiV1;
 import org.projectnessie.client.rest.v1.RestV1Client;
 import org.projectnessie.client.rest.v2.HttpApiV2;
@@ -42,10 +45,7 @@ public class NessieHttpClientBuilderImpl
           .enable(SerializationFeature.INDENT_OUTPUT)
           .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
-  private final HttpClient.Builder builder =
-      HttpClient.builder()
-          .setObjectMapper(MAPPER)
-          .addResponseFilter(new NessieHttpResponseFilter());
+  private final HttpClient.Builder builder = HttpClient.builder().setObjectMapper(MAPPER);
 
   private boolean tracing;
 
@@ -57,6 +57,14 @@ public class NessieHttpClientBuilderImpl
   @Override
   public String name() {
     return "HTTP";
+  }
+
+  @Override
+  public Set<String> names() {
+    Set<String> names = new HashSet<>();
+    names.add("HTTP");
+    names.addAll(HttpClientBuilderImpl.clientNames());
+    return names;
   }
 
   @Override
@@ -143,6 +151,14 @@ public class NessieHttpClientBuilderImpl
     return this;
   }
 
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilderImpl withSSLCertificateVerificationDisabled(
+      boolean certificateVerificationDisabled) {
+    builder.setSslNoCertificateVerification(certificateVerificationDisabled);
+    return this;
+  }
+
   /**
    * Set the SSL context for this client.
    *
@@ -177,11 +193,20 @@ public class NessieHttpClientBuilderImpl
     return this;
   }
 
+  @SuppressWarnings("deprecation")
   @CanIgnoreReturnValue
   @Override
+  @Deprecated
   public NessieHttpClientBuilderImpl withForceUrlConnectionClient(
       boolean forceUrlConnectionClient) {
     builder.setForceUrlConnectionClient(forceUrlConnectionClient);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilderImpl withClientName(String clientName) {
+    builder.setHttpClientName(clientName);
     return this;
   }
 
@@ -196,6 +221,42 @@ public class NessieHttpClientBuilderImpl
   @Override
   public NessieHttpClientBuilderImpl withResponseFactory(HttpResponseFactory responseFactory) {
     builder.setResponseFactory(responseFactory);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilderImpl addRequestFilter(RequestFilter filter) {
+    builder.addRequestFilter(filter);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  @Override
+  public NessieHttpClientBuilderImpl addResponseFilter(ResponseFilter filter) {
+    builder.addResponseFilter(filter);
+    return this;
+  }
+
+  @Override
+  public NessieHttpClientBuilderImpl fromConfig(Function<String, String> configuration) {
+    return (NessieHttpClientBuilderImpl) super.fromConfig(configuration);
+  }
+
+  @Override
+  public NessieHttpClientBuilderImpl withAuthenticationFromConfig(
+      Function<String, String> configuration) {
+    return (NessieHttpClientBuilderImpl) super.withAuthenticationFromConfig(configuration);
+  }
+
+  @Override
+  public NessieHttpClientBuilderImpl withUri(String uri) {
+    return (NessieHttpClientBuilderImpl) super.withUri(uri);
+  }
+
+  @Override
+  public NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture) {
+    builder.setCancellationFuture(cancellationFuture);
     return this;
   }
 
