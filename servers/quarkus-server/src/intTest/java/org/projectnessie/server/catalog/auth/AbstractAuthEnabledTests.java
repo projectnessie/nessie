@@ -30,7 +30,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import org.apache.iceberg.aws.s3.signer.S3V4RestSignerClient;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider;
@@ -72,6 +75,24 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTes
       Method invalidateAll = cache.getClass().getMethod("invalidateAll");
       invalidateAll.setAccessible(true);
       invalidateAll.invoke(cache);
+    }
+  }
+
+  @AfterEach
+  public void closeS3SignerExecutor() throws Exception {
+    Field tokenRefreshExecutor =
+        S3V4RestSignerClient.class.getDeclaredField("tokenRefreshExecutor");
+    tokenRefreshExecutor.setAccessible(true);
+    ScheduledExecutorService executor = (ScheduledExecutorService) tokenRefreshExecutor.get(null);
+    if (executor != null) {
+      List<Runnable> tasks = executor.shutdownNow();
+      tasks.forEach(
+          task -> {
+            if (task instanceof Future) {
+              ((Future<?>) task).cancel(true);
+            }
+          });
+      tokenRefreshExecutor.set(null, null);
     }
   }
 
