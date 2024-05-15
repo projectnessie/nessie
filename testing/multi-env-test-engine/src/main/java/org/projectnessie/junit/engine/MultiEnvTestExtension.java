@@ -40,8 +40,8 @@ public interface MultiEnvTestExtension extends Extension {
 
   /**
    * Allows {@link MultiEnvTestExtension}s to define their relative ordering within a JUnit
-   * UniqueID. Higher numbers will appear earlier in the JUnit UniqueId. For extensions with the
-   * same order value, the segmentType will be sorted alphabetically.
+   * UniqueID's segments. Higher numbers will appear earlier in the JUnit UniqueId. Extensions with
+   * the same segment priority will be sorted alphabetically by segmentType.
    */
   default int segmentPriority() {
     return 0;
