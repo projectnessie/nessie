@@ -69,9 +69,9 @@ public interface StoreConfig {
   String CONFIG_PREVIOUS_HEAD_TIME_SPAN_SECONDS = "ref-previous-head-time-span-seconds";
   long DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS = 5 * 60;
 
-  String CONFIG_CACHE_REFERENCE_TTL = "cache-reference-ttl";
+  String CONFIG_REFERENCE_CACHE_TTL = "reference-cache-ttl";
 
-  String CONFIG_CACHE_REFERENCE_NEGATIVE_TTL = "cache-reference-negative-ttl";
+  String CONFIG_REFERENCE_NEGATIVE_CACHE_TTL = "reference-cache-negative-ttl";
 
   /**
    * Whether namespace validation is enabled, changing this to false will break the Nessie
@@ -264,7 +264,7 @@ public interface StoreConfig {
    * <p><em>This is an experimental feature, currently only for single Nessie node deployments! If
    * in doubt, leave this un-configured!</em>
    */
-  Optional<Duration> cacheReferenceTtl();
+  Optional<Duration> referenceCacheTtl();
 
   /**
    * Defines the duration how long sentinels for non-existing references shall be kept in the cache
@@ -275,7 +275,7 @@ public interface StoreConfig {
    * <p><em>This is an experimental feature, currently only for single Nessie node deployments! If
    * in doubt, leave this un-configured!</em>
    */
-  Optional<Duration> cacheReferenceNegativeTtl();
+  Optional<Duration> referenceCacheNegativeTtl();
 
   /**
    * Retrieves the current timestamp in microseconds since epoch, using the configured {@link
@@ -361,13 +361,13 @@ public interface StoreConfig {
       if (v != null) {
         a = a.withReferencePreviousHeadTimeSpanSeconds(Long.parseLong(v.trim()));
       }
-      v = configFunction.apply(CONFIG_CACHE_REFERENCE_TTL);
+      v = configFunction.apply(CONFIG_REFERENCE_CACHE_TTL);
       if (v != null) {
-        a = a.withCacheReferenceTtl(Duration.parse(v.trim()));
+        a = a.withReferenceCacheTtl(Duration.parse(v.trim()));
       }
-      v = configFunction.apply(CONFIG_CACHE_REFERENCE_NEGATIVE_TTL);
+      v = configFunction.apply(CONFIG_REFERENCE_NEGATIVE_CACHE_TTL);
       if (v != null) {
-        a = a.withCacheReferenceNegativeTtl(Duration.parse(v.trim()));
+        a = a.withReferenceCacheNegativeTtl(Duration.parse(v.trim()));
       }
       return a;
     }
@@ -415,10 +415,10 @@ public interface StoreConfig {
 
     Adjustable withReferencePreviousHeadTimeSpanSeconds(long referencePreviousHeadTimeSpanSeconds);
 
-    /** See {@link StoreConfig#cacheReferenceTtl()}. */
-    Adjustable withCacheReferenceTtl(Duration cacheReferenceTtl);
+    /** See {@link StoreConfig#referenceCacheTtl()}. */
+    Adjustable withReferenceCacheTtl(Duration referenceCacheTtl);
 
-    /** See {@link StoreConfig#cacheReferenceNegativeTtl()}. */
-    Adjustable withCacheReferenceNegativeTtl(Duration cacheReferenceNegativeTtl);
+    /** See {@link StoreConfig#referenceCacheNegativeTtl()}. */
+    Adjustable withReferenceCacheNegativeTtl(Duration referencecacheNegativeTtl);
   }
 }

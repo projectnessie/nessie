@@ -150,7 +150,7 @@ public class PersistProvider {
           CacheConfig.builder().capacityMb(effectiveCacheSizeMB).meterRegistry(meterRegistry);
 
       storeConfig
-          .cacheReferenceTtl()
+          .referenceCacheTtl()
           .ifPresent(
               refTtl -> {
                 LOGGER.warn(
@@ -158,7 +158,7 @@ public class PersistProvider {
                     refTtl);
                 cacheConfig.referenceTtl(refTtl);
               });
-      storeConfig.cacheReferenceNegativeTtl().ifPresent(cacheConfig::referenceNegativeTtl);
+      storeConfig.referenceCacheNegativeTtl().ifPresent(cacheConfig::referenceNegativeTtl);
 
       CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig.build());
       persist = cacheBackend.wrap(persist);

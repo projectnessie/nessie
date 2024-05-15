@@ -139,11 +139,11 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
   OptionalInt cacheCapacityFractionAdjustMB();
 
-  @WithName(CONFIG_CACHE_REFERENCE_TTL)
+  @WithName(CONFIG_REFERENCE_CACHE_TTL)
   @Override
-  Optional<Duration> cacheReferenceTtl();
+  Optional<Duration> referenceCacheTtl();
 
-  @WithName(CONFIG_CACHE_REFERENCE_NEGATIVE_TTL)
+  @WithName(CONFIG_REFERENCE_NEGATIVE_CACHE_TTL)
   @Override
-  Optional<Duration> cacheReferenceNegativeTtl();
+  Optional<Duration> referenceCacheNegativeTtl();
 }
