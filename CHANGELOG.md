@@ -16,6 +16,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- `nessie-quarkus-cli`, the low-level tool to for example export/import Nessie repositories, has been renamed
+  to `nessie-server-admin-tool`.
+
 ### New Features
 
 - More verbose exceptions from Nessie GC.
