@@ -19,32 +19,11 @@ import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLife
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import java.util.Map;
 import java.util.UUID;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.rest.RESTCatalog;
 
 @QuarkusTest
 @TestProfile(AdlsUnitTestProfile.class)
 public class TestAdlsIcebergViewCatalog extends AbstractIcebergViewCatalogUnitTests {
-
-  @Override
-  protected RESTCatalog catalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-    RESTCatalog catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        "nessie-adls-view-iceberg-api",
-        Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
-            CatalogProperties.WAREHOUSE_LOCATION,
-            ADLS_WAREHOUSE_LOCATION));
-    catalogs.add(catalog);
-    currentCatalog = catalog;
-    return catalog;
-  }
 
   @Override
   protected String temporaryLocation() {
