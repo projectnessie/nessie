@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.CACHE_UNLIMITED;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.NOT_CACHED;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
@@ -167,12 +166,16 @@ final class CaffeineCacheBackend implements CacheBackend {
     cache.asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
   }
 
+  private ObjId refObjId(String name) {
+    return ObjId.objIdFromByteArray(("r:" + name).getBytes(UTF_8));
+  }
+
   @Override
   public void removeReference(@Nonnull String repositoryId, @Nonnull String name) {
     if (refCacheTtlNanos <= 0L) {
       return;
     }
-    ObjId id = objIdFromByteArray(name.getBytes(UTF_8));
+    ObjId id = refObjId(name);
     CacheKeyValue key = cacheKey(repositoryId, id);
     cache.invalidate(key);
   }
@@ -182,7 +185,7 @@ final class CaffeineCacheBackend implements CacheBackend {
     if (refCacheTtlNanos <= 0L) {
       return;
     }
-    ObjId id = objIdFromByteArray(r.name().getBytes(UTF_8));
+    ObjId id = refObjId(r.name());
     CacheKeyValue key =
         cacheKeyValue(repositoryId, id, config.clockNanos().getAsLong() + refCacheTtlNanos);
     cache.put(key, serializeReference(r));
@@ -193,7 +196,7 @@ final class CaffeineCacheBackend implements CacheBackend {
     if (refCacheNegativeTtlNanos <= 0L) {
       return;
     }
-    ObjId id = objIdFromByteArray(name.getBytes(UTF_8));
+    ObjId id = refObjId(name);
     CacheKeyValue key =
         cacheKeyValue(repositoryId, id, config.clockNanos().getAsLong() + refCacheNegativeTtlNanos);
     cache.put(key, NON_EXISTING_SENTINEL);
@@ -204,7 +207,7 @@ final class CaffeineCacheBackend implements CacheBackend {
     if (refCacheTtlNanos <= 0L) {
       return null;
     }
-    ObjId id = objIdFromByteArray(name.getBytes(UTF_8));
+    ObjId id = refObjId(name);
     CacheKeyValue keyValue = cacheKey(repositoryId, id);
     byte[] bytes = cache.getIfPresent(keyValue);
     if (bytes == NON_EXISTING_SENTINEL) {
