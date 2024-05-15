@@ -291,7 +291,10 @@ class TestMultiEnvTestEngine {
     assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
   }
 
-  /** M before A because M sets higher order value A before Z because alphabetical */
+  /**
+   * M before A because M sets higher order value.<br>
+   * A before Z because orders are equal, falling back to alphabetical.
+   */
   @Test
   void orderedTest() {
     Set<UniqueId> uniqueTestIds =
@@ -324,6 +327,42 @@ class TestMultiEnvTestEngine {
                 .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"));
 
     assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
+  }
+
+  /**
+   * M before A because M sets higher order value.<br>
+   * A before Z because orders are equal, falling back to alphabetical.
+   */
+  @Test
+  void displayNames() {
+    Set<String> uniqueTestNames =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .selectors(selectClass(TestDisplayNames.class))
+            .selectors(selectClass(TestDisplayNames.Inner.class))
+            .filters(new MultiEnvTestFilter())
+            .execute()
+            .testEvents()
+            .list()
+            .stream()
+            .map(e -> e.getTestDescriptor().getDisplayName())
+            .collect(Collectors.toSet());
+
+    // Note that inner/outer tests have the same display names, so there are half as many actually
+    // expected display names
+    List<String> expectedDisplayNames =
+        List.of(
+            String.format(
+                "test1() [%s,%s,%s]",
+                MmmOrderedTestExtension.SEGMENT_1,
+                AaaOrderedTestExtension.SEGMENT_1,
+                ZzzOrderedTestExtension.SEGMENT_1),
+            String.format(
+                "test2() [%s,%s,%s]",
+                MmmOrderedTestExtension.SEGMENT_1,
+                AaaOrderedTestExtension.SEGMENT_1,
+                ZzzOrderedTestExtension.SEGMENT_1));
+
+    assertThat(uniqueTestNames).containsExactlyInAnyOrderElementsOf(expectedDisplayNames);
   }
 
   @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
@@ -392,6 +431,35 @@ class TestMultiEnvTestEngine {
     class Inner {
       @Test
       void test() {
+        // nop
+      }
+    }
+  }
+
+  @ExtendWith(AaaOrderedTestExtension.class)
+  @ExtendWith(MmmOrderedTestExtension.class)
+  @ExtendWith(ZzzOrderedTestExtension.class)
+  @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
+  public static class TestDisplayNames {
+    @Test
+    void test1() {
+      // nop
+    }
+
+    @Test
+    void test2() {
+      // nop
+    }
+
+    @Nested
+    class Inner {
+      @Test
+      void test1() {
+        // nop
+      }
+
+      @Test
+      void test2() {
         // nop
       }
     }

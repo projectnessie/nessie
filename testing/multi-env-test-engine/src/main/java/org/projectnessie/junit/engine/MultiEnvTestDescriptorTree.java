@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
@@ -28,6 +30,7 @@ import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.UniqueId;
+import org.junit.platform.engine.UniqueId.Segment;
 
 public class MultiEnvTestDescriptorTree {
 
@@ -67,10 +70,17 @@ public class MultiEnvTestDescriptorTree {
   }
 
   public void addOriginalChildrenToFinishedTree(EngineDiscoveryRequest discoveryRequest) {
+    final String rootNodeSegmentValue = rootNode.getUniqueId().getSegments().get(0).getValue();
+
     for (TestDescriptor leafNode : latestLeafNodes) {
+      String environmentNames =
+          leafNode.getUniqueId().getSegments().stream()
+              .map(Segment::getValue)
+              .filter(Predicate.not(rootNodeSegmentValue::equals))
+              .collect(Collectors.joining(","));
       JupiterConfiguration nodeConfiguration =
           new CachingJupiterConfiguration(
-              new MultiEnvJupiterConfiguration(configurationParameters, "TODO")); // TODO
+              new MultiEnvJupiterConfiguration(configurationParameters, environmentNames));
       JupiterEngineDescriptor discoverResult =
           new JupiterEngineDescriptor(leafNode.getUniqueId(), nodeConfiguration);
       new DiscoverySelectorResolver().resolveSelectors(discoveryRequest, discoverResult);

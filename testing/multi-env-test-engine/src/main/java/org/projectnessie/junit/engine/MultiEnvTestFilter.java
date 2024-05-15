@@ -62,14 +62,15 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
       }
     } else {
       // check whether any of the extensions declared by the test recognize the version segment
-      Set<String> registeredMultiEnvSegmentTypes = registry.stream(testClass)
-        .map(MultiEnvTestExtension::segmentType)
-        .collect(Collectors.toUnmodifiableSet());
+      Set<String> registeredMultiEnvSegmentTypes =
+          registry.stream(testClass)
+              .map(MultiEnvTestExtension::segmentType)
+              .collect(Collectors.toUnmodifiableSet());
 
-      Stream<String> segmentTypesInTestId = id.getSegments().stream()
-        .map(Segment::getType);
+      Stream<String> segmentTypesInTestId = id.getSegments().stream().map(Segment::getType);
 
-      boolean atLeastOneSegmentTypeIsMultiEnv = segmentTypesInTestId.anyMatch(registeredMultiEnvSegmentTypes::contains);
+      boolean atLeastOneSegmentTypeIsMultiEnv =
+          segmentTypesInTestId.anyMatch(registeredMultiEnvSegmentTypes::contains);
 
       if (atLeastOneSegmentTypeIsMultiEnv) {
         return FilterResult.included(null);
