@@ -64,7 +64,7 @@ public interface IcebergCatalogOperation extends CatalogOperation {
       throw new IllegalArgumentException(
           "Invalid create requirements: "
               + requirements().stream()
-                  .filter(r -> r instanceof AssertCreate)
+                  .filter(r -> !(r instanceof AssertCreate))
                   .collect(Collectors.toList()));
     }
   }
