@@ -417,9 +417,9 @@ class TestMultiEnvTestEngine {
     }
   }
 
+  @ExtendWith(ZzzOrderedTestExtension.class) // Z first to throw off default ordering
   @ExtendWith(AaaOrderedTestExtension.class)
   @ExtendWith(MmmOrderedTestExtension.class)
-  @ExtendWith(ZzzOrderedTestExtension.class)
   @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
   public static class OrderedTest {
     @Test
@@ -436,9 +436,9 @@ class TestMultiEnvTestEngine {
     }
   }
 
+  @ExtendWith(ZzzOrderedTestExtension.class) // Z first to throw off default ordering
   @ExtendWith(AaaOrderedTestExtension.class)
   @ExtendWith(MmmOrderedTestExtension.class)
-  @ExtendWith(ZzzOrderedTestExtension.class)
   @SuppressWarnings("JUnitMalformedDeclaration") // Intentionally not nested, used above
   public static class TestDisplayNames {
     @Test
