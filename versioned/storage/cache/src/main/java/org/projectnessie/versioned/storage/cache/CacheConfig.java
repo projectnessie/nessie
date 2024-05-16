@@ -15,17 +15,29 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.function.LongSupplier;
 import org.immutables.value.Value;
 
 @Value.Immutable
 public interface CacheConfig {
+
+  String INVALID_REFERENCE_NEGATIVE_TTL =
+      "Cache reference-negative-TTL must only be present, if reference-TTL is configured, and must only be positive.";
+  String INVALID_REFERENCE_TTL = "Cache reference-TTL must be positive, if present.";
+
   long capacityMb();
 
   Optional<MeterRegistry> meterRegistry();
+
+  Optional<Duration> referenceTtl();
+
+  Optional<Duration> referenceNegativeTtl();
 
   @Value.Default
   default LongSupplier clockNanos() {
@@ -36,12 +48,30 @@ public interface CacheConfig {
     return ImmutableCacheConfig.builder();
   }
 
+  @Value.Check
+  default void check() {
+    referenceTtl()
+        .ifPresent(ttl -> checkState(ttl.compareTo(Duration.ZERO) > 0, INVALID_REFERENCE_TTL));
+    referenceNegativeTtl()
+        .ifPresent(
+            ttl ->
+                checkState(
+                    referenceTtl().isPresent() && ttl.compareTo(Duration.ZERO) > 0,
+                    INVALID_REFERENCE_NEGATIVE_TTL));
+  }
+
   interface Builder {
     @CanIgnoreReturnValue
     Builder capacityMb(long capacityMb);
 
     @CanIgnoreReturnValue
     Builder meterRegistry(MeterRegistry meterRegistry);
+
+    @CanIgnoreReturnValue
+    Builder referenceTtl(Duration referenceTtl);
+
+    @CanIgnoreReturnValue
+    Builder referenceNegativeTtl(Duration referenceNegativeTtl);
 
     @CanIgnoreReturnValue
     Builder clockNanos(LongSupplier clockNanos);

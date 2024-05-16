@@ -120,10 +120,27 @@ public interface Persist {
    * <p><em>Do not use this function from service implementations, use {@link ReferenceLogic}
    * instead!</em>
    *
+   * <p>This function leverages the references-cache, if enabled, and must only be used for read
+   * operations. Updating operations must use {@link #fetchReferenceForUpdate(String)}.
+   *
+   * <p>Database specific implementations of {@link Persist} must implement this function, without
+   * caching.
+   *
    * @return the reference or {@code null}, if it does not exist
    */
   @Nullable
   Reference fetchReference(@Nonnull String name);
+
+  /**
+   * This is similar to {@link #fetchReference(String)}, but does always fetch the reference from
+   * the backend, <em>refreshing</em> the references-cache.
+   *
+   * <p>Database specific implementations of {@link Persist} must not implement this function.
+   */
+  @Nullable
+  default Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return fetchReference(name);
+  }
 
   /**
    * Like {@link #fetchReference(String)}, but finds multiple references by name at once, leveraging
@@ -131,11 +148,28 @@ public interface Persist {
    *
    * <p>Non-existing references are returned as {@code null} elements in the returned array.
    *
+   * <p>This function leverages the references-cache, if enabled, and must only be used for read
+   * operations. Updating operations must use {@link #fetchReferencesForUpdate(String[])}.
+   *
+   * <p>Database specific implementations of {@link Persist} must implement this function, without
+   * caching.
+   *
    * <p><em>Do not use this function from service implementations, use {@link ReferenceLogic}
    * instead!</em>
    */
   @Nonnull
   Reference[] fetchReferences(@Nonnull String[] names);
+
+  /**
+   * This is similar to #fetchReferences(String[]), but does always fetch the reference from the
+   * backend, <em>refreshing</em> the references-cache.
+   *
+   * <p>Database specific implementations of {@link Persist} must not implement this function.
+   */
+  @Nonnull
+  default Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return fetchReferences(names);
+  }
 
   // Objects
 
