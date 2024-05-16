@@ -756,7 +756,8 @@ public class NessieModelIceberg {
     return value != null ? value : defaultValue;
   }
 
-  public static String defaultIcebergLocation(String warehouseLocation, ContentKey key) {
+  /** Returns the default table or view base location. */
+  public static String icebergBaseLocation(String warehouseLocation, ContentKey key) {
     String baseLocation = warehouseLocation;
     Namespace ns = key.getNamespace();
     if (!ns.isEmpty()) {
@@ -766,10 +767,9 @@ public class NessieModelIceberg {
     // Different tables with same table name can exist across references in Nessie.
     // To avoid sharing same table path between two tables with same name, use uuid in the table
     // path.
-    // Note: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
+    // Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
     // TODO: support GZIP ??
-    return String.format(
-        "%s_%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID(), randomUUID());
+    return baseLocation + "_" + randomUUID();
   }
 
   private static String concatLocation(String location, String key) {
@@ -777,6 +777,11 @@ public class NessieModelIceberg {
       return location + key;
     }
     return location + "/" + key;
+  }
+
+  /** Returns the table or view metadata JSON location. */
+  public static String icebergMetadataJsonLocation(String baseLocation) {
+    return String.format("%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID());
   }
 
   public static NessieTableSnapshot newIcebergTableSnapshot(
@@ -1523,9 +1528,10 @@ public class NessieModelIceberg {
     state.builder().icebergCurrentVersionId(versionId);
   }
 
-  public static Content icebergMetadataToContent(IcebergTableMetadata snapshot, String contentId) {
+  public static Content icebergMetadataToContent(
+      String metadataJsonLocation, IcebergTableMetadata snapshot, String contentId) {
     return IcebergTable.of(
-        snapshot.location(),
+        metadataJsonLocation,
         snapshot.currentSnapshotId(),
         safeUnbox(snapshot.currentSchemaId(), INITIAL_SCHEMA_ID),
         safeUnbox(snapshot.defaultSpecId(), INITIAL_SPEC_ID),
@@ -1533,10 +1539,11 @@ public class NessieModelIceberg {
         contentId);
   }
 
-  public static Content icebergMetadataToContent(IcebergViewMetadata snapshot, String contentId) {
+  public static Content icebergMetadataToContent(
+      String location, IcebergViewMetadata snapshot, String contentId) {
     IcebergViewVersion version = snapshot.currentVersion();
     return IcebergView.of(
-        contentId, snapshot.location(), snapshot.currentVersionId(), version.schemaId(), "", "");
+        contentId, location, snapshot.currentVersionId(), version.schemaId(), "", "");
   }
 
   public static String typeToEntityName(Content.Type type) {

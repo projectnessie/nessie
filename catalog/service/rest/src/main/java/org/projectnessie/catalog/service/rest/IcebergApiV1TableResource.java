@@ -22,7 +22,7 @@ import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.unpartitioned;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.unsorted;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.defaultIcebergLocation;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddPartitionSpec.addPartitionSpec;
@@ -243,7 +243,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     if (createTableRequest.stageCreate()) {
 
       WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
-      String icebergLocation = defaultIcebergLocation(warehouse.location(), tableRef.contentKey());
+      String icebergLocation = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
 
       NessieTableSnapshot snapshot =
           new IcebergTableMetadataUpdateState(

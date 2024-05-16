@@ -17,9 +17,9 @@ package org.projectnessie.catalog.service.impl;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
-import static java.util.UUID.randomUUID;
 import static java.util.concurrent.CompletableFuture.completedStage;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.defaultIcebergLocation;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieViewSnapshotToIceberg;
@@ -464,7 +464,7 @@ public class CatalogServiceImpl implements CatalogService {
     if (content == null) {
       contentId = null;
       WarehouseConfig warehouse = catalogConfig.getWarehouse(icebergOp.warehouse());
-      String icebergLocation = defaultIcebergLocation(warehouse.location(), op.getKey());
+      String icebergLocation = icebergBaseLocation(warehouse.location(), op.getKey());
       snapshotStage = completedStage(newIcebergTableSnapshot(icebergOp.updates(), icebergLocation));
     } else {
       contentId = content.getId();
@@ -494,8 +494,12 @@ public class CatalogServiceImpl implements CatalogService {
                 })
             .thenApply(
                 nessieSnapshot -> {
-                  IcebergTableMetadata icebergMetadata = storeTableSnapshot(nessieSnapshot);
-                  Content updated = icebergMetadataToContent(icebergMetadata, contentId);
+                  String metadataJsonLocation =
+                      icebergMetadataJsonLocation(nessieSnapshot.icebergLocation());
+                  IcebergTableMetadata icebergMetadata =
+                      storeTableSnapshot(metadataJsonLocation, nessieSnapshot);
+                  Content updated =
+                      icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
 
                   ObjId snapshotId;
                   try {
@@ -535,7 +539,7 @@ public class CatalogServiceImpl implements CatalogService {
     if (content == null) {
       contentId = null;
       WarehouseConfig warehouse = catalogConfig.getWarehouse(icebergOp.warehouse());
-      String icebergLocation = defaultIcebergLocation(warehouse.location(), op.getKey());
+      String icebergLocation = icebergBaseLocation(warehouse.location(), op.getKey());
       snapshotStage = completedStage(newIcebergViewSnapshot(icebergOp.updates(), icebergLocation));
     } else {
       contentId = content.getId();
@@ -565,8 +569,12 @@ public class CatalogServiceImpl implements CatalogService {
                 })
             .thenApply(
                 nessieSnapshot -> {
-                  IcebergViewMetadata icebergMetadata = storeViewSnapshot(nessieSnapshot);
-                  Content updated = icebergMetadataToContent(icebergMetadata, contentId);
+                  String metadataJsonLocation =
+                      icebergMetadataJsonLocation(nessieSnapshot.icebergLocation());
+                  IcebergViewMetadata icebergMetadata =
+                      storeViewSnapshot(metadataJsonLocation, nessieSnapshot);
+                  Content updated =
+                      icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
                   ObjId snapshotId;
                   try {
                     snapshotId = snapshotIdFromContent(updated);
@@ -630,10 +638,11 @@ public class CatalogServiceImpl implements CatalogService {
         .retrieveIcebergSnapshot(snapshotId, content, SnapshotFormat.NESSIE_SNAPSHOT);
   }
 
-  private IcebergTableMetadata storeTableSnapshot(NessieTableSnapshot snapshot) {
+  private IcebergTableMetadata storeTableSnapshot(
+      String metadataJsonLocation, NessieTableSnapshot snapshot) {
     IcebergTableMetadata tableMetadata =
         nessieTableSnapshotToIceberg(snapshot, Optional.empty(), p -> {});
-    try (OutputStream out = objectIO.writeObject(StorageUri.of(snapshot.icebergLocation()))) {
+    try (OutputStream out = objectIO.writeObject(StorageUri.of(metadataJsonLocation))) {
       IcebergJson.objectMapper().writeValue(out, tableMetadata);
     } catch (IOException ex) {
       throw new RuntimeException(ex);
@@ -641,10 +650,11 @@ public class CatalogServiceImpl implements CatalogService {
     return tableMetadata;
   }
 
-  private IcebergViewMetadata storeViewSnapshot(NessieViewSnapshot snapshot) {
+  private IcebergViewMetadata storeViewSnapshot(
+      String metadataJsonLocation, NessieViewSnapshot snapshot) {
     IcebergViewMetadata viewMetadata =
         nessieViewSnapshotToIceberg(snapshot, Optional.empty(), p -> {});
-    try (OutputStream out = objectIO.writeObject(StorageUri.of(snapshot.icebergLocation()))) {
+    try (OutputStream out = objectIO.writeObject(StorageUri.of(metadataJsonLocation))) {
       IcebergJson.objectMapper().writeValue(out, viewMetadata);
     } catch (IOException ex) {
       throw new RuntimeException(ex);
