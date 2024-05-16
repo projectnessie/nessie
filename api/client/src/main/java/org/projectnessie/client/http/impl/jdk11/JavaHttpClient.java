@@ -21,6 +21,8 @@ import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 
@@ -75,6 +77,26 @@ final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
 
   @Override
   public void close() {
+    if (client != null) {
+      client
+          .executor()
+          .ifPresent(
+              executor -> {
+                if (executor instanceof ExecutorService) {
+                  ExecutorService executorService = (ExecutorService) executor;
+                  executorService.shutdown();
+                  try {
+                    if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                      executorService.shutdownNow();
+                    }
+                  } catch (InterruptedException e) {
+                    executorService.shutdownNow();
+                    Thread.currentThread().interrupt();
+                  }
+                }
+              });
+    }
+
     client = null;
     config.close();
   }
