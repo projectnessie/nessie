@@ -65,7 +65,9 @@ public interface IcebergCatalogOperation extends CatalogOperation {
           "Invalid create requirements: "
               + requirements().stream()
                   .filter(r -> !(r instanceof AssertCreate))
-                  .collect(Collectors.toList()));
+                  .map(Object::getClass)
+                  .map(Class::getSimpleName)
+                  .collect(Collectors.joining(", ")));
     }
   }
 
