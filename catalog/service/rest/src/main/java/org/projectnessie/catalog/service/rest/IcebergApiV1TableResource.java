@@ -68,7 +68,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.ToIntFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -499,15 +498,6 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
   Uni<SnapshotResponse> createOrUpdateTable(
       TableRef tableRef, IcebergUpdateTableRequest commitTableRequest) throws IOException {
-
-    if (commitTableRequest.hasAssertCreate()) {
-      List<IcebergUpdateRequirement> invalidRequirements =
-          commitTableRequest.requirements().stream()
-              .filter(req -> !(req instanceof IcebergUpdateRequirement.AssertCreate))
-              .collect(Collectors.toList());
-      checkArgument(
-          invalidRequirements.isEmpty(), "Invalid create requirements: %s", invalidRequirements);
-    }
 
     IcebergCatalogOperation op =
         IcebergCatalogOperation.builder()

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.formats.iceberg.rest;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,9 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import java.util.List;
-import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
@@ -45,12 +42,6 @@ public interface IcebergUpdateTableRequest {
   @Nullable // required for IcebergCommitTransactionRequest, null for a single update
   @JsonInclude(JsonInclude.Include.NON_NULL)
   IcebergTableIdentifier identifier();
-
-  @JsonIgnore
-  @Value.NonAttribute
-  default boolean hasAssertCreate() {
-    return requirements().stream().anyMatch(u -> u instanceof AssertCreate);
-  }
 
   static Builder builder() {
     return ImmutableIcebergUpdateTableRequest.builder();

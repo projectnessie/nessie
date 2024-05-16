@@ -55,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
@@ -292,18 +291,6 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
 
   Uni<SnapshotResponse> createOrUpdateView(
       TableRef tableRef, IcebergCommitViewRequest commitViewRequest) throws IOException {
-
-    boolean isCreate =
-        commitViewRequest.requirements().stream()
-            .anyMatch(IcebergUpdateRequirement.AssertCreate.class::isInstance);
-    if (isCreate) {
-      List<IcebergUpdateRequirement> invalidRequirements =
-          commitViewRequest.requirements().stream()
-              .filter(req -> !(req instanceof IcebergUpdateRequirement.AssertCreate))
-              .collect(Collectors.toList());
-      checkArgument(
-          invalidRequirements.isEmpty(), "Invalid create requirements: %s", invalidRequirements);
-    }
 
     IcebergCatalogOperation op =
         IcebergCatalogOperation.builder()

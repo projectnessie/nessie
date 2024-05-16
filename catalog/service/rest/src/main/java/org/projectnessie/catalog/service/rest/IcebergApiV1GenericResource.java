@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.service.rest;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse.icebergS3SignResponse;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
@@ -37,9 +36,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.RequestSigner;
@@ -51,13 +48,10 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTransactionRe
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
-import org.projectnessie.model.ContentKey;
 
 /**
  * Handles Iceberg REST API v1 endpoints that are not strongly associated with a particular entity
@@ -142,27 +136,13 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     CatalogCommit.Builder commit = CatalogCommit.builder();
     commitTransactionRequest.tableChanges().stream()
         .map(
-            tableChange -> {
-              ContentKey key = requireNonNull(tableChange.identifier()).toNessieContentKey();
-
-              if (tableChange.hasAssertCreate()) {
-                List<IcebergUpdateRequirement> invalidRequirements =
-                    tableChange.requirements().stream()
-                        .filter(req -> !(req instanceof AssertCreate))
-                        .collect(Collectors.toList());
-                checkArgument(
-                    invalidRequirements.isEmpty(),
-                    "Invalid create requirements: %s",
-                    invalidRequirements);
-              }
-
-              return IcebergCatalogOperation.builder()
-                  .updates(tableChange.updates())
-                  .requirements(tableChange.requirements())
-                  .key(key)
-                  .type(ICEBERG_TABLE)
-                  .build();
-            })
+            tableChange ->
+                IcebergCatalogOperation.builder()
+                    .updates(tableChange.updates())
+                    .requirements(tableChange.requirements())
+                    .key(requireNonNull(tableChange.identifier()).toNessieContentKey())
+                    .type(ICEBERG_TABLE)
+                    .build())
         .forEach(commit::addOperations);
 
     SnapshotReqParams reqParams = SnapshotReqParams.forSnapshotHttpReq(ref, "iceberg", null);
