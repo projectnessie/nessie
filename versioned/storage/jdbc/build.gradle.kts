@@ -53,6 +53,7 @@ dependencies {
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:postgresql")
   intTestRuntimeOnly("org.testcontainers:cockroachdb")
+  intTestRuntimeOnly(libs.mariadb.java.client)
   intTestRuntimeOnly(libs.docker.java.api)
   testFixturesImplementation(platform(libs.junit.bom))
   testFixturesImplementation(libs.bundles.junit.testing)

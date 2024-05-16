@@ -141,4 +141,63 @@ public final class DatabaseSpecifics {
       return sql + " ON CONFLICT DO NOTHING";
     }
   }
+
+  static class MariaDBDatabaseSpecific implements DatabaseSpecific {
+
+    private static final String VARCHAR = "VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
+    private static final String TEXT = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
+    private static final String MYSQL_CONSTRAINT_VIOLATION_SQL_STATE = "23000";
+
+    private static final String MYSQL_LOCK_DEADLOCK_SQL_STATE = "40001";
+
+    private final Map<JdbcColumnType, String> typeMap;
+    private final Map<JdbcColumnType, Integer> typeIdMap;
+
+    MariaDBDatabaseSpecific() {
+      typeMap = new EnumMap<>(JdbcColumnType.class);
+      typeIdMap = new EnumMap<>(JdbcColumnType.class);
+      typeMap.put(JdbcColumnType.NAME, VARCHAR);
+      typeIdMap.put(JdbcColumnType.NAME, Types.VARCHAR);
+      typeMap.put(JdbcColumnType.OBJ_ID, VARCHAR);
+      typeIdMap.put(JdbcColumnType.OBJ_ID, Types.VARCHAR);
+      typeMap.put(JdbcColumnType.OBJ_ID_LIST, TEXT);
+      typeIdMap.put(JdbcColumnType.OBJ_ID_LIST, Types.VARCHAR);
+      typeMap.put(JdbcColumnType.BOOL, "BIT(1)");
+      typeIdMap.put(JdbcColumnType.BOOL, Types.BIT);
+      typeMap.put(JdbcColumnType.VARBINARY, "BLOB");
+      typeIdMap.put(JdbcColumnType.VARBINARY, Types.BLOB);
+      typeMap.put(JdbcColumnType.BIGINT, "BIGINT");
+      typeIdMap.put(JdbcColumnType.BIGINT, Types.BIGINT);
+      typeMap.put(JdbcColumnType.VARCHAR, VARCHAR);
+      typeIdMap.put(JdbcColumnType.VARCHAR, Types.VARCHAR);
+    }
+
+    @Override
+    public Map<JdbcColumnType, String> columnTypes() {
+      return typeMap;
+    }
+
+    @Override
+    public Map<JdbcColumnType, Integer> columnTypeIds() {
+      return typeIdMap;
+    }
+
+    @Override
+    public boolean isConstraintViolation(SQLException e) {
+      return MYSQL_CONSTRAINT_VIOLATION_SQL_STATE.equals(e.getSQLState());
+    }
+
+    @Override
+    public boolean isRetryTransaction(SQLException e) {
+      if (e.getSQLState() == null) {
+        return false;
+      }
+      return e.getSQLState().equals(MYSQL_LOCK_DEADLOCK_SQL_STATE);
+    }
+
+    @Override
+    public String wrapInsert(String sql) {
+      return sql.replace("INSERT INTO", "INSERT IGNORE INTO");
+    }
+  }
 }
