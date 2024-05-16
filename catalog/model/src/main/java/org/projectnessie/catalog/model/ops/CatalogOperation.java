@@ -17,6 +17,7 @@ package org.projectnessie.catalog.model.ops;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import jakarta.annotation.Nullable;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 
@@ -38,5 +39,6 @@ public interface CatalogOperation {
    *
    * <p>If not set, the default warehouse will be used.
    */
+  @Nullable
   String warehouse();
 }

@@ -49,8 +49,6 @@ import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTransactionRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
@@ -145,20 +143,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     commitTransactionRequest.tableChanges().stream()
         .map(
             tableChange -> {
-              List<IcebergMetadataUpdate> updates =
-                  tableChange.updates().stream()
-                      .filter(update -> !(update instanceof SetLocation))
-                      .collect(Collectors.toList());
-
               ContentKey key = requireNonNull(tableChange.identifier()).toNessieContentKey();
-
-              IcebergCatalogOperation.Builder builder =
-                  IcebergCatalogOperation.builder()
-                      .updates(updates)
-                      .requirements(tableChange.requirements())
-                      .key(key)
-                      .warehouse(decoded.warehouse())
-                      .type(ICEBERG_TABLE);
 
               if (tableChange.hasAssertCreate()) {
                 List<IcebergUpdateRequirement> invalidRequirements =
@@ -171,7 +156,12 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
                     invalidRequirements);
               }
 
-              return builder.build();
+              return IcebergCatalogOperation.builder()
+                  .updates(tableChange.updates())
+                  .requirements(tableChange.requirements())
+                  .key(key)
+                  .type(ICEBERG_TABLE)
+                  .build();
             })
         .forEach(commit::addOperations);
 

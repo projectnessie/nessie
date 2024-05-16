@@ -82,7 +82,6 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddS
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveProperties;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergDecimalType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergFixedType;
@@ -767,12 +766,10 @@ public class NessieModelIceberg {
     // Different tables with same table name can exist across references in Nessie.
     // To avoid sharing same table path between two tables with same name, use uuid in the table
     // path.
+    // Note: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
     // TODO: support GZIP ??
-    // TODO: support TableProperties.WRITE_METADATA_LOCATION
-    String location =
-        String.format(
-            "%s_%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID(), randomUUID());
-    return location;
+    return String.format(
+        "%s_%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID(), randomUUID());
   }
 
   private static String concatLocation(String location, String key) {
@@ -1086,11 +1083,6 @@ public class NessieModelIceberg {
         "UUID mismatch: assigned: %s, new: %s",
         snapshot.entity().icebergUuid(),
         uuid);
-  }
-
-  public static void setLocation(SetLocation u, NessieEntitySnapshot.Builder<?> builder) {
-    // TODO: set base location in the NessieEntity?
-    builder.icebergLocation(u.location());
   }
 
   public static void setProperties(
