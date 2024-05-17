@@ -16,8 +16,8 @@
 package org.projectnessie.server.catalog;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
-import com.google.common.collect.ImmutableMap;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -64,17 +64,17 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
   protected final List<RESTCatalog> catalogs = new ArrayList<>();
 
-  @Override
   protected RESTCatalog catalog() {
     int catalogServerPort = Integer.getInteger("quarkus.http.port");
-
     RESTCatalog catalog = new RESTCatalog();
     catalog.setConf(new Configuration());
     catalog.initialize(
-        "nessie-iceberg-api",
-        ImmutableMap.of(
+        getClass().getSimpleName(),
+        Map.of(
             CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort)));
+            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
+            CatalogProperties.WAREHOUSE_LOCATION,
+            WAREHOUSE_NAME));
     catalogs.add(catalog);
     return catalog;
   }

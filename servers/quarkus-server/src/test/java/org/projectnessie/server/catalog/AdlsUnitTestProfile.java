@@ -15,6 +15,7 @@
  */
 package org.projectnessie.server.catalog;
 
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.ADLS_WAREHOUSE_LOCATION;
 
 import com.google.common.collect.ImmutableMap;
@@ -34,8 +35,8 @@ public class AdlsUnitTestProfile implements QuarkusTestProfile {
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.warehouses.warehouse1.name", "warehouse1")
-        .put("nessie.catalog.warehouses.warehouse1.location", ADLS_WAREHOUSE_LOCATION)
+        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".name", "warehouse1")
+        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location", ADLS_WAREHOUSE_LOCATION)
         .build();
   }
 }

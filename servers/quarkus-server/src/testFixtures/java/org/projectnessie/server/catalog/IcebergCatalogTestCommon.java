@@ -15,18 +15,6 @@
  */
 package org.projectnessie.server.catalog;
 
-import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
-
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import java.util.UUID;
-
-@QuarkusTest
-@TestProfile(S3UnitTestProfile.class)
-public class TestS3IcebergViewCatalog extends AbstractIcebergViewCatalogUnitTests {
-
-  @Override
-  protected String temporaryLocation() {
-    return S3_WAREHOUSE_LOCATION + "/temp/" + UUID.randomUUID();
-  }
+public interface IcebergCatalogTestCommon {
+  String WAREHOUSE_NAME = "warehouse1";
 }
