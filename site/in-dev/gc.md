@@ -41,40 +41,10 @@ java -jar nessie-gc.jar --help
 
 You should see the following output:
 
-```text
-Usage: nessie-gc.jar [-hV] [COMMAND]
-  -h, --help      Show this help message and exit.
-  -V, --version   Print version information and exit.
-Commands:
-  help                           Display help information about the specified
-                                   command.
-  mark-live, identify, mark      Run identify-live-content phase of Nessie GC,
-                                   must not be used with the in-memory
-                                   contents-storage.
-  sweep, expire                  Run expire-files + delete-orphan-files phase
-                                   of Nessie GC using a live-contents-set
-                                   stored by a previous run of the mark-live
-                                   command, must not be used with the in-memory
-                                   contents-storage.
-  gc                             Run identify-live-content and expire-files +
-                                   delete-orphan-files.
-  list                           List existing live-sets, must not be used with
-                                   the in-memory contents-storage.
-  delete                         Delete a live-set, must not be used with the
-                                   in-memory contents-storage.
-  list-deferred                  List files collected as deferred deletes, must
-                                   not be used with the in-memory
-                                   contents-storage.
-  deferred-deletes               Delete files collected as deferred deletes,
-                                   must not be used with the in-memory
-                                   contents-storage.
-  show                           Show information of a live-content-set, must
-                                   not be used with the in-memory
-                                   contents-storage.
-  show-sql-create-schema-script  Print DDL statements to create the schema.
-  create-sql-schema              JDBC schema creation.
-  completion-script              Extracts the command-line completion script.
-```
+{% include './generated-docs/gc-help.md' %}
+
+!!! info
+    Help for all Nessie GC tool commands are [below on this page](#nessie-gc-tool-commands)
 
 The following example assumes that you have a Nessie server running at `http://localhost:19120` and
 a PostgreSQL instance running at `jdbc:postgresql://localhost:5432/nessie_gc` with user `pguser` and
@@ -188,12 +158,62 @@ spec:
 EOF
 ```
 
-# Nessie GC for Nessie Administrators
+## Nessie GC Tool commands
+
+{% include './generated-docs/gc-help.md' %}
+
+Below is the output of the Nessie GC tool help for all commands.
+
+### `mark-live`, `identify`, `mark`
+
+{% include './generated-docs/gc-help-mark.md' %}
+
+### `sweep`, `expire`
+
+{% include './generated-docs/gc-help-sweep.md' %}
+
+### `gc`
+
+{% include './generated-docs/gc-help-gc.md' %}
+
+### `list`
+
+{% include './generated-docs/gc-help-list.md' %}
+
+### `delete`
+
+{% include './generated-docs/gc-help-delete.md' %}
+
+### `list-deferred`
+
+{% include './generated-docs/gc-help-list-deferred.md' %}
+
+### `deferred-deletes`
+
+{% include './generated-docs/gc-help-deferred-deletes.md' %}
+
+### `show`
+
+{% include './generated-docs/gc-help-show.md' %}
+
+### `show-sql-create-schema-script`
+
+{% include './generated-docs/gc-help-show-sql-create-schema-script.md' %}
+
+### `create-sql-schema`
+
+{% include './generated-docs/gc-help-create-sql-schema.md' %}
+
+### `completion-script`
+
+{% include './generated-docs/gc-help-completion-script.md' %}
+
+## Nessie GC for Nessie Administrators
 
 Please refer to the [Garbage Collection](../guides/management.md#garbage-collection) documentation for
 information on how to run the Nessie GC on a regular basis in production.
 
-# Nessie GC Internals
+## Nessie GC Internals
 
 The rest of this document describes the internals of the Nessie GC tool and is intended for
 developers who want to understand how the tool works.
@@ -217,7 +237,7 @@ Modules that supplement the `gc-base` module:
 The `gc-tool` module is a command-line interface, a standalone tool provided as an executable,
 it is an uber jar prefixed with a shell script, and can still be executed with `java -jar ...`.
 
-## Basic Nessie-GC functionality
+### Basic Nessie-GC functionality
 
 Nessie-GC implements a mark-and-sweep approach, a two-phase process:
 
@@ -230,7 +250,7 @@ versions of a `Content` are scanned to identify the set of live data files. Afte
 base-location(s)  are scanned and all files that are not in the set of live data files are deleted.
 The "sweep phase" is implemented by `DefaultLocalExpire`.
 
-## Inner workings
+### Inner workings
 
 To minimize the amount of data needed to match against the set of live data files for a `Content`,
 the implementation does not actually remember all individual data files, like maintaining a
@@ -240,7 +260,7 @@ Both the "mark" (identify live contents) and "sweep" (identify and delete expire
 provide a configurable _parallelism_: the number of concurrently scanned named references can be
 configured and the amount of concurrently processed tables can be configured.
 
-### _Mark_ phase optimization
+#### _Mark_ phase optimization
 
 The implementation that walks the commit logs can be configured with a `VisitedDeduplicator`, which
 is meant to reduce the work required during the "mark" phase, if the commit to be examined has
@@ -252,7 +272,7 @@ and/or has to walk many commits. This `DefaultVisitedDeduplicator` is present, b
 mentioned concerns _not_ available in the Nessie GC tool and the use of
 `DefaultVisitedDeduplicator` is not supported at all, and not recommended.
 
-## Identified live contents repository
+### Identified live contents repository
 
 It is recommended to use an external database for the Nessie GC repository. This is especially
 recommended for big Nessie repositories.
@@ -261,7 +281,7 @@ Nessie GC runs against small-ish repositories do technically work with an in-mem
 But, as the term "in memory" suggests, the identified live-contents-set, its state, duration, etc.
 cannot be inspected afterwards.
 
-## Pluggable code
+### Pluggable code
 
 Different parts / functionalities are quite isolated and abstracted to allow proper
 unit-testability and also allow reuse of similar functionality.
@@ -274,7 +294,7 @@ Examples of abstracted/isolated functionality:
 * Getting all data files for a specific content reference (think: Iceberg table snapshot)
 * Commit-log-scanning duplicate work elimination
 
-## File references
+### File references
 
 All files (or objects, in case of an object store like S3) are described using a `FileReference`,
 using a _base_ URI plus a URI _relative_ to the base URI. Noteworthy: the "sweep phase", which
@@ -287,7 +307,7 @@ stores do not know about directories, further Iceberg's `FileIO` does not know a
 either. For file systems that do support directories this means, that empty directories will not be
 deleted, and prematurely deleting directories could break concurrent operations.
 
-## Runtime requirements
+### Runtime requirements
 
 Nessie GC work is dominated by network and/or disk I/O, less by CPU and heap pressure.
 
@@ -304,7 +324,7 @@ Memory requirements (rough estimates):
 * An in-memory live-contents-repository (**not recommended for production workloads**) requires
   memory for all content-references.
 
-### CPU & heap pressure testing
+#### CPU & heap pressure testing
 
 Special "tests" ([this](https://github.com/projectnessie/nessie/blob/main/gc/gc-base/src/test/java/org/projectnessie/gc/huge/TestManyObjects.java) and
 ([this](https://github.com/projectnessie/nessie/blob/main/gc/gc-iceberg-inttest/src/test/java/org/projectnessie/gc/iceberg/inttest/ITHuge.java)) have
@@ -315,12 +335,12 @@ implementation requires little memory and little CPU - runtime is largely domina
 _put_ and _maybe-contains_ operations for the per-content-expire runs. Both tests proved the
 concept.
 
-## Deferred deletion
+### Deferred deletion
 
 The default behavior is to immediately deletes orphan files. But it is also possible to record the
 files to be deleted and delete those later. The `nessie-gc.jar` tool supports deferred deletion.
 
-## Non-Nessie use cases
+### Non-Nessie use cases
 
 Although all the above is designed for Nessie, it is possible to reuse the core implementation with
 "plain" Iceberg, effectively a complete replacement of Iceberg's _expire snapshots_ and _delete
@@ -333,7 +353,7 @@ orphan files_, but without Iceberg's implicit requirement of using Spark. Things
 * Existing functionality, the mark-and-sweep logic and the code in `nessie-gc-iceberg` and
   `nessie-gc-iceberg-files`, can be reused without any changes.
 
-## Potential future enhancements
+### Potential future enhancements
 
 Since Nessie GC keeps track of all ever live content-references and all ever known base content
 locations, it is possible to identify ...
@@ -343,7 +363,7 @@ locations, it is possible to identify ...
 * ... the content references (aka Iceberg snapshots) are no longer used. This information can be
   used to no longer expose the affected e.g. Iceberg snapshots in any table metadata.
 
-### Completely unreferenced contents
+#### Completely unreferenced contents
 
 Files of contents that are not visible from any live Nessie commit can be completely removed.
 Detecting this situation is not _directly_ supported by the above approach.
@@ -357,7 +377,7 @@ the data files, manifests, etc were stored.
 
 The above must not purge files for content IDs that have just been recently created.
 
-## Potential Iceberg specific enhancements
+### Potential Iceberg specific enhancements
 
 Nessie GC can easily identify the Iceberg snapshots, as each Nessie commit references exactly one
 Iceberg table snapshot. Nessie (the runtime/server) has no knowledge of whether a particular

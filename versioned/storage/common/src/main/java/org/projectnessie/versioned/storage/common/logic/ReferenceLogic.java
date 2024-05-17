@@ -41,8 +41,21 @@ public interface ReferenceLogic {
   List<Reference> getReferences(@Nonnull List<String> references);
 
   @Nonnull
+  List<Reference> getReferencesForUpdate(@Nonnull List<String> references);
+
+  @Nonnull
   default Reference getReference(@Nonnull String name) throws RefNotFoundException {
     List<Reference> refs = getReferences(Collections.singletonList(name));
+    Reference ref = refs.get(0);
+    if (ref == null) {
+      throw new RefNotFoundException(name);
+    }
+    return ref;
+  }
+
+  @Nonnull
+  default Reference getReferenceForUpdate(@Nonnull String name) throws RefNotFoundException {
+    List<Reference> refs = getReferencesForUpdate(Collections.singletonList(name));
     Reference ref = refs.get(0);
     if (ref == null) {
       throw new RefNotFoundException(name);

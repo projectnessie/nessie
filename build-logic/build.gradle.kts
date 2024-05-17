@@ -23,6 +23,7 @@ dependencies {
   implementation(baselibs.idea.ext)
   implementation(baselibs.shadow)
   implementation(baselibs.errorprone)
+  implementation(baselibs.license.report)
 
   testImplementation(platform(baselibs.junit.bom))
   testImplementation(baselibs.assertj.core)
@@ -32,3 +33,15 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
+
+tasks.register("compileAll").configure {
+  group = "build"
+  description = "Runs all compilation and jar tasks"
+  dependsOn(tasks.withType<AbstractCompile>(), tasks.withType<ProcessResources>())
+}
+
+tasks.register("codeChecks").configure {
+  group = "build"
+  description = "Runs code style and license checks"
+  dependsOn("spotlessCheck")
+}

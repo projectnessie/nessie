@@ -21,6 +21,7 @@ plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
   id("nessie-jacoco")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - Quarkus Server"
@@ -50,6 +51,7 @@ dependencies {
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-notice"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))

@@ -43,7 +43,7 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.guava)
-  testImplementation(libs.logback.classic)
+  testRuntimeOnly(libs.logback.classic)
 
   testCompileOnly(libs.microprofile.openapi)
 }

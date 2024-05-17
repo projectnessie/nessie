@@ -21,6 +21,7 @@ plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
+  id("nessie-license-report")
 }
 
 dependencies {

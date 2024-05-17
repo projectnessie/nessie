@@ -90,7 +90,7 @@ public class TestSyntax {
                 + "        {PRE:[}\n"
                 + "                {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG}\n"
                 + "            {POST:]}\n"
-                + "        {SEP:|} {TERMINAL:MERGE} {SEP:|} {TERMINAL:HELP} {SEP:|} {TERMINAL:EXIT}\n"
+                + "        {SEP:|} {TERMINAL:MERGE} {SEP:|} {TERMINAL:HELP} {SEP:|} {TERMINAL:EXIT} {SEP:|} {TERMINAL:LICENSE}\n"
                 + "    {POST:]}\n"
                 + "{POST:\n"
                 + "}"),

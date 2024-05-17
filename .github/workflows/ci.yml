@@ -63,7 +63,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -86,19 +86,19 @@ jobs:
             spotlessCheck \
             compileAll \
             -x :nessie-quarkus:compileAll \
-            -x :nessie-quarkus-cli:compileAll \
+            -x :nessie-server-admin-tool:compileAll \
             -x :nessie-events-quarkus:compileAll \
             --scan
 
       - name: Gradle / Compile Quarkus
         run: |
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-quarkus-cli:compileAll :nessie-events-quarkus:compileAll --scan
+          ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan
 
-      - name: Gradle / Checkstyle
-        run: ./gradlew checkstyle --scan
+      - name: Gradle / Code checks
+        run: ./gradlew codeChecks --scan
 
       - name: Gradle / Assemble
         run: ./gradlew assemble --scan
@@ -127,7 +127,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -141,7 +141,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
 
       - name: Gradle / test
-        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-quarkus-cli:test -x :nessie-events-quarkus:test --scan
+        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v4
@@ -169,7 +169,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -234,7 +234,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -261,7 +261,7 @@ jobs:
 
           ./gradlew intTest \
             -x :nessie-quarkus:intTest \
-            -x :nessie-quarkus-cli:intTest \
+            -x :nessie-server-admin-tool:intTest \
             -x :nessie-events-quarkus:intTest \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
@@ -294,7 +294,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -343,7 +343,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -385,7 +385,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -408,9 +408,9 @@ jobs:
       - name: Gradle / intTest Quarkus CLI
         run:
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus-cli:intTest --scan || \
-            ./gradlew :nessie-quarkus-cli:intTest --scan || \
-            ./gradlew :nessie-quarkus-cli:intTest --scan
+          ./gradlew :nessie-server-admin-tool:intTest --scan || \
+            ./gradlew :nessie-server-admin-tool:intTest --scan || \
+            ./gradlew :nessie-server-admin-tool:intTest --scan
 
       - name: Gradle / intTest Quarkus Events
         run:
@@ -560,7 +560,7 @@ jobs:
     if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           fetch-depth: 0
       - name: Setup runner
@@ -650,6 +650,7 @@ jobs:
           echo "BUILDX_CONFIG=--config ${buildkitd_conf}" >> ${GITHUB_ENV}
           echo "DOCKER_IMAGE=${DOCKER_REGISTRY}:5000/nessie-testing" >> ${GITHUB_ENV}
           echo "DOCKER_GC_IMAGE=${DOCKER_REGISTRY}:5000/nessie-gc-testing" >> ${GITHUB_ENV}
+          echo "DOCKER_SERVER_ADMIN_IMAGE=${DOCKER_REGISTRY}:5000/nessie-server-admin-testing" >> ${GITHUB_ENV}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
@@ -668,6 +669,12 @@ jobs:
             -d "Dockerfile-gctool" \
             ${DOCKER_GC_IMAGE}
 
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-server-admin-tool" \
+            -p "tools/server-admin" \
+            -d "Dockerfile-admintool" \
+            ${DOCKER_SERVER_ADMIN_IMAGE}
+
       - name: Cleanup buildx
         run: |
           docker buildx use default
@@ -683,6 +690,10 @@ jobs:
           docker pull ${DOCKER_GC_IMAGE}:latest-java
           docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}
           docker pull ${DOCKER_GC_IMAGE}:${DOCKER_VERSION}-java
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:latest
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:${DOCKER_VERSION}
+          docker pull ${DOCKER_SERVER_ADMIN_IMAGE}:${DOCKER_VERSION}-java
           cat <<! >> $GITHUB_STEP_SUMMARY
           ## Docker images
           
@@ -727,6 +738,23 @@ jobs:
 
             \`\`\`
             $(docker logs nessie-gc)
+            \`\`\`
+          !
+            exit 1
+          fi
+
+      - name: Check if Server Admin Tool Docker Java image works
+        run: |
+          if docker run --rm --name nessie-server-admin ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java --help | grep -q "Usage: nessie-server-admin"; then
+            echo "## Server Admin Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "Server Admin Tool Java Docker image smoke test: PASSED"
+          else
+           echo "Server Admin Tool Java Docker image smoke test: FAILED" > /dev/stderr
+            cat <<! >> $GITHUB_STEP_SUMMARY
+            ## Server Admin Tool Java Docker image FAILED
+
+            \`\`\`
+            $(docker logs nessie-server-admin)
             \`\`\`
           !
             exit 1
@@ -778,7 +806,7 @@ jobs:
           git config --global user.name "Integrations Testing [Bot]"
 
       - name: Checkout NeQuEIT repo
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}
@@ -862,7 +890,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -916,7 +944,7 @@ jobs:
       matrix:
         java-version: ['17']
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle

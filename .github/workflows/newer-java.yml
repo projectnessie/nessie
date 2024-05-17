@@ -33,7 +33,7 @@ jobs:
       SPARK_LOCAL_IP: localhost
 
     steps:
-    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
     - name: Setup runner
       uses: ./.github/actions/setup-runner
       with:
@@ -59,7 +59,7 @@ jobs:
           spotlessCheck \
           compileAll \
           -x :nessie-quarkus:compileAll \
-          -x :nessie-quarkus-cli:compileAll \
+          -x :nessie-server-admin-tool:compileAll \
           -x :nessie-events-quarkus:compileAll \
           --scan
 
@@ -67,7 +67,7 @@ jobs:
       run: |
         ./gradlew \
           :nessie-quarkus:compileAll \
-          :nessie-quarkus-cli:compileAll \
+          :nessie-server-admin-tool:compileAll \
           :nessie-events-quarkus:compileAll \
           --scan
 

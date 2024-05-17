@@ -21,6 +21,7 @@ plugins {
   id("nessie-conventions-iceberg")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
@@ -31,6 +32,7 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-gc-repository-jdbc"))
+  implementation(nessieProject("nessie-notice"))
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.immutables.value.annotations)

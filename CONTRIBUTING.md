@@ -40,8 +40,12 @@ project.
 
 Common Gradle tasks:
 
+* Good "smoke check" after making changes:
+  `./gradlew sAp compileAll jar codeChecks`
 * Check whether everything compiles (no style checks):
   `./gradlew jar testClasses`
+* Run code and license checks (Spotless, Checkstyle and License checks):
+  `./gradlew codeChecks`
 * Automatically fix code style issues:
   `./gradlew spotlessApply` (abbreviated: `sAp`)
 * Publish to local Maven repo:

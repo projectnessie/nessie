@@ -87,7 +87,7 @@ public class TestPublishedPoms {
     "nessie-jaxrs-tests",
     "nessie-model",
     "nessie-quarkus",
-    "nessie-quarkus-cli",
+    "nessie-server-admin-tool",
     "nessie-quarkus-common",
     "nessie-quarkus-tests",
     "nessie-rest-services",

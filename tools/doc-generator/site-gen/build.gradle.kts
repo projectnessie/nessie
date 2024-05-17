@@ -15,6 +15,7 @@
  */
 
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 
 plugins {
   `java-library`
@@ -26,6 +27,7 @@ val genProjects by configurations.creating
 val genSources by configurations.creating
 val cliGrammar by configurations.creating
 val doclet by configurations.creating
+val gcRunner by configurations.creating
 val cliRunner by configurations.creating
 
 val genProjectPaths = listOf(
@@ -61,6 +63,8 @@ dependencies {
   }
 
   cliRunner(project(":nessie-cli"))
+
+  gcRunner(nessieProject("nessie-gc-tool"))
 }
 
 val generatedMarkdownDocsDir = layout.buildDirectory.dir("generatedMarkdownDocs")
@@ -150,9 +154,64 @@ val cliHelp = tasks.register<JavaExec>("cliHelp") {
   }
 }
 
+val gcHelpDir = layout.buildDirectory.dir("gcHelp")
+
+val gcHelp = tasks.register<JavaExec>("gcHelp") {
+  mainClass = "-jar"
+
+  inputs.files(gcRunner)
+  outputs.dir(gcHelpDir)
+
+  classpath(gcRunner)
+
+  val gcMainClass = "org.projectnessie.gc.tool.cli.CLI"
+
+  mainClass = gcMainClass
+  args("--help")
+
+  doFirst {
+    delete(gcHelpDir)
+  }
+
+  standardInput = InputStream.nullInputStream()
+  standardOutput = ByteArrayOutputStream()
+
+  doLast {
+    gcHelpDir.get().asFile.mkdirs()
+
+    file(gcHelpDir.get().file("gc-help.md")).writeText("```\n$standardOutput\n```\n")
+
+    for (cmd in listOf(
+      "mark",
+      "sweep",
+      "gc",
+      "list",
+      "delete",
+      "list-deferred",
+      "deferred-deletes",
+      "show",
+      "show-sql-create-schema-script",
+      "create-sql-schema",
+      "completion-script"
+    )) {
+      logger.info("Generating GC command help for '$cmd' ...")
+      val capture = ByteArrayOutputStream()
+      javaexec {
+        mainClass = gcMainClass
+        classpath(gcRunner)
+        standardInput = InputStream.nullInputStream()
+        standardOutput = capture
+        args("help", cmd)
+      }
+      file(gcHelpDir.get().file("gc-help-$cmd.md")).writeText("```\n$capture\n```\n")
+    }
+  }
+}
+
 tasks.register<Copy>("generateDocs") {
   dependsOn(generatedMarkdownDocs)
   dependsOn(cliHelp)
+  dependsOn(gcHelp)
 
   val targetDir = layout.buildDirectory.dir("markdown-docs")
 
@@ -167,6 +226,7 @@ tasks.register<Copy>("generateDocs") {
 
   from(generatedMarkdownDocsDir)
   from(cliHelpDir)
+  from(gcHelpDir)
   from(provider { zipTree(cliGrammar.singleFile) }) {
     include("org/projectnessie/nessie/cli/syntax/*.md")
     eachFile {

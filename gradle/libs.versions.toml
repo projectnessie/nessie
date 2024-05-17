@@ -9,26 +9,31 @@ errorproneSlf4j = "0.1.24"
 gatling = "3.11.2"
 googleJavaFormat = "1.22.0"
 hadoop = "3.4.0"
-iceberg = "1.5.0" # While bumping this version, 'nessieClientVersion' must also be updated.
+iceberg = "1.5.2" # While bumping this version, 'nessieClientVersion' must also be updated.
 immutables = "2.10.1"
 jacoco = "0.8.12"
 jandex = "3.1.8"
 jmh = "1.37"
 junit = "5.10.2"
 keycloak = "24.0.4"
+logback = "1.5.6"
 mavenResolver = "1.9.20"
 mockito="4.11.0"
 nessieClientVersion = "0.77.1" # Must be in sync with Nessie version in the Iceberg release.
-opentelemetry = "1.37.0"
+opentelemetry = "1.38.0"
 opentelemetryAlpha = "1.31.0-alpha"
 opentracing = "0.33.0"
 picocli = "4.7.6"
 protobuf = "3.25.3"
-quarkusPlatform = "3.10.0"
-quarkusPlugin = "3.10.0"
-slf4j = "1.7.36"
+quarkusPlatform = "3.10.1"
+quarkusPlugin = "3.10.1"
+slf4j = "2.0.13"
 smallryeConfig = "3.8.1"
 undertow = "2.2.28.Final"
+
+# Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
+logback_compat = "1.3.14" # For Java 8
+slf4j_compat = "1.7.36" # Spark up to 3.3 has a hard reference to org.slf4j.impl.StaticLoggerBinder
 
 [bundles]
 junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params", "junit-platform-reporting"]
@@ -41,7 +46,7 @@ antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "ant
 assertj-core = { module = "org.assertj:assertj-core", version = "3.25.3" }
 avro = { module = "org.apache.avro:avro", version = "1.11.3" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.1" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.25.45" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.25.50" }
 azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.23" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
@@ -56,10 +61,10 @@ errorprone-core = { module = "com.google.errorprone:error_prone_core", version.r
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
-google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.39.0" }
+google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.39.2" }
 google-cloud-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version = "hadoop3-2.2.21" }
-google-cloud-nio = { module = "com.google.cloud:google-cloud-nio", version = "0.127.16" }
-google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.37.0" }
+google-cloud-nio = { module = "com.google.cloud:google-cloud-nio", version = "0.127.17" }
+google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.38.0" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
 guava = { module = "com.google.guava:guava", version = "33.2.0-jre" }
 h2 = { module = "com.h2database:h2", version = "2.2.224" }
@@ -96,11 +101,15 @@ junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.2.13" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 maven-resolver-supplier = { module = "org.apache.maven.resolver:maven-resolver-supplier", version.ref = "mavenResolver" }
+<<<<<<< feat/mysql_support
 mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.3.3" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version = "1.12.5" }
+=======
+micrometer-core = { module = "io.micrometer:micrometer-core", version = "1.13.0" }
+>>>>>>> main
 microprofile-contextpropagation-api = { module = "org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api", version = "1.3" }
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1.1" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
@@ -138,7 +147,7 @@ spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { s
 spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.5[", prefer = "3.4.2"}}
 spark-sql-v35-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.5, 3.6[", prefer = "3.5.1"}}
 spark-sql-v35-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.5, 3.6[", prefer = "3.5.1"}}
-testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.19.7" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.19.8" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.3.1" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.8.0" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
@@ -152,7 +161,7 @@ annotations-stripper = { id = "org.projectnessie.annotation-stripper", version =
 errorprone = { id = "net.ltgt.errorprone", version = "3.1.0" }
 gatling = { id = "io.gatling.gradle", version = "3.11.2" }
 jmh = { id = "me.champeau.jmh", version = "0.7.2" }
-nessie-run = { id = "org.projectnessie", version = "0.32.1" }
+nessie-run = { id = "org.projectnessie", version = "0.32.2" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }

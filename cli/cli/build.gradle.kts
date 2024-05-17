@@ -21,6 +21,7 @@ plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
+  id("nessie-license-report")
 }
 
 extra["maven.name"] = "Nessie - CLI"
@@ -31,6 +32,7 @@ dependencies {
   implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-client"))
   implementation(project(":nessie-cli-grammar"))
+  implementation(project(":nessie-notice"))
 
   implementation(libs.jline)
   implementation(libs.picocli)

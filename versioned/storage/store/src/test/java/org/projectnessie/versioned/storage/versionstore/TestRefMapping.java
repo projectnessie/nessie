@@ -398,12 +398,22 @@ public class TestRefMapping {
     soft.assertThat(refMapping.resolveNamedRef("tag")).isEqualTo(tag);
     soft.assertThat(refMapping.resolveNamedRef(BranchName.of("branch"))).isEqualTo(branch);
     soft.assertThat(refMapping.resolveNamedRef(TagName.of("tag"))).isEqualTo(tag);
+    soft.assertThat(refMapping.resolveNamedRefForUpdate(BranchName.of("branch"))).isEqualTo(branch);
+    soft.assertThat(refMapping.resolveNamedRefForUpdate(TagName.of("tag"))).isEqualTo(tag);
 
     soft.assertThat(refMapping.resolveNamedRef("empty")).isEqualTo(emptyBranch);
     soft.assertThat(refMapping.resolveNamedRef(BranchName.of("empty"))).isEqualTo(emptyBranch);
     soft.assertThat(refMapping.resolveNamedRef(TagName.of("empty"))).isEqualTo(emptyTag);
+    soft.assertThat(refMapping.resolveNamedRefForUpdate(BranchName.of("empty")))
+        .isEqualTo(emptyBranch);
+    soft.assertThat(refMapping.resolveNamedRefForUpdate(TagName.of("empty"))).isEqualTo(emptyTag);
 
     soft.assertThatThrownBy(() -> refMapping.resolveNamedRef("does-not-exist"))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    soft.assertThatThrownBy(
+            () -> refMapping.resolveNamedRefForUpdate(BranchName.of("does-not-exist")))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    soft.assertThatThrownBy(() -> refMapping.resolveNamedRefForUpdate(TagName.of("does-not-exist")))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     soft.assertThat(refMapping.resolveNamedRefHead(branch))
@@ -421,6 +431,11 @@ public class TestRefMapping {
     soft.assertThat(refMapping.resolveRefHead(TagName.of("tag")))
         .isEqualTo(persist.fetchTypedObj(commitId, COMMIT, CommitObj.class));
     soft.assertThat(refMapping.resolveRefHead(Hash.of(commitId.toString())))
+        .isEqualTo(persist.fetchTypedObj(commitId, COMMIT, CommitObj.class));
+
+    soft.assertThat(refMapping.resolveRefHeadForUpdate(BranchName.of("branch")))
+        .isEqualTo(persist.fetchTypedObj(commitId, COMMIT, CommitObj.class));
+    soft.assertThat(refMapping.resolveRefHeadForUpdate(TagName.of("tag")))
         .isEqualTo(persist.fetchTypedObj(commitId, COMMIT, CommitObj.class));
 
     soft.assertThat(refMapping.resolveNamedRefHead(emptyBranch)).isNull();

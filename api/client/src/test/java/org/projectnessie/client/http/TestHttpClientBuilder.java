@@ -18,16 +18,20 @@ package org.projectnessie.client.http;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import javax.net.ssl.SSLContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -173,6 +177,34 @@ public class TestHttpClientBuilder {
         client.getConfig();
       }
     }
+  }
+
+  @Test
+  void testBuilderFromBuilderWithNoSslCertificateVerification() {
+    HttpClient.Builder builder1 =
+        HttpClient.builder()
+            .setSslNoCertificateVerification(true)
+            .setObjectMapper(new ObjectMapper());
+    assertThatCode(() -> builder1.copy().build().close()).doesNotThrowAnyException();
+    assertThatCode(() -> builder1.copy().build().close()).doesNotThrowAnyException();
+    assertThatCode(() -> builder1.build().close()).doesNotThrowAnyException();
+  }
+
+  @Test
+  void testNoSslCertificateVerificationWithSslContext() throws NoSuchAlgorithmException {
+    HttpClient.Builder builder1 =
+        HttpClient.builder()
+            .setSslNoCertificateVerification(true)
+            .setSslContext(SSLContext.getDefault())
+            .setObjectMapper(new ObjectMapper());
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> builder1.build().close())
+        .withMessage(
+            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and an explicitly configured SSLContext");
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> builder1.copy().build().close())
+        .withMessage(
+            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and an explicitly configured SSLContext");
   }
 
   static HttpTestServer.RequestHandler handlerForHeaderTest(

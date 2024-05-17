@@ -30,8 +30,11 @@ plugins {
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Checkstyle
 
+val noCheckstyle =
+  project.name.endsWith("-proto") || project.extra.has("duplicated-project-sources")
+
 // Exclude projects that only generate Java from protobuf
-if (project.name.endsWith("-proto") || project.extra.has("duplicated-project-sources")) {
+if (noCheckstyle) {
   tasks.withType<Checkstyle>().configureEach { enabled = false }
 } else {
   checkstyle {
@@ -216,6 +219,20 @@ class MemoizedGitInfo {
         rootProject.extra["gitReleaseInfo"] = info
         return info
       }
+    }
+  }
+}
+
+afterEvaluate {
+  tasks.register("codeChecks").configure {
+    group = "build"
+    description = "Runs code style and license checks"
+    dependsOn("spotlessCheck")
+    if (!noCheckstyle) {
+      dependsOn("checkstyle")
+    }
+    if (tasks.names.contains("checkLicense")) {
+      dependsOn("checkLicense")
     }
   }
 }
