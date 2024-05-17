@@ -15,6 +15,7 @@
  */
 package org.projectnessie.server.catalog;
 
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.INIT_ADDRESS;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_INIT_ADDRESS;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
@@ -38,8 +39,8 @@ public class S3UnitTestProfile implements QuarkusTestProfile {
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.warehouses.warehouse1.name", "warehouse1")
-        .put("nessie.catalog.warehouses.warehouse1.location", S3_WAREHOUSE_LOCATION)
+        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".name", "warehouse1")
+        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location", S3_WAREHOUSE_LOCATION)
         .build();
   }
 }

@@ -15,9 +15,11 @@
  */
 package org.projectnessie.server.catalog;
 
-import com.google.common.collect.ImmutableMap;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
@@ -35,17 +37,17 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
 
   protected RESTCatalog currentCatalog;
 
-  @Override
   protected RESTCatalog catalog() {
     int catalogServerPort = Integer.getInteger("quarkus.http.port");
-
     RESTCatalog catalog = new RESTCatalog();
     catalog.setConf(new Configuration());
     catalog.initialize(
-        "nessie-iceberg-api",
-        ImmutableMap.of(
+        getClass().getSimpleName(),
+        Map.of(
             CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort)));
+            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
+            CatalogProperties.WAREHOUSE_LOCATION,
+            WAREHOUSE_NAME));
     catalogs.add(catalog);
     currentCatalog = catalog;
     return catalog;
