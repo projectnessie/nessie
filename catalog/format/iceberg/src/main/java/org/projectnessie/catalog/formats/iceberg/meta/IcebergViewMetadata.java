@@ -40,6 +40,10 @@ public interface IcebergViewMetadata {
 
   int formatVersion();
 
+  /**
+   * The Iceberg view base location, usually something like {@code
+   * s3://bucket1/warehouse/ns/view_<uuid>}.
+   */
   @Nullable
   String location();
 

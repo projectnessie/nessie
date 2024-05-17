@@ -82,7 +82,7 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
   }
 
   protected boolean overridesRequestedLocation() {
-    return false;
+    return true;
   }
 
   protected boolean supportsServerSideRetry() {

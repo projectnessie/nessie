@@ -49,6 +49,10 @@ public interface IcebergTableMetadata {
   @jakarta.annotation.Nullable
   String tableUuid();
 
+  /**
+   * The Iceberg table base location, usually something like {@code
+   * s3://bucket1/warehouse/ns/table_<uuid>}.
+   */
   String location();
 
   @JsonView(IcebergSpec.IcebergSpecV2.class)
