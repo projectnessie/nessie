@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerate
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateSimpleMetadata;
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -60,6 +61,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.storage.uri.StorageUri;
@@ -151,24 +153,34 @@ public class TestNessieCore {
     soft.assertThat(api.getConfig().getDefaultBranch()).isEqualTo("main");
   }
 
-  @Test
-  public void concurrentImportDemo() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  public void concurrentImports(boolean useIcebergREST) throws Exception {
     var tableMetadataLocation = generateMetadataWithManifestList(currentBase, objectWriter());
 
-    var tableName = "concurrentImportDemo";
+    var namespace = "stuff-" + useIcebergREST;
+    var tableName = "concurrentImports-" + useIcebergREST;
 
     api.commitMultipleOperations()
         .commitMeta(fromMessage("a table named " + tableName))
+        .operation(Operation.Put.of(ContentKey.of(namespace), Namespace.of(namespace)))
         .operation(
             Operation.Put.of(
-                ContentKey.of(tableName), IcebergTable.of(tableMetadataLocation, 1, 0, 0, 0)))
+                ContentKey.of(namespace, tableName),
+                IcebergTable.of(tableMetadataLocation, 1, 0, 0, 0)))
         .branch(api.getDefaultBranch())
         .commitWithResponse();
 
-    var snapshotUri = baseUri.resolve("trees/main/snapshot/" + tableName);
+    var snapshotUri =
+        useIcebergREST
+            ? baseUri.resolve(
+                format(
+                    "../../iceberg/v1/main%%7C%s/namespaces/%s/tables/%s",
+                    WAREHOUSE_NAME, namespace, tableName))
+            : baseUri.resolve("trees/main/snapshot/" + namespace + "." + tableName);
 
     var requests = new ArrayList<Future<String>>();
-    for (int i = 0; i < 1; i++) {
+    for (var i = 0; i < 10; i++) {
       var req = httpRequest(snapshotUri).map(Buffer::toString);
       requests.add(req);
     }
