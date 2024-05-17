@@ -94,6 +94,10 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
   @jakarta.annotation.Nullable
   Integer icebergFormatVersion();
 
+  /**
+   * The Iceberg entity base location, usually something like {@code
+   * s3://bucket1/warehouse/ns/table_<uuid>}.
+   */
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
   @jakarta.annotation.Nullable
