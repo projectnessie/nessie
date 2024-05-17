@@ -61,8 +61,6 @@ import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.files.secrets.SecretsProvider;
-import org.projectnessie.catalog.service.config.CatalogServerConfig;
-import org.projectnessie.catalog.service.config.ImmutableCatalogServerConfig;
 import org.projectnessie.catalog.service.rest.IcebergOAuthProxy;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
@@ -89,12 +87,6 @@ import software.amazon.awssdk.http.SdkHttpClient;
 public class CatalogProducers {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogProducers.class);
-
-  @Produces
-  @Singleton
-  public CatalogServerConfig catalogServerConfig() {
-    return ImmutableCatalogServerConfig.builder().sendStacktraceToClient(true).build();
-  }
 
   @Produces
   @Singleton

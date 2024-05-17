@@ -78,4 +78,10 @@ dependencies {
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
+
+  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi("io.quarkus:quarkus-core")
 }

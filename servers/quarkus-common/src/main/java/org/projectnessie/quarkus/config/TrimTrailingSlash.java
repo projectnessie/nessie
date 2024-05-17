@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.service.config;
+package org.projectnessie.quarkus.config;
 
-import org.projectnessie.nessie.immutables.NessieImmutable;
+import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
 
-@NessieImmutable
-public interface CatalogServerConfig {
-  /**
-   * Returns {@code true} if server stack trace should be sent to the client in case of error.
-   *
-   * @return {@code true} if the server should send the stack trace to the client.
-   */
-  boolean sendStacktraceToClient();
+import org.eclipse.microprofile.config.spi.Converter;
+
+public class TrimTrailingSlash implements Converter<String> {
+  @Override
+  public String convert(String s) throws IllegalArgumentException, NullPointerException {
+    if (s == null) {
+      return null;
+    }
+    return removeTrailingSlash(s);
+  }
 }
