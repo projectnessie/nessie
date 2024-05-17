@@ -122,7 +122,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.Namespace;
 
 public class NessieModelIceberg {
   private NessieModelIceberg() {}
@@ -758,24 +757,17 @@ public class NessieModelIceberg {
 
   /** Returns the default table or view base location. */
   public static String icebergBaseLocation(String warehouseLocation, ContentKey key) {
-    String baseLocation = warehouseLocation;
-    Namespace ns = key.getNamespace();
-    if (!ns.isEmpty()) {
-      baseLocation = concatLocation(warehouseLocation, ns.toString());
-    }
-    baseLocation = concatLocation(baseLocation, key.getName());
+    // TODO include key elements in base location once we have sorted out #8524
+    // warehouseLocation = concatLocation(warehouseLocation, key.toPathString());
     // Different tables with same table name can exist across references in Nessie.
     // To avoid sharing same table path between two tables with same name, use uuid in the table
     // path.
     // Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
-    return baseLocation + "_" + randomUUID();
+    return warehouseLocation + "_" + randomUUID();
   }
 
   private static String concatLocation(String location, String key) {
-    if (location.endsWith("/")) {
-      return location + key;
-    }
-    return location + "/" + key;
+    return location.endsWith("/") ? location + key : location + "/" + key;
   }
 
   /** Returns the table or view metadata JSON location. */
