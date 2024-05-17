@@ -15,6 +15,8 @@
  */
 package org.projectnessie.catalog.service.config;
 
+import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
+
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
@@ -54,29 +56,32 @@ public interface CatalogConfig {
    * or the location to identify a warehouse.
    */
   default WarehouseConfig getWarehouse(String warehouse) {
-    if (warehouse != null && !warehouse.isEmpty()) {
+    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
+    if (hasWarehouse) {
       WarehouseConfig w = warehouses().get(warehouse);
       if (w != null) {
         return w;
       }
+      String warehouseLocation = removeTrailingSlash(warehouse);
       for (WarehouseConfig wc : warehouses().values()) {
-        if (removeTrailingSlash(wc.location()).equals(removeTrailingSlash(warehouse))) {
+        if (wc.location().equals(warehouseLocation)) {
           return wc;
         }
       }
     }
-    return defaultWarehouse()
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    warehouse != null
-                        ? "Warehouse "
-                            + warehouse
-                            + " is not defined and no default-warehouse is configured"
-                        : "No default-warehouse configured"));
+
+    // Nit-ish - prevent a lambda-allocation
+    Optional<? extends WarehouseConfig> def = defaultWarehouse();
+    if (def.isPresent()) {
+      return def.get();
+    }
+    throw new IllegalStateException(
+        hasWarehouse
+            ? "Warehouse '" + warehouse + "' is not defined and no default-warehouse is configured"
+            : "No default-warehouse configured");
   }
 
-  private static String removeTrailingSlash(String s) {
+  static String removeTrailingSlash(String s) {
     return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
   }
 }
