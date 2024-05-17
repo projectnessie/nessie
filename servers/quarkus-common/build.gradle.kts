@@ -45,6 +45,7 @@ dependencies {
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
+  implementation("io.quarkus:quarkus-jdbc-mariadb")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-micrometer")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))

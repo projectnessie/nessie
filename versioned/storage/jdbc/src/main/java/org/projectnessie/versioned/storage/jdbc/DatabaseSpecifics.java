@@ -52,6 +52,9 @@ public final class DatabaseSpecifics {
   public static final DatabaseSpecific H2_DATABASE_SPECIFIC =
       new BasePostgresDatabaseSpecific("VARCHAR");
 
+  public static final DatabaseSpecific MYSQL_MARIADB_DATABASE_SPECIFIC =
+    new MariaDBDatabaseSpecific();
+
   public static DatabaseSpecific detect(DataSource dataSource) {
     try (Connection conn = dataSource.getConnection()) {
       return detect(conn);
@@ -75,6 +78,9 @@ public final class DatabaseSpecifics {
               return POSTGRESQL_DATABASE_SPECIFIC;
             }
           }
+        case "mysql":
+        case "mariadb":
+          return MYSQL_MARIADB_DATABASE_SPECIFIC;
         default:
           throw new IllegalStateException(
               "Could not select specifics to use for database product '" + productName + "'");

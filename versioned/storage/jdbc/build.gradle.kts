@@ -23,7 +23,7 @@ plugins {
 
 extra["maven.name"] = "Nessie - Storage - JDBC"
 
-description = "Storage implementation for JDBC, supports H2, PostgreSQL and CockroachDB."
+description = "Storage implementation for JDBC, supports H2, PostgreSQL, CockroachDB,MariaDb and MySQL(via MariaDb Driver)."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
