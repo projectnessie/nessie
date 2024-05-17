@@ -768,7 +768,6 @@ public class NessieModelIceberg {
     // To avoid sharing same table path between two tables with same name, use uuid in the table
     // path.
     // Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
-    // TODO: support GZIP ??
     return baseLocation + "_" + randomUUID();
   }
 
