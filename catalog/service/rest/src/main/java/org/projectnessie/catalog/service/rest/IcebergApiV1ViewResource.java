@@ -24,7 +24,6 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID.assignUUID;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentViewVersion.setCurrentViewVersion;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -56,10 +55,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitViewRequest;
@@ -109,11 +106,6 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
 
     createViewRequest.viewVersion();
 
-    IcebergSchema schema = createViewRequest.schema();
-    String location = createViewRequest.location();
-    if (location == null) {
-      location = defaultTableLocation(createViewRequest.location(), tableRef);
-    }
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createViewRequest.properties());
@@ -122,9 +114,8 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
         Arrays.asList(
             assignUUID(randomUUID().toString()),
             upgradeFormatVersion(1),
-            addSchema(schema, 0),
+            addSchema(createViewRequest.schema(), 0),
             setCurrentSchema(-1),
-            setLocation(location),
             setProperties(properties),
             addViewVersion(createViewRequest.viewVersion()),
             setCurrentViewVersion(-1L));
@@ -301,23 +292,12 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
   Uni<SnapshotResponse> createOrUpdateView(
       TableRef tableRef, IcebergCommitViewRequest commitViewRequest) throws IOException {
 
-    boolean isCreate =
-        commitViewRequest.requirements().stream()
-            .anyMatch(IcebergUpdateRequirement.AssertCreate.class::isInstance);
-    if (isCreate) {
-      List<IcebergUpdateRequirement> invalidRequirements =
-          commitViewRequest.requirements().stream()
-              .filter(req -> !(req instanceof IcebergUpdateRequirement.AssertCreate))
-              .collect(Collectors.toList());
-      checkArgument(
-          invalidRequirements.isEmpty(), "Invalid create requirements: %s", invalidRequirements);
-    }
-
     IcebergCatalogOperation op =
         IcebergCatalogOperation.builder()
             .updates(commitViewRequest.updates())
             .requirements(commitViewRequest.requirements())
             .key(tableRef.contentKey())
+            .warehouse(tableRef.warehouse())
             .type(ICEBERG_VIEW)
             .build();
 

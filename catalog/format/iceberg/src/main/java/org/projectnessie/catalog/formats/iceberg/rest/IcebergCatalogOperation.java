@@ -19,7 +19,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate;
 import org.projectnessie.catalog.model.ops.CatalogOperation;
@@ -38,6 +40,10 @@ public interface IcebergCatalogOperation extends CatalogOperation {
   @Override
   Content.Type getType();
 
+  @Override
+  @Nullable
+  String warehouse();
+
   List<IcebergMetadataUpdate> updates();
 
   List<IcebergUpdateRequirement> requirements();
@@ -47,9 +53,22 @@ public interface IcebergCatalogOperation extends CatalogOperation {
   }
 
   @JsonIgnore
-  @Value.NonAttribute
+  @Value.Derived
   default boolean hasAssertCreate() {
     return requirements().stream().anyMatch(u -> u instanceof AssertCreate);
+  }
+
+  @Value.Check
+  default void check() {
+    if (hasAssertCreate() && requirements().size() > 1) {
+      throw new IllegalArgumentException(
+          "Invalid create requirements: "
+              + requirements().stream()
+                  .filter(r -> !(r instanceof AssertCreate))
+                  .map(Object::getClass)
+                  .map(Class::getSimpleName)
+                  .collect(Collectors.joining(", ")));
+    }
   }
 
   @SuppressWarnings("unused")
@@ -65,6 +84,9 @@ public interface IcebergCatalogOperation extends CatalogOperation {
 
     @CanIgnoreReturnValue
     Builder type(Content.Type type);
+
+    @CanIgnoreReturnValue
+    Builder warehouse(String warehouse);
 
     @CanIgnoreReturnValue
     Builder addUpdate(IcebergMetadataUpdate element);
