@@ -39,8 +39,8 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
         .put("nessie.catalog.service.s3.secret-access-key-ref", "awsSecretAccessKey")
         .put("nessie.catalog.secrets.awsAccessKeyId", minio.accessKey())
         .put("nessie.catalog.secrets.awsSecretAccessKey", minio.secretKey())
-        .put("nessie.catalog.default-warehouse.name", "warehouse")
-        .put("nessie.catalog.default-warehouse.location", minio.s3BucketUri("").toString())
+        .put("nessie.catalog.default-warehouse", "warehouse")
+        .put("nessie.catalog.warehouses.warehouse.location", minio.s3BucketUri("").toString())
         .build();
   }
 

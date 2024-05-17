@@ -115,9 +115,9 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTes
       return Map.of(
           "nessie.server.authentication.enabled",
           "true",
-          "nessie.catalog.default-warehouse.name",
+          "nessie.catalog.default-warehouse",
           "warehouse",
-          "nessie.catalog.default-warehouse.location",
+          "nessie.catalog.warehouses.warehouse.location",
           S3_WAREHOUSE_LOCATION);
     }
 

@@ -36,8 +36,8 @@ public class ITNessieStatementsViaIcebergRest extends AbstractNessieSparkSqlExte
         ObjectStorageMock.builder().putBuckets("bucket", bucket.bucket()).build().start();
 
     NessieProcess.start(
-        "-Dnessie.catalog.default-warehouse.name=warehouse",
-        "-Dnessie.catalog.default-warehouse.location=s3://bucket/",
+        "-Dnessie.catalog.default-warehouse=warehouse",
+        "-Dnessie.catalog.warehouses.warehouse.location=s3://bucket/",
         "-Dnessie.catalog.service.s3.cloud=private",
         "-Dnessie.catalog.service.s3.endpoint=" + objectStorage.getS3BaseUri().toString(),
         "-Dnessie.catalog.service.s3.path-style-access=true",

@@ -32,7 +32,7 @@ public class TestQuarkusCatalogConfig {
   @ParameterizedTest
   @MethodSource
   public void lookupWarehouse(
-      Map<String, String> configs, String lookup, String expectedWarehouseName) {
+      Map<String, String> configs, String lookup, String expectedWarehouseLocation) {
     SmallRyeConfig config =
         new SmallRyeConfigBuilder()
             .setAddDefaultSources(false)
@@ -44,7 +44,7 @@ public class TestQuarkusCatalogConfig {
     QuarkusCatalogConfig catalogConfig = config.getConfigMapping(QuarkusCatalogConfig.class);
 
     assertThat(catalogConfig.getWarehouse(lookup))
-        .matches(c -> c.name().equals(expectedWarehouseName));
+        .matches(c -> c.location().equals(expectedWarehouseLocation));
   }
 
   static Stream<Arguments> lookupWarehouse() {
@@ -53,84 +53,56 @@ public class TestQuarkusCatalogConfig {
 
     Map<String, String> cfgWithoutDefault =
         ImmutableMap.<String, String>builder()
-            .put("nessie.catalog.warehouses.w1.name", "w1")
             .put("nessie.catalog.warehouses.w1.location", loc12)
-            .put("nessie.catalog.warehouses.w2.name", "w2")
             .put("nessie.catalog.warehouses.w2.location", loc12)
-            .put("nessie.catalog.warehouses.w3.name", "w3")
             .put("nessie.catalog.warehouses.w3.location", loc3)
             .build();
 
     Map<String, String> cfgWithTrailingSlash =
         ImmutableMap.<String, String>builder()
-            .put("nessie.catalog.warehouses.w1.name", "w1")
             .put("nessie.catalog.warehouses.w1.location", loc12 + "/")
-            .put("nessie.catalog.warehouses.w2.name", "w2")
             .put("nessie.catalog.warehouses.w2.location", loc12 + "/")
-            .put("nessie.catalog.warehouses.w3.name", "w3")
             .put("nessie.catalog.warehouses.w3.location", loc3 + "/")
             .build();
 
-    Map<String, String> cfgWithDefault1 =
+    Map<String, String> cfgWithDefault =
         ImmutableMap.<String, String>builder()
-            .put("nessie.catalog.warehouses.w1.name", "w1")
             .put("nessie.catalog.warehouses.w1.location", loc12)
-            .put("nessie.catalog.warehouses.w3.name", "w3")
             .put("nessie.catalog.warehouses.w3.location", loc3)
-            .put("nessie.catalog.default-warehouse.name", "w2")
-            .put("nessie.catalog.default-warehouse.location", loc12)
-            .build();
-
-    Map<String, String> cfgWithDefault2 =
-        ImmutableMap.<String, String>builder()
-            .put("nessie.catalog.warehouses.w3.name", "w3")
-            .put("nessie.catalog.warehouses.w3.location", loc3)
-            .put("nessie.catalog.default-warehouse.name", "w2")
-            .put("nessie.catalog.default-warehouse.location", loc12)
+            .put("nessie.catalog.default-warehouse", "w3")
             .build();
 
     return Stream.of(
-        arguments(cfgWithoutDefault, "w1", "w1"),
-        arguments(cfgWithoutDefault, loc12, "w1"),
-        arguments(cfgWithoutDefault, loc12 + "/", "w1"),
+        arguments(cfgWithoutDefault, "w1", loc12),
+        arguments(cfgWithoutDefault, loc12, loc12),
+        arguments(cfgWithoutDefault, loc12 + "/", loc12),
         // Actually, the behavior when looking up a warehouse by a location used by multiple
         // warehouses is undefined, but for this test we can (probably) rely on Immutables.
-        arguments(cfgWithoutDefault, loc12, "w1"),
-        arguments(cfgWithoutDefault, loc12 + "/", "w1"),
-        arguments(cfgWithoutDefault, "w3", "w3"),
-        arguments(cfgWithoutDefault, loc3, "w3"),
-        arguments(cfgWithoutDefault, loc3 + "/", "w3"),
+        arguments(cfgWithoutDefault, loc12, loc12),
+        arguments(cfgWithoutDefault, loc12 + "/", loc12),
+        arguments(cfgWithoutDefault, "w3", loc3),
+        arguments(cfgWithoutDefault, loc3, loc3),
+        arguments(cfgWithoutDefault, loc3 + "/", loc3),
         //
-        arguments(cfgWithTrailingSlash, "w1", "w1"),
-        arguments(cfgWithTrailingSlash, loc12, "w1"),
-        arguments(cfgWithTrailingSlash, loc12 + "/", "w1"),
+        arguments(cfgWithTrailingSlash, "w1", loc12),
+        arguments(cfgWithTrailingSlash, loc12, loc12),
+        arguments(cfgWithTrailingSlash, loc12 + "/", loc12),
         // Actually, the behavior when looking up a warehouse by a location used by multiple
         // warehouses is undefined, but for this test we can (probably) rely on Immutables.
-        arguments(cfgWithTrailingSlash, loc12, "w1"),
-        arguments(cfgWithTrailingSlash, loc12 + "/", "w1"),
-        arguments(cfgWithTrailingSlash, "w3", "w3"),
-        arguments(cfgWithTrailingSlash, loc3, "w3"),
-        arguments(cfgWithTrailingSlash, loc3 + "/", "w3"),
+        arguments(cfgWithTrailingSlash, loc12, loc12),
+        arguments(cfgWithTrailingSlash, loc12 + "/", loc12),
+        arguments(cfgWithTrailingSlash, "w3", loc3),
+        arguments(cfgWithTrailingSlash, loc3, loc3),
+        arguments(cfgWithTrailingSlash, loc3 + "/", loc3),
         //
-        arguments(cfgWithDefault1, "w1", "w1"),
-        arguments(cfgWithDefault1, loc12, "w1"),
-        arguments(cfgWithDefault1, loc12 + "/", "w1"),
-        arguments(cfgWithDefault1, loc12, "w1"),
-        arguments(cfgWithDefault1, loc12 + "/", "w1"),
-        arguments(cfgWithDefault1, "w3", "w3"),
-        arguments(cfgWithDefault1, loc3, "w3"),
-        arguments(cfgWithDefault1, loc3 + "/", "w3"),
-        arguments(cfgWithDefault1, "fooooo", "w2"),
-        //
-        arguments(cfgWithDefault2, "w1", "w2"),
-        arguments(cfgWithDefault2, loc12, "w2"),
-        arguments(cfgWithDefault2, loc12 + "/", "w2"),
-        arguments(cfgWithDefault2, loc12, "w2"),
-        arguments(cfgWithDefault2, loc12 + "/", "w2"),
-        arguments(cfgWithDefault2, "w3", "w3"),
-        arguments(cfgWithDefault2, loc3, "w3"),
-        arguments(cfgWithDefault2, loc3 + "/", "w3"),
-        arguments(cfgWithDefault2, "fooooo", "w2")
+        arguments(cfgWithDefault, "w1", loc12),
+        arguments(cfgWithDefault, loc12, loc12),
+        arguments(cfgWithDefault, loc12 + "/", loc12),
+        arguments(cfgWithDefault, "w3", loc3),
+        arguments(cfgWithDefault, loc3, loc3),
+        arguments(cfgWithDefault, loc3 + "/", loc3),
+        arguments(cfgWithDefault, null, loc3),
+        arguments(cfgWithDefault, "", loc3)
         //
         );
   }
