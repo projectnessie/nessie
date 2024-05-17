@@ -82,7 +82,6 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddS
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveProperties;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergDecimalType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergFixedType;
@@ -120,8 +119,10 @@ import org.projectnessie.catalog.model.statistics.NessieIcebergBlobMetadata;
 import org.projectnessie.catalog.model.statistics.NessiePartitionStatisticsFile;
 import org.projectnessie.catalog.model.statistics.NessieStatisticsFile;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 
 public class NessieModelIceberg {
   private NessieModelIceberg() {}
@@ -755,7 +756,33 @@ public class NessieModelIceberg {
     return value != null ? value : defaultValue;
   }
 
-  public static NessieTableSnapshot newIcebergTableSnapshot(List<IcebergMetadataUpdate> updates) {
+  /** Returns the default table or view base location. */
+  public static String icebergBaseLocation(String warehouseLocation, ContentKey key) {
+    // FIXME escape or remove forbidden chars, cf. #8524
+    String baseLocation = warehouseLocation;
+    Namespace ns = key.getNamespace();
+    if (!ns.isEmpty()) {
+      baseLocation = concatLocation(warehouseLocation, ns.toString());
+    }
+    baseLocation = concatLocation(baseLocation, key.getName());
+    // Different tables with same table name can exist across references in Nessie.
+    // To avoid sharing same table path between two tables with same name, use uuid in the table
+    // path.
+    // Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
+    return baseLocation + "_" + randomUUID();
+  }
+
+  private static String concatLocation(String location, String key) {
+    return location.endsWith("/") ? location + key : location + "/" + key;
+  }
+
+  /** Returns the table or view metadata JSON location. */
+  public static String icebergMetadataJsonLocation(String baseLocation) {
+    return String.format("%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID());
+  }
+
+  public static NessieTableSnapshot newIcebergTableSnapshot(
+      List<IcebergMetadataUpdate> updates, String icebergLocation) {
     String icebergUuid =
         updates.stream()
             .filter(u -> u instanceof AssignUUID)
@@ -779,12 +806,14 @@ public class NessieModelIceberg {
         .id(nessieId)
         .entity(nessieTable)
         .lastUpdatedTimestamp(now)
+        .icebergLocation(icebergLocation)
         .icebergLastSequenceNumber(IcebergTableMetadata.INITIAL_SEQUENCE_NUMBER)
         .icebergLastPartitionId(INITIAL_PARTITION_ID)
         .build();
   }
 
-  public static NessieViewSnapshot newIcebergViewSnapshot(List<IcebergMetadataUpdate> updates) {
+  public static NessieViewSnapshot newIcebergViewSnapshot(
+      List<IcebergMetadataUpdate> updates, String icebergLocation) {
     String icebergUuid =
         updates.stream()
             .filter(u -> u instanceof AssignUUID)
@@ -807,6 +836,7 @@ public class NessieModelIceberg {
     return NessieViewSnapshot.builder()
         .id(nessieId)
         .entity(nessieView)
+        .icebergLocation(icebergLocation)
         .lastUpdatedTimestamp(now)
         .build();
   }
@@ -1055,11 +1085,6 @@ public class NessieModelIceberg {
         "UUID mismatch: assigned: %s, new: %s",
         snapshot.entity().icebergUuid(),
         uuid);
-  }
-
-  public static void setLocation(SetLocation u, NessieEntitySnapshot.Builder<?> builder) {
-    // TODO: set base location in the NessieEntity?
-    builder.icebergLocation(u.location());
   }
 
   public static void setProperties(
@@ -1501,9 +1526,9 @@ public class NessieModelIceberg {
   }
 
   public static Content icebergMetadataToContent(
-      String location, IcebergTableMetadata snapshot, String contentId) {
+      String metadataJsonLocation, IcebergTableMetadata snapshot, String contentId) {
     return IcebergTable.of(
-        location,
+        metadataJsonLocation,
         snapshot.currentSnapshotId(),
         safeUnbox(snapshot.currentSchemaId(), INITIAL_SCHEMA_ID),
         safeUnbox(snapshot.defaultSpecId(), INITIAL_SPEC_ID),

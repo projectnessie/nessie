@@ -52,7 +52,6 @@ import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
-import org.projectnessie.model.ContentKey;
 
 /**
  * Handles Iceberg REST API v1 endpoints that are not strongly associated with a particular entity
@@ -137,16 +136,13 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     CatalogCommit.Builder commit = CatalogCommit.builder();
     commitTransactionRequest.tableChanges().stream()
         .map(
-            tableChange -> {
-              ContentKey key = requireNonNull(tableChange.identifier()).toNessieContentKey();
-
-              return IcebergCatalogOperation.builder()
-                  .updates(tableChange.updates())
-                  .requirements(tableChange.requirements())
-                  .key(key)
-                  .type(ICEBERG_TABLE)
-                  .build();
-            })
+            tableChange ->
+                IcebergCatalogOperation.builder()
+                    .updates(tableChange.updates())
+                    .requirements(tableChange.requirements())
+                    .key(requireNonNull(tableChange.identifier()).toNessieContentKey())
+                    .type(ICEBERG_TABLE)
+                    .build())
         .forEach(commit::addOperations);
 
     SnapshotReqParams reqParams = SnapshotReqParams.forSnapshotHttpReq(ref, "iceberg", null);

@@ -131,8 +131,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
   @Override
   protected boolean overridesRequestedLocation() {
-    // TODO Nessie Catalog should force the metadata location
-    return super.overridesRequestedLocation();
+    return true;
   }
 
   @Override

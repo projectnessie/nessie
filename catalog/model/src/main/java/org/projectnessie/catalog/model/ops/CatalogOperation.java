@@ -17,6 +17,7 @@ package org.projectnessie.catalog.model.ops;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import jakarta.annotation.Nullable;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 
@@ -31,4 +32,13 @@ public interface CatalogOperation {
   ContentKey getKey();
 
   Content.Type getType();
+
+  /**
+   * The logical warehouse name where this operation will occur. Must correspond to a warehouse
+   * configured under {@code nessie.catalog.warehouses.<name>}.
+   *
+   * <p>If not set, the default warehouse will be used.
+   */
+  @Nullable
+  String warehouse();
 }
