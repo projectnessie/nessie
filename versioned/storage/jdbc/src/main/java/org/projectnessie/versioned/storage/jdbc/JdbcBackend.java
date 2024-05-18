@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 
@@ -140,10 +141,6 @@ public final class JdbcBackend implements Backend {
         .append(COL_OBJ_ID)
         .append(")\n  )");
     return sb.toString();
-  }
-
-  static RuntimeException unhandledSQLException(SQLException e) {
-    return new RuntimeException("Unhandled SQL exception", e);
   }
 
   DatabaseSpecific databaseSpecific() {
@@ -323,7 +320,14 @@ public final class JdbcBackend implements Backend {
       }
       conn.commit();
     } catch (SQLException e) {
-      throw unhandledSQLException(e);
+      throw unhandledSQLException(databaseSpecific, e);
     }
+  }
+
+  static RuntimeException unhandledSQLException(DatabaseSpecific databaseSpecific, SQLException e) {
+    if (databaseSpecific.isRetryTransaction(e)) {
+      return new UnknownOperationResultException("Unhandled SQL exception", e);
+    }
+    return new RuntimeException("Unhandled SQL exception", e);
   }
 }

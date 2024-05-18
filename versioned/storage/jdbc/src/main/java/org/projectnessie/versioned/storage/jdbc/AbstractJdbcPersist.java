@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
-import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
 import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.deserializeObjId;
 import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.serializeObjId;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENCE;
@@ -667,7 +666,7 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  private abstract static class ResultSetIterator<R> extends AbstractIterator<R>
+  private abstract class ResultSetIterator<R> extends AbstractIterator<R>
       implements CloseableIterator<R> {
 
     private final Connection conn;
@@ -714,10 +713,14 @@ abstract class AbstractJdbcPersist implements Persist {
 
         return mapToObj(rs);
       } catch (SQLException e) {
-        throw new RuntimeException(e);
+        throw unhandledSQLException(e);
       }
     }
 
     protected abstract R mapToObj(ResultSet rs) throws SQLException;
+  }
+
+  protected RuntimeException unhandledSQLException(SQLException e) {
+    return JdbcBackend.unhandledSQLException(databaseSpecific, e);
   }
 }

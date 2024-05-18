@@ -45,8 +45,11 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.S
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_REFS;
 
+import com.datastax.oss.driver.api.core.AllNodesFailedException;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DriverException;
+import com.datastax.oss.driver.api.core.DriverTimeoutException;
+import com.datastax.oss.driver.api.core.NodeUnavailableException;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
@@ -59,6 +62,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.api.core.servererrors.CASWriteUnknownException;
+import com.datastax.oss.driver.api.core.servererrors.QueryExecutionException;
 import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -80,6 +84,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
@@ -321,7 +326,7 @@ public final class CassandraBackend implements Backend {
 
   boolean executeCas(BoundStatement stmt) {
     try {
-      ResultSet rs = execute(stmt);
+      ResultSet rs = session.execute(stmt);
       return rs.wasApplied();
     } catch (DriverException e) {
       handleDriverException(e);
@@ -330,16 +335,40 @@ public final class CassandraBackend implements Backend {
   }
 
   ResultSet execute(BoundStatement stmt) {
-    return session.execute(stmt);
+    try {
+      return session.execute(stmt);
+    } catch (DriverException e) {
+      throw unhandledException(e);
+    }
   }
 
   CompletionStage<AsyncResultSet> executeAsync(BoundStatement stmt) {
     return session.executeAsync(stmt);
   }
 
-  void handleDriverException(DriverException e) {
-    if (e instanceof CASWriteUnknownException) {
-      logCASWriteUnknown((CASWriteUnknownException) e);
+  static RuntimeException unhandledException(DriverException e) {
+    if (e instanceof QueryExecutionException) {
+      return new UnknownOperationResultException(e);
+    } else if (e instanceof DriverTimeoutException
+        || e instanceof NodeUnavailableException
+        || e instanceof AllNodesFailedException) {
+      return new UnknownOperationResultException(e);
+    } else {
+      return e;
+    }
+  }
+
+  static void handleDriverException(DriverException e) {
+    if (e instanceof QueryExecutionException) {
+      if (e instanceof CASWriteUnknownException) {
+        logCASWriteUnknown((CASWriteUnknownException) e);
+      } else {
+        throw new UnknownOperationResultException(e);
+      }
+    } else if (e instanceof DriverTimeoutException
+        || e instanceof NodeUnavailableException
+        || e instanceof AllNodesFailedException) {
+      throw new UnknownOperationResultException(e);
     } else {
       throw e;
     }

@@ -26,6 +26,8 @@ import static org.projectnessie.versioned.CommitValidation.CommitOperationType.C
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.DELETE;
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
+import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Unchanged.commitUnchanged;
@@ -79,6 +81,7 @@ import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
@@ -145,6 +148,10 @@ class CommitImpl extends BaseCommitHelper {
   static class CommitRetryState {
     final Set<ObjId> storedContents = new HashSet<>();
     final Map<ContentKey, String> generatedContentIds = new HashMap<>();
+    // Contains the ID of the _successfully_ persisted CommitObj. This is not included in
+    // `storedContents`, because "contents" can be reused, but we have to check for hash-collisions
+    // for CommitObj.
+    ObjId commitPersisted;
   }
 
   CommitResult<Commit> commit(
@@ -163,9 +170,15 @@ class CommitImpl extends BaseCommitHelper {
     CommitRetryState commitRetryState =
         retryState.map(x -> (CommitRetryState) x).orElseGet(CommitRetryState::new);
 
+    // toStore holds the IDs of all (non-CommitObj) objects to be stored via
+    // `CommitLogic.storeCommit()`. If `storeCommit()` succeeds, we can add those IDs to
+    // `CommitRetryState.storedContents` to not store those objects during a retry.
+    // This mechanism ensures that we retry the store-objects in case that one fails with an
+    // `UnknownOperationResultException`.
+    Set<ObjId> toStore = new HashSet<>();
     Consumer<Obj> valueConsumer =
         obj -> {
-          if (commitRetryState.storedContents.add(obj.id())) {
+          if (toStore.add(obj.id())) {
             objectsToStore.add(obj);
           }
         };
@@ -186,11 +199,29 @@ class CommitImpl extends BaseCommitHelper {
 
     fromCommitMeta(metadata, commit);
 
+    CommitObj newHead;
     try {
-      CommitObj newHead = commitLogic.doCommit(commit.build(), objectsToStore);
+      CreateCommit createCommit = commit.build();
+      newHead =
+          commitLogic.buildCommitObj(
+              createCommit,
+              c -> CONFLICT,
+              (k, v) -> {},
+              NO_VALUE_REPLACEMENT,
+              NO_VALUE_REPLACEMENT);
 
+      // If 'commitRetryState.storedContents' already contains the commit-ID, __we__ already
+      // successfully persisted that commit. This can happen, if the `Persist` implementation raised
+      // an `UnknownOperationResultException` in one of the following operations (reference bump for
+      // example).
+      boolean stored = commitLogic.storeCommit(newHead, objectsToStore);
+      if (stored) {
+        commitRetryState.commitPersisted = newHead.id();
+        commitRetryState.storedContents.addAll(toStore);
+      }
+      boolean commitPersisted = stored || newHead.id().equals(commitRetryState.commitPersisted);
       checkState(
-          newHead != null,
+          commitPersisted,
           "Hash collision detected, a commit with the same parent commit, commit message, "
               + "headers/commit-metadata and operations already exists");
 
@@ -207,6 +238,8 @@ class CommitImpl extends BaseCommitHelper {
       throw referenceConflictException(e);
     } catch (ObjNotFoundException e) {
       throw referenceNotFound(e);
+    } catch (UnknownOperationResultException e) {
+      throw new RetryException(Optional.of(commitRetryState));
     }
   }
 

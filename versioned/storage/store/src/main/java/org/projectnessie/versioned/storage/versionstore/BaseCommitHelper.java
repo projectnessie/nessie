@@ -87,6 +87,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
@@ -618,7 +619,7 @@ class BaseCommitHelper {
   void bumpReferencePointer(ObjId newHead, Optional<?> retryState) throws RetryException {
     try {
       persist.updateReferencePointer(reference, newHead);
-    } catch (RefConditionFailedException e) {
+    } catch (UnknownOperationResultException | RefConditionFailedException e) {
       throw new RetryException(retryState);
     } catch (RefNotFoundException e) {
       throw new RuntimeException("Internal reference not found", e);
