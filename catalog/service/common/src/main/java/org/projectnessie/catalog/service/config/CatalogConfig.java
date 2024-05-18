@@ -52,6 +52,10 @@ public interface CatalogConfig {
   @ConfigPropertyName("iceberg-property")
   Map<String, String> icebergConfigOverrides();
 
+  /**
+   * Returns the given {@code warehouse} if not-empty or the {@link #defaultWarehouse() default
+   * warehouse}. Throws an {@link IllegalStateException} if neither is given/present.
+   */
   default String resolveWarehouseName(String warehouse) {
     boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
     if (hasWarehouse) {
@@ -72,21 +76,14 @@ public interface CatalogConfig {
    * or the location to identify a warehouse.
    */
   default WarehouseConfig getWarehouse(String warehouse) {
-    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
-    if (!hasWarehouse) {
-      Optional<String> def = defaultWarehouse();
-      if (def.isEmpty()) {
-        throw new IllegalStateException("No default-warehouse configured");
-      }
-      warehouse = def.get();
-    }
-
-    WarehouseConfig w = warehouses().get(warehouse);
+    String resolvedWarehouse = resolveWarehouseName(warehouse);
+    WarehouseConfig w = warehouses().get(resolvedWarehouse);
     if (w != null) {
       return w;
     }
 
     // Lookup the warehouse by location (but not by the default warehouse name).
+    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
     if (hasWarehouse) {
       String warehouseLocation = removeTrailingSlash(warehouse);
       for (WarehouseConfig wc : warehouses().values()) {

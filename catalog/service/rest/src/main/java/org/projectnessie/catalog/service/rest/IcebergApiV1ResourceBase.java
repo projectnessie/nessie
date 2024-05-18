@@ -31,7 +31,6 @@ import jakarta.inject.Inject;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -237,15 +236,10 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       parsedReference =
           ParsedReference.parsedReference(serverConfig.getDefaultBranch(), null, BRANCH);
     }
-    if (warehouse == null) {
-      Optional<String> defaultWarehouse = catalogConfig.defaultWarehouse();
-      if (defaultWarehouse.isEmpty()) {
-        throw new IllegalStateException("No default warehouse configured");
-      }
-      warehouse = defaultWarehouse.get();
-    }
 
-    return decodedPrefix(parsedReference, warehouse);
+    String resolvedWarehouse = catalogConfig.resolveWarehouseName(warehouse);
+
+    return decodedPrefix(parsedReference, resolvedWarehouse);
   }
 
   static Branch checkBranch(Reference reference) {
