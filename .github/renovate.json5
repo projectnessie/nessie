@@ -4,6 +4,11 @@
     "config:base",
     // Required to not pin dependencies to _exact_ versions (pip)
     ":preserveSemverRanges",
+    "group:monorepos",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests",
+    ":semanticPrefixFixDepsChoreOthers",
+    ":dependencyDashboard",
   ],
 
   pip_requirements: {
