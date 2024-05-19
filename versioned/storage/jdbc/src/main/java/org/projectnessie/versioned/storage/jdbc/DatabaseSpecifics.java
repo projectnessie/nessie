@@ -53,7 +53,7 @@ public final class DatabaseSpecifics {
       new BasePostgresDatabaseSpecific("VARCHAR");
 
   public static final DatabaseSpecific MYSQL_MARIADB_DATABASE_SPECIFIC =
-    new MariaDBDatabaseSpecific();
+      new MariaDBDatabaseSpecific();
 
   public static DatabaseSpecific detect(DataSource dataSource) {
     try (Connection conn = dataSource.getConnection()) {
