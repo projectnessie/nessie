@@ -31,6 +31,25 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
     String dockerImage = dockerImage("mysql");
-    return new MySQLContainer<>(dockerImage);
+    return new MariaDBDriverMySQLContainer(dockerImage);
+  }
+
+  /** This has been done so that mariaDB Driver can be used for mysql Testcontainer */
+  private static class MariaDBDriverMySQLContainer
+      extends MySQLContainer<MariaDBDriverMySQLContainer> {
+
+    MariaDBDriverMySQLContainer(String dockerImage) {
+      super(dockerImage);
+    }
+
+    @Override
+    public String getDriverClassName() {
+      return "org.mariadb.jdbc.Driver";
+    }
+
+    @Override
+    public String getJdbcUrl() {
+      return super.getJdbcUrl().replace("jdbc:mysql", "jdbc:mariadb");
+    }
   }
 }
