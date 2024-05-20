@@ -32,6 +32,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-inmemory"))
   implementation(project(":nessie-versioned-storage-store"))
+  implementation(libs.guava)
   implementation(libs.slf4j.api)
 
   compileOnly(libs.jakarta.ws.rs.api)
