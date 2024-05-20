@@ -34,7 +34,6 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
     return new MariaDBDriverMySQLContainer(dockerImage);
   }
 
-  /** This has been done so that mariaDB Driver can be used for mysql Testcontainer */
   private static class MariaDBDriverMySQLContainer
       extends MySQLContainer<MariaDBDriverMySQLContainer> {
 
