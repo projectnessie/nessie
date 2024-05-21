@@ -72,17 +72,18 @@ mongodb:
     # -- The secret key storing the MongoDB password.
     password: mongodb_password
 
-# Postgres settings. Only required when using JDBC version store type; ignored otherwise.
-postgres:
-  # -- The Postgres JDBC connection string.
+# JDBC datasource settings. Only required when using JDBC version store type; ignored otherwise.
+jdbc:
+  # -- The JDBC connection string. If you are using Nessie OSS images, then only
+  # PostgreSQL and MariaDB are supported.
   jdbcUrl: jdbc:postgresql://localhost:5432/my_database
   secret:
-    # -- The secret name to pull Postgres credentials from.
-    name: postgres-creds
-    # -- The secret key storing the Postgres username.
-    username: postgres_username
-    # -- The secret key storing the Postgres password.
-    password: postgres_password
+    # -- The secret name to pull datasource credentials from.
+    name: datasource-creds
+    # -- The secret key storing the datasource username.
+    username: username
+    # -- The secret key storing the datasource password.
+    password: password
 
 # BigTable settings. Only required when using BIGTABLE version store type; ignored otherwise.
 bigtable:

@@ -25,6 +25,11 @@ as necessary. Empty sections will not end in the release notes.
      `nessie.version.store.persist.jdbc.datasource=postgresql`;
   2. Migrate any property under `quarkus.datasource.*` to `quarkus.datasource.postgresql.*`. Support
      for the old `quarkus.datasource.*` properties will be removed in a future release.
+- For the same reason, the Nessie Helm chart has been updated. The old `postgres` section is now
+  called `jdbc`. Existing Helm chart configurations should be updated accordingly, e.g.
+  `postgres.jdbcUrl` now becomes `jdbc.jdbcUrl`. Although the old `postgres` section is still
+  honored, it won't be supported in future releases. The right datasource will be chosen based on
+  the `jdbcUrl` contents.
 
 ### Breaking changes
 
