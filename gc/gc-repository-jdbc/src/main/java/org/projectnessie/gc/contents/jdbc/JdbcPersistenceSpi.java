@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
@@ -85,6 +86,15 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
     Builder dataSource(DataSource dataSource);
 
     JdbcPersistenceSpi build();
+  }
+
+  @Value.Lazy
+  protected String productName() {
+    try (Connection conn = dataSource().getConnection()) {
+      return conn.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -209,7 +219,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
   @Override
   public long addIdentifiedLiveContent(UUID liveSetId, Stream<ContentReference> contentReference) {
     return singleStatement(
-        ADD_CONTENT,
+        decorateInsertStatement(ADD_CONTENT),
         (conn, stmt) -> {
           stmt.setString(1, liveSetId.toString());
           long count = 0L;
@@ -260,7 +270,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
   public void associateBaseLocations(
       UUID liveSetId, String contentId, Collection<StorageUri> baseLocations) {
     singleStatement(
-        INSERT_CONTENT_LOCATION,
+        decorateInsertStatement(INSERT_CONTENT_LOCATION),
         (conn, stmt) -> {
           stmt.setString(1, liveSetId.toString());
           stmt.setString(2, contentId);
@@ -358,7 +368,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
   @Override
   public long addFileDeletions(UUID liveSetId, Stream<FileReference> files) {
     return singleStatement(
-        INSERT_FILE_DELETIONS,
+        decorateInsertStatement(INSERT_FILE_DELETIONS),
         (conn, stmt) -> {
           long count = 0L;
           for (Iterator<FileReference> iter = files.iterator(); iter.hasNext(); ) {
@@ -417,6 +427,16 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
         .errorMessage(rs.getString(7))
         .persistenceSpi(this)
         .build();
+  }
+
+  protected String decorateInsertStatement(String statement) {
+    switch (productName()) {
+      case "mysql":
+      case "mariadb":
+        return statement.replace("INSERT", "INSERT IGNORE");
+      default:
+        return statement + " ON CONFLICT DO NOTHING";
+    }
   }
 
   private Connection connection() {

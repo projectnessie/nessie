@@ -34,6 +34,7 @@ dependencies {
 
   implementation(libs.agroal.pool)
   implementation(libs.postgresql)
+  implementation(libs.mariadb.java.client)
   implementation(libs.h2)
 
   implementation(libs.slf4j.api)
@@ -64,6 +65,8 @@ dependencies {
   intTestImplementation(libs.postgresql)
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:postgresql")
+  intTestImplementation("org.testcontainers:mariadb")
+  intTestImplementation("org.testcontainers:mysql")
   intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(project(":nessie-container-spec-helper"))
   intTestCompileOnly(libs.immutables.value.annotations)

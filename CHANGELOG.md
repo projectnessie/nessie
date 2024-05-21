@@ -11,6 +11,7 @@ as necessary. Empty sections will not end in the release notes.
 - New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
   SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
   and reference names, syntax highlighting, paging of long results, command history.
+- The Nessie GC tool is now also compatible with MariaDB and MySQL (using the MariaDB connector).
 
 ### Upgrade notes
 
