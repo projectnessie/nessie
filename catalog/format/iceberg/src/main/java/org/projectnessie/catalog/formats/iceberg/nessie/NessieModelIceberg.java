@@ -443,6 +443,11 @@ public class NessieModelIceberg {
     NessieViewSnapshot.Builder snapshot = NessieViewSnapshot.builder().id(snapshotId);
     if (previous != null) {
       snapshot.from(previous);
+
+      String previousLocation = previous.icebergLocation();
+      if (previousLocation != null && !previousLocation.equals(iceberg.location())) {
+        snapshot.addAdditionalKnownLocation(previous.icebergLocation());
+      }
     }
 
     int formatVersion = iceberg.formatVersion();
@@ -500,6 +505,11 @@ public class NessieModelIceberg {
     NessieTableSnapshot.Builder snapshot = NessieTableSnapshot.builder().id(snapshotId);
     if (previous != null) {
       snapshot.from(previous);
+
+      String previousLocation = previous.icebergLocation();
+      if (previousLocation != null && !previousLocation.equals(iceberg.location())) {
+        snapshot.addAdditionalKnownLocation(previous.icebergLocation());
+      }
     }
 
     int formatVersion = iceberg.formatVersion();
