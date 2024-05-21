@@ -58,8 +58,8 @@ services:
       - nessie.catalog.service.s3.secret-access-key-ref=awsSecretAccessKeyRefId
       - nessie.catalog.secrets.accessKeyRefId=minioadmin
       - nessie.catalog.secrets.awsSecretAccessKeyRefId=minioadmin
-      - nessie.catalog.default-warehouse.name=warehouse
-      - nessie.catalog.default-warehouse.location=s3://demobucket/
+      - nessie.catalog.default-warehouse=warehouse
+      - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
       # Telemetry
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
     #healthcheck:

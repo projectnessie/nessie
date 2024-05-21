@@ -20,22 +20,69 @@ import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.immutables.value.Value;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public class TestCatalogConfig {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
+  @Test
+  public void defaultWarehouseDefined() {
+    soft.assertThatCode(
+            () ->
+                ImmutableCatalogConfigForTest.builder()
+                    .putWarehouses(
+                        "w1",
+                        ImmutableWarehouseConfigForTest.builder().location("s3://foo").build())
+                    .build()
+                    .check())
+        .doesNotThrowAnyException();
+
+    soft.assertThatCode(
+            () ->
+                ImmutableCatalogConfigForTest.builder()
+                    .putWarehouses(
+                        "w1",
+                        ImmutableWarehouseConfigForTest.builder().location("s3://foo").build())
+                    .defaultWarehouse("w1")
+                    .build()
+                    .check())
+        .doesNotThrowAnyException();
+
+    soft.assertThatIllegalStateException()
+        .isThrownBy(
+            () -> ImmutableCatalogConfigForTest.builder().defaultWarehouse("w1").build().check())
+        .withMessage("Default warehouse 'w1' is not defined.");
+
+    soft.assertThatIllegalStateException()
+        .isThrownBy(
+            () ->
+                ImmutableCatalogConfigForTest.builder()
+                    .putWarehouses(
+                        "w1",
+                        ImmutableWarehouseConfigForTest.builder().location("s3://foo").build())
+                    .defaultWarehouse("w2")
+                    .build()
+                    .check())
+        .withMessage("Default warehouse 'w2' is not defined.");
+  }
+
   @ParameterizedTest
   @MethodSource
   public void lookupWarehouseFail(CatalogConfig catalogConfig, String lookup) {
     if (lookup != null && !lookup.isEmpty()) {
       assertThatIllegalStateException()
           .isThrownBy(() -> catalogConfig.getWarehouse(lookup))
-          .withMessage(
-              "Warehouse '" + lookup + "' is not defined and no default-warehouse is configured");
+          .withMessage("Warehouse '" + lookup + "' is not known");
     } else {
       assertThatIllegalStateException()
           .isThrownBy(() -> catalogConfig.getWarehouse(lookup))
@@ -52,87 +99,81 @@ public class TestCatalogConfig {
 
   static Stream<Arguments> lookupWarehouseFail() {
     WarehouseConfigForTest w1 =
-        ImmutableWarehouseConfigForTest.builder().name("w1").location("s3://blah/blah").build();
+        ImmutableWarehouseConfigForTest.builder().location("s3://blah/blah").build();
     WarehouseConfigForTest w2 =
-        ImmutableWarehouseConfigForTest.builder().name("w2").location("s3://blah/blah").build();
+        ImmutableWarehouseConfigForTest.builder().location("s3://blah/blah").build();
     WarehouseConfigForTest w3 =
-        ImmutableWarehouseConfigForTest.builder().name("w3").location("gcs://blah/blah").build();
+        ImmutableWarehouseConfigForTest.builder().location("gcs://blah/blah").build();
 
     CatalogConfig cfgWithoutDefault =
         ImmutableCatalogConfigForTest.builder()
-            .putWarehouses(w1.name(), w1)
-            .putWarehouses(w2.name(), w2)
-            .putWarehouses(w3.name(), w3)
+            .putWarehouses("w1", w1)
+            .putWarehouses("w2", w2)
+            .putWarehouses("w3", w3)
             .build();
 
     return Stream.of(
         arguments(cfgWithoutDefault, null),
         arguments(cfgWithoutDefault, ""),
         arguments(cfgWithoutDefault, "foo"),
-        arguments(cfgWithoutDefault, w1.name() + "foo"),
+        arguments(cfgWithoutDefault, "w1foo"),
         arguments(cfgWithoutDefault, w1.location() + "blah"),
         arguments(cfgWithoutDefault, w1.location() + "/blah"));
   }
 
   static Stream<Arguments> lookupWarehouse() {
     WarehouseConfigForTest w1 =
-        ImmutableWarehouseConfigForTest.builder().name("w1").location("s3://blah/blah").build();
+        ImmutableWarehouseConfigForTest.builder().location("s3://blah/blah").build();
     WarehouseConfigForTest w2 =
-        ImmutableWarehouseConfigForTest.builder().name("w2").location("s3://blah/blah").build();
+        ImmutableWarehouseConfigForTest.builder().location("s3://blah/blah").build();
     WarehouseConfigForTest w3 =
-        ImmutableWarehouseConfigForTest.builder().name("w3").location("gcs://blah/blah").build();
+        ImmutableWarehouseConfigForTest.builder().location("gcs://blah/blah").build();
 
     CatalogConfig cfgWithoutDefault =
         ImmutableCatalogConfigForTest.builder()
-            .putWarehouses(w1.name(), w1)
-            .putWarehouses(w2.name(), w2)
-            .putWarehouses(w3.name(), w3)
+            .putWarehouses("w1", w1)
+            .putWarehouses("w2", w2)
+            .putWarehouses("w3", w3)
             .build();
 
     CatalogConfig cfgWithDefault1 =
         ImmutableCatalogConfigForTest.builder()
-            .putWarehouses(w1.name(), w1)
-            .putWarehouses(w3.name(), w3)
-            .defaultWarehouse(w2)
+            .putWarehouses("w1", w1)
+            .putWarehouses("w3", w3)
+            .defaultWarehouse("w1")
             .build();
 
     CatalogConfig cfgWithDefault2 =
         ImmutableCatalogConfigForTest.builder()
-            .putWarehouses(w3.name(), w3)
-            .defaultWarehouse(w2)
+            .putWarehouses("w3", w3)
+            .defaultWarehouse("w3")
             .build();
 
     return Stream.of(
-        arguments(cfgWithoutDefault, w1.name(), w1),
+        arguments(cfgWithoutDefault, "w1", w1),
         arguments(cfgWithoutDefault, w1.location(), w1),
         arguments(cfgWithoutDefault, w1.location() + "/", w1),
         // Actually, the behavior when looking up a warehouse by a location used by multiple
         // warehouses is undefined, but for this test we can (probably) rely on Immutables.
         arguments(cfgWithoutDefault, w2.location(), w1),
         arguments(cfgWithoutDefault, w2.location() + "/", w1),
-        arguments(cfgWithoutDefault, w3.name(), w3),
+        arguments(cfgWithoutDefault, "w3", w3),
         arguments(cfgWithoutDefault, w3.location(), w3),
         arguments(cfgWithoutDefault, w3.location() + "/", w3),
         //
-        arguments(cfgWithDefault1, w1.name(), w1),
+        arguments(cfgWithDefault1, "w1", w1),
         arguments(cfgWithDefault1, w1.location(), w1),
         arguments(cfgWithDefault1, w1.location() + "/", w1),
         arguments(cfgWithDefault1, w2.location(), w1),
         arguments(cfgWithDefault1, w2.location() + "/", w1),
-        arguments(cfgWithDefault1, w3.name(), w3),
+        arguments(cfgWithDefault1, "w3", w3),
         arguments(cfgWithDefault1, w3.location(), w3),
         arguments(cfgWithDefault1, w3.location() + "/", w3),
-        arguments(cfgWithDefault1, "fooooo", w2),
         //
-        arguments(cfgWithDefault2, w1.name(), w2),
-        arguments(cfgWithDefault2, w1.location(), w2),
-        arguments(cfgWithDefault2, w1.location() + "/", w2),
-        arguments(cfgWithDefault2, w2.location(), w2),
-        arguments(cfgWithDefault2, w2.location() + "/", w2),
-        arguments(cfgWithDefault2, w3.name(), w3),
+        arguments(cfgWithDefault2, "w3", w3),
         arguments(cfgWithDefault2, w3.location(), w3),
         arguments(cfgWithDefault2, w3.location() + "/", w3),
-        arguments(cfgWithDefault2, "fooooo", w2)
+        arguments(cfgWithDefault2, "", w3)
         //
         );
   }
@@ -141,10 +182,13 @@ public class TestCatalogConfig {
   @SuppressWarnings("immutables:from")
   interface CatalogConfigForTest extends CatalogConfig {
     @Override
-    Optional<WarehouseConfigForTest> defaultWarehouse();
+    Map<String, WarehouseConfigForTest> warehouses();
 
     @Override
-    Map<String, WarehouseConfigForTest> warehouses();
+    @Value.Check
+    default void check() {
+      CatalogConfig.super.check();
+    }
   }
 
   @Value.Immutable

@@ -21,9 +21,6 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
 
 public interface WarehouseConfig {
 
-  /** Name of the warehouse. */
-  String name();
-
   /**
    * Iceberg config defaults specific to this warehouse. They override any defaults specified in
    * {@link CatalogConfig#icebergConfigDefaults()}.
