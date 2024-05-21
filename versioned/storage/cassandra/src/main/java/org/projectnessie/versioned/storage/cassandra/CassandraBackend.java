@@ -300,7 +300,7 @@ public final class CassandraBackend implements Backend {
   }
 
   @Nonnull
-  BoundStatement buildStatement(String cql, Object... values) {
+  BoundStatement buildStatement(String cql, boolean idempotent, Object... values) {
     PreparedStatement prepared =
         statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));
     return prepared
@@ -308,14 +308,15 @@ public final class CassandraBackend implements Backend {
         .setTimeout(config.dmlTimeout())
         .setConsistencyLevel(LOCAL_QUORUM)
         .setSerialConsistencyLevel(LOCAL_SERIAL)
+        .setIdempotence(idempotent)
         .build();
   }
 
   @Nonnull
-  BoundStatementBuilder newBoundStatementBuilder(String cql) {
+  BoundStatementBuilder newBoundStatementBuilder(String cql, boolean idempotent) {
     PreparedStatement prepared =
         statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));
-    return prepared.boundStatementBuilder();
+    return prepared.boundStatementBuilder().setIdempotence(idempotent);
   }
 
   boolean executeCas(BoundStatement stmt) {
@@ -497,16 +498,16 @@ public final class CassandraBackend implements Backend {
 
     try (LimitedConcurrentRequests requests =
         new LimitedConcurrentRequests(MAX_CONCURRENT_DELETES)) {
-      for (Row row : execute(buildStatement(ERASE_REFS_SCAN, repoIdList))) {
+      for (Row row : execute(buildStatement(ERASE_REFS_SCAN, true, repoIdList))) {
         String repoId = row.getString(0);
         String ref = row.getString(1);
-        requests.submitted(executeAsync(buildStatement(ERASE_REF, repoId, ref)));
+        requests.submitted(executeAsync(buildStatement(ERASE_REF, true, repoId, ref)));
       }
 
-      for (Row row : execute(buildStatement(ERASE_OBJS_SCAN, repoIdList))) {
+      for (Row row : execute(buildStatement(ERASE_OBJS_SCAN, true, repoIdList))) {
         String repoId = row.getString(0);
         String objId = row.getString(1);
-        requests.submitted(executeAsync(buildStatement(ERASE_OBJ, repoId, objId)));
+        requests.submitted(executeAsync(buildStatement(ERASE_OBJ, true, repoId, objId)));
       }
     }
     // We must ensure that the system clock advances a little, so that C*'s next write-timestamp
