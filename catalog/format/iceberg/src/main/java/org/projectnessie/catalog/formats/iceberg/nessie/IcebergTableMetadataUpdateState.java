@@ -18,6 +18,7 @@ package org.projectnessie.catalog.formats.iceberg.nessie;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -137,9 +138,10 @@ public class IcebergTableMetadataUpdateState {
   }
 
   public IcebergTableMetadataUpdateState applyUpdates(List<IcebergMetadataUpdate> updates) {
+    Instant now = now();
     for (IcebergMetadataUpdate update : updates) {
       update.applyToTable(this);
-      snapshot = builder.lastUpdatedTimestamp(now()).build();
+      snapshot = builder.lastUpdatedTimestamp(now).build();
     }
     return this;
   }
