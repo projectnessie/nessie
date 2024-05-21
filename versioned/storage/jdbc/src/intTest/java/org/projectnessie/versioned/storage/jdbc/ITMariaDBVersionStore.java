@@ -16,8 +16,8 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
-import org.projectnessie.versioned.storage.jdbctests.MySQLBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbctests.MariaDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
-@NessieBackend(MySQLBackendTestFactory.class)
+@NessieBackend(MariaDBBackendTestFactory.class)
 public class ITMariaDBVersionStore extends AbstractVersionStoreTests {}

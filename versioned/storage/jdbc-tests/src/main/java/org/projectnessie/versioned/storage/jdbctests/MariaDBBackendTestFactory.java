@@ -25,7 +25,7 @@ public class MariaDBBackendTestFactory extends ContainerBackendTestFactory {
 
   @Override
   public String getName() {
-    return JdbcBackendFactory.NAME + "-MariaDb";
+    return JdbcBackendFactory.NAME + "-MariaDB";
   }
 
   @Nonnull
