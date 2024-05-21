@@ -292,7 +292,7 @@ public class CatalogProducers {
     return new CombinedClientBuilder()
         .withConfigResource(configResource)
         .withTreeResource(treeResource)
-        .buildForProduction(NessieApiV2.class);
+        .build(NessieApiV2.class);
   }
 
   @Produces
