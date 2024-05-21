@@ -18,7 +18,6 @@ package org.projectnessie.tools.admin.cli;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.MONGODB;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.DEFAULT_PARENTS_PER_COMMIT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -33,6 +32,7 @@ import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
@@ -42,9 +42,9 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 @QuarkusMainTest
-@TestProfile(QuarkusCliTestProfilePersistMongo.class)
-@ExtendWith(NessieCliPersistTestExtension.class)
-class ITNessieInfoPersist {
+@TestProfile(BaseConfigProfile.class)
+@ExtendWith(NessieServerAdminTestExtension.class)
+class ITNessieInfo {
 
   @Test
   @Launch("info")
@@ -60,7 +60,8 @@ class ITNessieInfoPersist {
         .contains("Repository created:")
         .contains("Default branch head commit ID:     " + EMPTY_OBJ_ID)
         .contains("Default branch commit count:       0")
-        .contains("Version-store type:                " + MONGODB.name())
+        .containsPattern(
+            "Version-store type: {16}(ROCKSDB|DYNAMODB|MONGODB|CASSANDRA|JDBC|BIGTABLE)")
         .contains("Default branch:                    main")
         .contains("Parent commit IDs per commit:      " + DEFAULT_PARENTS_PER_COMMIT);
   }
@@ -88,7 +89,8 @@ class ITNessieInfoPersist {
         .contains("Repository created:")
         .contains("Default branch head commit ID:     " + head.id())
         .contains("Default branch commit count:       1")
-        .contains("Version-store type:                " + MONGODB.name())
+        .containsPattern(
+            "Version-store type: {16}(ROCKSDB|DYNAMODB|MONGODB|CASSANDRA|JDBC|BIGTABLE)")
         .contains("Default branch:                    main")
         .contains("Parent commit IDs per commit:      " + DEFAULT_PARENTS_PER_COMMIT);
   }

@@ -30,6 +30,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
@@ -37,9 +38,9 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 @QuarkusMainTest
-@TestProfile(QuarkusCliTestProfilePersistMongo.class)
-@ExtendWith({NessieCliPersistTestExtension.class, SoftAssertionsExtension.class})
-class ITEraseRepositoryPersist {
+@TestProfile(BaseConfigProfile.class)
+@ExtendWith({NessieServerAdminTestExtension.class, SoftAssertionsExtension.class})
+class ITEraseRepository {
 
   @InjectSoftAssertions private SoftAssertions soft;
 

@@ -51,6 +51,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 import org.projectnessie.tools.admin.cli.ExportRepository.Format;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.KeyEntry;
@@ -68,9 +69,12 @@ import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 @QuarkusMainTest
-@TestProfile(QuarkusCliTestProfilePersistMongo.class)
-@ExtendWith({NessieCliPersistTestExtension.class, SoftAssertionsExtension.class})
-public class ITExportImportPersist {
+@TestProfile(BaseConfigProfile.class)
+@ExtendWith({NessieServerAdminTestExtension.class, SoftAssertionsExtension.class})
+public class ITExportImport {
+
+  private static final String VERSION_STORES = "(ROCKSDB|DYNAMODB|MONGODB|CASSANDRA|JDBC|BIGTABLE)";
+
   @InjectSoftAssertions private SoftAssertions soft;
 
   @Test
@@ -139,7 +143,7 @@ public class ITExportImportPersist {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Exporting from a MONGODB version store...")
+        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
         .contains(
             "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
@@ -149,7 +153,7 @@ public class ITExportImportPersist {
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Importing into a MONGODB version store...")
+        .containsPattern("Importing into a " + VERSION_STORES + " version store...")
         .contains("Imported Nessie repository, 0 commits, 1 named references.");
   }
 
@@ -158,7 +162,7 @@ public class ITExportImportPersist {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Exporting from a MONGODB version store...")
+        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
         .contains(
             "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files.");
     soft.assertThat(tempDir).isNotEmptyDirectory();
@@ -168,7 +172,7 @@ public class ITExportImportPersist {
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Importing into a MONGODB version store...")
+        .containsPattern("Importing into a " + VERSION_STORES + " version store...")
         .contains("Imported Nessie repository, 0 commits, 1 named references.");
   }
 
@@ -181,7 +185,7 @@ public class ITExportImportPersist {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Exporting from a MONGODB version store...")
+        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
         .contains(
             "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
@@ -203,7 +207,7 @@ public class ITExportImportPersist {
         .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
         .containsPattern(
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
-        .contains("Importing into a MONGODB version store...")
+        .containsPattern("Importing into a " + VERSION_STORES + " version store...")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Import finalization finished, total duration: ");
 
@@ -227,7 +231,7 @@ public class ITExportImportPersist {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Exporting from a MONGODB version store...")
+        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
         .contains(
             "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files.");
     soft.assertThat(tempDir).isNotEmptyDirectory();
@@ -249,7 +253,7 @@ public class ITExportImportPersist {
         .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
         .containsPattern(
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
-        .contains("Importing into a MONGODB version store...")
+        .containsPattern("Importing into a " + VERSION_STORES + " version store...")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Import finalization finished, total duration: ");
 
@@ -280,7 +284,7 @@ public class ITExportImportPersist {
             zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Exporting from a MONGODB version store...")
+        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
         .contains(
             "Exported Nessie repository, 1 commits into 1 files, 1 named references into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
@@ -292,7 +296,7 @@ public class ITExportImportPersist {
         .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
         .containsPattern(
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
-        .contains("Importing into a MONGODB version store...")
+        .containsPattern("Importing into a " + VERSION_STORES + " version store...")
         .contains("Imported Nessie repository, 1 commits, 1 named references.")
         .contains("Import finalization finished, total duration: ");
 
@@ -313,7 +317,7 @@ public class ITExportImportPersist {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Exporting from a MONGODB version store...")
+        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
         .contains(
             "Exported Nessie repository, 4 commits into 1 files, 2 named references into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
@@ -325,7 +329,7 @@ public class ITExportImportPersist {
         .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
         .containsPattern(
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
-        .contains("Importing into a MONGODB version store...")
+        .containsPattern("Importing into a " + VERSION_STORES + " version store...")
         .contains("Imported Nessie repository, 4 commits, 2 named references.")
         .contains("Import finalization finished, total duration: ");
 

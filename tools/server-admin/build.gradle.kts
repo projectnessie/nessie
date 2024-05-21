@@ -77,6 +77,11 @@ dependencies {
   testFixturesApi(project(":nessie-quarkus-tests"))
   testFixturesApi(project(":nessie-versioned-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-jdbc-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-bigtable-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-dynamodb-tests"))
+  intTestImplementation(project(":nessie-multi-env-test-engine"))
   testFixturesApi(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesApi("io.quarkus:quarkus-junit5")
@@ -144,4 +149,13 @@ if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest").configure { this.enabled = false }
+}
+
+tasks.named<Test>("intTest").configure {
+  // Reduce likelihood of OOM due to too many Quarkus apps in memory;
+  // Ideally, set this number to the number of IT classes to run for each backend.
+  forkEvery = 4
+  // Optional; comma-separated list of backend names to test against;
+  // see NessieServerAdminTestBackends for valid values.
+  systemProperty("backends", System.getProperty("backends"))
 }
