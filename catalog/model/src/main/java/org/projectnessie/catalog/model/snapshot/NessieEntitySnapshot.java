@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -116,6 +117,9 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
   // FIXME is this nullable? The builder method says yes, but the interface says no.
   Instant lastUpdatedTimestamp();
 
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  Set<String> additionalKnownLocations();
+
   @SuppressWarnings("unused")
   interface Builder<B extends Builder<B>> {
     @CanIgnoreReturnValue
@@ -159,5 +163,17 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
 
     @CanIgnoreReturnValue
     B icebergLocation(String icebergLocation);
+
+    @CanIgnoreReturnValue
+    B addAdditionalKnownLocation(String element);
+
+    @CanIgnoreReturnValue
+    B addAdditionalKnownLocations(String... elements);
+
+    @CanIgnoreReturnValue
+    B additionalKnownLocations(Iterable<String> elements);
+
+    @CanIgnoreReturnValue
+    B addAllAdditionalKnownLocations(Iterable<String> elements);
   }
 }
