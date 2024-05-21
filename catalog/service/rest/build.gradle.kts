@@ -66,8 +66,6 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  testFixturesApi(project(":nessie-combined-cs"))
-
   testCompileOnly(libs.microprofile.openapi)
 }
 

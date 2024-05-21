@@ -15,8 +15,6 @@
  */
 package org.projectnessie.nessie.combined;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV2;
@@ -68,19 +66,6 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
   public CombinedClientBuilder withPersist(Persist persist) {
     this.persist = persist;
     return this;
-  }
-
-  public <API extends NessieApi> API buildForProduction(Class<API> apiContract) {
-    RestV2ConfigResource configResource = this.configResource;
-    RestV2TreeResource treeResource = this.treeResource;
-
-    checkState(
-        configResource != null && treeResource != null, "configResource or treeResource missing");
-
-    // Optimistic cast...
-    @SuppressWarnings("unchecked")
-    API r = (API) new CombinedClientImpl(configResource, treeResource);
-    return r;
   }
 
   @Override
