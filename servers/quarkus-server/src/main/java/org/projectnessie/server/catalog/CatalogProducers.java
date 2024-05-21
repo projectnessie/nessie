@@ -29,6 +29,7 @@ import io.smallrye.context.SmallRyeThreadContext;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
@@ -74,8 +75,9 @@ import org.projectnessie.quarkus.config.CatalogGcsConfig;
 import org.projectnessie.quarkus.config.CatalogS3Config;
 import org.projectnessie.quarkus.config.CatalogServiceConfig;
 import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
+import org.projectnessie.services.rest.RestV2ConfigResource;
+import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -284,9 +286,13 @@ public class CatalogProducers {
   }
 
   @Produces
-  @Singleton
-  public NessieApiV2 nessieApiV2(Persist persist) {
-    return new CombinedClientBuilder().withPersist(persist).build(NessieApiV2.class);
+  @RequestScoped
+  public NessieApiV2 nessieApiV2(
+      RestV2ConfigResource configResource, RestV2TreeResource treeResource) {
+    return new CombinedClientBuilder()
+        .withConfigResource(configResource)
+        .withTreeResource(treeResource)
+        .buildForProduction(NessieApiV2.class);
   }
 
   @Produces
