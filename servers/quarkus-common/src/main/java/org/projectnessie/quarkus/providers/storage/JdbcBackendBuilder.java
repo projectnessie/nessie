@@ -17,43 +17,64 @@ package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.JDBC;
 
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.datasource.common.runtime.DatabaseKind;
+import io.quarkus.arc.All;
+import io.quarkus.arc.InstanceHandle;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.util.List;
+import javax.sql.DataSource;
 import org.projectnessie.quarkus.config.QuarkusJdbcConfig;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendConfig;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @StoreType(JDBC)
 @Dependent
 public class JdbcBackendBuilder implements BackendBuilder {
 
-  @SuppressWarnings("CdiInjectionPointsInspection")
-  @Inject
-  AgroalDataSource dataSource;
+  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBackendBuilder.class);
 
   @Inject
-  @ConfigProperty(name = "quarkus.datasource.db-kind")
-  String databaseKind;
+  @All
+  @SuppressWarnings("CdiInjectionPointsInspection")
+  List<InstanceHandle<DataSource>> dataSources;
 
   @Inject QuarkusJdbcConfig config;
 
   @Override
   public Backend buildBackend() {
-    if (!DatabaseKind.isPostgreSQL(databaseKind) && !DatabaseKind.isH2(databaseKind)) {
-      throw new IllegalArgumentException(
-          "Database kind is configured to '"
-              + databaseKind
-              + "', which Nessie does not support yet, PostgreSQL, H2, MariaDb and MySQL(via mariaDb driver) are supported. "
-              + "Feel free to raise a pull request to support your database of choice.");
-    }
-
     JdbcBackendFactory factory = new JdbcBackendFactory();
-    JdbcBackendConfig c = JdbcBackendConfig.builder().from(config).dataSource(dataSource).build();
+    JdbcBackendConfig c =
+        JdbcBackendConfig.builder().from(config).dataSource(selectDataSource()).build();
     return factory.buildBackend(c);
+  }
+
+  private DataSource selectDataSource() {
+    String dataSourceName = config.datasource().orElse("default");
+    DataSource dataSource = null;
+    for (InstanceHandle<DataSource> handle : dataSources) {
+      String name = handle.getBean().getName();
+      if (name == null) {
+        name = "default";
+      }
+      if (name.equals(dataSourceName)) {
+        dataSource = handle.get();
+      }
+    }
+    if (dataSource == null) {
+      throw new IllegalStateException("No data source configured with name: " + dataSourceName);
+    }
+    if (dataSourceName.equals("default")) {
+      LOGGER.warn(
+          "Legacy datasource configuration found under quarkus.datasource.*: "
+              + "please migrate to quarkus.datasource.postgresql.* and "
+              + "set nessie.version.store.persist.jdbc.datasource=postgresql");
+    } else {
+      LOGGER.info("Using data source: {}", dataSourceName);
+    }
+    return dataSource;
   }
 }

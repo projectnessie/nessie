@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.storage.jdbc;
+package org.projectnessie.server;
 
-import java.sql.SQLException;
-import java.util.Map;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.TestProfile;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistMySQL;
 
-public interface DatabaseSpecific {
-
-  Map<JdbcColumnType, String> columnTypes();
-
-  Map<JdbcColumnType, Integer> columnTypeIds();
-
-  boolean isConstraintViolation(SQLException e);
-
-  boolean isRetryTransaction(SQLException e);
-
-  String wrapInsert(String sql);
-}
+@QuarkusIntegrationTest
+@TestProfile(QuarkusTestProfilePersistMySQL.class)
+@DisabledOnOs(OS.WINDOWS) // testcontainers does not support Windows
+class ITRestApiPersistMySQL extends AbstractQuarkusSmoke {}

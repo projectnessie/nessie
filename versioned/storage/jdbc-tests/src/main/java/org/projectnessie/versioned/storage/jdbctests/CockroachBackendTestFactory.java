@@ -37,11 +37,11 @@ public class CockroachBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   public Map<String, String> getQuarkusConfig() {
     return Map.of(
-        "quarkus.datasource.jdbc.url",
+        "quarkus.datasource.postgresql.jdbc.url",
         jdbcUrl(),
-        "quarkus.datasource.username",
+        "quarkus.datasource.postgresql.username",
         jdbcUser(),
-        "quarkus.datasource.password",
+        "quarkus.datasource.postgresql.password",
         jdbcPass());
   }
 }

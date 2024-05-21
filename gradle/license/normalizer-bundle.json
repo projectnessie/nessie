@@ -61,6 +61,7 @@
     { "bundleName" : "lgpl21", "licenseNamePattern" : "GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1" },
     { "bundleName" : "lgpl21", "licenseNamePattern" : "LGPL, version 2.1" },
     { "bundleName" : "lgpl21", "licenseNamePattern" : "LGPL 2.1" },
+    { "bundleName" : "lgpl21", "licenseNamePattern" : "LGPL-2.1" },
     { "bundleName" : "lgpl21", "licenseNamePattern" : "lgpl" },
 
     { "bundleName" : "lgpl3", "licenseNamePattern" : "Lesser General Public License, version 3 or greater" },

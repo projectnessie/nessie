@@ -36,6 +36,8 @@ dependencies {
   implementation("org.testcontainers:testcontainers")
   implementation("org.testcontainers:cassandra")
   implementation("org.testcontainers:postgresql")
+  implementation("org.testcontainers:mysql")
+  implementation("org.testcontainers:mariadb")
   implementation("org.testcontainers:mongodb")
   implementation(libs.docker.java.api)
   compileOnly(project(":nessie-keycloak-testcontainer"))
