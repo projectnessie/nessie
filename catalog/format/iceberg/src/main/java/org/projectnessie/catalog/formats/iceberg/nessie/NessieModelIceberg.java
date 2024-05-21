@@ -479,12 +479,14 @@ public class NessieModelIceberg {
       }
     }
 
+    Instant lastUpdatedTimestamp = Instant.ofEpochMilli(currentVersion.timestampMs());
     snapshot
         .icebergCurrentVersionId(currentVersion.versionId())
         .icebergDefaultCatalog(currentVersion.defaultCatalog())
         .icebergNamespace(currentVersion.defaultNamespace().levels())
         .icebergVersionSummary(currentVersion.summary())
-        .snapshotCreatedTimestamp(Instant.ofEpochMilli(currentVersion.timestampMs()));
+        .snapshotCreatedTimestamp(now())
+        .lastUpdatedTimestamp(lastUpdatedTimestamp);
 
     return snapshot.build();
   }
