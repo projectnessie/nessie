@@ -35,7 +35,6 @@ public class AdlsUnitTestProfile implements QuarkusTestProfile {
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".name", "warehouse1")
         .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location", ADLS_WAREHOUSE_LOCATION)
         .build();
   }

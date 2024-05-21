@@ -23,8 +23,16 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
 
 public interface CatalogConfig {
 
-  /** Default warehouse configuration. This is used when a warehouse is not specified in a query. */
-  Optional<? extends WarehouseConfig> defaultWarehouse();
+  /**
+   * Name of the default warehouse. This one is used when a warehouse is not specified in a query.
+   * If no default warehouse is configured and a request does not specify a warehouse, the request
+   * will fail.
+   */
+  Optional<String> defaultWarehouse();
+
+  /** Map of warehouse names to warehouse configurations. */
+  @ConfigPropertyName("warehouse-name")
+  Map<String, ? extends WarehouseConfig> warehouses();
 
   /**
    * Iceberg config defaults applicable to all clients and warehouses. Any properties that are
@@ -44,9 +52,21 @@ public interface CatalogConfig {
   @ConfigPropertyName("iceberg-property")
   Map<String, String> icebergConfigOverrides();
 
-  /** Map of warehouse names to warehouse configurations. */
-  @ConfigPropertyName("warehouse-name")
-  Map<String, ? extends WarehouseConfig> warehouses();
+  /**
+   * Returns the given {@code warehouse} if not-empty or the {@link #defaultWarehouse() default
+   * warehouse}. Throws an {@link IllegalStateException} if neither is given/present.
+   */
+  default String resolveWarehouseName(String warehouse) {
+    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
+    if (hasWarehouse) {
+      return warehouse;
+    }
+    Optional<String> def = defaultWarehouse();
+    if (def.isEmpty()) {
+      throw new IllegalStateException("No default-warehouse configured");
+    }
+    return def.get();
+  }
 
   /**
    * Attempts to match a warehouse by name or location. If no warehouse is found, the default
@@ -56,12 +76,15 @@ public interface CatalogConfig {
    * or the location to identify a warehouse.
    */
   default WarehouseConfig getWarehouse(String warehouse) {
+    String resolvedWarehouse = resolveWarehouseName(warehouse);
+    WarehouseConfig w = warehouses().get(resolvedWarehouse);
+    if (w != null) {
+      return w;
+    }
+
+    // Lookup the warehouse by location (but not by the default warehouse name).
     boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
     if (hasWarehouse) {
-      WarehouseConfig w = warehouses().get(warehouse);
-      if (w != null) {
-        return w;
-      }
       String warehouseLocation = removeTrailingSlash(warehouse);
       for (WarehouseConfig wc : warehouses().values()) {
         if (wc.location().equals(warehouseLocation)) {
@@ -70,15 +93,17 @@ public interface CatalogConfig {
       }
     }
 
-    // Nit-ish - prevent a lambda-allocation
-    Optional<? extends WarehouseConfig> def = defaultWarehouse();
-    if (def.isPresent()) {
-      return def.get();
-    }
-    throw new IllegalStateException(
-        hasWarehouse
-            ? "Warehouse '" + warehouse + "' is not defined and no default-warehouse is configured"
-            : "No default-warehouse configured");
+    throw new IllegalStateException("Warehouse '" + warehouse + "' is not known");
+  }
+
+  default void check() {
+    defaultWarehouse()
+        .ifPresent(
+            name -> {
+              if (!warehouses().containsKey(name)) {
+                throw new IllegalStateException("Default warehouse '" + name + "' is not defined.");
+              }
+            });
   }
 
   static String removeTrailingSlash(String s) {

@@ -39,7 +39,6 @@ public class S3UnitTestProfile implements QuarkusTestProfile {
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".name", "warehouse1")
         .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location", S3_WAREHOUSE_LOCATION)
         .build();
   }

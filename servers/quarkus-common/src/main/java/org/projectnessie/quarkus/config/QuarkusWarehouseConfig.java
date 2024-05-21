@@ -23,10 +23,6 @@ import org.projectnessie.catalog.service.config.WarehouseConfig;
 
 public interface QuarkusWarehouseConfig extends WarehouseConfig {
   @Override
-  @WithName("name")
-  String name();
-
-  @Override
   @WithName("iceberg-config-defaults")
   Map<String, String> icebergConfigDefaults();
 

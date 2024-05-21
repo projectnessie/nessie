@@ -26,7 +26,7 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
 public interface QuarkusCatalogConfig extends CatalogConfig {
   @Override
   @WithName("default-warehouse")
-  Optional<QuarkusWarehouseConfig> defaultWarehouse();
+  Optional<String> defaultWarehouse();
 
   @Override
   @WithName("warehouses")
