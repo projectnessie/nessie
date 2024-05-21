@@ -507,7 +507,7 @@ abstract class AbstractJdbcPersist implements Persist {
             for (int i = 0; i < updated.length; i++) {
               if (updated[i] == 1) {
                 r[batchIndexToObjIndex.get(i)] = true;
-              } else if (updated[i] < 0 || updated[i] > 1) {
+              } else if (updated[i] != 0) {
                 throw new IllegalStateException(
                     "driver returned unexpected value for a batch update: " + updated[i]);
               }
