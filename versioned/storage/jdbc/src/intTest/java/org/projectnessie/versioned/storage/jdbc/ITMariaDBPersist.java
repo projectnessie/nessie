@@ -16,8 +16,8 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
-import org.projectnessie.versioned.storage.jdbctests.MariaDbBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbctests.MariaDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
-@NessieBackend(MariaDbBackendTestFactory.class)
-public class ITMariaDbPersist extends AbstractPersistTests {}
+@NessieBackend(MariaDBBackendTestFactory.class)
+public class ITMariaDBPersist extends AbstractPersistTests {}

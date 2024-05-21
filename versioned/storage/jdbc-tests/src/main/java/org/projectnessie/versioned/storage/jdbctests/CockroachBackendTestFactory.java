@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbctests;
 
 import jakarta.annotation.Nonnull;
+import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
 import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -31,5 +32,16 @@ public class CockroachBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
     return new CockroachContainer(dockerImage("cockroach"));
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "quarkus.datasource.jdbc.url",
+        jdbcUrl(),
+        "quarkus.datasource.username",
+        jdbcUser(),
+        "quarkus.datasource.password",
+        jdbcPass());
   }
 }
