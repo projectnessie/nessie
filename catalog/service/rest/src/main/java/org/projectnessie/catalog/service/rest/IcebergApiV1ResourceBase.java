@@ -40,7 +40,6 @@ import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.CatalogConfig;
-import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -237,15 +236,10 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       parsedReference =
           ParsedReference.parsedReference(serverConfig.getDefaultBranch(), null, BRANCH);
     }
-    if (warehouse == null) {
-      warehouse =
-          catalogConfig
-              .defaultWarehouse()
-              .map(WarehouseConfig::name)
-              .orElseThrow(() -> new IllegalStateException("No default warehouse configured"));
-    }
 
-    return decodedPrefix(parsedReference, warehouse);
+    String resolvedWarehouse = catalogConfig.resolveWarehouseName(warehouse);
+
+    return decodedPrefix(parsedReference, resolvedWarehouse);
   }
 
   static Branch checkBranch(Reference reference) {

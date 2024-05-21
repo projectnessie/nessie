@@ -108,8 +108,8 @@ public class TestVendedS3CredentialsExpiry {
     @Override
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
-          .put("nessie.catalog.default-warehouse.name", "warehouse")
-          .put("nessie.catalog.default-warehouse.location", "s3://test-bucket")
+          .put("nessie.catalog.default-warehouse", "warehouse")
+          .put("nessie.catalog.warehouses.warehouse.location", "s3://test-bucket")
           .put("nessie.catalog.service.s3.cloud", Cloud.PRIVATE.name())
           .put("nessie.catalog.service.s3.region", "us-west-2")
           .put("nessie.catalog.service.s3.auth-mode", S3ClientAuthenticationMode.ASSUME_ROLE.name())
