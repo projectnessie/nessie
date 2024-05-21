@@ -61,7 +61,6 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.datastax.oss.driver.api.core.servererrors.CASWriteUnknownException;
 import com.datastax.oss.driver.api.core.servererrors.QueryExecutionException;
 import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
@@ -360,29 +359,13 @@ public final class CassandraBackend implements Backend {
 
   static void handleDriverException(DriverException e) {
     if (e instanceof QueryExecutionException) {
-      if (e instanceof CASWriteUnknownException) {
-        logCASWriteUnknown((CASWriteUnknownException) e);
-      } else {
-        throw new UnknownOperationResultException(e);
-      }
+      throw new UnknownOperationResultException(e);
     } else if (e instanceof DriverTimeoutException
         || e instanceof NodeUnavailableException
         || e instanceof AllNodesFailedException) {
       throw new UnknownOperationResultException(e);
     } else {
       throw e;
-    }
-  }
-
-  @SuppressWarnings("Slf4jDoNotLogMessageOfExceptionExplicitly")
-  private static void logCASWriteUnknown(CASWriteUnknownException e) {
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Assuming CAS failed due to CASWriteUnknownException with message'{}', coordinator: {}, errors: {}, warnings: {}",
-          e.getMessage(),
-          e.getExecutionInfo().getCoordinator(),
-          e.getExecutionInfo().getErrors(),
-          e.getExecutionInfo().getWarnings());
     }
   }
 
