@@ -15,17 +15,28 @@
  */
 package org.projectnessie.junit.engine;
 
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.engine.JupiterTestEngine;
+import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
+import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
+import org.junit.jupiter.engine.descriptor.ClassTestDescriptor;
+import org.junit.jupiter.engine.descriptor.NestedClassTestDescriptor;
+import org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.ExecutionRequest;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestEngine;
 import org.junit.platform.engine.UniqueId;
+import org.junit.platform.engine.UniqueId.Segment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +75,7 @@ public class MultiEnvTestEngine implements TestEngine {
 
   public static final String ENGINE_ID = "nessie-multi-env";
 
+  private static final SegmentTypes ROOT_KEY = new SegmentTypes(Collections.emptyList());
   private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
 
   private final JupiterTestEngine delegate = new JupiterTestEngine();
@@ -84,33 +96,71 @@ public class MultiEnvTestEngine implements TestEngine {
       TestDescriptor originalRoot = delegate.discover(discoveryRequest, uniqueId);
       List<TestDescriptor> originalChildren = new ArrayList<>(originalRoot.getChildren());
 
-      // Scan for multi-env test extensions
+      ListMultimap<SegmentTypes, TestDescriptor> nodeCache =
+          MultimapBuilder.hashKeys().arrayListValues().build();
+      nodeCache.put(ROOT_KEY, originalRoot);
+
+      // Scan existing nodes for multi-env test extensions
       originalRoot.accept(
-          descriptor -> {
-            if (descriptor instanceof ClassBasedTestDescriptor) {
-              Class<?> testClass = ((ClassBasedTestDescriptor) descriptor).getTestClass();
+          testDescriptor -> {
+            if (testDescriptor instanceof ClassTestDescriptor) {
+              Class<?> testClass = ((ClassBasedTestDescriptor) testDescriptor).getTestClass();
+
               registry.registerExtensions(testClass);
+
+              List<? extends MultiEnvTestExtension> orderedMultiEnvExtensionsOnTest =
+                  registry.stream(testClass)
+                      .sorted(
+                          Comparator.comparing(MultiEnvTestExtension::segmentPriority)
+                              .reversed()
+                              .thenComparing(MultiEnvTestExtension::segmentType))
+                      .collect(Collectors.toList());
+
+              if (orderedMultiEnvExtensionsOnTest.isEmpty()) {
+                return;
+              }
+
+              // Construct an intermediate tree of the cartesian product of applied extensions.
+              // Multiple nodes will exist at a given level - one for each combination of possible
+              // environment IDs (including expanding parent nodes).
+              List<TestDescriptor> parentNodes;
+              SegmentTypes currentPosition = ROOT_KEY;
+              for (MultiEnvTestExtension extension : orderedMultiEnvExtensionsOnTest) {
+                parentNodes = nodeCache.get(currentPosition);
+                currentPosition = currentPosition.append(extension.segmentType());
+
+                for (TestDescriptor parentNode : parentNodes) {
+                  for (String environmentId :
+                      extension.allEnvironmentIds(discoveryRequest.getConfigurationParameters())) {
+                    UniqueId newId =
+                        parentNode.getUniqueId().append(extension.segmentType(), environmentId);
+                    MultiEnvTestDescriptor newChild =
+                        new MultiEnvTestDescriptor(newId, environmentId);
+                    parentNode.addChild(newChild);
+                    nodeCache.put(currentPosition, newChild);
+                  }
+                }
+              }
+
+              // Add this test into each known node at the current level
+              List<String> currentSegmentTypes = currentPosition.get();
+              for (TestDescriptor nodeAtCurrentPosition : nodeCache.get(currentPosition)) {
+                String environmentNames =
+                    nodeAtCurrentPosition.getUniqueId().getSegments().stream()
+                        .filter(s -> currentSegmentTypes.contains(s.getType()))
+                        .map(Segment::getValue)
+                        .collect(Collectors.joining(","));
+
+                putTestIntoParent(
+                    testDescriptor, nodeAtCurrentPosition, environmentNames, discoveryRequest);
+              }
             }
           });
 
       // Note: this also removes the reference to parent from the child
       originalChildren.forEach(originalRoot::removeChild);
 
-      // Append each extension's IDs in a new, nested, layer
-      MultiEnvTestDescriptorTree tree =
-          new MultiEnvTestDescriptorTree(
-              originalRoot, discoveryRequest.getConfigurationParameters());
-      registry.stream()
-          .sorted(
-              Comparator.comparing(MultiEnvTestExtension::segmentPriority)
-                  .reversed()
-                  .thenComparing(MultiEnvTestExtension::segmentType))
-          .forEach(tree::appendDescriptorsForExtension);
-
-      // Migrate the actual tests from the root to each of the leaves of the new tree
-      tree.addOriginalChildrenToFinishedTree(discoveryRequest);
-
-      return tree.getRootNode();
+      return originalRoot;
     } catch (Exception e) {
       LOGGER.error("Failed to discover tests", e);
       throw new RuntimeException(e);
@@ -129,5 +179,93 @@ public class MultiEnvTestEngine implements TestEngine {
 
   public static void clearRegistry() {
     registry.clear();
+  }
+
+  /** Immutable key of segment types for the intermediate cartesian product tree. */
+  private static class SegmentTypes {
+
+    private final List<String> components;
+
+    public SegmentTypes(List<String> components) {
+      this.components = components;
+    }
+
+    public List<String> get() {
+      return new ArrayList<>(components);
+    }
+
+    public SegmentTypes append(String component) {
+      List<String> newComponents = new ArrayList<>(components);
+      newComponents.add(component);
+      return new SegmentTypes(newComponents);
+    }
+
+    @Override
+    public String toString() {
+      return components.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      SegmentTypes segmentTypes = (SegmentTypes) o;
+      return Objects.equals(components, segmentTypes.components);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(components);
+    }
+  }
+
+  private static void putTestIntoParent(
+      TestDescriptor test,
+      TestDescriptor parent,
+      String environmentNames,
+      EngineDiscoveryRequest discoveryRequest) {
+    JupiterConfiguration nodeConfiguration =
+        new CachingJupiterConfiguration(
+            new MultiEnvJupiterConfiguration(
+                discoveryRequest.getConfigurationParameters(), environmentNames));
+
+    parent.addChild(nodeWithIdAsChildOf(test, parent.getUniqueId(), nodeConfiguration));
+  }
+
+  /**
+   * Returns a new TestDescriptor node as if it were a child of the provided parent ID. Recursively
+   * generates new children with appropriate IDs, if any.
+   */
+  private static TestDescriptor nodeWithIdAsChildOf(
+      TestDescriptor originalNode, UniqueId parentId, JupiterConfiguration configuration) {
+    UniqueId newId = parentId.append(originalNode.getUniqueId().getLastSegment());
+
+    TestDescriptor nodeWithNewId;
+    if (originalNode instanceof ClassTestDescriptor) {
+      nodeWithNewId =
+          new ClassTestDescriptor(
+              newId, ((ClassTestDescriptor) originalNode).getTestClass(), configuration);
+    } else if (originalNode instanceof NestedClassTestDescriptor) {
+      nodeWithNewId =
+          new NestedClassTestDescriptor(
+              newId, ((NestedClassTestDescriptor) originalNode).getTestClass(), configuration);
+    } else if (originalNode instanceof TestMethodTestDescriptor) {
+      nodeWithNewId =
+          new TestMethodTestDescriptor(
+              newId,
+              ((TestMethodTestDescriptor) originalNode).getTestClass(),
+              ((TestMethodTestDescriptor) originalNode).getTestMethod(),
+              configuration);
+    } else {
+      throw new IllegalArgumentException(
+          String.format("Unable to process node of type %s.", originalNode.getClass().getName()));
+    }
+
+    for (TestDescriptor originalChild : originalNode.getChildren()) {
+      TestDescriptor newChild = nodeWithIdAsChildOf(originalChild, newId, configuration);
+      nodeWithNewId.addChild(newChild);
+    }
+
+    return nodeWithNewId;
   }
 }

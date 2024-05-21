@@ -16,14 +16,10 @@
 package org.projectnessie.junit.engine;
 
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.UniqueId;
-import org.junit.platform.engine.UniqueId.Segment;
 import org.junit.platform.launcher.PostDiscoveryFilter;
 
 /**
@@ -54,25 +50,18 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
     // Keep separate registry from MultiEnvTestEngine in case we are running on another engine and
     // still need to filter.
     registry.registerExtensions(testClass);
-    if (id.getEngineId().map("junit-jupiter"::equals).orElse(false)) {
-      if (registry.stream(testClass).findAny().isPresent()) {
+
+    boolean isJunitEngine = id.getEngineId().map("junit-jupiter"::equals).orElse(false);
+    boolean isMultiEnvTest = registry.stream(testClass).findAny().isPresent();
+
+    if (isJunitEngine) {
+      if (isMultiEnvTest) {
         return FilterResult.excluded("Excluding multi-env test from Jupiter Engine: " + id);
       } else {
         return FilterResult.included(null);
       }
     } else {
-      // check whether any of the extensions declared by the test recognize the version segment
-      Set<String> registeredMultiEnvSegmentTypes =
-          registry.stream(testClass)
-              .map(MultiEnvTestExtension::segmentType)
-              .collect(Collectors.toUnmodifiableSet());
-
-      Stream<String> segmentTypesInTestId = id.getSegments().stream().map(Segment::getType);
-
-      boolean atLeastOneSegmentTypeIsMultiEnv =
-          segmentTypesInTestId.anyMatch(registeredMultiEnvSegmentTypes::contains);
-
-      if (atLeastOneSegmentTypeIsMultiEnv) {
+      if (isMultiEnvTest) {
         return FilterResult.included(null);
       } else {
         return FilterResult.excluded("Excluding unmatched multi-env test: " + id);
