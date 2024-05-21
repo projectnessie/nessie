@@ -15,7 +15,8 @@
  */
 package org.projectnessie.nessie.combined;
 
-import java.security.Principal;
+import static com.google.common.base.Preconditions.checkState;
+
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV2;
@@ -39,6 +40,8 @@ import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
  */
 public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieClientBuilder {
   private Persist persist;
+  private RestV2ConfigResource configResource;
+  private RestV2TreeResource treeResource;
 
   public CombinedClientBuilder() {}
 
@@ -52,13 +55,51 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
     return 50;
   }
 
-  public NessieClientBuilder withPersist(Persist persist) {
+  public CombinedClientBuilder withConfigResource(RestV2ConfigResource configResource) {
+    this.configResource = configResource;
+    return this;
+  }
+
+  public CombinedClientBuilder withTreeResource(RestV2TreeResource treeResource) {
+    this.treeResource = treeResource;
+    return this;
+  }
+
+  public CombinedClientBuilder withPersist(Persist persist) {
     this.persist = persist;
     return this;
   }
 
+  public <API extends NessieApi> API buildForProduction(Class<API> apiContract) {
+    RestV2ConfigResource configResource = this.configResource;
+    RestV2TreeResource treeResource = this.treeResource;
+
+    checkState(
+        configResource != null && treeResource != null, "configResource or treeResource missing");
+
+    // Optimistic cast...
+    @SuppressWarnings("unchecked")
+    API r = (API) new CombinedClientImpl(configResource, treeResource);
+    return r;
+  }
+
   @Override
   public <API extends NessieApi> API build(Class<API> apiContract) {
+    RestV2ConfigResource configResource = this.configResource;
+    RestV2TreeResource treeResource = this.treeResource;
+
+    if (configResource != null && treeResource != null) {
+      // Optimistic cast...
+      @SuppressWarnings("unchecked")
+      API r = (API) new CombinedClientImpl(configResource, treeResource);
+      return r;
+    }
+
+    if (configResource != null || treeResource != null) {
+      throw new IllegalStateException(
+          "configResource or treeResource configured - this indicates a product bug");
+    }
+
     ServerConfig serverConfig =
         new ServerConfig() {
           @Override
@@ -75,13 +116,7 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
     VersionStore versionStore = new VersionStoreImpl(persist);
     Authorizer authorizer = c -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
-    AccessContext accessContext =
-        new AccessContext() {
-          @Override
-          public Principal user() {
-            return null;
-          }
-        };
+    AccessContext accessContext = () -> null;
 
     ConfigApiImpl configService =
         new ConfigApiImpl(serverConfig, versionStore, authorizer, accessContext, 2);
@@ -92,10 +127,9 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
     DiffApiImpl diffService =
         new DiffApiImpl(serverConfig, versionStore, authorizer, accessContext);
 
-    RestV2ConfigResource configResource =
+    configResource =
         new RestV2ConfigResource(serverConfig, versionStore, authorizer, accessContext);
-    RestV2TreeResource treeResource =
-        new RestV2TreeResource(configService, treeService, contentService, diffService);
+    treeResource = new RestV2TreeResource(configService, treeService, contentService, diffService);
 
     // Optimistic cast...
     @SuppressWarnings("unchecked")
