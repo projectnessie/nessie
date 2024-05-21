@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.inmemorytests;
 
+import java.util.Map;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackend;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
@@ -36,4 +37,9 @@ public class InmemoryBackendTestFactory implements BackendTestFactory {
 
   @Override
   public void stop() {}
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of();
+  }
 }

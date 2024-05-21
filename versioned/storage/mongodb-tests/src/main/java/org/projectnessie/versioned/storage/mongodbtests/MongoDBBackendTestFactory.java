@@ -66,11 +66,8 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
     }
   }
 
-  /**
-   * Starts MongoDB with an optional Docker network ID and a flag to turn off all output to stdout
-   * and stderr.
-   */
-  public void startMongo(Optional<String> containerNetworkId) {
+  @Override
+  public void start(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -129,7 +126,7 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
 
   @Override
   public void start() {
-    startMongo(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override
@@ -143,6 +140,7 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
     }
   }
 
+  @Override
   public Map<String, String> getQuarkusConfig() {
     Map<String, String> config = new HashMap<>();
     config.put("quarkus.mongodb.connection-string", connectionString);

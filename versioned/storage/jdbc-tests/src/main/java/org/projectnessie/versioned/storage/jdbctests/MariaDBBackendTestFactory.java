@@ -16,11 +16,12 @@
 package org.projectnessie.versioned.storage.jdbctests;
 
 import jakarta.annotation.Nonnull;
+import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
 
-public class MariaDbBackendTestFactory extends ContainerBackendTestFactory {
+public class MariaDBBackendTestFactory extends ContainerBackendTestFactory {
 
   @Override
   public String getName() {
@@ -29,8 +30,20 @@ public class MariaDbBackendTestFactory extends ContainerBackendTestFactory {
 
   @Nonnull
   @Override
+  @SuppressWarnings("resource")
   protected JdbcDatabaseContainer<?> createContainer() {
     String dockerImage = dockerImage("mariadb");
     return new MariaDBContainer<>(dockerImage).withUrlParam("useBulkStmtsForInserts", "false");
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "quarkus.datasource.mariadb.jdbc.url",
+        jdbcUrl(),
+        "quarkus.datasource.mariadb.username",
+        jdbcUser(),
+        "quarkus.datasource.mariadb.password",
+        jdbcPass());
   }
 }

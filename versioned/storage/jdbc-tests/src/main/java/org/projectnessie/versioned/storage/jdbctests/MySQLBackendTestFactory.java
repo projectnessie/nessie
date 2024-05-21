@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbctests;
 
 import jakarta.annotation.Nonnull;
+import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
@@ -30,8 +31,18 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String dockerImage = dockerImage("mysql");
-    return new MariaDBDriverMySQLContainer(dockerImage);
+    return new MariaDBDriverMySQLContainer(dockerImage("mysql"));
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "quarkus.datasource.mariadb.jdbc.url",
+        jdbcUrl(),
+        "quarkus.datasource.mariadb.username",
+        jdbcUser(),
+        "quarkus.datasource.mariadb.password",
+        jdbcPass());
   }
 
   private static class MariaDBDriverMySQLContainer

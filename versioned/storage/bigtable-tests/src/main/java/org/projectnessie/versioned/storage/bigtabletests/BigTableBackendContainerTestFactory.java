@@ -63,8 +63,9 @@ public class BigTableBackendContainerTestFactory extends AbstractBigTableBackend
     }
   }
 
+  @Override
   @SuppressWarnings("resource")
-  public void startBigtable(Optional<String> containerNetworkId) {
+  public void start(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -120,7 +121,7 @@ public class BigTableBackendContainerTestFactory extends AbstractBigTableBackend
 
   @Override
   public void start() {
-    startBigtable(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override

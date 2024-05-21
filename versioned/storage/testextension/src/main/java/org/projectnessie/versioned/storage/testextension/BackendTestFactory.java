@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.testextension;
 
+import java.util.Map;
+import java.util.Optional;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 
 public interface BackendTestFactory {
@@ -22,7 +24,21 @@ public interface BackendTestFactory {
 
   void start() throws Exception;
 
+  /**
+   * For backends relying on containers, start the backend with an optional container network ID.
+   * Behaves the same as {@link #start()} by default.
+   */
+  default void start(Optional<String> containerNetworkId) throws Exception {
+    start();
+  }
+
   void stop() throws Exception;
 
   String getName();
+
+  /**
+   * When testing a Quarkus application, returns a map of Quarkus configuration properties that
+   * should be set for the backend.
+   */
+  Map<String, String> getQuarkusConfig();
 }

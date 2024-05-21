@@ -71,7 +71,8 @@ public abstract class ContainerBackendTestFactory extends AbstractJdbcBackendTes
     return container.getPassword();
   }
 
-  private void startJdbc(Optional<String> containerNetworkId) throws Exception {
+  @Override
+  public void start(Optional<String> containerNetworkId) throws Exception {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -100,7 +101,7 @@ public abstract class ContainerBackendTestFactory extends AbstractJdbcBackendTes
 
   @Override
   public void start() throws Exception {
-    startJdbc(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override

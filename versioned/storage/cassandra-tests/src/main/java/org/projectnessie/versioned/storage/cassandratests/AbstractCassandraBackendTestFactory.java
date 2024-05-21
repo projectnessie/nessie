@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackend;
@@ -98,8 +99,9 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
         .createClient();
   }
 
+  @Override
   @SuppressWarnings("resource")
-  public void startTestNode(Optional<String> containerNetworkId) {
+  public void start(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -177,7 +179,7 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
 
   @Override
   public void start() {
-    startTestNode(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override
@@ -189,5 +191,16 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
     } finally {
       container = null;
     }
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "quarkus.cassandra.contact-points",
+        String.format("%s:%d", getHostAndPort().getHostName(), getHostAndPort().getPort()),
+        "quarkus.cassandra.local-datacenter",
+        getLocalDc(),
+        "quarkus.cassandra.keyspace",
+        getKeyspace());
   }
 }

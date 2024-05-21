@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,45 +15,34 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
-import java.util.Optional;
-import org.projectnessie.versioned.storage.jdbctests.PostgreSQLBackendTestFactory;
+import org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory;
 
-public class PostgresTestResourceLifecycleManager
-    implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
-  private PostgreSQLBackendTestFactory postgres;
+public class RocksTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
-  private Optional<String> containerNetworkId;
-
-  @Override
-  public void setIntegrationTestContext(DevServicesContext context) {
-    containerNetworkId = context.containerNetworkId();
-  }
+  private RocksDBBackendTestFactory rocksdb;
 
   @Override
   public Map<String, String> start() {
-    postgres = new PostgreSQLBackendTestFactory();
+    rocksdb = new RocksDBBackendTestFactory();
 
     try {
-      postgres.start(containerNetworkId);
+      rocksdb.start();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
-    return postgres.getQuarkusConfig();
+    return rocksdb.getQuarkusConfig();
   }
 
   @Override
   public void stop() {
-    if (postgres != null) {
+    if (rocksdb != null) {
       try {
-        postgres.stop();
+        rocksdb.stop();
       } catch (Exception e) {
         throw new RuntimeException(e);
-      } finally {
-        postgres = null;
       }
     }
   }

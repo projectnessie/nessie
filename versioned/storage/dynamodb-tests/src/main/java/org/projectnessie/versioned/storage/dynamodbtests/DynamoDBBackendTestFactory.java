@@ -16,10 +16,12 @@
 package org.projectnessie.versioned.storage.dynamodbtests;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static software.amazon.awssdk.regions.Region.US_WEST_2;
 
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
@@ -93,8 +95,9 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
     }
   }
 
+  @Override
   @SuppressWarnings("resource")
-  public void startDynamo(Optional<String> containerNetworkId) {
+  public void start(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -134,7 +137,7 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
 
   @Override
   public void start() {
-    startDynamo(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override
@@ -150,5 +153,20 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
 
   public String getEndpointURI() {
     return endpointURI;
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "quarkus.dynamodb.endpoint-override",
+        getEndpointURI(),
+        "quarkus.dynamodb.aws.region",
+        US_WEST_2.id(),
+        "quarkus.dynamodb.aws.credentials.type",
+        "STATIC",
+        "quarkus.dynamodb.aws.credentials.static-provider.access-key-id",
+        "xxx",
+        "quarkus.dynamodb.aws.credentials.static-provider.secret-access-key",
+        "xxx");
   }
 }
