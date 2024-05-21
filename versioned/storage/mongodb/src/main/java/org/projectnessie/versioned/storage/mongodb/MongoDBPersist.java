@@ -788,13 +788,7 @@ public class MongoDBPersist implements Persist {
   }
 
   static RuntimeException handleMongoWriteException(MongoWriteException e) {
-    switch (e.getError().getCategory()) {
-      case EXECUTION_TIMEOUT:
-      case UNCATEGORIZED:
-        return new UnknownOperationResultException(e);
-      default:
-        return e;
-    }
+    return handleMongoWriteError(e, e.getError());
   }
 
   static RuntimeException handleMongoWriteError(MongoException e, WriteError error) {
