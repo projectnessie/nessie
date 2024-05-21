@@ -51,7 +51,8 @@ public class ITOAuthProxyIcebergCatalog extends AbstractAuthEnabledTests {
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> config = new HashMap<>(super.getConfigOverrides());
-      config.put("nessie.catalog.default-warehouse.allow-auth-proxy", "true");
+      config.put("nessie.catalog.default-warehouse", "warehouse");
+      config.put("nessie.catalog.warehouses.warehouse.allow-auth-proxy", "true");
       return config;
     }
   }

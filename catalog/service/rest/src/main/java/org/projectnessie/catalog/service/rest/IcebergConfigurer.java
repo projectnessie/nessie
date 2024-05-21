@@ -95,7 +95,9 @@ public class IcebergConfigurer {
   @Context ExternalBaseUri uriInfo;
 
   public Map<String, String> icebergConfigDefaults(String reference, String warehouse) {
+    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
     WarehouseConfig warehouseConfig = catalogConfig.getWarehouse(warehouse);
+
     String branch = defaultBranchName(reference);
     Map<String, String> config = new HashMap<>();
     config.put(FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
@@ -105,11 +107,12 @@ public class IcebergConfigurer {
     config.putAll(catalogConfig.icebergConfigDefaults());
     config.putAll(warehouseConfig.icebergConfigDefaults());
     // Set the "default" prefix
-    if (catalogConfig.defaultWarehouse().isPresent()
-        && warehouseConfig.equals(catalogConfig.defaultWarehouse().get())) {
+    if (!hasWarehouse && catalogConfig.defaultWarehouse().isPresent()) {
       config.put(ICEBERG_PREFIX, encode(branch, UTF_8));
     } else {
-      config.put(ICEBERG_PREFIX, encode(branch + "|" + warehouseConfig.name(), UTF_8));
+      config.put(
+          ICEBERG_PREFIX,
+          encode(branch + "|" + catalogConfig.resolveWarehouseName(warehouse), UTF_8));
     }
     return config;
   }

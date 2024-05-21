@@ -23,6 +23,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.oidc.OidcTenantConfig;
 import io.quarkus.oidc.common.runtime.OidcCommonUtils;
 import io.quarkus.oidc.runtime.OidcConfig;
+import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.TlsConfig;
 import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
@@ -30,6 +31,7 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
@@ -62,6 +64,7 @@ import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.rest.IcebergOAuthProxy;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
@@ -89,6 +92,10 @@ import software.amazon.awssdk.http.SdkHttpClient;
 public class CatalogProducers {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogProducers.class);
+
+  void eagerCatalogConfigValidation(@Observes StartupEvent ev, CatalogConfig catalogConfig) {
+    catalogConfig.check();
+  }
 
   @Produces
   @Singleton

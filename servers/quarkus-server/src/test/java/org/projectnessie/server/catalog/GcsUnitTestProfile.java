@@ -35,7 +35,6 @@ public class GcsUnitTestProfile implements QuarkusTestProfile {
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".name", "warehouse1")
         .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location", GCS_WAREHOUSE_LOCATION)
         .build();
   }
