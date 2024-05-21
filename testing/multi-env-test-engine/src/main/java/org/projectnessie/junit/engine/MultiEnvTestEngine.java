@@ -15,14 +15,18 @@
  */
 package org.projectnessie.junit.engine;
 
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.segmentTypeOf;
+
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
@@ -77,6 +81,8 @@ public class MultiEnvTestEngine implements TestEngine {
 
   private static final SegmentTypes ROOT_KEY = new SegmentTypes(Collections.emptyList());
   private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
+  private static final boolean FAIL_ON_MISSING_ENVIRONMENTS =
+      !Boolean.getBoolean("org.projectnessie.junit.engine.ignore-empty-environments");
 
   private final JupiterTestEngine delegate = new JupiterTestEngine();
 
@@ -96,6 +102,9 @@ public class MultiEnvTestEngine implements TestEngine {
       TestDescriptor originalRoot = delegate.discover(discoveryRequest, uniqueId);
       List<TestDescriptor> originalChildren = new ArrayList<>(originalRoot.getChildren());
 
+      AtomicBoolean foundAtLeastOneEnvironmentId = new AtomicBoolean();
+      List<String> processedExtensionNames = new ArrayList<>();
+
       ListMultimap<SegmentTypes, TestDescriptor> nodeCache =
           MultimapBuilder.hashKeys().arrayListValues().build();
       nodeCache.put(ROOT_KEY, originalRoot);
@@ -113,7 +122,7 @@ public class MultiEnvTestEngine implements TestEngine {
                       .sorted(
                           Comparator.comparing(MultiEnvTestExtension::segmentPriority)
                               .reversed()
-                              .thenComparing(MultiEnvTestExtension::segmentType))
+                              .thenComparing(MultiEnvAnnotationUtils::segmentTypeOf))
                       .collect(Collectors.toList());
 
               if (orderedMultiEnvExtensionsOnTest.isEmpty()) {
@@ -126,14 +135,16 @@ public class MultiEnvTestEngine implements TestEngine {
               List<TestDescriptor> parentNodes;
               SegmentTypes currentPosition = ROOT_KEY;
               for (MultiEnvTestExtension extension : orderedMultiEnvExtensionsOnTest) {
+                processedExtensionNames.add(extension.getClass().getSimpleName());
                 parentNodes = nodeCache.get(currentPosition);
-                currentPosition = currentPosition.append(extension.segmentType());
+                currentPosition = currentPosition.append(segmentTypeOf(extension));
 
                 for (TestDescriptor parentNode : parentNodes) {
                   for (String environmentId :
                       extension.allEnvironmentIds(discoveryRequest.getConfigurationParameters())) {
+                    foundAtLeastOneEnvironmentId.set(true);
                     UniqueId newId =
-                        parentNode.getUniqueId().append(extension.segmentType(), environmentId);
+                        parentNode.getUniqueId().append(segmentTypeOf(extension), environmentId);
                     MultiEnvTestDescriptor newChild =
                         new MultiEnvTestDescriptor(newId, environmentId);
                     parentNode.addChild(newChild);
@@ -160,6 +171,16 @@ public class MultiEnvTestEngine implements TestEngine {
       // Note: this also removes the reference to parent from the child
       originalChildren.forEach(originalRoot::removeChild);
 
+      if (FAIL_ON_MISSING_ENVIRONMENTS
+          && !processedExtensionNames.isEmpty()
+          && !foundAtLeastOneEnvironmentId.get()) {
+        throw new IllegalStateException(
+            String.format(
+                "%s was enabled, but test extensions %s did not discover any environment IDs.",
+                MultiEnvTestEngine.class.getSimpleName(),
+                Arrays.toString(processedExtensionNames.toArray())));
+      }
+
       return originalRoot;
     } catch (Exception e) {
       LOGGER.error("Failed to discover tests", e);
@@ -175,10 +196,6 @@ public class MultiEnvTestEngine implements TestEngine {
   @Override
   public Optional<String> getArtifactId() {
     return Optional.of("nessie-multi-env-test-engine");
-  }
-
-  public static void clearRegistry() {
-    registry.clear();
   }
 
   /** Immutable key of segment types for the intermediate cartesian product tree. */

@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -65,12 +64,6 @@ class TestNessieCompatibilityExtensions {
                 "The following test events have failed:\n:"
                     + failedEvents.stream().map(Event::toString).collect(Collectors.joining()))
         .isEqualTo(0);
-  }
-
-  @BeforeEach
-  public void beforeEach() {
-    MultiEnvTestEngine.clearRegistry();
-    MultiEnvTestFilter.clear();
   }
 
   @Test
@@ -216,6 +209,10 @@ class TestNessieCompatibilityExtensions {
   }
 
   @ExtendWith({OlderNessieClientsExtension.class, SoftAssertionsExtension.class})
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class OldClientsSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -261,6 +258,10 @@ class TestNessieCompatibilityExtensions {
   }
 
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class OldServersSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -311,6 +312,10 @@ class TestNessieCompatibilityExtensions {
   }
 
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class ApiEndpointServerSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -337,6 +342,10 @@ class TestNessieCompatibilityExtensions {
   }
 
   @ExtendWith(OlderNessieServersExtension.class)
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class OuterSample {
     static final List<Version> outerVersions = new ArrayList<>();
     static final List<Version> innerVersions = new ArrayList<>();
@@ -360,6 +369,10 @@ class TestNessieCompatibilityExtensions {
   }
 
   @ExtendWith({NessieUpgradesExtension.class, SoftAssertionsExtension.class})
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class UpgradeSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -406,6 +419,10 @@ class TestNessieCompatibilityExtensions {
 
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class TooManyExtensions1 {
     @Test
     void testSome() {}
@@ -413,6 +430,10 @@ class TestNessieCompatibilityExtensions {
 
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class TooManyExtensions2 {
     @Test
     void testSome() {}
@@ -420,6 +441,10 @@ class TestNessieCompatibilityExtensions {
 
   @ExtendWith(NessieUpgradesExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class TooManyExtensions3 {
     @Test
     void testSome() {}
@@ -428,6 +453,10 @@ class TestNessieCompatibilityExtensions {
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
+  @SuppressWarnings({
+    "JUnitMalformedDeclaration",
+    "NewClassNamingConvention"
+  }) // Intentionally not nested, used above
   static class TooManyExtensions4 {
     @Test
     void testSome() {}

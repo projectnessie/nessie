@@ -15,7 +15,10 @@
  */
 package org.projectnessie.junit.engine;
 
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findMultiEnvTestExtensionsOn;
+
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
 import org.junit.platform.engine.TestDescriptor;
@@ -34,7 +37,8 @@ import org.junit.platform.launcher.PostDiscoveryFilter;
  */
 public class MultiEnvTestFilter implements PostDiscoveryFilter {
 
-  private static MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
+  private static final Set<String> KNOWN_JUNIT_SEGMENT_TYPES =
+      Set.of("engine", "class", "nested-class", "method");
 
   private Optional<Class<?>> classFor(TestDescriptor object) {
     for (TestDescriptor d = object; d != null; d = d.getParent().orElse(null)) {
@@ -47,12 +51,12 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
   }
 
   private FilterResult filter(Class<?> testClass, UniqueId id) {
-    // Keep separate registry from MultiEnvTestEngine in case we are running on another engine and
-    // still need to filter.
-    registry.registerExtensions(testClass);
-
     boolean isJunitEngine = id.getEngineId().map("junit-jupiter"::equals).orElse(false);
-    boolean isMultiEnvTest = registry.stream(testClass).findAny().isPresent();
+    boolean isMultiEnvTest =
+        findMultiEnvTestExtensionsOn(testClass)
+            .map(MultiEnvAnnotationUtils::segmentTypeOf)
+            .findAny()
+            .isPresent();
 
     if (isJunitEngine) {
       if (isMultiEnvTest) {
@@ -74,9 +78,5 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
     return classFor(test)
         .map(testClass -> filter(testClass, test.getUniqueId()))
         .orElseGet(() -> FilterResult.included(null)); // fallback for non-class descriptors
-  }
-
-  public static void clear() {
-    registry = new MultiEnvExtensionRegistry();
   }
 }
