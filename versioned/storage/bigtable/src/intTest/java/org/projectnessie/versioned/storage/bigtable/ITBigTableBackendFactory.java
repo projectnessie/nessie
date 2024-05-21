@@ -49,7 +49,6 @@ public class ITBigTableBackendFactory {
 
       try (BigtableDataClient dataClient = testFactory.buildNewDataClient();
           BigtableTableAdminClient tableAdminClient = testFactory.buildNewTableAdminClient()) {
-        RepositoryDescription repoDesc;
         try (Backend backend =
             factory.buildBackend(
                 BigTableBackendConfig.builder()
@@ -65,10 +64,13 @@ public class ITBigTableBackendFactory {
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
           repositoryLogic.initialize("initializeAgain");
-          repoDesc = repositoryLogic.fetchRepositoryDescription();
+          RepositoryDescription repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repoDesc).isNotNull();
         }
+      }
 
+      try (BigtableDataClient dataClient = testFactory.buildNewDataClient();
+          BigtableTableAdminClient tableAdminClient = testFactory.buildNewTableAdminClient()) {
         try (Backend backend =
             factory.buildBackend(
                 BigTableBackendConfig.builder()
@@ -84,6 +86,7 @@ public class ITBigTableBackendFactory {
 
           RepositoryLogic repositoryLogic = repositoryLogic(persist);
           repositoryLogic.initialize("initializeAgain");
+          RepositoryDescription repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
         }
       }

@@ -40,6 +40,6 @@ public class BigTableBackendFactory implements BackendFactory<BigTableBackendCon
   @Override
   @Nonnull
   public Backend buildBackend(@Nonnull BigTableBackendConfig config) {
-    return new BigTableBackend(config, false);
+    return new BigTableBackend(config);
   }
 }
