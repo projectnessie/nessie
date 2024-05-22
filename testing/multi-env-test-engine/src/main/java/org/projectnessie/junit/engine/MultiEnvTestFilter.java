@@ -37,9 +37,6 @@ import org.junit.platform.launcher.PostDiscoveryFilter;
  */
 public class MultiEnvTestFilter implements PostDiscoveryFilter {
 
-  private static final Set<String> KNOWN_JUNIT_SEGMENT_TYPES =
-      Set.of("engine", "class", "nested-class", "method");
-
   private Optional<Class<?>> classFor(TestDescriptor object) {
     for (TestDescriptor d = object; d != null; d = d.getParent().orElse(null)) {
       if (d instanceof ClassBasedTestDescriptor) {
