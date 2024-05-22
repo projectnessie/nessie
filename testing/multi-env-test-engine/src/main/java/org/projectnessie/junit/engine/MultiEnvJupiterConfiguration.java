@@ -21,17 +21,17 @@ import org.junit.platform.engine.ConfigurationParameters;
 
 public class MultiEnvJupiterConfiguration extends DefaultJupiterConfiguration {
 
-  private final String environmentIds;
+  private final String environment;
 
   public MultiEnvJupiterConfiguration(
-      ConfigurationParameters configurationParameters, String environmentIds) {
+      ConfigurationParameters configurationParameters, String environment) {
     super(configurationParameters);
-    this.environmentIds = environmentIds;
+    this.environment = environment;
   }
 
   @Override
   public DisplayNameGenerator getDefaultDisplayNameGenerator() {
     DisplayNameGenerator delegate = super.getDefaultDisplayNameGenerator();
-    return new MultiEnvDisplayNameGenerator(delegate, environmentIds);
+    return new MultiEnvDisplayNameGenerator(delegate, environment);
   }
 }

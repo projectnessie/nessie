@@ -21,28 +21,25 @@ import org.junit.jupiter.api.DisplayNameGenerator;
 public class MultiEnvDisplayNameGenerator implements DisplayNameGenerator {
 
   private final DisplayNameGenerator delegate;
-  private final String environmentIds;
+  private final String environment;
 
-  public MultiEnvDisplayNameGenerator(DisplayNameGenerator delegate, String environmentIds) {
+  public MultiEnvDisplayNameGenerator(DisplayNameGenerator delegate, String environment) {
     this.delegate = delegate;
-    this.environmentIds = environmentIds;
+    this.environment = environment;
   }
 
   @Override
   public String generateDisplayNameForClass(Class<?> testClass) {
-    return delegate.generateDisplayNameForClass(testClass) + " [" + environmentIds + "]";
+    return delegate.generateDisplayNameForClass(testClass) + " [" + environment + "]";
   }
 
   @Override
   public String generateDisplayNameForNestedClass(Class<?> nestedClass) {
-    return delegate.generateDisplayNameForNestedClass(nestedClass) + " [" + environmentIds + "]";
+    return delegate.generateDisplayNameForNestedClass(nestedClass) + " [" + environment + "]";
   }
 
   @Override
   public String generateDisplayNameForMethod(Class<?> testClass, Method testMethod) {
-    return delegate.generateDisplayNameForMethod(testClass, testMethod)
-        + " ["
-        + environmentIds
-        + "]";
+    return delegate.generateDisplayNameForMethod(testClass, testMethod) + " [" + environment + "]";
   }
 }
