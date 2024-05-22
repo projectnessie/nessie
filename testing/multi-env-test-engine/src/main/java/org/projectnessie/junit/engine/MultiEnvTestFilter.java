@@ -18,7 +18,6 @@ package org.projectnessie.junit.engine;
 import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findMultiEnvTestExtensionsOn;
 
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
 import org.junit.platform.engine.TestDescriptor;
