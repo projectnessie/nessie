@@ -27,7 +27,7 @@ public class ITMariaDBPersistenceSpi extends AbstractJdbcPersistenceSpi {
 
   @BeforeAll
   static void createDataSource() throws Exception {
-    container = new MariaDBContainer<>(dockerImage("mariadb"));
+    container = new MariaDBContainer<>(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"));
     container.start();
     initDataSource(container.getJdbcUrl());
   }
