@@ -24,6 +24,7 @@ import jakarta.inject.Inject;
 import java.util.List;
 import javax.sql.DataSource;
 import org.projectnessie.quarkus.config.QuarkusJdbcConfig;
+import org.projectnessie.quarkus.config.datasource.DataSourceActivator;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendConfig;
@@ -53,13 +54,11 @@ public class JdbcBackendBuilder implements BackendBuilder {
   }
 
   private DataSource selectDataSource() {
-    String dataSourceName = config.datasource().orElse("default");
+    String dataSourceName = config.datasource().map(DataSourceActivator::unquote).orElse("default");
     DataSource dataSource = null;
     for (InstanceHandle<DataSource> handle : dataSources) {
       String name = handle.getBean().getName();
-      if (name == null) {
-        name = "default";
-      }
+      name = name == null ? "default" : DataSourceActivator.unquote(name);
       if (name.equals(dataSourceName)) {
         dataSource = handle.get();
       }

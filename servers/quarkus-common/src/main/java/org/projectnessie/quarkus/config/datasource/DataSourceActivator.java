@@ -50,11 +50,13 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
     return VersionStoreType.valueOf(versionStoreType.getValue());
   }
 
-  private static String dataSourceName(String name) {
-    if (name.equals("quarkus.datasource.active")) {
+  private static String dataSourceName(String property) {
+    if (property.equals("quarkus.datasource.active")) {
       return "default";
     }
-    return name.substring("quarkus.datasource.".length(), name.length() - ".active".length());
+    String dataSourceName =
+        property.substring("quarkus.datasource.".length(), property.length() - ".active".length());
+    return unquote(dataSourceName);
   }
 
   private static String activeDataSourceName(ConfigSourceInterceptorContext context) {
@@ -70,5 +72,12 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
         .withValue(value ? "true" : "false")
         .withConfigSourceOrdinal(APPLICATION_PROPERTIES_CLASSPATH_ORDINAL + 1)
         .build();
+  }
+
+  public static String unquote(String dataSourceName) {
+    if (dataSourceName.startsWith("\"") && dataSourceName.endsWith("\"")) {
+      dataSourceName = dataSourceName.substring(1, dataSourceName.length() - 1);
+    }
+    return dataSourceName;
   }
 }
