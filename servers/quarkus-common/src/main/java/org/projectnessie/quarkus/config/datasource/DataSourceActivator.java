@@ -20,6 +20,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.quarkus.providers.storage.JdbcBackendBuilder;
 
 /**
  * Activates a data source based on the current Nessie configuration under {@code
@@ -75,26 +76,21 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
 
   private static String dataSourceName(String property) {
     if (property.equals("quarkus.datasource.active")) {
-      return "default";
+      return JdbcBackendBuilder.DEFAULT_DATA_SOURCE_NAME;
     }
     String dataSourceName =
         property.substring("quarkus.datasource.".length(), property.length() - ".active".length());
-    return unquote(dataSourceName);
+    return JdbcBackendBuilder.unquoteDataSourceName(dataSourceName);
   }
 
   private static synchronized String activeDataSourceName(ConfigSourceInterceptorContext context) {
     if (activeDataSourceName == null) {
       ConfigValue value = context.proceed("nessie.version.store.persist.jdbc.datasource");
       activeDataSourceName =
-          value == null || value.getValue() == null ? "default" : unquote(value.getValue());
+          value == null || value.getValue() == null
+              ? JdbcBackendBuilder.DEFAULT_DATA_SOURCE_NAME
+              : JdbcBackendBuilder.unquoteDataSourceName(value.getValue());
     }
     return activeDataSourceName;
-  }
-
-  public static String unquote(String dataSourceName) {
-    if (dataSourceName.startsWith("\"") && dataSourceName.endsWith("\"")) {
-      dataSourceName = dataSourceName.substring(1, dataSourceName.length() - 1);
-    }
-    return dataSourceName;
   }
 }
