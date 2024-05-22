@@ -38,7 +38,7 @@ public class MongoTestResourceLifecycleManager
     mongo = new MongoDBBackendTestFactory();
 
     try {
-      mongo.startMongo(containerNetworkId);
+      mongo.start(containerNetworkId);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

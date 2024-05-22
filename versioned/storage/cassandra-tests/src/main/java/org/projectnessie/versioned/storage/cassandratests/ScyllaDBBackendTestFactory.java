@@ -30,7 +30,7 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
         "scylladb",
         asList(
             "--smp",
-            Integer.toString(max(getRuntime().availableProcessors(), 2)),
+            Integer.toString(max(getRuntime().availableProcessors() / 3, 2)),
             "--developer-mode",
             "1",
             "--skip-wait-for-gossip-to-settle",

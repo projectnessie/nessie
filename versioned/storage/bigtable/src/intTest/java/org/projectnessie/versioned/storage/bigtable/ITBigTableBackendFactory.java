@@ -46,10 +46,10 @@ public class ITBigTableBackendFactory {
       BackendFactory<BigTableBackendConfig> factory =
           PersistLoader.findFactoryByName(BigTableBackendFactory.NAME);
       soft.assertThat(factory).isNotNull().isInstanceOf(BigTableBackendFactory.class);
+      RepositoryDescription repoDesc;
 
       try (BigtableDataClient dataClient = testFactory.buildNewDataClient();
           BigtableTableAdminClient tableAdminClient = testFactory.buildNewTableAdminClient()) {
-        RepositoryDescription repoDesc;
         try (Backend backend =
             factory.buildBackend(
                 BigTableBackendConfig.builder()
@@ -68,7 +68,10 @@ public class ITBigTableBackendFactory {
           repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repoDesc).isNotNull();
         }
+      }
 
+      try (BigtableDataClient dataClient = testFactory.buildNewDataClient();
+          BigtableTableAdminClient tableAdminClient = testFactory.buildNewTableAdminClient()) {
         try (Backend backend =
             factory.buildBackend(
                 BigTableBackendConfig.builder()

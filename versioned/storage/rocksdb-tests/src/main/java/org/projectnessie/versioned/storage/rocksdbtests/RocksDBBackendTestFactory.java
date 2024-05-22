@@ -26,6 +26,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.rocksdb.RocksDBBackend;
 import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendConfig;
@@ -110,5 +111,10 @@ public final class RocksDBBackendTestFactory implements BackendTestFactory {
       failures.forEach(e::addSuppressed);
       throw e;
     }
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of("nessie.version.store.persist.rocks.database-path", rocksDir.toString());
   }
 }

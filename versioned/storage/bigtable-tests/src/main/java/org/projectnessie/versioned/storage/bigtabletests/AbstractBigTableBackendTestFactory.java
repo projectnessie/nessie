@@ -23,6 +23,7 @@ import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import java.io.IOException;
+import java.util.Map;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackend;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendConfig;
 import org.projectnessie.versioned.storage.bigtable.ImmutableBigTableBackendConfig.Builder;
@@ -35,13 +36,11 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
 
   @Override
   public Backend createNewBackend() {
-    return createNewBackend(bigtableConfigBuilder().build(), true);
+    return createNewBackend(bigtableConfigBuilder().build());
   }
 
-  @SuppressWarnings("ClassEscapesDefinedScope")
-  public BigTableBackend createNewBackend(
-      BigTableBackendConfig bigtableConfig, boolean closeClient) {
-    return new BigTableBackend(bigtableConfig, closeClient);
+  public Backend createNewBackend(BigTableBackendConfig bigtableConfig) {
+    return new BigTableBackend(bigtableConfig);
   }
 
   public Builder bigtableConfigBuilder() {
@@ -84,4 +83,17 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
   public abstract String getEmulatorHost();
 
   public abstract int getEmulatorPort();
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "nessie.version.store.persist.bigtable.emulator-host",
+        getEmulatorHost(),
+        "nessie.version.store.persist.bigtable.emulator-port",
+        Integer.toString(getEmulatorPort()),
+        "quarkus.google.cloud.project-id",
+        projectId,
+        "nessie.version.store.persist.bigtable.instance-id",
+        instanceId);
+  }
 }

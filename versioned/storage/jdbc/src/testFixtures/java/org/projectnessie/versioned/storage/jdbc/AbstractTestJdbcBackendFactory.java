@@ -183,7 +183,7 @@ public abstract class AbstractTestJdbcBackendFactory {
             Statement st = conn.createStatement()) {
           dropTables(conn, st);
 
-          st.executeUpdate("CREATE TABLE " + TABLE_REFS + " (foobarbaz VARCHAR PRIMARY KEY)");
+          st.executeUpdate("CREATE TABLE " + TABLE_REFS + " (foobarbaz VARCHAR(255) PRIMARY KEY)");
         }
 
         try (Backend backend =
@@ -211,9 +211,9 @@ public abstract class AbstractTestJdbcBackendFactory {
                   + TABLE_REFS
                   + " ("
                   + COL_REPO_ID
-                  + " VARCHAR, "
+                  + " VARCHAR(255), "
                   + COL_REFS_NAME
-                  + " VARCHAR, meep VARCHAR, boo VARCHAR, PRIMARY KEY ("
+                  + " VARCHAR(255), meep VARCHAR(255), boo VARCHAR(255), PRIMARY KEY ("
                   + COL_REPO_ID
                   + ", "
                   + COL_REFS_NAME

@@ -15,15 +15,11 @@
  */
 package org.projectnessie.versioned.storage.mongodbtests;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.mongodb.client.MongoClient;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.mongodb.MongoDBBackend;
 import org.projectnessie.versioned.storage.mongodb.MongoDBBackendConfig;
@@ -34,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 
 public class MongoDBBackendTestFactory implements BackendTestFactory {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDBBackendTestFactory.class);
@@ -48,37 +45,23 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
     return MongoDBBackendFactory.NAME;
   }
 
-  protected static String dockerImage(String dbName) {
-    URL resource = MongoDBBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String image = imageTag[0];
-      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
-      return image + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
-  }
-
-  /**
-   * Starts MongoDB with an optional Docker network ID and a flag to turn off all output to stdout
-   * and stderr.
-   */
-  public void startMongo(Optional<String> containerNetworkId) {
+  @Override
+  public void start(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
 
+    DockerImageName dockerImage =
+        ContainerSpecHelper.builder()
+            .name("mongodb")
+            .containerClass(MongoDBBackendTestFactory.class)
+            .build()
+            .dockerImageName(null)
+            .asCompatibleSubstituteFor("mongo");
+
     for (int retry = 0; ; retry++) {
       MongoDBContainer c =
-          new MongoDBContainer(dockerImage("mongodb"))
-              .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+          new MongoDBContainer(dockerImage).withLogConsumer(new Slf4jLogConsumer(LOGGER));
       containerNetworkId.ifPresent(c::withNetworkMode);
       try {
         c.start();
@@ -129,7 +112,7 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
 
   @Override
   public void start() {
-    startMongo(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override
@@ -143,6 +126,7 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
     }
   }
 
+  @Override
   public Map<String, String> getQuarkusConfig() {
     Map<String, String> config = new HashMap<>();
     config.put("quarkus.mongodb.connection-string", connectionString);

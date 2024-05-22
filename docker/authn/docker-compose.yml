@@ -17,7 +17,7 @@
 version: '3'
 services:
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest
+    image: ghcr.io/projectnessie/nessie:latest@sha256:d985754717735751a772c3435e29f0045e2bb008acbac5c7b4adc7a8d36cbd34
     ports:
       - "19120:19120"
     depends_on:
@@ -30,7 +30,7 @@ services:
       QUARKUS_OIDC_CLIENT_ID: projectnessie
       # QUARKUS_OIDC_TOKEN_ISSUER: any
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:latest@sha256:ff02c932f0249c58f32b8ff1b188a48cc90809779a3a05931ab67f5672400ad0
     ports:
       - "8080:8080"
     environment:

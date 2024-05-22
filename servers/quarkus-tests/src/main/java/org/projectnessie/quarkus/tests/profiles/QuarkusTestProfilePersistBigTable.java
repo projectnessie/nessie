@@ -29,7 +29,6 @@ public class QuarkusTestProfilePersistBigTable extends BaseConfigProfile {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", BIGTABLE.name())
-        .put("quarkus.google.cloud.project-id", "test-project")
         .build();
   }
 

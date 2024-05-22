@@ -15,23 +15,15 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
-
-import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.projectnessie.versioned.storage.jdbctests.PostgreSQLBackendTestFactory;
 
 public class PostgresTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
-  private JdbcDatabaseContainer<?> container;
+  private PostgreSQLBackendTestFactory postgres;
 
   private Optional<String> containerNetworkId;
 
@@ -42,68 +34,27 @@ public class PostgresTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    container =
-        new PostgreSQLContainer<>(dockerImage("postgres"))
-            .withLogConsumer(outputFrame -> {})
-            .withStartupAttempts(5);
-    containerNetworkId.ifPresent(container::withNetworkMode);
+    postgres = new PostgreSQLBackendTestFactory();
+
     try {
-      // Only start the Docker container (local Dynamo-compatible). The DynamoDatabaseClient will
-      // be configured via Quarkus -> Quarkus-Dynamo / DynamoVersionStoreFactory.
-      container.start();
+      postgres.start(containerNetworkId);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
-    String jdbcUrl = container.getJdbcUrl();
-
-    if (containerNetworkId.isPresent()) {
-      String hostPort = container.getHost() + ':' + container.getMappedPort(POSTGRESQL_PORT);
-      String networkHostPort =
-          container.getCurrentContainerInfo().getConfig().getHostName() + ':' + POSTGRESQL_PORT;
-      jdbcUrl = jdbcUrl.replace(hostPort, networkHostPort);
-    }
-
-    return ImmutableMap.of(
-        "quarkus.datasource.username",
-        container.getUsername(),
-        "quarkus.datasource.password",
-        container.getPassword(),
-        "quarkus.datasource.jdbc.url",
-        jdbcUrl,
-        "quarkus.datasource.jdbc.extended-leak-report",
-        "true");
+    return postgres.getQuarkusConfig();
   }
 
   @Override
   public void stop() {
-    if (container != null) {
+    if (postgres != null) {
       try {
-        container.stop();
+        postgres.stop();
       } catch (Exception e) {
         throw new RuntimeException(e);
       } finally {
-        container = null;
+        postgres = null;
       }
-    }
-  }
-
-  protected static String dockerImage(String dbName) {
-    URL resource =
-        PostgresTestResourceLifecycleManager.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String image = imageTag[0];
-      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
-      return image + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
     }
   }
 }

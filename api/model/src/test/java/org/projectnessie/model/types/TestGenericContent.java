@@ -88,8 +88,8 @@ public class TestGenericContent {
         IcebergTable.of("meta", 1, 2, 3, 4, "cid"),
         IcebergView.of("meta", 1, 2),
         IcebergView.of("cid", "meta", 1, 2),
-        UDF.of("/udf-metadata", 666),
-        UDF.of("cid", "/udf-metadata", 42),
+        UDF.udf("/udf-metadata", "42", "666"),
+        UDF.udf("cid", "/udf-metadata", "42", "666"),
         Namespace.of("foo", "bar"),
         Namespace.builder().from(Namespace.of("foo", "bar")).id("cid").build());
   }

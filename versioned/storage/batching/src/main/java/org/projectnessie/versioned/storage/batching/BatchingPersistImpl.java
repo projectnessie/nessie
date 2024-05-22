@@ -405,10 +405,24 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
+  @Nullable
+  @javax.annotation.Nullable
+  public Reference fetchReferenceForUpdate(@Nonnull @javax.annotation.Nonnull String name) {
+    return delegate().fetchReferenceForUpdate(name);
+  }
+
+  @Override
   @Nonnull
   @javax.annotation.Nonnull
   public Reference[] fetchReferences(@Nonnull @javax.annotation.Nonnull String[] names) {
     return delegate().fetchReferences(names);
+  }
+
+  @Override
+  @Nonnull
+  @javax.annotation.Nonnull
+  public Reference[] fetchReferencesForUpdate(@Nonnull @javax.annotation.Nonnull String[] names) {
+    return delegate().fetchReferencesForUpdate(names);
   }
 
   @Override

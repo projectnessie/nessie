@@ -37,7 +37,7 @@ public class TestIcebergContentToContentReference {
     return Stream.of(
         ImmutableDeltaLakeTable.builder().id("123").lastCheckpoint("lc").build(),
         IcebergView.of("cid", "meta", 42, 43),
-        UDF.of("udf-meta", 42),
+        UDF.udf("udf-meta", "42", "666"),
         Namespace.of("foo", "bar"));
   }
 

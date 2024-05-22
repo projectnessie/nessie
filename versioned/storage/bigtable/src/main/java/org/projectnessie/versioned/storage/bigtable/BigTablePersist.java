@@ -173,7 +173,7 @@ public class BigTablePersist implements Persist {
               .filter(FILTERS.family().exactMatch(FAMILY_REFS))
               .filter(FILTERS.qualifier().exactMatch(QUALIFIER_REFS));
 
-      boolean success =
+      boolean failure =
           backend
               .client()
               .checkAndMutateRow(
@@ -181,7 +181,7 @@ public class BigTablePersist implements Persist {
                       .condition(condition)
                       .otherwise(mutation));
 
-      if (success) {
+      if (failure) {
         throw new RefAlreadyExistsException(fetchReference(reference.name()));
       }
 

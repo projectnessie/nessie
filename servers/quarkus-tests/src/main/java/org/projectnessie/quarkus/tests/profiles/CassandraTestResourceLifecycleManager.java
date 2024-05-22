@@ -15,10 +15,8 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
@@ -38,18 +36,9 @@ public class CassandraTestResourceLifecycleManager
   @Override
   public Map<String, String> start() {
     cassandra = new CassandraBackendTestFactory();
-    cassandra.startTestNode(containerNetworkId);
+    cassandra.start(containerNetworkId);
     cassandra.maybeCreateKeyspace();
-
-    InetSocketAddress contactPoint = cassandra.getHostAndPort();
-
-    return ImmutableMap.of(
-        "quarkus.cassandra.contact-points",
-        String.format("%s:%d", contactPoint.getHostName(), contactPoint.getPort()),
-        "quarkus.cassandra.local-datacenter",
-        cassandra.getLocalDc(),
-        "quarkus.cassandra.keyspace",
-        cassandra.getKeyspace());
+    return cassandra.getQuarkusConfig();
   }
 
   @Override

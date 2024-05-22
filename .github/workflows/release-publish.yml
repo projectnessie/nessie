@@ -74,12 +74,12 @@ jobs:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       if: ${{ github.event_name == 'push' }}
       with:
         fetch-depth: '0'
     - name: Checkout
-      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       if: ${{ github.event_name == 'workflow_dispatch' }}
       with:
         fetch-depth: '0'
@@ -91,7 +91,7 @@ jobs:
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
     - name: Install Helm
-      uses: azure/setup-helm@v4
+      uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4
       with:
         version: v3.6.3
     ### END runner setup
@@ -268,7 +268,7 @@ jobs:
           "${LICENSE_REPORTS}"
 
     - name: Update SwaggerHub
-      uses: smartbear/swaggerhub-cli@v0.9.0
+      uses: smartbear/swaggerhub-cli@20e5eaf4866bbbc44d72e9eb8a48a942c0d9e43b # v0.9.0
       env:
         XDG_CONFIG_HOME: "/tmp"
         SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}

@@ -22,6 +22,8 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:testcontainers")
+  implementation(project(":nessie-container-spec-helper"))
+  compileOnly(libs.immutables.value.annotations)
 
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)

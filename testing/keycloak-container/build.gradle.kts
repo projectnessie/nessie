@@ -20,6 +20,8 @@ extra["maven.name"] = "Nessie - Keycloak testcontainer"
 
 dependencies {
   implementation(libs.slf4j.api)
+  implementation(project(":nessie-container-spec-helper"))
+  compileOnly(libs.immutables.value.annotations)
   api(libs.keycloak.admin.client)
   api(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet

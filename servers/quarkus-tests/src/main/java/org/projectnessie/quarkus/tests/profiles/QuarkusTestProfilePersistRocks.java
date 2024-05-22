@@ -34,6 +34,6 @@ public class QuarkusTestProfilePersistRocks extends BaseConfigProfile {
 
   @Override
   public List<TestResourceEntry> testResources() {
-    return ImmutableList.of(new TestResourceEntry(RocksPersistTestResourceLifecycleManager.class));
+    return ImmutableList.of(new TestResourceEntry(RocksTestResourceLifecycleManager.class));
   }
 }

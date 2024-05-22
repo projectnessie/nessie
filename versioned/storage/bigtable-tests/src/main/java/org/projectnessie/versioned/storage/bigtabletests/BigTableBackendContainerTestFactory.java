@@ -15,18 +15,15 @@
  */
 package org.projectnessie.versioned.storage.bigtabletests;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Optional;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 
 /** Bigtable emulator via testcontainers. */
 public class BigTableBackendContainerTestFactory extends AbstractBigTableBackendTestFactory {
@@ -44,32 +41,19 @@ public class BigTableBackendContainerTestFactory extends AbstractBigTableBackend
     return BigTableBackendFactory.NAME + "Container";
   }
 
-  protected static String dockerImage(String dbName) {
-    URL resource =
-        BigTableBackendContainerTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String image = imageTag[0];
-      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
-      return image + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
-  }
-
+  @Override
   @SuppressWarnings("resource")
-  public void startBigtable(Optional<String> containerNetworkId) {
+  public void start(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
 
-    String imageName = dockerImage("google-cloud-sdk");
+    DockerImageName imageName =
+        ContainerSpecHelper.builder()
+            .name("google-cloud-sdk")
+            .containerClass(BigTableBackendContainerTestFactory.class)
+            .build()
+            .dockerImageName(null);
 
     for (int retry = 0; ; retry++) {
       GenericContainer<?> c =
@@ -120,7 +104,7 @@ public class BigTableBackendContainerTestFactory extends AbstractBigTableBackend
 
   @Override
   public void start() {
-    startBigtable(Optional.empty());
+    start(Optional.empty());
   }
 
   @Override

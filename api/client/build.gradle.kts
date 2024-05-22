@@ -95,6 +95,8 @@ dependencies {
   intTestImplementation(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
   }
+  intTestImplementation(project(":nessie-container-spec-helper"))
+  intTestCompileOnly(libs.immutables.value.annotations)
 }
 
 jandex { skipDefaultProcessing() }

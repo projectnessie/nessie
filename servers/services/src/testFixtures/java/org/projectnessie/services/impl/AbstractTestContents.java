@@ -91,7 +91,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
             Content.Type.ICEBERG_VIEW,
             Put.of(ContentKey.of("a", "view"), IcebergView.of("/iceberg/view", 1, 1))),
         new ContentAndOperationType(
-            Content.Type.UDF, Put.of(ContentKey.of("a", "udf"), UDF.of("/udf-meta", 42))),
+            Content.Type.UDF, Put.of(ContentKey.of("a", "udf"), UDF.udf("/udf-meta", "42", "666"))),
         new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Put.of(
@@ -115,7 +115,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
         new ContentAndOperationType(
             Content.Type.UDF,
             Delete.of(ContentKey.of("a", "udf_delete")),
-            Put.of(ContentKey.of("a", "udf_delete"), UDF.of("/udf-metadata", 42))),
+            Put.of(ContentKey.of("a", "udf_delete"), UDF.udf("/udf-metadata", "42", "666"))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
             Delete.of(ContentKey.of("a", "view_delete")),
@@ -127,7 +127,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
         new ContentAndOperationType(
             Content.Type.UDF,
             Unchanged.of(ContentKey.of("a", "udf_unchanged")),
-            Put.of(ContentKey.of("a", "udf_unchanged"), UDF.of("/udf-meta-data", 42))),
+            Put.of(ContentKey.of("a", "udf_unchanged"), UDF.udf("/udf-meta-data", "42", "666"))),
         new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Delete.of(ContentKey.of("a", "delta_delete")),

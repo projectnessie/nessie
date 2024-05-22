@@ -97,9 +97,20 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return delegate.fetchReferenceForUpdate(name);
+  }
+
+  @Override
   @Nonnull
   public Reference[] fetchReferences(@Nonnull String[] names) {
     return delegate.fetchReferences(names);
+  }
+
+  @Override
+  @Nonnull
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return delegate.fetchReferencesForUpdate(names);
   }
 
   @Override

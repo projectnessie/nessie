@@ -65,4 +65,6 @@ dependencies {
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:postgresql")
   intTestRuntimeOnly(libs.docker.java.api)
+  intTestImplementation(project(":nessie-container-spec-helper"))
+  intTestCompileOnly(libs.immutables.value.annotations)
 }

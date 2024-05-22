@@ -51,10 +51,13 @@ public final class UDFSerializer extends BaseSerializer<UDF> {
     if (metadata != null) {
       stateBuilder.setMetadataLocation(udf.getMetadataLocation());
     }
-
-    Long version = udf.getVersionId();
+    String version = udf.getVersionId();
     if (version != null) {
       stateBuilder.setVersionId(version);
+    }
+    String signature = udf.getSignatureId();
+    if (signature != null) {
+      stateBuilder.setSignatureId(signature);
     }
 
     builder.setUdf(stateBuilder);

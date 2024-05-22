@@ -51,6 +51,7 @@ dependencies {
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-server-store"))
+  testImplementation(project(":nessie-versioned-storage-cache"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testImplementation(project(":nessie-versioned-storage-testextension"))

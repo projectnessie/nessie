@@ -27,6 +27,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-testextension"))
+  implementation(project(":nessie-container-spec-helper"))
 
   compileOnly(libs.jakarta.annotation.api)
 
@@ -39,4 +40,6 @@ dependencies {
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:postgresql")
   implementation("org.testcontainers:cockroachdb")
+  implementation("org.testcontainers:mariadb")
+  implementation("org.testcontainers:mysql")
 }

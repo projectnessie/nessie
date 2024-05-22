@@ -48,7 +48,7 @@ public class JdbcBackendBuilder implements BackendBuilder {
       throw new IllegalArgumentException(
           "Database kind is configured to '"
               + databaseKind
-              + "', which Nessie does not support yet, PostgreSQL + H2 are supported. "
+              + "', which Nessie does not support yet, PostgreSQL, H2, MariaDb and MySQL(via mariaDb driver) are supported. "
               + "Feel free to raise a pull request to support your database of choice.");
     }
 

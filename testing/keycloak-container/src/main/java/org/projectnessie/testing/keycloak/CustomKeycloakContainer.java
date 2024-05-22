@@ -15,16 +15,12 @@
  */
 package org.projectnessie.testing.keycloak;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
-import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +38,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
+import org.testcontainers.utility.DockerImageName;
 
 public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomKeycloakContainer> {
   public static final String KEYCLOAK_REALM = "keycloak.realm";
@@ -128,34 +126,20 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
   @Value.Immutable
   public abstract static class KeycloakConfig {
 
-    public static final String DEFAULT_IMAGE;
-    public static final String DEFAULT_TAG;
+    @Nullable
+    public abstract String dockerImage();
 
-    static {
-      URL resource = KeycloakConfig.class.getResource("Dockerfile-keycloak-version");
-      try (InputStream in = resource.openConnection().getInputStream()) {
-        String[] imageTag =
-            Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-                .map(String::trim)
-                .filter(l -> l.startsWith("FROM "))
-                .map(l -> l.substring(5).trim().split(":"))
-                .findFirst()
-                .orElseThrow();
-        DEFAULT_IMAGE = imageTag[0];
-        DEFAULT_TAG = imageTag[1];
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to extract tag from " + resource, e);
-      }
-    }
+    @Nullable
+    public abstract String dockerTag();
 
-    @Value.Default
-    public String dockerImage() {
-      return DEFAULT_IMAGE;
-    }
-
-    @Value.Default
-    public String dockerTag() {
-      return DEFAULT_TAG;
+    @Value.Derived
+    public DockerImageName dockerImageName() {
+      String imageTag = dockerImage() != null ? dockerImage() + ":" + dockerTag() : null;
+      return ContainerSpecHelper.builder()
+          .name("keycloak")
+          .containerClass(KeycloakConfig.class)
+          .build()
+          .dockerImageName(imageTag);
     }
 
     @Value.Default
@@ -223,7 +207,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     }
 
     public CustomKeycloakContainer createContainer() {
-      LOGGER.info("Using Keycloak image {}:{}", dockerImage(), dockerTag());
+      LOGGER.info("Using Keycloak image {}", dockerImageName());
       return new CustomKeycloakContainer(this);
     }
   }
@@ -238,7 +222,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
   @SuppressWarnings("resource")
   public CustomKeycloakContainer(KeycloakConfig config) {
-    super(config.dockerImage() + ":" + config.dockerTag());
+    super(config.dockerImageName().toString());
 
     this.config = config;
 

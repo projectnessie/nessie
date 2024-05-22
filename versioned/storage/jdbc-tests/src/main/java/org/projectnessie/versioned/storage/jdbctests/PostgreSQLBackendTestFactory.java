@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbctests;
 
 import jakarta.annotation.Nonnull;
+import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -30,7 +31,17 @@ public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String dockerImage = dockerImage("postgres");
-    return new PostgreSQLContainer<>(dockerImage);
+    return new PostgreSQLContainer<>(dockerImage("postgres").asCompatibleSubstituteFor("postgres"));
+  }
+
+  @Override
+  public Map<String, String> getQuarkusConfig() {
+    return Map.of(
+        "quarkus.datasource.jdbc.url",
+        jdbcUrl(),
+        "quarkus.datasource.username",
+        jdbcUser(),
+        "quarkus.datasource.password",
+        jdbcPass());
   }
 }

@@ -35,6 +35,7 @@ dependencies {
     api(project(":nessie-compatibility-common"))
     api(project(":nessie-compatibility-tests"))
     api(project(":nessie-compatibility-jersey"))
+    api(project(":nessie-container-spec-helper"))
     api(project(":nessie-doc-generator-annotations"))
     api(project(":nessie-doc-generator-doclet"))
     api(project(":nessie-gc-base"))

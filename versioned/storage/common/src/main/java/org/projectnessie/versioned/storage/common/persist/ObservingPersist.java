@@ -124,6 +124,24 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
+  @Nullable
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
+    return delegate.fetchReferenceForUpdate(name);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
+  @Nonnull
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
+    return delegate.fetchReferencesForUpdate(names);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
   @Nonnull
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     return delegate.fetchObj(id);
