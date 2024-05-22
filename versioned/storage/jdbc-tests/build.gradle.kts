@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - JDBC - Tests"
+publishingHelper { mavenName = "Nessie - Storage - JDBC - Tests" }
 
 description = "Base test code for creating test backends using JDBC backends."
 

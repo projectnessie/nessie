@@ -20,7 +20,7 @@ plugins {
   alias(libs.plugins.annotations.stripper)
 }
 
-extra["maven.name"] = "Nessie - Catalog - REST Service"
+publishingHelper { mavenName = "Nessie - Catalog - REST Service" }
 
 description = "Nessie Catalog service implementation providing REST endpoints."
 

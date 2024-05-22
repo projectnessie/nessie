@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-scala") }
 
-extra["maven.name"] = "Nessie - Perf Test - Gatling"
+publishingHelper { mavenName = "Nessie - Perf Test - Gatling" }
 
 val scalaMajorVersion = "2.13"
 

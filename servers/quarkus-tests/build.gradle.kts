@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-quarkus") }
 
-extra["maven.name"] = "Nessie - Quarkus Tests"
+publishingHelper { mavenName = "Nessie - Quarkus Tests" }
 
 dependencies {
   implementation(project(":nessie-quarkus-common"))

@@ -16,4 +16,4 @@
 
 plugins { id("nessie-conventions-client") }
 
-extra["maven.name"] = "Annotations for nessie-doc-generator-doclet"
+publishingHelper { mavenName = "Annotations for nessie-doc-generator-doclet" }

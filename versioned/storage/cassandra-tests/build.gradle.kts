@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Cassandra & ScyllaDB - Tests"
+publishingHelper { mavenName = "Nessie - Storage - Cassandra & ScyllaDB - Tests" }
 
 description = "Base test code for creating test backends using Cassandra & ScyllaDB."
 

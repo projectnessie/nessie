@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - BigTable - Tests"
+publishingHelper { mavenName = "Nessie - Storage - BigTable - Tests" }
 
 description = "Base test code for creating test backends using BigTable."
 

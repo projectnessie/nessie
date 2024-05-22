@@ -21,7 +21,7 @@ plugins {
   id("nessie-common-base")
 }
 
-extra["maven.name"] = "Nessie - Bill of Materials (BOM)"
+publishingHelper { mavenName = "Nessie - Bill of Materials (BOM)" }
 
 dependencies {
   constraints {

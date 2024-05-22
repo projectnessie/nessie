@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - GC - Iceberg FileIO connector"
+publishingHelper { mavenName = "Nessie - GC - Iceberg FileIO connector" }
 
 description =
   "Nessie GC integration tests with Spark, Iceberg and S3 as a separate project " +

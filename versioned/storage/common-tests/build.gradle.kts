@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Tests"
+publishingHelper { mavenName = "Nessie - Storage - Tests" }
 
 description =
   "Base test code for 'Persist' and 'VersionStore' related tests used to test storage implementations."

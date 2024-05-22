@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - GC - Base Implementation"
+publishingHelper { mavenName = "Nessie - GC - Base Implementation" }
 
 description =
   "Mark and sweep GC base functionality to identify live contents, map to live files, list existing files and to purge orphan files."

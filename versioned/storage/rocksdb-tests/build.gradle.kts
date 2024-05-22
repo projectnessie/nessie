@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - RocksDB - Tests"
+publishingHelper { mavenName = "Nessie - Storage - RocksDB - Tests" }
 
 description = "Base test code for creating test backends using RocksDB."
 

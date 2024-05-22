@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Catalog - Service Common"
+publishingHelper { mavenName = "Nessie - Catalog - Service Common" }
 
 dependencies {
   implementation(project(":nessie-model"))

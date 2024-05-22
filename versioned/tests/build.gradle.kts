@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-server") }
 
-extra["maven.name"] = "Nessie - Versioned Store Integration Tests"
+publishingHelper { mavenName = "Nessie - Versioned Store Integration Tests" }
 
 dependencies {
   implementation(project(":nessie-model"))

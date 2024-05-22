@@ -18,7 +18,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins { id("nessie-conventions-server") }
 
-extra["maven.name"] = "Nessie - Backward Compatibility - Tests"
+publishingHelper { mavenName = "Nessie - Backward Compatibility - Tests" }
 
 dependencies {
   implementation(platform(libs.junit.bom))

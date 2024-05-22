@@ -21,7 +21,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - BigTable"
+publishingHelper { mavenName = "Nessie - Storage - BigTable" }
 
 description = "Storage implementation for BigTable."
 

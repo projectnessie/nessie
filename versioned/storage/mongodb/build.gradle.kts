@@ -21,7 +21,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - MongoDB"
+publishingHelper { mavenName = "Nessie - Storage - MongoDB" }
 
 description = "Storage implementation for MongoDB."
 

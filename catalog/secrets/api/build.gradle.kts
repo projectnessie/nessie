@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Catalog - Secrets API"
+publishingHelper { mavenName = "Nessie - Catalog - Secrets API" }
 
 dependencies {
   implementation(libs.guava)
