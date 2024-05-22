@@ -66,7 +66,7 @@ jobs:
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5
     ### END runner setup
 
     - name: Configure release-bot-user in git config
@@ -75,7 +75,7 @@ jobs:
         git config --global user.name "Nessie Release Workflow [bot]"
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3
       with:
         cache-disabled: true
 

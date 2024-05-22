@@ -29,7 +29,7 @@ runs:
         fi
 
     - name: Gradle / Setup
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
 
@@ -38,7 +38,7 @@ runs:
       run: ./gradlew -h
 
     - name: Download existing workflow artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
       # Just in case, don't know the exact inner workings of Gradle's build cache and whether
       # the download-action complains about duplicate files.
       continue-on-error: true

@@ -1,3 +1,3 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM docker.io/scylladb/scylla:5.4.6
+FROM docker.io/scylladb/scylla:5.4.6@sha256:f479b2dc70e0dc6684a606d0f76c129829c9b847521a50168ae2dd92a4ef011e

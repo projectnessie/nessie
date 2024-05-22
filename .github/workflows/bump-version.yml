@@ -64,7 +64,7 @@ jobs:
       run: echo "PREVIOUS_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3
       env:
         # Same as for ci.yml
         GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-17
