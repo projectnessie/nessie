@@ -41,7 +41,7 @@ public class ITPostgresPersistenceSpi extends AbstractJdbcPersistenceSpi {
     }
   }
 
-  public static DockerImageName dockerImage(String dbName) {
+  protected static DockerImageName dockerImage(String dbName) {
     return ContainerSpecHelper.builder()
         .name(dbName)
         .containerClass(ITPostgresPersistenceSpi.class)
