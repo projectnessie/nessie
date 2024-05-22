@@ -16,7 +16,6 @@
 package org.projectnessie.testing.gcs;
 
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 
 import com.google.auth.oauth2.AccessToken;
@@ -24,17 +23,13 @@ import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -62,34 +57,6 @@ public class GcsContainer extends GenericContainer<GcsContainer>
   private static final Logger LOGGER = LoggerFactory.getLogger(GcsContainer.class);
   public static final int PORT = 4443;
 
-  private static final String DEFAULT_IMAGE;
-  private static final String DEFAULT_TAG;
-
-  static {
-    URL resource = GcsContainer.class.getResource("Dockerfile-fake-gcs-server-version");
-    Objects.requireNonNull(resource, "Dockerfile-fake-gcs-server-version not found");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      DEFAULT_IMAGE =
-          System.getProperty(
-              "nessie.testing.fake-gcs-server.image",
-              Optional.ofNullable(System.getenv("FAKE_GCS_SERVER_DOCKER_IMAGE"))
-                  .orElse(imageTag[0]));
-      DEFAULT_TAG =
-          System.getProperty(
-              "nessie.testing.fake-gcs-server.tag",
-              Optional.ofNullable(System.getenv("FAKE_GCS_SERVER_DOCKER_TAG")).orElse(imageTag[1]));
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
-  }
-
   private final String localAddress;
   private final String oauth2token;
   private final String bucket;
@@ -101,7 +68,12 @@ public class GcsContainer extends GenericContainer<GcsContainer>
 
   @SuppressWarnings("resource")
   public GcsContainer(String image, String bucket, String projectId, String oauth2token) {
-    super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
+    super(
+        ContainerSpecHelper.builder()
+            .name("fake-gcs-server")
+            .containerClass(GcsContainer.class)
+            .build()
+            .dockerImageName(image));
 
     ThreadLocalRandom rand = ThreadLocalRandom.current();
     boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");

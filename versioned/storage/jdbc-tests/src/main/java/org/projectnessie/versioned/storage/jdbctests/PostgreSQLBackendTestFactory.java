@@ -31,8 +31,7 @@ public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    String dockerImage = dockerImage("postgres");
-    return new PostgreSQLContainer<>(dockerImage);
+    return new PostgreSQLContainer<>(dockerImage("postgres").asCompatibleSubstituteFor("postgres"));
   }
 
   @Override

@@ -17,7 +17,6 @@ package org.projectnessie.model;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.System.getProperty;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -36,13 +35,11 @@ import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.DockerClientFactory;
 
 public class ITOpenApiValidation {
@@ -136,20 +133,11 @@ public class ITOpenApiValidation {
   }
 
   protected static String dockerImage(String name) {
-    URL resource = ITOpenApiValidation.class.getResource("Dockerfile-" + name + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String image = imageTag[0];
-      String version = System.getProperty("it.nessie.container." + name + ".tag", imageTag[1]);
-      return image + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
+    return ContainerSpecHelper.builder()
+        .name(name)
+        .containerClass(ITOpenApiValidation.class)
+        .build()
+        .dockerImageName(null)
+        .toString();
   }
 }

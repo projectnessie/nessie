@@ -23,6 +23,8 @@ description = "JUnit extension providing a Minio instance."
 dependencies {
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:testcontainers")
+  implementation(project(":nessie-container-spec-helper"))
+  compileOnly(libs.immutables.value.annotations)
 
   implementation(platform(libs.awssdk.bom))
   implementation("software.amazon.awssdk:s3")

@@ -20,16 +20,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.file.datalake.DataLakeServiceClient;
 import com.azure.storage.file.datalake.DataLakeServiceClientBuilder;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.Base58;
@@ -38,34 +34,8 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer>
     implements AzuriteAccess, CloseableResource {
 
   private static final int DEFAULT_PORT = 10000; // default blob service port
-  private static final String DEFAULT_IMAGE;
-  private static final String DEFAULT_TAG;
   private static final String LOG_WAIT_REGEX =
       "Azurite Blob service is successfully listening at .*";
-
-  static {
-    URL resource = AzuriteContainer.class.getResource("Dockerfile-azurite-version");
-    Objects.requireNonNull(resource, "Dockerfile-azurite-version not found");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      DEFAULT_IMAGE =
-          System.getProperty(
-              "nessie.testing.azurite.image",
-              Optional.ofNullable(System.getenv("AZURITE_DOCKER_IMAGE")).orElse(imageTag[0]));
-      DEFAULT_TAG =
-          System.getProperty(
-              "nessie.testing.azurite.tag",
-              Optional.ofNullable(System.getenv("AZURITE_DOCKER_TAG")).orElse(imageTag[1]));
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
-  }
 
   private final String storageContainer;
   private final String account;
@@ -74,11 +44,16 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer>
   private final String secretBase64;
 
   public AzuriteContainer() {
-    this(DEFAULT_IMAGE + ":" + DEFAULT_TAG, null, null, null);
+    this(null, null, null, null);
   }
 
   public AzuriteContainer(String image, String storageContainer, String account, String secret) {
-    super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
+    super(
+        ContainerSpecHelper.builder()
+            .name("azurite")
+            .containerClass(AzuriteContainer.class)
+            .build()
+            .dockerImageName(image));
     if (storageContainer == null) {
       storageContainer = randomString("filesystem");
     }
