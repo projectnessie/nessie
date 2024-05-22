@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -121,6 +122,19 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     SigningResponse signed = signer.sign(ref.name(), identifier, signingRequest);
 
     return icebergS3SignResponse(signed.uri().toString(), signed.headers());
+  }
+
+  @POST
+  @Path("/v1/oauth/tokens")
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+  @PermitAll
+  public Response getToken() {
+    return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+        .entity(
+            Map.of(
+                "error", "OAuthTokenEndpointUnavailable",
+                "error_description", "OAuth token endpoint is unavailable"))
+        .build();
   }
 
   @POST
