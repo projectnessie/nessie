@@ -35,6 +35,7 @@ import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.descriptor.ClassTestDescriptor;
 import org.junit.jupiter.engine.descriptor.NestedClassTestDescriptor;
 import org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor;
+import org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.ExecutionRequest;
 import org.junit.platform.engine.TestDescriptor;
@@ -272,6 +273,13 @@ public class MultiEnvTestEngine implements TestEngine {
               newId,
               ((TestMethodTestDescriptor) originalNode).getTestClass(),
               ((TestMethodTestDescriptor) originalNode).getTestMethod(),
+              configuration);
+    } else if (originalNode instanceof TestTemplateTestDescriptor) {
+      nodeWithNewId =
+          new TestTemplateTestDescriptor(
+              newId,
+              ((TestTemplateTestDescriptor) originalNode).getTestClass(),
+              ((TestTemplateTestDescriptor) originalNode).getTestMethod(),
               configuration);
     } else {
       throw new IllegalArgumentException(
