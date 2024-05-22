@@ -141,6 +141,14 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   }
 
   @POST
+  @Path("/{reference}/v1/oauth/tokens")
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+  @PermitAll
+  public Response getToken(@PathParam("reference") String ignored) {
+    return getToken();
+  }
+
+  @POST
   @Path("/v1/{prefix}/transactions/commit")
   @Blocking
   public Uni<Void> commitTransaction(
