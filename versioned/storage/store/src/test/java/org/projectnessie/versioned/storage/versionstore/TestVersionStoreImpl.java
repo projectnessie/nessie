@@ -193,7 +193,57 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
   public static Stream<Arguments> commitWithDatabaseTimeout() {
     return Stream.of(
         arguments(
-            "updateReferencePointer",
+            "updateReferencePointer-success-but-timeout",
+            (BiFunction<AtomicBoolean, Persist, Persist>)
+                (called, p) ->
+                    new PersistDelegate(p) {
+                      @Nonnull
+                      @Override
+                      public Reference updateReferencePointer(
+                          @Nonnull Reference reference, @Nonnull ObjId newPointer)
+                          throws RefNotFoundException, RefConditionFailedException {
+                        if (called.compareAndSet(false, true)) {
+                          super.updateReferencePointer(reference, newPointer);
+                          throw new UnknownOperationResultException("test", new RuntimeException());
+                        } else {
+                          return super.updateReferencePointer(reference, newPointer);
+                        }
+                      }
+                    }),
+        arguments(
+            "storeObj-success-but-timeout",
+            (BiFunction<AtomicBoolean, Persist, Persist>)
+                (called, p) ->
+                    new PersistDelegate(p) {
+                      @Override
+                      public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
+                        if (called.compareAndSet(false, true)) {
+                          super.storeObj(obj);
+                          throw new UnknownOperationResultException("test", new RuntimeException());
+                        } else {
+                          return super.storeObj(obj);
+                        }
+                      }
+                    }),
+        arguments(
+            "storeObjs-success-but-timeout",
+            (BiFunction<AtomicBoolean, Persist, Persist>)
+                (called, p) ->
+                    new PersistDelegate(p) {
+                      @Nonnull
+                      @Override
+                      public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
+                        if (called.compareAndSet(false, true)) {
+                          super.storeObjs(objs);
+                          throw new UnknownOperationResultException("test", new RuntimeException());
+                        } else {
+                          return super.storeObjs(objs);
+                        }
+                      }
+                    }),
+        //
+        arguments(
+            "updateReferencePointer-no-success",
             (BiFunction<AtomicBoolean, Persist, Persist>)
                 (called, p) ->
                     new PersistDelegate(p) {
@@ -210,7 +260,7 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
                       }
                     }),
         arguments(
-            "storeObj",
+            "storeObj-no-success",
             (BiFunction<AtomicBoolean, Persist, Persist>)
                 (called, p) ->
                     new PersistDelegate(p) {
@@ -224,7 +274,7 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
                       }
                     }),
         arguments(
-            "storeObjs",
+            "storeObjs-no-success",
             (BiFunction<AtomicBoolean, Persist, Persist>)
                 (called, p) ->
                     new PersistDelegate(p) {

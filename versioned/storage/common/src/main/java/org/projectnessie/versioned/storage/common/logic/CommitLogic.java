@@ -71,13 +71,14 @@ public interface CommitLogic {
    *
    * @param commit commit to store
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return {@code true} if committed
+   * @return the persisted {@link CommitObj} if successful
    * @see #doCommit(CreateCommit, List)
    * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler, ValueReplacement,
    *     ValueReplacement)
    * @see #updateCommit(CommitObj)
    */
-  boolean storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects);
+  @Nullable
+  CommitObj storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects);
 
   /**
    * Updates an <em>existing</em> commit and handles storing the (external) {@link

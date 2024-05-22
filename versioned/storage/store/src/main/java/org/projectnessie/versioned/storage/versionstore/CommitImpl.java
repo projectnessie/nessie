@@ -214,12 +214,14 @@ class CommitImpl extends BaseCommitHelper {
       // successfully persisted that commit. This can happen, if the `Persist` implementation raised
       // an `UnknownOperationResultException` in one of the following operations (reference bump for
       // example).
-      boolean stored = commitLogic.storeCommit(newHead, objectsToStore);
-      if (stored) {
+      CommitObj stored = commitLogic.storeCommit(newHead, objectsToStore);
+      if (stored != null) {
+        newHead = stored;
         commitRetryState.commitPersisted = newHead.id();
         commitRetryState.storedContents.addAll(toStore);
       }
-      boolean commitPersisted = stored || newHead.id().equals(commitRetryState.commitPersisted);
+      boolean commitPersisted =
+          stored != null || newHead.id().equals(commitRetryState.commitPersisted);
       checkState(
           commitPersisted,
           "Hash collision detected, a commit with the same parent commit, commit message, "

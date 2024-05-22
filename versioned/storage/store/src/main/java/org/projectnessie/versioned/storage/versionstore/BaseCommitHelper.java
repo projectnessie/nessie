@@ -619,7 +619,15 @@ class BaseCommitHelper {
   void bumpReferencePointer(ObjId newHead, Optional<?> retryState) throws RetryException {
     try {
       persist.updateReferencePointer(reference, newHead);
-    } catch (UnknownOperationResultException | RefConditionFailedException e) {
+    } catch (UnknownOperationResultException e) {
+      // If the above pointer-bump returned an "unknown result", we check once (and only once!)
+      // whether the reference-pointer-change succeeded. This mitigation may not always work,
+      // especially not in highly concurrent update situations.
+      Reference r = persist.fetchReference(reference.name());
+      if (!reference.forNewPointer(newHead, persist.config()).equals(r)) {
+        throw new RetryException(retryState);
+      }
+    } catch (RefConditionFailedException e) {
       throw new RetryException(retryState);
     } catch (RefNotFoundException e) {
       throw new RuntimeException("Internal reference not found", e);
