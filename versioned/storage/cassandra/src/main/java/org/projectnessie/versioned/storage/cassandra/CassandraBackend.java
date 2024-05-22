@@ -328,8 +328,7 @@ public final class CassandraBackend implements Backend {
       ResultSet rs = session.execute(stmt);
       return rs.wasApplied();
     } catch (DriverException e) {
-      handleDriverException(e);
-      return false;
+      throw unhandledException(e);
     }
   }
 
@@ -354,18 +353,6 @@ public final class CassandraBackend implements Backend {
       return new UnknownOperationResultException(e);
     } else {
       return e;
-    }
-  }
-
-  static void handleDriverException(DriverException e) {
-    if (e instanceof QueryExecutionException) {
-      throw new UnknownOperationResultException(e);
-    } else if (e instanceof DriverTimeoutException
-        || e instanceof NodeUnavailableException
-        || e instanceof AllNodesFailedException) {
-      throw new UnknownOperationResultException(e);
-    } else {
-      throw e;
     }
   }
 

@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static org.projectnessie.versioned.storage.cassandra.CassandraBackend.handleDriverException;
 import static org.projectnessie.versioned.storage.cassandra.CassandraBackend.unhandledException;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
@@ -403,7 +402,7 @@ public class CassandraPersist implements Persist {
                       (resultSet, e) -> {
                         if (e != null) {
                           if (e instanceof DriverException) {
-                            handleDriverException((DriverException) e);
+                            throw unhandledException((DriverException) e);
                           }
                           if (e instanceof RuntimeException) {
                             throw (RuntimeException) e;
