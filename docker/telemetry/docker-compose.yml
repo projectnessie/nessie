@@ -2,7 +2,7 @@ version: "2"
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest
+    image: ghcr.io/projectnessie/nessie:latest@sha256:d985754717735751a772c3435e29f0045e2bb008acbac5c7b4adc7a8d36cbd34
     ports:
       - "19120:19120"
     depends_on:
@@ -13,7 +13,7 @@ services:
 
   # Jaeger
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:latest@sha256:521657055d8b608516d36a98583f8d8e38196599271c2547afee941ed5ac2e81
     ports:
       - "16686:16686" # Jaeger UI
       - "4317:4317"   # OTLP gRPC receiver

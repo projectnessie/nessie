@@ -17,7 +17,7 @@
 version: '3'
 services:
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest
+    image: ghcr.io/projectnessie/nessie:latest@sha256:d985754717735751a772c3435e29f0045e2bb008acbac5c7b4adc7a8d36cbd34
     ports:
       - "19120:19120"
     depends_on:
@@ -27,7 +27,7 @@ services:
       - quarkus.mongodb.database=nessie
       - quarkus.mongodb.connection-string=mongodb://root:password@mongo:27017
   mongo:
-    image: mongo
+    image: mongo@sha256:97aac78a80553735b3d9b9b7212803468781b4859645f892a3d04e6b621a7b77
     ports:
       - "27017:27017"
     environment:
