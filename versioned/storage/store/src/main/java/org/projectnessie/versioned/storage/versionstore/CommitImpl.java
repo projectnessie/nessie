@@ -175,7 +175,7 @@ class CommitImpl extends BaseCommitHelper {
     // `CommitRetryState.storedContents` to not store those objects during a retry.
     // This mechanism ensures that we retry the store-objects in case that one fails with an
     // `UnknownOperationResultException`.
-    Set<ObjId> toStore = new HashSet<>();
+    Set<ObjId> toStore = new HashSet<>(commitRetryState.storedContents);
     Consumer<Obj> valueConsumer =
         obj -> {
           if (toStore.add(obj.id())) {
