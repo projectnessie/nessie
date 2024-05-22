@@ -18,6 +18,7 @@ package org.projectnessie.quarkus.config.datasource;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 
 /**
@@ -28,21 +29,36 @@ import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
  */
 public class DataSourceActivator implements ConfigSourceInterceptor {
 
-  private static final int APPLICATION_PROPERTIES_CLASSPATH_ORDINAL = 250;
+  /**
+   * The default ordinal to use for modified {@code quarkus.datasource.*.active} properties. It must
+   * be higher than the ordinal of the application.properties classpath config source (250) but
+   * lower than the ordinal of the user-supplied application.properties (260).
+   */
+  private static final int DEFAULT_ORDINAL = 251;
 
   private static String activeDataSourceName;
   private static VersionStoreType versionStoreType;
 
   @Override
   public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+    ConfigValue value = context.proceed(name);
     if (name.startsWith("quarkus.datasource.") && name.endsWith(".active")) {
-      boolean active = false;
-      if (versionStoreType(context) == VersionStoreType.JDBC) {
-        active = dataSourceName(name).equals(activeDataSourceName(context));
+      boolean active =
+          versionStoreType(context) == VersionStoreType.JDBC
+              && dataSourceName(name).equals(activeDataSourceName(context));
+      if (value == null
+          || value.getValue() == null
+          || active != Boolean.parseBoolean(value.getValue())) {
+        value = newConfigValue(value, active);
       }
-      return newConfigValue(active);
     }
-    return context.proceed(name);
+    return value;
+  }
+
+  private static ConfigValue newConfigValue(ConfigValue current, boolean active) {
+    ConfigValueBuilder builder = current == null ? ConfigValue.builder() : current.from();
+    int ordinal = current == null ? DEFAULT_ORDINAL : current.getConfigSourceOrdinal() + 1;
+    return builder.withConfigSourceOrdinal(ordinal).withValue(active ? "true" : "false").build();
   }
 
   private static synchronized VersionStoreType versionStoreType(
@@ -73,13 +89,6 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
           value == null || value.getValue() == null ? "default" : unquote(value.getValue());
     }
     return activeDataSourceName;
-  }
-
-  private static ConfigValue newConfigValue(boolean value) {
-    return ConfigValue.builder()
-        .withValue(value ? "true" : "false")
-        .withConfigSourceOrdinal(APPLICATION_PROPERTIES_CLASSPATH_ORDINAL + 1)
-        .build();
   }
 
   public static String unquote(String dataSourceName) {
