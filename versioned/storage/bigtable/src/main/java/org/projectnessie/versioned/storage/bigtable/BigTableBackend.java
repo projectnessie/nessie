@@ -59,14 +59,13 @@ public final class BigTableBackend implements Backend {
   private final BigTableBackendConfig config;
   private final BigtableDataClient dataClient;
   private final BigtableTableAdminClient tableAdminClient;
-  private final boolean closeClient;
 
   final String tableRefs;
   final String tableObjs;
   final TableId tableRefsId;
   final TableId tableObjsId;
 
-  public BigTableBackend(@Nonnull BigTableBackendConfig config, boolean closeClient) {
+  public BigTableBackend(@Nonnull BigTableBackendConfig config) {
     this.config = config;
     this.dataClient = config.dataClient();
     this.tableAdminClient = config.tableAdminClient();
@@ -76,7 +75,6 @@ public final class BigTableBackend implements Backend {
         config.tablePrefix().map(prefix -> prefix + '_' + TABLE_OBJS).orElse(TABLE_OBJS);
     this.tableRefsId = TableId.of(tableRefs);
     this.tableObjsId = TableId.of(tableObjs);
-    this.closeClient = closeClient;
   }
 
   @Nonnull
@@ -102,27 +100,25 @@ public final class BigTableBackend implements Backend {
 
   @Override
   public void close() {
-    if (closeClient) {
-      RuntimeException ex = null;
-      try {
-        dataClient.close();
-      } catch (Exception e) {
+    RuntimeException ex = null;
+    try {
+      dataClient.close();
+    } catch (Exception e) {
+      ex = new RuntimeException(e);
+    }
+    try {
+      if (tableAdminClient != null) {
+        tableAdminClient.close();
+      }
+    } catch (Exception e) {
+      if (ex == null) {
         ex = new RuntimeException(e);
+      } else {
+        ex.addSuppressed(e);
       }
-      try {
-        if (tableAdminClient != null) {
-          tableAdminClient.close();
-        }
-      } catch (Exception e) {
-        if (ex == null) {
-          ex = new RuntimeException(e);
-        } else {
-          ex.addSuppressed(e);
-        }
-      }
-      if (ex != null) {
-        throw ex;
-      }
+    }
+    if (ex != null) {
+      throw ex;
     }
   }
 
