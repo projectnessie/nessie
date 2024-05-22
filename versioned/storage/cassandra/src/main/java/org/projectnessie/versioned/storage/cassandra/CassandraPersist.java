@@ -108,7 +108,7 @@ public class CassandraPersist implements Persist {
         backend.newBatchedQuery(
             keys ->
                 backend.executeAsync(
-                    backend.buildStatement(FIND_REFERENCES, config.repositoryId(), keys)),
+                    backend.buildStatement(FIND_REFERENCES, true, config.repositoryId(), keys)),
             CassandraSerde::deserializeReference,
             Reference::name,
             names.length,
@@ -136,6 +136,7 @@ public class CassandraPersist implements Persist {
     BoundStatement stmt =
         backend.buildStatement(
             ADD_REFERENCE,
+            false,
             config.repositoryId(),
             reference.name(),
             serializeObjId(reference.pointer()),
@@ -156,6 +157,7 @@ public class CassandraPersist implements Persist {
     BoundStatement stmt =
         backend.buildStatement(
             MARK_REFERENCE_AS_DELETED,
+            false,
             true,
             config().repositoryId(),
             reference.name(),
@@ -180,6 +182,7 @@ public class CassandraPersist implements Persist {
     BoundStatement stmt =
         backend.buildStatement(
             PURGE_REFERENCE,
+            false,
             config().repositoryId(),
             reference.name(),
             serializeObjId(reference.pointer()),
@@ -206,6 +209,7 @@ public class CassandraPersist implements Persist {
     BoundStatement stmt =
         backend.buildStatement(
             UPDATE_REFERENCE_POINTER,
+            false,
             serializeObjId(newPointer),
             previous,
             config().repositoryId(),
@@ -248,7 +252,7 @@ public class CassandraPersist implements Persist {
   public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     BoundStatement stmt =
         backend.buildStatement(
-            FETCH_OBJ_TYPE, config.repositoryId(), singletonList(serializeObjId(id)));
+            FETCH_OBJ_TYPE, true, config.repositoryId(), singletonList(serializeObjId(id)));
     Row row = backend.execute(stmt).one();
     if (row != null) {
       String objType = requireNonNull(row.getString(0));
@@ -271,7 +275,8 @@ public class CassandraPersist implements Persist {
     Function<List<ObjId>, CompletionStage<AsyncResultSet>> queryFunc =
         keys ->
             backend.executeAsync(
-                backend.buildStatement(FIND_OBJS, config.repositoryId(), idsToStrings.apply(keys)));
+                backend.buildStatement(
+                    FIND_OBJS, true, config.repositoryId(), idsToStrings.apply(keys)));
 
     Function<Row, Obj> rowMapper =
         row -> {
@@ -339,6 +344,7 @@ public class CassandraPersist implements Persist {
     BoundStatement stmt =
         backend.buildStatement(
             DELETE_OBJ_CONDITIONAL,
+            false,
             config.repositoryId(),
             serializeObjId(obj.id()),
             obj.type().name(),
@@ -362,7 +368,7 @@ public class CassandraPersist implements Persist {
 
     BoundStatementBuilder stmt =
         backend
-            .newBoundStatementBuilder(serializer.updateConditionalCql())
+            .newBoundStatementBuilder(serializer.updateConditionalCql(), false)
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
             .setString(COL_OBJ_TYPE.name() + EXPECTED_SUFFIX, type.name())
@@ -436,7 +442,7 @@ public class CassandraPersist implements Persist {
 
     BoundStatementBuilder stmt =
         backend
-            .newBoundStatementBuilder(serializer.insertCql(upsert))
+            .newBoundStatementBuilder(serializer.insertCql(upsert), upsert)
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
             .setString(COL_OBJ_TYPE.name(), type.name())
@@ -454,7 +460,7 @@ public class CassandraPersist implements Persist {
   @Override
   public void deleteObj(@Nonnull ObjId id) {
     BoundStatement stmt =
-        backend.buildStatement(DELETE_OBJ, config.repositoryId(), serializeObjId(id));
+        backend.buildStatement(DELETE_OBJ, true, config.repositoryId(), serializeObjId(id));
     backend.execute(stmt);
   }
 
@@ -465,7 +471,8 @@ public class CassandraPersist implements Persist {
       String repoId = config.repositoryId();
       for (ObjId id : ids) {
         if (id != null) {
-          BoundStatement stmt = backend.buildStatement(DELETE_OBJ, repoId, serializeObjId(id));
+          BoundStatement stmt =
+              backend.buildStatement(DELETE_OBJ, true, repoId, serializeObjId(id));
           requests.submitted(backend.executeAsync(stmt));
         }
       }
@@ -491,7 +498,7 @@ public class CassandraPersist implements Persist {
 
     ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
       this.returnedObjTypes = returnedObjTypes;
-      BoundStatement stmt = backend.buildStatement(SCAN_OBJS, config.repositoryId());
+      BoundStatement stmt = backend.buildStatement(SCAN_OBJS, true, config.repositoryId());
       rs = backend.execute(stmt).iterator();
     }
 
