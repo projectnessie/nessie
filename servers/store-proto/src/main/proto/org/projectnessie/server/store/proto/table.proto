@@ -155,6 +155,7 @@ message UDF {
   optional string sql_text = 1;
   optional string dialect = 2;
 
-  optional int64 version_id = 3;
-  optional string metadata_location = 4;
+  optional string version_id = 3;
+  optional string signature_id = 4;
+  optional string metadata_location = 5;
 }

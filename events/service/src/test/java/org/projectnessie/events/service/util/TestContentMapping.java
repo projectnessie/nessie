@@ -136,13 +136,15 @@ class TestContentMapping {
             org.projectnessie.model.ImmutableUDF.builder()
                 .id("id")
                 .metadataLocation("metadataLocation")
-                .versionId(1L)
+                .versionId("42")
+                .signatureId("666")
                 .build(),
             ImmutableContent.builder()
                 .id("id")
                 .type("UDF")
                 .putProperty("metadataLocation", "metadataLocation")
-                .putProperty("versionId", 1L)
+                .putProperty("versionId", "42")
+                .putProperty("signatureId", "666")
                 .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableUDF.builder()

@@ -82,6 +82,9 @@ abstract class BaseSerializer<C extends Content> implements LegacyContentSeriali
     if (udf.hasVersionId()) {
       builder.versionId(udf.getVersionId());
     }
+    if (udf.hasSignatureId()) {
+      builder.versionId(udf.getSignatureId());
+    }
     return builder.build();
   }
 

@@ -48,7 +48,12 @@ public abstract class UDF extends Content {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  public abstract Long getVersionId();
+  public abstract String getVersionId();
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public abstract String getSignatureId();
 
   @Nullable
   @jakarta.annotation.Nullable
@@ -67,12 +72,21 @@ public abstract class UDF extends Content {
     return ImmutableUDF.builder();
   }
 
-  public static UDF of(String metadataLocation, long versionId) {
-    return builder().metadataLocation(metadataLocation).versionId(versionId).build();
+  public static UDF udf(String metadataLocation, String versionId, String signatureId) {
+    return builder()
+        .metadataLocation(metadataLocation)
+        .versionId(versionId)
+        .signatureId(signatureId)
+        .build();
   }
 
-  public static UDF of(String id, String metadataLocation, long versionId) {
-    return builder().id(id).metadataLocation(metadataLocation).versionId(versionId).build();
+  public static UDF udf(String id, String metadataLocation, String versionId, String signatureId) {
+    return builder()
+        .id(id)
+        .metadataLocation(metadataLocation)
+        .versionId(versionId)
+        .signatureId(signatureId)
+        .build();
   }
 
   @Deprecated

@@ -189,11 +189,15 @@ class TestStoreWorker {
             Content.Type.UDF),
         //
         Arguments.of(
-            UDF.of(CID, "metadata", 42),
+            UDF.udf(CID, "metadata", "42", "666"),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setUdf(
-                    ObjectTypes.UDF.newBuilder().setMetadataLocation("metadata").setVersionId(42)),
+                    ObjectTypes.UDF
+                        .newBuilder()
+                        .setMetadataLocation("metadata")
+                        .setVersionId("42")
+                        .setSignatureId("666")),
             null,
             Content.Type.UDF),
         //
