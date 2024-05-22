@@ -42,7 +42,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  *       quarkus.datasource.postgresql.*}
  * </ul>
  *
- * <p>To connect to use a MariaDB database instead, the following configuration should be used:
+ * <p>To connect to a MariaDB database instead, the following configuration should be used:
  *
  * <ul>
  *   <li>{@code nessie.version.store.type=JDBC}
