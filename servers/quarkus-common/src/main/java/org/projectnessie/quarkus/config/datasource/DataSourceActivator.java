@@ -30,6 +30,9 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
 
   private static final int APPLICATION_PROPERTIES_CLASSPATH_ORDINAL = 250;
 
+  private static String activeDataSourceName;
+  private static VersionStoreType versionStoreType;
+
   @Override
   public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
     if (name.startsWith("quarkus.datasource.") && name.endsWith(".active")) {
@@ -42,12 +45,16 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
     return context.proceed(name);
   }
 
-  private static VersionStoreType versionStoreType(ConfigSourceInterceptorContext context) {
-    ConfigValue versionStoreType = context.proceed("nessie.version.store.type");
-    if (versionStoreType == null || versionStoreType.getValue() == null) {
-      return VersionStoreType.IN_MEMORY;
+  private static synchronized VersionStoreType versionStoreType(
+      ConfigSourceInterceptorContext context) {
+    if (versionStoreType == null) {
+      ConfigValue value = context.proceed("nessie.version.store.type");
+      versionStoreType =
+          value == null || value.getValue() == null
+              ? VersionStoreType.IN_MEMORY
+              : VersionStoreType.valueOf(value.getValue());
     }
-    return VersionStoreType.valueOf(versionStoreType.getValue());
+    return versionStoreType;
   }
 
   private static String dataSourceName(String property) {
@@ -59,12 +66,13 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
     return unquote(dataSourceName);
   }
 
-  private static String activeDataSourceName(ConfigSourceInterceptorContext context) {
-    ConfigValue nessieDataSource = context.proceed("nessie.version.store.persist.jdbc.datasource");
-    if (nessieDataSource == null || nessieDataSource.getValue() == null) {
-      return "default";
+  private static synchronized String activeDataSourceName(ConfigSourceInterceptorContext context) {
+    if (activeDataSourceName == null) {
+      ConfigValue value = context.proceed("nessie.version.store.persist.jdbc.datasource");
+      activeDataSourceName =
+          value == null || value.getValue() == null ? "default" : unquote(value.getValue());
     }
-    return nessieDataSource.getValue();
+    return activeDataSourceName;
   }
 
   private static ConfigValue newConfigValue(boolean value) {
