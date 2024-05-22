@@ -49,7 +49,6 @@ import com.datastax.oss.driver.api.core.AllNodesFailedException;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DriverException;
 import com.datastax.oss.driver.api.core.DriverTimeoutException;
-import com.datastax.oss.driver.api.core.NodeUnavailableException;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
@@ -61,7 +60,7 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.datastax.oss.driver.api.core.servererrors.QueryExecutionException;
+import com.datastax.oss.driver.api.core.servererrors.QueryConsistencyException;
 import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -345,15 +344,23 @@ public final class CassandraBackend implements Backend {
   }
 
   static RuntimeException unhandledException(DriverException e) {
-    if (e instanceof QueryExecutionException) {
+    if (isUnknownOperationResult(e)) {
       return new UnknownOperationResultException(e);
-    } else if (e instanceof DriverTimeoutException
-        || e instanceof NodeUnavailableException
-        || e instanceof AllNodesFailedException) {
-      return new UnknownOperationResultException(e);
-    } else {
-      return e;
+    } else if (e instanceof AllNodesFailedException) {
+      AllNodesFailedException all = (AllNodesFailedException) e;
+      if (all.getAllErrors().values().stream()
+          .flatMap(List::stream)
+          .filter(DriverException.class::isInstance)
+          .map(DriverException.class::cast)
+          .anyMatch(CassandraBackend::isUnknownOperationResult)) {
+        return new UnknownOperationResultException(e);
+      }
     }
+    return e;
+  }
+
+  private static boolean isUnknownOperationResult(DriverException e) {
+    return e instanceof QueryConsistencyException || e instanceof DriverTimeoutException;
   }
 
   @Override
