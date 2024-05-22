@@ -431,11 +431,14 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   protected String decorateInsertStatement(String statement) {
     switch (productName()) {
+      case "postgresql":
+      case "h2":
+        return statement + " ON CONFLICT DO NOTHING";
       case "mysql":
       case "mariadb":
         return statement.replace("INSERT", "INSERT IGNORE");
       default:
-        return statement + " ON CONFLICT DO NOTHING";
+        throw new IllegalStateException("Unsupported database: " + productName());
     }
   }
 
