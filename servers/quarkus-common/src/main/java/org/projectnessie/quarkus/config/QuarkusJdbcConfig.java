@@ -22,9 +22,39 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 
 /**
  * Setting {@code nessie.version.store.type=JDBC} enables transactional/RDBMS as the version store
- * used by the Nessie server. Configuration of the datastore will be done by Quarkus and depends on
- * many factors, such as the actual database in use. A complete set of JDBC configuration options
- * can be found on <a href="https://quarkus.io/guides/datasource">quarkus.io</a>.
+ * used by the Nessie server.
+ *
+ * <p>Configuration of the datastore will be done by Quarkus and depends on many factors, such as
+ * the actual database to use. The property {@code nessie.version.store.persist.jdbc.datasource}
+ * will be used to select one of the built-in datasources; currently supported values are: {@code
+ * postgresql} (which activates the PostgresQL driver) and {@code mariadb} (which activates the
+ * MariaDB driver, compatible with MySQL servers).
+ *
+ * <p>For example, to configure a PostgresQL connection, the following configuration should be used:
+ *
+ * <ul>
+ *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.persist.jdbc.datasource=postgresql}
+ *   <li>{@code quarkus.datasource.postgresql.jdbc.url=jdbc:postgresql://localhost:5432/my_database}
+ *   <li>{@code quarkus.datasource.postgresql.username=<your username>}
+ *   <li>{@code quarkus.datasource.postgresql.password=<your password>}
+ *   <li>Other PostgresQL-specific properties can be set using {@code
+ *       quarkus.datasource.postgresql.*}
+ * </ul>
+ *
+ * <p>To connect to use a MariaDB database instead, the following configuration should be used:
+ *
+ * <ul>
+ *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.persist.jdbc.datasource=mariadb}
+ *   <li>{@code quarkus.datasource.mariadb.jdbc.url=jdbc:mariadb://localhost:3306/my_database}
+ *   <li>{@code quarkus.datasource.mariadb.username=<your username>}
+ *   <li>{@code quarkus.datasource.mariadb.password=<your password>}
+ *   <li>Other MariaDB-specific properties can be set using {@code quarkus.datasource.mariadb.*}
+ * </ul>
+ *
+ * <p>A complete set of JDBC configuration options can be found on <a
+ * href="https://quarkus.io/guides/datasource">quarkus.io</a>.
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.jdbc")
@@ -32,7 +62,12 @@ public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
 
   /**
    * The name of the datasource to use. Must correspond to a configured datasource under {@code
-   * quarkus.datasource.<name>}. If not provided, the default datasource (PostgreSQL) will be used.
+   * quarkus.datasource.<name>}. Supported values are: {@code postgresql} and {@code mariadb}. If
+   * not provided, the default Quarkus datasource, defined using the {@code quarkus.datasource.*}
+   * configuration keys, will be used (the corresponding driver is PostgresQL). Note that it is
+   * recommended to define "named" JDBC datasources, see <a
+   * href="https://quarkus.io/guides/datasource#jdbc-configuration">Quarkus JDBC config
+   * reference</a>.
    */
   Optional<String> datasource();
 
