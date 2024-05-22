@@ -28,6 +28,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-mongodb-tests"))
   implementation(project(":nessie-versioned-storage-rocksdb-tests"))
   implementation(project(":nessie-versioned-storage-testextension"))
+  implementation(project(":nessie-container-spec-helper"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-junit5")
@@ -51,4 +52,6 @@ dependencies {
 
   implementation(libs.testcontainers.keycloak)
   implementation(libs.keycloak.admin.client)
+
+  compileOnly(libs.immutables.value.annotations)
 }

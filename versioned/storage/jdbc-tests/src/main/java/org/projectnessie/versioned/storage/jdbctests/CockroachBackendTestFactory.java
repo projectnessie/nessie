@@ -31,7 +31,8 @@ public class CockroachBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    return new CockroachContainer(dockerImage("cockroach"));
+    return new CockroachContainer(
+        dockerImage("cockroach").asCompatibleSubstituteFor("cockroachdb/cockroach"));
   }
 
   @Override

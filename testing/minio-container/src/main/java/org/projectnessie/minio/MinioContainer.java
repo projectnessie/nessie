@@ -15,22 +15,16 @@
  */
 package org.projectnessie.minio;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.base.Preconditions;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -48,33 +42,6 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
     implements MinioAccess, CloseableResource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MinioContainer.class);
-
-  private static final String DEFAULT_IMAGE;
-  private static final String DEFAULT_TAG;
-
-  static {
-    URL resource = MinioContainer.class.getResource("Dockerfile-minio-version");
-    Objects.requireNonNull(resource, "Dockerfile-minio-version not found");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      DEFAULT_IMAGE =
-          System.getProperty(
-              "nessie.testing.minio.image",
-              Optional.ofNullable(System.getenv("MINIO_DOCKER_IMAGE")).orElse(imageTag[0]));
-      DEFAULT_TAG =
-          System.getProperty(
-              "nessie.testing.minio.tag",
-              Optional.ofNullable(System.getenv("MINIO_DOCKER_TAG")).orElse(imageTag[1]));
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
-  }
 
   private static final int DEFAULT_PORT = 9000;
 
@@ -129,7 +96,12 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
 
   @SuppressWarnings("resource")
   public MinioContainer(String image, String accessKey, String secretKey, String bucket) {
-    super(image == null ? DEFAULT_IMAGE + ":" + DEFAULT_TAG : image);
+    super(
+        ContainerSpecHelper.builder()
+            .name("minio")
+            .containerClass(MinioContainer.class)
+            .build()
+            .dockerImageName(image));
     withNetworkAliases(randomString("minio"));
     withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MinioContainer.class)));
     addExposedPort(DEFAULT_PORT);

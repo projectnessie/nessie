@@ -15,14 +15,11 @@
  */
 package org.projectnessie.versioned.storage.dynamodbtests;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static software.amazon.awssdk.regions.Region.US_WEST_2;
 
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendFactory;
@@ -33,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -75,26 +73,6 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
         .createClient();
   }
 
-  protected static String dockerImage(String dbName) {
-    URL resource =
-        DynamoDBBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String imageName = imageTag[0];
-      String version =
-          System.getProperty("it.nessie.container." + dbName + "-local.tag", imageTag[1]);
-      return imageName + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
-  }
-
   @Override
   @SuppressWarnings("resource")
   public void start(Optional<String> containerNetworkId) {
@@ -102,11 +80,16 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
       throw new IllegalStateException("Already started");
     }
 
-    String image = dockerImage("dynamodb-local");
+    DockerImageName dockerImage =
+        ContainerSpecHelper.builder()
+            .name("dynamodb-local")
+            .containerClass(DynamoDBBackendTestFactory.class)
+            .build()
+            .dockerImageName(null);
 
     for (int retry = 0; ; retry++) {
       GenericContainer<?> c =
-          new GenericContainer<>(image)
+          new GenericContainer<>(dockerImage)
               .withLogConsumer(new Slf4jLogConsumer(LOGGER))
               .withExposedPorts(DYNAMODB_PORT)
               .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb");

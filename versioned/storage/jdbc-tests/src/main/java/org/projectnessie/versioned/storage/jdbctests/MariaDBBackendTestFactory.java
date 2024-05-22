@@ -32,8 +32,8 @@ public class MariaDBBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   @SuppressWarnings("resource")
   protected JdbcDatabaseContainer<?> createContainer() {
-    String dockerImage = dockerImage("mariadb");
-    return new MariaDBContainer<>(dockerImage).withUrlParam("useBulkStmtsForInserts", "false");
+    return new MariaDBContainer<>(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"))
+        .withUrlParam("useBulkStmtsForInserts", "false");
   }
 
   @Override

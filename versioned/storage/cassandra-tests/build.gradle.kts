@@ -27,6 +27,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-cassandra"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-testextension"))
+  implementation(project(":nessie-container-spec-helper"))
 
   compileOnly(libs.jakarta.annotation.api)
 

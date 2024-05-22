@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-server")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-client") }
 
-extra["maven.name"] = "Nessie - Storage - MongoDB - Tests"
-
-description = "Base test code for creating test backends using MongoDB."
+extra["maven.name"] = "Nessie - Container Specification Helper"
 
 dependencies {
-  implementation(project(":nessie-versioned-storage-mongodb"))
-  implementation(project(":nessie-versioned-storage-common"))
-  implementation(project(":nessie-versioned-storage-testextension"))
-  implementation(project(":nessie-container-spec-helper"))
-
   implementation(libs.slf4j.api)
+  api(platform(libs.testcontainers.bom))
+  api("org.testcontainers:testcontainers")
 
-  compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  implementation(libs.mongodb.driver.sync)
-
-  implementation(platform(libs.testcontainers.bom))
-  implementation("org.testcontainers:mongodb")
+  testImplementation(libs.bundles.junit.testing)
 }

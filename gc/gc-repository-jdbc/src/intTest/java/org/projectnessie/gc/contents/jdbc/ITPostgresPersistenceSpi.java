@@ -15,14 +15,11 @@
  */
 package org.projectnessie.gc.contents.jdbc;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public class ITPostgresPersistenceSpi extends AbstractJdbcPersistenceSpi {
 
@@ -44,21 +41,12 @@ public class ITPostgresPersistenceSpi extends AbstractJdbcPersistenceSpi {
     }
   }
 
-  protected static String dockerImage(String dbName) {
-    URL resource = ITPostgresPersistenceSpi.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String image = imageTag[0];
-      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
-      return image + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
+  protected static DockerImageName dockerImage(String dbName) {
+    return ContainerSpecHelper.builder()
+        .name(dbName)
+        .containerClass(ITPostgresPersistenceSpi.class)
+        .build()
+        .dockerImageName(null)
+        .asCompatibleSubstituteFor("postgres");
   }
 }

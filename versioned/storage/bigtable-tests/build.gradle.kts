@@ -27,6 +27,8 @@ dependencies {
   implementation(project(":nessie-versioned-storage-bigtable"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-testextension"))
+  implementation(project(":nessie-container-spec-helper"))
+  compileOnly(libs.immutables.value.annotations)
 
   implementation(libs.slf4j.api)
 

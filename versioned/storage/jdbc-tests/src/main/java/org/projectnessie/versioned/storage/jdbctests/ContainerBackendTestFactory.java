@@ -15,42 +15,29 @@
  */
 package org.projectnessie.versioned.storage.jdbctests;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.shaded.com.google.common.base.Preconditions.checkState;
 
 import jakarta.annotation.Nonnull;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Optional;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 
 public abstract class ContainerBackendTestFactory extends AbstractJdbcBackendTestFactory {
   private static final Logger LOGGER = LoggerFactory.getLogger(ContainerBackendTestFactory.class);
 
   private JdbcDatabaseContainer<?> container;
 
-  protected static String dockerImage(String dbName) {
-    URL resource =
-        ContainerBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String image = imageTag[0];
-      String version = System.getProperty("it.nessie.container." + dbName + ".tag", imageTag[1]);
-      return image + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
+  protected static DockerImageName dockerImage(String dbName) {
+    return ContainerSpecHelper.builder()
+        .name(dbName)
+        .containerClass(ContainerBackendTestFactory.class)
+        .build()
+        .dockerImageName(null);
   }
 
   @Override

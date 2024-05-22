@@ -20,6 +20,8 @@ extra["maven.name"] = "Nessie - GCS testcontainer"
 
 dependencies {
   implementation(libs.slf4j.api)
+  implementation(project(":nessie-container-spec-helper"))
+  compileOnly(libs.immutables.value.annotations)
   api(platform(libs.testcontainers.bom))
   api("org.testcontainers:testcontainers")
 

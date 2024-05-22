@@ -16,20 +16,17 @@
 package org.projectnessie.versioned.storage.cassandratests;
 
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testcontainers.containers.CassandraContainer.CQL_PORT;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.Node;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackend;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
@@ -106,10 +103,14 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
       throw new IllegalStateException("Already started");
     }
 
-    String image = dockerImage(dbName);
-
     DockerImageName dockerImageName =
-        DockerImageName.parse(image).asCompatibleSubstituteFor("cassandra");
+        ContainerSpecHelper.builder()
+            .name(dbName)
+            .containerClass(AbstractCassandraBackendTestFactory.class)
+            .build()
+            .dockerImageName(null)
+            .asCompatibleSubstituteFor("cassandra");
+
     for (int retry = 0; ; retry++) {
       CassandraContainer<?> c =
           new CassandraContainer<>(dockerImageName)
@@ -141,26 +142,6 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
     localDc = container.getLocalDatacenter();
 
     hostAndPort = InetSocketAddress.createUnresolved(host, port);
-  }
-
-  protected static String dockerImage(String dbName) {
-    URL resource =
-        AbstractCassandraBackendTestFactory.class.getResource("Dockerfile-" + dbName + "-version");
-    try (InputStream in = resource.openConnection().getInputStream()) {
-      String[] imageTag =
-          Arrays.stream(new String(in.readAllBytes(), UTF_8).split("\n"))
-              .map(String::trim)
-              .filter(l -> l.startsWith("FROM "))
-              .map(l -> l.substring(5).trim().split(":"))
-              .findFirst()
-              .orElseThrow();
-      String imageName = imageTag[0];
-      String version =
-          System.getProperty("it.nessie.container." + dbName + "-local.tag", imageTag[1]);
-      return imageName + ':' + version;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to extract tag from " + resource, e);
-    }
   }
 
   public String getKeyspace() {

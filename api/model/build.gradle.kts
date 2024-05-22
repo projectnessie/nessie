@@ -61,6 +61,8 @@ dependencies {
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
   intTestImplementation(libs.awaitility)
+  intTestImplementation(project(":nessie-container-spec-helper"))
+  intTestCompileOnly(libs.immutables.value.annotations)
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
