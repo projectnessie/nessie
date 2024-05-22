@@ -129,11 +129,14 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @PermitAll
   public Response getToken() {
-    return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+    return Response.status(Response.Status.NOT_IMPLEMENTED)
         .entity(
             Map.of(
-                "error", "OAuthTokenEndpointUnavailable",
-                "error_description", "OAuth token endpoint is unavailable"))
+                "error",
+                "NotImplemented",
+                "error_description",
+                "Endpoint not implemented: please configure "
+                    + "the catalog client with the oauth2-server-uri property."))
         .build();
   }
 
