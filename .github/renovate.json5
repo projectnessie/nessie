@@ -20,21 +20,13 @@
     // do not add any labels, because that conflicts with CI job restarts, causing the wrong CI run
     // to be cancelled in GitHub actions when the `labeled` type is used in e.g. `on.pull_request.types`.
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper"],
-      labels: [],
-    },
-    {
-      matchManagers: ["pip_requirements", "pip_setup"],
-      labels: [],
-    },
-    {
-      matchManagers: ["dockerfile"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
       labels: [],
     },
 
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
-      matchManagers: ["dockerfile"],
+      matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
       matchUpdateTypes: ["major", "minor", "patch"],
       matchPackageNames: [
         "gcr.io/google.com/cloudsdktool/google-cloud-cli"
@@ -45,7 +37,7 @@
 
     // Dockerfile pin/digest updates
     {
-      matchManagers: ["dockerfile"],
+      matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
       matchUpdateTypes: ["pin", "pinDigest", "digest"],
       automerge: true,
       platformAutomerge: true
@@ -53,7 +45,7 @@
 
     // Check for updates, merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       platformAutomerge: true,
@@ -108,7 +100,7 @@
 
     // Special versioning for Minio
     {
-      matchManagers: ["dockerfile"],
+      matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
       packagePatterns: ["^quay.io/minio/minio"],
       versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>\\d{2})-(?<revision>\\d{2})-\\d{2}Z",
       // see https://docs.renovatebot.com/modules/versioning/#regular-expression-versioning
