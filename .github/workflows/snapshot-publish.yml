@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  java:
-    name: Publish from main
+  publish-to-maven:
+    name: Publish to Maven Central
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
@@ -44,14 +44,49 @@ jobs:
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
         run: |
           # 2 Retries - due to Gradle's old and unfixed CME bug
-          ./gradlew compileAll jar testClasses || \
-            ./gradlew compileAll jar testClasses || \
-            ./gradlew compileAll jar testClasses 
+          ./gradlew compileAll jar || \
+            ./gradlew compileAll jar || \
+            ./gradlew compileAll jar 
 
-          # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
+          # 2 Retries - due to Gradle's old and unfixed CME bug
           ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
             ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
             ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
+
+  publish-images:
+    name: Publish to Maven Central
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      SPARK_LOCAL_IP: localhost
+    if: github.repository == 'projectnessie/nessie'
+
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          fetch-depth: '0'
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
+        uses: ./.github/actions/dev-tool-java
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3
+        with:
+          cache-disabled: true
+
+      - name: List projects
+        run: ./gradlew projects
+
+      - name: Gradle / build
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: |
+          # 2 Retries - due to Gradle's old and unfixed CME bug
+          ./gradlew compileAll jar || \
+            ./gradlew compileAll jar || \
+            ./gradlew compileAll jar 
 
       - name: Docker images publishing
         run: |
