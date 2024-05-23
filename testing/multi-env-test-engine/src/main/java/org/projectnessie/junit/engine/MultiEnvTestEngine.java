@@ -24,10 +24,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Style.ImplementationVisibility;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
@@ -80,7 +81,8 @@ public class MultiEnvTestEngine implements TestEngine {
 
   public static final String ENGINE_ID = "nessie-multi-env";
 
-  private static final SegmentTypes ROOT_KEY = new SegmentTypes(Collections.emptyList());
+  private static final SegmentTypes ROOT_KEY =
+      SegmentTypes.newBuilder().components(Collections.emptyList()).build();
   private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
   private static final boolean FAIL_ON_MISSING_ENVIRONMENTS =
       !Boolean.getBoolean("org.projectnessie.junit.engine.ignore-empty-environments");
@@ -155,7 +157,7 @@ public class MultiEnvTestEngine implements TestEngine {
               }
 
               // Add this test into each known node at the current level
-              List<String> currentSegmentTypes = currentPosition.get();
+              List<String> currentSegmentTypes = currentPosition.components();
               for (TestDescriptor nodeAtCurrentPosition : nodeCache.get(currentPosition)) {
                 String environmentNames =
                     nodeAtCurrentPosition.getUniqueId().getSegments().stream()
@@ -200,40 +202,20 @@ public class MultiEnvTestEngine implements TestEngine {
   }
 
   /** Immutable key of segment types for the intermediate cartesian product tree. */
-  private static class SegmentTypes {
+  @Value.Immutable
+  @Value.Style(visibility = ImplementationVisibility.PACKAGE, overshadowImplementation = true)
+  interface SegmentTypes {
 
-    private final List<String> components;
+    List<String> components();
 
-    public SegmentTypes(List<String> components) {
-      this.components = components;
+    default SegmentTypes append(String component) {
+      return newBuilder().components(components()).addComponents(component).build();
     }
 
-    public List<String> get() {
-      return new ArrayList<>(components);
-    }
+    class Builder extends ImmutableSegmentTypes.Builder {}
 
-    public SegmentTypes append(String component) {
-      List<String> newComponents = new ArrayList<>(components);
-      newComponents.add(component);
-      return new SegmentTypes(newComponents);
-    }
-
-    @Override
-    public String toString() {
-      return components.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      SegmentTypes segmentTypes = (SegmentTypes) o;
-      return Objects.equals(components, segmentTypes.components);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(components);
+    static Builder newBuilder() {
+      return new Builder();
     }
   }
 
