@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.version.store.persist.repository-id` | (empty) | `String` | Nessie repository ID (optional) that identifies a particular Nessie storage repository. <br><br>When remote (shared) database is used, multiple Nessie repositories may co-exist in the same  database (and in the same schema). In that case this configuration parameter can be used to  distinguish those repositories.  |
