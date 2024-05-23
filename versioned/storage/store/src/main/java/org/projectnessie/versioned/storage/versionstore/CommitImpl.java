@@ -26,8 +26,6 @@ import static org.projectnessie.versioned.CommitValidation.CommitOperationType.C
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.DELETE;
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
-import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
-import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Unchanged.commitUnchanged;
@@ -202,13 +200,7 @@ class CommitImpl extends BaseCommitHelper {
     CommitObj newHead;
     try {
       CreateCommit createCommit = commit.build();
-      newHead =
-          commitLogic.buildCommitObj(
-              createCommit,
-              c -> CONFLICT,
-              (k, v) -> {},
-              NO_VALUE_REPLACEMENT,
-              NO_VALUE_REPLACEMENT);
+      newHead = commitLogic.buildCommitObj(createCommit);
 
       // If 'commitRetryState.storedContents' already contains the commit-ID, __we__ already
       // successfully persisted that commit. This can happen, if the `Persist` implementation raised

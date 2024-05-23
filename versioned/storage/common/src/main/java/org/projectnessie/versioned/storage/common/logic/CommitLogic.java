@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
+import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.List;
@@ -170,6 +173,13 @@ public interface CommitLogic {
       @Nonnull ValueReplacement expectedValueReplacement,
       @Nonnull ValueReplacement committedValueReplacement)
       throws CommitConflictException, ObjNotFoundException;
+
+  @Nonnull
+  default CommitObj buildCommitObj(@Nonnull CreateCommit createCommit)
+      throws CommitConflictException, ObjNotFoundException {
+    return buildCommitObj(
+        createCommit, c -> CONFLICT, (k, v) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
+  }
 
   @FunctionalInterface
   interface ValueReplacement {
