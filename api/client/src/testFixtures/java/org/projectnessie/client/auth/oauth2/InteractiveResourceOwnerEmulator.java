@@ -18,10 +18,10 @@ package org.projectnessie.client.auth.oauth2;
 import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_MOVED_TEMP;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,9 +44,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,13 +55,11 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InteractiveResourceOwnerEmulator.class);
 
-  private static final Pattern LOGIN_FORM_ACTION_PATTERN =
-      Pattern.compile("<form.*action=\"([^\"]+)\".*>");
-
   private static final AtomicInteger COUNTER = new AtomicInteger(1);
 
   protected final String username;
   protected final String password;
+  private final SSLContext sslContext;
 
   private final ExecutorService executor;
 
@@ -80,8 +78,14 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   private volatile Runnable completionListener;
 
   public InteractiveResourceOwnerEmulator(String username, String password) throws IOException {
+    this(username, password, null);
+  }
+
+  public InteractiveResourceOwnerEmulator(String username, String password, SSLContext sslContext)
+      throws IOException {
     this.username = username;
     this.password = password;
+    this.sslContext = sslContext;
     executor =
         Executors.newFixedThreadPool(
             2, r -> new Thread(r, getClass().getSimpleName() + COUNTER.getAndIncrement()));
@@ -157,31 +161,13 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   }
 
   /** Emulate user logging in to the authorization server. */
-  protected URI login(URI loginPageUrl, Set<String> cookies) throws Exception {
-    LOGGER.info("Performing login...");
-    // receive login page
-    String loginHtml = getHtmlPage(loginPageUrl, cookies);
-    Matcher matcher = LOGIN_FORM_ACTION_PATTERN.matcher(loginHtml);
-    assertThat(matcher.find()).isTrue();
-    URI loginActionUrl = new URI(matcher.group(1));
-    // send login form
-    HttpURLConnection loginActionConn = openConnection(loginActionUrl);
-    Map<String, String> data =
-        ImmutableMap.of(
-            "username", username,
-            "password", password,
-            "credentialId", "");
-    postForm(loginActionConn, data, cookies);
-    URI redirectUrl = readRedirectUrl(loginActionConn, cookies);
-    loginActionConn.disconnect();
-    return redirectUrl;
-  }
+  protected abstract URI login(URI loginPageUrl, Set<String> cookies) throws Exception;
 
   protected String getHtmlPage(URI url, Set<String> cookies) throws Exception {
     HttpURLConnection conn = openConnection(url);
     conn.setRequestMethod("GET");
     writeCookies(conn, cookies);
-    String html = readHtml(conn);
+    String html = readBody(conn);
     assertThat(conn.getResponseCode()).isEqualTo(HTTP_OK);
     readCookies(conn, cookies);
     conn.disconnect();
@@ -209,6 +195,11 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
    * hostname + port address that is only accessible within a Docker network, e.g. keycloak:8080.
    */
   protected HttpURLConnection openConnection(URI url) throws Exception {
+    // See https://github.com/projectnessie/nessie/issues/7918
+    return openConnection(url, "text/html, *; q=.2, */*; q=.2");
+  }
+
+  protected HttpURLConnection openConnection(URI url, String accept) throws Exception {
     HttpURLConnection conn;
     if (baseUri == null || baseUri.getHost().equals(url.getHost())) {
       conn = (HttpURLConnection) url.toURL().openConnection();
@@ -224,8 +215,10 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
               null);
       conn = (HttpURLConnection) transformed.toURL().openConnection();
     }
-    // See https://github.com/projectnessie/nessie/issues/7918
-    conn.addRequestProperty("Accept", "text/html, *; q=.2, */*; q=.2");
+    conn.addRequestProperty("Accept", accept);
+    if (sslContext != null && conn instanceof HttpsURLConnection) {
+      ((HttpsURLConnection) conn).setSSLSocketFactory(sslContext.getSocketFactory());
+    }
     return conn;
   }
 
@@ -275,7 +268,18 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     }
   }
 
-  protected static String readHtml(HttpURLConnection conn) throws IOException {
+  protected static void postJson(HttpURLConnection conn, String json, Set<String> cookies)
+      throws IOException {
+    conn.setRequestMethod("POST");
+    conn.addRequestProperty("Content-Type", "application/json; charset=utf-8");
+    writeCookies(conn, cookies);
+    conn.setDoOutput(true);
+    try (OutputStream out = conn.getOutputStream()) {
+      out.write(json.getBytes(UTF_8));
+    }
+  }
+
+  protected static String readBody(HttpURLConnection conn) throws IOException {
     String html;
     try (InputStream is = conn.getInputStream()) {
       html =
@@ -289,7 +293,8 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   protected static URI readRedirectUrl(HttpURLConnection conn, Set<String> cookies)
       throws Exception {
     conn.setInstanceFollowRedirects(false);
-    assertThat(conn.getResponseCode()).isIn(HTTP_MOVED_TEMP, HTTP_MOVED_PERM);
+    int responseCode = conn.getResponseCode();
+    assertThat(responseCode).isIn(HTTP_MOVED_PERM, HTTP_MOVED_TEMP, HTTP_SEE_OTHER);
     String location = conn.getHeaderField("Location");
     assertThat(location).isNotNull();
     readCookies(conn, cookies);

@@ -69,14 +69,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @ExtendWith(SoftAssertionsExtension.class)
-public class ITOAuth2Client {
+public class ITOAuth2ClientKeycloak {
 
   @Container
   private static final KeycloakContainer KEYCLOAK =
       new KeycloakContainer(
               ContainerSpecHelper.builder()
                   .name("keycloak")
-                  .containerClass(ITOAuth2Client.class)
+                  .containerClass(ITOAuth2ClientKeycloak.class)
                   .build()
                   .dockerImageName(null)
                   .toString())
@@ -142,10 +142,10 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws Exception {
-    try (AuthorizationCodeResourceOwnerEmulator resourceOwner1 =
-            new AuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t");
-        DeviceCodeResourceOwnerEmulator resourceOwner2 =
-            new DeviceCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
+    try (KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner1 =
+            new KeycloakAuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t");
+        KeycloakDeviceCodeResourceOwnerEmulator resourceOwner2 =
+            new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
 
       OAuth2ClientConfig config1 =
           clientConfig("Private1", true, false).grantType(CLIENT_CREDENTIALS).build();
@@ -433,8 +433,8 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadAuthorizationCode() throws Exception {
-    try (AuthorizationCodeResourceOwnerEmulator resourceOwner =
-        new AuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
+    try (KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
+        new KeycloakAuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.overrideAuthorizationCode("BAD_CODE", Status.UNAUTHORIZED);
       OAuth2ClientConfig config =
@@ -455,8 +455,8 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientDeviceCodeAccessDenied() throws Exception {
-    try (DeviceCodeResourceOwnerEmulator resourceOwner =
-        new DeviceCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
+    try (KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
+        new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
       resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
       resourceOwner.denyConsent();
       OAuth2ClientConfig config =
@@ -645,15 +645,15 @@ public class ITOAuth2Client {
         return ResourceOwnerEmulator.INACTIVE;
       case AUTHORIZATION_CODE:
         {
-          AuthorizationCodeResourceOwnerEmulator resourceOwner =
-              new AuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t");
+          KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
+              new KeycloakAuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t");
           resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
           return resourceOwner;
         }
       case DEVICE_CODE:
         {
-          DeviceCodeResourceOwnerEmulator resourceOwner =
-              new DeviceCodeResourceOwnerEmulator("Alice", "s3cr3t");
+          KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
+              new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t");
           resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
           return resourceOwner;
         }
