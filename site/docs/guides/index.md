@@ -92,8 +92,8 @@ Nessie was built as a Cloud native technology and is designed to be highly scala
 on Java and leveraging [Quarkus](https://quarkus.io/).
 This makes Nessie work very well in Docker and FaaS environments. 
 Nessie has a pluggable storage backend and comes pre-packaged with support for Amazon's DynamoDB,
-Google BigTable, Apache Cassandra, ScyllaDB, PostgreSQL (incl. Cockroach) and local storage
-using RocksDB.
+Google BigTable, Apache Cassandra, ScyllaDB, PostgreSQL (incl. Cockroach), MariaDB (compatible with 
+MySQL) and local storage using RocksDB.
 
 ## License and Governance
 Nessie is Apache-Licensed and built in an open source, consensus-driven GitHub community. 

@@ -42,6 +42,6 @@ public final class H2BackendTestFactory extends AbstractJdbcBackendTestFactory {
 
   @Override
   public Map<String, String> getQuarkusConfig() {
-    return Map.of("quarkus.datasource.jdbc.url", jdbcUrl());
+    return Map.of("quarkus.datasource.postgresql.jdbc.url", jdbcUrl());
   }
 }

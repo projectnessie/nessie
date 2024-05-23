@@ -52,8 +52,7 @@ public final class DatabaseSpecifics {
   public static final DatabaseSpecific H2_DATABASE_SPECIFIC =
       new BasePostgresDatabaseSpecific("VARCHAR");
 
-  public static final DatabaseSpecific MYSQL_MARIADB_DATABASE_SPECIFIC =
-      new MariaDBDatabaseSpecific();
+  public static final DatabaseSpecific MARIADB_DATABASE_SPECIFIC = new MariaDBDatabaseSpecific();
 
   public static DatabaseSpecific detect(DataSource dataSource) {
     try (Connection conn = dataSource.getConnection()) {
@@ -80,7 +79,7 @@ public final class DatabaseSpecifics {
           }
         case "mysql":
         case "mariadb":
-          return MYSQL_MARIADB_DATABASE_SPECIFIC;
+          return MARIADB_DATABASE_SPECIFIC;
         default:
           throw new IllegalStateException(
               "Could not select specifics to use for database product '" + productName + "'");
@@ -91,6 +90,20 @@ public final class DatabaseSpecifics {
   }
 
   static class BasePostgresDatabaseSpecific implements DatabaseSpecific {
+
+    /** Integrity constraint violation error code, as returned by H2, Postgres &amp; Cockroach. */
+    private static final String CONSTRAINT_VIOLATION_SQL_CODE = "23505";
+
+    /** Deadlock error, returned by Postgres. */
+    private static final String DEADLOCK_SQL_STATE_POSTGRES = "40P01";
+
+    /**
+     * Cockroach "retry, write too old" error, see <a
+     * href="https://www.cockroachlabs.com/docs/v21.1/transaction-retry-error-reference.html#retry_write_too_old">Cockroach's
+     * Transaction Retry Error Reference</a>, and Postgres may return a "deadlock" error.
+     */
+    private static final String RETRY_SQL_STATE_COCKROACH = "40001";
+
     private final Map<JdbcColumnType, String> typeMap;
     private final Map<JdbcColumnType, Integer> typeIdMap;
 
@@ -125,7 +138,7 @@ public final class DatabaseSpecifics {
 
     @Override
     public boolean isConstraintViolation(SQLException e) {
-      return CONSTRAINT_VIOLATION_SQL_STATE.equals(e.getSQLState());
+      return CONSTRAINT_VIOLATION_SQL_CODE.equals(e.getSQLState());
     }
 
     @Override
@@ -195,10 +208,7 @@ public final class DatabaseSpecifics {
 
     @Override
     public boolean isRetryTransaction(SQLException e) {
-      if (e.getSQLState() == null) {
-        return false;
-      }
-      return e.getSQLState().equals(MYSQL_LOCK_DEADLOCK_SQL_STATE);
+      return MYSQL_LOCK_DEADLOCK_SQL_STATE.equals(e.getSQLState());
     }
 
     @Override
