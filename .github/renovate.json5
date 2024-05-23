@@ -43,6 +43,14 @@
       platformAutomerge: true
     },
 
+    // Dockerfile pin/digest updates
+    {
+      matchManagers: ["dockerfile"],
+      matchUpdateTypes: ["pin", "pinDigest", "digest"],
+      automerge: true,
+      platformAutomerge: true
+    },
+
     // Check for updates, merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile"],
