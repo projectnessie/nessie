@@ -17,6 +17,8 @@ as necessary. Empty sections will not end in the release notes.
   2. Provide all the MariaDB (or MySQL) connection details using `quarkus.datasource.mariadb.*`
      configuration properties.
 - The Nessie GC tool is now also compatible with MariaDB and MySQL (using the MariaDB connector).
+- The Nessie Server Admin tool is now also compatible with MariaDB and MySQL (using the MariaDB
+  connector).
 
 ### Upgrade notes
 
