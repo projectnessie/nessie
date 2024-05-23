@@ -2,6 +2,83 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.83.0 Release (May 23, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.83.0).
+
+### Highlights
+
+- New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
+  SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
+  and reference names, syntax highlighting, paging of long results, command history.
+- Nessie now includes built-in support for MariaDB, with full compatibility with MySQL servers. New
+  users wishing to try MariaDB (or MySQL) should:
+  1. Specify the new configuration property: `nessie.version.store.persist.jdbc.datasource=mariadb`;
+  2. Provide all the MariaDB (or MySQL) connection details using `quarkus.datasource.mariadb.*`
+     configuration properties.
+- The Nessie GC tool is now also compatible with MariaDB and MySQL (using the MariaDB connector).
+- The Nessie Server Admin tool is now also compatible with MariaDB and MySQL (using the MariaDB
+  connector).
+
+### Upgrade notes
+
+- Due to the newly-introduced support for MariaDB, existing PostgreSQL users can continue to use
+  their current JDBC configuration, but are encouraged to update it as follows:
+  1. Specify the new configuration property: 
+     `nessie.version.store.persist.jdbc.datasource=postgresql`;
+  2. Migrate any property under `quarkus.datasource.*` to `quarkus.datasource.postgresql.*`. Support
+     for the old `quarkus.datasource.*` properties will be removed in a future release.
+- For the same reason, the Nessie Helm chart has been updated. The old `postgres` section is now
+  called `jdbc`. Existing Helm chart configurations should be updated accordingly, e.g.
+  `postgres.jdbcUrl` now becomes `jdbc.jdbcUrl`. Although the old `postgres` section is still
+  honored, it won't be supported in future releases. The right datasource will be chosen based on
+  the `jdbcUrl` contents.
+
+### Breaking changes
+
+- `nessie-quarkus-cli`, the low-level tool to for example export/import Nessie repositories, has been renamed
+  to `nessie-server-admin-tool`.
+
+### New Features
+
+- More verbose exceptions from Nessie GC.
+
+### Commits
+* Nessie Server Admin Tool: add support for MariaDB and MySQL backends (#8548)
+* Helm chart: add support for MariaDB and MySQL backends (#8554)
+* Persistence: properly handle timeout-ish exceptions (#8533)
+* Renovate: merge "digest" updates automatically (#8576)
+* Nessie GC: add support for MariaDB and MySQL backends (#8545)
+* Nessie server: add support for MariaDB and MySQL backends (#8544)
+* UDF type: additional changes (#8560)
+* Tests/Scylla: Cap SMP to 1/3 of num-CPUs (#8559)
+* Testing: Centralize image resolution (#8546)
+* Always close BigTable clients (#8549)
+* Cassandra: explicitly specify statement idempotence (#8557)
+* Refactor BackendTestFactory (#8553)
+* JDBC persist: properly handle SUCCESS_NO_INFO and EXECUTE_FAILED (#8551)
+* Persistence layer: add support for MariaDB and MySQL backends (#8483)
+* Renovate: add some recommended extensions (#8534)
+* Add congocc license to `NOTICE` (#8540)
+* Hide `namespace-validation` setting in docs (#8535)
+* Nit: fix Util.isHexChar() (#8528)
+* Experimental ability to cache `Reference`s (#8111)
+* Changelog / Server-Admin-Tool (#8515)
+* Nessie client: optionally disable certificate verifications (#8506)
+* Blog: Nessie Catalog announcement
+* Publish docker images of the server admin tool (#8507)
+* Verify BSD+MIT+Go+UPL+ISC license mentions in `NOTICE` file + expose in Nessie server, GC-tool, Admin-Tool and CLI/REPL (#8498)
+* Use `ubi9/openjdk-21-runtime` instead of `ubi9/openjdk-21` as the base image (#8503)
+* Rename nessie-quarkus-cli to nessie-server-admin-tool (#8482)
+* Add license reports and checks (#8497)
+* Bump slf4j to 1.7.36/2.0.12 + logback to 1.3.14/1.5.6 (#6536)
+* Add GC tool help to site and enhance GC tool help (#8447)
+* Update `UDF` + `IcebergView`content types (#8478)
+* Let renovate merge all google-cloud-cli Docker tag bumps (#8472)
+* New Java based Nessie CLI tool + REPL (#8348)
+* GC: more verbose error messages (#8467)
+* build-push-images.sh: remove unused "artifacts" parameter (#8464)
+
 ## 0.82.0 Release (May 06, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.82.0).

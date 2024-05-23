@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.82.0](https://img.shields.io/badge/Version-0.82.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.83.0](https://img.shields.io/badge/Version-0.83.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -90,6 +90,10 @@ $ helm uninstall --namespace nessie-ns nessie
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
+| jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database"` | The JDBC connection string. If you are using Nessie OSS images, then only PostgreSQL and MariaDB are supported. |
+| jdbc.secret.name | string | `"datasource-creds"` | The secret name to pull datasource credentials from. |
+| jdbc.secret.password | string | `"password"` | The secret key storing the datasource password. |
+| jdbc.secret.username | string | `"username"` | The secret key storing the datasource username. |
 | logLevel | string | `"INFO"` | The default logging level for the nessie server. |
 | mongodb.connectionString | string | `"mongodb://localhost:27017"` | The MongoDB connection string. |
 | mongodb.name | string | `"nessie"` | The MongoDB database name. |
@@ -100,10 +104,6 @@ $ helm uninstall --namespace nessie-ns nessie
 | podAnnotations | object | `{}` | Annotations to apply to nessie pods. |
 | podLabels | object | `{}` | Additional Labels to apply to nessie pods. |
 | podSecurityContext | object | `{}` | Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
-| postgres.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database"` | The Postgres JDBC connection string. |
-| postgres.secret.name | string | `"postgres-creds"` | The secret name to pull Postgres credentials from. |
-| postgres.secret.password | string | `"postgres_password"` | The secret key storing the Postgres password. |
-| postgres.secret.username | string | `"postgres_username"` | The secret key storing the Postgres username. |
 | replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using IN_MEMORY or ROCKSDB version store types. |
 | resources | object | `{}` | Configures the resources requests and limits for nessie pods. We usually recommend not to specify default resources and to leave this as a conscious choice for the user. This also increases chances charts run on environments with little resources, such as Minikube. If you do want to specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'resources:'. |
 | rocksdb.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |

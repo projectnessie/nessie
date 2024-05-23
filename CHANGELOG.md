@@ -8,6 +8,24 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+### Upgrade notes
+
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.83.0] Release (2024-05-23)
+
+### Highlights
+
 - New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
   SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
   and reference names, syntax highlighting, paging of long results, command history.
@@ -42,14 +60,6 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - More verbose exceptions from Nessie GC.
-
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
 
 ## [0.82.0] Release (2024-05-06)
 
@@ -452,7 +462,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.83.0...HEAD
+[0.83.0]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.0
 [0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
 [0.81.1]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...nessie-0.81.1
 [0.81.0]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...nessie-0.81.0
