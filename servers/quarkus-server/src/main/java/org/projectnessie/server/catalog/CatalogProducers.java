@@ -20,16 +20,9 @@ import static java.time.Clock.systemUTC;
 import com.azure.core.http.HttpClient;
 import com.google.auth.http.HttpTransportFactory;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkus.oidc.OidcTenantConfig;
-import io.quarkus.oidc.common.runtime.OidcCommonUtils;
-import io.quarkus.oidc.runtime.OidcConfig;
 import io.quarkus.runtime.StartupEvent;
-import io.quarkus.runtime.TlsConfig;
 import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
-import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.mutiny.core.Vertx;
-import io.vertx.mutiny.ext.web.client.WebClient;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Disposes;
@@ -65,7 +58,6 @@ import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
-import org.projectnessie.catalog.service.rest.IcebergOAuthProxy;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
@@ -300,21 +292,5 @@ public class CatalogProducers {
         .withConfigResource(configResource)
         .withTreeResource(treeResource)
         .build(NessieApiV2.class);
-  }
-
-  @Produces
-  @Singleton
-  @SuppressWarnings("CdiInjectionPointsInspection")
-  public IcebergOAuthProxy produceIcebergOAuthProxy(
-      OidcConfig oidcConfig, TlsConfig tlsConfig, Vertx vertx) {
-    OidcTenantConfig tenantConfig = oidcConfig.defaultTenant;
-    if (tenantConfig != null && tenantConfig.isTenantEnabled()) {
-      WebClientOptions options = new WebClientOptions();
-      OidcCommonUtils.setHttpClientOptions(tenantConfig, tlsConfig, options);
-      WebClient webClient = WebClient.create(vertx, options);
-      return new IcebergOAuthProxyImpl(webClient, tenantConfig, vertx);
-    } else {
-      return IcebergOAuthProxy.DISABLED;
-    }
   }
 }
