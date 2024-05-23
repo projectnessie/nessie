@@ -22,10 +22,10 @@ import org.junit.platform.engine.ConfigurationParameters;
 /**
  * Interface for JUnit5 test extensions that require running the same suite of tests in multiple
  * executions environments. For example, running the same tests for multiple versions of a Nessie
- * Client.<br>
- * <br>
- * Implementations must declare a {@link MultiEnvSegmentType} with the name of the type of their
- * Junit UniqueID segment.<br>
+ * Client.
+ *
+ * <p>Implementations must declare a {@link MultiEnvSegmentType} with the name of the type of their
+ * Junit UniqueID segment.
  */
 public interface MultiEnvTestExtension extends Extension {
 
