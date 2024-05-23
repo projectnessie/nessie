@@ -39,7 +39,7 @@ slf4j_compat = "1.7.36" # Spark up to 3.3 has a hard reference to org.slf4j.impl
 junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params", "junit-platform-reporting"]
 
 [libraries]
-agroal-pool = { module = "io.agroal:agroal-pool", version = "2.3" }
+agroal-pool = { module = "io.agroal:agroal-pool", version = "2.4" }
 agrona = { module = "org.agrona:agrona", version = "1.21.1" }
 antlr-antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
 antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
