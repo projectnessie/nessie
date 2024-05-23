@@ -2,7 +2,7 @@ version: "2"
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest@sha256:d985754717735751a772c3435e29f0045e2bb008acbac5c7b4adc7a8d36cbd34
+    image: ghcr.io/projectnessie/nessie:latest@sha256:7fc6cfe427db95f660f9676e10c30c5c21a91d48bf37b2ec52abb646d246b34d
     ports:
       - "19120:19120"
     depends_on:
