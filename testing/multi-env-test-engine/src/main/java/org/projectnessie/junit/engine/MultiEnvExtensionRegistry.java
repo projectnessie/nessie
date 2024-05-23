@@ -46,10 +46,6 @@ public class MultiEnvExtensionRegistry {
         .forEach(registry::registerExtension);
   }
 
-  public Stream<MultiEnvTestExtension> stream() {
-    return registry.stream(MultiEnvTestExtension.class);
-  }
-
   public Stream<? extends MultiEnvTestExtension> stream(Class<?> testClass) {
     return findMultiEnvTestExtensionsOn(testClass).flatMap(registry::stream);
   }
