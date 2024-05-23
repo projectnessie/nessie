@@ -312,11 +312,11 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   /**
-   * Called when the above {@link #storeCommit(CommitObj, List)} could not persist the {@link
-   * CommitObj} (duplicate object-id). Checks whether the persisted object is actually the object
-   * that's expected to be persisted - and yields "OK" in that case. This mitigates the risk of
-   * false-positive hash-collision errors in case the backend database runs into timeout situations
-   * with an undefined outcome.
+   * Called from the above {@link #storeCommit(CommitObj, List)}, handles the case when it could not
+   * persist the {@link CommitObj} (duplicate object-id). Checks whether the persisted object is
+   * actually the object that's expected to be persisted - and yields "OK" in that case. This
+   * mitigates the risk of false-positive hash-collision errors in case the backend database runs
+   * into timeout situations with an undefined outcome.
    */
   private CommitObj mitigateHashCollision(boolean storeResult, CommitObj commit) {
     if (storeResult) {

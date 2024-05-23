@@ -623,7 +623,7 @@ class BaseCommitHelper {
       // If the above pointer-bump returned an "unknown result", we check once (and only once!)
       // whether the reference-pointer-change succeeded. This mitigation may not always work,
       // especially not in highly concurrent update situations.
-      Reference r = persist.fetchReference(reference.name());
+      Reference r = persist.fetchReferenceForUpdate(reference.name());
       if (!reference.forNewPointer(newHead, persist.config()).equals(r)) {
         throw new RetryException(retryState);
       }
