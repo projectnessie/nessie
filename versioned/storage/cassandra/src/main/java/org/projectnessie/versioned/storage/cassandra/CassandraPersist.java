@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.cassandra.CassandraBackend.unhandledException;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_TYPE;
@@ -122,6 +123,8 @@ public class CassandraPersist implements Persist {
       }
 
       return batchedQuery.finish();
+    } catch (DriverException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -298,6 +301,8 @@ public class CassandraPersist implements Persist {
       }
 
       r = batchedQuery.finish();
+    } catch (DriverException e) {
+      throw unhandledException(e);
     }
 
     List<ObjId> notFound = null;
@@ -397,7 +402,7 @@ public class CassandraPersist implements Persist {
                       (resultSet, e) -> {
                         if (e != null) {
                           if (e instanceof DriverException) {
-                            backend.handleDriverException((DriverException) e);
+                            throw unhandledException((DriverException) e);
                           }
                           if (e instanceof RuntimeException) {
                             throw (RuntimeException) e;
@@ -412,6 +417,8 @@ public class CassandraPersist implements Persist {
           requests.submitted(cs);
         }
       }
+    } catch (DriverException e) {
+      throw unhandledException(e);
     }
 
     int l = results.length();
@@ -476,6 +483,8 @@ public class CassandraPersist implements Persist {
           requests.submitted(backend.executeAsync(stmt));
         }
       }
+    } catch (DriverException e) {
+      throw unhandledException(e);
     }
   }
 

@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
+import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.List;
@@ -71,13 +74,14 @@ public interface CommitLogic {
    *
    * @param commit commit to store
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return {@code true} if committed
+   * @return the persisted {@link CommitObj} if successful
    * @see #doCommit(CreateCommit, List)
    * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler, ValueReplacement,
    *     ValueReplacement)
    * @see #updateCommit(CommitObj)
    */
-  boolean storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects);
+  @Nullable
+  CommitObj storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects);
 
   /**
    * Updates an <em>existing</em> commit and handles storing the (external) {@link
@@ -169,6 +173,13 @@ public interface CommitLogic {
       @Nonnull ValueReplacement expectedValueReplacement,
       @Nonnull ValueReplacement committedValueReplacement)
       throws CommitConflictException, ObjNotFoundException;
+
+  @Nonnull
+  default CommitObj buildCommitObj(@Nonnull CreateCommit createCommit)
+      throws CommitConflictException, ObjNotFoundException {
+    return buildCommitObj(
+        createCommit, c -> CONFLICT, (k, v) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
+  }
 
   @FunctionalInterface
   interface ValueReplacement {

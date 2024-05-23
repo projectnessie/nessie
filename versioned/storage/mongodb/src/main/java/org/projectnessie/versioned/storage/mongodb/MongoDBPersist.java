@@ -46,7 +46,14 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 
 import com.google.common.collect.AbstractIterator;
 import com.mongodb.MongoBulkWriteException;
+import com.mongodb.MongoException;
+import com.mongodb.MongoExecutionTimeoutException;
+import com.mongodb.MongoInterruptedException;
+import com.mongodb.MongoServerUnavailableException;
+import com.mongodb.MongoSocketReadTimeoutException;
+import com.mongodb.MongoTimeoutException;
 import com.mongodb.MongoWriteException;
+import com.mongodb.WriteError;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.bulk.BulkWriteInsert;
 import com.mongodb.bulk.BulkWriteResult;
@@ -77,6 +84,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -155,7 +163,9 @@ public class MongoDBPersist implements Persist {
       if (e.getError().getCategory() == DUPLICATE_KEY) {
         throw new RefAlreadyExistsException(fetchReference(reference.name()));
       }
-      throw e;
+      throw unhandledException(e);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
     return reference;
   }
@@ -165,8 +175,17 @@ public class MongoDBPersist implements Persist {
   public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(false);
-    UpdateResult result =
-        backend.refs().updateOne(referenceCondition(reference), set(COL_REFERENCES_DELETED, true));
+
+    UpdateResult result;
+    try {
+      result =
+          backend
+              .refs()
+              .updateOne(referenceCondition(reference), set(COL_REFERENCES_DELETED, true));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
+
     if (result.getModifiedCount() != 1) {
       Reference ex = fetchReference(reference.name());
       if (ex == null) {
@@ -213,7 +232,13 @@ public class MongoDBPersist implements Persist {
       updates.add(set(COL_REFERENCES_PREVIOUS, new Binary(previous)));
     }
 
-    UpdateResult result = backend.refs().updateOne(referenceCondition(reference), updates);
+    UpdateResult result;
+    try {
+      result = backend.refs().updateOne(referenceCondition(reference), updates);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
+
     if (result.getModifiedCount() != 1) {
       if (result.getMatchedCount() == 1) {
         // not updated
@@ -234,7 +259,14 @@ public class MongoDBPersist implements Persist {
   public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     reference = reference.withDeleted(true);
-    DeleteResult result = backend.refs().deleteOne(referenceCondition(reference));
+
+    DeleteResult result;
+    try {
+      result = backend.refs().deleteOne(referenceCondition(reference));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
+
     if (result.getDeletedCount() != 1) {
       Reference ex = fetchReference(reference.name());
       if (ex == null) {
@@ -246,7 +278,12 @@ public class MongoDBPersist implements Persist {
 
   @Override
   public Reference fetchReference(@Nonnull String name) {
-    FindIterable<Document> result = backend.refs().find(eq(ID_PROPERTY_NAME, idRefDoc(name)));
+    FindIterable<Document> result;
+    try {
+      result = backend.refs().find(eq(ID_PROPERTY_NAME, idRefDoc(name)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
 
     Document doc = result.first();
     if (doc == null) {
@@ -274,7 +311,13 @@ public class MongoDBPersist implements Persist {
   public Reference[] fetchReferences(@Nonnull String[] names) {
     List<Document> nameIdDocs =
         Arrays.stream(names).filter(Objects::nonNull).map(this::idRefDoc).collect(toList());
-    FindIterable<Document> result = backend.refs().find(in(ID_PROPERTY_NAME, nameIdDocs));
+    FindIterable<Document> result;
+    try {
+      result = backend.refs().find(in(ID_PROPERTY_NAME, nameIdDocs));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
+
     Reference[] r = new Reference[names.length];
 
     for (Document doc : result) {
@@ -303,7 +346,12 @@ public class MongoDBPersist implements Persist {
   @Override
   @Nonnull
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
-    FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
+    FindIterable<Document> result;
+    try {
+      result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
 
     Document doc = result.first();
     if (doc == null) {
@@ -317,10 +365,15 @@ public class MongoDBPersist implements Persist {
   @Nonnull
   public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
-    FindIterable<Document> result =
-        backend
-            .objs()
-            .find(and(eq(ID_PROPERTY_NAME, idObjDoc(id)), eq(COL_OBJ_TYPE, type.shortName())));
+    FindIterable<Document> result;
+    try {
+      result =
+          backend
+              .objs()
+              .find(and(eq(ID_PROPERTY_NAME, idObjDoc(id)), eq(COL_OBJ_TYPE, type.shortName())));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
 
     Document doc = result.first();
     if (doc == null) {
@@ -337,7 +390,12 @@ public class MongoDBPersist implements Persist {
   @Override
   @Nonnull
   public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
-    FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
+    FindIterable<Document> result;
+    try {
+      result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
 
     Document doc = result.first();
     if (doc == null) {
@@ -384,7 +442,12 @@ public class MongoDBPersist implements Persist {
   }
 
   private void fetchObjsPage(Obj[] r, List<Document> list, Object2IntHashMap<ObjId> idToIndex) {
-    FindIterable<Document> result = backend.objs().find(in(ID_PROPERTY_NAME, list));
+    FindIterable<Document> result;
+    try {
+      result = backend.objs().find(in(ID_PROPERTY_NAME, list));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
     for (Document doc : result) {
       Obj obj = docToObj(doc);
       int idx = idToIndex.getValue(obj.id());
@@ -404,7 +467,9 @@ public class MongoDBPersist implements Persist {
       if (e.getError().getCategory() == DUPLICATE_KEY) {
         return false;
       }
-      throw e;
+      throw handleMongoWriteException(e);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
 
     return true;
@@ -439,7 +504,7 @@ public class MongoDBPersist implements Persist {
         List<BulkWriteError> errs = e.getWriteErrors();
         for (BulkWriteError err : errs) {
           if (err.getCategory() != DUPLICATE_KEY) {
-            throw e;
+            throw handleMongoWriteError(e, err);
           }
         }
         BulkWriteResult res = e.getWriteResult();
@@ -449,6 +514,8 @@ public class MongoDBPersist implements Persist {
             .mapToInt(id -> objIdIndex(objs, id))
             .mapToObj(docs::get)
             .forEach(inserts::add);
+      } catch (RuntimeException e) {
+        throw unhandledException(e);
       }
     }
     return r;
@@ -473,7 +540,11 @@ public class MongoDBPersist implements Persist {
 
   @Override
   public void deleteObj(@Nonnull ObjId id) {
-    backend.objs().deleteOne(eq(ID_PROPERTY_NAME, idObjDoc(id)));
+    try {
+      backend.objs().deleteOne(eq(ID_PROPERTY_NAME, idObjDoc(id)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   @Override
@@ -483,7 +554,11 @@ public class MongoDBPersist implements Persist {
     if (list.isEmpty()) {
       return;
     }
-    backend.objs().deleteMany(in(ID_PROPERTY_NAME, list));
+    try {
+      backend.objs().deleteMany(in(ID_PROPERTY_NAME, list));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   @Override
@@ -494,8 +569,12 @@ public class MongoDBPersist implements Persist {
     ReplaceOptions options = upsertOptions();
 
     Document doc = objToDoc(obj, false);
-    UpdateResult result =
-        backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc, options);
+    UpdateResult result;
+    try {
+      result = backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc, options);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
     if (!result.wasAcknowledged()) {
       throw new RuntimeException("Upsert not acknowledged");
     }
@@ -525,7 +604,12 @@ public class MongoDBPersist implements Persist {
 
     List<WriteModel<Document>> updates = new ArrayList<>(docs);
     if (!updates.isEmpty()) {
-      BulkWriteResult res = backend.objs().bulkWrite(updates);
+      BulkWriteResult res;
+      try {
+        res = backend.objs().bulkWrite(updates);
+      } catch (RuntimeException e) {
+        throw unhandledException(e);
+      }
       if (!res.wasAcknowledged()) {
         throw new RuntimeException("Upsert not acknowledged");
       }
@@ -537,14 +621,18 @@ public class MongoDBPersist implements Persist {
     ObjId id = obj.id();
     ObjType type = obj.type();
 
-    return backend
-            .objs()
-            .findOneAndDelete(
-                and(
-                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
-                    eq(COL_OBJ_TYPE, type.shortName()),
-                    eq(COL_OBJ_VERS, obj.versionToken())))
-        != null;
+    try {
+      return backend
+              .objs()
+              .findOneAndDelete(
+                  and(
+                      eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                      eq(COL_OBJ_TYPE, type.shortName()),
+                      eq(COL_OBJ_VERS, obj.versionToken())))
+          != null;
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   @Override
@@ -568,15 +656,19 @@ public class MongoDBPersist implements Persist {
 
     Bson update = Updates.combine(updates);
 
-    return backend
-            .objs()
-            .findOneAndUpdate(
-                and(
-                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
-                    eq(COL_OBJ_TYPE, type.shortName()),
-                    eq(COL_OBJ_VERS, expectedVersion)),
-                update)
-        != null;
+    try {
+      return backend
+              .objs()
+              .findOneAndUpdate(
+                  and(
+                      eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                      eq(COL_OBJ_TYPE, type.shortName()),
+                      eq(COL_OBJ_VERS, expectedVersion)),
+                  update)
+          != null;
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   @Nonnull
@@ -635,12 +727,18 @@ public class MongoDBPersist implements Persist {
     public ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
       List<String> objTypeShortNames =
           returnedObjTypes.stream().map(ObjType::shortName).collect(toList());
-      result =
-          backend
-              .objs()
-              .find(
-                  and(eq(ID_REPO_PATH, config.repositoryId()), in(COL_OBJ_TYPE, objTypeShortNames)))
-              .iterator();
+      try {
+        result =
+            backend
+                .objs()
+                .find(
+                    and(
+                        eq(ID_REPO_PATH, config.repositoryId()),
+                        in(COL_OBJ_TYPE, objTypeShortNames)))
+                .iterator();
+      } catch (RuntimeException e) {
+        throw unhandledException(e);
+      }
     }
 
     @Override
@@ -649,13 +747,57 @@ public class MongoDBPersist implements Persist {
         return endOfData();
       }
 
-      Document doc = result.next();
-      return docToObj(doc);
+      try {
+        Document doc = result.next();
+        return docToObj(doc);
+      } catch (RuntimeException e) {
+        throw unhandledException(e);
+      }
     }
 
     @Override
     public void close() {
       result.close();
+    }
+  }
+
+  static RuntimeException unhandledException(RuntimeException e) {
+    if (e instanceof MongoInterruptedException
+        || e instanceof MongoTimeoutException
+        || e instanceof MongoServerUnavailableException
+        || e instanceof MongoSocketReadTimeoutException
+        || e instanceof MongoExecutionTimeoutException) {
+      return new UnknownOperationResultException(e);
+    }
+    if (e instanceof MongoWriteException) {
+      return handleMongoWriteException((MongoWriteException) e);
+    }
+    if (e instanceof MongoBulkWriteException) {
+      MongoBulkWriteException specific = (MongoBulkWriteException) e;
+      for (BulkWriteError error : specific.getWriteErrors()) {
+        switch (error.getCategory()) {
+          case EXECUTION_TIMEOUT:
+          case UNCATEGORIZED:
+            return new UnknownOperationResultException(e);
+          default:
+            break;
+        }
+      }
+    }
+    return e;
+  }
+
+  static RuntimeException handleMongoWriteException(MongoWriteException e) {
+    return handleMongoWriteError(e, e.getError());
+  }
+
+  static RuntimeException handleMongoWriteError(MongoException e, WriteError error) {
+    switch (error.getCategory()) {
+      case EXECUTION_TIMEOUT:
+      case UNCATEGORIZED:
+        return new UnknownOperationResultException(e);
+      default:
+        return e;
     }
   }
 }

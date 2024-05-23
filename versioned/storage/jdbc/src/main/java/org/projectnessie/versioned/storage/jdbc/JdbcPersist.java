@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import static java.util.Collections.singleton;
-import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
 
 import jakarta.annotation.Nonnull;
 import java.sql.Connection;

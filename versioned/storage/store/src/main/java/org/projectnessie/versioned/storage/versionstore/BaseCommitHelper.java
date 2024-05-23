@@ -87,6 +87,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
@@ -618,6 +619,14 @@ class BaseCommitHelper {
   void bumpReferencePointer(ObjId newHead, Optional<?> retryState) throws RetryException {
     try {
       persist.updateReferencePointer(reference, newHead);
+    } catch (UnknownOperationResultException e) {
+      // If the above pointer-bump returned an "unknown result", we check once (and only once!)
+      // whether the reference-pointer-change succeeded. This mitigation may not always work,
+      // especially not in highly concurrent update situations.
+      Reference r = persist.fetchReferenceForUpdate(reference.name());
+      if (!reference.forNewPointer(newHead, persist.config()).equals(r)) {
+        throw new RetryException(retryState);
+      }
     } catch (RefConditionFailedException e) {
       throw new RetryException(retryState);
     } catch (RefNotFoundException e) {

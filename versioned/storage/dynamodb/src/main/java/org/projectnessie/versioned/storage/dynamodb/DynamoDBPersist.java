@@ -67,6 +67,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -78,6 +79,11 @@ import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializers;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.AbortedException;
+import software.amazon.awssdk.core.exception.ApiCallAttemptTimeoutException;
+import software.amazon.awssdk.core.exception.ApiCallTimeoutException;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
@@ -134,6 +140,8 @@ public class DynamoDBPersist implements Persist {
       return reference;
     } catch (ConditionalCheckFailedException e) {
       throw new RefAlreadyExistsException(fetchReference(reference.name()));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -196,14 +204,21 @@ public class DynamoDBPersist implements Persist {
         throw new RefNotFoundException(refName);
       }
       throw new RefConditionFailedException(r);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
   @Override
   @Nullable
   public Reference fetchReference(@Nonnull String name) {
-    GetItemResponse item =
-        backend.client().getItem(b -> b.tableName(backend.tableRefs).key(referenceKeyMap(name)));
+    GetItemResponse item;
+    try {
+      item =
+          backend.client().getItem(b -> b.tableName(backend.tableRefs).key(referenceKeyMap(name)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
     if (!item.hasItem()) {
       return null;
     }
@@ -257,30 +272,34 @@ public class DynamoDBPersist implements Persist {
     Map<String, KeysAndAttributes> requestItems =
         singletonMap(backend.tableRefs, KeysAndAttributes.builder().keys(keys).build());
 
-    BatchGetItemResponse response =
-        backend.client().batchGetItem(b -> b.requestItems(requestItems));
+    try {
+      BatchGetItemResponse response =
+          backend.client().batchGetItem(b -> b.requestItems(requestItems));
 
-    response
-        .responses()
-        .get(backend.tableRefs)
-        .forEach(
-            item -> {
-              String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
-              String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
-              long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
-              Reference reference =
-                  reference(
-                      name,
-                      DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_POINTER),
-                      DynamoDBSerde.attributeToBool(item, COL_REFERENCES_DELETED),
-                      createdAt,
-                      DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO),
-                      attributeToPreviousPointers(item));
-              int idx = nameToIndex.getValue(name);
-              if (idx >= 0) {
-                r[idx] = reference;
-              }
-            });
+      response
+          .responses()
+          .get(backend.tableRefs)
+          .forEach(
+              item -> {
+                String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
+                String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
+                long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
+                Reference reference =
+                    reference(
+                        name,
+                        DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_POINTER),
+                        DynamoDBSerde.attributeToBool(item, COL_REFERENCES_DELETED),
+                        createdAt,
+                        DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO),
+                        attributeToPreviousPointers(item));
+                int idx = nameToIndex.getValue(name);
+                if (idx >= 0) {
+                  r[idx] = reference;
+                }
+              });
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   private List<Reference.PreviousPointer> attributeToPreviousPointers(
@@ -295,8 +314,12 @@ public class DynamoDBPersist implements Persist {
   @Override
   @Nonnull
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
-    GetItemResponse item =
-        backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
+    GetItemResponse item;
+    try {
+      item = backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
     if (!item.hasItem()) {
       throw new ObjNotFoundException(id);
     }
@@ -308,8 +331,12 @@ public class DynamoDBPersist implements Persist {
   @Nonnull
   public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
-    GetItemResponse item =
-        backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
+    GetItemResponse item;
+    try {
+      item = backend.client().getItem(b -> b.tableName(backend.tableObjs).key(objKeyMap(id)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
     if (!item.hasItem()) {
       throw new ObjNotFoundException(id);
     }
@@ -327,14 +354,19 @@ public class DynamoDBPersist implements Persist {
   @Override
   @Nonnull
   public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
-    GetItemResponse item =
-        backend
-            .client()
-            .getItem(
-                b ->
-                    b.tableName(backend.tableObjs)
-                        .key(objKeyMap(id))
-                        .attributesToGet(COL_OBJ_TYPE));
+    GetItemResponse item;
+    try {
+      item =
+          backend
+              .client()
+              .getItem(
+                  b ->
+                      b.tableName(backend.tableObjs)
+                          .key(objKeyMap(id))
+                          .attributesToGet(COL_OBJ_TYPE));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
     if (!item.hasItem()) {
       throw new ObjNotFoundException(id);
     }
@@ -390,20 +422,24 @@ public class DynamoDBPersist implements Persist {
     Map<String, KeysAndAttributes> requestItems =
         singletonMap(backend.tableObjs, KeysAndAttributes.builder().keys(keys).build());
 
-    BatchGetItemResponse response =
-        backend.client().batchGetItem(b -> b.requestItems(requestItems));
+    try {
+      BatchGetItemResponse response =
+          backend.client().batchGetItem(b -> b.requestItems(requestItems));
 
-    response
-        .responses()
-        .get(backend.tableObjs)
-        .forEach(
-            item -> {
-              Obj obj = itemToObj(item);
-              int idx = idToIndex.getValue(obj.id());
-              if (idx != -1) {
-                r[idx] = obj;
-              }
-            });
+      response
+          .responses()
+          .get(backend.tableObjs)
+          .forEach(
+              item -> {
+                Obj obj = itemToObj(item);
+                int idx = idToIndex.getValue(obj.id());
+                if (idx != -1) {
+                  r[idx] = obj;
+                }
+              });
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   @Nonnull
@@ -444,7 +480,9 @@ public class DynamoDBPersist implements Persist {
       if (checkItemSizeExceeded(errorDetails)) {
         throw new ObjTooLargeException();
       }
-      throw e;
+      throw unhandledException(e);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
 
     return true;
@@ -463,6 +501,8 @@ public class DynamoDBPersist implements Persist {
           batchWrite.addDelete(objKey(id));
         }
       }
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -481,7 +521,9 @@ public class DynamoDBPersist implements Persist {
       if (checkItemSizeExceeded(errorDetails)) {
         throw new ObjTooLargeException();
       }
-      throw e;
+      throw unhandledException(e);
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -499,6 +541,8 @@ public class DynamoDBPersist implements Persist {
           batchWrite.addPut(item);
         }
       }
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -516,6 +560,8 @@ public class DynamoDBPersist implements Persist {
       return true;
     } catch (ConditionalCheckFailedException checkFailedException) {
       return false;
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -553,6 +599,8 @@ public class DynamoDBPersist implements Persist {
       return true;
     } catch (ConditionalCheckFailedException checkFailedException) {
       return false;
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
     }
   }
 
@@ -638,14 +686,18 @@ public class DynamoDBPersist implements Persist {
     String condition = referenceCondition(expected);
     Map<String, AttributeValue> values = referenceConditionAttributes(expected);
 
-    backend
-        .client()
-        .putItem(
-            b ->
-                b.tableName(backend.tableRefs)
-                    .conditionExpression(condition)
-                    .expressionAttributeValues(values)
-                    .item(referenceAttributeValues(reference)));
+    try {
+      backend
+          .client()
+          .putItem(
+              b ->
+                  b.tableName(backend.tableRefs)
+                      .conditionExpression(condition)
+                      .expressionAttributeValues(values)
+                      .item(referenceAttributeValues(reference)));
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
   }
 
   private static Map<String, AttributeValue> referenceConditionAttributes(Reference reference) {
@@ -709,31 +761,56 @@ public class DynamoDBPersist implements Persist {
       scanFilter.put(KEY_NAME, condition(BEGINS_WITH, fromS(keyPrefix)));
       scanFilter.put(COL_OBJ_TYPE, condition(IN, objTypes));
 
-      iter =
-          backend
-              .client()
-              .scanPaginator(b -> b.tableName(backend.tableObjs).scanFilter(scanFilter))
-              .iterator();
+      try {
+        iter =
+            backend
+                .client()
+                .scanPaginator(b -> b.tableName(backend.tableObjs).scanFilter(scanFilter))
+                .iterator();
+      } catch (RuntimeException e) {
+        throw unhandledException(e);
+      }
     }
 
     @Override
     protected Obj computeNext() {
-      while (true) {
-        if (!pageIter.hasNext()) {
-          if (!iter.hasNext()) {
-            return endOfData();
+      try {
+        while (true) {
+          if (!pageIter.hasNext()) {
+            if (!iter.hasNext()) {
+              return endOfData();
+            }
+            ScanResponse r = iter.next();
+            pageIter = r.items().iterator();
+            continue;
           }
-          ScanResponse r = iter.next();
-          pageIter = r.items().iterator();
-          continue;
-        }
 
-        Map<String, AttributeValue> item = pageIter.next();
-        return itemToObj(item);
+          Map<String, AttributeValue> item = pageIter.next();
+          return itemToObj(item);
+        }
+      } catch (RuntimeException e) {
+        throw unhandledException(e);
       }
     }
 
     @Override
     public void close() {}
+  }
+
+  static RuntimeException unhandledException(RuntimeException e) {
+    if (e instanceof SdkException) {
+      if (((SdkException) e).retryable()
+          || e instanceof ApiCallTimeoutException
+          || e instanceof ApiCallAttemptTimeoutException
+          || e instanceof AbortedException) {
+        return new UnknownOperationResultException(e);
+      }
+    }
+    if (e instanceof AwsServiceException) {
+      if (((AwsServiceException) e).isThrottlingException()) {
+        return new UnknownOperationResultException(e);
+      }
+    }
+    return e;
   }
 }

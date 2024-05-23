@@ -478,7 +478,7 @@ public class TestCommitConflicts {
         .containsEntry(fooKey, fooAddId)
         .containsEntry(barKey, barAddId);
 
-    soft.assertThat(commitLogic.storeCommit(firstCommit, emptyList())).isTrue();
+    soft.assertThat(commitLogic.storeCommit(firstCommit, emptyList())).isEqualTo(firstCommit);
     ObjId firstCommitId = firstCommit.id();
 
     // callback for a remove + update
@@ -502,7 +502,7 @@ public class TestCommitConflicts {
         .containsEntry(fooKey, null)
         .containsEntry(barKey, barUpdateId);
 
-    soft.assertThat(commitLogic.storeCommit(secondCommit, emptyList())).isTrue();
+    soft.assertThat(commitLogic.storeCommit(secondCommit, emptyList())).isEqualTo(secondCommit);
     ObjId secondCommitId = secondCommit.id();
     CommitObj secondCommitLoaded = requireNonNull(commitLogic.fetchCommit(secondCommitId));
     commitLogic.updateCommit(secondCommitLoaded);
