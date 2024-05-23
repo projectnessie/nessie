@@ -45,6 +45,16 @@ curl -o nessie-quarkus-{{ versions.nessie }}-runner.jar \
 java -jar nessie-quarkus-{{ versions.nessie }}-runner.jar
 ```
 
+## Nessie CLI as a standalone uber jar
+
+Requires Java 11 or newer.
+
+```bash
+curl -o nessie-cli-{{ versions.nessie }}-runner.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-cli-{{ versions.nessie }}-runner.jar
+java -jar nessie-cli-{{ versions.nessie }}-runner.jar
+```
+
 ## Nessie GC Tool as Docker image
 
 Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
