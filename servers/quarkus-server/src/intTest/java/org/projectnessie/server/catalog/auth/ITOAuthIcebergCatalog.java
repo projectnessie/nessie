@@ -37,7 +37,6 @@ public class ITOAuthIcebergCatalog extends AbstractAuthEnabledTests {
             String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
             OAuth2Properties.SCOPE,
             "email",
-            // See https://github.com/apache/iceberg/pull/10256
             OAuth2Properties.OAUTH2_SERVER_URI,
             tokenEndpoint.toString(),
             OAuth2Properties.CREDENTIAL,

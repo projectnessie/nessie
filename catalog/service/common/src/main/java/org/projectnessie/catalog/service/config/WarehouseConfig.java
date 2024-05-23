@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.service.config;
 
 import java.util.Map;
-import java.util.Optional;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface WarehouseConfig {
@@ -37,12 +36,4 @@ public interface WarehouseConfig {
 
   /** Location of the warehouse. Used to determine the base location of a table. */
   String location();
-
-  /**
-   * Whether the warehouse should use the token endpoint proxied through the Rest Catalog server, or
-   * the real one directly. The default is false (use the real one directly).
-   *
-   * <p>Using the proxied endpoint is considered insecure and should be avoided.
-   */
-  Optional<Boolean> allowAuthProxy();
 }

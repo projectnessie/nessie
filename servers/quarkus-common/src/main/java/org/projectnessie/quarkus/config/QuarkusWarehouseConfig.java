@@ -18,7 +18,6 @@ package org.projectnessie.quarkus.config;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithName;
 import java.util.Map;
-import java.util.Optional;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 
 public interface QuarkusWarehouseConfig extends WarehouseConfig {
@@ -34,8 +33,4 @@ public interface QuarkusWarehouseConfig extends WarehouseConfig {
   @WithName("location")
   @WithConverter(TrimTrailingSlash.class)
   String location();
-
-  @Override
-  @WithName("allow-auth-proxy")
-  Optional<Boolean> allowAuthProxy();
 }
