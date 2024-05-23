@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `LIST` `CONTENTS`
   \[ `ON`
       \[ **ReferenceType** \]

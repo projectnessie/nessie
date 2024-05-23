@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `SHOW` **ContentKind**
   \[ `ON`
       \[ **ReferenceType** \]

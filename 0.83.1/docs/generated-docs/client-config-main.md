@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Description |
 |----------|-------------|
 | `nessie.uri` | Config property name ("nessie.uri") for the Nessie service URL.  |
