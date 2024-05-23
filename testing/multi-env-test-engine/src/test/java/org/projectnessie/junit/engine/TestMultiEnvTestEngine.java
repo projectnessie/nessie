@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -505,6 +506,113 @@ class TestMultiEnvTestEngine {
     assertThat(uniqueTestNames).containsExactlyInAnyOrderElementsOf(expectedDisplayNames);
   }
 
+  @Test
+  void nonNestedTest() {
+    Set<UniqueId> uniqueTestIds =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .selectors(selectClass(NonNestedTest.class))
+            .selectors(selectClass(NonNestedTest.Inner.class))
+            .filters(new MultiEnvTestFilter())
+            .execute()
+            .testEvents()
+            .list()
+            .stream()
+            .map(e -> e.getTestDescriptor().getUniqueId())
+            .collect(Collectors.toSet());
+
+    List<UniqueId> expectedIds =
+        List.of(
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_1)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, NonNestedTest.class.getName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"),
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_2)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, NonNestedTest.class.getName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"));
+
+    assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
+  }
+
+  @Test
+  @Disabled // TODO: Support complex nesting
+  void onlyNestedTest() {
+    Set<UniqueId> uniqueTestIds =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .selectors(selectClass(OnlyNestedTest.class))
+            .selectors(selectClass(OnlyNestedTest.Inner.class))
+            .filters(new MultiEnvTestFilter())
+            .execute()
+            .testEvents()
+            .list()
+            .stream()
+            .map(e -> e.getTestDescriptor().getUniqueId())
+            .collect(Collectors.toSet());
+
+    List<UniqueId> expectedIds =
+        List.of(
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_1)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, OnlyNestedTest.class.getName())
+                .append(
+                    NestedClassTestDescriptor.SEGMENT_TYPE,
+                    OnlyNestedTest.Inner.class.getSimpleName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"),
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_2)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, OnlyNestedTest.class.getName())
+                .append(
+                    NestedClassTestDescriptor.SEGMENT_TYPE,
+                    OnlyNestedTest.Inner.class.getSimpleName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"));
+
+    assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
+  }
+
+  @Test
+  @Disabled // TODO: Support complex nesting
+  void cartesianNestedTest() {
+    Set<UniqueId> uniqueTestIds =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .selectors(selectClass(CartesianNestedTest.class))
+            .selectors(selectClass(CartesianNestedTest.Inner.class))
+            .filters(new MultiEnvTestFilter())
+            .execute()
+            .testEvents()
+            .list()
+            .stream()
+            .map(e -> e.getTestDescriptor().getUniqueId())
+            .collect(Collectors.toSet());
+
+    List<UniqueId> expectedIds =
+        List.of(
+            // Outer
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianNestedTest.class.getName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"),
+
+            // Inner
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+                .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_1)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianNestedTest.class.getName())
+                .append(
+                    NestedClassTestDescriptor.SEGMENT_TYPE,
+                    CartesianNestedTest.Inner.class.getSimpleName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"),
+            UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+                .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_2)
+                .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianNestedTest.class.getName())
+                .append(
+                    NestedClassTestDescriptor.SEGMENT_TYPE,
+                    CartesianNestedTest.Inner.class.getSimpleName())
+                .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"));
+
+    assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
+  }
+
   @SuppressWarnings({"JUnitMalformedDeclaration"}) // Intentionally not nested, used above
   public static class PlainTest {
     @Test
@@ -624,6 +732,61 @@ class TestMultiEnvTestEngine {
 
       @Test
       void test2() {
+        // nop
+      }
+    }
+  }
+
+  @ExtendWith(TestExtension2.class)
+  @SuppressWarnings({"JUnitMalformedDeclaration"}) // Intentionally not nested, used above
+  public static class NonNestedTest {
+    @Test
+    void test() {
+      // nop
+    }
+
+    // Note: No @Nested here!
+    @SuppressWarnings("InnerClassMayBeStatic") // Intentional for test
+    class Inner {
+      @SuppressWarnings("unused") // Intentional for test
+      @Test
+      void test() {
+        // nop
+      }
+    }
+  }
+
+  // Note: No extension here!
+  @SuppressWarnings({"JUnitMalformedDeclaration"}) // Intentionally not nested, used above
+  public static class OnlyNestedTest {
+    @Test
+    void test() {
+      // nop
+    }
+
+    @ExtendWith(TestExtension2.class)
+    @Nested
+    class Inner {
+      @Test
+      void test() {
+        // nop
+      }
+    }
+  }
+
+  @ExtendWith(TestExtension1.class)
+  @SuppressWarnings({"JUnitMalformedDeclaration"}) // Intentionally not nested, used above
+  public static class CartesianNestedTest {
+    @Test
+    void test() {
+      // nop
+    }
+
+    @ExtendWith(TestExtension2.class)
+    @Nested
+    class Inner {
+      @Test
+      void test() {
         // nop
       }
     }
