@@ -115,11 +115,13 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
       if (!transplantOp.dryRun()) {
         newHead = newCommit.id();
         CommitObj committed = commitLogic.storeCommit(newCommit, objsToStore);
-        // Here we have to know whether "our" 'newCommit' object has been persisted or not.
-        // If not equal, we have to assume that the commit already existed - aka a "fast-forward
+        if (committed != null) {
+          newCommit = committed;
+        }
+        // Here we have to know whether "our" 'newCommit' object is actually new or not.
+        // If it is equal to the source commit, we have to assume that it is a "fast-forward
         // transplant". This is only to maintain compatibility with (pre-)existing behavior.
-        // (This .equals has been introduced with https://github.com/projectnessie/nessie/pull/8533)
-        if (newCommit.equals(committed)) {
+        if (!newCommit.equals(sourceCommit)) {
           newCommit = committed;
           mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
         }

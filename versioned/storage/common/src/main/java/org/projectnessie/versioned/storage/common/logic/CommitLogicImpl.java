@@ -324,9 +324,7 @@ final class CommitLogicImpl implements CommitLogic {
     // timestamp of the commit-obj).
     try {
       CommitObj existing = persist.fetchTypedObj(commit.id(), COMMIT, CommitObj.class);
-      CommitObj commitWithNewCreatedTimestamp =
-          CommitObj.commitBuilder().from(commit).created(existing.created()).build();
-      return commitWithNewCreatedTimestamp.equals(existing) ? existing : null;
+      return commit.equals(existing) ? existing : null;
     } catch (ObjNotFoundException e) {
       return null;
     }

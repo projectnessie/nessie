@@ -137,7 +137,12 @@ public interface CommitObj extends Obj {
     CommitObj build();
   }
 
-  /** Creation timestamp in microseconds since epoch. */
+  /**
+   * Creation timestamp in microseconds since epoch.
+   *
+   * <p>Note that this value is not considered during Nessie commit hash value computations.
+   */
+  @Value.Auxiliary
   long created();
 
   /**
