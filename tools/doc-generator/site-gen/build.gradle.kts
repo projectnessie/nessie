@@ -208,16 +208,12 @@ val gcHelp = tasks.register<JavaExec>("gcHelp") {
   }
 }
 
-tasks.register<Copy>("generateDocs") {
+tasks.register<Sync>("generateDocs") {
   dependsOn(generatedMarkdownDocs)
   dependsOn(cliHelp)
   dependsOn(gcHelp)
 
   val targetDir = layout.buildDirectory.dir("markdown-docs")
-
-  doFirst {
-    delete(targetDir)
-  }
 
   inputs.files(cliGrammar)
   outputs.dir(targetDir)
@@ -228,19 +224,12 @@ tasks.register<Copy>("generateDocs") {
   from(cliHelpDir)
   from(gcHelpDir)
   from(provider { zipTree(cliGrammar.singleFile) }) {
-    include("org/projectnessie/nessie/cli/syntax/*.md")
-    eachFile {
-      path = "cli-syntax-$name"
-    }
-  }
-  from(provider { zipTree(cliGrammar.singleFile) }) {
     include("org/projectnessie/nessie/cli/syntax/*.help.txt")
-    eachFile {
-      path = "cli-help-${name.replace(".help.txt", ".md")}"
-    }
+    include("org/projectnessie/nessie/cli/syntax/*.md")
+    eachFile { path = if (name.endsWith(".help.txt")) "cli-help-${name.replace(".help.txt", ".md")}" else "cli-syntax-$name" }
   }
 
-  doLast {
-    delete(targetDir.get().dir("org"))
-  }
+  duplicatesStrategy = DuplicatesStrategy.FAIL
+
+  doLast { delete(targetDir.get().dir("org")) }
 }
