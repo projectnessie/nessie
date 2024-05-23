@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `CREATE` `NAMESPACE` **ContentKey**
   \[ `ON`
       \[ **ReferenceType** \]
