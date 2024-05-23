@@ -2,6 +2,50 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.83.2 Release (May 23, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.83.2).
+
+### Highlights
+
+- New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
+  SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
+  and reference names, syntax highlighting, paging of long results, command history.
+- Nessie now includes built-in support for MariaDB, with full compatibility with MySQL servers. New
+  users wishing to try MariaDB (or MySQL) should:
+  1. Specify the new configuration property: `nessie.version.store.persist.jdbc.datasource=mariadb`;
+  2. Provide all the MariaDB (or MySQL) connection details using `quarkus.datasource.mariadb.*`
+     configuration properties.
+- The Nessie GC tool is now also compatible with MariaDB and MySQL (using the MariaDB connector).
+- The Nessie Server Admin tool is now also compatible with MariaDB and MySQL (using the MariaDB
+  connector).
+
+### Upgrade notes
+
+- Due to the newly-introduced support for MariaDB, existing PostgreSQL users can continue to use
+  their current JDBC configuration, but are encouraged to update it as follows:
+  1. Specify the new configuration property: 
+     `nessie.version.store.persist.jdbc.datasource=postgresql`;
+  2. Migrate any property under `quarkus.datasource.*` to `quarkus.datasource.postgresql.*`. Support
+     for the old `quarkus.datasource.*` properties will be removed in a future release.
+- For the same reason, the Nessie Helm chart has been updated. The old `postgres` section is now
+  called `jdbc`. Existing Helm chart configurations should be updated accordingly, e.g.
+  `postgres.jdbcUrl` now becomes `jdbc.jdbcUrl`. Although the old `postgres` section is still
+  honored, it won't be supported in future releases. The right datasource will be chosen based on
+  the `jdbcUrl` contents.
+
+### Breaking changes
+
+- `nessie-quarkus-cli`, the low-level tool to for example export/import Nessie repositories, has been renamed
+  to `nessie-server-admin-tool`.
+
+### New Features
+
+- More verbose exceptions from Nessie GC.
+
+### Commits
+* Ninja: fix GH release-create
+
 ## 0.83.1 Release (May 23, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.83.1).
