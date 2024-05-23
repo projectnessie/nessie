@@ -11,9 +11,21 @@ as necessary. Empty sections will not end in the release notes.
 - New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
   SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
   and reference names, syntax highlighting, paging of long results, command history.
+- Nessie now includes built-in support for MariaDB, with full compatibility with MySQL servers. New
+  users wishing to try MariaDB (or MySQL) should:
+  1. Specify the new configuration property: `nessie.version.store.persist.jdbc.datasource=mariadb`;
+  2. Provide all the MariaDB (or MySQL) connection details using `quarkus.datasource.mariadb.*`
+     configuration properties.
 - The Nessie GC tool is now also compatible with MariaDB and MySQL (using the MariaDB connector).
 
 ### Upgrade notes
+
+- Due to the newly-introduced support for MariaDB, existing PostgreSQL users can continue to use
+  their current JDBC configuration, but are encouraged to update it as follows:
+  1. Specify the new configuration property: 
+     `nessie.version.store.persist.jdbc.datasource=postgresql`;
+  2. Migrate any property under `quarkus.datasource.*` to `quarkus.datasource.postgresql.*`. Support
+     for the old `quarkus.datasource.*` properties will be removed in a future release.
 
 ### Breaking changes
 

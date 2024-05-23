@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,20 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
 
-public class QuarkusTestProfilePersistPostgres extends BaseConfigProfile {
+public class QuarkusTestProfilePersistMySQL extends BaseConfigProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", JDBC.name())
-        .put("nessie.version.store.persist.jdbc.datasource", "postgresql")
-        .put("quarkus.datasource.jdbc.extended-leak-report", "true")
+        .put("nessie.version.store.persist.jdbc.datasource", "mariadb")
+        .put("quarkus.datasource.mariadb.jdbc.extended-leak-report", "true")
         .build();
   }
 
   @Override
   public List<TestResourceEntry> testResources() {
-    return ImmutableList.of(new TestResourceEntry(PostgresTestResourceLifecycleManager.class));
+    return ImmutableList.of(new TestResourceEntry(MySQLTestResourceLifecycleManager.class));
   }
 }

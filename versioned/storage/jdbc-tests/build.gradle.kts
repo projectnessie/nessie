@@ -39,6 +39,8 @@ dependencies {
 
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:postgresql")
+  implementation("org.testcontainers:mysql")
+  implementation("org.testcontainers:mariadb")
   implementation("org.testcontainers:cockroachdb")
   implementation("org.testcontainers:mariadb")
   implementation("org.testcontainers:mysql")
