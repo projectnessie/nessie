@@ -27,8 +27,8 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  * <p>Configuration of the datastore will be done by Quarkus and depends on many factors, such as
  * the actual database to use. The property {@code nessie.version.store.persist.jdbc.datasource}
  * will be used to select one of the built-in datasources; currently supported values are: {@code
- * postgresql} (which activates the PostgresQL driver) and {@code mariadb} (which activates the
- * MariaDB driver, compatible with MySQL servers).
+ * postgresql} (which activates the PostgresQL driver), {@code mariadb} (which activates the MariaDB
+ * driver), and {@code mysql} (which targets MySQL backends, but using the MariaDB driver).
  *
  * <p>For example, to configure a PostgresQL connection, the following configuration should be used:
  *
@@ -53,6 +53,20 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  *   <li>Other MariaDB-specific properties can be set using {@code quarkus.datasource.mariadb.*}
  * </ul>
  *
+ * <p>To connect to a MySQL database instead, the following configuration should be used:
+ *
+ * <ul>
+ *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.persist.jdbc.datasource=mysql}
+ *   <li>{@code quarkus.datasource.mysql.jdbc.url=jdbc:mysql://localhost:3306/my_database}
+ *   <li>{@code quarkus.datasource.mysql.username=<your username>}
+ *   <li>{@code quarkus.datasource.mysql.password=<your password>}
+ *   <li>Other MySQL-specific properties can be set using {@code quarkus.datasource.mysql.*}
+ * </ul>
+ *
+ * Note: for MySQL, the MariaDB driver is used, as it is compatible with MySQL. You can use either
+ * {@code jdbc:mysql} or {@code jdbc:mariadb} as the URL prefix.
+ *
  * <p>A complete set of JDBC configuration options can be found on <a
  * href="https://quarkus.io/guides/datasource">quarkus.io</a>.
  */
@@ -62,10 +76,10 @@ public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
 
   /**
    * The name of the datasource to use. Must correspond to a configured datasource under {@code
-   * quarkus.datasource.<name>}. Supported values are: {@code postgresql} and {@code mariadb}. If
-   * not provided, the default Quarkus datasource, defined using the {@code quarkus.datasource.*}
-   * configuration keys, will be used (the corresponding driver is PostgresQL). Note that it is
-   * recommended to define "named" JDBC datasources, see <a
+   * quarkus.datasource.<name>}. Supported values are: {@code postgresql} {@code mariadb} and {@code
+   * mysql}. If not provided, the default Quarkus datasource, defined using the {@code
+   * quarkus.datasource.*} configuration keys, will be used (the corresponding driver is
+   * PostgresQL). Note that it is recommended to define "named" JDBC datasources, see <a
    * href="https://quarkus.io/guides/datasource#jdbc-configuration">Quarkus JDBC config
    * reference</a>.
    */

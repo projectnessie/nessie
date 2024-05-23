@@ -29,8 +29,8 @@ public class QuarkusTestProfilePersistMySQL extends BaseConfigProfile {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", JDBC.name())
-        .put("nessie.version.store.persist.jdbc.datasource", "mariadb")
-        .put("quarkus.datasource.mariadb.jdbc.extended-leak-report", "true")
+        .put("nessie.version.store.persist.jdbc.datasource", "mysql")
+        .put("quarkus.datasource.mysql.jdbc.extended-leak-report", "true")
         .build();
   }
 

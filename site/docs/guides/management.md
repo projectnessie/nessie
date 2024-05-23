@@ -71,10 +71,6 @@ java -jar nessie-gc.jar create-sql-schema \
 ```
 
 !!! note
-    For MySQL servers, use a JDBC URL with prefix `jdbc:mariadb` – the Nessie GC tool does not 
-    support `jdbc:mysql` JDBC URLs.
-
-!!! note
     Instead of specifying the JDBC parameters, especially the password, everytime on the command
     line, most command line option values can be specified via environment variables. The naming
     scheme follows this Java pseudo-code:
