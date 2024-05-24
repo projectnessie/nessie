@@ -71,9 +71,9 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 11, Java 17 recommended.
 
 ```bash
-curl -L -o https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/nessie-gc-0.80.0 \
-  https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/nessie-gc-0.80.0
-java -jar https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/nessie-gc-0.80.0
+curl -L -o https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/nessie-gc-0.80.0.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-0.80.0/nessie-gc-0.80.0.jar
+java -jar nessie-gc-0.80.0.jar
 ```
 
 ### Nessie Repository Management tool as a standalone uber jar

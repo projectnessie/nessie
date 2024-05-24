@@ -53,8 +53,8 @@ Requires Java 11, Java 17 recommended.
 
 ```bash
 curl -L -o https://github.com/projectnessie/nessie/releases/download/nessie-0.79.0/nessie-gc-0.79.0 \
-  https://github.com/projectnessie/nessie/releases/download/nessie-0.79.0/https://github.com/projectnessie/nessie/releases/download/nessie-0.79.0/nessie-gc-0.79.0
-java -jar https://github.com/projectnessie/nessie/releases/download/nessie-0.79.0/nessie-gc-0.79.0
+  https://github.com/projectnessie/nessie/releases/download/nessie-0.79.0/nessie-gc-0.79.0
+java -jar nessie-gc-0.79.0
 ```
 
 ### Nessie Repository Management tool as a standalone uber jar
