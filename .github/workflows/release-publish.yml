@@ -131,6 +131,7 @@ jobs:
           ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
           ./gradlew publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
         mv servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+        mv cli/cli/build/libs/nessie-cli-${RELEASE_VERSION}.jar "${ARTIFACTS}"
         mv tools/server-admin/build/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
         mv gc/gc-tool/build/executable/nessie-gc.jar "${ARTIFACTS}"/nessie-gc-${RELEASE_VERSION}.jar
         echo "::endgroup::"
@@ -158,6 +159,7 @@ jobs:
         cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-cli-${RELEASE_VERSION}.jar" >> ${GITHUB_ENV}
         echo "GC_UBER_JAR=${ARTIFACTS}/nessie-gc-${RELEASE_VERSION}.jar" >> ${GITHUB_ENV}
         echo "SERVER_ADMIN_UBER_JAR=${ARTIFACTS}/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
@@ -259,6 +261,7 @@ jobs:
           --notes-file ${{ env.NOTES_FILE }} \
           --title "Nessie ${RELEASE_VERSION}" \
           "${QUARKUS_UBER_JAR}" \
+          "${CLI_UBER_JAR}" \
           "${GC_UBER_JAR}" \
           "${SERVER_ADMIN_UBER_JAR}" \
           "${NESSIE_OPENAPI}" \
