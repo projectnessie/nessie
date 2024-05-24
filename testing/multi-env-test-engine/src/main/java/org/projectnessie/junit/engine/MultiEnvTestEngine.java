@@ -15,6 +15,7 @@
  */
 package org.projectnessie.junit.engine;
 
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findMultiEnvTestExtensionsOn;
 import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.segmentTypeOf;
 
 import com.google.common.collect.ListMultimap;
@@ -23,8 +24,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
@@ -34,9 +37,8 @@ import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.descriptor.ClassTestDescriptor;
-import org.junit.jupiter.engine.descriptor.NestedClassTestDescriptor;
-import org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor;
-import org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor;
+import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
+import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.ExecutionRequest;
 import org.junit.platform.engine.TestDescriptor;
@@ -158,15 +160,40 @@ public class MultiEnvTestEngine implements TestEngine {
 
               // Add this test into each known node at the current level
               List<String> currentSegmentTypes = currentPosition.components();
-              for (TestDescriptor nodeAtCurrentPosition : nodeCache.get(currentPosition)) {
-                String environmentNames =
-                    nodeAtCurrentPosition.getUniqueId().getSegments().stream()
+              for (TestDescriptor currentNode : nodeCache.get(currentPosition)) {
+                // Add suffix to test names for usages that do not know how to read UniqueIds
+                String environment =
+                    currentNode.getUniqueId().getSegments().stream()
                         .filter(s -> currentSegmentTypes.contains(s.getType()))
                         .map(Segment::getValue)
                         .collect(Collectors.joining(","));
 
-                putTestIntoParent(
-                    testDescriptor, nodeAtCurrentPosition, environmentNames, discoveryRequest);
+                JupiterConfiguration nodeConfiguration =
+                    new CachingJupiterConfiguration(
+                        new MultiEnvJupiterConfiguration(
+                            discoveryRequest.getConfigurationParameters(), environment));
+
+                // Find tests as if they existed as children of the current node
+                JupiterEngineDescriptor discoverResult =
+                    new JupiterEngineDescriptor(currentNode.getUniqueId(), nodeConfiguration);
+                new DiscoverySelectorResolver().resolveSelectors(discoveryRequest, discoverResult);
+
+                List<? extends TestDescriptor> classBasedChildren =
+                    discoverResult.getChildren().stream()
+                        .filter(child -> child instanceof ClassBasedTestDescriptor)
+                        .collect(Collectors.toList());
+                for (TestDescriptor child : classBasedChildren) {
+                  Class<?> childTestClass = ((ClassBasedTestDescriptor) child).getTestClass();
+
+                  Set<String> segmentTypesOnChild =
+                      findMultiEnvTestExtensionsOn(childTestClass)
+                          .map(MultiEnvAnnotationUtils::segmentTypeOf)
+                          .collect(Collectors.toUnmodifiableSet());
+
+                  if (segmentTypesOnChild.equals(new HashSet<>(currentPosition.components()))) {
+                    currentNode.addChild(child);
+                  }
+                }
               }
             }
           });
@@ -217,62 +244,5 @@ public class MultiEnvTestEngine implements TestEngine {
     static Builder newBuilder() {
       return new Builder();
     }
-  }
-
-  private static void putTestIntoParent(
-      TestDescriptor test,
-      TestDescriptor parent,
-      String environmentNames,
-      EngineDiscoveryRequest discoveryRequest) {
-    JupiterConfiguration nodeConfiguration =
-        new CachingJupiterConfiguration(
-            new MultiEnvJupiterConfiguration(
-                discoveryRequest.getConfigurationParameters(), environmentNames));
-
-    parent.addChild(nodeWithIdAsChildOf(test, parent.getUniqueId(), nodeConfiguration));
-  }
-
-  /**
-   * Returns a new TestDescriptor node as if it were a child of the provided parent ID. Recursively
-   * generates new children with appropriate IDs, if any.
-   */
-  private static TestDescriptor nodeWithIdAsChildOf(
-      TestDescriptor originalNode, UniqueId parentId, JupiterConfiguration configuration) {
-    UniqueId newId = parentId.append(originalNode.getUniqueId().getLastSegment());
-
-    TestDescriptor nodeWithNewId;
-    if (originalNode instanceof ClassTestDescriptor) {
-      nodeWithNewId =
-          new ClassTestDescriptor(
-              newId, ((ClassTestDescriptor) originalNode).getTestClass(), configuration);
-    } else if (originalNode instanceof NestedClassTestDescriptor) {
-      nodeWithNewId =
-          new NestedClassTestDescriptor(
-              newId, ((NestedClassTestDescriptor) originalNode).getTestClass(), configuration);
-    } else if (originalNode instanceof TestMethodTestDescriptor) {
-      nodeWithNewId =
-          new TestMethodTestDescriptor(
-              newId,
-              ((TestMethodTestDescriptor) originalNode).getTestClass(),
-              ((TestMethodTestDescriptor) originalNode).getTestMethod(),
-              configuration);
-    } else if (originalNode instanceof TestTemplateTestDescriptor) {
-      nodeWithNewId =
-          new TestTemplateTestDescriptor(
-              newId,
-              ((TestTemplateTestDescriptor) originalNode).getTestClass(),
-              ((TestTemplateTestDescriptor) originalNode).getTestMethod(),
-              configuration);
-    } else {
-      throw new IllegalArgumentException(
-          String.format("Unable to process node of type %s.", originalNode.getClass().getName()));
-    }
-
-    for (TestDescriptor originalChild : originalNode.getChildren()) {
-      TestDescriptor newChild = nodeWithIdAsChildOf(originalChild, newId, configuration);
-      nodeWithNewId.addChild(newChild);
-    }
-
-    return nodeWithNewId;
   }
 }
