@@ -183,13 +183,13 @@ public class MultiEnvTestEngine implements TestEngine {
                         .filter(child -> child instanceof ClassBasedTestDescriptor)
                         .collect(Collectors.toList());
                 for (TestDescriptor child : classBasedChildren) {
+                  // Resolution above can discover children that do not apply to the current
+                  // environment. We need to filter them out.
                   Class<?> childTestClass = ((ClassBasedTestDescriptor) child).getTestClass();
-
                   Set<String> segmentTypesOnChild =
                       findNestedMultiEnvTestExtensionsOn(childTestClass)
                           .map(MultiEnvAnnotationUtils::segmentTypeOf)
                           .collect(Collectors.toUnmodifiableSet());
-
                   if (segmentTypesOnChild.equals(new HashSet<>(currentPosition.components()))) {
                     currentNode.addChild(child);
                   }
