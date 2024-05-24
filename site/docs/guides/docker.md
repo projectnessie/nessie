@@ -84,6 +84,6 @@ From there, you can use one of the three main Nessie integrations of:
 You can also install the [Nessie CLI/REPL](../nessie-latest/cli.md).
 
 ```bash
-curl -o nessie-cli-{{ versions.nessie }}-runner.jar \
+curl -L -o nessie-cli-{{ versions.nessie }}-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-cli-{{ versions.nessie }}-runner.jar
 ```
