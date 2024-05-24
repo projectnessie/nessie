@@ -42,7 +42,7 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-quarkus-0.83.2-runner.jar \
+curl -L -o nessie-quarkus-0.83.2-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-quarkus-0.83.2-runner.jar
 java -jar nessie-quarkus-0.83.2-runner.jar
 ```
@@ -52,7 +52,7 @@ java -jar nessie-quarkus-0.83.2-runner.jar
 Requires Java 11 or newer.
 
 ```bash
-curl -o nessie-cli-0.83.2-runner.jar \
+curl -L -o nessie-cli-0.83.2-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-cli-0.83.2-runner.jar
 java -jar nessie-cli-0.83.2-runner.jar
 ```
@@ -79,7 +79,7 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 11, Java 17 recommended.
 
 ```bash
-curl -o https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-gc-0.83.2 \
+curl -L -o https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-gc-0.83.2 \
   https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-gc-0.83.2
 java -jar https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-gc-0.83.2
 ```
@@ -89,7 +89,7 @@ java -jar https://github.com/projectnessie/nessie/releases/download/nessie-0.83.
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-server-admin-tool-0.83.2-runner.jar \
+curl -L -o nessie-server-admin-tool-0.83.2-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-0.83.2/nessie-server-admin-tool-0.83.2-runner.jar
 java -jar nessie-server-admin-tool-0.83.2-runner.jar
 ```
