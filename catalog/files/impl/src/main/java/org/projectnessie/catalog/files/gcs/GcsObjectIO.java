@@ -43,11 +43,11 @@ public class GcsObjectIO implements ObjectIO {
   public InputStream readObject(StorageUri uri) {
     GcsLocation location = gcsLocation(uri);
     GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+    @SuppressWarnings("resource")
     Storage client = storageSupplier.forLocation(bucketOptions);
     List<BlobSourceOption> sourceOptions = new ArrayList<>();
     bucketOptions
-        .decryptionKeyRef()
-        .map(keyRef -> storageSupplier.secretsProvider().getSecret(keyRef))
+        .decryptionKey()
         .map(BlobSourceOption::decryptionKey)
         .ifPresent(sourceOptions::add);
     bucketOptions.userProject().map(BlobSourceOption::userProject).ifPresent(sourceOptions::add);
@@ -63,14 +63,11 @@ public class GcsObjectIO implements ObjectIO {
   public OutputStream writeObject(StorageUri uri) {
     GcsLocation location = gcsLocation(uri);
     GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+    @SuppressWarnings("resource")
     Storage client = storageSupplier.forLocation(bucketOptions);
     List<BlobWriteOption> writeOptions = new ArrayList<>();
 
-    bucketOptions
-        .encryptionKeyRef()
-        .map(keyRef -> storageSupplier.secretsProvider().getSecret(keyRef))
-        .map(BlobWriteOption::encryptionKey)
-        .ifPresent(writeOptions::add);
+    bucketOptions.encryptionKey().map(BlobWriteOption::encryptionKey).ifPresent(writeOptions::add);
     bucketOptions.userProject().map(BlobWriteOption::userProject).ifPresent(writeOptions::add);
 
     BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(location.bucket(), location.path())).build();

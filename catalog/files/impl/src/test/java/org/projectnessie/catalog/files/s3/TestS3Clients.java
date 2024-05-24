@@ -16,8 +16,10 @@
 package org.projectnessie.catalog.files.s3;
 
 import java.time.Clock;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -52,8 +54,8 @@ public class TestS3Clients extends AbstractClients {
                 S3ProgrammaticOptions.S3PerBucketOptions.builder()
                     .endpoint(server1.getS3BaseUri())
                     .region("us-west-1")
-                    .accessKeyIdRef("ak1")
-                    .secretAccessKeyRef("sak1")
+                    .accessKeyId("ak1")
+                    .secretAccessKey("sak1")
                     .accessPoint(BUCKET_1)
                     .build());
     if (server2 != null) {
@@ -62,14 +64,18 @@ public class TestS3Clients extends AbstractClients {
           S3ProgrammaticOptions.S3PerBucketOptions.builder()
               .endpoint(server2.getS3BaseUri())
               .region("eu-central-2")
-              .accessKeyIdRef("ak2")
-              .secretAccessKeyRef("sak2")
+              .accessKeyId("ak2")
+              .secretAccessKey("sak2")
               .build());
     }
 
     S3ClientSupplier supplier =
         new S3ClientSupplier(
-            sdkHttpClient, S3Config.builder().build(), s3options.build(), secret -> "secret", null);
+            sdkHttpClient,
+            S3Config.builder().build(),
+            s3options.build(),
+            (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> "secret")),
+            null);
     return new S3ObjectIO(supplier, Clock.systemUTC());
   }
 

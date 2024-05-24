@@ -20,7 +20,6 @@ import io.smallrye.config.WithName;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.catalog.service.config.CatalogConfig;
-import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 @ConfigMapping(prefix = "nessie.catalog")
 public interface QuarkusCatalogConfig extends CatalogConfig {
@@ -39,12 +38,4 @@ public interface QuarkusCatalogConfig extends CatalogConfig {
   @Override
   @WithName("iceberg-config-overrides")
   Map<String, String> icebergConfigOverrides();
-
-  /**
-   * Secrets must be provided in the configuration as key-value pairs of the form: {@code
-   * nessie.catalog.secrets.<secret-ref>=<value>}, where _`secret-ref`_ is the name used where it is
-   * referenced, for example via `nessie.catalog.service.s3.access-key-id-ref`.
-   */
-  @ConfigPropertyName("secret-ref")
-  Map<String, String> secrets();
 }

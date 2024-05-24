@@ -21,13 +21,13 @@ import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 
 public interface CatalogAdlsFileSystemOptions extends AdlsFileSystemOptions {
   @Override
-  Optional<String> accountNameRef();
+  Optional<String> accountName();
 
   @Override
-  Optional<String> accountKeyRef();
+  Optional<String> accountKey();
 
   @Override
-  Optional<String> sasTokenRef();
+  Optional<String> sasToken();
 
   @Override
   Optional<String> endpoint();

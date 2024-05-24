@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files.gcs;
 
 import static org.projectnessie.catalog.files.gcs.GcsClients.buildSharedHttpTransportFactory;
 
 import com.google.auth.http.HttpTransportFactory;
+import java.util.stream.Collectors;
+import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.ObjectIO;
-import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
-import org.projectnessie.catalog.files.gcs.GcsObjectIO;
-import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions;
-import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -57,7 +55,10 @@ public class TestGcsClients extends AbstractClients {
     }
 
     GcsStorageSupplier supplier =
-        new GcsStorageSupplier(httpTransportFactory, gcsOptions.build(), secret -> "secret");
+        new GcsStorageSupplier(
+            httpTransportFactory,
+            gcsOptions.build(),
+            (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> "secret")));
 
     return new GcsObjectIO(supplier);
   }

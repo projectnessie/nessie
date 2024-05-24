@@ -54,10 +54,8 @@ services:
         # MinIO endpoint for clients (on the Podman/Docker host)
       - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
       - nessie.catalog.service.s3.path-style-access=true
-      - nessie.catalog.service.s3.access-key-id-ref=accessKeyRefId
-      - nessie.catalog.service.s3.secret-access-key-ref=awsSecretAccessKeyRefId
-      - nessie.catalog.secrets.accessKeyRefId=minioadmin
-      - nessie.catalog.secrets.awsSecretAccessKeyRefId=minioadmin
+      - nessie.catalog.service.s3.access-key-id=minioadmin
+      - nessie.catalog.service.s3.secret-access-key=minioadmin
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
       # Telemetry

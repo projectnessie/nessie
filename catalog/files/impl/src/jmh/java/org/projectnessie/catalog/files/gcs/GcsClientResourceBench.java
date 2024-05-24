@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
 import com.google.auth.http.HttpTransportFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -60,13 +61,13 @@ public class GcsClientResourceBench {
       HttpTransportFactory httpTransportFactory = GcsClients.buildSharedHttpTransportFactory();
 
       GcsOptions<GcsBucketOptions> gcsOptions =
-          GcsProgrammaticOptions.builder()
-              .oauth2TokenRef("foo")
-              .host(server.getGcsBaseUri())
-              .build();
+          GcsProgrammaticOptions.builder().oauth2Token("foo").host(server.getGcsBaseUri()).build();
 
       storageSupplier =
-          new GcsStorageSupplier(httpTransportFactory, gcsOptions, secret -> "secret");
+          new GcsStorageSupplier(
+              httpTransportFactory,
+              gcsOptions,
+              (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> k)));
     }
 
     @TearDown

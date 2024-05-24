@@ -76,8 +76,7 @@ class TestS3SessionsManager {
         };
 
     S3SessionsManager manager =
-        new S3SessionsManager(
-            s3options, time::get, null, clientBuilder, Optional.empty(), s -> s, loader);
+        new S3SessionsManager(s3options, time::get, null, clientBuilder, Optional.empty(), loader);
     S3BucketOptions options = S3ProgrammaticOptions.builder().region("R1").roleArn("role").build();
 
     credentials.set(credentials(time.get() + 100));
@@ -133,8 +132,7 @@ class TestS3SessionsManager {
         };
 
     S3SessionsManager manager =
-        new S3SessionsManager(
-            s3options, time::get, null, clientBuilder, Optional.empty(), s -> s, loader);
+        new S3SessionsManager(s3options, time::get, null, clientBuilder, Optional.empty(), loader);
     S3BucketOptions options = S3ProgrammaticOptions.builder().region("R1").roleArn("role").build();
 
     credentials.set(credentials(time.get() + 100));
@@ -157,8 +155,7 @@ class TestS3SessionsManager {
     AtomicReference<Credentials> credentials = new AtomicReference<>();
     SessionCredentialsFetcher loader = (client, key, duration) -> credentials.get();
     S3SessionsManager manager =
-        new S3SessionsManager(
-            s3options, time::get, null, (p) -> null, Optional.empty(), s -> s, loader);
+        new S3SessionsManager(s3options, time::get, null, (p) -> null, Optional.empty(), loader);
 
     S3BucketOptions options = S3ProgrammaticOptions.builder().region("R1").roleArn("role").build();
     Credentials c1 = credentials(time.get() + 100);
@@ -185,7 +182,6 @@ class TestS3SessionsManager {
         null,
         (p) -> null,
         Optional.of(meterRegistry),
-        s -> s,
         (client, key, duration) -> null);
 
     Function<Meter, AbstractListAssert<?, List<?>, Object, ObjectAssert<Object>>> extractor =

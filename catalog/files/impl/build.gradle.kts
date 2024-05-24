@@ -62,6 +62,9 @@ dependencies {
 
   testFixturesApi(project(":nessie-object-storage-mock"))
 
+  testCompileOnly(project(":nessie-immutables"))
+  testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
+
   testRuntimeOnly(libs.logback.classic)
 
   jmhImplementation(libs.jmh.core)

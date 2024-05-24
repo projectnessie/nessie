@@ -15,11 +15,18 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import static org.projectnessie.catalog.files.secrets.SecretsHelper.Specializeable.specializable;
+
+import com.google.common.collect.ImmutableList;
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
+import org.projectnessie.catalog.files.secrets.SecretsHelper;
+import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketOptions {
@@ -84,20 +91,18 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   Optional<String> projectId();
 
   /**
-   * The default reference to the access-key-id to use, if not configured {@linkplain #buckets() per
-   * bucket}. An access-key-id must be configured, either {@linkplain #buckets() per bucket} or
-   * here.
+   * The default access-key-id to use, if not configured {@linkplain #buckets() per bucket}. An
+   * access-key-id must be configured, either {@linkplain #buckets() per bucket} or here.
    */
   @Override
-  Optional<String> accessKeyIdRef();
+  Optional<String> accessKeyId();
 
   /**
-   * The default reference to the secret-access-key to use, if not configured {@linkplain #buckets()
-   * per bucket}. A secret-access-key must be configured, either {@linkplain #buckets() per bucket}
-   * or here.
+   * The default secret-access-key to use, if not configured {@linkplain #buckets() per bucket}. A
+   * secret-access-key must be configured, either {@linkplain #buckets() per bucket} or here.
    */
   @Override
-  Optional<String> secretAccessKeyRef();
+  Optional<String> secretAccessKey();
 
   /**
    * The time period to subtract from the S3 session credentials (assumed role credentials) expiry
@@ -132,15 +137,39 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   @ConfigPropertyName("bucket-name")
   Map<String, PER_BUCKET> buckets();
 
-  default S3BucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
+  default S3BucketOptions effectiveOptionsForBucket(
+      Optional<String> bucketName, SecretsProvider secretsProvider) {
     if (bucketName.isEmpty()) {
-      return this;
+      return resolveSecrets(null, null, secretsProvider);
     }
-    S3BucketOptions perBucket = buckets().get(bucketName.get());
+    String name = bucketName.get();
+    S3BucketOptions perBucket = buckets().get(name);
     if (perBucket == null) {
-      return this;
+      return resolveSecrets(name, null, secretsProvider);
     }
 
-    return S3ProgrammaticOptions.S3PerBucketOptions.builder().from(this).from(perBucket).build();
+    return resolveSecrets(name, perBucket, secretsProvider);
+  }
+
+  List<SecretsHelper.Specializeable<S3BucketOptions, S3PerBucketOptions.Builder>> SECRETS =
+      ImmutableList.of(
+          specializable(
+              "accessKeyId", S3BucketOptions::accessKeyId, S3PerBucketOptions.Builder::accessKeyId),
+          specializable(
+              "secretAccessKey",
+              S3BucketOptions::secretAccessKey,
+              S3PerBucketOptions.Builder::secretAccessKey));
+
+  default S3BucketOptions resolveSecrets(
+      String filesystemName, S3BucketOptions specific, SecretsProvider secretsProvider) {
+    S3PerBucketOptions.Builder builder = S3PerBucketOptions.builder().from(this);
+    if (specific != null) {
+      builder.from(specific);
+    }
+
+    SecretsHelper.resolveSecrets(
+        secretsProvider, "object-stores.s3", builder, this, filesystemName, specific, SECRETS);
+
+    return builder.build();
   }
 }
