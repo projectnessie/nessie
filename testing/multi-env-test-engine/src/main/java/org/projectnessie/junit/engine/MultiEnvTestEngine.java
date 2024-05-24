@@ -15,7 +15,7 @@
  */
 package org.projectnessie.junit.engine;
 
-import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findMultiEnvTestExtensionsOn;
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findNestedMultiEnvTestExtensionsOn;
 import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.segmentTypeOf;
 
 import com.google.common.collect.ListMultimap;
@@ -186,7 +186,7 @@ public class MultiEnvTestEngine implements TestEngine {
                   Class<?> childTestClass = ((ClassBasedTestDescriptor) child).getTestClass();
 
                   Set<String> segmentTypesOnChild =
-                      findMultiEnvTestExtensionsOn(childTestClass)
+                      findNestedMultiEnvTestExtensionsOn(childTestClass)
                           .map(MultiEnvAnnotationUtils::segmentTypeOf)
                           .collect(Collectors.toUnmodifiableSet());
 

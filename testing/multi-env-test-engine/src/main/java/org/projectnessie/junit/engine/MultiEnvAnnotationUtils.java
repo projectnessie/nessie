@@ -36,7 +36,7 @@ public final class MultiEnvAnnotationUtils {
     return annotations;
   }
 
-  public static Stream<Class<? extends MultiEnvTestExtension>> findMultiEnvTestExtensionsOn(
+  public static Stream<Class<? extends MultiEnvTestExtension>> findNestedMultiEnvTestExtensionsOn(
       Class<?> classToSearch) {
     //noinspection unchecked
     return findNestedRepeatableAnnotationsOn(classToSearch, ExtendWith.class).stream()

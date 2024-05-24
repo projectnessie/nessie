@@ -15,14 +15,11 @@
  */
 package org.projectnessie.junit.engine;
 
-import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findMultiEnvTestExtensionsOn;
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findNestedMultiEnvTestExtensionsOn;
 
-import java.util.Arrays;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
 import org.junit.jupiter.engine.extension.MutableExtensionRegistry;
-import org.junit.platform.commons.util.AnnotationUtils;
 
 /**
  * A helper class for collecting instances of {@link MultiEnvTestExtension}.
@@ -40,13 +37,10 @@ public class MultiEnvExtensionRegistry {
   }
 
   public void registerExtensions(Class<?> testClass) {
-    AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
-        .flatMap(e -> Arrays.stream(e.value()))
-        .filter(MultiEnvTestExtension.class::isAssignableFrom)
-        .forEach(registry::registerExtension);
+    findNestedMultiEnvTestExtensionsOn(testClass).forEach(registry::registerExtension);
   }
 
   public Stream<? extends MultiEnvTestExtension> stream(Class<?> testClass) {
-    return findMultiEnvTestExtensionsOn(testClass).flatMap(registry::stream);
+    return findNestedMultiEnvTestExtensionsOn(testClass).flatMap(registry::stream);
   }
 }

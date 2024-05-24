@@ -15,7 +15,7 @@
  */
 package org.projectnessie.junit.engine;
 
-import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findMultiEnvTestExtensionsOn;
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findNestedMultiEnvTestExtensionsOn;
 
 import java.util.Optional;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
@@ -49,7 +49,7 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
   private FilterResult filter(Class<?> testClass, UniqueId id) {
     boolean isJunitEngine = id.getEngineId().map("junit-jupiter"::equals).orElse(false);
     boolean isMultiEnvTest =
-        findMultiEnvTestExtensionsOn(testClass)
+        findNestedMultiEnvTestExtensionsOn(testClass)
             .map(MultiEnvAnnotationUtils::segmentTypeOf)
             .findAny()
             .isPresent();
