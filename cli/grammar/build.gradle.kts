@@ -122,7 +122,7 @@ val generateNessieSyntax =
     dependsOn(compileJava)
 
     sourceDir = projectDir.resolve("src/main/congocc/nessie")
-    outputDir = genNessieGrammarDir
+    outputDir = genNessieSyntaxDir
 
     classpath(syntaxGen, configurations.runtimeClasspath, compileJava)
 
