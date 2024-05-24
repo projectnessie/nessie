@@ -8,6 +8,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- MySQL users can now configure the JDBC connection using the `quarkus.datasource.mysql.*`
+  properties. Also, JDBC URLs can now use the `mysql` prefix, e.g.
+  `jdbc:mysql://example.com:3306/my_db`.
+
 ### Upgrade notes
 
 ### Breaking changes

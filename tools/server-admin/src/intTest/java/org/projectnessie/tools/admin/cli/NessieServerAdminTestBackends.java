@@ -119,7 +119,7 @@ public enum NessieServerAdminTestBackends {
           "nessie.version.store.type",
           VersionStoreType.JDBC.name(),
           "nessie.version.store.persist.jdbc.datasource",
-          "mariadb");
+          "mysql");
     }
   },
   ;

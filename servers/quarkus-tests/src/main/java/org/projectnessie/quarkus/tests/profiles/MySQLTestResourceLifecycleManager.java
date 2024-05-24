@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.tests.profiles;
 
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.jdbctests.MySQLBackendTestFactory;
@@ -42,7 +43,11 @@ public class MySQLTestResourceLifecycleManager
       throw new RuntimeException(e);
     }
 
-    return mysql.getQuarkusConfig();
+    Map<String, String> quarkusConfig = new HashMap<>(mysql.getQuarkusConfig());
+    String url = quarkusConfig.get("quarkus.datasource.mysql.jdbc.url");
+    url = url.replace("mariadb", "mysql");
+    quarkusConfig.put("quarkus.datasource.mysql.jdbc.url", url);
+    return quarkusConfig;
   }
 
   @Override

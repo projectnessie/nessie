@@ -40,14 +40,24 @@ but here is a quick step-by-step guide:
 nessie.version.store.type=JDBC
 ```
 
-2. Declare the JDBC datasource to use as `mariadb` (_this should be done regardless of whether you
-   are using MariaDB or MySQL_):
+2. Declare the JDBC datasource to use as either `mariadb` or `mysql` depending on your case:
+
+For MariaDB:
 
 ```properties
 nessie.version.store.persist.jdbc.datasource=mariadb
 ```
 
-3. Configure the datasource using the prefix `quarkus.datasource.mariadb.*`; for example:
+For MySQL:
+
+```properties
+nessie.version.store.persist.jdbc.datasource=mysql
+```
+
+3. Configure the datasource using either the prefix `quarkus.datasource.mariadb.*` or
+   `quarkus.datasource.mysql.*`, depending on your case:
+
+For MariaDB:
 
 ```properties
 quarkus.datasource.mariadb.jdbc.url=jdbc:mariadb://example.com:3306/my_db
@@ -55,13 +65,22 @@ quarkus.datasource.mariadb.username=my_user
 quarkus.datasource.mariadb.password=${env:DB_PASSWORD}
 ```
 
+For MySQL:
+
+```properties
+quarkus.datasource.mysql.jdbc.url=jdbc:mysql://example.com:3306/my_db
+quarkus.datasource.mysql.username=my_user
+quarkus.datasource.mysql.password=${env:DB_PASSWORD}
+```
+
 Check the [Quarkus documentation](https://quarkus.io/guides/datasource#datasource-reference) for more details on how to configure the datasource.
 
 **Important Notes**: 
 
-* When connecting to a MySQL server, do not forget to use the `jdbc:mariadb:` prefix in the JDBC
-  URL. Using `jdbc:mysql` prefix **will not work**. Generally, all MySQL JDBC URL parameters should
-  still work, but your mileage may vary – we would love to hear your feedback!
+* When connecting to a MySQL server, the actual driver being used is the MariaDB driver, as it is
+  compatible with MySQL. You can use either `jdbc:mariadb:` or `jdbc:mysql` in your JDBC URL.
+  Generally, all MySQL JDBC URL parameters should still work, but your mileage may vary – we would
+  love to hear your feedback!
 
 * When connecting to MariaDB, please do NOT set the following options to `true`; they are
   incompatible with Nessie's current implementation and may cause somme commits to be rejected:

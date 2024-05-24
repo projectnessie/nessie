@@ -19,6 +19,8 @@ import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.Priorities;
+import jakarta.annotation.Priority;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.storage.JdbcBackendBuilder;
 
@@ -28,6 +30,7 @@ import org.projectnessie.quarkus.providers.storage.JdbcBackendBuilder;
  *
  * <p>If the version store type is not JDBC, all data sources are deactivated.
  */
+@Priority(Priorities.LIBRARY + 400)
 public class DataSourceActivator implements ConfigSourceInterceptor {
 
   /**
@@ -35,7 +38,7 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
    * be higher than the ordinal of the application.properties classpath config source (250) but
    * lower than the ordinal of the user-supplied application.properties (260).
    */
-  private static final int DEFAULT_ORDINAL = 251;
+  static final int DEFAULT_ORDINAL = 251;
 
   private static String activeDataSourceName;
   private static VersionStoreType versionStoreType;
@@ -44,22 +47,25 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
   public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
     ConfigValue value = context.proceed(name);
     if (name.startsWith("quarkus.datasource.") && name.endsWith(".active")) {
-      boolean active =
-          versionStoreType(context) == VersionStoreType.JDBC
-              && dataSourceName(name).equals(activeDataSourceName(context));
+      boolean active = isDataSourceActive(context, name);
       if (value == null
           || value.getValue() == null
           || active != Boolean.parseBoolean(value.getValue())) {
-        value = newConfigValue(value, active);
+        value = newConfigValue(value, active ? "true" : "false");
       }
     }
     return value;
   }
 
-  private static ConfigValue newConfigValue(ConfigValue current, boolean active) {
+  static boolean isDataSourceActive(ConfigSourceInterceptorContext context, String name) {
+    return versionStoreType(context) == VersionStoreType.JDBC
+        && dataSourceName(name).equals(activeDataSourceName(context));
+  }
+
+  static ConfigValue newConfigValue(ConfigValue current, String newValue) {
     ConfigValueBuilder builder = current == null ? ConfigValue.builder() : current.from();
     int ordinal = current == null ? DEFAULT_ORDINAL : current.getConfigSourceOrdinal() + 1;
-    return builder.withConfigSourceOrdinal(ordinal).withValue(active ? "true" : "false").build();
+    return builder.withConfigSourceOrdinal(ordinal).withValue(newValue).build();
   }
 
   private static synchronized VersionStoreType versionStoreType(
@@ -78,8 +84,8 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
     if (property.equals("quarkus.datasource.active")) {
       return JdbcBackendBuilder.DEFAULT_DATA_SOURCE_NAME;
     }
-    String dataSourceName =
-        property.substring("quarkus.datasource.".length(), property.length() - ".active".length());
+    String dataSourceName = property.substring("quarkus.datasource.".length());
+    dataSourceName = dataSourceName.substring(0, dataSourceName.indexOf('.'));
     return JdbcBackendBuilder.unquoteDataSourceName(dataSourceName);
   }
 

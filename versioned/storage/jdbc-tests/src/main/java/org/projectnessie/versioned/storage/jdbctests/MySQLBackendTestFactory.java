@@ -38,11 +38,11 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   public Map<String, String> getQuarkusConfig() {
     return Map.of(
-        "quarkus.datasource.mariadb.jdbc.url",
+        "quarkus.datasource.mysql.jdbc.url",
         jdbcUrl(),
-        "quarkus.datasource.mariadb.username",
+        "quarkus.datasource.mysql.username",
         jdbcUser(),
-        "quarkus.datasource.mariadb.password",
+        "quarkus.datasource.mysql.password",
         jdbcPass());
   }
 
