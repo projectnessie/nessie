@@ -1,3 +1,3 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM mariadb:11.3.2@sha256:f0a6faee9d0e55492f238d1d11ff13d77616ea12d8c38bedf090da2ee05532be
+FROM mariadb:11.3.2@sha256:3c43c6f4bc2931825c1207328429f422f30ce2cb029567da1df9a8cdcf2b8552
