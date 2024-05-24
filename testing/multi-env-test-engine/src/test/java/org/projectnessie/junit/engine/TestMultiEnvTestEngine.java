@@ -17,11 +17,13 @@ package org.projectnessie.junit.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectUniqueId;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +31,9 @@ import org.junit.jupiter.engine.descriptor.ClassTestDescriptor;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
 import org.junit.jupiter.engine.descriptor.NestedClassTestDescriptor;
 import org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.testkit.engine.EngineTestKit;
@@ -321,6 +326,109 @@ class TestMultiEnvTestEngine {
                 .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()"));
 
     assertThat(uniqueTestIds).containsExactlyInAnyOrderElementsOf(expectedIds);
+  }
+
+  private static Stream<Arguments> provideUniqueIds() {
+    Stream.Builder<Arguments> streamBuilder = Stream.builder();
+
+    for (String segment1Id : List.of(TestExtension1.SEGMENT_1)) {
+      for (String segment2Id : List.of(TestExtension2.SEGMENT_1, TestExtension2.SEGMENT_2)) {
+        for (String segment3Id :
+            List.of(TestExtension3.SEGMENT_1, TestExtension3.SEGMENT_2, TestExtension3.SEGMENT_3)) {
+          UniqueId outerClassId =
+              UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+                  .append(SEGMENT_TYPE_1, segment1Id)
+                  .append(SEGMENT_TYPE_2, segment2Id)
+                  .append(SEGMENT_TYPE_3, segment3Id)
+                  .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianProductTest2.class.getName());
+
+          streamBuilder.add(
+              Arguments.of(outerClassId.append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()")));
+
+          UniqueId innerClassId =
+              outerClassId.append(
+                  NestedClassTestDescriptor.SEGMENT_TYPE,
+                  CartesianProductTest2.Inner.class.getSimpleName());
+
+          streamBuilder.add(
+              Arguments.of(innerClassId.append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()")));
+        }
+      }
+    }
+
+    return streamBuilder.build();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideUniqueIds")
+  void cartesianProductSelectOneTestOuter(UniqueId uniqueId) {
+    Set<UniqueId> uniqueTestIds =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .selectors(selectUniqueId(uniqueId))
+            .filters(new MultiEnvTestFilter())
+            .execute()
+            .testEvents()
+            .list()
+            .stream()
+            .map(e -> e.getTestDescriptor().getUniqueId())
+            .collect(Collectors.toSet());
+
+    assertThat(uniqueTestIds).containsExactlyInAnyOrder(uniqueId);
+  }
+
+  @Test
+  void cartesianProductSelectMultipleUnrelatedTests() {
+    UniqueId uniqueId_Test1_12 =
+        UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+            .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+            .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_2)
+            .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianProductTest1.class.getName())
+            .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()");
+
+    UniqueId uniqueId_Test2_111 =
+        UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+            .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+            .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_1)
+            .append(SEGMENT_TYPE_3, TestExtension3.SEGMENT_1)
+            .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianProductTest2.class.getName())
+            .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()");
+
+    UniqueId uniqueId_Test2Inner_111 =
+        UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+            .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+            .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_1)
+            .append(SEGMENT_TYPE_3, TestExtension3.SEGMENT_1)
+            .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianProductTest2.class.getName())
+            .append(
+                NestedClassTestDescriptor.SEGMENT_TYPE,
+                CartesianProductTest2.Inner.class.getSimpleName())
+            .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()");
+
+    UniqueId uniqueId_Test2_123 =
+        UniqueId.forEngine(MultiEnvTestEngine.ENGINE_ID)
+            .append(SEGMENT_TYPE_1, TestExtension1.SEGMENT_1)
+            .append(SEGMENT_TYPE_2, TestExtension2.SEGMENT_2)
+            .append(SEGMENT_TYPE_3, TestExtension3.SEGMENT_3)
+            .append(ClassTestDescriptor.SEGMENT_TYPE, CartesianProductTest2.class.getName())
+            .append(TestMethodTestDescriptor.SEGMENT_TYPE, "test()");
+
+    Set<UniqueId> uniqueTestIds =
+        EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+            .selectors(selectUniqueId(uniqueId_Test1_12))
+            .selectors(selectUniqueId(uniqueId_Test2_111))
+            .selectors(selectUniqueId(uniqueId_Test2Inner_111))
+            .selectors(selectUniqueId(uniqueId_Test2_123))
+            .filters(new MultiEnvTestFilter())
+            .execute()
+            .testEvents()
+            .list()
+            .stream()
+            .map(e -> e.getTestDescriptor().getUniqueId())
+            .collect(Collectors.toSet());
+
+    assertThat(uniqueTestIds)
+        .containsExactlyInAnyOrder(
+            uniqueId_Test1_12, uniqueId_Test2_111, uniqueId_Test2Inner_111, uniqueId_Test2_123);
   }
 
   /**
