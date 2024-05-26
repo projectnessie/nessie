@@ -32,8 +32,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      minio-setup:
-        condition: service_completed_successfully
       keycloak:
         condition: service_healthy
     environment:
