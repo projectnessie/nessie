@@ -16,7 +16,7 @@ services:
   ##
   ## 3. Once the Nessie Catalog pod is up, you can run:
   ##
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth
   ##
   ##    Run the "standard smoketest SQL":
   ##      CREATE NAMESPACE nessie.testing;
@@ -29,23 +29,20 @@ services:
       - "19120:19120"
     depends_on:
       jaeger:
-        # This should ideally be 'service_healthy', but that doesn't work on macOS
-        condition: service_started
+        condition: service_healthy
       minio:
-        # This should ideally be 'service_healthy', but that doesn't work on macOS
-        condition: service_started
-      #minio-setup:
-      #  condition: service_started
+        condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
       keycloak:
-        # This should ideally be 'service_healthy', but that doesn't work on macOS
-        condition: service_started
+        condition: service_healthy
     environment:
       - nessie.version.store.type=IN_MEMORY # Ephemeral storage, data is lost during reset.
       # AuthN
-      #- nessie.server.authentication.enabled=true
-      #- quarkus.oidc.enabled=true
-      #- quarkus.oidc.auth-server-url=http://keycloak:8080/realms/master
-      #- quarkus.oidc.client-id=projectnessie
+      - nessie.server.authentication.enabled=true
+      - quarkus.oidc.enabled=true
+      - quarkus.oidc.auth-server-url=http://keycloak:8080/realms/iceberg
+      - quarkus.oidc.client-id=iceberg-client
       # Object store
       - nessie.catalog.service.s3.cloud=private
       - nessie.catalog.service.s3.region=us-east-1
@@ -60,9 +57,11 @@ services:
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
       # Telemetry
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: curl -qf http://localhost:19120/ || exit 1
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
 
   # Jaeger
   jaeger:
@@ -72,9 +71,11 @@ services:
       - "4317:4317"   # OTLP gRPC receiver
     environment:
       - COLLECTOR_OTLP_ENABLED=true
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: curl -qf http://localhost:16686/ || exit 1
+    healthcheck:
+      test: "echo -e 'GET / HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' | nc localhost 16686 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
 
   # MinIO
   minio:
@@ -88,9 +89,11 @@ services:
       - MINIO_ADDRESS=:9000
       - MINIO_CONSOLE_ADDRESS=:9090
     command: server /data
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: "curl -f http://localhost:9000/minio/health/live || exit 1"
+    healthcheck:
+      test: "bash -c '[[ \"$(exec 3<>/dev/tcp/localhost/9000 && echo -e '\"'\"'GET /minio/health/live HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n'\"'\"' >&3 && cat <&3)\" == *\"200 OK\"* ]] || exit 1'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
 
   # Create MinIO bucket (dumb approach)
   minio-setup:
@@ -111,7 +114,12 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    command: start-dev --features=preview,token-exchange --hostname-admin-url http://127.0.0.1:8080/ --hostname-url http://127.0.0.1:8080/
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: curl -f http://localhost:8080/ || exit 1
+    volumes:
+      # Import the "iceberg" realm configuration; contains one client: iceberg-client:s3cr3t. Access tokens are valid for 1 hour.
+      - ./iceberg-realm.json:/opt/keycloak/data/import/iceberg-realm.json
+    command: start-dev --features=token-exchange --hostname-admin-url http://127.0.0.1:8080/ --hostname-url http://127.0.0.1:8080/ --import-realm --health-enabled=true
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
