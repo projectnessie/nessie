@@ -98,8 +98,6 @@ final class RestCatalogBridge implements CatalogBridge {
               // o.a.i.rest.RESTSessionCatalog.initialize
               // See o.a.i.rest.auth.OAuth2Util.SCOPE
               return CatalogUtils.resolveOAuthScope(catalogProperties);
-              // TODO need the "token" (initial bearer token for OAuth2 as in
-              // o.a.i.rest.RESTSessionCatalog.initialize?
             case NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT:
               return catalogProperties.get("oauth2-server-uri");
             case NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN:
