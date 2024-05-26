@@ -36,8 +36,9 @@ import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Credentials;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3Options;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.model.ContentKey;
@@ -245,14 +246,24 @@ public class IcebergConfigurer {
         .deleteBatchSize()
         .ifPresent(dbs -> configOverrides.put(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
     // FIXME it is not safe to send de/encryption keys and oauth2 tokens
-    gcsBucketOptions.decryptionKey().ifPresent(key -> configOverrides.put(GCS_DECRYPTION_KEY, key));
-    gcsBucketOptions.encryptionKey().ifPresent(key -> configOverrides.put(GCS_ENCRYPTION_KEY, key));
-    gcsBucketOptions.oauth2Token().ifPresent(token -> configOverrides.put(GCS_OAUTH2_TOKEN, token));
     gcsBucketOptions
-        .oauth2TokenExpiresAt()
+        .decryptionKey()
+        .ifPresent(key -> configOverrides.put(GCS_DECRYPTION_KEY, key.key()));
+    gcsBucketOptions
+        .encryptionKey()
+        .ifPresent(key -> configOverrides.put(GCS_ENCRYPTION_KEY, key.key()));
+    gcsBucketOptions
+        .oauth2Token()
         .ifPresent(
-            e ->
-                configOverrides.put(GCS_OAUTH2_TOKEN_EXPIRES_AT, String.valueOf(e.toEpochMilli())));
+            token -> {
+              configOverrides.put(GCS_OAUTH2_TOKEN, token.token());
+              token
+                  .expiresAt()
+                  .ifPresent(
+                      e ->
+                          configOverrides.put(
+                              GCS_OAUTH2_TOKEN_EXPIRES_AT, String.valueOf(e.toEpochMilli())));
+            });
     if (gcsBucketOptions.authType().isPresent()
         && gcsBucketOptions.authType().get() == GcsBucketOptions.GcsAuthType.NONE) {
       configOverrides.put(GCS_NO_AUTH, "true");
@@ -266,18 +277,19 @@ public class IcebergConfigurer {
     Optional<String> fileSystem = location.container();
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
-    String accountName = fileSystemOptions.accountName().orElse(location.storageAccount());
+    String accountName =
+        fileSystemOptions.account().map(BasicCredentials::name).orElse(location.storageAccount());
     // FIXME send account key and token?
     fileSystemOptions
-        .accountKey()
+        .account()
         .ifPresent(
             key -> {
               configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, accountName);
-              configOverrides.put("adls.auth.shared-key.account.key", key);
+              configOverrides.put("adls.auth.shared-key.account.key", key.secret());
             });
     fileSystemOptions
         .sasToken()
-        .ifPresent(s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + accountName, s));
+        .ifPresent(s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + accountName, s.token()));
     fileSystemOptions
         .endpoint()
         .ifPresent(e -> configOverrides.put(ADLS_CONNECTION_STRING_PREFIX + accountName, e));

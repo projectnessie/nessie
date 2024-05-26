@@ -15,13 +15,15 @@
  */
 package org.projectnessie.quarkus.config;
 
+import io.smallrye.config.WithConverter;
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
+import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 
@@ -53,13 +55,11 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   Optional<GcsAuthType> authType();
 
   @Override
-  Optional<String> authCredentialsJson();
+  @WithConverter(KeyCredentialsConverter.class)
+  Optional<KeySecret> authCredentialsJson();
 
   @Override
-  Optional<String> oauth2Token();
-
-  @Override
-  Optional<Instant> oauth2TokenExpiresAt();
+  Optional<ExpiringTokenSecret> oauth2Token();
 
   @Override
   OptionalInt maxAttempts();
@@ -98,8 +98,10 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   OptionalInt deleteBatchSize();
 
   @Override
-  Optional<String> encryptionKey();
+  @WithConverter(KeyCredentialsConverter.class)
+  Optional<KeySecret> encryptionKey();
 
   @Override
-  Optional<String> decryptionKey();
+  @WithConverter(KeyCredentialsConverter.class)
+  Optional<KeySecret> decryptionKey();
 }

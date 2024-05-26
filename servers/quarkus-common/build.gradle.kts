@@ -30,6 +30,7 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-service-common"))
+  implementation(project(":nessie-catalog-secrets-api"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 

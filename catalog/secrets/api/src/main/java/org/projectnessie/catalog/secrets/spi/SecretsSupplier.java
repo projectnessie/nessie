@@ -13,25 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.secrets;
+package org.projectnessie.catalog.secrets.spi;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
-public interface SecretsProvider {
-  Map<String, String> resolveSecrets(Set<String> names);
-
-  static SecretsProvider mapSecretsProvider(Map<String, String> secretsMap) {
-    return names -> {
-      Map<String, String> resolved = new HashMap<>();
-      for (String name : names) {
-        String r = secretsMap.get(name);
-        if (r != null) {
-          resolved.put(name, r);
-        }
-      }
-      return resolved;
-    };
-  }
+/** SPI interface for actual secrets managers. */
+public interface SecretsSupplier {
+  Map<String, Map<String, String>> resolveSecrets(Collection<String> names);
 }

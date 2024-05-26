@@ -66,6 +66,7 @@ dependencies {
   implementation(project(":nessie-catalog-service-common"))
   implementation(project(":nessie-catalog-service-impl"))
   implementation(project(":nessie-catalog-service-rest"))
+  implementation(project(":nessie-catalog-secrets-api"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))

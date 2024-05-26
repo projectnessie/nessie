@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
+import org.projectnessie.catalog.secrets.BasicCredentials;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
 
@@ -37,10 +38,7 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<String> region();
 
   @Override
-  Optional<String> accessKeyId();
-
-  @Override
-  Optional<String> secretAccessKey();
+  Optional<BasicCredentials> accessKey();
 
   @Override
   Optional<String> accessPoint();

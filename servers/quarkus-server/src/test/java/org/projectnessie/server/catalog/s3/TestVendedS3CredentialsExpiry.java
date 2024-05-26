@@ -115,8 +115,8 @@ public class TestVendedS3CredentialsExpiry {
           .put("nessie.catalog.service.s3.role-session-name", "test-session-name")
           .put("nessie.catalog.service.s3.assumed-role", "test-role")
           .put("nessie.catalog.service.s3.external-id", "test-external-id")
-          .put("nessie.catalog.service.s3.access-key-id", "test-access-key")
-          .put("nessie.catalog.service.s3.secret-access-key", "test-secret-key")
+          .put("nessie.catalog.service.s3.access-key.name", "test-access-key")
+          .put("nessie.catalog.service.s3.access-key.secret", "test-secret-key")
           .build();
     }
   }

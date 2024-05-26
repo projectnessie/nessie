@@ -15,19 +15,20 @@
  */
 package org.projectnessie.quarkus.config;
 
+import io.smallrye.config.WithConverter;
 import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface CatalogAdlsFileSystemOptions extends AdlsFileSystemOptions {
   @Override
-  Optional<String> accountName();
+  Optional<BasicCredentials> account();
 
   @Override
-  Optional<String> accountKey();
-
-  @Override
-  Optional<String> sasToken();
+  @WithConverter(TokenCredentialsConverter.class)
+  Optional<TokenSecret> sasToken();
 
   @Override
   Optional<String> endpoint();

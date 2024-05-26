@@ -17,23 +17,20 @@ package org.projectnessie.catalog.files.adls;
 
 import java.time.Duration;
 import java.util.Optional;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface AdlsFileSystemOptions {
 
   /**
-   * Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"}. If not specified,
-   * it will be queried via the configured credentials provider.
+   * Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"} and account key,
+   * configured using the {@code name} and {@code secret} fields. If not specified, it will be
+   * queried via the configured credentials provider.
    */
-  Optional<String> accountName();
+  Optional<BasicCredentials> account();
 
-  /**
-   * Account key to access the ADLS file system. If not specified, it will be queried via the
-   * configured credentials provider.
-   */
-  Optional<String> accountKey();
-
-  /** SAS token <em>reference</em> to access the ADLS file system. */
-  Optional<String> sasToken();
+  /** SAS token to access the ADLS file system. */
+  Optional<TokenSecret> sasToken();
 
   /**
    * Define a custom HTTP endpoint. In case clients need to use a different URI, use the {@code
@@ -47,16 +44,16 @@ public interface AdlsFileSystemOptions {
   /** Configure the retry strategy. */
   Optional<AdlsRetryStrategy> retryPolicy();
 
-  /** Mandatory, if any {@link AdlsRetryStrategy} is configured. */
+  /** Mandatory, if any {@code retry-policy} is configured. */
   Optional<Integer> maxRetries();
 
-  /** Mandatory, if any {@link AdlsRetryStrategy} is configured. */
+  /** Mandatory, if any {@code retry-policy} is configured. */
   Optional<Duration> tryTimeout();
 
-  /** Mandatory, if any {@link AdlsRetryStrategy} is configured. */
+  /** Mandatory, if any {@code retry-policy} is configured. */
   Optional<Duration> retryDelay();
 
-  /** Mandatory, if {@link AdlsRetryStrategy#EXPONENTIAL_BACKOFF} is configured. */
+  /** Mandatory, if {@code EXPONENTIAL_BACKOFF} is configured. */
   Optional<Duration> maxRetryDelay();
 
   enum AdlsRetryStrategy {

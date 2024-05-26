@@ -29,7 +29,8 @@ import com.azure.storage.file.datalake.DataLakeFileClient;
 import com.azure.storage.file.datalake.DataLakeFileSystemClient;
 import com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder;
 import java.util.Optional;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
 
 public final class AdlsClientSupplier {
@@ -75,15 +76,17 @@ public final class AdlsClientSupplier {
     // MUST set the endpoint FIRST, because it ALSO sets accountName, fileSystemName and sasToken!
     // See com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder.endpoint
 
-    String accountName = fileSystemOptions.accountName().orElse(location.storageAccount());
+    Optional<BasicCredentials> account = fileSystemOptions.account();
+
+    String accountName = account.map(BasicCredentials::name).orElse(location.storageAccount());
 
     clientBuilder.endpoint(
         fileSystemOptions.endpoint().orElse(location.getUri().resolve("/").toString()));
 
     if (fileSystemOptions.sasToken().isPresent()) {
-      clientBuilder.sasToken(fileSystemOptions.sasToken().get());
-    } else if (fileSystemOptions.accountKey().isPresent()) {
-      String accountKey = fileSystemOptions.accountKey().get();
+      clientBuilder.sasToken(fileSystemOptions.sasToken().get().token());
+    } else if (fileSystemOptions.account().isPresent()) {
+      String accountKey = fileSystemOptions.account().get().secret();
       clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
     } else {
       throw new IllegalStateException(

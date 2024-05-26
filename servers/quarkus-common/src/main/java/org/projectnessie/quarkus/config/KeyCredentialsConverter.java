@@ -15,21 +15,12 @@
  */
 package org.projectnessie.quarkus.config;
 
-import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
-
 import org.eclipse.microprofile.config.spi.Converter;
-import org.projectnessie.api.v2.params.ParsedReference;
-import org.projectnessie.model.Reference;
+import org.projectnessie.catalog.secrets.KeySecret;
 
-public class ParsedReferenceConverter implements Converter<ParsedReference> {
+public class KeyCredentialsConverter implements Converter<KeySecret> {
   @Override
-  public ParsedReference convert(String value)
-      throws IllegalArgumentException, NullPointerException {
-    try {
-      // TODO inject the right default branch here
-      return resolveReferencePathElement(value, Reference.ReferenceType.BRANCH, () -> "main");
-    } catch (IllegalStateException e) {
-      throw new IllegalArgumentException(e.getMessage());
-    }
+  public KeySecret convert(String value) throws IllegalArgumentException, NullPointerException {
+    return value != null && !value.isEmpty() ? KeySecret.keySecret(value) : null;
   }
 }
