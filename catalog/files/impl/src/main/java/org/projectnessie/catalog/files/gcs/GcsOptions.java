@@ -18,11 +18,9 @@ package org.projectnessie.catalog.files.gcs;
 import static org.projectnessie.catalog.files.secrets.SecretsHelper.Specializeable.specializable;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions.GcsPerBucketOptions;
 import org.projectnessie.catalog.files.secrets.SecretsHelper;
 import org.projectnessie.catalog.files.secrets.SecretsProvider;
@@ -50,9 +48,6 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> extends GcsBuck
 
     return resolveSecrets(name, perBucket, secretsProvider);
   }
-
-  Set<String> SECRET_NAMES =
-      ImmutableSet.of("authCredentialsJson", "oauth2Token", "encryptionKey", "decryptionKey");
 
   List<SecretsHelper.Specializeable<GcsBucketOptions, GcsPerBucketOptions.Builder>> SECRETS =
       ImmutableList.of(
