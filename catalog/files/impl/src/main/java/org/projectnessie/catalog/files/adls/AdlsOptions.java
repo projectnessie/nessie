@@ -81,9 +81,8 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
       builder.from(specific);
     }
 
-    SecretsHelper.resolveSecrets(
-        secretsProvider, "object-stores.adls", builder, this, filesystemName, specific, SECRETS);
-
-    return builder.build();
+    return SecretsHelper.resolveSecrets(
+            secretsProvider, "object-stores.adls", builder, this, filesystemName, specific, SECRETS)
+        .build();
   }
 }

@@ -51,7 +51,7 @@ public final class SecretsHelper {
       @Nonnull String baseName,
       @Nonnull B builder,
       @Nonnull R base,
-      @Nonnull String specificName,
+      String specificName,
       R specific,
       @Nonnull List<Specializeable<R, B>> secrets) {
 

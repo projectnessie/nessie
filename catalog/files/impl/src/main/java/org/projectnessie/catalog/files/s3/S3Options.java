@@ -167,9 +167,8 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
       builder.from(specific);
     }
 
-    SecretsHelper.resolveSecrets(
-        secretsProvider, "object-stores.s3", builder, this, filesystemName, specific, SECRETS);
-
-    return builder.build();
+    return SecretsHelper.resolveSecrets(
+            secretsProvider, "object-stores.s3", builder, this, filesystemName, specific, SECRETS)
+        .build();
   }
 }

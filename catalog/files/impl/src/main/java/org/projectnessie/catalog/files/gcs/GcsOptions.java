@@ -75,9 +75,8 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> extends GcsBuck
       builder.from(specific);
     }
 
-    SecretsHelper.resolveSecrets(
-        secretsProvider, "object-stores.gcs", builder, this, filesystemName, specific, SECRETS);
-
-    return builder.build();
+    return SecretsHelper.resolveSecrets(
+            secretsProvider, "object-stores.gcs", builder, this, filesystemName, specific, SECRETS)
+        .build();
   }
 }

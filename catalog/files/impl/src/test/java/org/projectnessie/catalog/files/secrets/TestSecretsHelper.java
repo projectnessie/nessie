@@ -46,10 +46,12 @@ public class TestSecretsHelper {
             specializable("bar", Opts::bar, Opts.Builder::bar),
             specializable("baz", Opts::baz, Opts.Builder::baz));
 
-    SecretsHelper.resolveSecrets(
-        mapSecretsProvider(secrets), "base", builder, base, "spec", spec, specializables);
+    Opts opts =
+        SecretsHelper.resolveSecrets(
+                mapSecretsProvider(secrets), "base", builder, base, "spec", spec, specializables)
+            .build();
 
-    soft.assertThat(builder.build()).isEqualTo(expected);
+    soft.assertThat(opts).isEqualTo(expected);
   }
 
   public static Stream<Arguments> secretsHelper() {
