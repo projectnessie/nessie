@@ -120,11 +120,12 @@ services:
   # It contains one client: iceberg-client (secret: "s3cr3t"), and 2 custom scopes: "catalog" and "sign".
   # Access tokens are valid for 1 hour.
   # To access the Keycloak admin console, browse to http://localhost:8080 and log in with the admin/admin credentials.
-  # To request an access token, use the following command:
-  # curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token \
-  #   --user iceberg-client:s3cr3t \
-  #   -d 'grant_type=client_credentials' \
-  #   -d 'scope=catalog'
+  #
+  # To request an access token ("bearer token"), use the following command for one of the predefined clients:
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user iceberg-client:s3cr3t -d 'grant_type=client_credentials'  -d 'scope=catalog'
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user user1:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user user2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user user3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.3
     ports:
