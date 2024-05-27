@@ -21,6 +21,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.spark.SparkConf;
@@ -69,6 +70,12 @@ final class RestCatalogBridge implements CatalogBridge {
     // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
     CatalogUtils.Credential credential = CatalogUtils.resolveCredential(catalogProperties);
 
+    Function<String, String> defaultConfigValue =
+        x ->
+            catalogProperties.containsKey(x)
+                ? catalogProperties.get(x)
+                : catalogProperties.get(x.replace("nessie.", ""));
+
     NessieClientConfigSource configSource =
         x -> {
           switch (x) {
@@ -91,11 +98,17 @@ final class RestCatalogBridge implements CatalogBridge {
               // o.a.i.rest.RESTSessionCatalog.initialize
               // See o.a.i.rest.auth.OAuth2Util.SCOPE
               return CatalogUtils.resolveOAuthScope(catalogProperties);
-              // TODO need the "token" (initial bearer token for OAuth2 as in
-              // o.a.i.rest.RESTSessionCatalog.initialize?
+            case NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT:
+              return catalogProperties.get("oauth2-server-uri");
+            case NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN:
+              return catalogProperties.get("token");
+            case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE:
+              if (catalogProperties.containsKey("token")) {
+                return "BEARER";
+              }
+              return defaultConfigValue.apply(x);
             default:
-              if (catalogProperties.containsKey(x)) return catalogProperties.get(x);
-              return catalogProperties.get(x.replace("nessie.", ""));
+              return defaultConfigValue.apply(x);
           }
         };
 
