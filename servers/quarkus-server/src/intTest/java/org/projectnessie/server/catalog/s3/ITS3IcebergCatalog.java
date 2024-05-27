@@ -17,7 +17,6 @@ package org.projectnessie.server.catalog.s3;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.quarkus.test.junit.TestProfile;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
@@ -32,8 +31,7 @@ import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
     restrictToAnnotatedClass = true,
     value = MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
-@TestProfile(PrivateCloudProfile.class)
-public class ITPrivateS3IcebergCatalog extends AbstractIcebergCatalogTests {
+public class ITS3IcebergCatalog extends AbstractIcebergCatalogTests {
 
   @SuppressWarnings("unused")
   // Injected by MinioTestResourceLifecycleManager
@@ -45,7 +43,7 @@ public class ITPrivateS3IcebergCatalog extends AbstractIcebergCatalogTests {
     RESTCatalog catalog = new RESTCatalog();
     catalog.setConf(new Configuration());
     catalog.initialize(
-        "nessie-s3-private-iceberg-api",
+        "nessie-s3-iceberg-api",
         Map.of(
             CatalogProperties.URI,
             String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),

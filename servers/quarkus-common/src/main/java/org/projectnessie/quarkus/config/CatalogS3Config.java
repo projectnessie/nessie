@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.files.s3.Cloud;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3Options;
@@ -81,9 +80,6 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
 
   @Override
   Optional<Boolean> pathStyleAccess();
-
-  @Override
-  Optional<Cloud> cloud();
 
   @Override
   Optional<String> region();

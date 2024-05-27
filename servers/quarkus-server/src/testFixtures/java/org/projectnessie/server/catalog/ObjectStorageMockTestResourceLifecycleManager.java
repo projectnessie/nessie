@@ -72,7 +72,6 @@ public class ObjectStorageMockTestResourceLifecycleManager
     return ImmutableMap.<String, String>builder()
         // S3
         .put("nessie.catalog.service.s3.sts.endpoint", server.getStsEndpointURI().toString())
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".cloud", "private")
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".endpoint", s3Endpoint)
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".region", "us-east-1")
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".path-style-access", "true")

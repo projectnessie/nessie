@@ -30,7 +30,6 @@ import org.apache.iceberg.rest.RESTCatalog;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.catalog.files.s3.Cloud;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.objectstoragemock.sts.ImmutableAssumeRoleResult;
 import org.projectnessie.objectstoragemock.sts.ImmutableCredentials;
@@ -110,7 +109,6 @@ public class TestVendedS3CredentialsExpiry {
       return ImmutableMap.<String, String>builder()
           .put("nessie.catalog.default-warehouse", "warehouse")
           .put("nessie.catalog.warehouses.warehouse.location", "s3://test-bucket")
-          .put("nessie.catalog.service.s3.cloud", Cloud.PRIVATE.name())
           .put("nessie.catalog.service.s3.region", "us-west-2")
           .put("nessie.catalog.service.s3.auth-mode", S3ClientAuthenticationMode.ASSUME_ROLE.name())
           .put("nessie.catalog.service.s3.client-session-duration", "PT5H")

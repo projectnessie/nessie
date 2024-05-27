@@ -129,9 +129,7 @@ public class S3ClientSupplier {
 
   private static String toLogString(S3BucketOptions options) {
     return "S3BucketOptions{"
-        + "cloud="
-        + options.cloud().map(Cloud::name).orElse("<undefined>")
-        + ", endpoint="
+        + "endpoint="
         + options.endpoint().map(URI::toString).orElse("<undefined>")
         + ", region="
         + options.region().orElse("<undefined>")

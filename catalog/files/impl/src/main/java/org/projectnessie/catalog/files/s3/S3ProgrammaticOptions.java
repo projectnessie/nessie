@@ -31,9 +31,6 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
 
   interface Builder {
     @CanIgnoreReturnValue
-    Builder cloud(Cloud cloud);
-
-    @CanIgnoreReturnValue
     Builder endpoint(URI endpoint);
 
     @CanIgnoreReturnValue
@@ -91,9 +88,6 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
     interface Builder {
       @CanIgnoreReturnValue
       Builder from(S3BucketOptions instance);
-
-      @CanIgnoreReturnValue
-      Builder cloud(Cloud cloud);
 
       @CanIgnoreReturnValue
       Builder endpoint(URI endpoint);
