@@ -13,7 +13,7 @@ services:
 
   # Jaeger
   jaeger:
-    image: docker.io/jaegertracing/all-in-one:latest@sha256:048c07e5a62443c90fa13162a5f2eae14919a2e3d541b1c500519b52643befbb
+    image: docker.io/jaegertracing/all-in-one:latest@sha256:33a967f564eea011f520cbdfff35ea8db1d646849be86c12f1561677e9f6bb6a
     ports:
       - "16686:16686" # Jaeger UI
       - "4317:4317"   # OTLP gRPC receiver
