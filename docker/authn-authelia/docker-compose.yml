@@ -34,7 +34,6 @@ services:
       NESSIE_SERVER_AUTHENTICATION_ENABLED: true
       QUARKUS_OIDC_ENABLED: true
       QUARKUS_OIDC_AUTH_SERVER_URL: http://authelia:9091
-      QUARKUS_OIDC_TOKEN_ISSUER: any
       QUARKUS_OIDC_CLIENT_ID: nessie-client
       # Note: Authelia, contrary to Keycloak, requires the client to authenticate when introspecting the token.
       QUARKUS_OIDC_CREDENTIALS_SECRET: s3cr3t
