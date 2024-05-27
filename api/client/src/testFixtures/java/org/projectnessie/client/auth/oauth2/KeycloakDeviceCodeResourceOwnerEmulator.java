@@ -30,10 +30,10 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmulator {
+public class KeycloakDeviceCodeResourceOwnerEmulator extends AbstractKeycloakResourceOwnerEmulator {
 
   private static final Logger LOGGER =
-      LoggerFactory.getLogger(DeviceCodeResourceOwnerEmulator.class);
+      LoggerFactory.getLogger(KeycloakDeviceCodeResourceOwnerEmulator.class);
 
   private static final Pattern FORM_ACTION_PATTERN =
       Pattern.compile("<form.*action=\"([^\"]+)\".*>");
@@ -50,7 +50,7 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
   private volatile boolean denyConsent = false;
 
   /** Creates a new emulator with implicit login (for unit tests). */
-  public DeviceCodeResourceOwnerEmulator() throws IOException {
+  public KeycloakDeviceCodeResourceOwnerEmulator() throws IOException {
     super(null, null);
   }
 
@@ -58,7 +58,8 @@ public class DeviceCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmu
    * Creates a new emulator with required user login using the given username and password (for
    * integration tests).
    */
-  public DeviceCodeResourceOwnerEmulator(String username, String password) throws IOException {
+  public KeycloakDeviceCodeResourceOwnerEmulator(String username, String password)
+      throws IOException {
     super(username, password);
   }
 
