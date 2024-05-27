@@ -17,11 +17,11 @@ package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
-import static java.util.Arrays.asList;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.projectnessie.nessierunner.common.ProcessHandler;
 
 /**
@@ -43,7 +43,7 @@ final class NessieProcess {
   static ProcessHandler processHandler;
   static String baseUri;
 
-  static void start(String... args) throws Exception {
+  static void start(Map<String, String> nessieProperties) throws Exception {
     if (processHandler != null) {
       throw new IllegalStateException("Already started");
     }
@@ -58,7 +58,7 @@ final class NessieProcess {
     command.add("-Dquarkus.http.port=0");
     command.add("-Dquarkus.management.port=0");
     command.add("-Dnessie.server.send-stacktrace-to-client=true");
-    command.addAll(asList(args));
+    nessieProperties.forEach((k, v) -> command.add(format("-D%s=%s", k, v)));
     command.add("-jar");
     command.add(execJar);
 
