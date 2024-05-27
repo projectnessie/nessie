@@ -16,14 +16,24 @@ services:
   ##
   ## 3. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
   ##
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --credentials client1:s3cr3t
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --credentials client2:s3cr3t
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --credentials client3:s3cr3t
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --client-id client1
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --client-id client2
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --client-id client3
   ##
   ##    Run the "standard smoketest SQL":
-  ##      CREATE NAMESPACE nessie.testing;
-  ##      CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
-  ##      INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment');
+  ##
+  ##      CREATE NAMESPACE nessie.sales;
+  ##      CREATE NAMESPACE nessie.eng;
+  ##
+  ##      USE nessie.sales;
+  ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+  ##      SELECT * FROM city;
+  ##
+  ##      USE nessie.eng;
+  ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+  ##      SELECT * FROM city;
   ##
   nessie:
     image: localhost/projectnessie/nessie:latest
@@ -61,6 +71,15 @@ services:
       # OpenTelemetry settings.
       # This example uses Jaeger as the OpenTelemetry traces collector.
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
+      # Authorization settings.
+      # In this example, Nessie is configured with 3 clients and 3 rules:
+      # - client1: can access all namespaces
+      # - client2: can access all namespaces except 'sales'
+      # - client3: can access all namespaces except 'eng'
+      - nessie.server.authorization.enabled=true
+      - nessie.server.authorization.rules.client1=role=='service-account-client1'
+      - nessie.server.authorization.rules.client2=role=='service-account-client2' && !path.startsWith('sales')
+      - nessie.server.authorization.rules.client3=role=='service-account-client3' && !path.startsWith('eng')
     healthcheck:
       test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
       interval: 5s
