@@ -64,13 +64,13 @@ public interface GcsBucketOptions {
    * Reference to the credentials-JSON. This value is the name of the credential to use, the actual
    * credential is defined via secrets.
    */
-  Optional<String> authCredentialsJsonRef();
+  Optional<String> authCredentialsJson();
 
   /**
    * Reference to the OAuth2 token. This value is the name of the credential to use, the actual
    * credential is defined via secrets.
    */
-  Optional<String> oauth2TokenRef();
+  Optional<String> oauth2Token();
 
   /** Timestamp when the OAuth2 token referenced via {@code oauth2-token-ref} expires. */
   Optional<Instant> oauth2TokenExpiresAt();
@@ -116,14 +116,14 @@ public interface GcsBucketOptions {
    *
    * @implNote This is currently unsupported.
    */
-  Optional<String> encryptionKeyRef();
+  Optional<String> encryptionKey();
 
   /**
    * Customer-supplied AES256 key for blob decryption when reading.
    *
    * @implNote This is currently unsupported.
    */
-  Optional<String> decryptionKeyRef();
+  Optional<String> decryptionKey();
 
   enum GcsAuthType {
     NONE,

@@ -66,9 +66,10 @@ public class S3Signer implements RequestSigner {
       throw new IllegalArgumentException("DELETE requests must have a non-empty body");
     }
 
-    S3BucketOptions bucketOptions = s3Options.effectiveOptionsForBucket(clientRequest.bucket());
+    S3BucketOptions bucketOptions =
+        s3Options.effectiveOptionsForBucket(clientRequest.bucket(), secretsProvider);
     AwsCredentialsProvider credentialsProvider =
-        S3Clients.awsCredentialsProvider(bucketOptions, secretsProvider, s3sessions);
+        S3Clients.awsCredentialsProvider(bucketOptions, s3sessions);
 
     SdkHttpFullRequest.Builder request =
         SdkHttpFullRequest.builder()

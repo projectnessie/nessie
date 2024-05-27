@@ -15,6 +15,23 @@
  */
 package org.projectnessie.catalog.files.secrets;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 public interface SecretsProvider {
-  String getSecret(String secret);
+  Map<String, String> resolveSecrets(Set<String> names);
+
+  static SecretsProvider mapSecretsProvider(Map<String, String> secretsMap) {
+    return names -> {
+      Map<String, String> resolved = new HashMap<>();
+      for (String name : names) {
+        String r = secretsMap.get(name);
+        if (r != null) {
+          resolved.put(name, r);
+        }
+      }
+      return resolved;
+    };
+  }
 }

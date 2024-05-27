@@ -99,20 +99,18 @@ public interface S3BucketOptions {
   Optional<String> projectId();
 
   /**
-   * Key used to look up the access-key-ID via {@link
-   * org.projectnessie.catalog.files.secrets.SecretsProvider SecretsProvider}. An access-key-id must
-   * be configured, either per bucket or in {@link S3Options S3Options}. For STS, this defines the
-   * Access Key ID to be used as a basic credential for obtaining temporary session credentials.
+   * An access-key-id must be configured, either per bucket or in {@link S3Options S3Options}. For
+   * STS, this defines the Access Key ID to be used as a basic credential for obtaining temporary
+   * session credentials.
    */
-  Optional<String> accessKeyIdRef();
+  Optional<String> accessKeyId();
 
   /**
-   * Key used to look up the secret-access-key via {@link
-   * org.projectnessie.catalog.files.secrets.SecretsProvider SecretsProvider}. A secret-access-key
-   * must be configured, either per bucket or in {@link S3Options S3Options}. For STS, this defines
-   * the Secret Key ID to be used as a basic credential for obtaining temporary session credentials.
+   * A secret-access-key must be configured, either per bucket or in {@link S3Options S3Options}.
+   * For STS, this defines the Secret Key ID to be used as a basic credential for obtaining
+   * temporary session credentials.
    */
-  Optional<String> secretAccessKeyRef();
+  Optional<String> secretAccessKey();
 
   /**
    * The <a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">Security Token

@@ -20,17 +20,20 @@ import java.util.Optional;
 
 public interface AdlsFileSystemOptions {
 
-  /** Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"}. */
-  Optional<String> accountNameRef();
-
-  /** Account key to access the ADLS file system. */
-  Optional<String> accountKeyRef();
+  /**
+   * Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"}. If not specified,
+   * it will be queried via the configured credentials provider.
+   */
+  Optional<String> accountName();
 
   /**
-   * SAS token <em>reference</em> to access the ADLS file system, the actual secret value is defined
-   * as secrets via {@code nessie.catalog.secrets.}<em>{@code secret-ref}</em>.
+   * Account key to access the ADLS file system. If not specified, it will be queried via the
+   * configured credentials provider.
    */
-  Optional<String> sasTokenRef();
+  Optional<String> accountKey();
+
+  /** SAS token <em>reference</em> to access the ADLS file system. */
+  Optional<String> sasToken();
 
   /**
    * Define a custom HTTP endpoint. In case clients need to use a different URI, use the {@code

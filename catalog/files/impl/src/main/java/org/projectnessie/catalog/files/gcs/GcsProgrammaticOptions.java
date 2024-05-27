@@ -60,10 +60,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     Builder authType(GcsAuthType authType);
 
     @CanIgnoreReturnValue
-    Builder authCredentialsJsonRef(String authCredentialsJsonRef);
+    Builder authCredentialsJson(String authCredentialsJson);
 
     @CanIgnoreReturnValue
-    Builder oauth2TokenRef(String oauth2tokenRef);
+    Builder oauth2Token(String oauth2token);
 
     @CanIgnoreReturnValue
     Builder oauth2TokenExpiresAt(Instant oauth2TokenExpiresAt);
@@ -102,7 +102,7 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     Builder writeChunkSize(int writeChunkSize);
 
     @CanIgnoreReturnValue
-    Builder encryptionKeyRef(String encryptionKeyRef);
+    Builder encryptionKey(String encryptionKey);
 
     @CanIgnoreReturnValue
     Builder userProject(String userProject);
@@ -146,10 +146,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder authType(GcsAuthType authType);
 
       @CanIgnoreReturnValue
-      Builder authCredentialsJsonRef(String authCredentialsJsonRef);
+      Builder authCredentialsJson(String authCredentialsJson);
 
       @CanIgnoreReturnValue
-      Builder oauth2TokenRef(String oauth2tokenRef);
+      Builder oauth2Token(String oauth2token);
 
       @CanIgnoreReturnValue
       Builder oauth2TokenExpiresAt(Instant oauth2TokenExpiresAt);
@@ -188,7 +188,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder writeChunkSize(int writeChunkSize);
 
       @CanIgnoreReturnValue
-      Builder encryptionKeyRef(String encryptionKeyRef);
+      Builder encryptionKey(String encryptionKey);
+
+      @CanIgnoreReturnValue
+      Builder decryptionKey(String decryptionKey);
 
       @CanIgnoreReturnValue
       Builder userProject(String userProject);
