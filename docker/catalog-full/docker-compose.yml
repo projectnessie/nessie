@@ -14,9 +14,11 @@ services:
   ##
   ##      podman compose -f docker/catalog-full/docker-compose.yml up
   ##
-  ## 3. Once the Nessie Catalog pod is up, you can run:
+  ## 3. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
   ##
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --credentials client1:s3cr3t
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --credentials client2:s3cr3t
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --credentials client3:s3cr3t
   ##
   ##    Run the "standard smoketest SQL":
   ##      CREATE NAMESPACE nessie.testing;
@@ -42,7 +44,7 @@ services:
       # This examples uses Keycloak for authentication.
       - nessie.server.authentication.enabled=true
       - quarkus.oidc.auth-server-url=http://keycloak:8080/realms/iceberg
-      - quarkus.oidc.client-id=iceberg-client
+      - quarkus.oidc.client-id=client1
       # Object store settings.
       # This example uses MinIO as the object store.
       - nessie.catalog.default-warehouse=warehouse
@@ -117,14 +119,14 @@ services:
   # Keycloak with the "iceberg" realm
   # This example uses Keycloak as the identity provider for Nessie.
   # The "iceberg" realm configuration is imported from iceberg-realm.json.
-  # It contains one client: iceberg-client (secret: "s3cr3t"), and 2 custom scopes: "catalog" and "sign".
+  # It contains 3 clients: client1, client2 and client3 (secret for all: "s3cr3t"), and 2 custom scopes: "catalog" and "sign".
   # Access tokens are valid for 1 hour.
   # To access the Keycloak admin console, browse to http://localhost:8080 and log in with the admin/admin credentials.
-  # To request an access token, use the following command:
-  # curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token \
-  #   --user iceberg-client:s3cr3t \
-  #   -d 'grant_type=client_credentials' \
-  #   -d 'scope=catalog'
+  #
+  # To request an access token ("bearer token"), use the following command for one of the predefined clients:
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client1:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
+  #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.4@sha256:ff02c932f0249c58f32b8ff1b188a48cc90809779a3a05931ab67f5672400ad0
     ports:
