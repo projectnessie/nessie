@@ -43,7 +43,7 @@ public interface NessieUserInfo {
   List<String> roles();
 
   static NessieUserInfo nessieUserInfo(boolean anonymous, String name, List<String> roles) {
-    return null; // ImmutableNessieUserInfo.of(anonymous, name, roles);
+    return ImmutableNessieUserInfo.of(anonymous, name, roles);
   }
 
   static Builder builder() {
