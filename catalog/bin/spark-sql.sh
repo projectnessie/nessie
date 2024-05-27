@@ -28,7 +28,7 @@ SPARK_VERSION="3.5"
 SCALA_VERSION="2.12"
 AWS_SDK_VERSION="2.20.131"
 WAREHOUSE_LOCATION="$PROJECT_DIR/build/spark-warehouse"
-CREDENTIALS="iceberg-client:s3cr3t"
+CREDENTIALS="client1:s3cr3t"
 OAUTH_SERVER_URI="http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token"
 
 # Parse the command line arguments

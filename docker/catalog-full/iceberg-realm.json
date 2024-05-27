@@ -98,49 +98,37 @@
   "webAuthnPolicyPasswordlessExtraOrigins": [],
   "users": [
     {
-      "id": "f3d3454a-2db8-47f1-91a0-2cc6f702fd77",
-      "username": "service-account-iceberg-client",
-      "emailVerified": false,
-      "createdTimestamp": 1716731308074,
-      "enabled": true,
-      "totp": false,
-      "serviceAccountClientId": "iceberg-client",
-      "disableableCredentialTypes": [],
-      "requiredActions": [],
-      "notBefore": 0
-    },
-    {
       "id": "91bd4585-d925-47d4-8204-8571e0e5c84b",
-      "username": "service-account-user1",
+      "username": "service-account-client1",
       "emailVerified": false,
       "createdTimestamp": 1716813517228,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "user1",
+      "serviceAccountClientId": "client1",
       "disableableCredentialTypes": [],
       "requiredActions": [],
       "notBefore": 0
     },
     {
       "id": "a663c299-1118-4b35-ac85-f9a4f38d0699",
-      "username": "service-account-user2",
+      "username": "service-account-client2",
       "emailVerified": false,
       "createdTimestamp": 1716813519481,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "user2",
+      "serviceAccountClientId": "client2",
       "disableableCredentialTypes": [],
       "requiredActions": [],
       "notBefore": 0
     },
     {
       "id": "75a07b5f-9d71-4312-90d1-1b748745632a",
-      "username": "service-account-user3",
+      "username": "service-account-client3",
       "emailVerified": false,
       "createdTimestamp": 1716813521026,
       "enabled": true,
       "totp": false,
-      "serviceAccountClientId": "user3",
+      "serviceAccountClientId": "client3",
       "disableableCredentialTypes": [],
       "requiredActions": [],
       "notBefore": 0
@@ -346,277 +334,9 @@
       ]
     },
     {
-      "id": "c83b1553-663f-473f-9d6d-d652a5c6b7ec",
-      "clientId": "iceberg-client",
-      "name": "Iceberg client",
-      "description": "",
-      "rootUrl": "",
-      "adminUrl": "",
-      "baseUrl": "",
-      "surrogateAuthRequired": false,
-      "enabled": true,
-      "alwaysDisplayInConsole": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "s3cr3t",
-      "redirectUris": [
-        "http://localhost*"
-      ],
-      "webOrigins": [
-        "http://localhost*"
-      ],
-      "notBefore": 0,
-      "bearerOnly": false,
-      "consentRequired": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": true,
-      "authorizationServicesEnabled": true,
-      "publicClient": false,
-      "frontchannelLogout": true,
-      "protocol": "openid-connect",
-      "attributes": {
-        "access.token.lifespan": "3600",
-        "client.secret.creation.time": "1716731308",
-        "post.logout.redirect.uris": "+",
-        "oauth2.device.authorization.grant.enabled": "true",
-        "backchannel.logout.revoke.offline.tokens": "false",
-        "use.refresh.tokens": "true",
-        "oidc.ciba.grant.enabled": "false",
-        "client.use.lightweight.access.token.enabled": "false",
-        "backchannel.logout.session.required": "true",
-        "client_credentials.use_refresh_token": "false",
-        "client.offline.session.idle.timeout": "86400",
-        "tls.client.certificate.bound.access.tokens": "false",
-        "require.pushed.authorization.requests": "false",
-        "acr.loa.map": "{}",
-        "display.on.consent.screen": "false",
-        "client.offline.session.max.lifespan": "86400",
-        "client.session.max.lifespan": "86400",
-        "token.response.type.bearer.lower-case": "false",
-        "client.session.idle.timeout": "86400"
-      },
-      "authenticationFlowBindingOverrides": {},
-      "fullScopeAllowed": true,
-      "nodeReRegistrationTimeout": -1,
-      "protocolMappers": [
-        {
-          "id": "536cb6c6-64fe-4dd0-8130-68b38b7aaf4f",
-          "name": "Client Host",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usersessionmodel-note-mapper",
-          "consentRequired": false,
-          "config": {
-            "user.session.note": "clientHost",
-            "introspection.token.claim": "true",
-            "userinfo.token.claim": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "clientHost",
-            "jsonType.label": "String"
-          }
-        },
-        {
-          "id": "1428ba14-e474-40cd-b818-cfd0788ea968",
-          "name": "Client ID",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usersessionmodel-note-mapper",
-          "consentRequired": false,
-          "config": {
-            "user.session.note": "client_id",
-            "introspection.token.claim": "true",
-            "userinfo.token.claim": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "client_id",
-            "jsonType.label": "String"
-          }
-        },
-        {
-          "id": "b58bf6ae-cf51-4564-ad73-6a6dc7f3c5f4",
-          "name": "Client IP Address",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usersessionmodel-note-mapper",
-          "consentRequired": false,
-          "config": {
-            "user.session.note": "clientAddress",
-            "introspection.token.claim": "true",
-            "userinfo.token.claim": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "clientAddress",
-            "jsonType.label": "String"
-          }
-        }
-      ],
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "catalog",
-        "offline_access",
-        "sign",
-        "microprofile-jwt"
-      ],
-      "authorizationSettings": {
-        "allowRemoteResourceManagement": true,
-        "policyEnforcementMode": "ENFORCING",
-        "resources": [
-          {
-            "name": "Default Resource",
-            "type": "urn:iceberg-client:resources:default",
-            "ownerManagedAccess": false,
-            "attributes": {},
-            "_id": "1fc7aeae-0208-4c1c-bbfe-08e39e27d672",
-            "uris": [
-              "/*"
-            ]
-          }
-        ],
-        "policies": [
-          {
-            "id": "98bb844e-5524-4c42-914b-cc5121d3124d",
-            "name": "Default Policy",
-            "description": "A policy that grants access only for users within this realm",
-            "type": "role",
-            "logic": "POSITIVE",
-            "decisionStrategy": "AFFIRMATIVE",
-            "config": {
-              "roles": "[{\"id\":\"default-roles-iceberg\",\"required\":false}]"
-            }
-          },
-          {
-            "id": "c4d15960-11c6-4f88-9aef-f44c9fcb8df1",
-            "name": "Default Permission",
-            "description": "A permission that applies to the default resource type",
-            "type": "resource",
-            "logic": "POSITIVE",
-            "decisionStrategy": "UNANIMOUS",
-            "config": {
-              "defaultResourceType": "urn:iceberg-client:resources:default",
-              "applyPolicies": "[\"Default Policy\"]"
-            }
-          }
-        ],
-        "scopes": [],
-        "decisionStrategy": "UNANIMOUS"
-      }
-    },
-    {
-      "id": "00971b5c-a186-4382-9727-4176d1c765aa",
-      "clientId": "realm-management",
-      "name": "${client_realm-management}",
-      "surrogateAuthRequired": false,
-      "enabled": true,
-      "alwaysDisplayInConsole": false,
-      "clientAuthenticatorType": "client-secret",
-      "redirectUris": [],
-      "webOrigins": [],
-      "notBefore": 0,
-      "bearerOnly": true,
-      "consentRequired": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "publicClient": false,
-      "frontchannelLogout": false,
-      "protocol": "openid-connect",
-      "attributes": {
-        "post.logout.redirect.uris": "+"
-      },
-      "authenticationFlowBindingOverrides": {},
-      "fullScopeAllowed": false,
-      "nodeReRegistrationTimeout": 0,
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
-    },
-    {
-      "id": "8cc592bb-5c64-483b-87e7-c85812c61985",
-      "clientId": "security-admin-console",
-      "name": "${client_security-admin-console}",
-      "rootUrl": "${authAdminUrl}",
-      "baseUrl": "/admin/iceberg/console/",
-      "surrogateAuthRequired": false,
-      "enabled": true,
-      "alwaysDisplayInConsole": false,
-      "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/admin/iceberg/console/*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
-      "notBefore": 0,
-      "bearerOnly": false,
-      "consentRequired": false,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "publicClient": true,
-      "frontchannelLogout": false,
-      "protocol": "openid-connect",
-      "attributes": {
-        "post.logout.redirect.uris": "+",
-        "pkce.code.challenge.method": "S256"
-      },
-      "authenticationFlowBindingOverrides": {},
-      "fullScopeAllowed": false,
-      "nodeReRegistrationTimeout": 0,
-      "protocolMappers": [
-        {
-          "id": "2a4dd30b-b9e5-43a9-b499-3d370333ec63",
-          "name": "locale",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "introspection.token.claim": "true",
-            "userinfo.token.claim": "true",
-            "user.attribute": "locale",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "locale",
-            "jsonType.label": "String"
-          }
-        }
-      ],
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ]
-    },
-    {
       "id": "064f7cf5-86dc-450e-a88a-5d71a266654b",
-      "clientId": "user1",
-      "name": "user1",
+      "clientId": "client1",
+      "name": "client1",
       "description": "",
       "rootUrl": "",
       "adminUrl": "",
@@ -735,7 +455,7 @@
         "resources": [
           {
             "name": "Default Resource",
-            "type": "urn:user1:resources:default",
+            "type": "urn:client1:resources:default",
             "ownerManagedAccess": false,
             "attributes": {},
             "_id": "05110fcd-4ad3-49a9-8891-5d0730f5ca2f",
@@ -764,7 +484,7 @@
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "defaultResourceType": "urn:user1:resources:default",
+              "defaultResourceType": "urn:client1:resources:default",
               "applyPolicies": "[\"Default Policy\"]"
             }
           }
@@ -775,8 +495,8 @@
     },
     {
       "id": "552c9ab6-1220-4df6-ae3d-1a3f567e764e",
-      "clientId": "user2",
-      "name": "user2",
+      "clientId": "client2",
+      "name": "client2",
       "description": "",
       "rootUrl": "",
       "adminUrl": "",
@@ -895,7 +615,7 @@
         "resources": [
           {
             "name": "Default Resource",
-            "type": "urn:user2:resources:default",
+            "type": "urn:client2:resources:default",
             "ownerManagedAccess": false,
             "attributes": {},
             "_id": "67888492-27c8-4c57-9317-430b4d728d95",
@@ -924,7 +644,7 @@
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "defaultResourceType": "urn:user2:resources:default",
+              "defaultResourceType": "urn:client2:resources:default",
               "applyPolicies": "[\"Default Policy\"]"
             }
           }
@@ -935,8 +655,8 @@
     },
     {
       "id": "4c26b327-7525-48c0-9a0e-699ceeedde03",
-      "clientId": "user3",
-      "name": "user3",
+      "clientId": "client3",
+      "name": "client3",
       "description": "",
       "rootUrl": "",
       "adminUrl": "",
@@ -1055,7 +775,7 @@
         "resources": [
           {
             "name": "Default Resource",
-            "type": "urn:user3:resources:default",
+            "type": "urn:client3:resources:default",
             "ownerManagedAccess": false,
             "attributes": {},
             "_id": "91225760-8a1c-4d53-8786-ab3505285d0b",
@@ -1084,7 +804,7 @@
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "defaultResourceType": "urn:user3:resources:default",
+              "defaultResourceType": "urn:client3:resources:default",
               "applyPolicies": "[\"Default Policy\"]"
             }
           }
