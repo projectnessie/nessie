@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-trap 'kill $(jobs -p)' EXIT
+trap '[[ -n $(jobs -p) ]] && kill $(jobs -p);' EXIT
 set -e
 
 PROJECT_DIR=$(dirname "$0")/../..
@@ -28,6 +28,8 @@ SPARK_VERSION="3.5"
 SCALA_VERSION="2.12"
 AWS_SDK_VERSION="2.20.131"
 WAREHOUSE_LOCATION="$PROJECT_DIR/build/spark-warehouse"
+CREDENTIALS="iceberg-client:s3cr3t"
+OAUTH_SERVER_URI="http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token"
 
 # Parse the command line arguments
 while [[ $# -gt 0 ]]
@@ -96,6 +98,16 @@ do
       OAUTH="true"
       shift
       ;;
+    --credentials)
+      CREDENTIALS=$2
+      shift
+      shift
+      ;;
+    --oauth-server-uri)
+      OAUTH_SERVER_URI=$2
+      shift
+      shift
+      ;;
     --debug)
       DEBUG="true"
       shift
@@ -128,9 +140,13 @@ if [[ -n "$HELP" ]]; then
   echo "  --no-nessie-start               Do not start Nessie Core/Catalog, use externally provided instance(s). Default: start"
   echo "  --no-extensions                 Do not use Spark SQL extensions"
   echo "  --clear-warehouse               Clear warehouse directory. Default: false"
+  echo "  --aws                           Enable AWS support"
+  echo "  --oauth                         Enable OAuth support"
+  echo "  --credentials <credentials>     OAuth credentials. Default: $CREDENTIALS"
+  echo "  --oauth-server-uri <uri>        OAuth server URI. Default: $OAUTH_SERVER_URI"
   echo "  --debug                         Enable debug mode"
   echo "  --verbose                       Enable verbose mode"
-  echo "  --help                          Print this help"
+  echo "  --help                          Print this help and exit"
   exit 0
 fi
 
@@ -152,10 +168,9 @@ fi
 
 if [[ -n "$OAUTH" ]]; then
   AUTH_CONF=(
-    "--conf" "spark.sql.catalog.nessie.scope=email"
-    # TODO add some pre-configured credentials?
-    "--conf" "spark.sql.catalog.nessie.credential=democlient:zhConxW5K0x7aeHy8Ouq2CVhGmej4bjB"
-    "--conf" "spark.sql.catalog.nessie.oauth2-server-uri=http://127.0.0.1:8080/realms/master/protocol/openid-connect/token"
+    "--conf" "spark.sql.catalog.nessie.scope=catalog sign"
+    "--conf" "spark.sql.catalog.nessie.oauth2-server-uri=${OAUTH_SERVER_URI}"
+    "--conf" "spark.sql.catalog.nessie.credential=${CREDENTIALS}"
   )
 fi
 

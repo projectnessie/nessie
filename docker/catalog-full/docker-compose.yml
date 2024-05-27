@@ -16,7 +16,7 @@ services:
   ##
   ## 3. Once the Nessie Catalog pod is up, you can run:
   ##
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth
   ##
   ##    Run the "standard smoketest SQL":
   ##      CREATE NAMESPACE nessie.testing;
@@ -29,81 +29,102 @@ services:
       - "19120:19120"
     depends_on:
       jaeger:
-        # This should ideally be 'service_healthy', but that doesn't work on macOS
-        condition: service_started
+        condition: service_healthy
       minio:
-        # This should ideally be 'service_healthy', but that doesn't work on macOS
-        condition: service_started
-      #minio-setup:
-      #  condition: service_started
+        condition: service_healthy
       keycloak:
-        # This should ideally be 'service_healthy', but that doesn't work on macOS
-        condition: service_started
+        condition: service_healthy
     environment:
-      - nessie.version.store.type=IN_MEMORY # Ephemeral storage, data is lost during reset.
-      # AuthN
-      #- nessie.server.authentication.enabled=true
-      #- quarkus.oidc.enabled=true
-      #- quarkus.oidc.auth-server-url=http://keycloak:8080/realms/master
-      #- quarkus.oidc.client-id=projectnessie
-      # Object store
+      # Version store settings.
+      # This example uses ephemeral storage, data is lost during reset.
+      - nessie.version.store.type=IN_MEMORY
+      # AuthN settings.
+      # This examples uses Keycloak for authentication.
+      - nessie.server.authentication.enabled=true
+      - quarkus.oidc.auth-server-url=http://keycloak:8080/realms/iceberg
+      - quarkus.oidc.client-id=iceberg-client
+      # Object store settings.
+      # This example uses MinIO as the object store.
+      - nessie.catalog.default-warehouse=warehouse
+      - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
       - nessie.catalog.service.s3.cloud=private
       - nessie.catalog.service.s3.region=us-east-1
-        # MinIO endpoint for Nessie server
-      - nessie.catalog.service.s3.endpoint=http://minio:9000/
-        # MinIO endpoint for clients (on the Podman/Docker host)
-      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
       - nessie.catalog.service.s3.path-style-access=true
       - nessie.catalog.service.s3.access-key-id=minioadmin
       - nessie.catalog.service.s3.secret-access-key=minioadmin
-      - nessie.catalog.default-warehouse=warehouse
-      - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
-      # Telemetry
+      # MinIO endpoint for Nessie server
+      - nessie.catalog.service.s3.endpoint=http://minio:9000/
+      # MinIO endpoint for clients (on the Podman/Docker host)
+      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
+      # OpenTelemetry settings.
+      # This example uses Jaeger as the OpenTelemetry traces collector.
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: curl -qf http://localhost:19120/ || exit 1
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
 
-  # Jaeger
+  # Jaeger (OpenTelemetry traces collector)
   jaeger:
     image: quay.io/jaegertracing/all-in-one:1.56.0
     ports:
-      - "16686:16686" # Jaeger UI
-      - "4317:4317"   # OTLP gRPC receiver
+      # Jaeger gRPC collector, used by Nessie
+      - "4317:4317"
+      # Jaeger UI, browse to http://localhost:16686 to view traces
+      - "16686:16686"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: curl -qf http://localhost:16686/ || exit 1
+    healthcheck:
+      test: "echo -e 'GET / HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' | nc localhost 16686 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
 
   # MinIO
   minio:
     image: quay.io/minio/minio:RELEASE.2024-04-06T05-26-02Z
     ports:
-      - "9000:9000"   # API
-      - "9090:9090"   # Console
+      # API port, used by Nessie
+      - "9000:9000"
+      # MinIO UI, browse to http://localhost:9090 to view the MinIO Object Browser
+      - "9090:9090"
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
       - MINIO_ADDRESS=:9000
       - MINIO_CONSOLE_ADDRESS=:9090
     command: server /data
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: "curl -f http://localhost:9000/minio/health/live || exit 1"
+    healthcheck:
+      test: "bash -c '[[ \"$(exec 3<>/dev/tcp/localhost/9000 && echo -e '\"'\"'GET /minio/health/live HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n'\"'\"' >&3 && cat <&3 | head -n 1)\" == *\"200 OK\"* ]] || exit 1'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
 
-  # Create MinIO bucket (dumb approach)
+  # Create MinIO bucket
   minio-setup:
     image: quay.io/minio/minio:RELEASE.2024-04-06T05-26-02Z
     depends_on:
       minio:
-        condition: service_started
+        condition: service_healthy
     entrypoint: /bin/bash
+    restart: "no"
     command: [
       "-c",
       "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket"
       ]
 
+  # Keycloak with the "iceberg" realm
+  # This example uses Keycloak as the identity provider for Nessie.
+  # The "iceberg" realm configuration is imported from iceberg-realm.json.
+  # It contains one client: iceberg-client (secret: "s3cr3t"), and 2 custom scopes: "catalog" and "sign".
+  # Access tokens are valid for 1 hour.
+  # To access the Keycloak admin console, browse to http://localhost:8080 and log in with the admin/admin credentials.
+  # To request an access token, use the following command:
+  # curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token \
+  #   --user iceberg-client:s3cr3t \
+  #   -d 'grant_type=client_credentials' \
+  #   -d 'scope=catalog'
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.3
     ports:
@@ -111,7 +132,11 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    command: start-dev --features=preview,token-exchange --hostname-admin-url http://127.0.0.1:8080/ --hostname-url http://127.0.0.1:8080/
-    #healthcheck:
-    #  # Bummer - there's no `curl` in the container on macOS/ARM
-    #  test: curl -f http://localhost:8080/ || exit 1
+    volumes:
+      - ./iceberg-realm.json:/opt/keycloak/data/import/iceberg-realm.json
+    command: start-dev --features=token-exchange --hostname-admin-url http://127.0.0.1:8080/ --hostname-url http://127.0.0.1:8080/ --import-realm --health-enabled=true
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
