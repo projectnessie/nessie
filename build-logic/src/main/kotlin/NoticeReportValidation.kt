@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import com.github.jk1.license.LicenseReportExtension
 import com.github.jk1.license.ProjectData
 import com.github.jk1.license.filter.DependencyFilter
-import gradle.kotlin.dsl.accessors._0f44f690aca8d7bb8fae2d09020d267b.licenseReport
 import java.io.File
 import org.gradle.api.GradleException
 
@@ -40,7 +40,7 @@ class NoticeReportValidation : DependencyFilter {
 
     val rootNoticeFile = data.project.rootProject.file("NOTICE").readText()
 
-    val config = data.project.licenseReport
+    val licenseReport = data.project.extensions.getByType(LicenseReportExtension::class.java)
 
     val missing = mutableMapOf<String, String>()
 
@@ -61,7 +61,7 @@ class NoticeReportValidation : DependencyFilter {
             ${mod.group}:${mod.name}
 
             ${mod.licenseFiles.flatMap { it.fileDetails }.filter { it.file != null }.map { it.file }
-              .map { File("${config.absoluteOutputDir}/$it").readText().trim() }
+              .map { File("${licenseReport.absoluteOutputDir}/$it").readText().trim() }
               .distinct()
               .map { "\n\n$it\n" }
               .joinToString("\n")
