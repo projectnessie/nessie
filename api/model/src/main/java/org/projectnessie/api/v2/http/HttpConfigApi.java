@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v2.ConfigApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.RepositoryConfigResponse;
 import org.projectnessie.model.UpdateRepositoryConfigRequest;
 import org.projectnessie.model.UpdateRepositoryConfigResponse;
@@ -123,4 +124,26 @@ public interface HttpConfigApi extends ConfigApi {
   @JsonView(Views.V2.class)
   UpdateRepositoryConfigResponse updateRepositoryConfig(
       UpdateRepositoryConfigRequest repositoryConfigUpdate) throws NessieConflictException;
+
+  @Override
+  @GET
+  @jakarta.ws.rs.GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Operation(summary = "Returns information about the current user.", operationId = "getUserInfo")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "User information",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = NessieUserInfo.class),
+                examples = {@ExampleObject(ref = "nessieUserInfo")})),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided")
+  })
+  @JsonView(Views.V2.class)
+  @Path("whoami")
+  @jakarta.ws.rs.Path("whoami")
+  NessieUserInfo getUserInfo();
 }

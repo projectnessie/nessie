@@ -44,6 +44,7 @@ import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.Reference;
 
 final class CombinedClientImpl implements NessieApiV2 {
@@ -149,6 +150,11 @@ final class CombinedClientImpl implements NessieApiV2 {
   @Override
   public UpdateRepositoryConfigBuilder updateRepositoryConfig() {
     return new CombinedUpdateRepositoryConfig(configApi);
+  }
+
+  @Override
+  public NessieUserInfo getUserInfo() {
+    return configApi.getUserInfo();
   }
 
   @Override

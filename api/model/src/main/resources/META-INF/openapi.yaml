@@ -77,6 +77,15 @@ components:
         maxSupportedApiVersion: 2
         specVersion: "2.0.0"
 
+    nessieUserInfo:
+      value:
+        anonymous: false
+        name: username
+        roles:
+          - role_one
+          - role_two
+          - role_three
+
     namespace:
       value: "a.b.c"
 

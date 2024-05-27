@@ -15,6 +15,7 @@
  */
 package org.projectnessie.server;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -23,8 +24,12 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @SuppressWarnings("resource") // api() returns an AutoCloseable
@@ -37,6 +42,17 @@ class TestBasicAuthentication extends BaseClientAuthTest {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
     assertThat(api().getAllReferences().stream()).isNotEmpty();
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  public void testUserInfo() {
+    withClientCustomizer(
+        c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
+    NessieUserInfo userInfo = ((NessieApiV2) this.api()).getUserInfo();
+    assertThat(userInfo)
+        .extracting(NessieUserInfo::anonymous, NessieUserInfo::name, NessieUserInfo::roles)
+        .containsExactly(false, "test_user", singletonList("test123"));
   }
 
   @Test

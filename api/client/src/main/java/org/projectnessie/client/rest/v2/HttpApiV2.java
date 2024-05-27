@@ -40,6 +40,7 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
 
@@ -65,6 +66,11 @@ public class HttpApiV2 implements NessieApiV2 {
   @Override
   public NessieConfiguration getConfig() {
     return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+  }
+
+  @Override
+  public NessieUserInfo getUserInfo() {
+    return client.newRequest().path("config/whoami").get().readEntity(NessieUserInfo.class);
   }
 
   @Override

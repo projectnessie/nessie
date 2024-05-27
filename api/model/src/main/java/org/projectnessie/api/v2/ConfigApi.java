@@ -18,6 +18,7 @@ package org.projectnessie.api.v2;
 import java.util.List;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.RepositoryConfigResponse;
 import org.projectnessie.model.UpdateRepositoryConfigRequest;
 import org.projectnessie.model.UpdateRepositoryConfigResponse;
@@ -35,4 +36,6 @@ public interface ConfigApi {
 
   UpdateRepositoryConfigResponse updateRepositoryConfig(
       UpdateRepositoryConfigRequest repositoryConfigUpdate) throws NessieConflictException;
+
+  NessieUserInfo getUserInfo();
 }

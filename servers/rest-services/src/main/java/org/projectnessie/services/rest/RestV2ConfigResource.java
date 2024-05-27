@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.ImmutableRepositoryConfigResponse;
 import org.projectnessie.model.ImmutableUpdateRepositoryConfigResponse;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.RepositoryConfigResponse;
 import org.projectnessie.model.UpdateRepositoryConfigRequest;
@@ -45,6 +47,7 @@ import org.projectnessie.versioned.VersionStore;
 public class RestV2ConfigResource implements HttpConfigApi {
 
   private final ConfigApiImpl config;
+  private final AccessContext accessContext;
 
   // Mandated by CDI 2.0
   public RestV2ConfigResource() {
@@ -54,6 +57,7 @@ public class RestV2ConfigResource implements HttpConfigApi {
   @Inject
   public RestV2ConfigResource(
       ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    this.accessContext = accessContext;
     this.config = new ConfigApiImpl(config, store, authorizer, accessContext, 2);
   }
 
@@ -80,5 +84,25 @@ public class RestV2ConfigResource implements HttpConfigApi {
     return ImmutableUpdateRepositoryConfigResponse.builder()
         .previous(config.updateRepositoryConfig(repositoryConfigUpdate.getConfig()))
         .build();
+  }
+
+  @Override
+  public NessieUserInfo getUserInfo() {
+    NessieUserInfo.Builder userInfo = NessieUserInfo.builder();
+
+    Principal user = accessContext.user();
+    if (user != null) {
+      String name = user.getName();
+      if (name != null && !name.isEmpty()) {
+        userInfo.name(user.getName());
+        accessContext.roleIds().forEach(userInfo::addRoles);
+        userInfo.anonymous(false);
+      } else {
+        userInfo.anonymous(true);
+      }
+    } else {
+      userInfo.anonymous(true);
+    }
+    return userInfo.build();
   }
 }

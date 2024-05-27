@@ -16,6 +16,7 @@
 package org.projectnessie.jaxrs.tests;
 
 import static io.restassured.RestAssured.given;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
@@ -70,6 +71,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
@@ -164,6 +166,15 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   public void testNotFoundUrls(String path) {
     rest().get(path).then().statusCode(404);
     rest().head(path).then().statusCode(404);
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  public void testUserInfo() {
+    NessieUserInfo userInfo = ((NessieApiV2) this.api()).getUserInfo();
+    soft.assertThat(userInfo)
+        .extracting(NessieUserInfo::anonymous, NessieUserInfo::name, NessieUserInfo::roles)
+        .containsExactly(true, null, emptyList());
   }
 
   @Test
