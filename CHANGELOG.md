@@ -18,6 +18,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- New Nessie REST endpoint `api/v2/config/whoami` returning basic user/roles information.
+
 ### Changes
 
 ### Deprecations

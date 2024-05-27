@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
+import static java.lang.String.join;
 import static org.jline.utils.AttributedStyle.YELLOW;
 
 import jakarta.annotation.Nonnull;
@@ -32,6 +33,7 @@ import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.config.NessieClientConfigSources;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.NessieUserInfo;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.cli.cli.BaseNessieCli;
 import org.projectnessie.nessie.cli.cmdspec.ConnectCommandSpec;
@@ -95,9 +97,20 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
       }
     }
 
+    String user;
+    try {
+      NessieUserInfo userInfo = api.getUserInfo();
+      if (userInfo.anonymous()) {
+        user = " as anonymous";
+      } else {
+        user = format(" as %s (role: %s)", userInfo.name(), join(", ", userInfo.roles()));
+      }
+    } catch (Exception e) {
+      user = "";
+    }
     writer.printf(
-        "Successfully connected to %s - Nessie API version %d, spec version %s%n",
-        spec.getUri(), config.getActualApiVersion(), config.getSpecVersion());
+        "Successfully connected to %s%s - Nessie API version %d, spec version %s%n",
+        spec.getUri(), user, config.getActualApiVersion(), config.getSpecVersion());
 
     cli.connected(api);
 

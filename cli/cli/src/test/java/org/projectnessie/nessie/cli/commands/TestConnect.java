@@ -37,7 +37,7 @@ public class TestConnect extends BaseTestCommand {
           .containsExactly(
               format("Connecting to %s ...", nessieBaseUri()),
               format(
-                  "Successfully connected to %s - Nessie API version 2, spec version 2.1.0",
+                  "Successfully connected to %s as anonymous - Nessie API version 2, spec version 2.1.0",
                   nessieBaseUri()));
 
       soft.assertThatCode(cli::mandatoryNessieApi).doesNotThrowAnyException();
