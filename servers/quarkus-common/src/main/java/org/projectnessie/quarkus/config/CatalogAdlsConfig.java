@@ -81,13 +81,13 @@ public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFi
   // file-system options
 
   @Override
-  Optional<String> accountNameRef();
+  Optional<String> accountName();
 
   @Override
-  Optional<String> accountKeyRef();
+  Optional<String> accountKey();
 
   @Override
-  Optional<String> sasTokenRef();
+  Optional<String> sasToken();
 
   @Override
   Optional<String> endpoint();

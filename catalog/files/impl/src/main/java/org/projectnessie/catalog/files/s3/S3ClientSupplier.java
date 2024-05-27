@@ -82,12 +82,13 @@ public class S3ClientSupplier {
 
     // Supply an empty profile file
 
-    S3BucketOptions bucketOptions = s3options.effectiveOptionsForBucket(Optional.of(bucketName));
+    S3BucketOptions bucketOptions =
+        s3options.effectiveOptionsForBucket(Optional.of(bucketName), secretsProvider);
 
     S3ClientBuilder builder =
         S3Client.builder()
             .httpClient(sdkClient)
-            .credentialsProvider(awsCredentialsProvider(bucketOptions, secretsProvider, sessions))
+            .credentialsProvider(awsCredentialsProvider(bucketOptions, sessions))
             .overrideConfiguration(
                 override -> override.defaultProfileFileSupplier(() -> EMPTY_PROFILE_FILE))
             .serviceConfiguration(
@@ -136,10 +137,6 @@ public class S3ClientSupplier {
         + options.region().orElse("<undefined>")
         + ", projectId="
         + options.projectId().orElse("<undefined>")
-        + ", accessKeyIdRef="
-        + options.accessKeyIdRef().orElse("<undefined>")
-        + ", secretAccessKeyRef="
-        + options.secretAccessKeyRef().orElse("<undefined>")
         + "}";
   }
 

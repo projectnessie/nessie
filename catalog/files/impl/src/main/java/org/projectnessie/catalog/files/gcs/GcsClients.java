@@ -37,15 +37,12 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
 
 public final class GcsClients {
   private GcsClients() {}
 
   public static Storage buildStorage(
-      GcsBucketOptions bucketOptions,
-      HttpTransportFactory transportFactory,
-      SecretsProvider secretsProvider) {
+      GcsBucketOptions bucketOptions, HttpTransportFactory transportFactory) {
     HttpTransportOptions.Builder transportOptions =
         HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory);
     bucketOptions
@@ -55,7 +52,7 @@ public final class GcsClients {
 
     StorageOptions.Builder builder =
         StorageOptions.http()
-            .setCredentials(buildCredentials(bucketOptions, transportFactory, secretsProvider))
+            .setCredentials(buildCredentials(bucketOptions, transportFactory))
             .setTransportOptions(transportOptions.build());
     bucketOptions.projectId().ifPresent(builder::setProjectId);
     bucketOptions.quotaProjectId().ifPresent(builder::setQuotaProjectId);
@@ -116,9 +113,7 @@ public final class GcsClients {
   }
 
   static Credentials buildCredentials(
-      GcsBucketOptions bucketOptions,
-      HttpTransportFactory transportFactory,
-      SecretsProvider secretsProvider) {
+      GcsBucketOptions bucketOptions, HttpTransportFactory transportFactory) {
     GcsBucketOptions.GcsAuthType authType =
         bucketOptions.authType().orElse(GcsBucketOptions.GcsAuthType.NONE);
     switch (authType) {
@@ -128,7 +123,7 @@ public final class GcsClients {
         try {
           return UserCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJsonRef().orElseThrow().getBytes(UTF_8)),
+                  bucketOptions.authCredentialsJson().orElseThrow().getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -137,11 +132,7 @@ public final class GcsClients {
         try {
           return ServiceAccountCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions
-                      .authCredentialsJsonRef()
-                      .map(secretsProvider::getSecret)
-                      .orElseThrow()
-                      .getBytes(UTF_8)),
+                  bucketOptions.authCredentialsJson().orElseThrow().getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -149,7 +140,7 @@ public final class GcsClients {
       case ACCESS_TOKEN:
         AccessToken accessToken =
             new AccessToken(
-                bucketOptions.oauth2TokenRef().map(secretsProvider::getSecret).orElseThrow(),
+                bucketOptions.oauth2Token().orElseThrow(),
                 bucketOptions
                     .oauth2TokenExpiresAt()
                     .map(i -> new Date(i.toEpochMilli()))

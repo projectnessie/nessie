@@ -15,11 +15,17 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static org.projectnessie.catalog.files.secrets.SecretsHelper.Specializeable.specializable;
+
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileSystemOptions;
+import org.projectnessie.catalog.files.secrets.SecretsHelper;
+import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
@@ -38,15 +44,45 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
   @ConfigPropertyName("filesystem-name")
   Map<String, PER_FILE_SYSTEM> fileSystems();
 
-  default AdlsFileSystemOptions effectiveOptionsForFileSystem(Optional<String> filesystemName) {
+  default AdlsFileSystemOptions effectiveOptionsForFileSystem(
+      Optional<String> filesystemName, SecretsProvider secretsProvider) {
     if (filesystemName.isEmpty()) {
-      return this;
+      return resolveSecrets(null, null, secretsProvider);
     }
-    AdlsFileSystemOptions perBucket = fileSystems().get(filesystemName.get());
+    String name = filesystemName.get();
+    AdlsFileSystemOptions perBucket = fileSystems().get(name);
     if (perBucket == null) {
-      return this;
+      return resolveSecrets(name, null, secretsProvider);
     }
 
-    return AdlsPerFileSystemOptions.builder().from(this).from(perBucket).build();
+    return resolveSecrets(name, perBucket, secretsProvider);
+  }
+
+  List<SecretsHelper.Specializeable<AdlsFileSystemOptions, AdlsPerFileSystemOptions.Builder>>
+      SECRETS =
+          ImmutableList.of(
+              specializable(
+                  "accountName",
+                  AdlsFileSystemOptions::accountName,
+                  AdlsPerFileSystemOptions.Builder::accountName),
+              specializable(
+                  "accountKey",
+                  AdlsFileSystemOptions::accountKey,
+                  AdlsPerFileSystemOptions.Builder::accountKey),
+              specializable(
+                  "sasToken",
+                  AdlsFileSystemOptions::sasToken,
+                  AdlsPerFileSystemOptions.Builder::sasToken));
+
+  default AdlsFileSystemOptions resolveSecrets(
+      String filesystemName, AdlsFileSystemOptions specific, SecretsProvider secretsProvider) {
+    AdlsPerFileSystemOptions.Builder builder = AdlsPerFileSystemOptions.builder().from(this);
+    if (specific != null) {
+      builder.from(specific);
+    }
+
+    return SecretsHelper.resolveSecrets(
+            secretsProvider, "object-stores.adls", builder, this, filesystemName, specific, SECRETS)
+        .build();
   }
 }

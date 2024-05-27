@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;

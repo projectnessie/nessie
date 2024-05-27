@@ -58,13 +58,13 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
     Builder putAllFileSystems(Map<String, ? extends AdlsFileSystemOptions> entries);
 
     @CanIgnoreReturnValue
-    Builder accountNameRef(String accountNameRef);
+    Builder accountName(String accountName);
 
     @CanIgnoreReturnValue
-    Builder accountKeyRef(String accountKeyRef);
+    Builder accountKey(String accountKey);
 
     @CanIgnoreReturnValue
-    Builder sasTokenRef(String sasTokenRef);
+    Builder sasToken(String sasToken);
 
     @CanIgnoreReturnValue
     Builder endpoint(String endpoint);
@@ -99,13 +99,13 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
       Builder from(AdlsFileSystemOptions instance);
 
       @CanIgnoreReturnValue
-      Builder accountNameRef(String accountNameRef);
+      Builder accountName(String accountName);
 
       @CanIgnoreReturnValue
-      Builder accountKeyRef(String accountKeyRef);
+      Builder accountKey(String accountKey);
 
       @CanIgnoreReturnValue
-      Builder sasTokenRef(String sasTokenRef);
+      Builder sasToken(String sasToken);
 
       @CanIgnoreReturnValue
       Builder endpoint(String endpoint);

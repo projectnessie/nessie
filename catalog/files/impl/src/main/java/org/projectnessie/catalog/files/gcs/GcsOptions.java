@@ -15,8 +15,15 @@
  */
 package org.projectnessie.catalog.files.gcs;
 
+import static org.projectnessie.catalog.files.secrets.SecretsHelper.Specializeable.specializable;
+
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions.GcsPerBucketOptions;
+import org.projectnessie.catalog.files.secrets.SecretsHelper;
+import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> extends GcsBucketOptions {
@@ -28,15 +35,48 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> extends GcsBuck
   @ConfigPropertyName("bucket-name")
   Map<String, PER_BUCKET> buckets();
 
-  default GcsBucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
+  default GcsBucketOptions effectiveOptionsForBucket(
+      Optional<String> bucketName, SecretsProvider secretsProvider) {
     if (bucketName.isEmpty()) {
-      return this;
+      return resolveSecrets(null, null, secretsProvider);
     }
-    GcsBucketOptions perBucket = buckets().get(bucketName.get());
+    String name = bucketName.get();
+    GcsBucketOptions perBucket = buckets().get(name);
     if (perBucket == null) {
-      return this;
+      return resolveSecrets(name, null, secretsProvider);
     }
 
-    return GcsProgrammaticOptions.GcsPerBucketOptions.builder().from(this).from(perBucket).build();
+    return resolveSecrets(name, perBucket, secretsProvider);
+  }
+
+  List<SecretsHelper.Specializeable<GcsBucketOptions, GcsPerBucketOptions.Builder>> SECRETS =
+      ImmutableList.of(
+          specializable(
+              "authCredentialsJson",
+              GcsBucketOptions::authCredentialsJson,
+              GcsPerBucketOptions.Builder::authCredentialsJson),
+          specializable(
+              "oauth2Token",
+              GcsBucketOptions::oauth2Token,
+              GcsPerBucketOptions.Builder::oauth2Token),
+          specializable(
+              "encryptionKey",
+              GcsBucketOptions::encryptionKey,
+              GcsPerBucketOptions.Builder::encryptionKey),
+          specializable(
+              "decryptionKey",
+              GcsBucketOptions::decryptionKey,
+              GcsPerBucketOptions.Builder::decryptionKey));
+
+  default GcsBucketOptions resolveSecrets(
+      String filesystemName, GcsBucketOptions specific, SecretsProvider secretsProvider) {
+    GcsPerBucketOptions.Builder builder = GcsPerBucketOptions.builder().from(this);
+    if (specific != null) {
+      builder.from(specific);
+    }
+
+    return SecretsHelper.resolveSecrets(
+            secretsProvider, "object-stores.gcs", builder, this, filesystemName, specific, SECRETS)
+        .build();
   }
 }

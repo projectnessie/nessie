@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.s3;
 
 import java.util.Optional;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -38,33 +37,25 @@ public class S3Clients {
   }
 
   public static AwsCredentialsProvider basicCredentialsProvider(
-      Optional<String> accessKeyIdRef,
-      Optional<String> secretAccessKeyIdRef,
-      SecretsProvider secretsProvider) {
-    String keyId =
+      Optional<String> accessKeyIdRef, Optional<String> secretAccessKeyIdRef) {
+    String key =
         accessKeyIdRef.orElseThrow(
             () -> new IllegalStateException("Secret reference to S3 access key ID is not defined"));
 
-    String secretId =
+    String secret =
         secretAccessKeyIdRef.orElseThrow(
             () ->
                 new IllegalStateException(
                     "Secret reference to S3 secret access key is not defined"));
 
-    return () -> {
-      String accessKeyId = secretsProvider.getSecret(keyId);
-      String secretAccessKey = secretsProvider.getSecret(secretId);
-
-      return AwsBasicCredentials.create(accessKeyId, secretAccessKey);
-    };
+    return () -> AwsBasicCredentials.create(key, secret);
   }
 
   public static AwsCredentialsProvider awsCredentialsProvider(
-      S3BucketOptions bucketOptions, SecretsProvider secretsProvider, S3Sessions sessions) {
+      S3BucketOptions bucketOptions, S3Sessions sessions) {
     Optional<String> role = bucketOptions.roleArn();
     if (role.isEmpty()) {
-      return basicCredentialsProvider(
-          bucketOptions.accessKeyIdRef(), bucketOptions.secretAccessKeyRef(), secretsProvider);
+      return basicCredentialsProvider(bucketOptions.accessKeyId(), bucketOptions.secretAccessKey());
     }
 
     return sessions.assumeRoleForServer(bucketOptions);

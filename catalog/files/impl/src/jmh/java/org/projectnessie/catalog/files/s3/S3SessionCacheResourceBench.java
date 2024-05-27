@@ -73,21 +73,15 @@ public class S3SessionCacheResourceBench {
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
-              .accessKeyIdRef("foo")
-              .secretAccessKeyRef("bar")
+              .accessKeyId("foo")
+              .secretAccessKey("bar")
               .region("eu-central-1")
               .pathStyleAccess(true)
               .build();
 
       s3SessionsManager =
           new S3SessionsManager(
-              s3options,
-              System::currentTimeMillis,
-              httpClient,
-              null,
-              Optional.empty(),
-              secret -> "secret",
-              null);
+              s3options, System::currentTimeMillis, httpClient, null, Optional.empty(), null);
 
       List<String> regions =
           Region.regions().stream()
@@ -101,8 +95,8 @@ public class S3SessionCacheResourceBench {
               .mapToObj(
                   i ->
                       S3ProgrammaticOptions.S3PerBucketOptions.builder()
-                          .accessKeyIdRef("key" + i)
-                          .secretAccessKeyRef("secret" + i)
+                          .accessKeyId("key" + i)
+                          .secretAccessKey("secret" + i)
                           .externalId("externalId" + i)
                           .region(regions.get(i % regions.size()))
                           .roleSessionName("roleSessionName" + i)
