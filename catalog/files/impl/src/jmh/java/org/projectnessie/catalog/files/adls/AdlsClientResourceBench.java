@@ -22,6 +22,7 @@ import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import com.azure.core.http.HttpClient;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -61,13 +62,17 @@ public class AdlsClientResourceBench {
 
       AdlsOptions<AdlsFileSystemOptions> adlsOptions =
           AdlsProgrammaticOptions.builder()
-              .accountKeyRef("foo")
-              .accountNameRef("foo")
-              .sasTokenRef("foo")
+              .accountKey("foo")
+              .accountName("foo")
+              .sasToken("foo")
               .endpoint(server.getAdlsGen2BaseUri().toString())
               .build();
 
-      clientSupplier = new AdlsClientSupplier(httpClient, adlsOptions, secret -> "secret");
+      clientSupplier =
+          new AdlsClientSupplier(
+              httpClient,
+              adlsOptions,
+              (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> k)));
     }
 
     @TearDown

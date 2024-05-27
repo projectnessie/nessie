@@ -30,6 +30,8 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.time.Clock;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -132,9 +134,8 @@ public class CatalogProducers {
   public S3SessionsManager s3SessionsManager(
       S3Options<?> s3options,
       @CatalogS3Client SdkHttpClient sdkClient,
-      MeterRegistry meterRegistry,
-      SecretsProvider secretsProvider) {
-    return new S3SessionsManager(s3options, sdkClient, meterRegistry, secretsProvider);
+      MeterRegistry meterRegistry) {
+    return new S3SessionsManager(s3options, sdkClient, meterRegistry);
   }
 
   @Produces
@@ -155,17 +156,8 @@ public class CatalogProducers {
   public SecretsProvider secretsProvider(QuarkusCatalogConfig config) {
     return new SecretsProvider() {
       @Override
-      public String getSecret(String secret) {
-        String value = config.secrets().get(secret);
-        if (value != null) {
-          return value;
-        }
-        throw new IllegalArgumentException(
-            "Secret '"
-                + secret
-                + "' is not defined, configure it using the configuration option 'nessie.catalog.secrets."
-                + secret
-                + "'.");
+      public Map<String, String> resolveSecrets(Set<String> names) {
+        return Map.of();
       }
     };
   }

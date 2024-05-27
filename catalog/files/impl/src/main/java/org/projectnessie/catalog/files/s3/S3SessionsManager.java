@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -59,22 +58,11 @@ public class S3SessionsManager {
   private final LoadingCache<SessionKey, Credentials> sessions;
   private final Function<StsClientKey, StsClient> clientBuilder;
   private final Duration expiryReduction;
-  private final SecretsProvider secretsProvider;
   private final SessionCredentialsFetcher sessionCredentialsFetcher;
 
   public S3SessionsManager(
-      S3Options<?> options,
-      SdkHttpClient sdkHttpClient,
-      MeterRegistry meterRegistry,
-      SecretsProvider secretsProvider) {
-    this(
-        options,
-        System::currentTimeMillis,
-        sdkHttpClient,
-        null,
-        Optional.of(meterRegistry),
-        secretsProvider,
-        null);
+      S3Options<?> options, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
+    this(options, System::currentTimeMillis, sdkHttpClient, null, Optional.of(meterRegistry), null);
   }
 
   @VisibleForTesting
@@ -84,12 +72,10 @@ public class S3SessionsManager {
       SdkHttpClient sdkHttpClient,
       Function<StsClientKey, StsClient> clientBuilder,
       Optional<MeterRegistry> meterRegistry,
-      SecretsProvider secretsProvider,
       SessionCredentialsFetcher sessionCredentialsFetcher) {
     this.clientBuilder =
         clientBuilder != null ? clientBuilder : (parameters) -> client(parameters, sdkHttpClient);
     this.expiryReduction = options.effectiveSessionCredentialRefreshGracePeriod();
-    this.secretsProvider = secretsProvider;
     this.sessionCredentialsFetcher =
         sessionCredentialsFetcher != null
             ? sessionCredentialsFetcher
@@ -208,10 +194,7 @@ public class S3SessionsManager {
     request.overrideConfiguration(
         builder ->
             builder.credentialsProvider(
-                basicCredentialsProvider(
-                    sessionKey.accessKeyIdRef(),
-                    sessionKey.secretAccessKeyRef(),
-                    secretsProvider)));
+                basicCredentialsProvider(sessionKey.accessKeyId(), sessionKey.secretAccessKey())));
 
     AssumeRoleResponse response = client.assumeRole(request.build());
     return response.credentials();
@@ -245,8 +228,8 @@ public class S3SessionsManager {
             options
                 .roleArn()
                 .orElseThrow(() -> new IllegalArgumentException("Role ARN must be configured")))
-        .accessKeyIdRef(options.accessKeyIdRef())
-        .secretAccessKeyRef(options.secretAccessKeyRef())
+        .accessKeyId(options.accessKeyId())
+        .secretAccessKey(options.secretAccessKey())
         .stsEndpoint(options.stsEndpoint())
         .iamPolicy(options.iamPolicy())
         .roleSessionName(options.roleSessionName())
@@ -279,9 +262,9 @@ public class S3SessionsManager {
 
     Optional<URI> stsEndpoint();
 
-    Optional<String> accessKeyIdRef();
+    Optional<String> accessKeyId();
 
-    Optional<String> secretAccessKeyRef();
+    Optional<String> secretAccessKey();
 
     Optional<String> iamPolicy();
 

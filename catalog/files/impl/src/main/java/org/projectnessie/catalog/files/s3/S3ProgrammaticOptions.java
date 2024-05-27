@@ -52,10 +52,10 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
     Builder projectId(String projectId);
 
     @CanIgnoreReturnValue
-    Builder accessKeyIdRef(String accessKeyIdRef);
+    Builder accessKeyId(String accessKeyId);
 
     @CanIgnoreReturnValue
-    Builder secretAccessKeyRef(String secretAccessKeyRef);
+    Builder secretAccessKey(String secretAccessKey);
 
     @CanIgnoreReturnValue
     Builder sessionCredentialCacheMaxEntries(int sessionCredentialCacheMaxEntries);
@@ -111,10 +111,10 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
       Builder projectId(String projectId);
 
       @CanIgnoreReturnValue
-      Builder accessKeyIdRef(String accessKeyIdRef);
+      Builder accessKeyId(String accessKeyId);
 
       @CanIgnoreReturnValue
-      Builder secretAccessKeyRef(String secretAccessKeyRef);
+      Builder secretAccessKey(String secretAccessKey);
 
       @CanIgnoreReturnValue
       Builder accessPoint(String accessPoint);

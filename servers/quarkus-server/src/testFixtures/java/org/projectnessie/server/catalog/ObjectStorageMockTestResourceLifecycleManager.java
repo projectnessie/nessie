@@ -76,20 +76,15 @@ public class ObjectStorageMockTestResourceLifecycleManager
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".endpoint", s3Endpoint)
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".region", "us-east-1")
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".path-style-access", "true")
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key-id-ref", "awsAccessKeyId")
-        .put(
-            "nessie.catalog.service.s3.buckets." + BUCKET + ".secret-access-key-ref",
-            "awsSecretAccessKey")
-        .put("nessie.catalog.secrets.awsAccessKeyId", "accessKey")
-        .put("nessie.catalog.secrets.awsSecretAccessKey", "secretKey")
+        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key-id", "accessKey")
+        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".secret-access-key", "accessKey")
         // GCS
         .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".host", gcsEndpoint)
         .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".project-id", "my-project")
         .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".auth-type", "none")
         // ADLS
         .put("nessie.catalog.service.adls.file-systems." + BUCKET + ".endpoint", adlsEndpoint)
-        .put("nessie.catalog.service.adls.file-systems." + BUCKET + ".sas-token-ref", "sasToken")
-        .put("nessie.catalog.secrets.sasToken", "token")
+        .put("nessie.catalog.service.adls.file-systems." + BUCKET + ".sas-token", "token")
         .build();
   }
 

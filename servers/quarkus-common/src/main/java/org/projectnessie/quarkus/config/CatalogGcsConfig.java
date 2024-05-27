@@ -62,10 +62,10 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   Optional<GcsAuthType> authType();
 
   @Override
-  Optional<String> authCredentialsJsonRef();
+  Optional<String> authCredentialsJson();
 
   @Override
-  Optional<String> oauth2TokenRef();
+  Optional<String> oauth2Token();
 
   @Override
   Optional<Instant> oauth2TokenExpiresAt();
@@ -107,10 +107,10 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   OptionalInt deleteBatchSize();
 
   @Override
-  Optional<String> encryptionKeyRef();
+  Optional<String> encryptionKey();
 
   @Override
-  Optional<String> decryptionKeyRef();
+  Optional<String> decryptionKey();
 
   @Override
   Optional<String> userProject();

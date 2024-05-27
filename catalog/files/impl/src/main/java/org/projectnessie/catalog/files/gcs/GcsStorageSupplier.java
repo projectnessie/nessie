@@ -34,15 +34,11 @@ public final class GcsStorageSupplier {
     this.secretsProvider = secretsProvider;
   }
 
-  public SecretsProvider secretsProvider() {
-    return secretsProvider;
-  }
-
   public GcsBucketOptions bucketOptions(GcsLocation location) {
-    return gcsOptions.effectiveOptionsForBucket(Optional.of(location.bucket()));
+    return gcsOptions.effectiveOptionsForBucket(Optional.of(location.bucket()), secretsProvider);
   }
 
   public Storage forLocation(GcsBucketOptions bucketOptions) {
-    return GcsClients.buildStorage(bucketOptions, httpTransportFactory, secretsProvider);
+    return GcsClients.buildStorage(bucketOptions, httpTransportFactory);
   }
 }

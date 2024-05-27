@@ -22,6 +22,7 @@ import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -63,8 +64,8 @@ public class S3ClientResourceBench {
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
-              .accessKeyIdRef("foo")
-              .secretAccessKeyRef("bar")
+              .accessKeyId("foo")
+              .secretAccessKey("bar")
               .region("eu-central-1")
               .endpoint(server.getS3BaseUri())
               .pathStyleAccess(true)
@@ -73,7 +74,12 @@ public class S3ClientResourceBench {
       S3Sessions sessions = new S3Sessions("foo", null);
 
       clientSupplier =
-          new S3ClientSupplier(httpClient, s3config, s3options, secret -> "secret", sessions);
+          new S3ClientSupplier(
+              httpClient,
+              s3config,
+              s3options,
+              (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> k)),
+              sessions);
     }
 
     @TearDown

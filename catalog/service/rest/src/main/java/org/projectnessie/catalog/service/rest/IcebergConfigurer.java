@@ -182,7 +182,8 @@ public class IcebergConfigurer {
   private Map<String, String> s3ConfigOverrides(StorageUri warehouseLocation) {
     Map<String, String> configOverrides = new HashMap<>();
     String bucket = warehouseLocation.requiredAuthority();
-    S3BucketOptions s3BucketOptions = s3Options.effectiveOptionsForBucket(Optional.of(bucket));
+    S3BucketOptions s3BucketOptions =
+        s3Options.effectiveOptionsForBucket(Optional.of(bucket), secretsProvider);
     s3BucketOptions.region().ifPresent(r -> configOverrides.put(S3_CLIENT_REGION, r));
     if (s3BucketOptions.externalEndpoint().isPresent()) {
       configOverrides.put(S3_ENDPOINT, s3BucketOptions.externalEndpoint().get().toString());
@@ -226,7 +227,8 @@ public class IcebergConfigurer {
   private Map<String, String> gcsConfigOverrides(StorageUri warehouseLocation) {
     Map<String, String> configOverrides = new HashMap<>();
     String bucket = warehouseLocation.requiredAuthority();
-    GcsBucketOptions gcsBucketOptions = gcsOptions.effectiveOptionsForBucket(Optional.of(bucket));
+    GcsBucketOptions gcsBucketOptions =
+        gcsOptions.effectiveOptionsForBucket(Optional.of(bucket), secretsProvider);
     gcsBucketOptions.projectId().ifPresent(p -> configOverrides.put(GCS_PROJECT_ID, p));
     gcsBucketOptions.clientLibToken().ifPresent(t -> configOverrides.put(GCS_CLIENT_LIB_TOKEN, t));
     gcsBucketOptions.host().ifPresent(h -> configOverrides.put(GCS_SERVICE_HOST, h.toString()));
@@ -241,15 +243,9 @@ public class IcebergConfigurer {
         .deleteBatchSize()
         .ifPresent(dbs -> configOverrides.put(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
     // FIXME it is not safe to send de/encryption keys and oauth2 tokens
-    gcsBucketOptions
-        .decryptionKeyRef()
-        .ifPresent(ref -> configOverrides.put(GCS_DECRYPTION_KEY, secretsProvider.getSecret(ref)));
-    gcsBucketOptions
-        .encryptionKeyRef()
-        .ifPresent(ref -> configOverrides.put(GCS_ENCRYPTION_KEY, secretsProvider.getSecret(ref)));
-    gcsBucketOptions
-        .oauth2TokenRef()
-        .ifPresent(ref -> configOverrides.put(GCS_OAUTH2_TOKEN, secretsProvider.getSecret(ref)));
+    gcsBucketOptions.decryptionKey().ifPresent(key -> configOverrides.put(GCS_DECRYPTION_KEY, key));
+    gcsBucketOptions.encryptionKey().ifPresent(key -> configOverrides.put(GCS_ENCRYPTION_KEY, key));
+    gcsBucketOptions.oauth2Token().ifPresent(token -> configOverrides.put(GCS_OAUTH2_TOKEN, token));
     gcsBucketOptions
         .oauth2TokenExpiresAt()
         .ifPresent(
@@ -266,23 +262,19 @@ public class IcebergConfigurer {
     Map<String, String> configOverrides = new HashMap<>();
     AdlsLocation location = adlsLocation(warehouseLocation);
     Optional<String> fileSystem = location.container();
-    AdlsFileSystemOptions fileSystemOptions = adlsOptions.effectiveOptionsForFileSystem(fileSystem);
-    String accountName =
-        fileSystemOptions
-            .accountNameRef()
-            .map(secretsProvider::getSecret)
-            .orElse(location.storageAccount());
+    AdlsFileSystemOptions fileSystemOptions =
+        adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
+    String accountName = fileSystemOptions.accountName().orElse(location.storageAccount());
     // FIXME send account key and token?
     fileSystemOptions
-        .accountKeyRef()
+        .accountKey()
         .ifPresent(
-            ref -> {
+            key -> {
               configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, accountName);
-              configOverrides.put(
-                  "adls.auth.shared-key.account.key", secretsProvider.getSecret(ref));
+              configOverrides.put("adls.auth.shared-key.account.key", key);
             });
     fileSystemOptions
-        .sasTokenRef()
+        .sasToken()
         .ifPresent(s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + accountName, s));
     fileSystemOptions
         .endpoint()

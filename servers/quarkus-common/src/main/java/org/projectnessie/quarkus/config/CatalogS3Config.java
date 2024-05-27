@@ -92,10 +92,10 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
   Optional<String> projectId();
 
   @Override
-  Optional<String> accessKeyIdRef();
+  Optional<String> accessKeyId();
 
   @Override
-  Optional<String> secretAccessKeyRef();
+  Optional<String> secretAccessKey();
 
   @Override
   Optional<String> accessPoint();

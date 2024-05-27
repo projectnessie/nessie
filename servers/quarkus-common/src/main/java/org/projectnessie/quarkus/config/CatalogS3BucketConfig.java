@@ -44,10 +44,10 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<String> projectId();
 
   @Override
-  Optional<String> accessKeyIdRef();
+  Optional<String> accessKeyId();
 
   @Override
-  Optional<String> secretAccessKeyRef();
+  Optional<String> secretAccessKey();
 
   @Override
   Optional<String> accessPoint();
