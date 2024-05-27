@@ -1,0 +1,65 @@
+---
+###############################################################
+#                   Authelia configuration                    #
+###############################################################
+
+# Note: This configuration is VERY INSECURE and should not be used in production.
+# It is meant to be used for demonstration purposes only.
+
+server:
+  address: 'tcp://:9091'
+
+log:
+  level: 'debug'
+
+totp:
+  issuer: 'authelia.com'
+
+identity_validation:
+  reset_password:
+    jwt_secret: 'a_very_important_secret'
+
+authentication_backend:
+  file:
+    path: '/config/users.yml'
+
+access_control:
+  default_policy: 'one_factor'
+
+session:
+  secret: 'insecure_session_secret'
+  cookies:
+    - name: 'authelia_session'
+      domain: 'authelia.127.0.0.1.nip.io'
+      authelia_url: 'https://authelia.127.0.0.1.nip.io'
+
+storage:
+  encryption_key: 'you_must_generate_a_random_string_of_more_than_twenty_chars_and_configure_this'
+  local:
+    path: '/config/db.sqlite3'
+
+notifier:
+  filesystem:
+    filename: '/config/notification.txt'
+
+identity_providers:
+  oidc:
+    enable_client_debug_messages: true
+    enforce_pkce: never
+    jwks:
+      - key: {{ secret "/config/key.pem" | mindent 10 "|" | msquote }}
+    clients:
+      - client_id: 'nessie-client'
+        client_name: 'Nessie'
+        # The digest of 's3cr3t'.
+        client_secret: "$pbkdf2-sha512$310000$ZCRTSGdGSazSFWHVaQSMtw$WZbWXoBTaluYaZviGFzOSvlexw1yLtd7qsHa0xR/5I.ZX/qeYdm008j4Vnadfy8RmOYOiAjh.UPELqrM3tKo7A"
+        public: false
+        scopes:
+          - 'groups'
+          - 'email'
+          - 'profile'
+        grant_types:
+          - 'client_credentials'
+        response_types:
+          - 'code'
+        token_endpoint_auth_method: 'client_secret_basic'

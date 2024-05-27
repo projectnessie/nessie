@@ -1,0 +1,10 @@
+users:
+  Alice:
+    disabled: false
+    displayname: "Alice"
+    # s3cr3t
+    password: "$pbkdf2-sha512$310000$ZCRTSGdGSazSFWHVaQSMtw$WZbWXoBTaluYaZviGFzOSvlexw1yLtd7qsHa0xR/5I.ZX/qeYdm008j4Vnadfy8RmOYOiAjh.UPELqrM3tKo7A"
+    email: alice@example.com
+    groups:
+      - admins
+      - dev
