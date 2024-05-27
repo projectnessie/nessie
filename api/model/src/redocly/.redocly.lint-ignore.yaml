@@ -119,6 +119,7 @@ openapi.yaml:
     - '#/components/examples/types'
   security-defined:
     - '#/paths/~1v1~1config/get'
+    - '#/paths/~1v2~1config~1whoami/get'
     - '#/paths/~1v1~1contents/post'
     - '#/paths/~1v1~1contents~1{key}/get'
     - '#/paths/~1v1~1diffs~1{fromRefWithHash}...{toRefWithHash}/get'
