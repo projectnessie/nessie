@@ -29,8 +29,11 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -265,6 +268,20 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
         1000);
 
     LOGGER.info("Finished setting up Keycloak, external realm auth url: {}", getExternalRealmUri());
+  }
+
+  public String createBearerToken(String realm, String clientId, String clientSecret) {
+    try (Keycloak k =
+        KeycloakBuilder.builder()
+            .serverUrl(getAuthServerUrl())
+            .realm(realm)
+            .clientId(clientId)
+            .clientSecret(clientSecret)
+            .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+            .build()) {
+      TokenManager tm = k.tokenManager();
+      return tm.getAccessTokenString();
+    }
   }
 
   private RealmRepresentation createRealm() {
