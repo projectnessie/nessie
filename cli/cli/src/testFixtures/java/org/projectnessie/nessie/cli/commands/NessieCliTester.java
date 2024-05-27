@@ -29,7 +29,7 @@ import org.projectnessie.nessie.cli.cmdspec.CommandSpec;
 public class NessieCliTester extends BaseNessieCli implements AutoCloseable {
   private final ByteArrayOutputStream out;
 
-  protected NessieCliTester() throws Exception {
+  public NessieCliTester() throws Exception {
     InputStream in = InputStream.nullInputStream();
     out = new ByteArrayOutputStream();
 

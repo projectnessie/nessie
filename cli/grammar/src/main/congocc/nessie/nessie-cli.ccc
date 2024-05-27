@@ -126,7 +126,12 @@ ExitStatement
 ConnectStatement
     : <CONNECT>
       <TO> /uri/=Uri
-      { setOptionalNextTokenTypes(TokenType.USING); }
+      { setOptionalNextTokenTypes(TokenType.ON, TokenType.USING); }
+      [ <ON>
+        { setOptionalNextTokenTypes(); }
+        /initialRef/=ReferenceName
+        { setOptionalNextTokenTypes(TokenType.USING); }
+      ]
       [ <USING>
         { setOptionalNextTokenTypes();
           completionType = CompletionType.CONNECT_OPTIONS; }

@@ -130,7 +130,7 @@ import org.projectnessie.nessie.cli.cmdspec.*;
 
   @Override
   public String getInitialReference() {
-    return null;
+    return stringValueOf("initialRef");
   }
 
   @Override

@@ -45,6 +45,8 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.uuidTy
 
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergBlobMetadata;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField;
@@ -59,6 +61,11 @@ import org.projectnessie.catalog.formats.iceberg.types.IcebergType;
 
 public class IcebergFixtures {
   public static Stream<IcebergType> icebergTypes() {
+    AtomicInteger idGen = new AtomicInteger();
+    return icebergTypes(idGen::incrementAndGet);
+  }
+
+  public static Stream<IcebergType> icebergTypes(IntSupplier idSupplier) {
     return Stream.of(
         booleanType(),
         uuidType(),
@@ -70,16 +77,20 @@ public class IcebergFixtures {
         doubleType(),
         dateType(),
         timeType(),
-        structType(singletonList(nestedField(11, "field11", true, stringType(), null)), null),
-        structType(singletonList(nestedField(11, "field11", false, stringType(), null)), null),
-        listType(1, stringType(), true),
-        listType(1, stringType(), false),
-        listType(1, uuidType(), true),
-        listType(1, uuidType(), false),
-        mapType(3, stringType(), 4, dateType(), true),
-        mapType(3, stringType(), 4, dateType(), false),
-        mapType(3, uuidType(), 4, timeType(), true),
-        mapType(3, uuidType(), 4, timeType(), false),
+        structType(
+            singletonList(nestedField(idSupplier.getAsInt(), "field11", true, stringType(), null)),
+            null),
+        structType(
+            singletonList(nestedField(idSupplier.getAsInt(), "field11", false, stringType(), null)),
+            null),
+        listType(idSupplier.getAsInt(), stringType(), true),
+        listType(idSupplier.getAsInt(), stringType(), false),
+        listType(idSupplier.getAsInt(), uuidType(), true),
+        listType(idSupplier.getAsInt(), uuidType(), false),
+        mapType(idSupplier.getAsInt(), stringType(), idSupplier.getAsInt(), dateType(), true),
+        mapType(idSupplier.getAsInt(), stringType(), idSupplier.getAsInt(), dateType(), false),
+        mapType(idSupplier.getAsInt(), uuidType(), idSupplier.getAsInt(), timeType(), true),
+        mapType(idSupplier.getAsInt(), uuidType(), idSupplier.getAsInt(), timeType(), false),
         decimalType(10, 3),
         fixedType(42),
         timestampType(),

@@ -22,12 +22,9 @@ import java.util.Map;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableConnectCommandSpec;
@@ -49,18 +46,11 @@ public abstract class BaseTestCommand {
 
   @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 
-  private NessieApiV2 nessieApi;
   private URI uri;
 
   @BeforeEach
-  public void setUp(NessieClientFactory clientFactory, @NessieClientUri URI uri) {
-    nessieApi = (NessieApiV2) clientFactory.make();
+  public void setUp(@NessieClientUri URI uri) {
     this.uri = uri;
-  }
-
-  @AfterEach
-  public void tearDown() {
-    nessieApi.close();
   }
 
   protected URI nessieBaseUri() {
