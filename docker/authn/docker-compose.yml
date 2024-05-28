@@ -1,0 +1,46 @@
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: '3'
+services:
+  nessie:
+    image: ghcr.io/projectnessie/nessie:latest@sha256:7fc6cfe427db95f660f9676e10c30c5c21a91d48bf37b2ec52abb646d246b34d
+    ports:
+      - "19120:19120"
+    depends_on:
+      - keycloak
+    environment:
+      NESSIE_VERSION_STORE_TYPE: IN_MEMORY
+      NESSIE_SERVER_AUTHENTICATION_ENABLED: true
+      QUARKUS_OIDC_ENABLED: true
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/master
+      QUARKUS_OIDC_CLIENT_ID: projectnessie
+      # QUARKUS_OIDC_TOKEN_ISSUER: any
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest@sha256:ff02c932f0249c58f32b8ff1b188a48cc90809779a3a05931ab67f5672400ad0
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Required if Nessie fails to validate the issuer claim;
+      # but the admin console won't be accessible from the host system
+      # at localhost:8080 anymore; you will need to add an entry to
+      # /etc/hosts:
+      # 127.0.0.1  keycloak
+      # Another option is to set QUARKUS_OIDC_TOKEN_ISSUER above
+      KC_HOSTNAME_URL: http://keycloak:8080
+    command: start-dev --features=preview,token-exchange
