@@ -37,9 +37,6 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<String> region();
 
   @Override
-  Optional<String> projectId();
-
-  @Override
   Optional<String> accessKeyId();
 
   @Override

@@ -87,9 +87,6 @@ public interface S3BucketOptions {
    */
   Optional<String> region();
 
-  /** Project ID, if required, possibly needed in Google cloud. */
-  Optional<String> projectId();
-
   /**
    * An access-key-id must be configured, either per bucket or in {@link S3Options S3Options}. For
    * STS, this defines the Access Key ID to be used as a basic credential for obtaining temporary

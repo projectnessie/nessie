@@ -109,14 +109,6 @@ public class S3ClientSupplier {
         .allowCrossRegionAccessPoint()
         .ifPresent(cr -> builder.disableMultiRegionAccessPoints(!cr));
 
-    // https://cloud.google.com/storage/docs/aws-simple-migration#project-header
-    bucketOptions
-        .projectId()
-        .ifPresent(
-            prj ->
-                builder.overrideConfiguration(
-                    override -> override.putHeader("x-amz-project-id", prj)));
-
     S3Client s3Client = builder.build();
 
     if (bucketOptions.accessPoint().isPresent()) {
@@ -133,8 +125,6 @@ public class S3ClientSupplier {
         + options.endpoint().map(URI::toString).orElse("<undefined>")
         + ", region="
         + options.region().orElse("<undefined>")
-        + ", projectId="
-        + options.projectId().orElse("<undefined>")
         + "}";
   }
 

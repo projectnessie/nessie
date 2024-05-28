@@ -76,10 +76,6 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   @Override
   Optional<String> region();
 
-  /** The default Google project ID to use, if not configured {@linkplain #buckets() per bucket}. */
-  @Override
-  Optional<String> projectId();
-
   /**
    * The default access-key-id to use, if not configured {@linkplain #buckets() per bucket}. An
    * access-key-id must be configured, either {@linkplain #buckets() per bucket} or here.
