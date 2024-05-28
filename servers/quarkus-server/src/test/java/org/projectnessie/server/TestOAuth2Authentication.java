@@ -44,9 +44,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.projectnessie.client.auth.NessieAuthentication;
+import org.projectnessie.client.auth.oauth2.AuthorizationCodeResourceOwnerEmulator;
+import org.projectnessie.client.auth.oauth2.DeviceCodeResourceOwnerEmulator;
 import org.projectnessie.client.auth.oauth2.GrantType;
-import org.projectnessie.client.auth.oauth2.KeycloakAuthorizationCodeResourceOwnerEmulator;
-import org.projectnessie.client.auth.oauth2.KeycloakDeviceCodeResourceOwnerEmulator;
 import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -273,10 +273,10 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
     };
   }
 
-  private KeycloakAuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
+  private AuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
       throws IOException {
-    KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
-        new KeycloakAuthorizationCodeResourceOwnerEmulator();
+    AuthorizationCodeResourceOwnerEmulator resourceOwner =
+        new AuthorizationCodeResourceOwnerEmulator();
     resourceOwner.replaceSystemOut();
     resourceOwner.setAuthUrlListener(
         url -> {
@@ -292,9 +292,8 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
     return resourceOwner;
   }
 
-  private KeycloakDeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
-    KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
-        new KeycloakDeviceCodeResourceOwnerEmulator();
+  private DeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
+    DeviceCodeResourceOwnerEmulator resourceOwner = new DeviceCodeResourceOwnerEmulator();
     resourceOwner.replaceSystemOut();
     resourceOwner.setCompletionListener(
         () -> {

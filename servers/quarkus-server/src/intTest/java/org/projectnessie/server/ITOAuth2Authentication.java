@@ -26,9 +26,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 import java.util.Properties;
+import org.projectnessie.client.auth.oauth2.AuthorizationCodeResourceOwnerEmulator;
+import org.projectnessie.client.auth.oauth2.DeviceCodeResourceOwnerEmulator;
 import org.projectnessie.client.auth.oauth2.GrantType;
-import org.projectnessie.client.auth.oauth2.KeycloakAuthorizationCodeResourceOwnerEmulator;
-import org.projectnessie.client.auth.oauth2.KeycloakDeviceCodeResourceOwnerEmulator;
 import org.projectnessie.client.auth.oauth2.ResourceOwnerEmulator;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
@@ -79,19 +79,19 @@ public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
     };
   }
 
-  private KeycloakAuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
+  private AuthorizationCodeResourceOwnerEmulator newAuthorizationCodeResourceOwner()
       throws IOException {
-    KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
-        new KeycloakAuthorizationCodeResourceOwnerEmulator("alice", "alice");
+    AuthorizationCodeResourceOwnerEmulator resourceOwner =
+        new AuthorizationCodeResourceOwnerEmulator("alice", "alice");
     resourceOwner.replaceSystemOut();
     resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
     resourceOwner.setErrorListener(e -> api().close());
     return resourceOwner;
   }
 
-  private KeycloakDeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
-    KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
-        new KeycloakDeviceCodeResourceOwnerEmulator("alice", "alice");
+  private DeviceCodeResourceOwnerEmulator newDeviceCodeResourceOwner() throws IOException {
+    DeviceCodeResourceOwnerEmulator resourceOwner =
+        new DeviceCodeResourceOwnerEmulator("alice", "alice");
     resourceOwner.replaceSystemOut();
     resourceOwner.setAuthServerBaseUri(URI.create(keycloakClient.getAuthServerUrl()));
     resourceOwner.setErrorListener(e -> api().close());

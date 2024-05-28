@@ -389,8 +389,8 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), false)) {
 
-      try (KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
-          new KeycloakAuthorizationCodeResourceOwnerEmulator()) {
+      try (AuthorizationCodeResourceOwnerEmulator resourceOwner =
+          new AuthorizationCodeResourceOwnerEmulator()) {
 
         OAuth2ClientConfig config =
             configBuilder(server, false)
@@ -433,8 +433,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), false)) {
 
-      try (KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
-          new KeycloakDeviceCodeResourceOwnerEmulator()) {
+      try (DeviceCodeResourceOwnerEmulator resourceOwner = new DeviceCodeResourceOwnerEmulator()) {
 
         OAuth2ClientConfig config =
             configBuilder(server, false)

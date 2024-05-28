@@ -21,28 +21,42 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.net.ssl.SSLContext;
+import org.projectnessie.client.http.Status;
+import org.projectnessie.client.http.impl.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AutheliaAuthorizationCodeResourceOwnerEmulator
-    extends InteractiveResourceOwnerEmulator {
+public class AuthorizationCodeResourceOwnerEmulator extends InteractiveResourceOwnerEmulator {
 
   private static final Logger LOGGER =
-      LoggerFactory.getLogger(AutheliaAuthorizationCodeResourceOwnerEmulator.class);
-
-  private static final Pattern REDIRECT_PATTERN = Pattern.compile("\"redirect\":\"([^\"]+)\"");
+      LoggerFactory.getLogger(AuthorizationCodeResourceOwnerEmulator.class);
 
   private URI authUrl;
 
-  public AutheliaAuthorizationCodeResourceOwnerEmulator(
-      String username, String password, SSLContext sslContext) throws IOException {
-    super(username, password, sslContext);
+  private volatile String authorizationCode;
+  private volatile int expectedCallbackStatus = HTTP_OK;
+
+  /** Creates a new emulator with implicit login (for unit tests). */
+  public AuthorizationCodeResourceOwnerEmulator() throws IOException {
+    super(null, null);
+  }
+
+  /**
+   * Creates a new emulator with required user login using the given username and password (for
+   * integration tests).
+   */
+  public AuthorizationCodeResourceOwnerEmulator(String username, String password)
+      throws IOException {
+    super(username, password);
+  }
+
+  public void overrideAuthorizationCode(String code, Status expectedStatus) {
+    authorizationCode = code;
+    expectedCallbackStatus = expectedStatus.getCode();
   }
 
   @Override
@@ -62,40 +76,20 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
     try {
       LOGGER.info("Starting authorization code flow.");
       Set<String> cookies = new HashSet<>();
-      URI callbackUri = login(authUrl, cookies);
+      URI callbackUri;
+      if (username == null || password == null) {
+        HttpURLConnection conn = (HttpURLConnection) authUrl.toURL().openConnection();
+        callbackUri = readRedirectUrl(conn, cookies);
+        conn.disconnect();
+      } else {
+        callbackUri = login(authUrl, cookies);
+      }
       invokeCallbackUrl(callbackUri);
       LOGGER.info("Authorization code flow completed.");
       notifyFlowCompleted();
     } catch (Exception | AssertionError t) {
       recordFailure(t);
     }
-  }
-
-  @Override
-  protected URI login(URI loginPageUrl, Set<String> cookies) throws Exception {
-    LOGGER.info("Performing login...");
-    String loginHtml = getHtmlPage(loginPageUrl, cookies);
-    assertThat(loginHtml).contains("Login - Authelia");
-    URI loginActionUrl = loginPageUrl.resolve("/api/firstfactor");
-    HttpURLConnection loginActionConn =
-        openConnection(loginActionUrl, "application/json, text/plain, */*");
-    String data =
-        String.format(
-            "{\"username\":\"%s\",\"password\":\"%s\",\"targetURL\":\"%s\",\"keepMeLoggedIn\":false,\"workflow\":\"openid_connect\"}",
-            username, password, authUrl.toString());
-    postJson(loginActionConn, data, cookies);
-    int responseCode = loginActionConn.getResponseCode();
-    assertThat(responseCode).isEqualTo(HTTP_OK);
-    readCookies(loginActionConn, cookies);
-    String response = readBody(loginActionConn);
-    loginActionConn.disconnect();
-    assertThat(response).contains("\"status\":\"OK\"");
-    Matcher matcher = REDIRECT_PATTERN.matcher(response);
-    assertThat(matcher.find()).isTrue();
-    String redirectUri = URLDecoder.decode(matcher.group(1), "UTF-8").replace("\\u0026", "&");
-    HttpURLConnection redirectConn = openConnection(URI.create(redirectUri));
-    writeCookies(redirectConn, cookies);
-    return readRedirectUrl(redirectConn, cookies);
   }
 
   /** Emulate browser being redirected to callback URL. */
@@ -105,10 +99,23 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
         .hasPath(AuthorizationCodeFlow.CONTEXT_PATH)
         .hasParameter("code")
         .hasParameter("state");
+    String code = authorizationCode;
+    if (code != null) {
+      Map<String, String> params = HttpUtils.parseQueryString(callbackUrl.getQuery());
+      callbackUrl =
+          new URI(
+              callbackUrl.getScheme(),
+              null,
+              callbackUrl.getHost(),
+              callbackUrl.getPort(),
+              callbackUrl.getPath(),
+              "code=" + URLEncoder.encode(code, "UTF-8") + "&state=" + params.get("state"),
+              null);
+    }
     HttpURLConnection conn = (HttpURLConnection) callbackUrl.toURL().openConnection();
     conn.setRequestMethod("GET");
     int status = conn.getResponseCode();
     conn.disconnect();
-    assertThat(status).isEqualTo(HTTP_OK);
+    assertThat(status).isEqualTo(expectedCallbackStatus);
   }
 }
