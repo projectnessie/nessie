@@ -54,7 +54,7 @@ jobs:
             ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
 
   publish-images:
-    name: Publish to Maven Central
+    name: Publish Images
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
