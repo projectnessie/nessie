@@ -51,12 +51,6 @@ public class MinioExtension
     if (OS.current() == OS.LINUX) {
       return enabled("Running on Linux");
     }
-    if (OS.current() == OS.MAC
-        && System.getenv("CI_MAC") == null
-        && MinioContainer.canRunOnMacOs()) {
-      // Disable tests on GitHub Actions
-      return enabled("Running on macOS locally");
-    }
     return disabled(format("Disabled on %s", OS.current().name()));
   }
 

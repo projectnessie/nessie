@@ -93,7 +93,7 @@ public class ITOAuth2ClientAuthelia {
 
   @BeforeAll
   static void beforeAll() {
-    issuerUrl = URI.create("https://authelia.127.0.0.1.nip.io:" + AUTHELIA.getMappedPort(9091));
+    issuerUrl = URI.create("https://localhost:" + AUTHELIA.getMappedPort(9091));
   }
 
   @Test

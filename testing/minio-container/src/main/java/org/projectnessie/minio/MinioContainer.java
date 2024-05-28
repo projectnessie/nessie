@@ -56,24 +56,20 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
   /**
    * Domain must start with "s3" in order to be recognized as an S3 endpoint by the AWS SDK with
    * virtual-host-style addressing. The bucket name is expected to be the first part of the domain
-   * name, e.g. "bucket.s3.127-0-0-1.nip.io".
+   * name, e.g. "bucket.s3.localhost.localdomain".
    */
-  private static final String MINIO_DOMAIN_NIP = "s3.127-0-0-1.nip.io";
-
-  static boolean canRunOnMacOs() {
-    return MINIO_DOMAIN_NAME.equals(MINIO_DOMAIN_NIP);
-  }
+  private static final String MINIO_DOMAIN_LOCAL = "s3.localhost.localdomain";
 
   static {
     String name;
     try {
-      InetAddress ignored = InetAddress.getByName(MINIO_DOMAIN_NIP);
-      name = MINIO_DOMAIN_NIP;
+      InetAddress ignored = InetAddress.getByName(MINIO_DOMAIN_LOCAL);
+      name = MINIO_DOMAIN_LOCAL;
     } catch (UnknownHostException e) {
       LOGGER.warn(
           "Could not resolve '{}', falling back to 'localhost'. "
               + "This usually happens when your router or DNS provider is unable to resolve the nip.io addresses.",
-          MINIO_DOMAIN_NIP);
+          MINIO_DOMAIN_LOCAL);
       name = "localhost";
     }
     MINIO_DOMAIN_NAME = name;

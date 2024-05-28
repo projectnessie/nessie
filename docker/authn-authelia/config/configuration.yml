@@ -30,8 +30,8 @@ session:
   secret: 'insecure_session_secret'
   cookies:
     - name: 'authelia_session'
-      domain: 'authelia.127.0.0.1.nip.io'
-      authelia_url: 'https://authelia.127.0.0.1.nip.io'
+      domain: 'localhost'
+      authelia_url: 'https://localhost'
 
 storage:
   encryption_key: 'you_must_generate_a_random_string_of_more_than_twenty_chars_and_configure_this'
