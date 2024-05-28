@@ -71,6 +71,16 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       Consumer<String> responsePagingToken)
       throws NessieNotFoundException {
 
+    if (pageSize == null) {
+      pageToken = null;
+    } else {
+      // Hard-coded limit of 500 entries to return in one page
+      pageSize = Math.max(1, Math.min(pageSize, 500));
+      if (pageToken != null && pageToken.isEmpty()) {
+        pageToken = null;
+      }
+    }
+
     EntriesResponse entriesResponse =
         applyPaging(
                 nessieApi
