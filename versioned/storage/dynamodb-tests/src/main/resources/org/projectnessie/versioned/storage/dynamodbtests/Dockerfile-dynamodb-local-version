@@ -1,3 +1,3 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM docker.io/amazon/dynamodb-local:2.4.0@sha256:a72e734c42833ae35f069dc1678fc364db41ca926a367599d8caad317be02cba
+FROM docker.io/amazon/dynamodb-local:2.5.0@sha256:22b1f856581e5c77549b319c20371c7454381d7ef039d2a386c1b0dc686573cd
