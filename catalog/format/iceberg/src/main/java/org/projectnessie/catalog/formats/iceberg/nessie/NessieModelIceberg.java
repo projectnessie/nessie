@@ -768,20 +768,29 @@ public class NessieModelIceberg {
     return value != null ? value : defaultValue;
   }
 
-  /** Returns the default table or view base location. */
+  /**
+   * Returns the default table or view base location, including the {@linkplain
+   * #icebergBasePrefix(String, ContentKey) base prefix} and a randomized suffix.
+   *
+   * <p>Different tables with same table name can exist across references in Nessie. To avoid
+   * sharing same table path between two tables with same name, we randomize it by appending a uuid
+   * suffix to the table path.
+   *
+   * <p>Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
+   */
   public static String icebergBaseLocation(String warehouseLocation, ContentKey key) {
+    return icebergBasePrefix(warehouseLocation, key) + "/" + randomUUID();
+  }
+
+  /** Returns the default table or view base prefix, without the randomized suffix. */
+  public static String icebergBasePrefix(String warehouseLocation, ContentKey key) {
     // FIXME escape or remove forbidden chars, cf. #8524
     String baseLocation = warehouseLocation;
     Namespace ns = key.getNamespace();
     if (!ns.isEmpty()) {
       baseLocation = concatLocation(warehouseLocation, ns.toString());
     }
-    baseLocation = concatLocation(baseLocation, key.getName());
-    // Different tables with same table name can exist across references in Nessie.
-    // To avoid sharing same table path between two tables with same name, use uuid in the table
-    // path.
-    // Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
-    return baseLocation + "_" + randomUUID();
+    return concatLocation(baseLocation, key.getName());
   }
 
   private static String concatLocation(String location, String key) {

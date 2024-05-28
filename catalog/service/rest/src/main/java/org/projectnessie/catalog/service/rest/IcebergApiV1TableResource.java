@@ -251,7 +251,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
               .snapshot();
 
       IcebergTableMetadata stagedTableMetadata =
-          nessieTableSnapshotToIceberg(snapshot, Optional.empty(), map -> {});
+          nessieTableSnapshotToIceberg(
+              snapshot, Optional.empty(), map -> map.put("nessie.staged", "true"));
 
       return Uni.createFrom()
           .item(
