@@ -27,7 +27,7 @@
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
       matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["major", "minor", "patch"],
+      matchUpdateTypes: ["major", "minor", "patch", "digest"],
       matchPackageNames: [
         "gcr.io/google.com/cloudsdktool/google-cloud-cli"
       ],
@@ -35,18 +35,10 @@
       platformAutomerge: true
     },
 
-    // Dockerfile pin/digest updates
-    {
-      matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["pin", "pinDigest", "digest"],
-      automerge: true,
-      platformAutomerge: true
-    },
-
     // Check for updates, merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchUpdateTypes: ["minor", "patch", "pin", "pinDigest", "digest"],
       automerge: true,
       platformAutomerge: true,
     },

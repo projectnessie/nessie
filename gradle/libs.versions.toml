@@ -112,7 +112,7 @@ microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "5.1.0" }
-nessie-runner-common = { module = "org.projectnessie.nessie-runner:nessie-runner-common", version = "0.31.0" }
+nessie-runner-common = { module = "org.projectnessie.nessie-runner:nessie-runner-common", version = "0.32.2" }
 nessie-ui = { module = "org.projectnessie.nessie.ui:nessie-ui", version = "0.63.6" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
 opentelemetry-bom-alpha = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
@@ -137,7 +137,7 @@ scala-library-v213 = { module = "org.scala-lang:scala-library", version = { stri
 slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
 slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
-smallrye-mutiny = { module = "io.smallrye.reactive:mutiny", version = "2.5.3" }
+smallrye-mutiny = { module = "io.smallrye.reactive:mutiny", version = "2.6.0" }
 smallrye-config-core = { module = "io.smallrye.config:smallrye-config-core", version.ref = "smallryeConfig" }
 snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.5" }
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
@@ -154,7 +154,7 @@ undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "und
 vertx-core = { module = "io.vertx:vertx-core", version = "4.5.8" }
 weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "5.1.2.Final" }
 wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version = "2.35.2" }
-zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.5-11" }
+zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-3" }
 
 [plugins]
 annotations-stripper = { id = "org.projectnessie.annotation-stripper", version = "0.1.2" }

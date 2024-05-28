@@ -92,7 +92,7 @@ services:
 
   # Jaeger (OpenTelemetry traces collector)
   jaeger:
-    image: docker.io/jaegertracing/all-in-one:latest@sha256:048c07e5a62443c90fa13162a5f2eae14919a2e3d541b1c500519b52643befbb
+    image: docker.io/jaegertracing/all-in-one:latest@sha256:353f8d2229cf51f0f76d85c506676a8ecc1eb0200d84deb3ba78ed34794be6b7
     ports:
       # Jaeger gRPC collector, used by Nessie
       - "4317:4317"
@@ -108,7 +108,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z@sha256:420663b8685c5396f06405ad516d611db4465939a141cc7d40266342d0f2632d
+    image: quay.io/minio/minio:RELEASE.2024-05-27T19-17-46Z@sha256:3675de348d27585bea81e54fcf1dfcb98117334af2fb864f3000b359b8e2264c
     ports:
       # API port, used by Nessie
       - "9000:9000"
@@ -128,7 +128,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z@sha256:420663b8685c5396f06405ad516d611db4465939a141cc7d40266342d0f2632d
+    image: quay.io/minio/minio:RELEASE.2024-05-27T19-17-46Z@sha256:3675de348d27585bea81e54fcf1dfcb98117334af2fb864f3000b359b8e2264c
     depends_on:
       minio:
         condition: service_healthy
