@@ -15,16 +15,15 @@
  */
 package org.projectnessie.server.catalog;
 
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.BaseTransaction;
 import org.apache.iceberg.CatalogProperties;
@@ -51,6 +50,7 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClientBuilder;
@@ -62,29 +62,23 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   public static final String EMPTY_OBJ_ID =
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 
-  protected final List<RESTCatalog> catalogs = new ArrayList<>();
+  private static final Catalogs CATALOGS = new Catalogs();
 
   protected RESTCatalog catalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-    RESTCatalog catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        getClass().getSimpleName(),
-        Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
-            CatalogProperties.WAREHOUSE_LOCATION,
-            WAREHOUSE_NAME));
-    catalogs.add(catalog);
-    return catalog;
+    return CATALOGS.getCatalog(catalogOptions());
+  }
+
+  protected Map<String, String> catalogOptions() {
+    return singletonMap(CatalogProperties.WAREHOUSE_LOCATION, WAREHOUSE_NAME);
+  }
+
+  @AfterAll
+  static void closeRestCatalog() throws Exception {
+    CATALOGS.close();
   }
 
   @AfterEach
   void cleanup() throws Exception {
-    for (RESTCatalog catalog : catalogs) {
-      catalog.close();
-    }
-
     try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
       Reference main = null;
       for (Reference reference : api.getAllReferences().stream().toList()) {

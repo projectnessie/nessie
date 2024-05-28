@@ -16,10 +16,8 @@
 package org.projectnessie.server.catalog.auth;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import java.util.HashMap;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
 import org.projectnessie.client.auth.oauth2.AccessToken;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider;
@@ -30,8 +28,7 @@ import org.projectnessie.client.auth.oauth2.OAuth2AuthenticatorConfig;
 public class ITBearerTokenIcebergCatalog extends AbstractAuthEnabledTests {
 
   @Override
-  protected RESTCatalog catalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
+  protected Map<String, String> catalogOptions() {
     AccessToken accessToken;
     try (OAuth2Authenticator authenticator =
         OAuth2AuthenticationProvider.newAuthenticator(
@@ -43,18 +40,10 @@ public class ITBearerTokenIcebergCatalog extends AbstractAuthEnabledTests {
       authenticator.start();
       accessToken = authenticator.authenticate();
     }
-    RESTCatalog catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        "nessie-auth-iceberg-api",
-        Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
-            OAuth2Properties.SCOPE,
-            "email",
-            OAuth2Properties.TOKEN,
-            accessToken.getPayload()));
-    catalogs.add(catalog);
-    return catalog;
+
+    Map<String, String> options = new HashMap<>();
+    options.put(OAuth2Properties.SCOPE, "email");
+    options.put(OAuth2Properties.TOKEN, accessToken.getPayload());
+    return options;
   }
 }
