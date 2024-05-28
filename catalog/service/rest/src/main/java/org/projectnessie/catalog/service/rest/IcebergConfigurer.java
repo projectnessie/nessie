@@ -19,6 +19,7 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
 import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
+import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -145,7 +146,9 @@ public class IcebergConfigurer {
       config.put(
           S3_SIGNER_ENDPOINT,
           // TODO does it make sense to use a separate endpoint (service) just for signing?
-          uriInfo.icebergS3SignerUri(prefix, contentKey).toString());
+          uriInfo
+              .icebergS3SignerUri(prefix, contentKey, normalizeS3Scheme(tableMetadata.location()))
+              .toString());
     }
     // TODO GCS and ADLS per-table config overrides
     return config;

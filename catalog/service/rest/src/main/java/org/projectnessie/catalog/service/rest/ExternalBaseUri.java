@@ -91,11 +91,21 @@ public interface ExternalBaseUri {
         "uri", icebergBaseURI().toString());
   }
 
-  default URI icebergS3SignerUri(String prefix, ContentKey contentKey) {
+  /**
+   * The URI to sign a request to S3 for a specific content key.
+   *
+   * @param prefix the prefix of the request (warehouse and reference)
+   * @param contentKey the content key to sign the request for
+   * @param currentBaseLocation the current base location, used to authorize signing for staged
+   *     tables mostly
+   */
+  default URI icebergS3SignerUri(String prefix, ContentKey contentKey, String currentBaseLocation) {
     return icebergBaseURI()
         .resolve(
             format(
-                "v1/%s/s3-sign/%s",
-                encode(prefix, UTF_8), encode(contentKey.toPathString(), UTF_8)));
+                "v1/%s/s3-sign/%s?loc=%s",
+                encode(prefix, UTF_8),
+                encode(contentKey.toPathString(), UTF_8),
+                encode(currentBaseLocation, UTF_8)));
   }
 }

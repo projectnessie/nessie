@@ -45,6 +45,7 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.Catalog.TableBuilder;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -1972,15 +1973,21 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
 
     Map<String, String> properties =
         ImmutableMap.of("user", "someone", "created-at", "2022-02-25T00:38:19");
-    String location = temporaryLocation();
-    Transaction createOrReplace =
+
+    TableBuilder tableBuilder =
         catalog
             .buildTable(TABLE, SCHEMA)
-            .withLocation(location)
             .withPartitionSpec(SPEC)
             .withSortOrder(WRITE_ORDER)
-            .withProperties(properties)
-            .createOrReplaceTransaction();
+            .withProperties(properties);
+
+    String location = null;
+    if (!overridesRequestedLocation()) {
+      location = temporaryLocation();
+      tableBuilder.withLocation(location);
+    }
+
+    Transaction createOrReplace = tableBuilder.createOrReplaceTransaction();
 
     Assertions.assertThat(catalog.tableExists(TABLE))
         .as("Table should still exist after replaceTransaction")
@@ -2143,15 +2150,20 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
 
     Map<String, String> properties =
         ImmutableMap.of("user", "someone", "created-at", "2022-02-25T00:38:19");
-    String location = temporaryLocation();
-    Transaction replace =
+    TableBuilder tableBuilder =
         catalog
             .buildTable(TABLE, SCHEMA)
-            .withLocation(location)
             .withPartitionSpec(SPEC)
             .withSortOrder(WRITE_ORDER)
-            .withProperties(properties)
-            .replaceTransaction();
+            .withProperties(properties);
+
+    String location = null;
+    if (!overridesRequestedLocation()) {
+      location = temporaryLocation();
+      tableBuilder.withLocation(location);
+    }
+
+    Transaction replace = tableBuilder.replaceTransaction();
 
     Assertions.assertThat(catalog.tableExists(TABLE))
         .as("Table should still exist after replaceTransaction")

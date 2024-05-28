@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.service.rest;
 
 import static java.util.Objects.requireNonNull;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse.icebergS3SignResponse;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import io.smallrye.common.annotation.Blocking;
@@ -35,20 +34,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.RequestSigner;
-import org.projectnessie.catalog.files.api.SigningRequest;
-import org.projectnessie.catalog.files.api.SigningResponse;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTransactionRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
@@ -94,31 +87,6 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
         .defaults(icebergConfigurer.icebergConfigDefaults(reference, warehouse))
         .overrides(icebergConfigurer.icebergConfigOverrides(reference, warehouse))
         .build();
-  }
-
-  // TODO inject some path parameters to identify the table in a secure way to then do the
-  //  access-check against the table and eventually sign the request.
-  //  The endpoint can be tweaked sing the S3_SIGNER_ENDPOINT property, signing to be
-  //  enabled via S3_REMOTE_SIGNING_ENABLED.
-  @POST
-  @Path("/v1/{prefix}/s3-sign/{identifier}")
-  @Blocking
-  public IcebergS3SignResponse s3sign(
-      IcebergS3SignRequest request,
-      @PathParam("prefix") String prefix,
-      @PathParam("identifier") String identifier) {
-    URI uri = URI.create(request.uri());
-
-    Optional<String> bucket = s3options.extractBucket(uri);
-    Optional<String> body = Optional.ofNullable(request.body());
-
-    SigningRequest signingRequest =
-        SigningRequest.signingRequest(
-            uri, request.method(), request.region(), bucket, body, request.headers());
-
-    SigningResponse signed = signer.sign(signingRequest);
-
-    return icebergS3SignResponse(signed.uri().toString(), signed.headers());
   }
 
   @POST

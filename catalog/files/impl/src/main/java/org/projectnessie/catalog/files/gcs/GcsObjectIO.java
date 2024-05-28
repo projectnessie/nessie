@@ -81,9 +81,4 @@ public class GcsObjectIO implements ObjectIO {
     bucketOptions.writeChunkSize().ifPresent(channel::setChunkSize);
     return Channels.newOutputStream(channel);
   }
-
-  @Override
-  public boolean isValidUri(StorageUri uri) {
-    return uri != null && "gs".equals(uri.scheme());
-  }
 }

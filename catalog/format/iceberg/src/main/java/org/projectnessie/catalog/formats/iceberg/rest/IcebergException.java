@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.api;
+package org.projectnessie.catalog.formats.iceberg.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import org.projectnessie.storage.uri.StorageUri;
+public class IcebergException extends RuntimeException {
 
-public interface ObjectIO {
-  InputStream readObject(StorageUri uri) throws IOException;
+  private final IcebergError error;
 
-  OutputStream writeObject(StorageUri uri) throws IOException;
+  public IcebergException(IcebergError error) {
+    super(error.message());
+    this.error = error;
+  }
+
+  public IcebergErrorResponse toErrorResponse() {
+    return IcebergErrorResponse.icebergErrorResponse(error);
+  }
 }

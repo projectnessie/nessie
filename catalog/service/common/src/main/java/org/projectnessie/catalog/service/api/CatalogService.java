@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.api;
 
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -43,7 +44,7 @@ public interface CatalogService {
    *     manifest files.
    */
   CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams, ContentKey key, Content.Type expectedType)
+      SnapshotReqParams reqParams, ContentKey key, @Nullable Content.Type expectedType)
       throws NessieNotFoundException;
 
   Stream<Supplier<CompletionStage<SnapshotResponse>>> retrieveSnapshots(

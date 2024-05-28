@@ -50,9 +50,4 @@ public class AdlsObjectIO implements ObjectIO {
     options.setParallelTransferOptions(transferOptions);
     return new BufferedOutputStream(file.getOutputStream(options));
   }
-
-  @Override
-  public boolean isValidUri(StorageUri uri) {
-    return uri != null && ("abfs".equals(uri.scheme()) || "abfss".equals(uri.scheme()));
-  }
 }

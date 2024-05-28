@@ -43,6 +43,8 @@ public interface IcebergTableMetadata {
   long INITIAL_SEQUENCE_NUMBER = 0;
   int INITIAL_PARTITION_ID = MIN_PARTITION_ID - 1;
 
+  String STAGED_PROPERTY = "nessie.staged";
+
   int formatVersion();
 
   @Nullable

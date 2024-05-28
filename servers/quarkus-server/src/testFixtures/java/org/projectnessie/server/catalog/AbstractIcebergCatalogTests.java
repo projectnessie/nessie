@@ -21,12 +21,15 @@ import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUS
 
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.BaseTransaction;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.HasTableOperations;
@@ -42,11 +45,13 @@ import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableCommit;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
 import org.assertj.core.api.Assertions;
@@ -166,9 +171,12 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     TableOperations ops = ((BaseTable) originalTable).operations();
 
-    String metadataLocation = temporaryLocation() + "/my-metadata-" + UUID.randomUUID() + ".json";
-    try (OutputStream output = ops.io().newOutputFile(metadataLocation).create()) {
-      output.write(TableMetadataParser.toJson(ops.current()).getBytes(StandardCharsets.UTF_8));
+    String metadataLocation;
+    try (FileIO io = temporaryFileIO(catalog)) {
+      metadataLocation = temporaryLocation() + "/my-metadata-" + UUID.randomUUID() + ".json";
+      try (OutputStream output = io.newOutputFile(metadataLocation).create()) {
+        output.write(TableMetadataParser.toJson(ops.current()).getBytes(StandardCharsets.UTF_8));
+      }
     }
 
     catalog.dropTable(TABLE, false /* do not purge */);
@@ -202,6 +210,16 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     Assertions.assertThat(catalog.loadTable(TABLE)).isNotNull();
     Assertions.assertThat(catalog.dropTable(TABLE)).isTrue();
     Assertions.assertThat(catalog.tableExists(TABLE)).isFalse();
+  }
+
+  protected FileIO temporaryFileIO(RESTCatalog catalog) {
+    String ioImpl = catalog.properties().get(CatalogProperties.FILE_IO_IMPL);
+    Map<String, String> props = new HashMap<>(catalog.properties());
+    props.put(S3FileIOProperties.REMOTE_SIGNING_ENABLED, "false");
+    // dummy credentials - must be overridden if the test requires real credentials
+    props.put(S3FileIOProperties.ACCESS_KEY_ID, "accessKey");
+    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, "secretKey");
+    return CatalogUtil.loadFileIO(ioImpl, props, new Configuration(false));
   }
 
   // TODO the following tests have been copied from Iceberg's `TestRESTCatalog`. Those should

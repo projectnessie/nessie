@@ -19,9 +19,15 @@ import static java.util.Collections.singletonMap;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.CatalogUtil;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
@@ -44,7 +50,17 @@ public class ITS3IcebergCatalog extends AbstractIcebergCatalogTests {
 
   @Override
   protected String temporaryLocation() {
-    return minio.s3BucketUri(scheme(), "") + "/temp/" + UUID.randomUUID();
+    return minio.s3BucketUri(scheme(), "/temp/" + UUID.randomUUID()).toString();
+  }
+
+  @Override
+  protected FileIO temporaryFileIO(RESTCatalog catalog) {
+    String ioImpl = catalog.properties().get(CatalogProperties.FILE_IO_IMPL);
+    Map<String, String> props = new HashMap<>(catalog.properties());
+    props.put(S3FileIOProperties.REMOTE_SIGNING_ENABLED, "false");
+    props.put(S3FileIOProperties.ACCESS_KEY_ID, minio.accessKey());
+    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, minio.secretKey());
+    return CatalogUtil.loadFileIO(ioImpl, props, new Configuration(false));
   }
 
   @Override
