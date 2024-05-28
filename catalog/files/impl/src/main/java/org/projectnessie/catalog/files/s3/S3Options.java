@@ -41,16 +41,9 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   Duration DEFAULT_SESSION_REFRESH_GRACE_PERIOD = Duration.ofMinutes(5);
 
   /**
-   * The default type of cloud to use, if not configured {@linkplain #buckets() per bucket}. The
-   * cloud type must be configured, either {@linkplain #buckets() per bucket} or here.
-   */
-  @Override
-  Optional<Cloud> cloud();
-
-  /**
    * The default endpoint override to use, if not configured {@linkplain #buckets() per bucket}. The
-   * endpoint must be specified for {@linkplain Cloud#PRIVATE private clouds}, either {@linkplain
-   * #buckets() per bucket} or here.
+   * endpoint must be specified for private (non-AWS) clouds, either {@linkplain #buckets() per
+   * bucket} or here.
    *
    * <p>If the endpoint URIs for the Nessie server and clients differ, this one defines the endpoint
    * used for the Nessie server.
@@ -77,16 +70,13 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
 
   /**
    * The default DNS name of the region to use, if not configured {@linkplain #buckets() per
-   * bucket}. The region must be specified for {@linkplain Cloud#AMAZON AWS}, either {@linkplain
-   * #buckets() per bucket} or here.
+   * bucket}. The region must be specified for AWS, either {@linkplain #buckets() per bucket} or
+   * here.
    */
   @Override
   Optional<String> region();
 
-  /**
-   * The default project ID to use, if not configured {@linkplain #buckets() per bucket}, for
-   * example for {@linkplain Cloud#GOOGLE Google cloud}.
-   */
+  /** The default Google project ID to use, if not configured {@linkplain #buckets() per bucket}. */
   @Override
   Optional<String> projectId();
 

@@ -19,7 +19,6 @@ import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
-import org.projectnessie.catalog.files.s3.Cloud;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 
@@ -33,9 +32,6 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
 
   @Override
   Optional<Boolean> pathStyleAccess();
-
-  @Override
-  Optional<Cloud> cloud();
 
   @Override
   Optional<String> region();

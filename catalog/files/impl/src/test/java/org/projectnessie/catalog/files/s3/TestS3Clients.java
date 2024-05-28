@@ -48,7 +48,6 @@ public class TestS3Clients extends AbstractClients {
 
     S3ProgrammaticOptions.Builder s3options =
         S3ProgrammaticOptions.builder()
-            .cloud(Cloud.PRIVATE)
             .putBuckets(
                 BUCKET_1,
                 S3ProgrammaticOptions.S3PerBucketOptions.builder()

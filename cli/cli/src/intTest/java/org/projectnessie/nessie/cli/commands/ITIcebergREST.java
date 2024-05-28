@@ -100,7 +100,6 @@ public class ITIcebergREST {
     NessieProcess.start(
         "-Dnessie.catalog.default-warehouse=warehouse",
         "-Dnessie.catalog.warehouses.warehouse.location=" + S3_BUCKET,
-        "-Dnessie.catalog.service.s3.cloud=private",
         "-Dnessie.catalog.service.s3.endpoint=" + objectStorage.getS3BaseUri().toString(),
         "-Dnessie.catalog.service.s3.path-style-access=true",
         "-Dnessie.catalog.service.s3.region=eu-central-1",

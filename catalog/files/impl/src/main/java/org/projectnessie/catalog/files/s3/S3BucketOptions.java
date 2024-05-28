@@ -39,15 +39,8 @@ public interface S3BucketOptions {
       S3ClientAuthenticationMode.REQUEST_SIGNING;
 
   /**
-   * The type of cloud running the S3 service. The cloud type must be configured, either per bucket
-   * or in {@link S3Options S3Options}.
-   */
-  Optional<Cloud> cloud();
-
-  /**
-   * Endpoint URI, required for {@linkplain Cloud#PRIVATE private clouds}. The endpoint must be
-   * specified for {@linkplain Cloud#PRIVATE private clouds}, either per bucket or in {@link
-   * S3Options S3Options}.
+   * Endpoint URI, required for private (non-AWS) clouds, specified either per bucket or in the
+   * default/fallback {@link S3Options S3Options}.
    *
    * <p>If the endpoint URIs for the Nessie server and clients differ, this one defines the endpoint
    * used for the Nessie server.
@@ -89,13 +82,12 @@ public interface S3BucketOptions {
   Optional<Boolean> allowCrossRegionAccessPoint();
 
   /**
-   * DNS name of the region, required for {@linkplain Cloud#AMAZON AWS}. The region must be
-   * specified for {@linkplain Cloud#AMAZON AWS}, either per bucket or in {@link S3Options
-   * S3Options}.
+   * DNS name of the region, required for AWS. The region must be specified for AWS, either per
+   * bucket or in {@link S3Options S3Options}.
    */
   Optional<String> region();
 
-  /** Project ID, if required, for example for {@linkplain Cloud#GOOGLE Google cloud}. */
+  /** Project ID, if required, possibly needed in Google cloud. */
   Optional<String> projectId();
 
   /**
@@ -116,8 +108,8 @@ public interface S3BucketOptions {
    * The <a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">Security Token
    * Service</a> endpoint.
    *
-   * <p>This parameter must be set if the cloud provider is not {@link Cloud#AMAZON}) and the
-   * catalog is configured to use S3 sessions (e.g. to use the "assume role" functionality).
+   * <p>This parameter must be set when running in a private (non-AWS) cloud and the catalog is
+   * configured to use S3 sessions (e.g. to use the "assume role" functionality).
    */
   Optional<URI> stsEndpoint();
 
@@ -187,9 +179,7 @@ public interface S3BucketOptions {
   }
 
   /**
-   * Extract the bucket name from the URI. Only relevant for {@linkplain Cloud#AMAZON AWS} or
-   * {@linkplain Cloud#PRIVATE S3-compatible private} clouds; the behavior of this method is
-   * unspecified for other clouds.
+   * Extract the bucket name from the URI.
    *
    * @param uri URI to extract the bucket name from; both s3 and https schemes are accepted, and
    *     https schemes can be either path-style or virtual-host-style.

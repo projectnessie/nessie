@@ -35,8 +35,7 @@ public class S3Sessions {
    * duration.
    */
   AwsCredentialsProvider assumeRoleForServer(S3BucketOptions options) {
-    return credentials(
-        options, () -> sessionsManager.sessionCredentialsForServer(repositoryId, options));
+    return credentials(() -> sessionsManager.sessionCredentialsForServer(repositoryId, options));
   }
 
   /**
@@ -44,20 +43,10 @@ public class S3Sessions {
    * credentials returned from this method are generally not shared across sessions.
    */
   AwsCredentialsProvider assumeRoleForClient(S3BucketOptions options) {
-    return credentials(
-        options, () -> sessionsManager.sessionCredentialsForClient(repositoryId, options));
+    return credentials(() -> sessionsManager.sessionCredentialsForClient(repositoryId, options));
   }
 
-  private AwsCredentialsProvider credentials(
-      S3BucketOptions options, Supplier<Credentials> supplier) {
-    if (options.cloud().orElse(null) != Cloud.AMAZON) {
-      if (options.stsEndpoint().isEmpty()) {
-        throw new IllegalArgumentException(
-            "STS endpoint must be provided for cloud: "
-                + options.cloud().map(Cloud::name).orElse("<unset>"));
-      }
-    }
-
+  private AwsCredentialsProvider credentials(Supplier<Credentials> supplier) {
     return () -> {
       Credentials credentials = supplier.get();
       return AwsSessionCredentials.builder()

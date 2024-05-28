@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.util.Map;
@@ -41,8 +42,8 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
     restrictToAnnotatedClass = true,
     value = MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
-@TestProfile(ITPrivateS3AssumeRoleIcebergCatalog.Profile.class)
-public class ITPrivateS3AssumeRoleIcebergCatalog {
+@TestProfile(ITS3AssumeRoleIcebergCatalog.Profile.class)
+public class ITS3AssumeRoleIcebergCatalog {
 
   private static final String IAM_POLICY =
       """
@@ -104,11 +105,10 @@ public class ITPrivateS3AssumeRoleIcebergCatalog {
         .hasStackTraceContaining("org.apache.iceberg.rest.RESTClient");
   }
 
-  public static class Profile extends PrivateCloudProfile {
+  public static class Profile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
-          .putAll(super.getConfigOverrides())
           .put("nessie.catalog.service.s3.session-iam-policy", IAM_POLICY)
           .put("nessie.catalog.service.s3.assumed-role", "test-role") // Note: unused by Minio
           .put("nessie.catalog.service.s3.external-id", "test-external-id") // Note: unused by Minio
