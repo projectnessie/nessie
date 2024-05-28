@@ -17,7 +17,6 @@ package org.projectnessie.server.catalog;
 
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.INIT_ADDRESS;
-import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_INIT_ADDRESS;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
 
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +32,7 @@ public class S3UnitTestProfile implements QuarkusTestProfile {
     return Collections.singletonList(
         new TestResourceEntry(
             ObjectStorageMockTestResourceLifecycleManager.class,
-            ImmutableMap.of(INIT_ADDRESS, S3_INIT_ADDRESS)));
+            ImmutableMap.of(INIT_ADDRESS, "localhost")));
   }
 
   @Override

@@ -37,21 +37,10 @@ public class ObjectStorageMockTestResourceLifecycleManager
   public static final String INIT_ADDRESS =
       "ObjectStorageMockTestResourceLifecycleManager.initAddress";
 
-  public static final String S3_INIT_ADDRESS =
-      System.getProperty("os.name").toLowerCase().contains("linux")
-          ? "s3.localhost.localdomain"
-          : "s3.127-0-0-1.nip.io";
-
   private final AssumeRoleHandlerHolder assumeRoleHandler = new AssumeRoleHandlerHolder();
 
-  private String initAddress;
   private HeapStorageBucket heapStorageBucket;
   private MockServer server;
-
-  @Override
-  public void init(Map<String, String> initArgs) {
-    initAddress = initArgs.getOrDefault(INIT_ADDRESS, "127.0.0.1");
-  }
 
   @Override
   public Map<String, String> start() {
@@ -59,7 +48,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
     heapStorageBucket = HeapStorageBucket.newHeapStorageBucket();
     server =
         ObjectStorageMock.builder()
-            .initAddress(initAddress)
+            .initAddress("localhost")
             .putBuckets(BUCKET, heapStorageBucket.bucket())
             .assumeRoleHandler(assumeRoleHandler)
             .build()
