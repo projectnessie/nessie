@@ -479,12 +479,16 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
-      // Don't apply custom location to table metadata.
+      NessieModelIceberg.setLocation(this, state.builder());
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
-      // Don't apply custom location to view metadata.
+      NessieModelIceberg.setLocation(this, state.builder());
+    }
+
+    static SetLocation setLocation(String location) {
+      return ImmutableSetLocation.of(location);
     }
   }
 

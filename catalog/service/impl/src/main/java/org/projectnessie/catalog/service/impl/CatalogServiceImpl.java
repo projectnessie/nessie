@@ -15,10 +15,10 @@
  */
 package org.projectnessie.catalog.service.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.CompletableFuture.completedStage;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
@@ -59,6 +59,8 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergTableMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergViewMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.catalog.model.ops.CatalogOperation;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
@@ -441,6 +443,8 @@ public class CatalogServiceImpl implements CatalogService {
 
     IcebergCatalogOperation icebergOp = (IcebergCatalogOperation) op;
 
+    validateIcebergOperation(icebergOp);
+
     if (icebergOp.hasAssertCreate()) {
       if (content != null) {
         throw new CatalogEntityAlreadyExistsException(
@@ -463,9 +467,7 @@ public class CatalogServiceImpl implements CatalogService {
     CompletionStage<NessieTableSnapshot> snapshotStage;
     if (content == null) {
       contentId = null;
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(icebergOp.warehouse());
-      String icebergLocation = icebergBaseLocation(warehouse.location(), op.getKey());
-      snapshotStage = completedStage(newIcebergTableSnapshot(icebergOp.updates(), icebergLocation));
+      snapshotStage = completedStage(newIcebergTableSnapshot(icebergOp.updates()));
     } else {
       contentId = content.getId();
       snapshotStage = loadExistingTableSnapshot(content);
@@ -534,13 +536,13 @@ public class CatalogServiceImpl implements CatalogService {
 
     IcebergCatalogOperation icebergOp = (IcebergCatalogOperation) op;
 
+    validateIcebergOperation(icebergOp);
+
     String contentId;
     CompletionStage<NessieViewSnapshot> snapshotStage;
     if (content == null) {
       contentId = null;
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(icebergOp.warehouse());
-      String icebergLocation = icebergBaseLocation(warehouse.location(), op.getKey());
-      snapshotStage = completedStage(newIcebergViewSnapshot(icebergOp.updates(), icebergLocation));
+      snapshotStage = completedStage(newIcebergViewSnapshot(icebergOp.updates()));
     } else {
       contentId = content.getId();
       snapshotStage = loadExistingViewSnapshot(content);
@@ -594,6 +596,18 @@ public class CatalogServiceImpl implements CatalogService {
     commitBuilderStage =
         contentStage.thenCombine(commitBuilderStage, (singleTableUpdate, nothing) -> null);
     return commitBuilderStage;
+  }
+
+  private void validateIcebergOperation(IcebergCatalogOperation icebergOp) {
+    for (IcebergMetadataUpdate u : icebergOp.updates()) {
+      if (u instanceof SetLocation) {
+        StorageUri uri = StorageUri.of(((SetLocation) u).location());
+        checkArgument(objectIO.isValidUri(uri), "Unsupported table or view location: %s", uri);
+        WarehouseConfig warehouse = catalogConfig.getWarehouse(icebergOp.warehouse());
+        boolean inWarehouse = !StorageUri.of(warehouse.location()).relativize(uri).isAbsolute();
+        checkArgument(inWarehouse, "Invalid table or view location : %s", uri);
+      }
+    }
   }
 
   static final class MultiTableUpdate {

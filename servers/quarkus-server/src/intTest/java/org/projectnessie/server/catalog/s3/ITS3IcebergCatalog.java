@@ -43,6 +43,6 @@ public class ITS3IcebergCatalog extends AbstractIcebergCatalogTests {
 
   @Override
   protected String temporaryLocation() {
-    return minio.s3BucketUri("") + "/" + UUID.randomUUID();
+    return minio.s3BucketUri("") + "/temp/" + UUID.randomUUID();
   }
 }

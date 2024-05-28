@@ -32,6 +32,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultPartitionSpec.setDefaultPartitionSpec;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
@@ -209,6 +210,12 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     if (spec == null) {
       spec = unpartitioned();
     }
+    String location = createTableRequest.location();
+    if (location == null) {
+      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
+      location = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
+    }
+
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createTableRequest.properties());
@@ -223,6 +230,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             setDefaultPartitionSpec(-1),
             addSortOrder(sortOrder),
             setDefaultSortOrder(-1),
+            setLocation(location),
             setProperties(properties));
 
     GetMultipleContentsResponse contentResponse =
@@ -241,12 +249,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     if (createTableRequest.stageCreate()) {
 
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
-      String icebergLocation = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
-
       NessieTableSnapshot snapshot =
           new IcebergTableMetadataUpdateState(
-                  newIcebergTableSnapshot(updates, icebergLocation), tableRef.contentKey(), false)
+                  newIcebergTableSnapshot(updates), tableRef.contentKey(), false)
               .applyUpdates(updates)
               .snapshot();
 

@@ -82,6 +82,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddS
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveProperties;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergDecimalType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergFixedType;
@@ -793,8 +794,7 @@ public class NessieModelIceberg {
     return String.format("%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID());
   }
 
-  public static NessieTableSnapshot newIcebergTableSnapshot(
-      List<IcebergMetadataUpdate> updates, String icebergLocation) {
+  public static NessieTableSnapshot newIcebergTableSnapshot(List<IcebergMetadataUpdate> updates) {
     String icebergUuid =
         updates.stream()
             .filter(u -> u instanceof AssignUUID)
@@ -818,14 +818,12 @@ public class NessieModelIceberg {
         .id(nessieId)
         .entity(nessieTable)
         .lastUpdatedTimestamp(now)
-        .icebergLocation(icebergLocation)
         .icebergLastSequenceNumber(IcebergTableMetadata.INITIAL_SEQUENCE_NUMBER)
         .icebergLastPartitionId(INITIAL_PARTITION_ID)
         .build();
   }
 
-  public static NessieViewSnapshot newIcebergViewSnapshot(
-      List<IcebergMetadataUpdate> updates, String icebergLocation) {
+  public static NessieViewSnapshot newIcebergViewSnapshot(List<IcebergMetadataUpdate> updates) {
     String icebergUuid =
         updates.stream()
             .filter(u -> u instanceof AssignUUID)
@@ -848,7 +846,6 @@ public class NessieModelIceberg {
     return NessieViewSnapshot.builder()
         .id(nessieId)
         .entity(nessieView)
-        .icebergLocation(icebergLocation)
         .lastUpdatedTimestamp(now)
         .build();
   }
@@ -1097,6 +1094,10 @@ public class NessieModelIceberg {
         "UUID mismatch: assigned: %s, new: %s",
         snapshot.entity().icebergUuid(),
         uuid);
+  }
+
+  public static void setLocation(SetLocation u, NessieEntitySnapshot.Builder<?> builder) {
+    builder.icebergLocation(u.location());
   }
 
   public static void setProperties(

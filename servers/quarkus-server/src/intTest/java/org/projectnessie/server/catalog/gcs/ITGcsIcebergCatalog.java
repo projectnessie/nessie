@@ -15,6 +15,8 @@
  */
 package org.projectnessie.server.catalog.gcs;
 
+import static java.util.UUID.randomUUID;
+
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.URI;
@@ -39,6 +41,6 @@ public class ITGcsIcebergCatalog extends AbstractIcebergCatalogTests {
 
   @Override
   protected String temporaryLocation() {
-    return warehouseLocation.resolve("/temp").toString();
+    return warehouseLocation.toString() + "/temp/" + randomUUID();
   }
 }
