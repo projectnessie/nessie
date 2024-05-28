@@ -30,6 +30,6 @@ services:
       - quarkus.dynamodb.aws.credentials.static-provider.access-key-id=fakeKeyId
       - quarkus.dynamodb.aws.credentials.static-provider.secret-access-key=fakeSecretAccessKey
   dynamodb:
-    image: amazon/dynamodb-local@sha256:a72e734c42833ae35f069dc1678fc364db41ca926a367599d8caad317be02cba
+    image: amazon/dynamodb-local@sha256:22b1f856581e5c77549b319c20371c7454381d7ef039d2a386c1b0dc686573cd
     ports:
         - "8000:8000"
