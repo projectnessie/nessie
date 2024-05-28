@@ -37,10 +37,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
   public static final String INIT_ADDRESS =
       "ObjectStorageMockTestResourceLifecycleManager.initAddress";
 
-  public static final String S3_INIT_ADDRESS =
-      System.getProperty("os.name").toLowerCase().contains("linux")
-          ? "s3.localhost.localdomain"
-          : "s3.127-0-0-1.nip.io";
+  public static final String S3_INIT_ADDRESS = "s3.localhost.localdomain";
 
   private final AssumeRoleHandlerHolder assumeRoleHandler = new AssumeRoleHandlerHolder();
 
