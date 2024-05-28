@@ -32,7 +32,7 @@ services:
   ##
   ##      USE nessie.eng;
   ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
-  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+  ##      INSERT INTO city VALUES (2, 'b', 2, 'comment');
   ##      SELECT * FROM city;
   ##
   nessie:
@@ -48,8 +48,12 @@ services:
         condition: service_healthy
     environment:
       # Version store settings.
-      # This example uses ephemeral storage, data is lost during reset.
-      - nessie.version.store.type=IN_MEMORY
+      # This example uses Postgres as the version store.
+      - nessie.version.store.type=JDBC
+      - nessie.version.store.persist.jdbc.datasource=postgresql
+      - quarkus.datasource.postgresql.jdbc.url=jdbc:postgresql://postgres:5432/catalog
+      - quarkus.datasource.postgresql.username=postgres
+      - quarkus.datasource.postgresql.password=postgres
       # AuthN settings.
       # This examples uses Keycloak for authentication.
       - nessie.server.authentication.enabled=true
@@ -59,6 +63,7 @@ services:
       # This example uses MinIO as the object store.
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
+      - nessie.catalog.service.s3.cloud=private
       - nessie.catalog.service.s3.region=us-east-1
       - nessie.catalog.service.s3.path-style-access=true
       - nessie.catalog.service.s3.access-key-id=minioadmin
@@ -131,7 +136,7 @@ services:
     restart: "no"
     command: [
       "-c",
-      "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket"
+      "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket --ignore-existing"
       ]
 
   # Keycloak with the "iceberg" realm
@@ -147,16 +152,48 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.4@sha256:ff02c932f0249c58f32b8ff1b188a48cc90809779a3a05931ab67f5672400ad0
+    depends_on:
+      - postgres
     ports:
       - "8080:8080"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/catalog
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
     volumes:
-      - ./iceberg-realm.json:/opt/keycloak/data/import/iceberg-realm.json
-    command: start-dev --features=token-exchange --hostname-admin-url http://127.0.0.1:8080/ --hostname-url http://127.0.0.1:8080/ --import-realm --health-enabled=true
+      - ../authn-keycloak/config/iceberg-realm.json:/opt/keycloak/data/import/iceberg-realm.json
+    command: [
+      "start-dev",
+      "--features=token-exchange",
+      "--spi-connections-jpa-quarkus-migration-strategy=update",
+      "--hostname-admin-url=http://127.0.0.1:8080/",
+      "--hostname-url=http://127.0.0.1:8080/",
+      "--import-realm",
+      "--health-enabled=true"
+    ]
     healthcheck:
       test: "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
+
+  postgres:
+    image: postgres:16.3@sha256:1bf73ccae25238fa555100080042f0b2f9be08eb757e200fe6afc1fc413a1b3c
+    ports:
+      - "5432:5432"
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: catalog
+      POSTGRES_INITDB_ARGS: "--encoding UTF8 --data-checksums"
+    # /docker-entrypoint-initdb.d
+    healthcheck:
+      test: "pg_isready -U postgres"
       interval: 5s
       timeout: 2s
       retries: 15
