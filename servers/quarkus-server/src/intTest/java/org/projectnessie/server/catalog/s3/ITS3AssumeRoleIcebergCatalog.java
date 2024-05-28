@@ -21,9 +21,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
-import java.io.IOException;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.aws.AwsClientProperties;
@@ -31,10 +29,10 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.minio.MinioContainer;
+import org.projectnessie.server.catalog.Catalogs;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -59,31 +57,27 @@ public class ITS3AssumeRoleIcebergCatalog {
   // Injected by MinioTestResourceLifecycleManager
   private MinioContainer minio;
 
-  private RESTCatalog catalog;
+  private static final Catalogs CATALOGS = new Catalogs();
 
-  @BeforeEach
-  void initCatalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-    catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        "nessie-s3-iceberg-api",
+  RESTCatalog catalog() {
+    return CATALOGS.getCatalog(
         Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
             AwsClientProperties.CLIENT_REGION,
             MinioTestResourceLifecycleManager.TEST_REGION,
             CatalogProperties.WAREHOUSE_LOCATION,
             minio.s3BucketUri("").toString()));
   }
 
-  @AfterEach
-  void closeCatalog() throws IOException {
-    catalog.close();
+  @AfterAll
+  static void closeRestCatalog() throws Exception {
+    CATALOGS.close();
   }
 
   @Test
   void testCreateTable() {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
     Namespace ns = Namespace.of("allowedNamespace");
     catalog.createNamespace(ns);
 
@@ -94,6 +88,9 @@ public class ITS3AssumeRoleIcebergCatalog {
 
   @Test
   void testCreateTableForbidden() {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
     Namespace ns = Namespace.of("blockedNamespace");
     catalog.createNamespace(ns);
 

@@ -19,9 +19,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.URI;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.rest.RESTCatalog;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
 import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager.WarehouseLocation;
@@ -35,19 +33,8 @@ public class ITGcsIcebergCatalog extends AbstractIcebergCatalogTests {
   @WarehouseLocation URI warehouseLocation;
 
   @Override
-  protected RESTCatalog catalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-    RESTCatalog catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        "nessie-s3-iceberg-api",
-        Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
-            CatalogProperties.WAREHOUSE_LOCATION,
-            warehouseLocation.toString()));
-    catalogs.add(catalog);
-    return catalog;
+  protected Map<String, String> catalogOptions() {
+    return Map.of(CatalogProperties.WAREHOUSE_LOCATION, warehouseLocation.toString());
   }
 
   @Override

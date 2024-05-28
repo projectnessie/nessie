@@ -15,15 +15,14 @@
  */
 package org.projectnessie.server.catalog;
 
+import static java.util.Collections.singletonMap;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.rest.RESTCatalog;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
@@ -33,43 +32,29 @@ import org.projectnessie.model.Reference;
 public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<RESTCatalog> {
   public static final String EMPTY_OBJ_ID =
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
-  protected final List<RESTCatalog> catalogs = new ArrayList<>();
 
-  protected RESTCatalog currentCatalog;
+  private static final Catalogs CATALOGS = new Catalogs();
 
   protected RESTCatalog catalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-    RESTCatalog catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        getClass().getSimpleName(),
-        Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
-            CatalogProperties.WAREHOUSE_LOCATION,
-            WAREHOUSE_NAME));
-    catalogs.add(catalog);
-    currentCatalog = catalog;
-    return catalog;
+    return CATALOGS.getCatalog(catalogOptions());
   }
 
-  @SuppressWarnings("resource")
+  protected Map<String, String> catalogOptions() {
+    return singletonMap(CatalogProperties.WAREHOUSE_LOCATION, WAREHOUSE_NAME);
+  }
+
+  @AfterAll
+  static void closeRestCatalog() throws Exception {
+    CATALOGS.close();
+  }
+
   @Override
   protected Catalog tableCatalog() {
-    if (currentCatalog == null) {
-      catalog();
-    }
-    return currentCatalog;
+    return catalog();
   }
 
   @AfterEach
   void cleanup() throws Exception {
-    currentCatalog = null;
-
-    for (RESTCatalog catalog : catalogs) {
-      catalog.close();
-    }
-
     int catalogServerPort = Integer.getInteger("quarkus.http.port");
 
     try (NessieApiV2 api =

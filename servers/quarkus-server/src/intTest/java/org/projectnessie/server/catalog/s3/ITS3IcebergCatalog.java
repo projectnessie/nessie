@@ -15,14 +15,13 @@
  */
 package org.projectnessie.server.catalog.s3;
 
+import static java.util.Collections.singletonMap;
+
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.Map;
 import java.util.UUID;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.aws.AwsClientProperties;
-import org.apache.iceberg.rest.RESTCatalog;
 import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
@@ -38,21 +37,8 @@ public class ITS3IcebergCatalog extends AbstractIcebergCatalogTests {
   private MinioContainer minio;
 
   @Override
-  protected RESTCatalog catalog() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-    RESTCatalog catalog = new RESTCatalog();
-    catalog.setConf(new Configuration());
-    catalog.initialize(
-        "nessie-s3-iceberg-api",
-        Map.of(
-            CatalogProperties.URI,
-            String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort),
-            AwsClientProperties.CLIENT_REGION,
-            MinioTestResourceLifecycleManager.TEST_REGION,
-            CatalogProperties.WAREHOUSE_LOCATION,
-            minio.s3BucketUri("").toString()));
-    catalogs.add(catalog);
-    return catalog;
+  protected Map<String, String> catalogOptions() {
+    return singletonMap(CatalogProperties.WAREHOUSE_LOCATION, minio.s3BucketUri("").toString());
   }
 
   @Override
