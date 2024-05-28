@@ -85,6 +85,10 @@ dependencies {
   intTestImplementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }
+  intTestImplementation(platform(libs.testcontainers.bom))
+  intTestImplementation("org.testcontainers:testcontainers")
+  intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestImplementation(project(":nessie-container-spec-helper"))
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
