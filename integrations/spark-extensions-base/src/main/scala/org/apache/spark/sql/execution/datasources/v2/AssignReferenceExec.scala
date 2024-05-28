@@ -19,7 +19,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
-import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.model.{Branch, Tag}
 
 case class AssignReferenceExec(
@@ -34,15 +33,16 @@ case class AssignReferenceExec(
     with LeafV2CommandExec {
 
   override protected def runInternal(
-      api: NessieApiV1
+      bridge: CatalogBridge
   ): Seq[InternalRow] = {
     val refNameAssign = unquoteRefName(refNameToAssign)
-    val currentHash = api.getReference().refName(refNameAssign).get().getHash
+    val currentHash =
+      bridge.api.getReference.refName(refNameAssign).get().getHash
 
     val toRef =
       if (toRefName.isDefined)
-        api.getReference.refName(toRefName.map(unquoteRefName).get).get()
-      else NessieUtils.getCurrentRef(api, currentCatalog, catalog)
+        bridge.api.getReference.refName(toRefName.map(unquoteRefName).get).get()
+      else bridge.getCurrentRef
 
     val assignToHash = toHash.getOrElse(toRef.getHash)
     val assignTo =
@@ -51,19 +51,19 @@ case class AssignReferenceExec(
       else Tag.of(toRef.getName, assignToHash)
 
     if (isBranch) {
-      api
+      bridge.api
         .assignBranch()
         .branch(Branch.of(refNameAssign, currentHash))
         .assignTo(assignTo)
         .assign()
     } else {
-      api
+      bridge.api
         .assignTag()
         .tag(Tag.of(refNameAssign, currentHash))
         .assignTo(assignTo)
         .assign()
     }
-    val ref = api.getReference().refName(refNameAssign).get()
+    val ref = bridge.api.getReference.refName(refNameAssign).get()
 
     singleRowForRef(ref)
   }

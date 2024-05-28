@@ -121,9 +121,20 @@ public class StorageUri implements Comparable<StorageUri> {
     return authority;
   }
 
+  @Nonnull
+  public String requiredAuthority() {
+    return Preconditions.checkNotNull(
+        authority, "Missing required authority in storage location: %s", this);
+  }
+
   @Nullable
   public String path() {
     return path;
+  }
+
+  @Nonnull
+  public String requiredPath() {
+    return Preconditions.checkNotNull(path, "Missing required path in storage location: %s", this);
   }
 
   public StorageUri withTrailingSeparator() {

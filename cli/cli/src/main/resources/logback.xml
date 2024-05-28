@@ -23,8 +23,7 @@
       <pattern>%date{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-  <root>
-    <level value="${log.level.console:-WARN}"/>
+  <root level="${log.level.console:-WARN}">
     <appender-ref ref="console"/>
   </root>
 </configuration>

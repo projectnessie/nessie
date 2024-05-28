@@ -26,8 +26,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Optional;
+import org.apache.iceberg.rest.RESTCatalog;
+import org.apache.iceberg.rest.RESTSessionCatalog;
+import org.apache.iceberg.rest.ResourcePaths;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -44,6 +49,7 @@ public abstract class BaseNessieCli {
 
   private Integer exitWithCode;
   private NessieApiV2 nessieApi;
+  private RESTCatalog icebergClient;
   private Reference currentReference;
   private Terminal terminal;
 
@@ -77,6 +83,25 @@ public abstract class BaseNessieCli {
 
   public void setCurrentReference(Reference currentReference) {
     this.currentReference = currentReference;
+
+    if (icebergClient != null) {
+      try {
+        String icebergRestPrefix = URLEncoder.encode(currentReference.getName(), UTF_8);
+
+        Field sessionCatalogField = icebergClient.getClass().getDeclaredField("sessionCatalog");
+        sessionCatalogField.setAccessible(true);
+        RESTSessionCatalog sessionCatalog =
+            (RESTSessionCatalog) sessionCatalogField.get(icebergClient);
+
+        Field pathsField = sessionCatalog.getClass().getDeclaredField("paths");
+        pathsField.setAccessible(true);
+        ResourcePaths paths = new ResourcePaths(icebergRestPrefix);
+        pathsField.set(sessionCatalog, paths);
+
+      } catch (IllegalAccessException | NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   public Reference getCurrentReference() {
@@ -86,7 +111,7 @@ public abstract class BaseNessieCli {
     return currentReference;
   }
 
-  public void connected(NessieApiV2 nessieApi) {
+  public void connected(NessieApiV2 nessieApi, RESTCatalog icebergClient) {
     if (this.nessieApi != null) {
       try {
         this.nessieApi.close();
@@ -99,7 +124,20 @@ public abstract class BaseNessieCli {
                 .append(e.toString(), STYLE_ERROR));
       }
     }
+    if (this.icebergClient != null) {
+      try {
+        this.icebergClient.close();
+      } catch (Exception e) {
+        @SuppressWarnings("resource")
+        PrintWriter writer = writer();
+        writer.println(
+            new AttributedStringBuilder()
+                .append("Failed to close the existing client: ")
+                .append(e.toString(), STYLE_ERROR));
+      }
+    }
     this.nessieApi = nessieApi;
+    this.icebergClient = icebergClient;
   }
 
   public Optional<NessieApiV2> nessieApi() {
@@ -111,6 +149,23 @@ public abstract class BaseNessieCli {
       throw new NotConnectedException();
     }
     return nessieApi;
+  }
+
+  public Optional<RESTCatalog> icebergClient() {
+    return Optional.ofNullable(icebergClient);
+  }
+
+  public RESTCatalog mandatoryIcebergClient() {
+    if (icebergClient == null) {
+      throw new NotConnectedException();
+    }
+    return icebergClient;
+  }
+
+  public void verifyAnyConnected() {
+    if (nessieApi == null && icebergClient == null) {
+      throw new NotConnectedException();
+    }
   }
 
   public String readResource(String resource) {

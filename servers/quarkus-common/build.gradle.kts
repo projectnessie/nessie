@@ -28,6 +28,10 @@ dependencies {
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-catalog-files-impl"))
+  implementation(project(":nessie-catalog-service-common"))
+
+  compileOnly(project(":nessie-doc-generator-annotations"))
 
   implementation(project(":nessie-versioned-storage-bigtable"))
   implementation(project(":nessie-versioned-storage-cache"))
@@ -74,4 +78,10 @@ dependencies {
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
+
+  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi("io.quarkus:quarkus-core")
 }

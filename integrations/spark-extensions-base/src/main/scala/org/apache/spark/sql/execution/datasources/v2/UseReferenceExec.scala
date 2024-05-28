@@ -19,7 +19,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
-import org.projectnessie.client.api.NessieApiV1
 
 case class UseReferenceExec(
     output: Seq[Attribute],
@@ -31,14 +30,16 @@ case class UseReferenceExec(
     with LeafV2CommandExec {
 
   override protected def runInternal(
-      api: NessieApiV1
+      bridge: CatalogBridge
   ): Seq[InternalRow] = {
 
     val ref =
-      NessieUtils.calculateRef(unquoteRefName(branch), timestampOrHash, api)
-    NessieUtils.setCurrentRefForSpark(
-      currentCatalog,
-      catalog,
+      NessieUtils.calculateRef(
+        unquoteRefName(branch),
+        timestampOrHash,
+        bridge.api
+      )
+    bridge.setCurrentRefForSpark(
       ref,
       timestampOrHash.isDefined
     )

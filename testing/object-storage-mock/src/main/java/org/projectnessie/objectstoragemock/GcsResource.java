@@ -28,6 +28,7 @@ import static org.projectnessie.objectstoragemock.s3.S3Constants.RANGE;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -70,6 +71,7 @@ import org.projectnessie.objectstoragemock.util.StartAfterSpliterator;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@IfBuildProfile("never-include")
 public class GcsResource {
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   @Inject ObjectStorageMock mockServer;

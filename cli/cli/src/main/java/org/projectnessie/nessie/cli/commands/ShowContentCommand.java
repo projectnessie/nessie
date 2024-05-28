@@ -15,6 +15,7 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
@@ -22,6 +23,11 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.RESTSerializers;
+import org.apache.iceberg.view.BaseView;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
@@ -43,6 +49,8 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
   @Override
   protected Stream<String> executeListing(@Nonnull BaseNessieCli cli, ShowContentCommandSpec spec)
       throws Exception {
+
+    cli.verifyAnyConnected();
 
     @SuppressWarnings("resource")
     NessieApiV2 api = cli.mandatoryNessieApi();
@@ -94,6 +102,50 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
       String jsonString =
           new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(content);
       jsonPretty.prettyPrint(jsonString);
+
+      // Iceberg
+
+      cli.icebergClient()
+          .ifPresent(
+              iceberg -> {
+                Object metadata;
+                switch (spec.getContentKind()) {
+                  case "TABLE":
+                    metadata =
+                        ((BaseTable) iceberg.loadTable(TableIdentifier.of(key.getElementsArray())))
+                            .operations()
+                            .current();
+                    break;
+                  case "VIEW":
+                    metadata =
+                        ((BaseView) iceberg.loadView(TableIdentifier.of(key.getElementsArray())))
+                            .operations()
+                            .current();
+                    break;
+                  case "NAMESPACE":
+                    metadata = iceberg.loadNamespaceMetadata(Namespace.of(key.getElementsArray()));
+                    break;
+                  default:
+                    return;
+                }
+
+                writer.println();
+                writer.println(
+                    new AttributedString("Iceberg metadata:", AttributedStyle.BOLD.underline())
+                        .toAnsi(terminal));
+
+                try {
+                  ObjectMapper mapper = new ObjectMapper();
+                  RESTSerializers.registerAll(mapper);
+
+                  String metaJsonString =
+                      mapper.writerWithDefaultPrettyPrinter().writeValueAsString(metadata);
+
+                  jsonPretty.prettyPrint(metaJsonString);
+                } catch (JsonProcessingException e) {
+                  throw new RuntimeException(e);
+                }
+              });
     } finally {
       writer.flush();
     }

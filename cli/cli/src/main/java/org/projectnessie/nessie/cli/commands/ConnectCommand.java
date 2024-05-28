@@ -16,18 +16,30 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
-import static org.jline.utils.AttributedStyle.YELLOW;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
+import static org.projectnessie.client.http.impl.HttpUtils.checkArgument;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BLUE;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_YELLOW;
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.iceberg.exceptions.RESTException;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.config.NessieClientConfigSources;
@@ -39,6 +51,9 @@ import org.projectnessie.nessie.cli.grammar.Node;
 import org.projectnessie.nessie.cli.grammar.Token;
 
 public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
+
+  static final Pattern NESSIE_URI_PATTERN = Pattern.compile("^(http.*/)api/v[1-5]/?" + "$");
+
   public ConnectCommand() {}
 
   @Override
@@ -46,69 +61,181 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
 
     PrintWriter writer = cli.writer();
 
-    writer.println(
-        new AttributedString(
-            format("Connecting to %s ...", spec.getUri()), AttributedStyle.DEFAULT.faint()));
-    writer.flush();
+    String uri = spec.getUri();
 
+    RESTCatalog icebergClient = null;
     NessieApiV2 api = null;
-    NessieConfiguration config;
+    boolean failure = true;
+    String initialReference = spec.getInitialReference();
+    Map<String, String> connectOptions = spec.getParameters();
+    Map<String, String> icebergProperties = new HashMap<>(connectOptions);
+    Map<String, String> nessieOptions = new HashMap<>(connectOptions);
 
-    CompletableFuture<?> cancel = new CompletableFuture<>();
-    Terminal terminal = cli.terminal();
-    Terminal.SignalHandler sigIntHandler =
-        terminal.handle(Terminal.Signal.INT, sig -> cancel.completeAsync(() -> null));
     try {
-      api =
-          NessieClientBuilder.createClientBuilderFromSystemSettings(
-                  NessieClientConfigSources.mapConfigSource(spec.getParameters()))
-              .withUri(spec.getUri())
-              .withCancellationFuture(cancel)
-              .build(NessieApiV2.class);
+      writer.println(
+          new AttributedString(format("Connecting to %s ...", uri), STYLE_FAINT)
+              .toAnsi(cli.terminal()));
+      writer.flush();
 
-      config = api.getConfig();
-    } catch (Exception e) {
-      if (api != null) {
-        api.close();
+      String nessieUri = uri;
+      String icebergUri = uri;
+
+      // Check if 'uri' represents a Nessie API base URI, if so, derive the Iceberg REST base URI.
+      Matcher uriMatcher = NESSIE_URI_PATTERN.matcher(uri);
+      boolean isNessieURI = uriMatcher.matches();
+      if (isNessieURI) {
+        icebergUri = uriMatcher.group(1) + "iceberg/";
       }
 
-      if (hasCauseMatching(
-          e,
-          t ->
-              t instanceof CancellationException
-                  || t instanceof InterruptedException
-                  || t instanceof TimeoutException)) {
+      // Derive Iceberg options from Nessie connect options and vice versa.
+      String icebergToken = connectOptions.get("token");
+      String nessieToken = connectOptions.get(CONF_NESSIE_AUTH_TOKEN);
+      checkArgument(
+          icebergToken == null || nessieToken == null || icebergToken.equals(nessieToken),
+          "Supplied both 'token' and '%s' options, but with different values. Remove one of those options or use the same value.",
+          CONF_NESSIE_AUTH_TOKEN);
+      String bearerToken = icebergToken != null ? icebergToken : nessieToken;
+      String nessieAuthType = connectOptions.get(CONF_NESSIE_AUTH_TYPE);
+      if (bearerToken != null) {
+        if (nessieAuthType == null) {
+          nessieOptions.put(CONF_NESSIE_AUTH_TYPE, "BEARER");
+        } else {
+          checkArgument(
+              "BEARER".equals(nessieAuthType),
+              "Must use Nessie auth type %s = BEARER when providing a bearer token",
+              CONF_NESSIE_AUTH_TYPE);
+        }
+
+        // "Propagate" the bearer token to both Nessie + Iceberg clients.
+        icebergProperties.put("token", bearerToken);
+        nessieOptions.put(CONF_NESSIE_AUTH_TOKEN, bearerToken);
+      }
+
+      // Ask the user to enter the token, if BEARER auth is configured.
+      if ("BEARER".equals(nessieAuthType) && bearerToken == null) {
         writer.println(
             new AttributedString(
-                    "Connection request aborted or timed out.",
-                    AttributedStyle.DEFAULT.foreground(YELLOW))
+                    "\nUsing BEARER authentication, enter token (not echoed) + press ENTER:",
+                    STYLE_BLUE.bold())
                 .toAnsi(cli.terminal()));
-        writer.println();
+        writer.flush();
+        bearerToken = new String(System.console().readPassword()).trim();
+
+        nessieOptions.put(CONF_NESSIE_AUTH_TOKEN, bearerToken);
+        icebergProperties.put("token", bearerToken);
+      }
+
+      icebergClient = new RESTCatalog();
+      try {
+        icebergProperties.put("uri", icebergUri);
+
+        // Use the "initial reference" clause from the CONNECT TO statement as the 'prefix'.
+        if (initialReference != null) {
+          icebergProperties.put("prefix", URLEncoder.encode(initialReference, UTF_8));
+        }
+
+        icebergClient.initialize("iceberg", icebergProperties);
+        Map<String, String> properties = icebergClient.properties();
+        if (Boolean.parseBoolean(properties.get("nessie.is-nessie-catalog"))) {
+          nessieUri = properties.get("nessie.core-base-uri") + "v2/";
+          if (initialReference == null) {
+            initialReference = properties.get("nessie.default-branch.name");
+          }
+        }
+        // Note: at one point we might extend the Nessie-CLI to work against any Iceberg-REST
+        // service, but not yet. Contributions are welcome.
+
+        writer.printf("Successfully connected to Iceberg REST at %s%n", icebergUri);
+        writer.println(
+            new AttributedString(
+                    format("Connecting to Nessie REST at %s ...", nessieUri), STYLE_FAINT)
+                .toAnsi(cli.terminal()));
+        writer.flush();
+      } catch (RESTException e) {
+        writer.println(
+            new AttributedString(
+                    format("No Iceberg REST endpoint at %s ...", icebergUri), STYLE_YELLOW)
+                .toAnsi(cli.terminal()));
         writer.flush();
 
-        return;
+        icebergClient.close();
+        icebergClient = null;
       }
-      throw e;
+
+      NessieConfiguration config;
+
+      CompletableFuture<?> cancel = new CompletableFuture<>();
+      Terminal terminal = cli.terminal();
+      Terminal.SignalHandler sigIntHandler =
+          terminal.handle(Terminal.Signal.INT, sig -> cancel.completeAsync(() -> null));
+      try {
+        api =
+            NessieClientBuilder.createClientBuilderFromSystemSettings(
+                    NessieClientConfigSources.mapConfigSource(nessieOptions))
+                .withUri(nessieUri)
+                .withCancellationFuture(cancel)
+                .build(NessieApiV2.class);
+
+        config = api.getConfig();
+      } catch (Exception e) {
+        if (api != null) {
+          api.close();
+        }
+
+        if (hasCauseMatching(
+            e,
+            t ->
+                t instanceof CancellationException
+                    || t instanceof InterruptedException
+                    || t instanceof TimeoutException)) {
+          writer.println(
+              new AttributedString("Connection request aborted or timed out.", STYLE_YELLOW)
+                  .toAnsi(cli.terminal()));
+          writer.println();
+          writer.flush();
+
+          return;
+        }
+        throw e;
+      } finally {
+        if (sigIntHandler != null) {
+          terminal.handle(Terminal.Signal.INT, sigIntHandler);
+        }
+      }
+
+      writer.printf(
+          "Successfully connected to Nessie REST at %s - Nessie API version %d, spec version %s%n",
+          nessieUri, config.getActualApiVersion(), config.getSpecVersion());
+
+      cli.connected(api, icebergClient);
+      failure = false;
+
+      Reference ref;
+      if (initialReference != null) {
+        ref = api.getReference().refName(initialReference).get();
+      } else {
+        ref = api.getDefaultBranch();
+      }
+
+      cli.setCurrentReference(ref);
     } finally {
-      if (sigIntHandler != null) {
-        terminal.handle(Terminal.Signal.INT, sigIntHandler);
+      if (failure) {
+        try {
+          if (api != null) {
+            api.close();
+          }
+        } catch (Exception e) {
+          // ignore
+        }
+        try {
+          if (icebergClient != null) {
+            icebergClient.close();
+          }
+        } catch (Exception e) {
+          // ignore
+        }
       }
     }
-
-    writer.printf(
-        "Successfully connected to %s - Nessie API version %d, spec version %s%n",
-        spec.getUri(), config.getActualApiVersion(), config.getSpecVersion());
-
-    cli.connected(api);
-
-    Reference ref;
-    if (spec.getInitialReference() != null) {
-      ref = api.getReference().refName(spec.getInitialReference()).get();
-    } else {
-      ref = api.getDefaultBranch();
-    }
-
-    cli.setCurrentReference(ref);
   }
 
   static boolean hasCauseMatching(Throwable t, Predicate<Throwable> test) {
