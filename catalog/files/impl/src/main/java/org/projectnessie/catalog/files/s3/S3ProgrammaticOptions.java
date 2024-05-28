@@ -46,9 +46,6 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
     Builder pathStyleAccess(boolean pathStyleAccess);
 
     @CanIgnoreReturnValue
-    Builder projectId(String projectId);
-
-    @CanIgnoreReturnValue
     Builder accessKeyId(String accessKeyId);
 
     @CanIgnoreReturnValue
@@ -100,9 +97,6 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
 
       @CanIgnoreReturnValue
       Builder pathStyleAccess(boolean pathStyleAccess);
-
-      @CanIgnoreReturnValue
-      Builder projectId(String projectId);
 
       @CanIgnoreReturnValue
       Builder accessKeyId(String accessKeyId);
