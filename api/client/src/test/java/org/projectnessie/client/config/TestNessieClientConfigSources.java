@@ -274,15 +274,13 @@ public class TestNessieClientConfigSources {
   @ParameterizedTest
   @MethodSource
   void resolveOAuthEndpoint(Map<String, String> properties, String expected) {
-    soft.assertThat(NessieClientConfigSources.resolveOAuthEndpoint(properties)).isEqualTo(expected);
+    soft.assertThat(properties).extractingByKey("oauth2-server-uri").isEqualTo(expected);
   }
 
   static Stream<Arguments> resolveOAuthEndpoint() {
     return Stream.of(
         arguments(singletonMap("oauth2-server-uri", "http://foo.bar/"), "http://foo.bar/"),
-        arguments(
-            singletonMap("nessie.iceberg-base-uri", "http://foo.bar/iceberg/"),
-            "http://foo.bar/iceberg/v1/oauth/tokens"));
+        arguments(singletonMap("nessie.iceberg-base-uri", "http://foo.bar/iceberg/"), null));
   }
 
   @ParameterizedTest

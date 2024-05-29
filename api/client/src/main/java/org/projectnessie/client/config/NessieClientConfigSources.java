@@ -16,7 +16,6 @@
 package org.projectnessie.client.config;
 
 import static java.lang.Boolean.parseBoolean;
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_API_VERSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
@@ -27,7 +26,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -283,7 +281,7 @@ public final class NessieClientConfigSources {
         case CONF_NESSIE_CLIENT_API_VERSION:
           return "2";
         case CONF_NESSIE_OAUTH2_AUTH_ENDPOINT:
-          return resolveOAuthEndpoint(catalogProperties);
+          return catalogProperties.get("oauth2-server-uri");
         case CONF_NESSIE_OAUTH2_CLIENT_ID:
           return credential.clientId;
         case CONF_NESSIE_OAUTH2_CLIENT_SECRET:
@@ -309,19 +307,6 @@ public final class NessieClientConfigSources {
   static String resolveTokenLifespan(Map<String, String> catalogProperties) {
     String life = catalogProperties.getOrDefault("token-expires-in-ms", "3600000");
     return Duration.ofMillis(Long.parseLong(life)).toString();
-  }
-
-  static String resolveOAuthEndpoint(Map<String, String> catalogProperties) {
-    String uri = catalogProperties.get("oauth2-server-uri");
-    if (uri != null) {
-      return uri;
-    }
-    URI baseUri =
-        URI.create(
-            requireNonNull(
-                catalogProperties.get("nessie.iceberg-base-uri"),
-                "Missing 'nessie.iceberg-base-uri' property"));
-    return baseUri.resolve("v1/oauth/tokens").toString();
   }
 
   /**
