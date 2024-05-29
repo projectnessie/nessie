@@ -31,7 +31,6 @@ import org.gradle.api.file.FileTree
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.resources.TextResource
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -92,30 +91,6 @@ fun Project.forceJavaVersionForTests(requestedJavaVersion: Int) {
   }
 }
 
-fun Project.forceJavaVersionForTestTask(name: String, requestedJavaVersion: Int) {
-  tasks.named(name, Test::class.java).configure { forceJavaVersion(requestedJavaVersion) }
-}
-
-fun Test.forceJavaVersion(requestedJavaVersion: Int) {
-  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
-  if (requestedJavaVersion != currentJavaVersion) {
-    useJavaVersion(requestedJavaVersion)
-  }
-  if (requestedJavaVersion >= 11) {
-    addSparkJvmOptions()
-  }
-}
-
-fun JavaExec.forceJavaVersion(requestedJavaVersion: Int) {
-  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
-  if (requestedJavaVersion != currentJavaVersion) {
-    useJavaVersion(requestedJavaVersion)
-  }
-  if (requestedJavaVersion >= 11) {
-    addSparkJvmOptions()
-  }
-}
-
 /**
  * Adds the JPMS options required for Spark to run on Java 17, taken from the
  * `DEFAULT_MODULE_OPTIONS` constant in `org.apache.spark.launcher.JavaModuleOptions`.
@@ -146,16 +121,6 @@ fun JavaForkOptions.addSparkJvmOptions() {
 }
 
 fun Test.useJavaVersion(requestedJavaVersion: Int) {
-  val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-  logger.info("Configuring Java $requestedJavaVersion for $path test execution")
-  javaLauncher.set(
-    javaToolchains!!.launcherFor {
-      languageVersion.set(JavaLanguageVersion.of(requestedJavaVersion))
-    }
-  )
-}
-
-fun JavaExec.useJavaVersion(requestedJavaVersion: Int) {
   val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
   logger.info("Configuring Java $requestedJavaVersion for $path test execution")
   javaLauncher.set(

@@ -131,32 +131,8 @@ fun JvmTestSuite.commonCompatSuite() {
 }
 
 @Suppress("UnstableApiUsage")
-fun JvmTestSuite.useJava8() {
-  targets {
-    all {
-      testTask.configure {
-        val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-        javaLauncher = javaToolchains!!.launcherFor { languageVersion = JavaLanguageVersion.of(8) }
-      }
-    }
-  }
-}
-
-@Suppress("UnstableApiUsage")
 testing {
   suites {
-    register("testJava8", JvmTestSuite::class.java) {
-      commonCompatSuite()
-
-      dependencies { forJacksonVersion(libs.jackson.bom.get().version!!) }
-
-      useJava8()
-    }
-
-    configurations.named("testJava8Implementation") {
-      extendsFrom(configurations.getByName("testImplementation"))
-    }
-
     register("testNoApacheHttp", JvmTestSuite::class.java) {
       useJUnitJupiter(libsRequiredVersion("junit"))
 
@@ -187,18 +163,6 @@ testing {
       configurations.named("testJackson_${safeName}Implementation") {
         extendsFrom(configurations.getByName("testImplementation"))
       }
-
-      register("testJackson_${safeName}_java8", JvmTestSuite::class.java) {
-        commonCompatSuite()
-
-        dependencies { forJacksonVersion(jacksonVersion) }
-
-        useJava8()
-
-        configurations.named("testJackson_${safeName}_java8Implementation") {
-          extendsFrom(configurations.getByName("testImplementation"))
-        }
-      }
     }
   }
 }
@@ -211,9 +175,8 @@ annotationStripper {
 }
 
 // prevent duplicate checkstyle work
-(jacksonTestVersions
-    .map { jacksonVersion -> "Jackson_" + jacksonVersion.replace("[.]".toRegex(), "_") }
-    .flatMap { n -> listOf(n, n + "_java8") } + listOf("Java8"))
+jacksonTestVersions
+  .map { jacksonVersion -> "Jackson_" + jacksonVersion.replace("[.]".toRegex(), "_") }
   .forEach { v -> tasks.named("checkstyleTest$v").configure { enabled = false } }
 
 // Issue w/ testcontainers/podman in GH workflows :(
