@@ -15,6 +15,8 @@
  */
 package org.projectnessie.gc.files;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.immutables.value.Value;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -35,9 +37,18 @@ public interface FileReference {
   @Value.Auxiliary
   long modificationTimeMillisEpoch();
 
-  @Value.NonAttribute
+  /**
+   * Absolute path to the file/directory. Virtually equivalent to {@code base().resolve(path())}.
+   */
+  @Value.Lazy
   default StorageUri absolutePath() {
     return base().resolve(path());
+  }
+
+  @Value.Check
+  default void check() {
+    checkArgument(base().isAbsolute(), "Base location must be absolute: %s", base());
+    checkArgument(!path().isAbsolute(), "Path must be relative: %s", path());
   }
 
   static ImmutableFileReference.Builder builder() {

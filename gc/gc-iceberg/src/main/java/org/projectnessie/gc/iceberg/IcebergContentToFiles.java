@@ -53,7 +53,10 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   public static final String S3_KEY_NOT_FOUND =
       "software.amazon.awssdk.services.s3.model.NoSuchKeyException";
   public static final String GCS_STORAGE_EXCEPTION = "com.google.cloud.storage.StorageException";
+  public static final String ADLS_STORAGE_EXCEPTION =
+      "com.azure.storage.blob.models.BlobStorageException";
   public static final String GCS_NOT_FOUND_START = "404 Not Found";
+  public static final String ADLS_NOT_FOUND_CODE = "PathNotFound";
 
   public static Builder builder() {
     return ImmutableIcebergContentToFiles.builder();
@@ -89,9 +92,14 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
           || S3_KEY_NOT_FOUND.equals(notFoundCandidate.getClass().getName())) {
         notFound = true;
       } else {
-        for (Throwable c = notFoundCandidate.getCause(); c != null; c = c.getCause()) {
+        for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
           if (GCS_STORAGE_EXCEPTION.equals(c.getClass().getName())
               && c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
+            notFound = true;
+            break;
+          }
+          if (ADLS_STORAGE_EXCEPTION.equals(c.getClass().getName())
+              && c.getMessage().contains(ADLS_NOT_FOUND_CODE)) {
             notFound = true;
             break;
           }

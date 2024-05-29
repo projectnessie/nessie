@@ -33,6 +33,11 @@ public class ITSparkIcebergNessieGCP extends AbstractITSparkIcebergNessieObjectS
   private static @Gcs GcsAccess gcsAccess;
 
   @Override
+  Storage storage() {
+    return Storage.GCS;
+  }
+
+  @Override
   protected String warehouseURI() {
     return gcsAccess.bucketUri(BUCKET_URI).toString();
   }

@@ -295,6 +295,7 @@ public class AdlsGen2Resource {
                           RFC_1123_DATE_TIME.format(
                               ZonedDateTime.ofInstant(
                                   Instant.ofEpochMilli(obj.lastModified()), ZoneId.of("UTC"))))
+                      .creationTime(1000L) // cannot be zero
                       .directory(false)
                       .build());
               keyCount++;

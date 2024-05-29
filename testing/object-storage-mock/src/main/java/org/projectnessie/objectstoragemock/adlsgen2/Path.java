@@ -39,6 +39,12 @@ public interface Path {
 
   String lastModified();
 
+  /**
+   * Not mentioned in the specs, but required by the ADLS client. See {@code
+   * com.azure.storage.file.datalake.models.PathItem}.
+   */
+  long creationTime();
+
   String name();
 
   @Nullable

@@ -26,13 +26,20 @@ import org.projectnessie.testing.azurite.Azurite;
 import org.projectnessie.testing.azurite.AzuriteAccess;
 import org.projectnessie.testing.azurite.AzuriteExtension;
 
-@Disabled("Needs an Iceberg release with https://github.com/apache/iceberg/pull/10045")
+@Disabled(
+    "1) Needs an Iceberg release with https://github.com/apache/iceberg/pull/10045 "
+        + "2) Azurite is incompatible with ADLS v2 list-prefix REST endpoint")
 @ExtendWith(AzuriteExtension.class)
 public class ITSparkIcebergNessieAzure extends AbstractITSparkIcebergNessieObjectStorage {
 
   public static final String BUCKET_URI = "/my/prefix";
 
   private static @Azurite AzuriteAccess azuriteAccess;
+
+  @Override
+  Storage storage() {
+    return Storage.ADLS;
+  }
 
   @Override
   protected String warehouseURI() {
