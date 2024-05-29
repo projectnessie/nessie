@@ -8,6 +8,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Nessie has got support for Iceberg REST.
 - MySQL users can now configure the JDBC connection using the `quarkus.datasource.mysql.*`
   properties. Also, JDBC URLs can now use the `mysql` prefix, e.g.
   `jdbc:mysql://example.com:3306/my_db`.
@@ -17,6 +18,10 @@ as necessary. Empty sections will not end in the release notes.
 ### Breaking changes
 
 ### New Features
+
+- Support for Iceberg REST is in "beta" state. We appreciate early feedback, comments and suggestions.
+  Take a look at the [Guides](http://projectnessie.org/guides/) and [Docs](http://projectnessie.org/docs/)
+  on our web site projectnessie.org for more information.
 
 ### Changes
 
