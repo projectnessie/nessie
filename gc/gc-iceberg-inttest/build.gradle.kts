@@ -58,9 +58,7 @@ dependencies {
 
   intTestImplementation(
     nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
-  ) {
-    exclude(group = "org.apache.logging.log4j", module = "log4j-slf4j2-impl")
-  }
+  )
   intTestImplementation(
     nessieProject(
       "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
@@ -72,15 +70,12 @@ dependencies {
 
   intTestImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
-    exclude(group = "org.apache.logging.log4j", module = "log4j-slf4j2-impl")
   }
   intTestImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
-    exclude(group = "org.apache.logging.log4j", module = "log4j-slf4j2-impl")
   }
   intTestRuntimeOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
-    exclude(group = "org.apache.logging.log4j", module = "log4j-slf4j2-impl")
   }
 
   intTestRuntimeOnly(platform(libs.iceberg.bom))

@@ -64,6 +64,7 @@ fun ModuleDependency.withSparkExcludes(): ModuleDependency {
     .exclude("org.eclipse.jetty", "jetty-util")
     .exclude("org.apache.avro", "avro")
     .exclude("org.apache.arrow", "arrow-vector")
+    .exclude("org.apache.logging.log4j", "log4j-slf4j2-impl")
 }
 
 fun DependencyHandlerScope.forScala(scalaVersion: String) {
