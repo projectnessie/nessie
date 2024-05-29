@@ -13,14 +13,14 @@ example using the following configuration example snippet:
 
 ```properties
 # Default/global S3 configuration settings
-nessie.catalog.service.s3.endpoint=http://localhost:9000
-nessie.catalog.service.s3.path-style-access=true
 nessie.catalog.service.s3.region=us-west-2
 nessie.catalog.service.s3.access-key-id=awsAccessKeyId
 nessie.catalog.service.s3.secret-access-key=awsSecretAccessKey
+# For non-AWS S3 you need to specify the endpoint and possibly enable path-style-access
+nessie.catalog.service.s3.endpoint=http://localhost:9000
+nessie.catalog.service.s3.path-style-access=true
 
 # S3 configuration settings that are different for "bucket1"
-nessie.catalog.service.s3.buckets.bucket1.endpoint=s3a://bucket1
 nessie.catalog.service.s3.buckets.bucket1.access-key-id=awsAccessKeyId1
 nessie.catalog.service.s3.buckets.bucket1.secret-access-key=awsSecretAccessKey1
 nessie.catalog.service.s3.buckets.bucket1.region=us-east-1
@@ -70,7 +70,8 @@ to the following table.
 | (all S3/GCS/ADLS settings) |                               |                               | Remove all object store settings                                       |
 
 !!! warn
-    Current Iceberg REST clients do not support the OAuth2 authorization code and device code flows!
+    Current Iceberg REST clients do not support the OAuth2 authorization code and device code flows,
+    like Nessie does!
 
     Only Bearer and client-ID/secret work. We recommend bearer tokens over client-ID/client-secret
     configuration to not put those credentials at the risk of being compromised - it is easier to
