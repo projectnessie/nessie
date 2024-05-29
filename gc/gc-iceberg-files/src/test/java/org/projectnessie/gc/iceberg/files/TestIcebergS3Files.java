@@ -69,8 +69,8 @@ public class TestIcebergS3Files {
       s3.deleteMultiple(
           baseUri,
           Stream.of(
-              FileReference.of(baseUri.resolve("file-2"), baseUri, -1L),
-              FileReference.of(baseUri.resolve("file-3"), baseUri, -1L)));
+              FileReference.of(StorageUri.of("file-2"), baseUri, -1L),
+              FileReference.of(StorageUri.of("file-3"), baseUri, -1L)));
       expect.remove(baseUri.resolve("file-2"));
       expect.remove(baseUri.resolve("file-3"));
 
@@ -81,7 +81,7 @@ public class TestIcebergS3Files {
             .containsExactlyInAnyOrderElementsOf(expect);
       }
 
-      s3.delete(FileReference.of(baseUri.resolve("dir-1/file-4"), baseUri, -1L));
+      s3.delete(FileReference.of(StorageUri.of("dir-1/file-4"), baseUri, -1L));
       expect.remove(baseUri.resolve("dir-1/file-4"));
 
       try (Stream<FileReference> files = s3.listRecursively(baseUri)) {
@@ -122,7 +122,7 @@ public class TestIcebergS3Files {
               s3.deleteMultiple(
                   baseUri,
                   IntStream.range(0, deletes)
-                      .mapToObj(i -> baseUri.resolve(String.format("%d/%d", i % 100, i)))
+                      .mapToObj(i -> StorageUri.of(String.format("%d/%d", i % 100, i)))
                       .map(p -> FileReference.of(p, baseUri, -1L))))
           .isEqualTo(DeleteSummary.of(deletes, 0L));
 
