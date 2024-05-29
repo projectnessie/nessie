@@ -149,7 +149,6 @@ rules](https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/
 
 ## Nessie related repositories
 
-* [Nessie Demos](https://github.com/projectnessie/nessie-demos): Demos for Nessie
 * [CEL Java](https://github.com/projectnessie/cel-java): Java port of the Common Expression Language
 * [Nessie apprunner](https://github.com/projectnessie/nessie-apprunner): Maven and Gradle plugins to use Nessie in integration tests.
 
