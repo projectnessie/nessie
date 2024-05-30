@@ -53,6 +53,15 @@ public interface EntitySnapshotTaskRequest
   @Nullable
   Content content();
 
+  /**
+   * Used for "committing API operations", holds the produced/built snapshot.
+   *
+   * <p>For reading API operations, this is {@code null}, indicating that the snapshot needs to be
+   * imported from an object store, if it is not already imported.
+   *
+   * <p>For writing API operations, this is not {@code null}, indicating that the snapshot does not
+   * need to be imported, only persisted.
+   */
   @Value.Auxiliary
   @Nullable
   NessieEntitySnapshot<?> snapshot();

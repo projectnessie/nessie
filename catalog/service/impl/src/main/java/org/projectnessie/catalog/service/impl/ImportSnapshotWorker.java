@@ -102,6 +102,8 @@ final class ImportSnapshotWorker {
             .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
             .generate();
 
+    // snapshot!=null means that we already have the snapshot (via a committing operation - like a
+    // table update) and do not need to import it but can just store it.
     if (snapshot == null) {
       IcebergTableMetadata tableMetadata;
       StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
@@ -185,6 +187,8 @@ final class ImportSnapshotWorker {
             .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
             .generate();
 
+    // snapshot!=null means that we already have the snapshot (via a committing operation - like a
+    // table update) and do not need to import it but can just store it.
     if (snapshot == null) {
       IcebergViewMetadata viewMetadata;
       StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());

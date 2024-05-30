@@ -18,6 +18,7 @@ package org.projectnessie.catalog.service.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
@@ -380,39 +381,51 @@ public class CatalogServiceImpl implements CatalogService {
 
     nessieCommit.commitMeta(CommitMeta.fromMessage(message.toString()));
 
-    return commitBuilderStage.thenApply(
-        updates -> {
-          try {
-            CommitResponse commitResponse = multiTableUpdate.nessieCommit.commitWithResponse();
-            Map<ContentKey, String> addedContentsMap =
-                commitResponse.getAddedContents() != null
-                    ? commitResponse.toAddedContentsMap()
-                    : emptyMap();
-            for (SingleTableUpdate tableUpdate : multiTableUpdate.tableUpdates) {
-              Content content = tableUpdate.content;
-              if (content.getId() == null) {
-                content = content.withId(addedContentsMap.get(tableUpdate.key));
-              }
-              // It is okay to ignore the returned `CompletionStage`, because the TasksService will
-              // always trigger the operation, regardless whether the  `CompletionStage` is consumed
-              // or not.
-              NessieId snapshotId = objIdToNessieId(snapshotIdFromContent(content));
-              icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
-            }
+    CompletionStage<CommitResponse> committedStage =
+        commitBuilderStage.thenCompose(
+            updates -> {
+              try {
+                CommitResponse commitResponse = multiTableUpdate.nessieCommit.commitWithResponse();
+                Map<ContentKey, String> addedContentsMap =
+                    commitResponse.getAddedContents() != null
+                        ? commitResponse.toAddedContentsMap()
+                        : emptyMap();
+                CompletionStage<NessieEntitySnapshot<?>> current = null;
+                for (SingleTableUpdate tableUpdate : multiTableUpdate.tableUpdates) {
+                  Content content = tableUpdate.content;
+                  if (content.getId() == null) {
+                    content = content.withId(addedContentsMap.get(tableUpdate.key));
+                  }
+                  NessieId snapshotId = objIdToNessieId(snapshotIdFromContent(content));
 
-            return multiTableUpdate.tableUpdates.stream()
+                  // Although the `TasksService` triggers the operation regardless of whether the
+                  // `CompletionStage` returned by `storeSnapshot()` is consumed, we have to "wait"
+                  // for those to complete so that we keep the "request scoped context" alive.
+                  CompletionStage<NessieEntitySnapshot<?>> stage =
+                      icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
+                  if (current == null) {
+                    current = stage;
+                  } else {
+                    current = current.thenCombine(stage, (snap1, snap2) -> snap1);
+                  }
+                }
+                return requireNonNull(current).thenApply(x -> commitResponse);
+              } catch (Exception e) {
+                // TODO cleanup files that were written but are now obsolete/unreferenced
+                throw new RuntimeException(e);
+              }
+            });
+
+    return committedStage.thenApply(
+        commitResponse ->
+            multiTableUpdate.tableUpdates.stream()
                 .map(
                     singleTableUpdate ->
                         snapshotResponse(
                             singleTableUpdate.key,
                             reqParams,
                             singleTableUpdate.snapshot,
-                            commitResponse.getTargetBranch()));
-          } catch (Exception e) {
-            // TODO cleanup files that were written but are now obsolete/unreferenced
-            throw new RuntimeException(e);
-          }
-        });
+                            commitResponse.getTargetBranch())));
   }
 
   private CompletionStage<MultiTableUpdate> applyIcebergTableCommitOperation(
