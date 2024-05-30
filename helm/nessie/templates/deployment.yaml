@@ -151,6 +151,14 @@ spec:
             {{- $dataSourceConfigPrefix := include "nessie.datasourceConfigPrefix" $dbKind }}
             - name: NESSIE_VERSION_STORE_PERSIST_JDBC_DATASOURCE
               value: {{ $dbKind }}
+            {{- if .Values.jdbc.catalog }}
+            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_CATALOG
+              value: {{ .Values.jdbc.catalog }}
+            {{- end }}
+            {{- if .Values.jdbc.schema }}
+            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_SCHEMA
+              value: {{ .Values.jdbc.schema }}
+            {{- end }}
             - name: {{ $dataSourceConfigPrefix }}USERNAME
               valueFrom:
                 secretKeyRef:
