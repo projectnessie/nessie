@@ -90,7 +90,9 @@ $ helm uninstall --namespace nessie-ns nessie
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
+| jdbc.catalog | string | `""` | The catalog name to use. Required only if the JDBC URL does not contain a catalog name, or if you want to override it. |
 | jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database"` | The JDBC connection string. If you are using Nessie OSS images, then only PostgreSQL and MariaDB are supported. |
+| jdbc.schema | string | `""` | The schema name to use. Required only if the JDBC URL does not contain a schema name, or if you want to override it. |
 | jdbc.secret.name | string | `"datasource-creds"` | The secret name to pull datasource credentials from. |
 | jdbc.secret.password | string | `"password"` | The secret key storing the datasource password. |
 | jdbc.secret.username | string | `"username"` | The secret key storing the datasource username. |
