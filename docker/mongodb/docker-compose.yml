@@ -27,7 +27,7 @@ services:
       - quarkus.mongodb.database=nessie
       - quarkus.mongodb.connection-string=mongodb://root:password@mongo:27017
   mongo:
-    image: mongo@sha256:d9588e5df15218cfb9a1f764f9a8d998ce28e4cbfc7a6c93c30e9e4fd03b5961
+    image: mongo@sha256:8f9f843d383e358d9be2f172ba9d2455e8736f3c59b00330da1f1b44273ce267
     ports:
       - "27017:27017"
     environment:
