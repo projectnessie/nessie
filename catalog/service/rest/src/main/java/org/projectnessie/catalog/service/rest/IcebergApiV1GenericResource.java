@@ -107,8 +107,6 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
       IcebergS3SignRequest request,
       @PathParam("prefix") String prefix,
       @PathParam("identifier") String identifier) {
-    ParsedReference ref = decodePrefix(prefix).parsedReference();
-
     URI uri = URI.create(request.uri());
 
     Optional<String> bucket = s3options.extractBucket(uri);
@@ -118,7 +116,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
         SigningRequest.signingRequest(
             uri, request.method(), request.region(), bucket, body, request.headers());
 
-    SigningResponse signed = signer.sign(ref.name(), identifier, signingRequest);
+    SigningResponse signed = signer.sign(signingRequest);
 
     return icebergS3SignResponse(signed.uri().toString(), signed.headers());
   }

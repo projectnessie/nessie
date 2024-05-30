@@ -140,8 +140,7 @@ public class NessieCatalogResource extends AbstractCatalogResource {
   public SigningResponse signRequest(
       @PathParam("ref") String ref, @PathParam("key") ContentKey key, SigningRequest request)
       throws NessieNotFoundException {
-    ParsedReference reference = parseRefPathString(ref);
     // TODO access check
-    return signer.sign(reference.name(), key.toPathString(), request);
+    return signer.sign(request);
   }
 }

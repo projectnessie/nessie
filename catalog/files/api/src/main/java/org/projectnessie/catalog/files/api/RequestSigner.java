@@ -17,5 +17,5 @@ package org.projectnessie.catalog.files.api;
 
 public interface RequestSigner {
 
-  SigningResponse sign(String ref, String key, SigningRequest request);
+  SigningResponse sign(SigningRequest request);
 }
