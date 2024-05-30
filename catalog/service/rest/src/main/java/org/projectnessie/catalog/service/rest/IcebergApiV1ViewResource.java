@@ -80,6 +80,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Operation;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with views. */
@@ -156,8 +157,9 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
 
   private IcebergLoadViewResponse loadViewResultFromSnapshotResponse(
       SnapshotResponse snap, IcebergLoadViewResponse.Builder builder) {
+    IcebergView content = (IcebergView) snap.content();
     IcebergViewMetadata viewMetadata = (IcebergViewMetadata) snap.entityObject().orElseThrow();
-    return loadViewResult(snapshotMetadataLocation(snap), viewMetadata, builder);
+    return loadViewResult(content.getMetadataLocation(), viewMetadata, builder);
   }
 
   private IcebergLoadViewResponse loadViewResult(
