@@ -50,7 +50,6 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
 import org.projectnessie.catalog.service.api.CatalogCommit;
-import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 
@@ -172,12 +171,10 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
 
     SnapshotReqParams reqParams = SnapshotReqParams.forSnapshotHttpReq(ref, "iceberg", null);
 
-    CatalogService.CatalogUriResolver catalogUriResolver = new CatalogUriResolverImpl(uriInfo);
-
     // Although we don't return anything, need to make sure that the commit operation starts and all
     // results are consumed.
     return Uni.createFrom()
-        .completionStage(catalogService.commit(ref, commit.build(), reqParams, catalogUriResolver))
+        .completionStage(catalogService.commit(ref, commit.build(), reqParams))
         .map(stream -> stream.reduce(null, (ident, snap) -> ident, (i1, i2) -> i1));
   }
 }

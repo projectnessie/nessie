@@ -69,7 +69,6 @@ import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.CatalogService;
-import org.projectnessie.catalog.service.api.SnapshotFormat;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.CatalogConfig;
@@ -122,7 +121,6 @@ public class CatalogServiceImpl implements CatalogService {
   public Stream<Supplier<CompletionStage<SnapshotResponse>>> retrieveSnapshots(
       SnapshotReqParams reqParams,
       List<ContentKey> keys,
-      CatalogUriResolver catalogUriResolver,
       Consumer<Reference> effectiveReferenceConsumer)
       throws NessieNotFoundException {
     ParsedReference reference = reqParams.ref();
@@ -164,12 +162,9 @@ public class CatalogServiceImpl implements CatalogService {
                         reference.hashWithRelativeSpec(),
                         key);
                     CompletionStage<NessieEntitySnapshot<?>> snapshotStage =
-                        icebergStuff.retrieveIcebergSnapshot(
-                            snapshotId, c.getContent(), reqParams.snapshotFormat());
+                        icebergStuff.retrieveIcebergSnapshot(snapshotId, c.getContent());
                     return snapshotStage.thenApply(
-                        snapshot ->
-                            snapshotResponse(
-                                key, reqParams, catalogUriResolver, snapshot, effectiveReference));
+                        snapshot -> snapshotResponse(key, reqParams, snapshot, effectiveReference));
                   };
             })
         .filter(Objects::nonNull);
@@ -177,10 +172,7 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   public CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams,
-      ContentKey key,
-      CatalogUriResolver catalogUriResolver,
-      Content.Type expectedType)
+      SnapshotReqParams reqParams, ContentKey key, Content.Type expectedType)
       throws NessieNotFoundException {
 
     ParsedReference reference = reqParams.ref();
@@ -207,26 +199,24 @@ public class CatalogServiceImpl implements CatalogService {
 
     CompletionStage<NessieEntitySnapshot<?>> snapshotStage =
         new IcebergStuff(objectIO, persist, tasksService, executor)
-            .retrieveIcebergSnapshot(snapshotId, content, reqParams.snapshotFormat());
+            .retrieveIcebergSnapshot(snapshotId, content);
 
     return snapshotStage.thenApply(
-        snapshot ->
-            snapshotResponse(key, reqParams, catalogUriResolver, snapshot, effectiveReference));
+        snapshot -> snapshotResponse(key, reqParams, snapshot, effectiveReference));
   }
 
   private SnapshotResponse snapshotResponse(
       ContentKey key,
       SnapshotReqParams reqParams,
-      CatalogUriResolver catalogUriResolver,
       NessieEntitySnapshot<?> snapshot,
       Reference effectiveReference) {
     if (snapshot instanceof NessieTableSnapshot) {
       return snapshotTableResponse(
-          key, reqParams, catalogUriResolver, (NessieTableSnapshot) snapshot, effectiveReference);
+          key, reqParams, (NessieTableSnapshot) snapshot, effectiveReference);
     }
     if (snapshot instanceof NessieViewSnapshot) {
       return snapshotViewResponse(
-          key, reqParams, catalogUriResolver, (NessieViewSnapshot) snapshot, effectiveReference);
+          key, reqParams, (NessieViewSnapshot) snapshot, effectiveReference);
     }
     throw new IllegalArgumentException(
         "Unsupported snapshot type " + snapshot.getClass().getSimpleName());
@@ -235,7 +225,6 @@ public class CatalogServiceImpl implements CatalogService {
   private SnapshotResponse snapshotTableResponse(
       ContentKey key,
       SnapshotReqParams reqParams,
-      CatalogUriResolver catalogUriResolver,
       NessieTableSnapshot snapshot,
       Reference effectiveReference) {
     Object result;
@@ -282,7 +271,6 @@ public class CatalogServiceImpl implements CatalogService {
   private SnapshotResponse snapshotViewResponse(
       ContentKey key,
       SnapshotReqParams reqParams,
-      CatalogUriResolver catalogUriResolver,
       NessieViewSnapshot snapshot,
       Reference effectiveReference) {
     Object result;
@@ -328,10 +316,7 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   public CompletionStage<Stream<SnapshotResponse>> commit(
-      ParsedReference reference,
-      CatalogCommit commit,
-      SnapshotReqParams reqParams,
-      CatalogUriResolver catalogUriResolver)
+      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
       throws BaseNessieClientServerException {
 
     GetContentBuilder contentRequest =
@@ -421,7 +406,6 @@ public class CatalogServiceImpl implements CatalogService {
                         snapshotResponse(
                             singleTableUpdate.key,
                             reqParams,
-                            catalogUriResolver,
                             singleTableUpdate.snapshot,
                             commitResponse.getTargetBranch()));
           } catch (Exception e) {
@@ -642,14 +626,14 @@ public class CatalogServiceImpl implements CatalogService {
       throws NessieContentNotFoundException {
     ObjId snapshotId = snapshotIdFromContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
-        .retrieveIcebergSnapshot(snapshotId, content, SnapshotFormat.NESSIE_SNAPSHOT);
+        .retrieveIcebergSnapshot(snapshotId, content);
   }
 
   private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content)
       throws NessieContentNotFoundException {
     ObjId snapshotId = snapshotIdFromContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
-        .retrieveIcebergSnapshot(snapshotId, content, SnapshotFormat.NESSIE_SNAPSHOT);
+        .retrieveIcebergSnapshot(snapshotId, content);
   }
 
   private IcebergTableMetadata storeTableSnapshot(

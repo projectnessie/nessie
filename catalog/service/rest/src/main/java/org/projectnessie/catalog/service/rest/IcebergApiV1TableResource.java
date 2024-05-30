@@ -93,7 +93,6 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateTableRequest;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
-import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
@@ -518,11 +517,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     SnapshotReqParams reqParams =
         SnapshotReqParams.forSnapshotHttpReq(tableRef.reference(), "iceberg", null);
 
-    CatalogService.CatalogUriResolver catalogUriResolver = new CatalogUriResolverImpl(uriInfo);
-
     return Uni.createFrom()
-        .completionStage(
-            catalogService.commit(tableRef.reference(), commit, reqParams, catalogUriResolver))
+        .completionStage(catalogService.commit(tableRef.reference(), commit, reqParams))
         .map(Stream::findFirst)
         .map(Optional::orElseThrow);
   }

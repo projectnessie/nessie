@@ -26,7 +26,6 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
-import org.projectnessie.catalog.service.api.SnapshotFormat;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
@@ -59,15 +58,15 @@ public class IcebergStuff {
    * imported from the data lake into the Nessie Data Catalog's database.
    */
   public <S extends NessieEntitySnapshot<?>> CompletionStage<S> retrieveIcebergSnapshot(
-      ObjId snapshotId, Content content, SnapshotFormat format) {
+      ObjId snapshotId, Content content) {
     EntitySnapshotTaskRequest snapshotTaskRequest =
         entitySnapshotTaskRequest(snapshotId, content, null, persist, objectIO, executor);
-    return triggerIcebergSnapshot(format, snapshotTaskRequest);
+    return triggerIcebergSnapshot(snapshotTaskRequest);
   }
 
   @SuppressWarnings("unchecked")
   private <S extends NessieEntitySnapshot<?>> CompletionStage<S> triggerIcebergSnapshot(
-      SnapshotFormat format, EntitySnapshotTaskRequest snapshotTaskRequest) {
+      EntitySnapshotTaskRequest snapshotTaskRequest) {
     // TODO Handle hash-collision - when entity-snapshot refers to a different(!) snapshot
     return tasksService
         .forPersist(persist)
@@ -91,7 +90,7 @@ public class IcebergStuff {
     EntitySnapshotTaskRequest snapshotTaskRequest =
         entitySnapshotTaskRequest(
             nessieIdToObjId(snapshot.id()), content, snapshot, persist, objectIO, executor);
-    return triggerIcebergSnapshot(SnapshotFormat.ICEBERG_TABLE_METADATA, snapshotTaskRequest);
+    return triggerIcebergSnapshot(snapshotTaskRequest);
   }
 
   /** Fetch requested metadata from the database, the snapshot already exists. */

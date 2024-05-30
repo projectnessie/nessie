@@ -46,7 +46,6 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.local.LocalObjectIO;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
-import org.projectnessie.catalog.service.api.SnapshotFormat;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.nessie.tasks.async.pool.JavaPoolTasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
@@ -115,8 +114,7 @@ public class TestIcebergStuff {
         IcebergTable.of(icebergTableMetadata, 1, 1, 1, 1, randomUUID().toString());
 
     CompletionStage<NessieTableSnapshot> stage =
-        icebergStuff.retrieveIcebergSnapshot(
-            snapshotId, icebergTable, SnapshotFormat.NESSIE_SNAPSHOT);
+        icebergStuff.retrieveIcebergSnapshot(snapshotId, icebergTable);
     NessieTableSnapshot snapshot = stage.toCompletableFuture().get(1, TimeUnit.MINUTES);
     soft.assertThat(snapshot).isNotNull();
   }
