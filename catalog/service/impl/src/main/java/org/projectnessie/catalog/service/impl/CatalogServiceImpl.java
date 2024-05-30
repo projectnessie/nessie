@@ -164,7 +164,9 @@ public class CatalogServiceImpl implements CatalogService {
                     CompletionStage<NessieEntitySnapshot<?>> snapshotStage =
                         icebergStuff.retrieveIcebergSnapshot(snapshotId, c.getContent());
                     return snapshotStage.thenApply(
-                        snapshot -> snapshotResponse(key, reqParams, snapshot, effectiveReference));
+                        snapshot ->
+                            snapshotResponse(
+                                key, c.getContent(), reqParams, snapshot, effectiveReference));
                   };
             })
         .filter(Objects::nonNull);
@@ -202,21 +204,22 @@ public class CatalogServiceImpl implements CatalogService {
             .retrieveIcebergSnapshot(snapshotId, content);
 
     return snapshotStage.thenApply(
-        snapshot -> snapshotResponse(key, reqParams, snapshot, effectiveReference));
+        snapshot -> snapshotResponse(key, content, reqParams, snapshot, effectiveReference));
   }
 
   private SnapshotResponse snapshotResponse(
       ContentKey key,
+      Content content,
       SnapshotReqParams reqParams,
       NessieEntitySnapshot<?> snapshot,
       Reference effectiveReference) {
     if (snapshot instanceof NessieTableSnapshot) {
       return snapshotTableResponse(
-          key, reqParams, (NessieTableSnapshot) snapshot, effectiveReference);
+          key, content, reqParams, (NessieTableSnapshot) snapshot, effectiveReference);
     }
     if (snapshot instanceof NessieViewSnapshot) {
       return snapshotViewResponse(
-          key, reqParams, (NessieViewSnapshot) snapshot, effectiveReference);
+          key, content, reqParams, (NessieViewSnapshot) snapshot, effectiveReference);
     }
     throw new IllegalArgumentException(
         "Unsupported snapshot type " + snapshot.getClass().getSimpleName());
@@ -224,6 +227,7 @@ public class CatalogServiceImpl implements CatalogService {
 
   private SnapshotResponse snapshotTableResponse(
       ContentKey key,
+      Content content,
       SnapshotReqParams reqParams,
       NessieTableSnapshot snapshot,
       Reference effectiveReference) {
@@ -265,11 +269,12 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     return SnapshotResponse.forEntity(
-        effectiveReference, result, fileName, "application/json", key, snapshot);
+        effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
   private SnapshotResponse snapshotViewResponse(
       ContentKey key,
+      Content content,
       SnapshotReqParams reqParams,
       NessieViewSnapshot snapshot,
       Reference effectiveReference) {
@@ -311,7 +316,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     return SnapshotResponse.forEntity(
-        effectiveReference, result, fileName, "application/json", key, snapshot);
+        effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
   @Override
@@ -405,6 +410,7 @@ public class CatalogServiceImpl implements CatalogService {
                     singleTableUpdate ->
                         snapshotResponse(
                             singleTableUpdate.key,
+                            singleTableUpdate.content,
                             reqParams,
                             singleTableUpdate.snapshot,
                             commitResponse.getTargetBranch()));

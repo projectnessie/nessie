@@ -158,8 +158,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap, B builder, String prefix, ContentKey contentKey) {
     IcebergTableMetadata tableMetadata = (IcebergTableMetadata) snap.entityObject().orElseThrow();
+    IcebergTable content = (IcebergTable) snap.content();
     return loadTableResult(
-        snapshotMetadataLocation(snap), tableMetadata, builder, prefix, contentKey);
+        content.getMetadataLocation(), tableMetadata, builder, prefix, contentKey);
   }
 
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Optional;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
 
@@ -36,6 +37,7 @@ public interface SnapshotResponse {
       String fileName,
       String contentType,
       ContentKey contentKey,
+      Content content,
       NessieEntitySnapshot<?> nessieSnapshot) {
     return new SnapshotResponse() {
       @Override
@@ -64,6 +66,11 @@ public interface SnapshotResponse {
       }
 
       @Override
+      public Content content() {
+        return content;
+      }
+
+      @Override
       public NessieEntitySnapshot<?> nessieSnapshot() {
         return nessieSnapshot;
       }
@@ -84,6 +91,8 @@ public interface SnapshotResponse {
   String contentType();
 
   ContentKey contentKey();
+
+  Content content();
 
   NessieEntitySnapshot<?> nessieSnapshot();
 
