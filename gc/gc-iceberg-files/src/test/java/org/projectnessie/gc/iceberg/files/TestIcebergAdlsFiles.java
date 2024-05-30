@@ -21,7 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
 import org.projectnessie.storage.uri.StorageUri;
 
-public class TestIcebergADLSFiles extends AbstractFiles {
+public class TestIcebergAdlsFiles extends AbstractFiles {
 
   @Override
   protected String bucket() {
