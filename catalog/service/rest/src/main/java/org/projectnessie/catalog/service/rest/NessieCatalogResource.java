@@ -46,7 +46,6 @@ import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
 import org.projectnessie.catalog.service.api.CatalogCommit;
-import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -73,8 +72,6 @@ public class NessieCatalogResource extends AbstractCatalogResource {
       throws NessieNotFoundException {
     SnapshotReqParams reqParams = forSnapshotHttpReq(parseRefPathString(ref), format, specVersion);
 
-    CatalogService.CatalogUriResolver catalogUriResolver = new CatalogUriResolverImpl(uriInfo);
-
     AtomicReference<Reference> effectiveReference = new AtomicReference<>();
 
     // The order of the returned items does not necessarily match the order of the requested items,
@@ -82,8 +79,7 @@ public class NessieCatalogResource extends AbstractCatalogResource {
 
     // This operation can block --> @Blocking
     Stream<Supplier<CompletionStage<SnapshotResponse>>> snapshots =
-        catalogService.retrieveSnapshots(
-            reqParams, keys, catalogUriResolver, effectiveReference::set);
+        catalogService.retrieveSnapshots(reqParams, keys, effectiveReference::set);
 
     Multi<Object> multi =
         Multi.createFrom()
@@ -133,10 +129,8 @@ public class NessieCatalogResource extends AbstractCatalogResource {
 
     SnapshotReqParams reqParams = forSnapshotHttpReq(reference, format, specVersion);
 
-    CatalogService.CatalogUriResolver catalogUriResolver = new CatalogUriResolverImpl(uriInfo);
-
     return Uni.createFrom()
-        .completionStage(catalogService.commit(reference, commit, reqParams, catalogUriResolver))
+        .completionStage(catalogService.commit(reference, commit, reqParams))
         .map(v -> Response.ok().build());
   }
 
@@ -146,8 +140,7 @@ public class NessieCatalogResource extends AbstractCatalogResource {
   public SigningResponse signRequest(
       @PathParam("ref") String ref, @PathParam("key") ContentKey key, SigningRequest request)
       throws NessieNotFoundException {
-    ParsedReference reference = parseRefPathString(ref);
     // TODO access check
-    return signer.sign(reference.name(), key.toPathString(), request);
+    return signer.sign(request);
   }
 }

@@ -55,7 +55,7 @@ public class S3Signer implements RequestSigner {
   }
 
   @Override
-  public SigningResponse sign(String ref, String key, SigningRequest clientRequest) {
+  public SigningResponse sign(SigningRequest clientRequest) {
 
     URI uri = clientRequest.uri();
     Optional<String> body = clientRequest.body();

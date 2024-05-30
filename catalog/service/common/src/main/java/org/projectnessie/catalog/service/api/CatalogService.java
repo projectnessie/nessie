@@ -37,32 +37,23 @@ public interface CatalogService {
    * @param reqParams Parameters holding the Nessie reference specification, snapshot format and
    *     more.
    * @param key content key of the table or view
-   * @param catalogUriResolver produces URIs for related entities, like Iceberg manifest lists or
-   *     manifest files.
    * @param expectedType The expected content-type.
    * @return The response is either a response object or callback to produce the result. The latter
    *     is useful to return results that are quite big, for example Iceberg manifest lists or
    *     manifest files.
    */
   CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams,
-      ContentKey key,
-      CatalogUriResolver catalogUriResolver,
-      Content.Type expectedType)
+      SnapshotReqParams reqParams, ContentKey key, Content.Type expectedType)
       throws NessieNotFoundException;
 
   Stream<Supplier<CompletionStage<SnapshotResponse>>> retrieveSnapshots(
       SnapshotReqParams reqParams,
       List<ContentKey> keys,
-      CatalogUriResolver catalogUriResolver,
       Consumer<Reference> effectiveReferenceConsumer)
       throws NessieNotFoundException;
 
   CompletionStage<Stream<SnapshotResponse>> commit(
-      ParsedReference reference,
-      CatalogCommit commit,
-      SnapshotReqParams reqParams,
-      CatalogUriResolver catalogUriResolver)
+      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
       throws BaseNessieClientServerException;
 
   interface CatalogUriResolver {
