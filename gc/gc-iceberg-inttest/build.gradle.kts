@@ -31,7 +31,7 @@ dependencies {
 
   // Enforce a single version of Netty among dependencies
   // (Spark, Hadoop and Azure)
-  implementation(platform("io.netty:netty-bom:4.1.110.Final"))
+  implementation(enforcedPlatform(libs.netty.bom))
 
   implementation("org.apache.iceberg:iceberg-core")
   implementation("org.apache.iceberg:iceberg-aws")
