@@ -18,10 +18,14 @@ package org.projectnessie.gc.iceberg.files;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.Disabled;
 import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
 import org.projectnessie.storage.uri.StorageUri;
 
-public class TestIcebergS3Files extends AbstractFiles {
+@Disabled(
+    "Requires implementation of the /batch/storage/v1 endpoint in object-storage-mock. "
+        + "That consumes a multipart/mixed content, which contains a series of serialized HTTP requests.")
+public class TestIcebergGCSFiles extends AbstractFiles {
 
   @Override
   protected String bucket() {
@@ -32,12 +36,14 @@ public class TestIcebergS3Files extends AbstractFiles {
   protected Map<String, ? extends String> icebergProperties(MockServer server) {
     Map<String, String> props = new HashMap<>();
 
-    props.put("s3.access-key-id", "accessKey");
-    props.put("s3.secret-access-key", "secretKey");
-    props.put("s3.endpoint", server.getS3BaseUri().toString());
-    // must enforce path-style access because S3Resource has the bucket name in its path
-    props.put("s3.path-style-access", "true");
-    props.put("http-client.type", "urlconnection");
+    props.put("gcs.project-id", "my-project");
+    // MUST NOT end with a trailing slash, otherwise code like
+    // com.google.cloud.storage.spi.v1.HttpStorageRpc.DefaultRpcBatch.submit inserts an ambiguous
+    // empty path segment ("//").
+    String uri = server.getGcsBaseUri().toString();
+    uri = uri.substring(0, uri.length() - 1);
+    props.put("gcs.service.host", uri);
+    props.put("gcs.no-auth", "true");
 
     return props;
   }
@@ -45,15 +51,16 @@ public class TestIcebergS3Files extends AbstractFiles {
   protected Configuration hadoopConfiguration(MockServer server) {
     Configuration conf = new Configuration();
 
-    conf.set("fs.s3a.access.key", "accessKey");
-    conf.set("fs.s3a.secret.key", "secretKey");
-    conf.set("fs.s3a.endpoint", server.getS3BaseUri().toString());
+    conf.set("fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem");
+    conf.set("fs.AbstractFileSystem.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFS");
+    conf.set("fs.gs.project.id", "projectId");
+    conf.set("fs.gs.auth.type", "none");
 
     return conf;
   }
 
   @Override
   protected StorageUri storageUri(String path) {
-    return StorageUri.of(String.format("s3://%s/", bucket())).resolve(path);
+    return StorageUri.of(String.format("gs://%s/", bucket())).resolve(path);
   }
 }

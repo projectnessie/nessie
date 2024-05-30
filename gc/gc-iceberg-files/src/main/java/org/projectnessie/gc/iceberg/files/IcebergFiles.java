@@ -140,9 +140,14 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
       }
       return StreamSupport.stream(fileInfos.spliterator(), false)
           .map(
-              f ->
-                  FileReference.of(
-                      basePath.relativize(f.location()), basePath, f.createdAtMillis()));
+              f -> {
+                StorageUri location = StorageUri.of(f.location());
+                if (!location.isAbsolute()) {
+                  location = basePath.resolve("/").resolve(location);
+                }
+                return FileReference.of(
+                    basePath.relativize(location), basePath, f.createdAtMillis());
+              });
     }
 
     return listHadoop(basePath);

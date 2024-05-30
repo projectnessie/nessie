@@ -15,6 +15,7 @@
  */
 package org.projectnessie.gc.iceberg.inttest;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.gc.iceberg.inttest.AbstractITSparkIcebergNessieObjectStorage.Step.dml;
 import static org.projectnessie.gc.iceberg.inttest.AbstractITSparkIcebergNessieObjectStorage.Step.expiredDdl;
 import static org.projectnessie.gc.iceberg.inttest.AbstractITSparkIcebergNessieObjectStorage.Step.expiredDml;
@@ -25,6 +26,7 @@ import static org.projectnessie.gc.identify.CutoffPolicy.numCommits;
 
 import jakarta.annotation.Nullable;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,6 +122,11 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
     Map<String, CutoffPolicy> policies();
 
     String namespace();
+
+    @Value.Default
+    default Set<Storage> compatibleStorages() {
+      return EnumSet.allOf(Storage.class);
+    }
   }
 
   static Stream<TestCase> testCases() {
@@ -151,6 +158,8 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
         // 3
         testCase()
             .namespace("tc_3")
+            // ADLS FileIO does not support special characters in column names
+            .addCompatibleStorages(Storage.S3, Storage.GCS)
             .addSteps(
                 expiredDdl(
                     // Note: intentional special chars in the column name
@@ -168,6 +177,8 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
   @ParameterizedTest
   @MethodSource("testCases")
   public void roundTrips(TestCase testCase) throws Exception {
+
+    assumeThat(testCase.compatibleStorages()).contains(storage());
 
     api.createNamespace()
         .namespace(testCase.namespace())
@@ -279,4 +290,12 @@ public abstract class AbstractITSparkIcebergNessieObjectStorage extends SparkSql
   }
 
   protected abstract StorageUri bucketUri();
+
+  abstract Storage storage();
+
+  enum Storage {
+    S3,
+    GCS,
+    ADLS,
+  }
 }

@@ -20,6 +20,7 @@ logback = "1.5.6"
 mavenResolver = "1.9.20"
 mockito="4.11.0"
 nessieClientVersion = "0.77.1" # Must be in sync with Nessie version in the Iceberg release.
+netty = "4.1.110.Final"
 opentelemetry = "1.38.0"
 opentelemetryAlpha = "1.31.0-alpha"
 opentracing = "0.33.0"
@@ -114,6 +115,7 @@ mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "5.1.0" }
 nessie-runner-common = { module = "org.projectnessie.nessie-runner:nessie-runner-common", version = "0.32.2" }
 nessie-ui = { module = "org.projectnessie.nessie.ui:nessie-ui", version = "0.63.6" }
+netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
 opentelemetry-bom-alpha = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
 opentelemetry-instrumentation-bom-alpha = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version.ref = "opentelemetryAlpha" }

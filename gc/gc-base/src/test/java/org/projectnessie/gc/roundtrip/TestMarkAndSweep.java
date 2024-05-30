@@ -279,10 +279,10 @@ public class TestMarkAndSweep {
         path -> {
           long l = markAndSweep.baseLocationToNum(path);
           return Stream.of(
-              FileReference.of(path.resolve("metadata-" + l), path, 123L),
-              FileReference.of(path.resolve("1-unused"), path, 123L),
-              FileReference.of(path.resolve("2-unused"), path, markAndSweep.newestToDeleteMillis),
-              FileReference.of(path.resolve("too-new-2"), path, markAndSweep.tooNewMillis));
+              FileReference.of(StorageUri.of("metadata-" + l), path, 123L),
+              FileReference.of(StorageUri.of("1-unused"), path, 123L),
+              FileReference.of(StorageUri.of("2-unused"), path, markAndSweep.newestToDeleteMillis),
+              FileReference.of(StorageUri.of("too-new-2"), path, markAndSweep.tooNewMillis));
         };
     FileDeleter deleter =
         fileObject -> {
@@ -299,13 +299,15 @@ public class TestMarkAndSweep {
                     .fileDeleter(deleter)
                     .expectedFileCount(100)
                     .contentToFiles(
-                        contentReference ->
-                            Stream.of(
-                                FileReference.of(
-                                    StorageUri.of(contentReference.metadataLocation()),
-                                    markAndSweep.numToBaseLocation(
-                                        markAndSweep.contentIdToNum(contentReference.contentId())),
-                                    -1L)))
+                        contentReference -> {
+                          StorageUri baseLocation =
+                              markAndSweep.numToBaseLocation(
+                                  markAndSweep.contentIdToNum(contentReference.contentId()));
+                          StorageUri location = StorageUri.of(contentReference.metadataLocation());
+                          return Stream.of(
+                              FileReference.of(
+                                  baseLocation.relativize(location), baseLocation, -1L));
+                        })
                     .maxFileModificationTime(markAndSweep.maxFileModificationTime)
                     .build())
             .build();

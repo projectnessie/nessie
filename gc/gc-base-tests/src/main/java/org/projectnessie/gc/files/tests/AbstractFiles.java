@@ -45,7 +45,7 @@ public abstract class AbstractFiles {
 
   @Test
   public void deleteNonExisting() {
-    assertThat(deleter().delete(FileReference.of(baseUri().resolve("fileX"), baseUri(), 123L)))
+    assertThat(deleter().delete(FileReference.of(StorageUri.of("fileX"), baseUri(), 123L)))
         .isEqualTo(DeleteResult.SUCCESS);
   }
 
@@ -133,7 +133,7 @@ public abstract class AbstractFiles {
                 .deleteMultiple(
                     baseUri(),
                     IntStream.rangeClosed(1, deletes)
-                        .mapToObj(i -> baseUri().resolve(dirAndFilename(i)))
+                        .mapToObj(i -> StorageUri.of(dirAndFilename(i)))
                         .map(p -> FileReference.of(p, baseUri(), -1L))))
         .isEqualTo(DeleteSummary.of(deletes, 0L));
 
