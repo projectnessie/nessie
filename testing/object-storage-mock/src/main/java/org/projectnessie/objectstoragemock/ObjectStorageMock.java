@@ -110,14 +110,6 @@ public abstract class ObjectStorageMock {
       props.put("http-client.type", "urlconnection");
       return props;
     }
-
-    default Map<String, String> hadoopConfiguration() {
-      Map<String, String> conf = new HashMap<>();
-      conf.put("fs.s3a.access.key", "accessKey");
-      conf.put("fs.s3a.secret.key", "secretKey");
-      conf.put("fs.s3a.endpoint", getS3BaseUri().toString());
-      return conf;
-    }
   }
 
   private static final class MockServerImpl implements MockServer {

@@ -21,23 +21,20 @@ import org.apache.hadoop.conf.Configuration;
 import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
 import org.projectnessie.storage.uri.StorageUri;
 
-public class TestIcebergS3Files extends AbstractFiles {
+public class TestIcebergADLSFiles extends AbstractFiles {
 
   @Override
   protected String bucket() {
-    return "bucket";
+    return "$root";
   }
 
   @Override
   protected Map<String, ? extends String> icebergProperties(MockServer server) {
     Map<String, String> props = new HashMap<>();
 
-    props.put("s3.access-key-id", "accessKey");
-    props.put("s3.secret-access-key", "secretKey");
-    props.put("s3.endpoint", server.getS3BaseUri().toString());
-    // must enforce path-style access because S3Resource has the bucket name in its path
-    props.put("s3.path-style-access", "true");
-    props.put("http-client.type", "urlconnection");
+    props.put("adls.connection-string.account", server.getAdlsGen2BaseUri().toString());
+    props.put("adls.auth.shared-key.account.name", "account@account.dfs.core.windows.net");
+    props.put("adls.auth.shared-key.account.key", "key");
 
     return props;
   }
@@ -45,15 +42,17 @@ public class TestIcebergS3Files extends AbstractFiles {
   protected Configuration hadoopConfiguration(MockServer server) {
     Configuration conf = new Configuration();
 
-    conf.set("fs.s3a.access.key", "accessKey");
-    conf.set("fs.s3a.secret.key", "secretKey");
-    conf.set("fs.s3a.endpoint", server.getS3BaseUri().toString());
+    conf.set("fs.azure.impl", "org.apache.hadoop.fs.azure.AzureNativeFileSystemStore");
+    conf.set("fs.AbstractFileSystem.azure.impl", "org.apache.hadoop.fs.azurebfs.Abfs");
+    conf.set("fs.azure.storage.emulator.account.name", "account");
+    conf.set("fs.azure.account.auth.type", "SharedKey");
+    conf.set("fs.azure.account.key.account", "<base-64-encoded-secret>");
 
     return conf;
   }
 
   @Override
   protected StorageUri storageUri(String path) {
-    return StorageUri.of(String.format("s3://%s/", bucket())).resolve(path);
+    return StorageUri.of(String.format("abfs://%s@account/", bucket())).resolve(path);
   }
 }
