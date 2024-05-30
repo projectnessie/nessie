@@ -1,3 +1,3 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM mongo:7.0.11@sha256:5546c6c015a7a7b1fb6a14f9d3f8326e7fb51f408c5cdf893981145883226473
+FROM mongo:7.0.11@sha256:8f9f843d383e358d9be2f172ba9d2455e8736f3c59b00330da1f1b44273ce267
