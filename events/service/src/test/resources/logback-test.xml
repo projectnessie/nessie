@@ -24,8 +24,7 @@
         %msg%n</pattern>
     </encoder>
   </appender>
-  <root>
-    <level value="${test.log.level:-INFO}"/>
+  <root level="${test.log.level:-WARN}">
     <appender-ref ref="console"/>
   </root>
 </configuration>
