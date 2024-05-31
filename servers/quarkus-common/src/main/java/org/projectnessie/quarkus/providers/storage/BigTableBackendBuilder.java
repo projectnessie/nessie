@@ -83,7 +83,7 @@ public class BigTableBackendBuilder implements BackendBuilder {
           bigTableConfig.appProfileId().orElse("(default)"),
           bigTableConfig.endpoint().orElse("(default)"));
     } else {
-      LOGGER.warn(
+      LOGGER.info(
           "Connecting to Google BigTable emulator {}:{} using project ID {}, instance ID {}, profile {}",
           bigTableConfig.emulatorHost().get(),
           bigTableConfig.emulatorPort(),
