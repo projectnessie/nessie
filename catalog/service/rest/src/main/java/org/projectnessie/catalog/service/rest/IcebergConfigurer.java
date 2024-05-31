@@ -101,6 +101,8 @@ public class IcebergConfigurer {
     config.put(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     config.putAll(uriInfo.icebergConfigDefaults());
     config.putAll(storeConfigDefaults(URI.create(warehouseConfig.location())));
+    // allow users to override the 'rest-page-size' in the Nessie configuration
+    config.put("rest-page-size", "200");
     config.putAll(catalogConfig.icebergConfigDefaults());
     config.putAll(warehouseConfig.icebergConfigDefaults());
     // Set the "default" prefix
@@ -120,8 +122,6 @@ public class IcebergConfigurer {
     Map<String, String> config = new HashMap<>();
     config.putAll(uriInfo.icebergConfigOverrides());
     config.putAll(storeConfigOverrides(StorageUri.of(warehouseConfig.location())));
-    // allow users to override the 'rest-page-size' in the Nessie configuration
-    config.put("rest-page-size", "200");
     config.putAll(catalogConfig.icebergConfigOverrides());
     config.putAll(warehouseConfig.icebergConfigOverrides());
     // Marker property telling clients that the backend is a Nessie Catalog.
