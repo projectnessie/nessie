@@ -55,7 +55,7 @@ public class S3ObjectIO implements ObjectIO {
       return s3client.getObject(
           GetObjectRequest.builder()
               .bucket(uri.requiredAuthority())
-              .key(uri.requiredPath())
+              .key(withoutLeadingSlash(uri))
               .build());
     } catch (SdkServiceException e) {
       if (e.isThrottlingException()) {
@@ -85,7 +85,7 @@ public class S3ObjectIO implements ObjectIO {
         s3client.putObject(
             PutObjectRequest.builder()
                 .bucket(uri.requiredAuthority())
-                .key(uri.requiredPath())
+                .key(withoutLeadingSlash(uri))
                 .build(),
             RequestBody.fromBytes(toByteArray()));
       }
@@ -95,5 +95,10 @@ public class S3ObjectIO implements ObjectIO {
   @Override
   public boolean isValidUri(StorageUri uri) {
     return uri != null && "s3".equals(uri.scheme());
+  }
+
+  private static String withoutLeadingSlash(StorageUri uri) {
+    String path = uri.requiredPath();
+    return path.startsWith("/") ? path.substring(1) : path;
   }
 }
