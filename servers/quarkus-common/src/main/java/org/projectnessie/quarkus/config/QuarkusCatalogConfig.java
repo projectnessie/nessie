@@ -25,7 +25,7 @@ import org.projectnessie.catalog.service.config.CatalogConfig;
 @ConfigMapping(prefix = "nessie.catalog")
 public interface QuarkusCatalogConfig extends CatalogConfig {
   @Override
-  @WithName("base-uri")
+  @WithName("external-base-uri")
   Optional<URI> externalBaseUri();
 
   @Override
