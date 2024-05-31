@@ -17,12 +17,17 @@ package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
+import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 
 @ConfigMapping(prefix = "nessie.catalog")
 public interface QuarkusCatalogConfig extends CatalogConfig {
+  @Override
+  @WithName("base-uri")
+  Optional<URI> baseUri();
+
   @Override
   @WithName("default-warehouse")
   Optional<String> defaultWarehouse();

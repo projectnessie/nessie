@@ -19,15 +19,23 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
+import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.rest.ExternalBaseUri;
 
 @RequestScoped
 public class ExternalBaseUriImpl implements ExternalBaseUri {
 
-  @Inject UriInfo uriInfo;
+  final UriInfo uriInfo;
+  final CatalogConfig catalogConfig;
+
+  @Inject
+  public ExternalBaseUriImpl(UriInfo uriInfo, CatalogConfig catalogConfig) {
+    this.uriInfo = uriInfo;
+    this.catalogConfig = catalogConfig;
+  }
 
   @Override
   public URI externalBaseURI() {
-    return uriInfo.getBaseUri();
+    return catalogConfig.baseUri().orElseGet(uriInfo::getBaseUri);
   }
 }

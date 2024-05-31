@@ -17,11 +17,22 @@ package org.projectnessie.catalog.service.config;
 
 import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface CatalogConfig {
+
+  /**
+   * Optional override for the Catalog Server's base URI. If not set, URI info from the application
+   * server will be used.
+   *
+   * <p>This parameter controls the URI visible to Catalog clients. It can be useful when the serer
+   * is behind a proxy or load balancer that alters the protocol (TLS termination) or adds/removes
+   * URI path elements.
+   */
+  Optional<URI> baseUri();
 
   /**
    * Name of the default warehouse. This one is used when a warehouse is not specified in a query.
