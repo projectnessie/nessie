@@ -30,6 +30,10 @@ public interface CatalogConfig {
    *
    * <p>This parameter controls the URI visible to Catalog clients. It can be useful when the serer
    * is behind a proxy or load balancer that alters the port or adds/removes URI path elements.
+   *
+   * <p>Example:
+   * <li>External URI: {@code https://example.com:1234/nessie/iceberg/v1/config}
+   * <li>Internal URI: {@code http://nessie.svc.cluster.local/iceberg/v1/config}
    */
   Optional<URI> externalBaseUri();
 
