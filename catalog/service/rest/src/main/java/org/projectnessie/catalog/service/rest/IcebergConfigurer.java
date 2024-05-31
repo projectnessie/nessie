@@ -101,6 +101,8 @@ public class IcebergConfigurer {
     config.put(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     config.putAll(uriInfo.icebergConfigDefaults());
     config.putAll(storeConfigDefaults(URI.create(warehouseConfig.location())));
+    // allow users to override the 'rest-page-size' in the Nessie configuration
+    config.put("rest-page-size", "200");
     config.putAll(catalogConfig.icebergConfigDefaults());
     config.putAll(warehouseConfig.icebergConfigDefaults());
     // Set the "default" prefix
