@@ -36,6 +36,6 @@ public class ExternalBaseUriImpl implements ExternalBaseUri {
 
   @Override
   public URI externalBaseURI() {
-    return catalogConfig.baseUri().orElseGet(uriInfo::getBaseUri);
+    return catalogConfig.externalBaseUri().orElseGet(uriInfo::getBaseUri);
   }
 }

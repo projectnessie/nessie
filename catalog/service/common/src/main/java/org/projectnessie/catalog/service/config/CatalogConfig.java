@@ -29,10 +29,9 @@ public interface CatalogConfig {
    * server will be used.
    *
    * <p>This parameter controls the URI visible to Catalog clients. It can be useful when the serer
-   * is behind a proxy or load balancer that alters the protocol (TLS termination) or adds/removes
-   * URI path elements.
+   * is behind a proxy or load balancer that alters the port or adds/removes URI path elements.
    */
-  Optional<URI> baseUri();
+  Optional<URI> externalBaseUri();
 
   /**
    * Name of the default warehouse. This one is used when a warehouse is not specified in a query.

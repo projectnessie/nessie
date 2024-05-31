@@ -26,7 +26,7 @@ import org.projectnessie.catalog.service.config.CatalogConfig;
 public interface QuarkusCatalogConfig extends CatalogConfig {
   @Override
   @WithName("base-uri")
-  Optional<URI> baseUri();
+  Optional<URI> externalBaseUri();
 
   @Override
   @WithName("default-warehouse")

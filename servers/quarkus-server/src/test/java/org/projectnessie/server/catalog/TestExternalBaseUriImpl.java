@@ -36,10 +36,10 @@ class TestExternalBaseUriImpl {
 
     Mockito.when(uriInfo.getBaseUri()).thenReturn(base1);
 
-    Mockito.when(config.baseUri()).thenReturn(Optional.empty());
+    Mockito.when(config.externalBaseUri()).thenReturn(Optional.empty());
     assertThat(impl.externalBaseURI()).isEqualTo(base1);
 
-    Mockito.when(config.baseUri()).thenReturn(Optional.of(base2));
+    Mockito.when(config.externalBaseUri()).thenReturn(Optional.of(base2));
     assertThat(impl.externalBaseURI()).isEqualTo(base2);
   }
 }
