@@ -20,7 +20,7 @@
 # (See site/docs/try/configuration.md)
 #
 ###
-FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.18-4@sha256:399a4169b3474e949597390191faab28f404e4cacc816de1b33fa389b48f929f
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.18-4
 
 LABEL org.opencontainers.image.source=https://github.com/projectnessie/nessie
 LABEL org.opencontainers.image.description="Projectnessie Nessie Core Server"
