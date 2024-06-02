@@ -87,7 +87,7 @@ services:
 
   # Jaeger (OpenTelemetry traces collector)
   jaeger:
-    image: docker.io/jaegertracing/all-in-one:latest@sha256:a76a7df2527f142b9e112c28472d90d6631876aa8f52a35e2126d50f5bd0e5ec
+    image: docker.io/jaegertracing/all-in-one:latest@sha256:b5a31b5b070bd403b2b916d67ae24ba03512e118983bdd39a382fe9e52fac2b8
     ports:
       # Jaeger gRPC collector, used by Nessie
       - "4317:4317"
