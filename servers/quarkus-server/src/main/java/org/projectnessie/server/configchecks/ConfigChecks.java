@@ -38,7 +38,7 @@ public class ConfigChecks {
       LOGGER.warn(
           "Configured version store type IN_MEMORY is only for testing purposes and experimentation, not for production use. "
               + "Data will be lost when the process is shut down. "
-              + "Recommended action: Use a supported database, see https://projectnessie.org/try/configuration/");
+              + "Recommended action: Use a supported database, see https://projectnessie.org/nessie-latest/configuration/");
     }
 
     // AuthZ + AuthN warnings
@@ -47,19 +47,19 @@ public class ConfigChecks {
           "Both authentication (AuthN) and authorization (AuthZ) are disabled, "
               + "all requests to Nessie will be permitted. "
               + "This means: everybody with access to Nessie can read, write and change everything. "
-              + "Recommended action: Enable AuthN & AuthZ, see https://projectnessie.org/try/configuration/");
+              + "Recommended action: Enable AuthN & AuthZ, see https://projectnessie.org/nessie-latest/configuration/");
     } else if (!authenticationConfig.enabled()) {
       LOGGER.warn(
           "Authentication (AuthN) is disabled and all requests to Nessie will be permitted. "
               + "This means: everybody with access to Nessie can read, write and change everything. "
-              + "Recommended action: Enable authentication, see https://projectnessie.org/try/configuration/");
+              + "Recommended action: Enable authentication, see https://projectnessie.org/nessie-latest/configuration/");
     } else if (!authorizationConfig.enabled()) {
       LOGGER.warn(
           "Authorization (AuthZ) is disabled and all authenticated requests to Nessie will be permitted. "
               + "This means: everybody with access to Nessie can read, write and change everything. "
               + "If you really intent to give every authenticated user access and get rid of this warning, "
               + "explicitly add an allow-all authorization rule (ex: nessie.server.authorization.rules.allow_all=true). "
-              + "Recommended action: Enable authorization and configure authorization rules, see https://projectnessie.org/try/configuration/");
+              + "Recommended action: Enable authorization and configure authorization rules, see https://projectnessie.org/nessie-latest/configuration/");
     }
 
     if (serverConfig.sendStacktraceToClient()) {
@@ -67,7 +67,7 @@ public class ConfigChecks {
           "Java stack traces are sent back in HTTP error responses. "
               + "It is not good practice to send Java stack traces to clients, because "
               + "stack traces might be considered a security risk. "
-              + "Recommended action: disable the option, see https://projectnessie.org/try/configuration/");
+              + "Recommended action: disable the option, see https://projectnessie.org/nessie-latest/configuration/");
     }
   }
 }
