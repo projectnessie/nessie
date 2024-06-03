@@ -787,10 +787,7 @@ public interface HttpTreeApi extends TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                examples = {
-                  @ExampleObject(ref = "mergeResponseSuccess"),
-                  @ExampleObject(ref = "mergeResponseFail")
-                },
+                examples = @ExampleObject(ref = "mergeResponseSuccess"),
                 schema = @Schema(implementation = MergeResponse.class)),
         description =
             "Transplant operation completed. "
@@ -803,7 +800,14 @@ public interface HttpTreeApi extends TreeApi {
         responseCode = "403",
         description = "Not allowed to view the given reference or transplant commits"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-    @APIResponse(responseCode = "409", description = "update conflict")
+    @APIResponse(
+        responseCode = "409",
+        description = "Transplant conflict",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = @ExampleObject(ref = "mergeResponseFail"),
+                schema = @Schema(implementation = MergeResponse.class)))
   })
   @JsonView(Views.V2.class)
   MergeResponse transplantCommitsIntoBranch(
@@ -851,10 +855,7 @@ public interface HttpTreeApi extends TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                examples = {
-                  @ExampleObject(ref = "mergeResponseSuccess"),
-                  @ExampleObject(ref = "mergeResponseFail")
-                },
+                examples = @ExampleObject(ref = "mergeResponseSuccess"),
                 schema = @Schema(implementation = MergeResponse.class)),
         description =
             "Merge operation completed. "
@@ -866,7 +867,14 @@ public interface HttpTreeApi extends TreeApi {
         responseCode = "403",
         description = "Not allowed to view the given reference or merge commits"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-    @APIResponse(responseCode = "409", description = "update conflict")
+    @APIResponse(
+        responseCode = "409",
+        description = "Merge conflict",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = @ExampleObject(ref = "mergeResponseFail"),
+                schema = @Schema(implementation = MergeResponse.class)))
   })
   @JsonView(Views.V2.class)
   MergeResponse mergeRefIntoBranch(

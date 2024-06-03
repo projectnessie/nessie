@@ -318,7 +318,6 @@ components:
                 - example
                 - key
             mergeBehavior: "NORMAL"
-            conflictType: "NONE"
 
     mergeResponseFail:
       value:
@@ -335,7 +334,13 @@ components:
                 - example
                 - key
             mergeBehavior: "NORMAL"
-            conflictType: "UNRESOLVABLE"
+            conflict:
+              type: "KEY_EXISTS"
+              message: "key 'example.key' already exists"
+              key:
+                elements:
+                  - example
+                  - key
 
     operations:
       value:

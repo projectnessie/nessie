@@ -24,8 +24,19 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.IOException;
 import java.util.Locale;
 import javax.annotation.Nullable;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "Per Content Key conflict details",
+    properties = {
+      @SchemaProperty(name = "conflictType", description = "Conflict type (enum)."),
+      @SchemaProperty(name = "key", description = "The conflicting Content Key."),
+      @SchemaProperty(name = "message", description = "Conflict details.")
+    })
 @Value.Immutable
 @JsonSerialize(as = ImmutableConflict.class)
 @JsonDeserialize(as = ImmutableConflict.class)
