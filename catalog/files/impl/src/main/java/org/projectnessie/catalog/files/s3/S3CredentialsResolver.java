@@ -43,7 +43,9 @@ public class S3CredentialsResolver {
       Instant now = clock.instant();
       // Note: expiry instance accuracy in STS is seconds.
       Duration requiredDuration = bucketOptions.minSessionCredentialValidityPeriod();
-      Instant sessionEnd = now.plus(requiredDuration).truncatedTo(ChronoUnit.SECONDS);
+      // Remove one second from the session end to account for the truncation to seconds.
+      Instant sessionEnd =
+          now.plus(requiredDuration).truncatedTo(ChronoUnit.SECONDS).minus(1, ChronoUnit.SECONDS);
       checkArgument(
           !sessionEnd.isAfter(expirationInstant.get()),
           "Provided credentials expire (%s) before the expected session end (now: %s, duration: %s)",
