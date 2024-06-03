@@ -1162,8 +1162,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 ---
 com.azure:azure-core
 com.azure:azure-core-http-netty
+com.azure:azure-core-http-vertx
 com.azure:azure-identity
 com.azure:azure-json
+com.azure:azure-security-keyvault-secrets
 com.azure:azure-storage-blob
 com.azure:azure-storage-common
 com.azure:azure-storage-file-datalake

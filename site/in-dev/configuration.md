@@ -79,6 +79,9 @@ especially the `cache.gets` values for `hit`/`miss` and the `cause`s provided by
 Instead of providing secrets like passwords in clear text, you can also use a keystore. This
 functionality is provided [natively via Quarkus](https://quarkus.io/guides/config-secrets#store-secrets-in-a-keystore).
 
+See also the [secrets manager settings](#secrets-manager-settings) below for information about
+Hashicorp Vault, Google Cloud and Amazon Services Secrets Managers.
+
 ## Core Nessie Configuration Settings
 
 ### Core Settings
@@ -193,6 +196,8 @@ references the name of the provider, for example `quarkus` to resolve secrets vi
 [Quarkus configuration](#quarkus-configuration-incl-environment-variables). `<secret-name>` is the
 secrets manager specific name for the secret to resolve.
 
+{% include './generated-docs/smallrye-nessie_secrets.md' %}
+
 ##### Types of Secrets
 
 * **Basic credentials** are composites of a `name` attribute and a `secret` attribute.
@@ -226,6 +231,74 @@ nessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:m
 my-secrets.s3-default.name=awsAccessKeyId
 my-secrets.s3-default.secret=awsSecretAccessKey
 ```
+
+##### Storing Secrets in Hashicorp Vault
+
+In Hashicorp Vault, secrets are stored as a map of strings to strings, where the map keys
+are defined by the type of the secret as mentioned above.
+
+For example, using the `vault` tool, a _basic credential_ is stored like this:
+```shell
+vault kv put secret/nessie-secrets/... name=the_username secret=the_secret_password
+```
+and similarly for AWS S3 access keys
+```shell
+vault kv put secret/nessie-secrets/... name=access_key secret=secret_access_key
+```
+
+A _token_ is stored like this:
+```shell
+vault kv put secret/nessie-secrets/... token=value_of_the_secret_token
+```
+and if it is an _expiring_ token with the expiration timestamp as an ISO instant.
+```shell
+vault kv put secret/nessie-secrets/... token=value_of_the_token expiresAt=2024-12-24T18:00:00Z
+```
+
+A _key_ is stored like this:
+```shell
+vault kv put secret/nessie-secrets/... key=value_of_the_secret_key
+```
+
+The paths mentioned above (`secret/nessie-secrets/...`) contain the path within Hashicorp Vault.
+`secret` is the default for the `quarkus.vault.kv-secret-engine-mount-path` setting,
+`nessie-secrets` is the default for the `nessie.secrets.path` setting.
+`...` represents the (remaining) path to the secret.
+
+For object stores, the path for the default S3 _basic credentials_ is: `secret/nessie-secrets/object-stores/s3/access-key`.
+The path for a specific S3 bucket _basic credentials_ is: `secret/nessie-secrets/object-stores/s3/<bucket-name>/access-key`.
+
+
+##### Soring Secrets in Google Cloud and Amazon Services Secrets Managers and Azure Key Vault
+
+!!! warn
+    Google Secrets Manager and Azure Key Vault are both not yet supported and considered experimental!
+    The reason is that there is no good way to test those locally and in CI.
+
+In Google Cloud and Amazon Services Secrets Managers and Azure Key Vault all secrets are stored as a
+single string.
+
+Since credentials consist of multiple values, Nessie expects the stored secret to be a JSON encoded
+object.
+
+Secrets are generally stored as JSON objects representing a map of strings to strings, where the map keys
+are defined by the type of the secret as mentioned above.
+
+For example, a _basic credential_ has to be stored as JSON like this, _without any leading or trailing
+whitespaces or newlines_:
+
+```json
+{"name": "mysecret", "secret": "mypassword"}
+```
+
+A _token_ with an expiration date has to be stored as JSON like this, _without any leading or trailing
+whitespaces or newlines_, where the `expiresAt` attribute is only needed for tokens that expire:
+
+```json
+{"token": "rkljmnfgoi4jfgoiujh23o4irj", "expiresAt": "2024-06-05T20:38:16Z"}
+```
+
+A _key_ however is always stored as is and _not_ encoded in JSON.
 
 ### Version Store Settings
 
