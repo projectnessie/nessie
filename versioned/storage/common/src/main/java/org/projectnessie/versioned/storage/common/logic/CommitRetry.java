@@ -30,6 +30,7 @@ import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 public class CommitRetry {
@@ -60,6 +61,10 @@ public class CommitRetry {
           throw new RetryTimeoutException(i, tls.currentNanos() - t0);
         }
         retryState = e.retryState();
+      } catch (UnknownOperationResultException e) {
+        if (!tls.retry(t1)) {
+          throw new RetryTimeoutException(i, tls.currentNanos() - t0);
+        }
       }
     }
   }

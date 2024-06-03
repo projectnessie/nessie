@@ -715,7 +715,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
             // Non-RESTCatalog
             "Iceberg replace against db.tbl",
             // RESTCatalog
-            "Update table db.tbl");
+            "Update ICEBERG_TABLE db.tbl");
 
     assertThat(sql("SELECT * FROM nessie.db.tbl"))
         .hasSize(2)

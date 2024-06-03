@@ -57,9 +57,10 @@ version store requires AWS credentials.
 _All database authentication options must be provided as Kubernetes secrets, and these must be
 created before installing the Helm chart._
 
-#### Providing secrets for PostgreSQL
+#### Providing secrets for JDBC datastores
 
-* Make sure you have a Secret in the following form:
+* Make sure you have a Secret in the following form (assuming PostgreSQL, but the same applies to
+  other JDBC datastores):
 
 ```text
 > cat $PWD/postgres-creds
@@ -173,7 +174,7 @@ database credentials from the secret that was created previously. We can do this
 
 ```yaml
 versionStoreType: JDBC
-postgres:
+jdbc:
   jdbcUrl: jdbc:postgresql://postgres:5432/nessie
   secret:
     name: postgres-creds

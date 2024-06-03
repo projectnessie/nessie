@@ -31,7 +31,6 @@ import org.gradle.api.file.FileTree
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.resources.TextResource
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -65,6 +64,7 @@ fun ModuleDependency.withSparkExcludes(): ModuleDependency {
     .exclude("org.eclipse.jetty", "jetty-util")
     .exclude("org.apache.avro", "avro")
     .exclude("org.apache.arrow", "arrow-vector")
+    .exclude("org.apache.logging.log4j", "log4j-slf4j2-impl")
 }
 
 fun DependencyHandlerScope.forScala(scalaVersion: String) {
@@ -89,30 +89,6 @@ fun Project.forceJavaVersionForTests(requestedJavaVersion: Int) {
     if (requestedJavaVersion >= 11) {
       addSparkJvmOptions()
     }
-  }
-}
-
-fun Project.forceJavaVersionForTestTask(name: String, requestedJavaVersion: Int) {
-  tasks.named(name, Test::class.java).configure { forceJavaVersion(requestedJavaVersion) }
-}
-
-fun Test.forceJavaVersion(requestedJavaVersion: Int) {
-  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
-  if (requestedJavaVersion != currentJavaVersion) {
-    useJavaVersion(requestedJavaVersion)
-  }
-  if (requestedJavaVersion >= 11) {
-    addSparkJvmOptions()
-  }
-}
-
-fun JavaExec.forceJavaVersion(requestedJavaVersion: Int) {
-  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
-  if (requestedJavaVersion != currentJavaVersion) {
-    useJavaVersion(requestedJavaVersion)
-  }
-  if (requestedJavaVersion >= 11) {
-    addSparkJvmOptions()
   }
 }
 
@@ -146,16 +122,6 @@ fun JavaForkOptions.addSparkJvmOptions() {
 }
 
 fun Test.useJavaVersion(requestedJavaVersion: Int) {
-  val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-  logger.info("Configuring Java $requestedJavaVersion for $path test execution")
-  javaLauncher.set(
-    javaToolchains!!.launcherFor {
-      languageVersion.set(JavaLanguageVersion.of(requestedJavaVersion))
-    }
-  )
-}
-
-fun JavaExec.useJavaVersion(requestedJavaVersion: Int) {
   val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
   logger.info("Configuring Java $requestedJavaVersion for $path test execution")
   javaLauncher.set(

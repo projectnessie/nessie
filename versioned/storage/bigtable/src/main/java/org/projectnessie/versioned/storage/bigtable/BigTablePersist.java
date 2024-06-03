@@ -39,7 +39,11 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.Batcher;
+import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.ApiException;
+import com.google.api.gax.rpc.DeadlineExceededException;
+import com.google.api.gax.rpc.UnknownException;
+import com.google.api.gax.rpc.WatchdogTimeoutException;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Filters.Filter;
@@ -72,6 +76,7 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -97,6 +102,12 @@ public class BigTablePersist implements Persist {
   }
 
   static RuntimeException apiException(ApiException e) {
+    if (e instanceof DeadlineExceededException
+        || e instanceof WatchdogTimeoutException
+        || e instanceof UnknownException
+        || e instanceof AbortedException) {
+      throw new UnknownOperationResultException("Unhandled BigTable exception", e);
+    }
     throw new RuntimeException("Unhandled BigTable exception", e);
   }
 

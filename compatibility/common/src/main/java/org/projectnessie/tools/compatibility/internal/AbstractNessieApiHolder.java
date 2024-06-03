@@ -124,6 +124,10 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
       Class<?> nessieClientBuilderClass =
           classLoader.loadClass("org.projectnessie.client.NessieClientBuilder");
       String builderClass = clientKey.getBuilderClass();
+      if (NessieAPI.DEFAULT_BUILDER_CLASS_NAME.equals(builderClass)) {
+        builderClass = null;
+      }
+
       try {
         // New functionality using NessieClientBuilder and the service loader mechanism.
         Method createClientBuilderMethod =
@@ -131,6 +135,11 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
                 "createClientBuilder", String.class, String.class);
         builderInstance = createClientBuilderMethod.invoke(null, null, builderClass);
       } catch (NoSuchMethodException ignore) {
+        if (builderClass == null) {
+          // Fall back to legacy (and now removed) HttpClientBuilder. See
+          // https://github.com/projectnessie/nessie/pull/7803
+          builderClass = "org.projectnessie.client.http.HttpClientBuilder";
+        }
         Class<?> builderClazz = classLoader.loadClass(builderClass);
         builderInstance = builderClazz.getMethod("builder").invoke(null);
       }

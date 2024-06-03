@@ -22,12 +22,17 @@ plugins {
 
 extra["maven.name"] = "Nessie - GC - Integration tests"
 
-val sparkScala = useSparkScalaVersionsForProject("3.4", "2.12")
+val sparkScala = useSparkScalaVersionsForProject("3.5", "2.12")
 
 dependencies {
   implementation(libs.hadoop.client)
 
   implementation(platform(libs.iceberg.bom))
+
+  // Enforce a single version of Netty among dependencies
+  // (Spark, Hadoop and Azure)
+  implementation(enforcedPlatform(libs.netty.bom))
+
   implementation("org.apache.iceberg:iceberg-core")
   implementation("org.apache.iceberg:iceberg-aws")
   implementation("org.apache.iceberg:iceberg-gcp")

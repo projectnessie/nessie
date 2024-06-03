@@ -17,7 +17,7 @@
 version: '3'
 services:
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest@sha256:d985754717735751a772c3435e29f0045e2bb008acbac5c7b4adc7a8d36cbd34
+    image: ghcr.io/projectnessie/nessie:latest
     ports:
       - 19120:19120
     environment:

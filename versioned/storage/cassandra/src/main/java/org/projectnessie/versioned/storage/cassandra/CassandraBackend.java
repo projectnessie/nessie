@@ -45,8 +45,10 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.S
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_REFS;
 
+import com.datastax.oss.driver.api.core.AllNodesFailedException;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DriverException;
+import com.datastax.oss.driver.api.core.DriverTimeoutException;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
@@ -58,7 +60,7 @@ import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.datastax.oss.driver.api.core.servererrors.CASWriteUnknownException;
+import com.datastax.oss.driver.api.core.servererrors.QueryConsistencyException;
 import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -80,6 +82,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
+import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.slf4j.Logger;
@@ -321,40 +324,43 @@ public final class CassandraBackend implements Backend {
 
   boolean executeCas(BoundStatement stmt) {
     try {
-      ResultSet rs = execute(stmt);
+      ResultSet rs = session.execute(stmt);
       return rs.wasApplied();
     } catch (DriverException e) {
-      handleDriverException(e);
-      return false;
+      throw unhandledException(e);
     }
   }
 
   ResultSet execute(BoundStatement stmt) {
-    return session.execute(stmt);
+    try {
+      return session.execute(stmt);
+    } catch (DriverException e) {
+      throw unhandledException(e);
+    }
   }
 
   CompletionStage<AsyncResultSet> executeAsync(BoundStatement stmt) {
     return session.executeAsync(stmt);
   }
 
-  void handleDriverException(DriverException e) {
-    if (e instanceof CASWriteUnknownException) {
-      logCASWriteUnknown((CASWriteUnknownException) e);
-    } else {
-      throw e;
+  static RuntimeException unhandledException(DriverException e) {
+    if (isUnknownOperationResult(e)) {
+      return new UnknownOperationResultException(e);
+    } else if (e instanceof AllNodesFailedException) {
+      AllNodesFailedException all = (AllNodesFailedException) e;
+      if (all.getAllErrors().values().stream()
+          .flatMap(List::stream)
+          .filter(DriverException.class::isInstance)
+          .map(DriverException.class::cast)
+          .anyMatch(CassandraBackend::isUnknownOperationResult)) {
+        return new UnknownOperationResultException(e);
+      }
     }
+    return e;
   }
 
-  @SuppressWarnings("Slf4jDoNotLogMessageOfExceptionExplicitly")
-  private static void logCASWriteUnknown(CASWriteUnknownException e) {
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Assuming CAS failed due to CASWriteUnknownException with message'{}', coordinator: {}, errors: {}, warnings: {}",
-          e.getMessage(),
-          e.getExecutionInfo().getCoordinator(),
-          e.getExecutionInfo().getErrors(),
-          e.getExecutionInfo().getWarnings());
-    }
+  private static boolean isUnknownOperationResult(DriverException e) {
+    return e instanceof QueryConsistencyException || e instanceof DriverTimeoutException;
   }
 
   @Override

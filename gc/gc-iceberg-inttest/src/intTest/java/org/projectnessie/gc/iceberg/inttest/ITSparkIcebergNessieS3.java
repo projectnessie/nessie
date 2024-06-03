@@ -42,6 +42,11 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
   @Minio static MinioAccess minio;
 
   @Override
+  Storage storage() {
+    return Storage.S3;
+  }
+
+  @Override
   protected String warehouseURI() {
     return minio.s3BucketUri(S3_BUCKET_URI).toString();
   }

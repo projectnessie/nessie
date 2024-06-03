@@ -208,6 +208,7 @@ class TestNessieCompatibilityExtensions {
     soft.assertThat(UpgradeSample.never).isEmpty();
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieClientsExtension.class, SoftAssertionsExtension.class})
   @SuppressWarnings({
     "JUnitMalformedDeclaration",
@@ -257,6 +258,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
   @SuppressWarnings({
     "JUnitMalformedDeclaration",
@@ -311,6 +313,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
   @SuppressWarnings({
     "JUnitMalformedDeclaration",
@@ -329,7 +332,7 @@ class TestNessieCompatibilityExtensions {
     static final List<Version> allVersions = new ArrayList<>();
 
     @Test
-    void testSome() throws Exception {
+    void testSome() {
       soft.assertThat(api).isNotNull().isSameAs(apiStatic);
       soft.assertThat(uri).isNotNull().isEqualTo(uriStatic);
       soft.assertThat(version).isNotNull().isEqualTo(versionStatic);
@@ -341,6 +344,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieServersExtension.class)
   @SuppressWarnings({
     "JUnitMalformedDeclaration",
@@ -368,6 +372,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({NessieUpgradesExtension.class, SoftAssertionsExtension.class})
   @SuppressWarnings({
     "JUnitMalformedDeclaration",
@@ -417,6 +422,7 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   @SuppressWarnings({
@@ -428,6 +434,7 @@ class TestNessieCompatibilityExtensions {
     void testSome() {}
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
   @SuppressWarnings({
@@ -439,6 +446,7 @@ class TestNessieCompatibilityExtensions {
     void testSome() {}
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(NessieUpgradesExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   @SuppressWarnings({
@@ -450,6 +458,7 @@ class TestNessieCompatibilityExtensions {
     void testSome() {}
   }
 
+  @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)

@@ -19,21 +19,6 @@ import java.sql.SQLException;
 import java.util.Map;
 
 public interface DatabaseSpecific {
-  /** H2 integrity constraint violation. */
-  int CONSTRAINT_VIOLATION_SQL_CODE = 23505;
-
-  /** Deadlock error, returned by Postgres. */
-  String DEADLOCK_SQL_STATE_POSTGRES = "40P01";
-
-  /**
-   * Cockroach "retry, write too old" error, see <a
-   * href="https://www.cockroachlabs.com/docs/v21.1/transaction-retry-error-reference.html#retry_write_too_old">Cockroach's
-   * Transaction Retry Error Reference</a>, and Postgres may return a "deadlock" error.
-   */
-  String RETRY_SQL_STATE_COCKROACH = "40001";
-
-  /** Postgres &amp; Cockroach integrity constraint violation. */
-  String CONSTRAINT_VIOLATION_SQL_STATE = "23505";
 
   Map<JdbcColumnType, String> columnTypes();
 

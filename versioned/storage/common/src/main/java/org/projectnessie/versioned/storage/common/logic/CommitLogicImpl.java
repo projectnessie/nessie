@@ -34,7 +34,6 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.Co
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.PAYLOAD_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.commitConflict;
-import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -274,21 +273,20 @@ final class CommitLogicImpl implements CommitLogic {
   public CommitObj doCommit(
       @Nonnull CreateCommit createCommit, @Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException {
-    CommitObj commit =
-        buildCommitObj(
-            createCommit, c -> CONFLICT, (k, v) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
-    return storeCommit(commit, additionalObjects) ? commit : null;
+    CommitObj commit = buildCommitObj(createCommit);
+    return storeCommit(commit, additionalObjects);
   }
 
+  @Nullable
   @Override
-  public boolean storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects) {
+  public CommitObj storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects) {
     int numAdditional = additionalObjects.size();
     try {
       Obj[] allObjs = additionalObjects.toArray(new Obj[numAdditional + 1]);
       allObjs[numAdditional] = commit;
 
       boolean[] stored = persist.storeObjs(allObjs);
-      return stored[numAdditional];
+      return mitigateHashCollision(stored[numAdditional], commit);
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
       // the reference index.
@@ -302,11 +300,35 @@ final class CommitLogicImpl implements CommitLogic {
       commit = indexTooBigStoreUpdate(commit);
 
       try {
-        return persist.storeObj(commit, true);
+        return mitigateHashCollision(persist.storeObj(commit, true), commit);
       } catch (ObjTooLargeException ex) {
         // Hit the "Hard database object size limit"
         throw new RuntimeException(ex);
       }
+    }
+  }
+
+  /**
+   * Called from the above {@link #storeCommit(CommitObj, List)}, handles the case when it could not
+   * persist the {@link CommitObj} (duplicate object-id). Checks whether the persisted object is
+   * actually the object that's expected to be persisted - and yields "OK" in that case. This
+   * mitigates the risk of false-positive hash-collision errors in case the backend database runs
+   * into timeout situations with an undefined outcome.
+   */
+  private CommitObj mitigateHashCollision(boolean storeResult, CommitObj commit) {
+    if (storeResult) {
+      return commit;
+    }
+
+    // Check whether the existing object is the same commit (w/o considering the internal "created"
+    // timestamp of the commit-obj).
+    try {
+      CommitObj existing = persist.fetchTypedObj(commit.id(), COMMIT, CommitObj.class);
+      CommitObj commitWithNewCreatedTimestamp =
+          CommitObj.commitBuilder().from(commit).created(existing.created()).build();
+      return commitWithNewCreatedTimestamp.equals(existing) ? existing : null;
+    } catch (ObjNotFoundException e) {
+      return null;
     }
   }
 

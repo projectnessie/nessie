@@ -76,6 +76,10 @@ dependencies {
   testFixturesRuntimeOnly("com.google.cloud:google-cloud-storage")
   testFixturesRuntimeOnly(libs.google.cloud.nio)
 
+  testFixturesApi(platform(libs.azuresdk.bom))
+  testFixturesApi("com.azure:azure-storage-file-datalake")
+  testFixturesRuntimeOnly("com.azure:azure-identity")
+
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 }

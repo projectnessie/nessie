@@ -40,9 +40,19 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-quarkus-{{ versions.nessie }}-runner.jar \
+curl -L -o nessie-quarkus-{{ versions.nessie }}-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-quarkus-{{ versions.nessie }}-runner.jar
 java -jar nessie-quarkus-{{ versions.nessie }}-runner.jar
+```
+
+## Nessie CLI as a standalone uber jar
+
+Requires Java 11 or newer.
+
+```bash
+curl -L -o nessie-cli-{{ versions.nessie }}.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-cli-{{ versions.nessie }}.jar
+java -jar nessie-cli-{{ versions.nessie }}.jar
 ```
 
 ## Nessie GC Tool as Docker image
@@ -67,9 +77,9 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 11, Java 17 recommended.
 
 ```bash
-curl -o https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-gc-{{ versions.nessie }} \
-  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-gc-{{ versions.nessie }}
-java -jar https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-gc-{{ versions.nessie }}
+curl -L -o nessie-gc-{{ versions.nessie }}.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-gc-{{ versions.nessie }}.jar
+java -jar nessie-gc-{{ versions.nessie }}.jar
 ```
 
 ## Nessie Repository Management tool as a standalone uber jar
@@ -77,9 +87,9 @@ java -jar https://github.com/projectnessie/nessie/releases/download/nessie-{{ ve
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-quarkus-cli-{{ versions.nessie }}-runner.jar \
-  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-quarkus-cli-{{ versions.nessie }}-runner.jar
-java -jar nessie-quarkus-cli-{{ versions.nessie }}-runner.jar
+curl -L -o nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
+java -jar nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
 ```
 
 ## Nessie REST API 

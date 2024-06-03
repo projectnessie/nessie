@@ -103,6 +103,7 @@ public class UriBuilder {
           if (pathElement.length() > 0) {
             uriBuilder.append(encode(pathElement.toString()));
             pathElement.setLength(0);
+            uriBuilder.append('/');
           }
           if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
             uriBuilder.append('/');

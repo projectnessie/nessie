@@ -54,6 +54,32 @@ Related Quarkus settings:
 !!! info
     A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
 
+### Catalog and Iceberg REST Settings
+
+{% include './generated-docs/smallrye-nessie_catalog.md' %}
+
+#### S3 settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_s3.md' %}
+
+#### Google Cloud Storage settings
+
+!!! note
+    Support for GCS is experimental.
+
+{% include './generated-docs/smallrye-nessie_catalog_service_gcs.md' %}
+
+#### ADLS settings
+
+!!! note
+    Support for ADLS is experimental.
+
+{% include './generated-docs/smallrye-nessie_catalog_service_adls.md' %}
+
+#### Advanced catalog settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service.md' %}
+
 ### Version Store Settings
 
 {% include './generated-docs/smallrye-nessie_version_store.md' %}
@@ -68,6 +94,8 @@ Related Quarkus settings:
 | MongoDB          | production                                       | `MONGODB`                                               |                                                                                                                                                                                                                                 |
 | Amazon DynamoDB  | beta, only tested against the simulator          | `DYNAMODB`                                              |                                                                                                                                                                                                                                 |
 | PostgreSQL       | production                                       | `JDBC`                                                  |                                                                                                                                                                                                                                 |
+| MariaDB          | experimental, feedback welcome                   | `JDBC`                                                  |                                                                                                                                                                                                                                 |
+| MySQL            | experimental, feedback welcome                   | `JDBC`                                                  | Works by connecting the MariaDB driver to a MySQL server.                                                                                                                                                                       |
 | CockroachDB      | experimental, known issues                       | `JDBC`                                                  | Known to raise user-facing "write too old" errors under contention.                                                                                                                                                             |
 | Apache Cassandra | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                     |
 | ScyllaDB         | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. |

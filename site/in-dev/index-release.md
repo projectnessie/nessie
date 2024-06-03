@@ -42,7 +42,7 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-quarkus-::NESSIE_VERSION::-runner.jar \
+curl -L -o nessie-quarkus-::NESSIE_VERSION::-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-quarkus-::NESSIE_VERSION::-runner.jar
 java -jar nessie-quarkus-::NESSIE_VERSION::-runner.jar
 ```
@@ -52,9 +52,9 @@ java -jar nessie-quarkus-::NESSIE_VERSION::-runner.jar
 Requires Java 11 or newer.
 
 ```bash
-curl -o nessie-cli-::NESSIE_VERSION::-runner.jar \
-  https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-cli-::NESSIE_VERSION::-runner.jar
-java -jar nessie-cli-::NESSIE_VERSION::-runner.jar
+curl -L -o nessie-cli-::NESSIE_VERSION::.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-cli-::NESSIE_VERSION::.jar
+java -jar nessie-cli-::NESSIE_VERSION::.jar
 ```
 
 ## Nessie GC Tool as Docker image
@@ -79,9 +79,9 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 Requires Java 11, Java 17 recommended.
 
 ```bash
-curl -o https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION:: \
-  https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION::
-java -jar https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION::
+curl -L -o nessie-gc-::NESSIE_VERSION::.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION::.jar
+java -jar nessie-gc-::NESSIE_VERSION::.jar
 ```
 
 ### Nessie Repository Management tool as a standalone uber jar
@@ -89,7 +89,7 @@ java -jar https://github.com/projectnessie/nessie/releases/download/nessie-::NES
 Requires Java 17 or newer.
 
 ```bash
-curl -o nessie-server-admin-tool-::NESSIE_VERSION::-runner.jar \
+curl -L -o nessie-server-admin-tool-::NESSIE_VERSION::-runner.jar \
   https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-server-admin-tool-::NESSIE_VERSION::-runner.jar
 java -jar nessie-server-admin-tool-::NESSIE_VERSION::-runner.jar
 ```

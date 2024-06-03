@@ -8,11 +8,64 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Nessie has got support for Iceberg REST.
+- MySQL users can now configure the JDBC connection using the `quarkus.datasource.mysql.*`
+  properties. Also, JDBC URLs can now use the `mysql` prefix, e.g.
+  `jdbc:mysql://example.com:3306/my_db`.
+
+### Upgrade notes
+
+### Breaking changes
+
+### New Features
+
+- Support for Iceberg REST is in "beta" state. We appreciate early feedback, comments and suggestions.
+  Take a look at the [Guides](http://projectnessie.org/guides/) and [Docs](http://projectnessie.org/docs/)
+  on our web site projectnessie.org for more information.
+
+### Changes
+
+### Deprecations
+
+- Support for Java 8 is officially deprecated and users are encouraged to upgrade all clients to
+  at least Java 11, better Java 17 or 21, if possible. Current Spark versions 3.3, 3.4 and 3.5 
+  work with Java 11 and 17. Support for Java 8 will eventually be removed.
+
+### Fixes
+
+### Commits
+
+## [0.83.2] Release (2024-05-23)
+
+(Note: the 0.83.1 and 0.83.0 versions failed to fully release all artifacts for technical reasons.)
+
+### Highlights
+
 - New Nessie CLI tool + REPL, replacing the old Python based CLI, based on Java.
   SQL-ish syntax, built-in online `HELP` command, auto-completion of commands, keywords
   and reference names, syntax highlighting, paging of long results, command history.
+- Nessie now includes built-in support for MariaDB, with full compatibility with MySQL servers. New
+  users wishing to try MariaDB (or MySQL) should:
+  1. Specify the new configuration property: `nessie.version.store.persist.jdbc.datasource=mariadb`;
+  2. Provide all the MariaDB (or MySQL) connection details using `quarkus.datasource.mariadb.*`
+     configuration properties.
+- The Nessie GC tool is now also compatible with MariaDB and MySQL (using the MariaDB connector).
+- The Nessie Server Admin tool is now also compatible with MariaDB and MySQL (using the MariaDB
+  connector).
 
 ### Upgrade notes
+
+- Due to the newly-introduced support for MariaDB, existing PostgreSQL users can continue to use
+  their current JDBC configuration, but are encouraged to update it as follows:
+  1. Specify the new configuration property: 
+     `nessie.version.store.persist.jdbc.datasource=postgresql`;
+  2. Migrate any property under `quarkus.datasource.*` to `quarkus.datasource.postgresql.*`. Support
+     for the old `quarkus.datasource.*` properties will be removed in a future release.
+- For the same reason, the Nessie Helm chart has been updated. The old `postgres` section is now
+  called `jdbc`. Existing Helm chart configurations should be updated accordingly, e.g.
+  `postgres.jdbcUrl` now becomes `jdbc.jdbcUrl`. Although the old `postgres` section is still
+  honored, it won't be supported in future releases. The right datasource will be chosen based on
+  the `jdbcUrl` contents.
 
 ### Breaking changes
 
@@ -22,14 +75,6 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - More verbose exceptions from Nessie GC.
-
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
 
 ## [0.82.0] Release (2024-05-06)
 
@@ -432,7 +477,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...HEAD
+[0.83.2]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.2
 [0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
 [0.81.1]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...nessie-0.81.1
 [0.81.0]: https://github.com/projectnessie/nessie/compare/nessie-0.80.0...nessie-0.81.0

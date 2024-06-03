@@ -1,6 +1,19 @@
-# Docker
+# Podman/Docker compose
 
 You can quickly get started with Nessie variants by following docker templates.
+
+When you use podman, make sure that:
+* you have `podman-compose` installed (on Ubuntu: `pip3 install podman-compose` as `root`).
+* your network-backend is configured to use `netavark`, check `podman info | grep network`.
+  This is needed to let podman-compose configure DNS entries in the pods.
+* Settings for `/etc/containers/containers.conf`:
+  ```
+  [engine]
+  compose_providers=[ "podman-compose" ]
+  [network]
+  network_backend = "netavark"
+  ```
+  _Might_ need to run `podman system reset --force` when changing the network backend. 
 
 ## Nessie with MongoDB
 The template brings up two containers, one for Nessie and one for MongoDB. Nessie uses MongoDB as a backing store.

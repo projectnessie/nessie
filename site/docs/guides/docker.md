@@ -68,26 +68,11 @@ If you need to configure Nessie, you can do so by passing in environment variabl
 can change the port Nessie listens on by passing in the `QUARKUS_HTTP_PORT` environment variable:
 
 ```bash
-docker run -p 19120:19120 -e QUARKUS_HTTP_PORT=8080 ghcr.io/projectnessie/nessie
+docker run -p 19120:19120 ghcr.io/projectnessie/nessie
 ```
 
 Check all the available configuration options in the 
 [configuration reference](../nessie-latest/configuration.md).
-
-Once the docker image is up and running, you can install the [Nessie cli](../nessie-latest/cli.md).
-
-```bash
-pip install pynessie
-```
-
-You're now ready to start using Nessie. To create a new branch, you can do
-the following:
-
-```bash
-# create a branch pointing to the same hash as
-# the current default branch (typically the main branch)
-nessie branch my_branch
-```
 
 From there, you can use one of the three main Nessie integrations of:
 
@@ -95,3 +80,10 @@ From there, you can use one of the three main Nessie integrations of:
 * NessieCatalog for [Spark via Iceberg](../iceberg/spark.md) integration
 * Try [Nessie on Kubernetes](./kubernetes.md), on your cloud provider or 
   [on your laptop](minikube.md)
+
+You can also install the [Nessie CLI/REPL](../nessie-latest/cli.md).
+
+```bash
+curl -L -o nessie-cli-{{ versions.nessie }}-runner.jar \
+  https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-cli-{{ versions.nessie }}-runner.jar
+```

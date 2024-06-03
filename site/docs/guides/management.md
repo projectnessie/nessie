@@ -16,8 +16,9 @@ are described below.
 Nessie GC is composed of multiple phases:
 1. **Identify** (or "mark") phase: Inspects the Nessie repository to identify all commits and
    content version (in Iceberg terms: a table's snapshot). These so-called "content references" are
-   stored as a live-content-set, ideally in a separate database (H2 or Postgres-compatible).
-   This phase requires access to the Nessie repository, but does not require access to the data lake.
+   stored as a live-content-set, ideally in a separate database (see below for compatible 
+   databases). This phase requires access to the Nessie repository, but does not require access to 
+   the data lake.
 2. **Expire** ("sweep") phase: Uses the actual table format (e.g. Iceberg) to map the content
    references from a live-content-set to a set of file-references, which are then matched against
    a recursive listing of all files for the respective tables. Files that are not contained in the
@@ -30,7 +31,7 @@ All relevant operations required for Nessie GC can be run via the `nessie-gc.jar
 downloaded from the [release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
 !!! info
-    Currently the GC algorithm only works for Iceberg tables and a H2 or Postgres database is
+    Currently the GC algorithm only works for Iceberg tables. A supported JDBC database is 
     recommended as the storage for the live-content-sets.
 
 !!! info
@@ -50,13 +51,17 @@ a data lake using Iceberg.
 
 ### Setting up the database for Nessie GC
 
+!!! note
+    The Nessie GC tool is compatible with the following databases: PostgreSQL (production-ready),
+    MariaDB and MySQL (experimental at the moment).
+
 You can create the tables in two ways:
 
 Manually: use the DDL statements emitted by `java -jar nessie-gc.jar show-sql-create-schema-script`
 as a template that can be enriched with database specific optimizations.
 
 Or alternatively, let the Nessie GC tool create the schema in your existing database, for example
-like this:
+like this for PostgreSQL:
 
 ```bash
 java -jar nessie-gc.jar create-sql-schema \
@@ -250,9 +255,8 @@ changed using the `--expiry-parallelism` command line option.
 
 ### Recommended production setup for Nessie GC
 
-It is highly recommended to use a Postgres or compatible or H2 database to persist the
-live-content-sets. Running the different Nessie GC phases separately is only supported with such a
-database.
+It is highly recommended to use one of the supported databases to persist the live-content-sets.
+Running the different Nessie GC phases separately is only supported with such a database.
 
 Make yourself familiar with all the commands offered by `nessie-gc.jar` and the available command
 line options. It is safe to run `java -jar nessie-gc.jar mark-live`, because it is non-destructive.

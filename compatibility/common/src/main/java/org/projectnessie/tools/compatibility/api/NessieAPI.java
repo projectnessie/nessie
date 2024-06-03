@@ -34,7 +34,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface NessieAPI {
-  String builderClassName() default "org.projectnessie.client.http.HttpClientBuilder";
+  String DEFAULT_BUILDER_CLASS_NAME = "_DEFAULT_BUILDER_CLASS_NAME_";
+
+  String builderClassName() default DEFAULT_BUILDER_CLASS_NAME;
 
   /**
    * Defines the target Nessie version instance in case multiple Nessie versions are running, for

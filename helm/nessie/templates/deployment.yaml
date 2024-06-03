@@ -139,20 +139,39 @@ spec:
             {{- end }}
 
             {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
-            - name: QUARKUS_DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgres.secret.name }}
-                  key: {{ .Values.postgres.secret.username }}
-            - name: QUARKUS_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgres.secret.name }}
-                  key: {{ .Values.postgres.secret.password }}
-            - name: QUARKUS_DATASOURCE_JDBC_URL
-              value: {{ .Values.postgres.jdbcUrl }}
+            {{- $oldConfig := .Values.postgres | default dict }}
+            {{- $newConfig := .Values.jdbc | default dict }}
+            {{- $jdbcUrl := coalesce $oldConfig.jdbcUrl $newConfig.jdbcUrl }}
+            {{- $oldSecret := $oldConfig.secret | default dict }}
+            {{- $newSecret := $newConfig.secret | default dict }}
+            {{- $secretName := coalesce $oldSecret.name $newSecret.name }}
+            {{- $secretUsername := coalesce $oldSecret.username $newSecret.username }}
+            {{- $secretPassword := coalesce $oldSecret.password $newSecret.password }}
+            {{- $dbKind := include "nessie.dbKind" $jdbcUrl }}
+            {{- $dataSourceConfigPrefix := include "nessie.datasourceConfigPrefix" $dbKind }}
+            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_DATASOURCE
+              value: {{ $dbKind }}
+            {{- if .Values.jdbc.catalog }}
+            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_CATALOG
+              value: {{ .Values.jdbc.catalog }}
             {{- end }}
-
+            {{- if .Values.jdbc.schema }}
+            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_SCHEMA
+              value: {{ .Values.jdbc.schema }}
+            {{- end }}
+            - name: {{ $dataSourceConfigPrefix }}USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $secretUsername }}
+            - name: {{ $dataSourceConfigPrefix }}PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $secretPassword }}
+            - name: {{ $dataSourceConfigPrefix }}JDBC_URL
+              value: {{ $jdbcUrl }}
+            {{- end }}
             {{- if eq .Values.versionStoreType "BIGTABLE" }}
             - name: QUARKUS_GOOGLE_CLOUD_PROJECT_ID
               value: {{ .Values.bigtable.projectId }}

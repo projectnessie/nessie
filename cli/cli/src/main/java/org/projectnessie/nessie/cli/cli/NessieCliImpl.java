@@ -31,6 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
+import org.apache.iceberg.exceptions.ServiceFailureException;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -161,8 +163,8 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   }
 
   @Override
-  public void connected(NessieApiV2 nessieApi) {
-    super.connected(nessieApi);
+  public void connected(NessieApiV2 nessieApi, RESTCatalog icebergClient) {
+    super.connected(nessieApi, icebergClient);
     updatePrompt();
   }
 
@@ -453,6 +455,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
 
     errMsg.append("\n\n");
     if (!(e instanceof HttpClientException)
+        && !(e instanceof ServiceFailureException)
         && !(e instanceof BaseNessieClientServerException)
         && !(e instanceof NessieServiceException)
         && !(e instanceof IllegalArgumentException)) {

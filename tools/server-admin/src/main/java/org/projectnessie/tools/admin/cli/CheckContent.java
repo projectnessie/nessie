@@ -103,12 +103,11 @@ public class CheckContent extends BaseCommand {
   private final AtomicInteger keysProcessed = new AtomicInteger();
   private final AtomicInteger errorDetected = new AtomicInteger();
 
-  private Ops ops;
   private JsonGenerator generator;
+  private StoreIndex<CommitOp> index;
 
   @Override
   public Integer call() throws Exception {
-    ops = new PersistOps();
     return check();
   }
 
@@ -152,7 +151,7 @@ public class CheckContent extends BaseCommand {
     if (keyElements != null && !keyElements.isEmpty()) {
       check(hash, List.of(ContentKey.of(keyElements)));
     } else {
-      ops.iterateKeys(hash);
+      iterateKeys(hash);
     }
 
     generator.writeEndArray();
@@ -169,13 +168,13 @@ public class CheckContent extends BaseCommand {
       effectiveRef = serverConfig.getDefaultBranch();
     }
 
-    return ops.resolveRefHead(effectiveRef);
+    return resolveRefHead(effectiveRef);
   }
 
   private void check(Hash hash, List<ContentKey> keys) {
     Map<ContentKey, Content> values;
     try {
-      values = ops.fetchValues(hash, keys);
+      values = fetchValues(hash, keys);
     } catch (Exception e) {
       keys.forEach(k -> report(k, e, null));
       return;
@@ -244,66 +243,48 @@ public class CheckContent extends BaseCommand {
     }
   }
 
-  interface Ops {
-
-    Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException;
-
-    void iterateKeys(Hash hash) throws ReferenceNotFoundException;
-
-    Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
-        throws ReferenceNotFoundException;
+  private Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
+    return objIdToHash(new RefMapping(persist).resolveNamedRef(effectiveRef).pointer());
   }
 
-  class PersistOps implements Ops {
-
-    private StoreIndex<CommitOp> index;
-
-    @Override
-    public Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
-      return objIdToHash(new RefMapping(persist).resolveNamedRef(effectiveRef).pointer());
-    }
-
-    @Override
-    public void iterateKeys(Hash hash) throws ReferenceNotFoundException {
-      List<ContentKey> batch = new ArrayList<>(batchSize);
-      index(hash)
-          .iterator(null, null, true)
-          .forEachRemaining(
-              indexElement -> {
-                if (indexElement.content().action().exists()) {
-                  ContentKey key = storeKeyToKey(indexElement.key());
-                  batch.add(key);
-                  if (batch.size() >= batchSize) {
-                    check(hash, batch);
-                    batch.clear();
-                  }
+  private void iterateKeys(Hash hash) throws ReferenceNotFoundException {
+    List<ContentKey> batch = new ArrayList<>(batchSize);
+    index(hash)
+        .iterator(null, null, true)
+        .forEachRemaining(
+            indexElement -> {
+              if (indexElement.content().action().exists()) {
+                ContentKey key = storeKeyToKey(indexElement.key());
+                batch.add(key);
+                if (batch.size() >= batchSize) {
+                  check(hash, batch);
+                  batch.clear();
                 }
-              });
-      check(hash, batch); // check remaining keys
-    }
+              }
+            });
+    check(hash, batch); // check remaining keys
+  }
 
-    @Override
-    public Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
-        throws ReferenceNotFoundException {
-      StoreIndex<CommitOp> index = index(hash);
-      ContentMapping contentMapping = new ContentMapping(persist);
+  private Map<ContentKey, Content> fetchValues(Hash hash, List<ContentKey> keys)
+      throws ReferenceNotFoundException {
+    StoreIndex<CommitOp> index = index(hash);
+    ContentMapping contentMapping = new ContentMapping(persist);
+    try {
+      return contentMapping.fetchContents(index, keys);
+    } catch (ObjNotFoundException e) {
+      throw objectNotFound(e);
+    }
+  }
+
+  private StoreIndex<CommitOp> index(Hash hash) throws ReferenceNotFoundException {
+    if (index == null) {
       try {
-        return contentMapping.fetchContents(index, keys);
+        CommitObj c = commitLogic(persist).fetchCommit(hashToObjId(hash));
+        index = indexesLogic(persist).buildCompleteIndexOrEmpty(c);
       } catch (ObjNotFoundException e) {
-        throw objectNotFound(e);
+        throw hashNotFound(hash);
       }
     }
-
-    private StoreIndex<CommitOp> index(Hash hash) throws ReferenceNotFoundException {
-      if (index == null) {
-        try {
-          CommitObj c = commitLogic(persist).fetchCommit(hashToObjId(hash));
-          index = indexesLogic(persist).buildCompleteIndexOrEmpty(c);
-        } catch (ObjNotFoundException e) {
-          throw hashNotFound(hash);
-        }
-      }
-      return index;
-    }
+    return index;
   }
 }

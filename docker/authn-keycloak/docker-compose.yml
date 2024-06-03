@@ -1,0 +1,66 @@
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# To request an access token, use the following command:
+# token=$(curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client1:s3cr3t -d 'grant_type=client_credentials' -d 'scope=profile' | jq -r .access_token)
+
+# Then use the access token in the Authorization header:
+# curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
+
+version: '3'
+services:
+
+  nessie:
+    image: ghcr.io/projectnessie/nessie:latest
+    ports:
+      - "19120:19120"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      NESSIE_VERSION_STORE_TYPE: IN_MEMORY
+      NESSIE_SERVER_AUTHENTICATION_ENABLED: true
+      QUARKUS_OIDC_ENABLED: true
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/iceberg
+      QUARKUS_OIDC_CLIENT_ID: client1
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./config/iceberg-realm.json:/opt/keycloak/data/import/iceberg-realm.json
+    command: [
+      "start-dev",
+      "--features=token-exchange",
+      "--hostname-admin-url=http://127.0.0.1:8080/",
+      "--hostname-url=http://127.0.0.1:8080/",
+      "--import-realm",
+      "--health-enabled=true"
+    ]
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15

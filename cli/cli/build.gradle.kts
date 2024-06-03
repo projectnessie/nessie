@@ -28,6 +28,10 @@ extra["maven.name"] = "Nessie - CLI"
 
 configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
 
+val versionIceberg = libs.versions.iceberg.get()
+
+val nessieQuarkusServer by configurations.creating
+
 dependencies {
   implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-client"))
@@ -36,6 +40,10 @@ dependencies {
 
   implementation(libs.jline)
   implementation(libs.picocli)
+
+  implementation(platform("org.apache.iceberg:iceberg-bom:$versionIceberg"))
+  implementation("org.apache.iceberg:iceberg-core")
+  runtimeOnly(libs.hadoop.common) { isTransitive = false }
 
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
@@ -56,12 +64,33 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+  testFixturesImplementation(project(":nessie-client"))
+  testFixturesImplementation(project(":nessie-cli-grammar"))
+  testFixturesImplementation(libs.jline)
 
   testImplementation(project(":nessie-jaxrs-testextension"))
 
   testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
 
   testCompileOnly(libs.immutables.value.annotations)
+
+  intTestImplementation(project(":nessie-object-storage-mock"))
+  intTestImplementation(project(":nessie-catalog-format-iceberg"))
+  intTestImplementation(project(":nessie-catalog-format-iceberg-fixturegen"))
+  intTestImplementation(project(":nessie-catalog-files-api"))
+  intTestImplementation(project(":nessie-catalog-files-impl"))
+  intTestImplementation(libs.nessie.runner.common)
+  intTestImplementation(platform(libs.awssdk.bom))
+  intTestImplementation("software.amazon.awssdk:s3")
+  intTestImplementation("software.amazon.awssdk:apache-client") {
+    exclude("commons-logging", "commons-logging")
+  }
+  intTestImplementation(platform(libs.testcontainers.bom))
+  intTestImplementation("org.testcontainers:testcontainers")
+  intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestImplementation(project(":nessie-container-spec-helper"))
+
+  nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
 
 tasks.withType<ProcessResources>().configureEach {
@@ -80,4 +109,17 @@ if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest").configure { this.enabled = false }
+}
+
+tasks.named<Test>("intTest").configure {
+  // Spark keeps a lot of stuff around in the JVM, breaking tests against different Iceberg
+  // catalogs, so give every test class its own JVM
+  forkEvery = 1
+  inputs.files(nessieQuarkusServer)
+  val execJarProvider =
+    configurations.named("nessieQuarkusServer").map { c ->
+      val file = c.fileCollection(*c.dependencies.toTypedArray()).files.first()
+      listOf("-Dnessie.exec-jar=${file.absolutePath}")
+    }
+  jvmArgumentProviders.add(CommandLineArgumentProvider { execJarProvider.get() })
 }

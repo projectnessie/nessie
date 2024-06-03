@@ -15,3 +15,5 @@
 #
 
 org.projectnessie.quarkus.config.OpenTelemetryConfigSourceInterceptor
+org.projectnessie.quarkus.config.datasource.DataSourceActivator
+org.projectnessie.quarkus.config.datasource.JdbcUrlInterceptor

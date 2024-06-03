@@ -1,0 +1,62 @@
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# To request an access token, use the following command:
+# token=$(curl http://127.0.0.1:9091/api/oidc/token --user nessie-client:s3cr3t -d 'grant_type=client_credentials' -d 'scope=profile' | jq -r .access_token)
+
+# Then use the access token in the Authorization header:
+# curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
+
+version: '3'
+services:
+
+  nessie:
+    image: ghcr.io/projectnessie/nessie:latest
+    ports:
+      - "19120:19120"
+    depends_on:
+      - authelia
+    environment:
+      NESSIE_VERSION_STORE_TYPE: IN_MEMORY
+      NESSIE_SERVER_AUTHENTICATION_ENABLED: true
+      QUARKUS_OIDC_ENABLED: true
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://authelia:9091
+      QUARKUS_OIDC_CLIENT_ID: nessie-client
+      # Note: Authelia, contrary to Keycloak, requires a call to the token
+      # introspection endpoint, hence the need for a client secret.
+      QUARKUS_OIDC_CREDENTIALS_SECRET: s3cr3t
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
+
+  authelia:
+    image: authelia/authelia:4.38
+    ports:
+      - "9091:9091"
+    volumes:
+      - ./config/configuration.yml:/config/configuration.yml
+      - ./config/key.pem:/config/key.pem
+      - ./config/users.yml:/config/users.yml
+    environment:
+      X_AUTHELIA_CONFIG_FILTERS: template
+      X_AUTHELIA_HEALTHCHECK: "1"
+    healthcheck:
+      test: "healthcheck.sh"
+      interval: 5s
+      timeout: 2s
+      retries: 15
