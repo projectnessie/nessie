@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.events.quarkus.fixtures;
+package org.projectnessie.server.catalog.secrets;
 
-import io.quarkus.test.Mock;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Singleton;
-import org.projectnessie.quarkus.providers.RepositoryId;
+import jakarta.enterprise.context.Dependent;
+import java.util.Map;
+import org.projectnessie.catalog.secrets.spi.SecretsSupplier;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
 
-@Mock
-public class MockRepositoryIdProducer {
-
-  @Produces
-  @Singleton
-  @RepositoryId
-  public String produceRepositoryId() {
-    return "repo1";
+@Dependent
+@SecretsType(SecretsSupplierType.NONE)
+public class NoneSecretsSupplierBuilder implements SecretsSupplierBuilder {
+  @Override
+  public SecretsSupplier buildSupplier() {
+    return toResolve -> Map.of();
   }
 }

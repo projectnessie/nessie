@@ -61,6 +61,7 @@ dependencies {
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-micrometer")
   implementation("io.smallrye.config:smallrye-config-source-keystore")
+
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation("software.amazon.awssdk:sts")
@@ -69,6 +70,7 @@ dependencies {
   }
   implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-bigtable")
+
   implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client") {
     // spotbugs-annotations has only a GPL license!

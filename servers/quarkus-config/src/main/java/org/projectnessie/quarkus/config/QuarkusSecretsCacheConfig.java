@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.events.quarkus.fixtures;
+package org.projectnessie.quarkus.config;
 
-import io.quarkus.test.Mock;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Singleton;
-import org.projectnessie.quarkus.providers.RepositoryId;
+import io.smallrye.config.WithDefault;
+import java.time.Duration;
 
-@Mock
-public class MockRepositoryIdProducer {
+/** Configurations for secrets caching. */
+public interface QuarkusSecretsCacheConfig {
+  /** Flag whether the secrets cache is enabled. */
+  @WithDefault("true")
+  boolean enabled();
 
-  @Produces
-  @Singleton
-  @RepositoryId
-  public String produceRepositoryId() {
-    return "repo1";
-  }
+  /** Optionally restrict the number of cached secrets. */
+  @WithDefault("1000")
+  long maxElements();
+
+  /** Time until cached secrets expire. */
+  @WithDefault("PT15M")
+  Duration ttl();
 }

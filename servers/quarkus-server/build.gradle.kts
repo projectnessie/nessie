@@ -52,6 +52,7 @@ dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-quarkus-distcache"))
+  implementation(project(":nessie-quarkus-secrets"))
   implementation(project(":nessie-quarkus-rest"))
   implementation(project(":nessie-events-quarkus"))
   implementation(project(":nessie-rest-common"))
@@ -102,6 +103,7 @@ dependencies {
   testFixturesApi(project(":nessie-jaxrs-tests"))
   testFixturesApi(project(":nessie-quarkus-auth"))
   testFixturesApi(project(":nessie-quarkus-common"))
+  testFixturesApi(project(":nessie-quarkus-config"))
   testFixturesApi(project(":nessie-quarkus-tests"))
   testFixturesApi(project(":nessie-catalog-files-api"))
   testFixturesApi(project(":nessie-catalog-files-impl"))
@@ -132,6 +134,8 @@ dependencies {
 
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
+  testFixturesApi("org.testcontainers:localstack")
+  testFixturesApi("org.testcontainers:vault")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
@@ -140,6 +144,15 @@ dependencies {
   testFixturesApi(project(":nessie-object-storage-mock"))
   testFixturesApi(project(":nessie-catalog-format-iceberg"))
   testFixturesApi(project(":nessie-catalog-format-iceberg-fixturegen"))
+  testFixturesApi(project(":nessie-container-spec-helper"))
+  testFixturesApi(project(":nessie-catalog-secrets-api"))
+
+  testFixturesApi(platform(libs.awssdk.bom))
+  testFixturesApi("software.amazon.awssdk:secretsmanager")
+  testFixturesApi("io.quarkiverse.vault:quarkus-vault-deployment")
+
+  testFixturesApi(enforcedPlatform(libs.quarkus.azure.services.bom))
+  testFixturesApi("io.quarkiverse.azureservices:quarkus-azure-keyvault")
 
   testFixturesApi(platform("org.apache.iceberg:iceberg-bom:$versionIceberg"))
   testFixturesApi("org.apache.iceberg:iceberg-core")
@@ -153,12 +166,19 @@ dependencies {
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 
+  testFixturesCompileOnly(project(":nessie-immutables"))
+  intTestCompileOnly(project(":nessie-immutables"))
+  intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
+
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestImplementation(libs.lowkey.vault.testcontainers)
 
   intTestImplementation(platform(libs.awssdk.bom))
   intTestImplementation("software.amazon.awssdk:s3")
   intTestImplementation("software.amazon.awssdk:sts")
+
+  intTestCompileOnly(libs.immutables.value.annotations)
 }
 
 val openApiSpecDir = layout.buildDirectory.dir("openapi-extra")

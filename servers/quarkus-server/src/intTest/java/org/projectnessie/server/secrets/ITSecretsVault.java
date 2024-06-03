@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.events.quarkus.fixtures;
+package org.projectnessie.server.secrets;
 
-import io.quarkus.test.Mock;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Singleton;
-import org.projectnessie.quarkus.providers.RepositoryId;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
 
-@Mock
-public class MockRepositoryIdProducer {
-
-  @Produces
-  @Singleton
-  @RepositoryId
-  public String produceRepositoryId() {
-    return "repo1";
-  }
-}
+@QuarkusTest // because the tests need @Inject'd fields
+@QuarkusTestResource(
+    restrictToAnnotatedClass = true,
+    value = VaultTestResourceLifecycleManager.class)
+public class ITSecretsVault extends AbstractSecretsSuppliers {}

@@ -24,17 +24,14 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Named;
 import java.security.Principal;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.projectnessie.events.service.EventSubscribers;
+import org.projectnessie.quarkus.providers.RepositoryId;
 import org.projectnessie.versioned.Result;
 
 public class QuarkusResultCollectorFactory {
-
-  /** The name of the CDI bean that provides the repository ID. */
-  public static final String REPOSITORY_ID_BEAN_NAME = "nessie.beans.repository-id";
 
   @Produces
   @RequestScoped
@@ -43,7 +40,7 @@ public class QuarkusResultCollectorFactory {
       EventSubscribers subscribers,
       EventBus bus,
       DeliveryOptions options,
-      @Named(REPOSITORY_ID_BEAN_NAME) Instance<String> repositoryIds,
+      @RepositoryId Instance<String> repositoryIds,
       @Any Instance<Supplier<Principal>> users,
       @Any Instance<Tracer> tracers,
       @Any Instance<MeterRegistry> registries) {

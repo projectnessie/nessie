@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.events.quarkus.fixtures;
+package org.projectnessie.quarkus.providers;
 
-import io.quarkus.test.Mock;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Singleton;
-import org.projectnessie.quarkus.providers.RepositoryId;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-@Mock
-public class MockRepositoryIdProducer {
+import jakarta.inject.Qualifier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-  @Produces
-  @Singleton
-  @RepositoryId
-  public String produceRepositoryId() {
-    return "repo1";
-  }
-}
+@Target({TYPE, METHOD, PARAMETER, FIELD})
+@Retention(RUNTIME)
+@Documented
+@Qualifier
+public @interface RepositoryId {}
