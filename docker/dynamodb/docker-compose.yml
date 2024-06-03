@@ -17,7 +17,7 @@
 version: '3'
 services:
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest@sha256:7fc6cfe427db95f660f9676e10c30c5c21a91d48bf37b2ec52abb646d246b34d
+    image: ghcr.io/projectnessie/nessie:latest
     ports:
       - "19120:19120"
     depends_on:
@@ -30,6 +30,6 @@ services:
       - quarkus.dynamodb.aws.credentials.static-provider.access-key-id=fakeKeyId
       - quarkus.dynamodb.aws.credentials.static-provider.secret-access-key=fakeSecretAccessKey
   dynamodb:
-    image: amazon/dynamodb-local@sha256:22b1f856581e5c77549b319c20371c7454381d7ef039d2a386c1b0dc686573cd
+    image: amazon/dynamodb-local
     ports:
         - "8000:8000"

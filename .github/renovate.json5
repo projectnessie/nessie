@@ -5,7 +5,6 @@
     // Required to not pin dependencies to _exact_ versions (pip)
     ":preserveSemverRanges",
     "group:monorepos",
-    "docker:pinDigests",
     "helpers:pinGitHubActionDigests",
     ":semanticPrefixFixDepsChoreOthers",
     ":dependencyDashboard",
@@ -27,7 +26,7 @@
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
       matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["major", "minor", "patch", "digest"],
+      matchUpdateTypes: ["major", "minor", "patch"],
       matchPackageNames: [
         "gcr.io/google.com/cloudsdktool/google-cloud-cli"
       ],
@@ -38,7 +37,7 @@
     // Check for updates, merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["minor", "patch", "pin", "pinDigest", "digest"],
+      matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       platformAutomerge: true,
     },

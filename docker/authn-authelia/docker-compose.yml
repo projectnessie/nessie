@@ -24,7 +24,7 @@ version: '3'
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest@sha256:7fc6cfe427db95f660f9676e10c30c5c21a91d48bf37b2ec52abb646d246b34d
+    image: ghcr.io/projectnessie/nessie:latest
     ports:
       - "19120:19120"
     depends_on:
@@ -45,7 +45,7 @@ services:
       retries: 15
 
   authelia:
-    image: authelia/authelia:4.38@sha256:19375b10024caeef4e0b119a6247beae84cbaa02c846cfd750e92dea910d4b6a
+    image: authelia/authelia:4.38
     ports:
       - "9091:9091"
     volumes:

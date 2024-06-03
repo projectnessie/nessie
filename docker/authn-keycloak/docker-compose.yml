@@ -24,7 +24,7 @@ version: '3'
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:latest@sha256:7fc6cfe427db95f660f9676e10c30c5c21a91d48bf37b2ec52abb646d246b34d
+    image: ghcr.io/projectnessie/nessie:latest
     ports:
       - "19120:19120"
     depends_on:
@@ -43,7 +43,7 @@ services:
       retries: 15
 
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0.4@sha256:ff02c932f0249c58f32b8ff1b188a48cc90809779a3a05931ab67f5672400ad0
+    image: quay.io/keycloak/keycloak:24.0.4
     ports:
       - "8080:8080"
     environment:
