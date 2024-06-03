@@ -31,6 +31,11 @@ dependencies {
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-service-common"))
   implementation(project(":nessie-catalog-secrets-api"))
+  implementation(project(":nessie-catalog-secrets-cache"))
+  implementation(project(":nessie-catalog-secrets-aws"))
+  implementation(project(":nessie-catalog-secrets-gcs"))
+  implementation(project(":nessie-catalog-secrets-azure"))
+  implementation(project(":nessie-catalog-secrets-vault"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 
@@ -55,14 +60,23 @@ dependencies {
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-micrometer")
   implementation("io.smallrye.config:smallrye-config-source-keystore")
+
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation("io.quarkiverse.amazonservices:quarkus-amazon-secretsmanager")
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation("software.amazon.awssdk:sts")
   implementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }
   implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+  implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-secret-manager")
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-bigtable")
+
+  implementation("io.quarkiverse.vault:quarkus-vault")
+
+  implementation(enforcedPlatform(libs.quarkus.azure.services.bom))
+  implementation("io.quarkiverse.azureservices:quarkus-azure-keyvault")
+
   implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client") {
     // spotbugs-annotations has only a GPL license!

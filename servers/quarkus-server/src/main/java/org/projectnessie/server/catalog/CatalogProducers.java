@@ -15,7 +15,9 @@
  */
 package org.projectnessie.server.catalog;
 
+import static java.lang.String.format;
 import static java.time.Clock.systemUTC;
+import static org.projectnessie.quarkus.providers.RepositoryIdProvider.REPOSITORY_ID_BEAN_NAME;
 
 import com.azure.core.http.HttpClient;
 import com.google.auth.http.HttpTransportFactory;
@@ -32,7 +34,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.time.Clock;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -60,6 +61,10 @@ import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.cache.CachingSecrets;
+import org.projectnessie.catalog.secrets.cache.CachingSecretsBackend;
+import org.projectnessie.catalog.secrets.cache.SecretsCacheConfig;
+import org.projectnessie.catalog.secrets.spi.SecretsSupplier;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
@@ -72,7 +77,10 @@ import org.projectnessie.quarkus.config.CatalogAdlsConfig;
 import org.projectnessie.quarkus.config.CatalogGcsConfig;
 import org.projectnessie.quarkus.config.CatalogS3Config;
 import org.projectnessie.quarkus.config.CatalogServiceConfig;
-import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.providers.secrets.SecretsSupplierBuilder;
+import org.projectnessie.quarkus.providers.secrets.SecretsType;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -155,8 +163,54 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  public SecretsProvider secretsProvider(QuarkusCatalogConfig config) {
-    return new SecretsProvider(names -> Map.of());
+  public SecretsSupplier secretsPSupplier(
+      QuarkusSecretsConfig config, @Any Instance<SecretsSupplierBuilder> secretsSupplierBuilders) {
+    SecretsSupplierType type = config.type();
+
+    if (secretsSupplierBuilders.isUnsatisfied()) {
+      throw new IllegalStateException("No secrets implementation for " + type);
+    }
+
+    return secretsSupplierBuilders.select(new SecretsType.Literal(type)).get().buildSupplier();
+  }
+
+  @Produces
+  @Singleton
+  public SecretsProvider secretsProvider(
+      @Named(REPOSITORY_ID_BEAN_NAME) String repositoryId,
+      QuarkusSecretsConfig config,
+      SecretsSupplier secretsSupplier,
+      @Any Instance<MeterRegistry> meterRegistry) {
+    SecretsSupplierType type = config.type();
+
+    String cacheInfo = "";
+    if (type != SecretsSupplierType.NONE && config.cache().enabled()) {
+      SecretsCacheConfig.Builder cacheConfig =
+          SecretsCacheConfig.builder()
+              .clockNanos(System::nanoTime)
+              .ttlMillis(config.cache().ttl().toMillis())
+              .maxElements(config.cache().maxElements());
+      if (meterRegistry.isResolvable()) {
+        cacheConfig.meterRegistry(meterRegistry.get());
+      }
+
+      CachingSecretsBackend backend = new CachingSecretsBackend(cacheConfig.build());
+      secretsSupplier = new CachingSecrets(backend).forRepository(repositoryId, secretsSupplier);
+
+      cacheInfo =
+          format(
+              ", with capacity of %d secrets and TTL of %s",
+              config.cache().maxElements(), config.cache().ttl());
+    }
+
+    LOGGER.info("Using {} secrets provider{}", type, cacheInfo);
+
+    return new SecretsProvider(secretsSupplier);
+  }
+
+  public void eagerPersistInitialization(
+      @Observes StartupEvent event, SecretsProvider secretsProvider) {
+    // no-op
   }
 
   @Produces
