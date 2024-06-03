@@ -15,21 +15,17 @@
  */
 package org.projectnessie.catalog.secrets.spi;
 
-import java.util.Collection;
 import java.util.Map;
-import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.catalog.secrets.Secret;
+import org.projectnessie.catalog.secrets.SecretType;
 
 /** SPI interface for actual secrets managers. */
 public interface SecretsSupplier {
   /**
    * Resolve secrets.
    *
-   * @param names names of the secrets to resolve
-   * @return map of secret names to a map of key-value pairs representing the secret. The keys and
-   *     -values depend on the type of secret. See {@link KeySecret#keySecret(Map)}, {@link
-   *     BasicCredentials#basicCredentials(Map)}, {@link TokenSecret#tokenSecret(Map)}
+   * @param toResolve names and types of the secrets to resolve
+   * @return map of secret names to secrets
    */
-  Map<String, Map<String, String>> resolveSecrets(Collection<String> names);
+  Map<String, Secret> resolveSecrets(Map<String, SecretType> toResolve);
 }

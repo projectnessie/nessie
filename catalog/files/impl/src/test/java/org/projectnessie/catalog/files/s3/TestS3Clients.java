@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 
@@ -25,8 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.KeyStore;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,6 +32,7 @@ import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -46,7 +44,8 @@ public class TestS3Clients extends AbstractClients {
   @BeforeAll
   static void createHttpClient() {
     S3Config s3Config = S3Config.builder().build();
-    sdkHttpClient = S3Clients.apacheHttpClient(s3Config, new SecretsProvider(names -> Map.of()));
+    sdkHttpClient =
+        S3Clients.apacheHttpClient(s3Config, new SecretsProvider(new DummySecretsSupplier()));
   }
 
   @AfterAll
@@ -84,10 +83,7 @@ public class TestS3Clients extends AbstractClients {
         new S3ClientSupplier(
             sdkHttpClient,
             s3options.build(),
-            new SecretsProvider(
-                names ->
-                    names.stream()
-                        .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret")))),
+            new SecretsProvider(new DummySecretsSupplier()),
             null);
     return new S3ObjectIO(supplier);
   }
@@ -121,7 +117,7 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder().trustStorePath(file).build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .withMessage("No trust store type");
     soft.assertThatThrownBy(
@@ -132,7 +128,7 @@ public class TestS3Clients extends AbstractClients {
                             .trustStoreType("jks")
                             .trustStorePassword(keySecret(password))
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -145,7 +141,7 @@ public class TestS3Clients extends AbstractClients {
                             .trustStoreType("jks")
                             .trustStorePassword(keySecret("wrong_password"))
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -158,7 +154,7 @@ public class TestS3Clients extends AbstractClients {
                             .trustStoreType("jks")
                             .trustStorePassword(keySecret(password))
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .doesNotThrowAnyException();
   }
@@ -181,7 +177,7 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder().keyStorePath(file).build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .withMessage("No key store type");
     soft.assertThatThrownBy(
@@ -192,7 +188,7 @@ public class TestS3Clients extends AbstractClients {
                             .keyStoreType("jks")
                             .keyStorePassword(keySecret(password))
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -205,7 +201,7 @@ public class TestS3Clients extends AbstractClients {
                             .keyStoreType("jks")
                             .keyStorePassword(keySecret("wrong_password"))
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -218,7 +214,7 @@ public class TestS3Clients extends AbstractClients {
                             .keyStoreType("jks")
                             .keyStorePassword(keySecret(password))
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        new SecretsProvider(new DummySecretsSupplier()))
                     .close())
         .doesNotThrowAnyException();
   }

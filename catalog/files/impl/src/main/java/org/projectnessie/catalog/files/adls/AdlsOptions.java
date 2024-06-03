@@ -65,7 +65,7 @@ public interface AdlsOptions {
                   AdlsFileSystemOptions::account,
                   ImmutableAdlsNamedFileSystemOptions.Builder::account),
               secretAttribute(
-                  "sasToken",
+                  "sas-token",
                   SecretType.KEY,
                   AdlsFileSystemOptions::sasToken,
                   ImmutableAdlsNamedFileSystemOptions.Builder::sasToken));

@@ -87,7 +87,7 @@ public interface S3Options {
       SECRET_ATTRIBUTES =
           ImmutableList.of(
               secretAttribute(
-                  "accessKey",
+                  "access-key",
                   SecretType.BASIC,
                   S3BucketOptions::accessKey,
                   ImmutableS3NamedBucketOptions.Builder::accessKey));

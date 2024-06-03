@@ -63,11 +63,14 @@ dependencies {
 
   testFixturesApi(project(":nessie-object-storage-mock"))
 
+  testImplementation(testFixtures(project(":nessie-catalog-secrets-api")))
+
   testRuntimeOnly(libs.logback.classic)
 
   jmhImplementation(libs.jmh.core)
   jmhImplementation(project(":nessie-object-storage-mock"))
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
+  jmhImplementation(testFixtures(project(":nessie-catalog-secrets-api")))
 }
 
 tasks.named("processJmhJandexIndex").configure { enabled = false }
