@@ -22,6 +22,10 @@ import io.smallrye.config.ConfigMappingInterface.MapProperty;
 import io.smallrye.config.ConfigMappingInterface.MayBeOptionalProperty;
 import io.smallrye.config.ConfigMappingInterface.PrimitiveProperty;
 import io.smallrye.config.ConfigMappingInterface.Property;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -114,6 +118,10 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
             .map(Enum::name)
             .collect(Collectors.joining(", "));
       }
+      if (property.hasConvertWith()) {
+        // A smallrye-config converter always takes a string.
+        return "string";
+      }
       if (rawType == OptionalInt.class) {
         return "int";
       }
@@ -122,6 +130,9 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
       }
       if (rawType == OptionalDouble.class) {
         return "double";
+      }
+      if (rawType == Boolean.class) {
+        return "boolean";
       }
       if (rawType == Byte.class) {
         return "byte";
@@ -144,10 +155,27 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
       if (rawType == Character.class) {
         return "char";
       }
+      if (rawType == String.class) {
+        return "string";
+      }
+      if (rawType == Duration.class) {
+        return "duration";
+      }
+      if (rawType == Instant.class) {
+        return "instant";
+      }
+      if (rawType == URI.class) {
+        return "uri";
+      }
+      if (rawType == Path.class) {
+        return "path";
+      }
       return rawType.getSimpleName();
     }
     if (property.isGroup()) {
-      return property.asGroup().getGroupType().getInterfaceType().getSimpleName();
+      // Represents a type that consists of multiple fields/properties, which are documented
+      // underneath this property.
+      return "-";
     }
     throw new UnsupportedOperationException("Don't know how to handle " + property);
   }

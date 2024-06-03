@@ -60,6 +60,9 @@ public class SmallryeConfigs {
       info = new SmallRyeConfigMappingInfo("");
       configMappingByType.put(typeName, info);
       TypeElement elem = env.getElementUtils().getTypeElement(typeName);
+      if (elem == null) {
+        throw new NullPointerException("Type " + typeName + " not found");
+      }
       elem.accept(visitor(), null);
     }
     return info;
