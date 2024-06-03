@@ -65,11 +65,13 @@ dependencies {
 
   testImplementation(platform(libs.cel.bom))
   testImplementation("org.projectnessie.cel:cel-standalone")
+
   testRuntimeOnly(libs.logback.classic)
 
   jmhImplementation(libs.jmh.core)
   jmhImplementation(project(":nessie-object-storage-mock"))
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
+  jmhImplementation(testFixtures(project(":nessie-catalog-secrets-api")))
 }
 
 tasks.named("processJmhJandexIndex").configure { enabled = false }
