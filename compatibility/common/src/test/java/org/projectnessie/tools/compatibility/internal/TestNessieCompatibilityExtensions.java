@@ -210,10 +210,6 @@ class TestNessieCompatibilityExtensions {
 
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieClientsExtension.class, SoftAssertionsExtension.class})
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class OldClientsSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -260,10 +256,6 @@ class TestNessieCompatibilityExtensions {
 
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class OldServersSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -315,10 +307,6 @@ class TestNessieCompatibilityExtensions {
 
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class ApiEndpointServerSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -346,10 +334,6 @@ class TestNessieCompatibilityExtensions {
 
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieServersExtension.class)
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class OuterSample {
     static final List<Version> outerVersions = new ArrayList<>();
     static final List<Version> innerVersions = new ArrayList<>();
@@ -374,10 +358,6 @@ class TestNessieCompatibilityExtensions {
 
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith({NessieUpgradesExtension.class, SoftAssertionsExtension.class})
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class UpgradeSample {
     @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -425,10 +405,6 @@ class TestNessieCompatibilityExtensions {
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class TooManyExtensions1 {
     @Test
     void testSome() {}
@@ -437,10 +413,6 @@ class TestNessieCompatibilityExtensions {
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class TooManyExtensions2 {
     @Test
     void testSome() {}
@@ -449,10 +421,6 @@ class TestNessieCompatibilityExtensions {
   @SuppressWarnings({"JUnitMalformedDeclaration", "NewClassNamingConvention"})
   @ExtendWith(NessieUpgradesExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class TooManyExtensions3 {
     @Test
     void testSome() {}
@@ -462,10 +430,6 @@ class TestNessieCompatibilityExtensions {
   @ExtendWith(OlderNessieClientsExtension.class)
   @ExtendWith(OlderNessieServersExtension.class)
   @ExtendWith(NessieUpgradesExtension.class)
-  @SuppressWarnings({
-    "JUnitMalformedDeclaration",
-    "NewClassNamingConvention"
-  }) // Intentionally not nested, used above
   static class TooManyExtensions4 {
     @Test
     void testSome() {}
