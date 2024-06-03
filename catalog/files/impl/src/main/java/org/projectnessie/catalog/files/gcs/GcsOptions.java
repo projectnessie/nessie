@@ -121,22 +121,22 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> {
   List<SecretAttribute<GcsBucketOptions, GcsPerBucketOptions.Builder, ?>> SECRET_ATTRIBUTES =
       ImmutableList.of(
           secretAttribute(
-              "authCredentialsJson",
+              "auth-credentials-json",
               SecretType.KEY,
               GcsBucketOptions::authCredentialsJson,
               GcsPerBucketOptions.Builder::authCredentialsJson),
           secretAttribute(
-              "oauth2Token",
+              "oauth2-token",
               SecretType.EXPIRING_TOKEN,
               GcsBucketOptions::oauth2Token,
               GcsPerBucketOptions.Builder::oauth2Token),
           secretAttribute(
-              "encryptionKey",
+              "encryption-key",
               SecretType.KEY,
               GcsBucketOptions::encryptionKey,
               GcsPerBucketOptions.Builder::encryptionKey),
           secretAttribute(
-              "decryptionKey",
+              "decryption-key",
               SecretType.KEY,
               GcsBucketOptions::decryptionKey,
               GcsPerBucketOptions.Builder::decryptionKey));

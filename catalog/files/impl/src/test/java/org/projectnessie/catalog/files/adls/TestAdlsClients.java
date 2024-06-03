@@ -18,11 +18,10 @@ package org.projectnessie.catalog.files.adls;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 
 import com.azure.core.http.HttpClient;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -57,12 +56,7 @@ public class TestAdlsClients extends AbstractClients {
 
     AdlsClientSupplier supplier =
         new AdlsClientSupplier(
-            httpClient,
-            adlsOptions.build(),
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+            httpClient, adlsOptions.build(), new SecretsProvider(new DummySecretsSupplier()));
 
     return new AdlsObjectIO(supplier);
   }

@@ -103,6 +103,11 @@ dependencies {
     api(project(":nessie-catalog-service-rest"))
     api(project(":nessie-catalog-service-impl"))
     api(project(":nessie-catalog-secrets-api"))
+    api(project(":nessie-catalog-secrets-cache"))
+    api(project(":nessie-catalog-secrets-aws"))
+    api(project(":nessie-catalog-secrets-gcs"))
+    api(project(":nessie-catalog-secrets-azure"))
+    api(project(":nessie-catalog-secrets-vault"))
 
     if (!isIncludedInNesQuEIT()) {
       api(project(":nessie-spark-antlr-runtime"))
