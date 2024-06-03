@@ -70,17 +70,17 @@ Convert a dict into a string formed by a comma-separated list of key-value pairs
 {{ join "," $list }}
 {{- end -}}
 
-{{- define "nessie.propsToEnvVars" -}}
-{{- $map := first . -}}
-{{- $prefix := last . -}}
-{{- range $key, $val := $map -}}
-{{- $name := ternary $key (list $prefix $key | join "_") (eq $prefix "") -}}
+{{- define "nessie.mergeAdvancedConfig" -}}
+{{- $advConfig := index . 0 -}}
+{{- $prefix := index . 1 -}}
+{{- $dest := index . 2 -}}
+{{- range $key, $val := $advConfig -}}
+{{- $name := ternary $key (list $prefix $key | join ".") (eq $prefix "") -}}
 {{- if kindOf $val | eq "map" -}}
-{{- list $val $name | include "nessie.propsToEnvVars" -}}
+{{- list $val $name $dest | include "nessie.mergeAdvancedConfig" -}}
 {{- else -}}
-- name: {{ $name | upper | replace "\"" "_" | replace "." "_"  | replace "-" "_" | quote }}
-  value: {{ $val | quote }}
-{{ end -}}
+{{- $_ := set $dest $name $val -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -91,11 +91,4 @@ names should coincide with jdbc schemes in connection URIs.
 {{- define "nessie.dbKind" -}}
 {{- $v := . | split ":" -}}
 {{ $v._1 }}
-{{- end }}
-
-{{/*
-Determine the datasource config prefix based on the db kind.
-*/}}
-{{- define "nessie.datasourceConfigPrefix" -}}
-QUARKUS_DATASOURCE_{{- upper . -}}_
 {{- end }}
