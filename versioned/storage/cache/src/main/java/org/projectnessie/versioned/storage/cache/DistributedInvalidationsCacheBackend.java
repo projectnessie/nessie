@@ -35,29 +35,13 @@ final class DistributedInvalidationsCacheBackend implements CacheBackend {
         .accept(
             new DistributedCacheInvalidation() {
               @Override
-              public void removeObj(String repositoryId, ObjId objId) {
+              public void evictObj(String repositoryId, ObjId objId) {
                 local.remove(repositoryId, objId);
               }
 
               @Override
-              public void putObj(String repositoryId, ObjId objId, int hash) {
-                Obj existing = local.get(repositoryId, objId);
-                if (existing != null && existing.hashCode() != hash) {
-                  local.remove(repositoryId, objId);
-                }
-              }
-
-              @Override
-              public void removeReference(String repositoryId, String refName) {
+              public void evictReference(String repositoryId, String refName) {
                 local.removeReference(repositoryId, refName);
-              }
-
-              @Override
-              public void putReference(String repositoryId, String refName, int hash) {
-                Reference existing = local.getReference(repositoryId, refName);
-                if (existing != null && existing.hashCode() != hash) {
-                  local.removeReference(repositoryId, refName);
-                }
               }
             });
   }
@@ -75,16 +59,22 @@ final class DistributedInvalidationsCacheBackend implements CacheBackend {
 
   @Override
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {
-    local.put(repositoryId, obj);
+    // Note: .put() vs .putLocal() doesn't matter here, because 'local' is the local cache.
+    local.putLocal(repositoryId, obj);
     if (obj instanceof UpdateableObj) {
-      sender.putObj(repositoryId, obj.id(), obj.hashCode());
+      sender.evictObj(repositoryId, obj.id());
     }
+  }
+
+  @Override
+  public void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj) {
+    local.putLocal(repositoryId, obj);
   }
 
   @Override
   public void remove(@Nonnull String repositoryId, @Nonnull ObjId id) {
     local.remove(repositoryId, id);
-    sender.removeObj(repositoryId, id);
+    sender.evictObj(repositoryId, id);
   }
 
   @Override
@@ -100,13 +90,20 @@ final class DistributedInvalidationsCacheBackend implements CacheBackend {
   @Override
   public void removeReference(@Nonnull String repositoryId, @Nonnull String name) {
     local.removeReference(repositoryId, name);
-    sender.removeReference(repositoryId, name);
+    sender.evictReference(repositoryId, name);
+  }
+
+  @Override
+  public void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r) {
+    local.putReferenceLocal(repositoryId, r);
   }
 
   @Override
   public void putReference(@Nonnull String repositoryId, @Nonnull Reference r) {
-    local.putReference(repositoryId, r);
-    sender.putReference(repositoryId, r.name(), r.hashCode());
+    // Note: .putReference() vs .putReferenceLocal() doesn't matter here, because 'local' is the
+    // local cache.
+    local.putReferenceLocal(repositoryId, r);
+    sender.evictReference(repositoryId, r.name());
   }
 
   @Override

@@ -109,9 +109,9 @@ public class TestDistributedInvalidations {
 
     distributed1.put("", obj1);
 
-    verify(backend1).put("", obj1);
-    verify(backend2).get("", obj1.id());
-    verify(sender1).putObj("", obj1.id(), obj1.hashCode());
+    verify(backend1).putLocal("", obj1);
+    verify(backend2).remove("", obj1.id());
+    verify(sender1).evictObj("", obj1.id());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
@@ -128,10 +128,9 @@ public class TestDistributedInvalidations {
     distributed1.put("", obj2);
     soft.assertThat(backend2noSpy.get("", obj1.id())).isNull();
 
-    verify(backend1).put("", obj2);
-    verify(backend2).get("", obj1.id());
+    verify(backend1).putLocal("", obj2);
     verify(backend2).remove("", obj1.id());
-    verify(sender1).putObj("", obj2.id(), obj2.hashCode());
+    verify(sender1).evictObj("", obj2.id());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
@@ -142,13 +141,13 @@ public class TestDistributedInvalidations {
     backend2noSpy.put("", obj2);
     soft.assertThat(backend2noSpy.get("", obj2.id())).isEqualTo(obj2);
 
-    // update to same object (no change for backend2)
+    // update to same object (still a removal for backend2)
 
     distributed1.put("", obj2);
 
-    verify(backend1).put("", obj2);
-    verify(backend2).get("", obj2.id());
-    verify(sender1).putObj("", obj2.id(), obj2.hashCode());
+    verify(backend1).putLocal("", obj2);
+    verify(backend2).remove("", obj2.id());
+    verify(sender1).evictObj("", obj2.id());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
@@ -156,7 +155,7 @@ public class TestDistributedInvalidations {
     resetAll();
 
     // Verify that ref2 has not been removed (same hash)
-    soft.assertThat(backend2noSpy.get("", obj2.id())).isEqualTo(obj2);
+    soft.assertThat(backend2noSpy.get("", obj2.id())).isNull();
 
     // remove object
 
@@ -164,15 +163,12 @@ public class TestDistributedInvalidations {
 
     verify(backend1).remove("", obj2.id());
     verify(backend2).remove("", obj2.id());
-    verify(sender1).removeObj("", obj2.id());
+    verify(sender1).evictObj("", obj2.id());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
     verifyNoMoreInteractions(sender2);
     resetAll();
-
-    // Verify that obj2 has not been removed (same hash)
-    soft.assertThat(backend2noSpy.get("", obj2.id())).isNull();
   }
 
   @Test
@@ -182,9 +178,9 @@ public class TestDistributedInvalidations {
 
     distributed1.putReference("", ref1);
 
-    verify(backend1).putReference("", ref1);
-    verify(backend2).getReference("", ref1.name());
-    verify(sender1).putReference("", ref1.name(), ref1.hashCode());
+    verify(backend1).putReferenceLocal("", ref1);
+    verify(backend2).removeReference("", ref1.name());
+    verify(sender1).evictReference("", ref1.name());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
@@ -201,10 +197,10 @@ public class TestDistributedInvalidations {
     distributed1.putReference("", ref2);
     soft.assertThat(backend2noSpy.getReference("", ref1.name())).isNull();
 
-    verify(backend1).putReference("", ref2);
-    verify(backend2).getReference("", ref1.name());
+    verify(backend1).putReferenceLocal("", ref2);
     verify(backend2).removeReference("", ref1.name());
-    verify(sender1).putReference("", ref2.name(), ref2.hashCode());
+    verify(backend2).removeReference("", ref1.name());
+    verify(sender1).evictReference("", ref2.name());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
@@ -219,17 +215,17 @@ public class TestDistributedInvalidations {
 
     distributed1.putReference("", ref2);
 
-    verify(backend1).putReference("", ref2);
-    verify(backend2).getReference("", ref2.name());
-    verify(sender1).putReference("", ref2.name(), ref2.hashCode());
+    verify(backend1).putReferenceLocal("", ref2);
+    verify(backend2).removeReference("", ref2.name());
+    verify(sender1).evictReference("", ref2.name());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
     verifyNoMoreInteractions(sender2);
     resetAll();
 
-    // Verify that ref2 has not been removed (same hash)
-    soft.assertThat(backend2noSpy.getReference("", ref2.name())).isEqualTo(ref2);
+    // Verify that ref2 has been removed in backend2
+    soft.assertThat(backend2noSpy.getReference("", ref2.name())).isNull();
 
     // remove reference
 
@@ -237,15 +233,12 @@ public class TestDistributedInvalidations {
 
     verify(backend1).removeReference("", ref2.name());
     verify(backend2).removeReference("", ref2.name());
-    verify(sender1).removeReference("", ref2.name());
+    verify(sender1).evictReference("", ref2.name());
     verifyNoMoreInteractions(backend1);
     verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
     verifyNoMoreInteractions(sender2);
     resetAll();
-
-    // Verify that ref2 has not been removed (same hash)
-    soft.assertThat(backend2noSpy.getReference("", ref2.name())).isNull();
   }
 
   private void resetAll() {
@@ -259,23 +252,13 @@ public class TestDistributedInvalidations {
       Supplier<DistributedCacheInvalidation> invalidation) {
     return new DistributedCacheInvalidation() {
       @Override
-      public void removeObj(String repositoryId, ObjId objId) {
-        invalidation.get().removeObj(repositoryId, objId);
+      public void evictObj(String repositoryId, ObjId objId) {
+        invalidation.get().evictObj(repositoryId, objId);
       }
 
       @Override
-      public void putObj(String repositoryId, ObjId objId, int hash) {
-        invalidation.get().putObj(repositoryId, objId, hash);
-      }
-
-      @Override
-      public void removeReference(String repositoryId, String refName) {
-        invalidation.get().removeReference(repositoryId, refName);
-      }
-
-      @Override
-      public void putReference(String repositoryId, String refName, int hash) {
-        invalidation.get().putReference(repositoryId, refName, hash);
+      public void evictReference(String repositoryId, String refName) {
+        invalidation.get().evictReference(repositoryId, refName);
       }
     };
   }

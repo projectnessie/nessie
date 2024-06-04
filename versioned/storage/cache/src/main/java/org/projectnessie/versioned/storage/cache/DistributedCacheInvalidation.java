@@ -18,11 +18,7 @@ package org.projectnessie.versioned.storage.cache;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 public interface DistributedCacheInvalidation {
-  void removeObj(String repositoryId, ObjId objId);
+  void evictObj(String repositoryId, ObjId objId);
 
-  void putObj(String repositoryId, ObjId objId, int hash);
-
-  void removeReference(String repositoryId, String refName);
-
-  void putReference(String repositoryId, String refName, int hash);
+  void evictReference(String repositoryId, String refName);
 }

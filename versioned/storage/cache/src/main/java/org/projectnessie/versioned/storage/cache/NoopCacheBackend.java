@@ -39,6 +39,9 @@ final class NoopCacheBackend implements CacheBackend {
   public void putReference(@Nonnull String repositoryId, @Nonnull Reference r) {}
 
   @Override
+  public void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r) {}
+
+  @Override
   public void removeReference(@Nonnull String repositoryId, @Nonnull String name) {}
 
   @Override
@@ -54,6 +57,9 @@ final class NoopCacheBackend implements CacheBackend {
 
   @Override
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {}
+
+  @Override
+  public void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj) {}
 
   @Override
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {

@@ -135,6 +135,11 @@ class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {
+    putLocal(repositoryId, obj);
+  }
+
+  @Override
+  public void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj) {
     long expiresAt =
         obj.type()
             .cachedObjectExpiresAtMicros(
@@ -182,6 +187,11 @@ class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public void putReference(@Nonnull String repositoryId, @Nonnull Reference r) {
+    putReferenceLocal(repositoryId, r);
+  }
+
+  @Override
+  public void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r) {
     if (refCacheTtlNanos <= 0L) {
       return;
     }

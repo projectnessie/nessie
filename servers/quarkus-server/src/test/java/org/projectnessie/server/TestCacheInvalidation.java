@@ -23,7 +23,7 @@ import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_I
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveObj.cacheInvalidationRemoveObj;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 
@@ -55,7 +55,7 @@ import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
 import org.projectnessie.quarkus.providers.storage.CacheInvalidations;
 import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidation;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutReference;
+import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference;
 import org.projectnessie.quarkus.util.HttpTestServer;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
@@ -133,11 +133,11 @@ public class TestCacheInvalidation {
       soft.assertThat(new ObjectMapper().readValue(body.get(), CacheInvalidations.class))
           .extracting(CacheInvalidations::invalidations, list(CacheInvalidation.class))
           .first()
-          .extracting(CacheInvalidationPutReference.class::cast)
+          .extracting(CacheInvalidationEvictReference.class::cast)
           .extracting(
-              CacheInvalidationPutReference::refName,
-              CacheInvalidationPutReference::repoId,
-              CacheInvalidationPutReference::type)
+              CacheInvalidations.CacheInvalidationEvictReference::refName,
+              CacheInvalidations.CacheInvalidationEvictReference::repoId,
+              CacheInvalidations.CacheInvalidationEvictReference::type)
           .containsExactly("foo/bar/baz", "", "ref");
     }
   }
@@ -235,8 +235,8 @@ public class TestCacheInvalidation {
       CacheInvalidations obj =
           cacheInvalidations(
               asList(
-                  cacheInvalidationRemoveObj("", id1.asByteArray()),
-                  cacheInvalidationRemoveObj("", id2.asByteArray())));
+                  cacheInvalidationEvictObj("", id1.asByteArray()),
+                  cacheInvalidationEvictObj("", id2.asByteArray())));
       new ObjectMapper().writeValue(outputStream, obj);
     }
 

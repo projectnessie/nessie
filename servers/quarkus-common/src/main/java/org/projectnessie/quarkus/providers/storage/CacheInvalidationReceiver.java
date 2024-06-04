@@ -32,10 +32,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutObj;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutReference;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveObj;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveReference;
+import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidationConsumer;
 import org.slf4j.Logger;
@@ -112,7 +109,7 @@ public class CacheInvalidationReceiver {
       return;
     }
     if (!"application/json".equals(rc.request().getHeader("Content-Type"))) {
-      LOGGER.warn("Received cache invalidation with invalid token {}", token);
+      LOGGER.warn("Received cache invalidation with invalid HTTP content type");
       responseInvalidContentType(rc);
       return;
     }
@@ -125,30 +122,17 @@ public class CacheInvalidationReceiver {
       return;
     }
 
-    LOGGER.debug("Processing {} invalidations from local instance", invs.size());
-
     for (CacheInvalidations.CacheInvalidation invalidation : invs) {
       switch (invalidation.type()) {
-        case CacheInvalidationPutObj.TYPE:
-          CacheInvalidationPutObj putObj = (CacheInvalidationPutObj) invalidation;
-          invalidator.invalidation.putObj(
-              putObj.repoId(), objIdFromByteArray(putObj.id()), putObj.hash());
+        case CacheInvalidations.CacheInvalidationEvictObj.TYPE:
+          CacheInvalidations.CacheInvalidationEvictObj putObj =
+              (CacheInvalidations.CacheInvalidationEvictObj) invalidation;
+          invalidator.invalidation.evictObj(putObj.repoId(), objIdFromByteArray(putObj.id()));
           break;
-        case CacheInvalidationRemoveObj.TYPE:
-          CacheInvalidationRemoveObj removeObj = (CacheInvalidationRemoveObj) invalidation;
-          invalidator.invalidation.removeObj(
-              removeObj.repoId(), objIdFromByteArray(removeObj.id()));
-          break;
-        case CacheInvalidationPutReference.TYPE:
-          CacheInvalidationPutReference putReference = (CacheInvalidationPutReference) invalidation;
-          invalidator.invalidation.putReference(
-              putReference.repoId(), putReference.refName(), putReference.hash());
-          break;
-        case CacheInvalidationRemoveReference.TYPE:
-          CacheInvalidationRemoveReference removeReference =
-              (CacheInvalidationRemoveReference) invalidation;
-          invalidator.invalidation.removeReference(
-              removeReference.repoId(), removeReference.refName());
+        case CacheInvalidations.CacheInvalidationEvictReference.TYPE:
+          CacheInvalidationEvictReference putReference =
+              (CacheInvalidations.CacheInvalidationEvictReference) invalidation;
+          invalidator.invalidation.evictReference(putReference.repoId(), putReference.refName());
           break;
         default:
           // nothing we can do about a new invalidation type here

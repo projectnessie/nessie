@@ -24,10 +24,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutObj.cacheInvalidationPutObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutReference.cacheInvalidationPutReference;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveObj.cacheInvalidationRemoveObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveReference.cacheInvalidationRemoveReference;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
@@ -78,10 +76,8 @@ public class TestCacheInvalidationReceiver {
     verify(rc.response()).setStatusCode(204);
     verify(rc.response()).setStatusMessage("No content");
 
-    verify(distributedCacheInvalidation).putObj("repo", EMPTY_OBJ_ID, 42);
-    verify(distributedCacheInvalidation).removeObj("repo", EMPTY_OBJ_ID);
-    verify(distributedCacheInvalidation).putReference("repo", "refs/foo/bar", 42);
-    verify(distributedCacheInvalidation).removeReference("repo", "refs/foo/bar");
+    verify(distributedCacheInvalidation).evictObj("repo", EMPTY_OBJ_ID);
+    verify(distributedCacheInvalidation).evictReference("repo", "refs/foo/bar");
     verifyNoMoreInteractions(distributedCacheInvalidation);
   }
 
@@ -192,9 +188,7 @@ public class TestCacheInvalidationReceiver {
 
   List<CacheInvalidations.CacheInvalidation> allInvalidationTypes() {
     return List.of(
-        cacheInvalidationPutReference("repo", "refs/foo/bar", 42),
-        cacheInvalidationRemoveReference("repo", "refs/foo/bar"),
-        cacheInvalidationPutObj("repo", EMPTY_OBJ_ID.asByteArray(), 42),
-        cacheInvalidationRemoveObj("repo", EMPTY_OBJ_ID.asByteArray()));
+        cacheInvalidationEvictReference("repo", "refs/foo/bar"),
+        cacheInvalidationEvictObj("repo", EMPTY_OBJ_ID.asByteArray()));
   }
 }

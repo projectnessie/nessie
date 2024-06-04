@@ -26,10 +26,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutObj.cacheInvalidationPutObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutReference.cacheInvalidationPutReference;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveObj.cacheInvalidationRemoveObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveReference.cacheInvalidationRemoveReference;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
@@ -174,7 +172,7 @@ public class TestCacheInvalidationSender {
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send an invalidation, compare addresses
-      sender.putObj("repo", EMPTY_OBJ_ID, 42);
+      sender.evictObj("repo", EMPTY_OBJ_ID);
       assertThat(submittedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
       soft.assertThat(submitResolvedAddresses.get())
           .containsExactlyInAnyOrderElementsOf(currentAddresses);
@@ -187,7 +185,7 @@ public class TestCacheInvalidationSender {
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send another invalidation, compare addresses
-      sender.putObj("repo", EMPTY_OBJ_ID, 42);
+      sender.evictObj("repo", EMPTY_OBJ_ID);
       assertThat(submittedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
       soft.assertThat(submitResolvedAddresses.get())
           .containsExactlyInAnyOrderElementsOf(currentAddresses);
@@ -199,7 +197,7 @@ public class TestCacheInvalidationSender {
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send another invalidation, compare addresses
-      sender.putObj("repo", EMPTY_OBJ_ID, 42);
+      sender.evictObj("repo", EMPTY_OBJ_ID);
       assertThat(submittedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
       soft.assertThat(submitResolvedAddresses.get())
           .containsExactlyInAnyOrderElementsOf(currentAddresses);
@@ -212,7 +210,7 @@ public class TestCacheInvalidationSender {
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send another invalidation, compare addresses
-      sender.putObj("repo", EMPTY_OBJ_ID, 42);
+      sender.evictObj("repo", EMPTY_OBJ_ID);
       assertThat(submittedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
       soft.assertThat(submitResolvedAddresses.get())
           .containsExactlyInAnyOrderElementsOf(currentAddresses);
@@ -249,14 +247,14 @@ public class TestCacheInvalidationSender {
 
     CacheInvalidationSender senderSpy = spy(sender);
 
-    senderSpy.putObj("repo", EMPTY_OBJ_ID, 42);
+    senderSpy.evictObj("repo", EMPTY_OBJ_ID);
 
     // Hard to test that nothing is done, if the list of resolved addresses is empty, but the
     // condition is easy. If this tests is flaky, then there's something broken.
     Thread.sleep(100L);
 
-    verify(senderSpy).putObj("repo", EMPTY_OBJ_ID, 42);
-    verify(senderSpy).enqueue(cacheInvalidationPutObj("repo", EMPTY_OBJ_ID.asByteArray(), 42));
+    verify(senderSpy).evictObj("repo", EMPTY_OBJ_ID);
+    verify(senderSpy).enqueue(cacheInvalidationEvictObj("repo", EMPTY_OBJ_ID.asByteArray()));
     verifyNoMoreInteractions(senderSpy);
   }
 
@@ -514,18 +512,11 @@ public class TestCacheInvalidationSender {
   static Stream<Arguments> invalidations() {
     return Stream.of(
         arguments(
-            (Consumer<DistributedCacheInvalidation>) i -> i.putObj("repo", EMPTY_OBJ_ID, 42),
-            cacheInvalidationPutObj("repo", EMPTY_OBJ_ID.asByteArray(), 42)),
+            (Consumer<DistributedCacheInvalidation>) i -> i.evictObj("repo", EMPTY_OBJ_ID),
+            cacheInvalidationEvictObj("repo", EMPTY_OBJ_ID.asByteArray())),
         arguments(
-            (Consumer<DistributedCacheInvalidation>) i -> i.removeObj("repo", EMPTY_OBJ_ID),
-            cacheInvalidationRemoveObj("repo", EMPTY_OBJ_ID.asByteArray())),
-        arguments(
-            (Consumer<DistributedCacheInvalidation>)
-                i -> i.putReference("repo", "refs/foo/bar", 42),
-            cacheInvalidationPutReference("repo", "refs/foo/bar", 42)),
-        arguments(
-            (Consumer<DistributedCacheInvalidation>) i -> i.removeReference("repo", "refs/foo/bar"),
-            cacheInvalidationRemoveReference("repo", "refs/foo/bar")));
+            (Consumer<DistributedCacheInvalidation>) i -> i.evictReference("repo", "refs/foo/bar"),
+            cacheInvalidationEvictReference("repo", "refs/foo/bar")));
   }
 
   private static QuarkusStoreConfig buildConfig(

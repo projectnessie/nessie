@@ -26,7 +26,14 @@ public interface ObjCache {
 
   Obj get(@Nonnull ObjId id);
 
+  /**
+   * Adds the given object to the local cache and sends a cache-invalidation message to Nessie
+   * peers.
+   */
   void put(@Nonnull Obj obj);
+
+  /** Adds the given object only to the local cache, does not send a cache-invalidation message. */
+  void putLocal(@Nonnull Obj obj);
 
   void remove(@Nonnull ObjId id);
 
@@ -36,7 +43,16 @@ public interface ObjCache {
 
   void removeReference(@Nonnull String name);
 
+  /**
+   * Adds the given reference to the local cache and sends a cache-invalidation message to Nessie
+   * peers.
+   */
   void putReference(@Nonnull Reference r);
+
+  /**
+   * Adds the given reference only to the local cache, does not send a cache-invalidation message.
+   */
+  void putReferenceLocal(@Nonnull Reference r);
 
   void putNegative(@Nonnull String name);
 }

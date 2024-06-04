@@ -38,16 +38,12 @@ public interface CacheInvalidations {
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "t")
   @JsonSubTypes({
-    @JsonSubTypes.Type(value = CacheInvalidationPutObj.class, name = CacheInvalidationPutObj.TYPE),
     @JsonSubTypes.Type(
-        value = CacheInvalidationRemoveObj.class,
-        name = CacheInvalidationRemoveObj.TYPE),
+        value = CacheInvalidationEvictObj.class,
+        name = CacheInvalidationEvictObj.TYPE),
     @JsonSubTypes.Type(
-        value = CacheInvalidationPutReference.class,
-        name = CacheInvalidationPutReference.TYPE),
-    @JsonSubTypes.Type(
-        value = CacheInvalidationRemoveReference.class,
-        name = CacheInvalidationRemoveReference.TYPE),
+        value = CacheInvalidationEvictReference.class,
+        name = CacheInvalidationEvictReference.TYPE),
   })
   interface CacheInvalidation {
     String type();
@@ -57,10 +53,10 @@ public interface CacheInvalidations {
   }
 
   @Value.Immutable
-  @JsonSerialize(as = ImmutableCacheInvalidationPutObj.class)
-  @JsonDeserialize(as = ImmutableCacheInvalidationPutObj.class)
-  @JsonTypeName(value = CacheInvalidationPutObj.TYPE)
-  interface CacheInvalidationPutObj extends CacheInvalidation {
+  @JsonSerialize(as = ImmutableCacheInvalidationEvictObj.class)
+  @JsonDeserialize(as = ImmutableCacheInvalidationEvictObj.class)
+  @JsonTypeName(value = CacheInvalidationEvictObj.TYPE)
+  interface CacheInvalidationEvictObj extends CacheInvalidation {
     String TYPE = "obj";
 
     @Override
@@ -75,44 +71,16 @@ public interface CacheInvalidations {
     @Value.Parameter(order = 2)
     byte[] id();
 
-    @Value.Parameter(order = 3)
-    @JsonProperty("h")
-    int hash();
-
-    static CacheInvalidationPutObj cacheInvalidationPutObj(String repoId, byte[] id, int hash) {
-      return ImmutableCacheInvalidationPutObj.of(repoId, id, hash);
+    static CacheInvalidationEvictObj cacheInvalidationEvictObj(String repoId, byte[] id) {
+      return ImmutableCacheInvalidationEvictObj.of(repoId, id);
     }
   }
 
   @Value.Immutable
-  @JsonSerialize(as = ImmutableCacheInvalidationRemoveObj.class)
-  @JsonDeserialize(as = ImmutableCacheInvalidationRemoveObj.class)
-  @JsonTypeName(value = CacheInvalidationRemoveObj.TYPE)
-  interface CacheInvalidationRemoveObj extends CacheInvalidation {
-    String TYPE = "rmObj";
-
-    @Override
-    default String type() {
-      return TYPE;
-    }
-
-    @Value.Parameter(order = 1)
-    @Override
-    String repoId();
-
-    @Value.Parameter(order = 2)
-    byte[] id();
-
-    static CacheInvalidationRemoveObj cacheInvalidationRemoveObj(String repoId, byte[] id) {
-      return ImmutableCacheInvalidationRemoveObj.of(repoId, id);
-    }
-  }
-
-  @Value.Immutable
-  @JsonSerialize(as = ImmutableCacheInvalidationPutReference.class)
-  @JsonDeserialize(as = ImmutableCacheInvalidationPutReference.class)
-  @JsonTypeName(value = CacheInvalidationPutReference.TYPE)
-  interface CacheInvalidationPutReference extends CacheInvalidation {
+  @JsonSerialize(as = ImmutableCacheInvalidationEvictReference.class)
+  @JsonDeserialize(as = ImmutableCacheInvalidationEvictReference.class)
+  @JsonTypeName(value = CacheInvalidationEvictReference.TYPE)
+  interface CacheInvalidationEvictReference extends CacheInvalidation {
     String TYPE = "ref";
 
     @Override
@@ -128,39 +96,9 @@ public interface CacheInvalidations {
     @JsonProperty("ref")
     String refName();
 
-    @Value.Parameter(order = 3)
-    @JsonProperty("h")
-    int hash();
-
-    static CacheInvalidationPutReference cacheInvalidationPutReference(
-        String repoId, String refName, int hash) {
-      return ImmutableCacheInvalidationPutReference.of(repoId, refName, hash);
-    }
-  }
-
-  @Value.Immutable
-  @JsonSerialize(as = ImmutableCacheInvalidationRemoveReference.class)
-  @JsonDeserialize(as = ImmutableCacheInvalidationRemoveReference.class)
-  @JsonTypeName(value = CacheInvalidationRemoveReference.TYPE)
-  interface CacheInvalidationRemoveReference extends CacheInvalidation {
-    String TYPE = "rmRef";
-
-    @Override
-    default String type() {
-      return TYPE;
-    }
-
-    @Value.Parameter(order = 1)
-    @Override
-    String repoId();
-
-    @Value.Parameter(order = 2)
-    @JsonProperty("ref")
-    String refName();
-
-    static CacheInvalidationRemoveReference cacheInvalidationRemoveReference(
+    static CacheInvalidationEvictReference cacheInvalidationEvictReference(
         String repoId, String refName) {
-      return ImmutableCacheInvalidationRemoveReference.of(repoId, refName);
+      return ImmutableCacheInvalidationEvictReference.of(repoId, refName);
     }
   }
 }

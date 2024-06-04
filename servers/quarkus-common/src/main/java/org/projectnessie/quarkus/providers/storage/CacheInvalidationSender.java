@@ -21,10 +21,8 @@ import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_I
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST;
 import static org.projectnessie.quarkus.providers.storage.AddressResolver.LOCAL_ADDRESSES;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutObj.cacheInvalidationPutObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationPutReference.cacheInvalidationPutReference;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveObj.cacheInvalidationRemoveObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationRemoveReference.cacheInvalidationRemoveReference;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -280,22 +278,12 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   @Override
-  public void putReference(String repositoryId, String refName, int hash) {
-    enqueue(cacheInvalidationPutReference(repositoryId, refName, hash));
+  public void evictReference(String repositoryId, String refName) {
+    enqueue(cacheInvalidationEvictReference(repositoryId, refName));
   }
 
   @Override
-  public void removeReference(String repositoryId, String refName) {
-    enqueue(cacheInvalidationRemoveReference(repositoryId, refName));
-  }
-
-  @Override
-  public void putObj(String repositoryId, ObjId objId, int hash) {
-    enqueue(cacheInvalidationPutObj(repositoryId, objId.asByteArray(), hash));
-  }
-
-  @Override
-  public void removeObj(String repositoryId, ObjId objId) {
-    enqueue(cacheInvalidationRemoveObj(repositoryId, objId.asByteArray()));
+  public void evictObj(String repositoryId, ObjId objId) {
+    enqueue(cacheInvalidationEvictObj(repositoryId, objId.asByteArray()));
   }
 }
