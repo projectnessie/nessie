@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nessie.fullname" . }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+    {{- if .Values.configMapLabels }}
+    {{- toYaml .Values.configMapLabels | nindent 4 }}
+    {{- end }}
+data:
+  application.properties: |-
+    {{- $map := dict -}}
+    {{- $_ := set $map "nessie.version.store.type" .Values.versionStoreType -}}
+
+    {{- if .Values.logLevel -}}
+    {{- $_ = set $map "quarkus.log.level" .Values.logLevel -}}
+    {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
+    {{- $_ = set $map "quarkus.log.file.level" .Values.logLevel -}}
+    {{- if or (eq .Values.logLevel "DEBUG") (eq .Values.logLevel "TRACE") -}}
+    {{- $_ = set $map "quarkus.log.min-level" .Values.logLevel -}}
+    {{- end -}}
+    {{- end -}}
+
+    {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
+    {{- if .Values.dynamodb.region -}}
+    {{- $_ = set $map "quarkus.dynamodb.aws.region" .Values.dynamodb.region -}}
+    {{- end -}}
+    {{- if .Values.dynamodb.profile -}}
+    {{- $_ = set $map "quarkus.dynamodb.aws.credentials.profile-provider.profile-name" .Values.dynamodb.profile -}}
+    {{- end -}}
+    {{- end -}}
+
+    {{- if eq .Values.versionStoreType "CASSANDRA" -}}
+    {{- $_ = set $map "quarkus.cassandra.keyspace" .Values.cassandra.keyspace -}}
+    {{- $_ = set $map "quarkus.cassandra.contact-points" .Values.cassandra.contactPoints -}}
+    {{- if .Values.cassandra.localDatacenter -}}
+    {{- $_ = set $map "quarkus.cassandra.local-datacenter" .Values.cassandra.localDatacenter -}}
+    {{- end -}}
+    {{- if .Values.cassandra.auth.username -}}
+    {{- $_ = set $map "quarkus.cassandra.auth.username" .Values.cassandra.auth.username -}}
+    {{- $_ = set $map "quarkus.cassandra.auth.password" .Values.cassandra.auth.password -}}
+    {{- end -}}
+    {{- end -}}
+
+    {{- if eq .Values.versionStoreType "ROCKSDB" -}}
+    {{- $_ = set $map "nessie.version.store.persist.rocks.database-path" "/rocks-nessie" -}}
+    {{- end -}}
+    {{- if eq .Values.versionStoreType "ROCKS" -}}
+    {{- $_ = set $map "nessie.version.store.rocks.db-path" "/rocks-nessie" -}}
+    {{- end -}}
+
+    {{- if or (eq .Values.versionStoreType "MONGODB") (eq .Values.versionStoreType "MONGO") -}}
+    {{- if .Values.mongodb.name -}}
+    {{- $_ = set $map "quarkus.mongodb.database" .Values.mongodb.name -}}
+    {{- end -}}
+    {{- if .Values.mongodb.connectionString -}}
+    {{- $_ = set $map "quarkus.mongodb.connection-string" .Values.mongodb.connectionString -}}
+    {{- end -}}
+    {{- end -}}
+
+    {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") -}}
+    {{- $oldConfig := .Values.postgres | default dict -}}
+    {{- $newConfig := .Values.jdbc | default dict -}}
+    {{- $jdbcUrl := coalesce $oldConfig.jdbcUrl $newConfig.jdbcUrl -}}
+    {{- $dbKind := include "nessie.dbKind" $jdbcUrl -}}
+    {{- $_ = set $map "nessie.version.store.persist.jdbc.datasource"  $dbKind -}}
+    {{- if .Values.jdbc.catalog -}}
+    {{- $_ = set $map "nessie.version.store.persist.jdbc.catalog" .Values.jdbc.catalog -}}
+    {{- end -}}
+    {{- if .Values.jdbc.schema -}}
+    {{- $_ = set $map "nessie.version.store.persist.jdbc.schema" .Values.jdbc.schema -}}
+    {{- end -}}
+    {{- $_ = set $map ( printf "quarkus.datasource.%s.jdbc.url" $dbKind ) $jdbcUrl }}
+    {{- end -}}
+
+    {{- if eq .Values.versionStoreType "BIGTABLE" -}}
+    {{- $_ = set $map "quarkus.google.cloud.project-id" .Values.bigtable.projectId -}}
+    {{- $_ = set $map "nessie.version.store.persist.bigtable.instance-id" .Values.bigtable.instanceId -}}
+    {{- $_ = set $map "nessie.version.store.persist.bigtable.app-profile-id" .Values.bigtable.appProfileId -}}
+    {{- end -}}
+
+    {{- if .Values.authentication.enabled -}}
+    {{- $_ = set $map "nessie.server.authentication.enabled" .Values.authentication.enabled -}}
+    {{- if .Values.authentication.oidcAuthServerUrl -}}
+    {{- $_ = set $map "quarkus.oidc.auth-server-url" .Values.authentication.oidcAuthServerUrl -}}
+    {{- end -}}
+    {{- if .Values.authentication.oidcClientId -}}
+    {{- $_ = set $map "quarkus.oidc.client-id" .Values.authentication.oidcClientId -}}
+    {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.oidc.tenant-enabled" false -}}
+    {{- end -}}
+
+    {{- if .Values.authorization.enabled -}}
+    {{- $_ = set $map "nessie.server.authorization.enabled" .Values.authorization.enabled -}}
+    {{- if .Values.authorization.rules -}}
+    {{- range $ruleId, $rule := .Values.authorization.rules -}}
+    {{- $_ = set $map (printf "nessie.server.authorization.rules.%s" $ruleId ) $rule -}}
+    {{- end -}}
+    {{- end -}}
+    {{- end -}}
+
+    {{- if .Values.tracing.enabled -}}
+    {{- $_ = set $map "quarkus.otel.exporter.otlp.endpoint" .Values.tracing.endpoint -}}
+    {{- if .Values.tracing.attributes -}}
+    {{- $_ = set $map "quarkus.otel.resource-attributes" (include "nessie.dictToString" .Values.tracing.attributes) -}}
+    {{- end -}}
+    {{- if .Values.tracing.sample -}}
+    {{ if eq .Values.tracing.sample "all" -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler" "parentbased_always_on" -}}
+    {{- else if eq .Values.tracing.sample "none" -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler" "always_off" -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler=" "parentbased_traceidratio" -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler-arg" .Values.tracing.sample -}}
+    {{- end -}}
+    {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.otel.sdk-disabled" true -}}
+    {{- end -}}
+
+    {{- list .Values.advancedConfig "" $map | include "nessie.mergeAdvancedConfig" }}
+
+    {{- range $k, $v := $map }}
+    {{ printf "%s=%s" $k ( toString $v ) }}
+    {{- end }}

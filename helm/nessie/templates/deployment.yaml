@@ -39,42 +39,20 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.Version }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
           volumeMounts:
+            - name: nessie-config
+              mountPath: /deployments/config/application.properties
+              subPath: application.properties
+          {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
             - name: rocks-storage
               mountPath: /rocks-nessie
           {{- end }}
           {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
-          volumeMounts:
             - name: bigtable-creds
               mountPath: /bigtable-nessie
           {{- end }}
           env:
-            - name: NESSIE_VERSION_STORE_TYPE
-              value: {{ .Values.versionStoreType }}
-
-            {{- if .Values.logLevel }}
-            - name: QUARKUS_LOG_LEVEL
-              value: {{ .Values.logLevel }}
-            - name: QUARKUS_LOG_CONSOLE_LEVEL
-              value: {{ .Values.logLevel }}
-            - name: QUARKUS_LOG_FILE_LEVEL
-              value: {{ .Values.logLevel }}
-            {{- if or (eq .Values.logLevel "DEBUG") (eq .Values.logLevel "TRACE") }}
-            - name: QUARKUS_LOG_MIN_LEVEL
-              value: {{ .Values.logLevel }}
-            {{- end }}
-            {{- end }}
-
             {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") }}
-            {{- if .Values.dynamodb.region }}
-            - name: AWS_REGION
-              value: {{ .Values.dynamodb.region }}
-            {{- end }}
-            {{- if .Values.dynamodb.profile }}
-            - name: AWS_PROFILE
-              value: {{ .Values.dynamodb.profile }}
-            {{- end }}
             {{- if .Values.dynamodb.secret }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
@@ -88,42 +66,7 @@ spec:
                   key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
             {{- end }}
             {{- end }}
-
-            {{- if eq .Values.versionStoreType "CASSANDRA" }}
-            - name: QUARKUS_CASSANDRA_KEYSPACE
-              value: {{ .Values.cassandra.keyspace }}
-            - name: QUARKUS_CASSANDRA_CONTACT_POINTS
-              value: {{ .Values.cassandra.contactPoints }}
-            {{- if .Values.cassandra.localDatacenter }}
-            - name: QUARKUS_CASSANDRA_LOCAL_DATACENTER
-              value: {{ .Values.cassandra.localDatacenter }}
-            {{- end}}
-            {{- if .Values.cassandra.auth.username }}
-            - name: QUARKUS_CASSANDRA_AUTH_USERNAME
-              value: {{ .Values.cassandra.auth.username }}
-            - name: QUARKUS_CASSANDRA_AUTH_PASSWORD
-              value: {{ .Values.cassandra.auth.password }}
-            {{- end}}
-            {{- end }}
-
-            {{- if eq .Values.versionStoreType "ROCKSDB" }}
-            - name: NESSIE_VERSION_STORE_PERSIST_ROCKS_DATABASE_PATH
-              value: /rocks-nessie
-            {{- end }}
-            {{- if eq .Values.versionStoreType "ROCKS" }}
-            - name: NESSIE_VERSION_STORE_ROCKS_DB_PATH
-              value: /rocks-nessie
-            {{- end }}
-
             {{- if or (eq .Values.versionStoreType "MONGODB") (eq .Values.versionStoreType "MONGO") }}
-            {{- if .Values.mongodb.name }}
-            - name: QUARKUS_MONGODB_DATABASE
-              value: {{ .Values.mongodb.name }}
-            {{- end }}
-            {{- if .Values.mongodb.connectionString }}
-            - name: QUARKUS_MONGODB_CONNECTION_STRING
-              value: {{ .Values.mongodb.connectionString }}
-            {{- end }}
             {{- if .Values.mongodb.secret.name }}
             - name: QUARKUS_MONGODB_CREDENTIALS_USERNAME
               valueFrom:
@@ -137,7 +80,6 @@ spec:
                   key: {{ .Values.mongodb.secret.password }}
             {{- end }}
             {{- end }}
-
             {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
             {{- $oldConfig := .Values.postgres | default dict }}
             {{- $newConfig := .Values.jdbc | default dict }}
@@ -148,98 +90,23 @@ spec:
             {{- $secretUsername := coalesce $oldSecret.username $newSecret.username }}
             {{- $secretPassword := coalesce $oldSecret.password $newSecret.password }}
             {{- $dbKind := include "nessie.dbKind" $jdbcUrl }}
-            {{- $dataSourceConfigPrefix := include "nessie.datasourceConfigPrefix" $dbKind }}
-            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_DATASOURCE
-              value: {{ $dbKind }}
-            {{- if .Values.jdbc.catalog }}
-            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_CATALOG
-              value: {{ .Values.jdbc.catalog }}
-            {{- end }}
-            {{- if .Values.jdbc.schema }}
-            - name: NESSIE_VERSION_STORE_PERSIST_JDBC_SCHEMA
-              value: {{ .Values.jdbc.schema }}
-            {{- end }}
-            - name: {{ $dataSourceConfigPrefix }}USERNAME
+            - name: QUARKUS_DATASOURCE_{{- upper $dbKind -}}_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key: {{ $secretUsername }}
-            - name: {{ $dataSourceConfigPrefix }}PASSWORD
+            - name: QUARKUS_DATASOURCE_{{- upper $dbKind -}}PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key: {{ $secretPassword }}
-            - name: {{ $dataSourceConfigPrefix }}JDBC_URL
-              value: {{ $jdbcUrl }}
             {{- end }}
             {{- if eq .Values.versionStoreType "BIGTABLE" }}
-            - name: QUARKUS_GOOGLE_CLOUD_PROJECT_ID
-              value: {{ .Values.bigtable.projectId }}
-            - name: NESSIE_VERSION_STORE_PERSIST_BIGTABLE_INSTANCE_ID
-              value: {{ .Values.bigtable.instanceId }}
-            - name: NESSIE_VERSION_STORE_PERSIST_BIGTABLE_APP_PROFILE_ID
-              value: {{ .Values.bigtable.appProfileId }}
             {{- if .Values.bigtable.secret }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /bigtable-nessie/sa_credentials.json
             {{- end }}
             {{- end }}
-
-            {{- if .Values.authentication.enabled }}
-            - name: NESSIE_SERVER_AUTHENTICATION_ENABLED
-              value: {{ .Values.authentication.enabled | quote }}
-            {{- if .Values.authentication.oidcAuthServerUrl }}
-            - name: QUARKUS_OIDC_AUTH_SERVER_URL
-              value: {{ .Values.authentication.oidcAuthServerUrl }}
-            {{- end }}
-            {{- if .Values.authentication.oidcClientId }}
-            - name: QUARKUS_OIDC_CLIENT_ID
-              value: {{ .Values.authentication.oidcClientId }}
-            {{- end }}
-            {{- else }}
-            - name: QUARKUS_OIDC_TENANT_ENABLED
-              value: "false"
-            {{- end }}
-
-            {{- if .Values.authorization.enabled }}
-            - name: NESSIE_SERVER_AUTHORIZATION_ENABLED
-              value: {{ .Values.authorization.enabled | quote }}
-            {{- if .Values.authorization.rules }}
-            {{- range $ruleId, $rule := .Values.authorization.rules }}
-            - name: NESSIE_SERVER_AUTHORIZATION_RULES_{{ upper $ruleId }}
-              value: {{ $rule }}
-            {{- end }}
-            {{- end }}
-            {{- end }}
-
-            {{- if .Values.tracing.enabled }}
-            - name: QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT
-              value: {{ .Values.tracing.endpoint | quote }}
-            {{- if .Values.tracing.attributes }}
-            - name: QUARKUS_OTEL_RESOURCE_ATTRIBUTES
-              value: "{{- include "nessie.dictToString" .Values.tracing.attributes }}"
-            {{- end }}
-            {{- if .Values.tracing.sample }}
-            {{ if eq .Values.tracing.sample "all" }}
-            - name: QUARKUS_OTEL_TRACES_SAMPLER
-              value: "parentbased_always_on"
-            {{- else if eq .Values.tracing.sample "none" }}
-            - name: QUARKUS_OTEL_TRACES_SAMPLER
-              value: "always_off"
-            {{- else }}
-            - name: QUARKUS_OTEL_TRACES_SAMPLER
-              value: "parentbased_traceidratio"
-            - name: QUARKUS_OTEL_TRACES_SAMPLER_ARG
-              value: {{ .Values.tracing.sample | quote }}
-            {{- end }}
-            {{- end }}
-            {{- else }}
-            - name: QUARKUS_OTEL_SDK_DISABLED
-              value: "true"
-            {{- end }}
-
-            {{ list .Values.advancedConfig "" | include "nessie.propsToEnvVars" | nindent 12 }}
-
             {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}
@@ -272,14 +139,16 @@ spec:
             timeoutSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
       volumes:
+        - name: nessie-config
+          configMap:
+            name: {{ include "nessie.fullname" . }}
+      {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
         - name: rocks-storage
           persistentVolumeClaim:
             claimName: {{ include "nessie.fullname" . }}
       {{- end }}
       {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
-      volumes:
         - name: bigtable-creds
           secret:
             secretName: {{ .Values.bigtable.secret.name }}

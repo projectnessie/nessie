@@ -216,6 +216,9 @@ podAnnotations: {}
 # -- Additional Labels to apply to nessie pods.
 podLabels: {}
 
+# -- Additional Labels to apply to nessie configmap.
+configMapLabels: {}
+
 # -- Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
 podSecurityContext:
   {}
