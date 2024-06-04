@@ -16,8 +16,10 @@
 package tests.smallrye;
 
 import io.smallrye.config.ConfigMapping;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +42,14 @@ public interface AllTypes extends IntOne {
   Path path();
 
   Optional<Path> optionalPath();
+
+  URI uri();
+
+  Optional<URI> optionalUri();
+
+  Instant instant();
+
+  Optional<Instant> optionalInstant();
 
   List<String> stringList();
 
