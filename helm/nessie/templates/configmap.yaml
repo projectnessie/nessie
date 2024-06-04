@@ -32,11 +32,14 @@ data:
 
     {{- if eq .Values.versionStoreType "CASSANDRA" -}}
     {{- $_ = set $map "quarkus.cassandra.keyspace" .Values.cassandra.keyspace -}}
-    {{- $_ = set $map "quarkus.cassandra.contact-points" .Values.cassandra.contactPoints -}}
+    {{- range $i, $cp := .Values.cassandra.contactPoints }}
+    {{- $_ = set $map (printf "quarkus.cassandra.contact-points[%d]" $i) $cp -}}
+    {{- end }}
     {{- if .Values.cassandra.localDatacenter -}}
     {{- $_ = set $map "quarkus.cassandra.local-datacenter" .Values.cassandra.localDatacenter -}}
     {{- end -}}
-    {{- if .Values.cassandra.auth.username -}}
+    {{- /* legacy support for username/password */}}
+    {{- if and .Values.cassandra.auth .Values.cassandra.auth.username -}}
     {{- $_ = set $map "quarkus.cassandra.auth.username" .Values.cassandra.auth.username -}}
     {{- $_ = set $map "quarkus.cassandra.auth.password" .Values.cassandra.auth.password -}}
     {{- end -}}

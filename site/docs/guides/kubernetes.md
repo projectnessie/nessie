@@ -97,6 +97,26 @@ kubectl create secret generic mongodb-creds --from-env-file="$PWD/mongodb-creds"
 * The `mongodb-creds` secret will now be picked up when you use `MONGODB` as the version store 
 when installing Nessie (see below).
 
+#### Providing secrets for Cassandra
+
+* Providing secrets for Cassandra is strongly recommended, but not enforced.
+* Make sure you have a Secret in the following form:
+
+```text
+> cat $PWD/cassandra-creds
+cassandra_username=YOUR_USERNAME
+cassandra_password=YOUR_PASSWORD
+```
+
+* Create the secret from the given file:
+
+```bash
+kubectl create secret generic cassandra-creds --from-env-file="$PWD/cassandra-creds"
+```
+
+* The `cassandra-creds` secret will now be picked up when you use `CASSANDRA` as the version store 
+when installing Nessie (see below).
+
 #### Providing secrets for DynamoDB
 
 * Make sure you have a Secret in the following form:

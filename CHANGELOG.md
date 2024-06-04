@@ -15,6 +15,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Helm chart: the `cassandra` section now has support for pulling credentials from a secret. The
+  old `cassandra.auth.username` and `cassandra.auth.password` properties still work, but are now
+  deprecated and will be removed in a future release. Use the `cassandra.secret` property instead. 
+  Also, the `cassandra.contactPoints` property is now an array.
+
+
 ### Breaking changes
 
 ### New Features
