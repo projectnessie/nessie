@@ -56,6 +56,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-rocksdb"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation("io.quarkus:quarkus-core-deployment")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-picocli")
 
