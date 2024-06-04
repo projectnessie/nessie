@@ -75,15 +75,13 @@ mongodb:
 # JDBC datasource settings. Only required when using JDBC version store type; ignored otherwise.
 jdbc:
   # -- The JDBC connection string. If you are using Nessie OSS images, then only
-  # PostgreSQL and MariaDB are supported.
-  jdbcUrl: jdbc:postgresql://localhost:5432/my_database
-
+  # PostgreSQL, MariaDB and MySQL URLs are supported. Check your JDBC driver documentation
+  # for the correct URL format.
+  jdbcUrl: jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie
   # -- The catalog name to use. Required only if the JDBC URL does not contain a catalog name, or if you want to override it.
   catalog: ""
-
   # -- The schema name to use. Required only if the JDBC URL does not contain a schema name, or if you want to override it.
   schema: ""
-
   secret:
     # -- The secret name to pull datasource credentials from.
     name: datasource-creds
