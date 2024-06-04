@@ -80,6 +80,20 @@ spec:
                   key: {{ .Values.mongodb.secret.password }}
             {{- end }}
             {{- end }}
+            {{- if eq .Values.versionStoreType "CASSANDRA" }}
+            {{- if .Values.cassandra.secret.name }}
+            - name: QUARKUS_CASSANDRA_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cassandra.secret.name }}
+                  key: {{ .Values.cassandra.secret.username }}
+            - name: QUARKUS_CASSANDRA_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cassandra.secret.name }}
+                  key: {{ .Values.cassandra.secret.password }}
+            {{- end }}
+            {{- end }}
             {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
             {{- $oldConfig := .Values.postgres | default dict }}
             {{- $newConfig := .Values.jdbc | default dict }}

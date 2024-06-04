@@ -36,7 +36,8 @@ data:
     {{- if .Values.cassandra.localDatacenter -}}
     {{- $_ = set $map "quarkus.cassandra.local-datacenter" .Values.cassandra.localDatacenter -}}
     {{- end -}}
-    {{- if .Values.cassandra.auth.username -}}
+    {{- /* legacy support for username/password */}}
+    {{- if and .Values.cassandra.auth .Values.cassandra.auth.username -}}
     {{- $_ = set $map "quarkus.cassandra.auth.username" .Values.cassandra.auth.username -}}
     {{- $_ = set $map "quarkus.cassandra.auth.password" .Values.cassandra.auth.password -}}
     {{- end -}}

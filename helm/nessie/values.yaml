@@ -23,12 +23,17 @@ versionStoreType: IN_MEMORY
 # Cassandra settings. Only required when using CASSANDRA version store type; ignored otherwise.
 cassandra:
   keyspace: nessie
-  contactPoints:
-  localDatacenter:
-  auth:
-    {}
-    # username:
-    # password:
+  # -- The contact points for the Cassandra cluster. At least one contact point must be provided,
+  # but more can be added for redundancy. The format is a comma-separated list of host:port elements.
+  contactPoints: cassandra.cassandra.svc.cluster.local:9042
+  localDatacenter: datacenter1
+  secret:
+    # -- The secret name to pull Cassandra credentials from.
+    name: cassandra-creds
+    # -- The secret key storing the Cassandra username.
+    username: cassandra_username
+    # -- The secret key storing the Cassandra password.
+    password: cassandra_password
 
 # RocksDB settings. Only required when using ROCKSDB version store type; ignored otherwise.
 rocksdb:
