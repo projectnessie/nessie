@@ -32,9 +32,7 @@ data:
 
     {{- if eq .Values.versionStoreType "CASSANDRA" -}}
     {{- $_ = set $map "quarkus.cassandra.keyspace" .Values.cassandra.keyspace -}}
-    {{- range $i, $cp := .Values.cassandra.contactPoints }}
-    {{- $_ = set $map (printf "quarkus.cassandra.contact-points[%d]" $i) $cp -}}
-    {{- end -}}
+    {{- $_ = set $map "quarkus.cassandra.contact-points" .Values.cassandra.contactPoints -}}
     {{- if .Values.cassandra.localDatacenter -}}
     {{- $_ = set $map "quarkus.cassandra.local-datacenter" .Values.cassandra.localDatacenter -}}
     {{- end -}}

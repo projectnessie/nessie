@@ -18,10 +18,6 @@ as necessary. Empty sections will not end in the release notes.
 - Helm chart: the `cassandra` section now has support for pulling credentials from a secret. The
   old `cassandra.auth.username` and `cassandra.auth.password` properties still work, but are now
   deprecated and will be removed in a future release. Use the `cassandra.secret` property instead.
-- Also in the Helm chart, the `cassandra.contactPoints` property is now an array and not a string
-  with comma-separated values. _This is a breaking change_. You can pass contact points on the
-  command line using the following syntax: `--set 'cassandra.contactPoints[0]=host1:9042' --set
-  'cassandra.contactPoints[1]=host2:9042'`.
 
 ### Breaking changes
 

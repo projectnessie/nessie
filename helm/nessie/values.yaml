@@ -23,9 +23,8 @@ versionStoreType: IN_MEMORY
 cassandra:
   keyspace: nessie
   # -- The contact points for the Cassandra cluster. At least one contact point must be provided,
-  # but more can be added for redundancy. The format is host:port.
-  contactPoints:
-  - cassandra.cassandra.svc.cluster.local:9042
+  # but more can be added for redundancy. The format is a comma-separated list of host:port elements.
+  contactPoints: cassandra.cassandra.svc.cluster.local:9042
   localDatacenter: datacenter1
   secret:
     # -- The secret name to pull Cassandra credentials from.
