@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.config;
 
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
 import java.util.Optional;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
 
@@ -83,11 +84,7 @@ public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
    * href="https://quarkus.io/guides/datasource#jdbc-configuration">Quarkus JDBC config
    * reference</a>.
    */
-  Optional<String> datasource();
-
+  @WithName("datasource")
   @Override
-  Optional<String> catalog();
-
-  @Override
-  Optional<String> schema();
+  Optional<String> datasourceName();
 }

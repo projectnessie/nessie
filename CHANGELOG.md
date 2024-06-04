@@ -34,6 +34,11 @@ as necessary. Empty sections will not end in the release notes.
 - Support for Java 8 is officially deprecated and users are encouraged to upgrade all clients to
   at least Java 11, better Java 17 or 21, if possible. Current Spark versions 3.3, 3.4 and 3.5 
   work with Java 11 and 17. Support for Java 8 will eventually be removed.
+- For JDBC version stores, the following settings, which never worked as expected, are now 
+  deprecated and will be removed in a future release. The catalog and the schema must always be
+  specified explicitly in the JDBC URL.
+  - `nessie.version.store.persist.jdbc.catalog`
+  - `nessie.version.store.persist.jdbc.schema`
 
 ### Fixes
 

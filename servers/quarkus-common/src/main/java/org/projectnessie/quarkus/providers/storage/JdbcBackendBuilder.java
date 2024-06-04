@@ -99,7 +99,7 @@ public class JdbcBackendBuilder implements BackendBuilder {
   private DataSource selectDataSource() {
     String dataSourceName =
         config
-            .datasource()
+            .datasourceName()
             .map(JdbcBackendBuilder::unquoteDataSourceName)
             .orElse(DEFAULT_DATA_SOURCE_NAME);
     DataSource dataSource = findDataSourceByName(dataSourceName);
