@@ -153,7 +153,7 @@ public class TestNamespace {
     assertThat(namespace.getProperties()).isEqualTo(properties);
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{displayName}[{index}]")
   @MethodSource("elementsProvider")
   void testNamespaceFromElements(String[] elements, String expectedNamespace) {
     Namespace namespace = Namespace.of(elements);
@@ -195,7 +195,7 @@ public class TestNamespace {
         .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, identifier));
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{displayName}[{index}]")
   @ValueSource(
       strings = {"\u0000", "a.\u0000", "a.b.c.\u0000", "\u001D", "a.\u001D", "a.b.c.\u001D"})
   void testZeroByteUsage(String identifier) {

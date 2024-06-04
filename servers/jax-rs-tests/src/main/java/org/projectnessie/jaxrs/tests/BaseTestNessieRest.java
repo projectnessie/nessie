@@ -552,7 +552,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   @NessieApiVersions(versions = {NessieApiVersion.V2})
-  @ParameterizedTest
+  @ParameterizedTest(name = "{displayName}[{index}]")
   @CsvSource({
     "simple1,testKey",
     "simple2,test.Key",
