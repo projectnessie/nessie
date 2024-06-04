@@ -56,7 +56,7 @@ import org.projectnessie.services.impl.AbstractTestContents.ContentAndOperationT
 
 public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{displayName}[{index}]")
   @ValueSource(strings = {"a.b.c", "a.b\u001Dc.d", "a.b.c.d", "a.b\u0000c.d"})
   public void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
     Namespace ns = Namespace.parse(namespaceName);
