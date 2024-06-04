@@ -12,7 +12,7 @@ services:
   ##
   ## 2. Start the pods:
   ##
-  ##      podman compose -f docker/catalog-full/docker-compose.yml up
+  ##      podman compose -f docker/catalog-auth-s3-otel-jdbc/docker-compose.yml up
   ##
   ## 3. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
   ##
