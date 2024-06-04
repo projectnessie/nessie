@@ -34,7 +34,7 @@ data:
     {{- $_ = set $map "quarkus.cassandra.keyspace" .Values.cassandra.keyspace -}}
     {{- range $i, $cp := .Values.cassandra.contactPoints }}
     {{- $_ = set $map (printf "quarkus.cassandra.contact-points[%d]" $i) $cp -}}
-    {{- end }}
+    {{- end -}}
     {{- if .Values.cassandra.localDatacenter -}}
     {{- $_ = set $map "quarkus.cassandra.local-datacenter" .Values.cassandra.localDatacenter -}}
     {{- end -}}
