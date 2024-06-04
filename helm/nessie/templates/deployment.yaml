@@ -95,7 +95,7 @@ spec:
                 secretKeyRef:
                   name: {{ $secretName }}
                   key: {{ $secretUsername }}
-            - name: QUARKUS_DATASOURCE_{{- upper $dbKind -}}PASSWORD
+            - name: QUARKUS_DATASOURCE_{{- upper $dbKind -}}_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $secretName }}
