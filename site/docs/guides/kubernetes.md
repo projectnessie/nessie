@@ -177,16 +177,16 @@ when installing Nessie (see below).
 
 #### Configuring JDBC version stores
 
-Let's assume that we want to use a PostgreSQL database. _The database must be created beforehand, as
-the Helm chart will not create it for you_. Let's assume that the database is called `nessie`. The
-PostgreSQL service is running at `postgres:5432` in the same namespace.
+!!! note
+    When setting up your SQL backend, _both the database (sometimes called catalog) and the 
+    schema (sometimes called namespace, for backends that distinguish between database and schema) 
+    must be created beforehand, as the Helm chart will not create them for you_. Check your database 
+    documentation for more information, especially around the `CREATE DATABASE` and `CREATE SCHEMA` 
+    commands. You must also create a user with the necessary permissions to access the database and 
+    schema.
 
-The JDBC schema will be created automatically by Nessie if it doesn't exist. If it does exist, it
-will be used as-is. You must ensure that the schema is created with the correct permissions for the
-database user, and that the schema is up-to-date with the version of Nessie that you are using.
-Check the [Nessie release notes] for more information on schema upgrades.
-
-[Nessie release notes]: https://github.com/projectnessie/nessie/releases
+Let's assume that we want to use a PostgreSQL service, that the database is called `nessiedb` and
+the schema `nessie`. The PostgreSQL service is running at `postgres:5432` in the same namespace.
 
 Next, we need to configure the Helm chart to use the `JDBC` version store type and to pull the
 database credentials from the secret that was created previously. We can do this by creating a
@@ -195,12 +195,48 @@ database credentials from the secret that was created previously. We can do this
 ```yaml
 versionStoreType: JDBC
 jdbc:
-  jdbcUrl: jdbc:postgresql://postgres:5432/nessie
+  jdbcUrl: jdbc:postgresql://postgres:5432/nessiedb?currentSchema=nessie
   secret:
     name: postgres-creds
     username: postgres_username
     password: postgres_password
 ```
+
+Let's now assume that we are using MariaDB or MySQL instead of PostgreSQL. These backends do not
+support schemas, thus only the database name needs to be provided. MariaDB and MySQL share the same
+JDBC driver (the MariaDB one), so the JDBC URL is roughly the same for both; a minimal JDBC URL for
+these backends would look like this:
+
+For MariaDB:
+
+```yaml
+jdbcUrl: jdbc:mariadb://mariadb:3306/nessiedb
+```
+
+For MySQL:
+
+```yaml
+jdbcUrl: jdbc:mysql://mysql:3306/nessiedb
+```
+
+In the above examples, `mariadb` and `mysql` are the service names of the MariaDB and MySQL
+services, respectively. The database name is `nessiedb`.
+
+!!! note 
+    The exact format of the JDBC URL may vary depending on the database you are using. Also,
+    JDBC drivers usually support various optional connection properties. Check the documentation of 
+    your database and its JDBC driver for more information (for PostgreSQL, [check out this
+    page](https://jdbc.postgresql.org/documentation/use/) and for MariaDB, [check out this
+    one](https://mariadb.com/kb/en/about-mariadb-connector-j/#connection-strings)).
+
+!!! note 
+    While the database and the schema must be created beforehand, the required tables can be
+    created automatically by Nessie if they don't exist, in the target database and schema. If they 
+    do exist, they will be used as-is. You must ensure that their structure is up-to-date with the
+    version of Nessie that you are using. Check the [Nessie release notes] for more information on
+    schema upgrades.
+
+[Nessie release notes]: https://github.com/projectnessie/nessie/releases
 
 Then, we can install the Helm chart with the following values:
 
