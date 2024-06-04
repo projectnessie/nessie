@@ -175,7 +175,7 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
     if (property.isGroup()) {
       // Represents a type that consists of multiple fields/properties, which are documented
       // underneath this property.
-      return "-";
+      return "";
     }
     throw new UnsupportedOperationException("Don't know how to handle " + property);
   }
