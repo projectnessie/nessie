@@ -51,6 +51,13 @@ public interface ExpiringTokenSecret extends Secret {
     };
   }
 
+  /**
+   * Builds an {@linkplain ExpiringTokenSecret expiring token} from its map representation.
+   *
+   * <p>{@link #token()} is retrieved from the key {@code key}, or if not present from the key
+   * {@code value}. {@linkplain #expiresAt()} is retrieved from the key {@code expiresAt} using
+   * {@link Instant#parse(CharSequence)} to convert it from the string representation.
+   */
   static ExpiringTokenSecret expiringTokenSecret(@Nonnull Map<String, String> value) {
     String name = value.get("token");
     if (name == null) {

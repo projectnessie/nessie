@@ -20,6 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 /**
  * Abstraction for secrets managers that only return a single string for a single secret. Tries to
@@ -47,5 +50,14 @@ public abstract class SingleValueSecretsSupplier implements SecretsSupplier {
     }
   }
 
+  /**
+   * Resolve secrets.
+   *
+   * @param names names of the secrets to resolve
+   * @return map of secret names to either the JSON representations of the secrets or, if not a JSON
+   *     document, the single value for the secret. See {@link KeySecret#keySecret(Map)}, {@link
+   *     BasicCredentials#basicCredentials(Map)}, {@link
+   *     ExpiringTokenSecret#expiringTokenSecret(Map)}
+   */
   protected abstract Map<String, String> resolveSingleValueSecrets(Collection<String> names);
 }

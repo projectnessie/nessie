@@ -18,7 +18,7 @@ package org.projectnessie.quarkus.config;
 import org.eclipse.microprofile.config.spi.Converter;
 import org.projectnessie.catalog.secrets.KeySecret;
 
-public class KeyCredentialsConverter implements Converter<KeySecret> {
+public class KeySecretConverter implements Converter<KeySecret> {
   @Override
   public KeySecret convert(String value) throws IllegalArgumentException, NullPointerException {
     return value != null && !value.isEmpty() ? KeySecret.keySecret(value) : null;

@@ -87,7 +87,7 @@ public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFi
   Optional<BasicCredentials> account();
 
   @Override
-  @WithConverter(KeyCredentialsConverter.class)
+  @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> sasToken();
 
   @Override

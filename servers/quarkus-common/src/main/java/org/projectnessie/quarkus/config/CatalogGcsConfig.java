@@ -64,7 +64,7 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   Optional<GcsAuthType> authType();
 
   @Override
-  @WithConverter(KeyCredentialsConverter.class)
+  @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> authCredentialsJson();
 
   @Override
@@ -107,11 +107,11 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   OptionalInt deleteBatchSize();
 
   @Override
-  @WithConverter(KeyCredentialsConverter.class)
+  @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> encryptionKey();
 
   @Override
-  @WithConverter(KeyCredentialsConverter.class)
+  @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> decryptionKey();
 
   @Override

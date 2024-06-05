@@ -38,6 +38,12 @@ public interface KeySecret extends Secret {
     };
   }
 
+  /**
+   * Builds a {@linkplain KeySecret key secret} from its map representation.
+   *
+   * <p>The secret is retrieved from the key {@code key}, or if not present from the key {@code
+   * value}.
+   */
   static KeySecret keySecret(@Nonnull Map<String, String> value) {
     String key = value.get("key");
     if (key == null) {

@@ -27,7 +27,7 @@ public interface CatalogAdlsFileSystemOptions extends AdlsFileSystemOptions {
   Optional<BasicCredentials> account();
 
   @Override
-  @WithConverter(KeyCredentialsConverter.class)
+  @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> sasToken();
 
   @Override

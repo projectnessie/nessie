@@ -47,6 +47,12 @@ public interface BasicCredentials extends Secret {
     };
   }
 
+  /**
+   * Builds a {@linkplain BasicCredentials basic credentials} from its map representation.
+   *
+   * <p>{@link #name()} is retrieved from the key {@code name}. {@linkplain #secret()} is retrieved
+   * from the key {@code secret}.
+   */
   static BasicCredentials basicCredentials(@Nonnull Map<String, String> value) {
     String name = value.get("name");
     if (name == null) {
