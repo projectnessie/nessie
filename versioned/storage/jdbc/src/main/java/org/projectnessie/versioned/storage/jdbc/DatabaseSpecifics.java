@@ -97,6 +97,9 @@ public final class DatabaseSpecifics {
     /** Deadlock error, returned by Postgres. */
     private static final String DEADLOCK_SQL_STATE_POSTGRES = "40P01";
 
+    /** Already exists error, returned by Postgres, H2 and Cockroach. */
+    private static final String ALREADY_EXISTS_STATE_POSTGRES = "42P07";
+
     /**
      * Cockroach "retry, write too old" error, see <a
      * href="https://www.cockroachlabs.com/docs/v21.1/transaction-retry-error-reference.html#retry_write_too_old">Cockroach's
@@ -156,6 +159,11 @@ public final class DatabaseSpecifics {
     }
 
     @Override
+    public boolean isAlreadyExists(SQLException e) {
+      return ALREADY_EXISTS_STATE_POSTGRES.equals(e.getSQLState());
+    }
+
+    @Override
     public String wrapInsert(String sql) {
       return sql + " ON CONFLICT DO NOTHING";
     }
@@ -165,9 +173,10 @@ public final class DatabaseSpecifics {
 
     private static final String VARCHAR = "VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
     private static final String TEXT = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin";
-    private static final String MYSQL_CONSTRAINT_VIOLATION_SQL_STATE = "23000";
 
+    private static final String MYSQL_CONSTRAINT_VIOLATION_SQL_STATE = "23000";
     private static final String MYSQL_LOCK_DEADLOCK_SQL_STATE = "40001";
+    private static final String MYSQL_ALREADY_EXISTS_SQL_STATE = "42S01";
 
     private final Map<JdbcColumnType, String> typeMap;
     private final Map<JdbcColumnType, Integer> typeIdMap;
@@ -209,6 +218,11 @@ public final class DatabaseSpecifics {
     @Override
     public boolean isRetryTransaction(SQLException e) {
       return MYSQL_LOCK_DEADLOCK_SQL_STATE.equals(e.getSQLState());
+    }
+
+    @Override
+    public boolean isAlreadyExists(SQLException e) {
+      return MYSQL_ALREADY_EXISTS_SQL_STATE.equals(e.getSQLState());
     }
 
     @Override

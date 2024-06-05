@@ -51,34 +51,52 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class JdbcBackend implements Backend {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBackend.class);
 
   private final DatabaseSpecific databaseSpecific;
   private final DataSource dataSource;
   private final boolean closeDataSource;
   private final String createTableRefsSql;
   private final String createTableObjsSql;
+
+  private final AtomicBoolean first = new AtomicBoolean(true);
   private String catalog;
   private String schema;
 
+  @SuppressWarnings("removal")
   public JdbcBackend(
       @Nonnull JdbcBackendConfig config,
       @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {
     this.dataSource = config.dataSource();
-    this.catalog = config.catalog().orElse(null);
-    this.schema = config.schema().orElse(null);
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
     createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
     createTableObjsSql = buildCreateTableObjsSql(databaseSpecific);
+    if (config.catalog().isPresent()) {
+      LOGGER.warn(
+          "Configuration 'nessie.version.store.persist.jdbc.catalog' is now obsolete, please remove it. "
+              + "The catalog must be specified directly in the JDBC URL using the option 'quarkus.datasource.{}.jdbc.url'",
+          config.datasourceName().orElse("postgresql"));
+    }
+    if (config.schema().isPresent()) {
+      LOGGER.warn(
+          "Configuration 'nessie.version.store.persist.jdbc.schema' is now obsolete, please remove it. "
+              + "The schema must be specified directly in the JDBC URL using the option 'quarkus.datasource.{}.jdbc.url'",
+          config.datasourceName().orElse("postgresql"));
+    }
   }
 
   private String buildCreateTableRefsSql(DatabaseSpecific databaseSpecific) {
@@ -169,18 +187,24 @@ public final class JdbcBackend implements Backend {
   Connection borrowConnection() throws SQLException {
     Connection c = dataSource.getConnection();
     c.setAutoCommit(false);
+    if (first.compareAndSet(true, false)) {
+      catalog = c.getCatalog();
+      schema = c.getSchema();
+      if (catalog == null) {
+        LOGGER.warn(
+            "Could not determine catalog name from JDBC properties: schema checks might fail");
+      }
+      if (schema == null) {
+        LOGGER.warn(
+            "Could not determine schema name from JDBC properties: schema checks might fail");
+      }
+    }
     return c;
   }
 
   @Override
   public void setupSchema() {
     try (Connection conn = borrowConnection()) {
-      if (catalog == null || catalog.isEmpty()) {
-        catalog = conn.getCatalog();
-      }
-      if (schema == null || schema.isEmpty()) {
-        schema = conn.getSchema();
-      }
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
       createTableIfNotExists(
@@ -224,12 +248,16 @@ public final class JdbcBackend implements Backend {
         tableName = tableName.toUpperCase(Locale.ROOT);
       }
 
+      String catalog = conn.getCatalog();
+      String schema = conn.getSchema();
+
       try (ResultSet rs = conn.getMetaData().getTables(catalog, schema, tableName, null)) {
         if (rs.next()) {
+          // table already exists
+
           Map<String, Integer> primaryKey = new LinkedHashMap<>();
           Map<String, Integer> columns = new LinkedHashMap<>();
 
-          // table already exists
           try (ResultSet cols = conn.getMetaData().getColumns(catalog, schema, tableName, null)) {
             while (cols.next()) {
               String colName = cols.getString("COLUMN_NAME").toLowerCase(Locale.ROOT);
@@ -269,7 +297,15 @@ public final class JdbcBackend implements Backend {
         }
       }
 
-      st.executeUpdate(createTable);
+      try {
+        st.executeUpdate(createTable);
+      } catch (SQLException e) {
+        if (!databaseSpecific.isAlreadyExists(e)) {
+          throw e;
+        }
+        // table was created by another process, try again to check the schema
+        createTableIfNotExists(conn, tableName, createTable, expectedColumns, expectedPrimaryKey);
+      }
     }
   }
 

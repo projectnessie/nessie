@@ -65,12 +65,6 @@ data:
     {{- $jdbcUrl := coalesce $oldConfig.jdbcUrl $newConfig.jdbcUrl -}}
     {{- $dbKind := include "nessie.dbKind" $jdbcUrl -}}
     {{- $_ = set $map "nessie.version.store.persist.jdbc.datasource"  $dbKind -}}
-    {{- if .Values.jdbc.catalog -}}
-    {{- $_ = set $map "nessie.version.store.persist.jdbc.catalog" .Values.jdbc.catalog -}}
-    {{- end -}}
-    {{- if .Values.jdbc.schema -}}
-    {{- $_ = set $map "nessie.version.store.persist.jdbc.schema" .Values.jdbc.schema -}}
-    {{- end -}}
     {{- $_ = set $map ( printf "quarkus.datasource.%s.jdbc.url" $dbKind ) $jdbcUrl }}
     {{- end -}}
 

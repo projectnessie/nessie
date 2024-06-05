@@ -19,9 +19,25 @@ import java.util.Optional;
 
 public interface JdbcBackendBaseConfig {
 
-  /** The JDBC catalog name. If not provided, will be inferred from the datasource. */
+  Optional<String> datasourceName();
+
+  /**
+   * The JDBC catalog name.
+   *
+   * @deprecated This setting has never worked as expected and is now ineffective. The catalog must
+   *     be specified directly in the JDBC URL using the option {@code
+   *     quarkus.datasource.*.jdbc.url}.
+   */
+  @Deprecated(forRemoval = true)
   Optional<String> catalog();
 
-  /** The JDBC schema name. If not provided, will be inferred from the datasource. */
+  /**
+   * The JDBC schema name.
+   *
+   * @deprecated This setting has never worked as expected and is now ineffective. The schema must
+   *     be specified directly in the JDBC URL using the option {@code
+   *     quarkus.datasource.*.jdbc.url}.
+   */
+  @Deprecated(forRemoval = true)
   Optional<String> schema();
 }

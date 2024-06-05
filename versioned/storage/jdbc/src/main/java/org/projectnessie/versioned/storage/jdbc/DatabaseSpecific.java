@@ -28,5 +28,7 @@ public interface DatabaseSpecific {
 
   boolean isRetryTransaction(SQLException e);
 
+  boolean isAlreadyExists(SQLException e);
+
   String wrapInsert(String sql);
 }
