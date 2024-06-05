@@ -1,8 +1,8 @@
 ---
-title: "Metadata Authorization"
+title: "Authorization (Access Control)"
 ---
 
-# Metadata Authorization
+# Authorization (Access Control)
 
 ## Authorization scope
 It is important to note that Nessie does not store data directly but only data location and other metadata. 
