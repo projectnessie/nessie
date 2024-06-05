@@ -15,8 +15,9 @@
  */
 package org.projectnessie.server.authz;
 
-import com.google.common.collect.ImmutableMap;
+import java.security.Principal;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -62,18 +63,36 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
     return failed;
   }
 
-  private String getRoleName() {
-    if (context.user() != null && context.user().getName() != null) {
-      return context.user().getName();
+  private String roleName() {
+    Principal user = context.user();
+    if (user == null) {
+      return "";
     }
-    return "";
+    String name = user.getName();
+    return name != null ? name : "";
+  }
+
+  private List<String> roles() {
+    // CEL only accepts lists and maps, but not sets
+    return List.copyOf(context.roleIds());
   }
 
   private void canPerformOp(Check check, Map<Check, String> failed) {
-    String roleName = getRoleName();
-    ImmutableMap<String, Object> arguments =
-        ImmutableMap.of(
-            "role", roleName, "op", check.type().name(), "path", "", "ref", "", "contentType", "");
+    String roleName = roleName();
+    Map<String, Object> arguments =
+        Map.of(
+            "role",
+            roleName,
+            "roles",
+            roles(),
+            "op",
+            check.type().name(),
+            "path",
+            "",
+            "ref",
+            "",
+            "contentType",
+            "");
 
     Supplier<String> errorMsgSupplier =
         () -> String.format("'%s' is not allowed for role '%s' ", check.type(), roleName);
@@ -81,11 +100,11 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   }
 
   private void canPerformOpOnReference(Check check, Map<Check, String> failed) {
-    String role = getRoleName();
+    String role = roleName();
     String op = check.type().name();
     String ref = Optional.ofNullable(check.ref()).map(NamedRef::getName).orElse("");
     Map<String, Object> arguments =
-        ImmutableMap.of("ref", ref, "role", role, "op", op, "path", "", "contentType", "");
+        Map.of("ref", ref, "role", role, "roles", roles(), "op", op, "path", "", "contentType", "");
 
     Supplier<String> errorMsgSupplier =
         () ->
@@ -95,14 +114,25 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   }
 
   private void canPerformOpOnPath(Check check, Map<Check, String> failed) {
-    String role = getRoleName();
+    String role = roleName();
     String op = check.type().name();
     String contentType = Optional.ofNullable(check.contentType()).map(Type::name).orElse("");
     String path = Optional.ofNullable(check.key()).map(ContentKey::toPathString).orElse("");
     String ref = Optional.ofNullable(check.ref()).map(NamedRef::getName).orElse("");
     Map<String, Object> arguments =
-        ImmutableMap.of(
-            "ref", ref, "path", path, "role", role, "op", op, "contentType", contentType);
+        Map.of(
+            "ref",
+            ref,
+            "path",
+            path,
+            "role",
+            role,
+            "roles",
+            roles(),
+            "op",
+            op,
+            "contentType",
+            contentType);
 
     Supplier<String> errorMsgSupplier =
         () -> String.format("'%s' is not allowed for role '%s' on content '%s'", op, role, path);
@@ -117,7 +147,8 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
             .map(RepositoryConfig.Type::name)
             .orElse("");
 
-    Map<String, Object> arguments = ImmutableMap.of("type", type, "op", op);
+    Map<String, Object> arguments =
+        Map.of("ref", "", "path", "", "role", roleName(), "roles", roles(), "op", op, "type", type);
 
     Supplier<String> errorMsgSupplier =
         () ->
