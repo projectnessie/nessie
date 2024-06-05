@@ -20,6 +20,19 @@ import java.util.Map;
 
 /** Represents a name + secret pair. */
 public interface BasicCredentials extends Secret {
+
+  /**
+   * Name of the map-key used in the argument to {@link #basicCredentials(Map)} for the value for
+   * {@link #name()}.
+   */
+  String JSON_NAME = "name";
+
+  /**
+   * Name of the map-key used in the argument to {@link #basicCredentials(Map)} for the value for
+   * {@link #secret()}.
+   */
+  String JSON_SECRET = "secret";
+
   @Nonnull
   String name();
 
@@ -54,11 +67,11 @@ public interface BasicCredentials extends Secret {
    * from the key {@code secret}.
    */
   static BasicCredentials basicCredentials(@Nonnull Map<String, String> value) {
-    String name = value.get("name");
+    String name = value.get(JSON_NAME);
     if (name == null) {
       return null;
     }
-    String secret = value.get("secret");
+    String secret = value.get(JSON_SECRET);
     if (secret == null) {
       return null;
     }

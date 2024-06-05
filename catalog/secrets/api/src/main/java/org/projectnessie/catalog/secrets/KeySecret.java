@@ -20,6 +20,13 @@ import java.util.Map;
 
 /** Represents a single-value "key". */
 public interface KeySecret extends Secret {
+
+  /**
+   * Name of the map-key used in the argument to {@link #keySecret(Map)} for the value for {@link
+   * #key()}.
+   */
+  String JSON_KEY = "key";
+
   @Nonnull
   String key();
 
@@ -45,7 +52,7 @@ public interface KeySecret extends Secret {
    * value}.
    */
   static KeySecret keySecret(@Nonnull Map<String, String> value) {
-    String key = value.get("key");
+    String key = value.get(JSON_KEY);
     if (key == null) {
       key = value.get("value");
     }

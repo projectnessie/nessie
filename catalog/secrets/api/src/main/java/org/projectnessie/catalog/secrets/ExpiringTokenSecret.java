@@ -23,6 +23,19 @@ import java.util.Optional;
 
 /** Represents a "token" with an optional expiration. */
 public interface ExpiringTokenSecret extends Secret {
+
+  /**
+   * Name of the map-key used in the argument to {@link #expiringTokenSecret(Map)} for the value for
+   * {@link #token()}.
+   */
+  String JSON_TOKEN = "token";
+
+  /**
+   * Name of the map-key used in the argument to {@link #expiringTokenSecret(Map)} for the value for
+   * {@link #expiresAt()} parsed using {@link Instant#parse(CharSequence)}.
+   */
+  String JSON_EXPIRES_AT = "expiresAt";
+
   @Nonnull
   String token();
 
@@ -59,14 +72,14 @@ public interface ExpiringTokenSecret extends Secret {
    * {@link Instant#parse(CharSequence)} to convert it from the string representation.
    */
   static ExpiringTokenSecret expiringTokenSecret(@Nonnull Map<String, String> value) {
-    String name = value.get("token");
+    String name = value.get(JSON_TOKEN);
     if (name == null) {
       name = value.get("value");
     }
     if (name == null) {
       return null;
     }
-    String e = value.get("expiresAt");
+    String e = value.get(JSON_EXPIRES_AT);
     Instant expiresAt = null;
     if (e != null) {
       try {
