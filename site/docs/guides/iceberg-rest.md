@@ -1,5 +1,8 @@
 # Configure Nessie with Iceberg REST
 
+!!! warn
+    Support for Iceberg REST is currently considered experimental in Nessie!
+
 With Iceberg REST, Nessie manages the metadata of the tables and views. On top, Nessie provides
 mechanisms like S3 request signing and S3 session credentials. Using Nessie with Iceberg
 therefore requires Nessie to have access to your object store.
