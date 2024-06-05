@@ -253,10 +253,11 @@ public final class JdbcBackend implements Backend {
 
       try (ResultSet rs = conn.getMetaData().getTables(catalog, schema, tableName, null)) {
         if (rs.next()) {
+          // table already exists
+
           Map<String, Integer> primaryKey = new LinkedHashMap<>();
           Map<String, Integer> columns = new LinkedHashMap<>();
 
-          // table already exists
           try (ResultSet cols = conn.getMetaData().getColumns(catalog, schema, tableName, null)) {
             while (cols.next()) {
               String colName = cols.getString("COLUMN_NAME").toLowerCase(Locale.ROOT);
@@ -299,11 +300,11 @@ public final class JdbcBackend implements Backend {
       try {
         st.executeUpdate(createTable);
       } catch (SQLException e) {
-        if (databaseSpecific.isAlreadyExists(e)) {
-          // table was created by another process, proceed
-          return;
+        if (!databaseSpecific.isAlreadyExists(e)) {
+          throw e;
         }
-        throw e;
+        // table was created by another process, try again to check the schema
+        createTableIfNotExists(conn, tableName, createTable, expectedColumns, expectedPrimaryKey);
       }
     }
   }
