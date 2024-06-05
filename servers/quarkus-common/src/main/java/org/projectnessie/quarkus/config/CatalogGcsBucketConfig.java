@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 
@@ -59,7 +59,7 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   Optional<KeySecret> authCredentialsJson();
 
   @Override
-  Optional<ExpiringTokenSecret> oauth2Token();
+  Optional<TokenSecret> oauth2Token();
 
   @Override
   OptionalInt maxAttempts();

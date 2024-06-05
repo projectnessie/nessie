@@ -16,8 +16,8 @@
 package org.projectnessie.catalog.secrets;
 
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.ExpiringTokenSecret.expiringTokenSecret;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
+import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
 import java.util.Map;
 
@@ -37,7 +37,7 @@ public enum SecretType {
   EXPIRING_TOKEN() {
     @Override
     public Secret fromValueMap(Map<String, String> value) {
-      return expiringTokenSecret(value);
+      return tokenSecret(value);
     }
   },
   ;

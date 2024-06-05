@@ -17,8 +17,8 @@ package org.projectnessie.quarkus.config;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.ExpiringTokenSecret.expiringTokenSecret;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
+import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
@@ -35,8 +35,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestCatalogSecretsConfig {
@@ -118,15 +118,15 @@ public class TestCatalogSecretsConfig {
   public void gcsOptions(
       Map<String, String> configs,
       KeySecret ac,
-      ExpiringTokenSecret o2,
+      TokenSecret o2,
       KeySecret ek,
       KeySecret dk,
       KeySecret b1ac,
-      ExpiringTokenSecret b1o2,
+      TokenSecret b1o2,
       KeySecret b1ek,
       KeySecret b1dk,
       KeySecret b2ac,
-      ExpiringTokenSecret b2o2,
+      TokenSecret b2o2,
       KeySecret b2ek,
       KeySecret b2dk) {
     SmallRyeConfig config =
@@ -193,15 +193,15 @@ public class TestCatalogSecretsConfig {
                 "nessie.catalog.service.gcs.buckets.bucket2.decryption-key",
                 "b2-dec-key"),
             KeySecret.keySecret("auth-cred"),
-            expiringTokenSecret("oauth2", Instant.parse("2024-12-24T12:12:12Z")),
+            TokenSecret.tokenSecret("oauth2", Instant.parse("2024-12-24T12:12:12Z")),
             KeySecret.keySecret("enc-key"),
             KeySecret.keySecret("dec-key"),
             null,
-            expiringTokenSecret("b1-oauth2", null),
+            TokenSecret.tokenSecret("b1-oauth2", null),
             null,
             KeySecret.keySecret("b1-dec"),
             null,
-            expiringTokenSecret("b2-oauth2", Instant.parse("2025-01-01T12:12:12Z")),
+            TokenSecret.tokenSecret("b2-oauth2", Instant.parse("2025-01-01T12:12:12Z")),
             null,
             KeySecret.keySecret("b2-dec-key"))
         //
@@ -276,12 +276,11 @@ public class TestCatalogSecretsConfig {
         .orElse(Map.of());
   }
 
-  static Map<String, String> expiringTokenMap(ExpiringTokenSecret expiringTokenSecret) {
-    return expiringTokenMap(Optional.ofNullable(expiringTokenSecret));
+  static Map<String, String> expiringTokenMap(TokenSecret tokenSecret) {
+    return expiringTokenMap(Optional.ofNullable(tokenSecret));
   }
 
-  static Map<String, String> expiringTokenMap(
-      Optional<ExpiringTokenSecret> expiringTokenCredentials) {
+  static Map<String, String> expiringTokenMap(Optional<TokenSecret> expiringTokenCredentials) {
     return expiringTokenCredentials
         .map(
             c ->

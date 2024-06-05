@@ -18,7 +18,6 @@ package org.projectnessie.catalog.secrets;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.ExpiringTokenSecret.expiringTokenSecret;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
 
@@ -93,7 +92,7 @@ public class TestSecretsProvider {
         arguments(
             Opts.EMPTY,
             Opts.EMPTY,
-            Opts.builder().expiringToken(expiringTokenSecret("exp-token", null)).build(),
+            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
             Map.of(
                 "base.spec.basic",
                 Map.of("name", "basic-name", "secretx", "basic-secret"),
@@ -103,7 +102,7 @@ public class TestSecretsProvider {
         arguments(
             Opts.EMPTY,
             Opts.EMPTY,
-            Opts.builder().expiringToken(expiringTokenSecret("exp-token", null)).build(),
+            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
             Map.of(
                 "base.spec.basic",
                 Map.of("name", "basic-name", "secretx", "basic-secret"),
@@ -116,7 +115,7 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
@@ -131,7 +130,7 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.key",
@@ -147,7 +146,7 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.basic",
@@ -160,7 +159,7 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.basic",
@@ -174,7 +173,7 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
@@ -187,7 +186,7 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
@@ -196,12 +195,12 @@ public class TestSecretsProvider {
                 Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
         // expiringToken present
         arguments(
-            Opts.builder().expiringToken(expiringTokenSecret("exp-token", instant)).build(),
+            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", instant)).build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
@@ -210,11 +209,11 @@ public class TestSecretsProvider {
                 Map.of("name", "basic-name", "secret", "basic-secret"))),
         arguments(
             Opts.EMPTY,
-            Opts.builder().expiringToken(expiringTokenSecret("exp-token", instant)).build(),
+            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", instant)).build(),
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
@@ -226,13 +225,13 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("nope"))
                 .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(expiringTokenSecret("nope", instant))
+                .expiringToken(TokenSecret.tokenSecret("nope", instant))
                 .build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(expiringTokenSecret("exp-token", instant))
+                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
@@ -246,13 +245,13 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("nope"))
                 .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(expiringTokenSecret("nope", instant))
+                .expiringToken(TokenSecret.tokenSecret("nope", instant))
                 .build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("nope"))
                 .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(expiringTokenSecret("nope", instant))
+                .expiringToken(TokenSecret.tokenSecret("nope", instant))
                 .build(),
             Map.of(
                 "base.key",
@@ -265,7 +264,7 @@ public class TestSecretsProvider {
         arguments(
             Opts.EMPTY,
             Opts.EMPTY,
-            Opts.builder().expiringToken(expiringTokenSecret("exp-token", null)).build(),
+            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
             Map.of("base.spec.expiringToken", Map.of("token", "exp-token")))
         //
         );
@@ -279,7 +278,7 @@ public class TestSecretsProvider {
 
     Optional<KeySecret> key();
 
-    Optional<ExpiringTokenSecret> expiringToken();
+    Optional<TokenSecret> expiringToken();
 
     static Builder builder() {
       return ImmutableOpts.builder();
@@ -292,7 +291,7 @@ public class TestSecretsProvider {
 
       Builder key(KeySecret key);
 
-      Builder expiringToken(ExpiringTokenSecret expiringToken);
+      Builder expiringToken(TokenSecret expiringToken);
 
       Opts build();
     }

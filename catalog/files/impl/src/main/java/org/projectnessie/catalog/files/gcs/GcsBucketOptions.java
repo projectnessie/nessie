@@ -20,8 +20,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface GcsBucketOptions {
 
@@ -71,7 +71,7 @@ public interface GcsBucketOptions {
    * OAuth2 token, this value is the name of the credential to use, the actual credential is defined
    * via secrets.
    */
-  Optional<ExpiringTokenSecret> oauth2Token();
+  Optional<TokenSecret> oauth2Token();
 
   /** Override the default maximum number of attempts. */
   OptionalInt maxAttempts();

@@ -22,17 +22,17 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Represents a "token" with an optional expiration. */
-public interface ExpiringTokenSecret extends Secret {
+public interface TokenSecret extends Secret {
 
   /**
-   * Name of the map-key used in the argument to {@link #expiringTokenSecret(Map)} for the value for
-   * {@link #token()}.
+   * Name of the map-key used in the argument to {@link #tokenSecret(Map)} for the value for {@link
+   * #token()}.
    */
   String JSON_TOKEN = "token";
 
   /**
-   * Name of the map-key used in the argument to {@link #expiringTokenSecret(Map)} for the value for
-   * {@link #expiresAt()} parsed using {@link Instant#parse(CharSequence)}.
+   * Name of the map-key used in the argument to {@link #tokenSecret(Map)} for the value for {@link
+   * #expiresAt()} parsed using {@link Instant#parse(CharSequence)}.
    */
   String JSON_EXPIRES_AT = "expiresAt";
 
@@ -42,9 +42,8 @@ public interface ExpiringTokenSecret extends Secret {
   @Nonnull
   Optional<Instant> expiresAt();
 
-  static ExpiringTokenSecret expiringTokenSecret(
-      @Nonnull String token, @Nullable Instant expiresAt) {
-    return new ExpiringTokenSecret() {
+  static TokenSecret tokenSecret(@Nonnull String token, @Nullable Instant expiresAt) {
+    return new TokenSecret() {
       @Override
       @Nonnull
       public String token() {
@@ -65,13 +64,13 @@ public interface ExpiringTokenSecret extends Secret {
   }
 
   /**
-   * Builds an {@linkplain ExpiringTokenSecret expiring token} from its map representation.
+   * Builds a {@linkplain TokenSecret token} from its map representation.
    *
    * <p>{@link #token()} is retrieved from the key {@code key}, or if not present from the key
    * {@code value}. {@linkplain #expiresAt()} is retrieved from the key {@code expiresAt} using
    * {@link Instant#parse(CharSequence)} to convert it from the string representation.
    */
-  static ExpiringTokenSecret expiringTokenSecret(@Nonnull Map<String, String> value) {
+  static TokenSecret tokenSecret(@Nonnull Map<String, String> value) {
     String name = value.get(JSON_TOKEN);
     if (name == null) {
       name = value.get("value");
@@ -88,6 +87,6 @@ public interface ExpiringTokenSecret extends Secret {
         // ignore
       }
     }
-    return expiringTokenSecret(name, expiresAt);
+    return tokenSecret(name, expiresAt);
   }
 }

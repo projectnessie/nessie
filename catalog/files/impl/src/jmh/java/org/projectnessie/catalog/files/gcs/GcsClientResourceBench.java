@@ -19,7 +19,6 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
-import static org.projectnessie.catalog.secrets.ExpiringTokenSecret.expiringTokenSecret;
 
 import com.google.auth.http.HttpTransportFactory;
 import java.io.IOException;
@@ -40,6 +39,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -65,7 +65,7 @@ public class GcsClientResourceBench {
 
       GcsOptions<GcsBucketOptions> gcsOptions =
           GcsProgrammaticOptions.builder()
-              .oauth2Token(expiringTokenSecret("foo", null))
+              .oauth2Token(TokenSecret.tokenSecret("foo", null))
               .host(server.getGcsBaseUri())
               .build();
 

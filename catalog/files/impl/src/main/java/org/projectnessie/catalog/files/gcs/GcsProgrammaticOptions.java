@@ -20,8 +20,8 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import org.immutables.value.Value;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 @Value.Immutable
 public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
@@ -64,7 +64,7 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     Builder authCredentialsJson(KeySecret authCredentialsJson);
 
     @CanIgnoreReturnValue
-    Builder oauth2Token(ExpiringTokenSecret oauth2token);
+    Builder oauth2Token(TokenSecret oauth2token);
 
     @CanIgnoreReturnValue
     Builder maxAttempts(int maxAttempts);
@@ -150,7 +150,7 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder authCredentialsJson(KeySecret authCredentialsJson);
 
       @CanIgnoreReturnValue
-      Builder oauth2Token(ExpiringTokenSecret oauth2token);
+      Builder oauth2Token(TokenSecret oauth2token);
 
       @CanIgnoreReturnValue
       Builder maxAttempts(int maxAttempts);

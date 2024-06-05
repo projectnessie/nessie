@@ -21,8 +21,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 /**
  * Abstraction for secrets managers that only return a single string for a single secret. Tries to
@@ -56,8 +56,7 @@ public abstract class SingleValueSecretsSupplier implements SecretsSupplier {
    * @param names names of the secrets to resolve
    * @return map of secret names to either the JSON representations of the secrets or, if not a JSON
    *     document, the single value for the secret. See {@link KeySecret#keySecret(Map)}, {@link
-   *     BasicCredentials#basicCredentials(Map)}, {@link
-   *     ExpiringTokenSecret#expiringTokenSecret(Map)}
+   *     BasicCredentials#basicCredentials(Map)}, {@link TokenSecret#tokenSecret(Map)}
    */
   protected abstract Map<String, String> resolveSingleValueSecrets(Collection<String> names);
 }

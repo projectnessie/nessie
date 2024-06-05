@@ -18,8 +18,8 @@ package org.projectnessie.catalog.secrets.spi;
 import java.util.Collection;
 import java.util.Map;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 /** SPI interface for actual secrets managers. */
 public interface SecretsSupplier {
@@ -29,8 +29,7 @@ public interface SecretsSupplier {
    * @param names names of the secrets to resolve
    * @return map of secret names to a map of key-value pairs representing the secret. The keys and
    *     -values depend on the type of secret. See {@link KeySecret#keySecret(Map)}, {@link
-   *     BasicCredentials#basicCredentials(Map)}, {@link
-   *     ExpiringTokenSecret#expiringTokenSecret(Map)}
+   *     BasicCredentials#basicCredentials(Map)}, {@link TokenSecret#tokenSecret(Map)}
    */
   Map<String, Map<String, String>> resolveSecrets(Collection<String> names);
 }

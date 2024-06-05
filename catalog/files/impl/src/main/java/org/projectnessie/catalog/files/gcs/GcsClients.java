@@ -37,7 +37,7 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public final class GcsClients {
   private GcsClients() {}
@@ -139,7 +139,7 @@ public final class GcsClients {
           throw new RuntimeException(e);
         }
       case ACCESS_TOKEN:
-        ExpiringTokenSecret oauth2token = bucketOptions.oauth2Token().orElseThrow();
+        TokenSecret oauth2token = bucketOptions.oauth2Token().orElseThrow();
         AccessToken accessToken =
             new AccessToken(
                 oauth2token.token(),
