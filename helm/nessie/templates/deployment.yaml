@@ -122,6 +122,13 @@ spec:
               value: /bigtable-nessie/sa_credentials.json
             {{- end }}
             {{- end }}
+            {{- if .Values.authentication.oidcClientSecret -}}
+            - name: QUARKUS_OIDC_CREDENTIALS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentication.oidcClientSecret.name }}
+                  key: {{ .Values.authentication.oidcClientSecret.key }}
+            {{- end -}}
             {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}
