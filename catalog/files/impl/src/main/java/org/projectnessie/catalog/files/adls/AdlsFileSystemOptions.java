@@ -18,7 +18,7 @@ package org.projectnessie.catalog.files.adls;
 import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface AdlsFileSystemOptions {
 
@@ -30,7 +30,7 @@ public interface AdlsFileSystemOptions {
   Optional<BasicCredentials> account();
 
   /** SAS token to access the ADLS file system. */
-  Optional<TokenSecret> sasToken();
+  Optional<KeySecret> sasToken();
 
   /**
    * Define a custom HTTP endpoint. In case clients need to use a different URI, use the {@code

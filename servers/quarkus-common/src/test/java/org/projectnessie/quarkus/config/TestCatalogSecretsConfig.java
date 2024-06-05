@@ -19,7 +19,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.ExpiringTokenSecret.expiringTokenSecret;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
-import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
@@ -38,7 +37,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.ExpiringTokenSecret;
 import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.TokenSecret;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestCatalogSecretsConfig {
@@ -49,11 +47,11 @@ public class TestCatalogSecretsConfig {
   public void adlsOptions(
       Map<String, String> configs,
       BasicCredentials top,
-      TokenSecret sas,
+      KeySecret sas,
       BasicCredentials bucket1,
-      TokenSecret sas1,
+      KeySecret sas1,
       BasicCredentials bucket2,
-      TokenSecret sas2) {
+      KeySecret sas2) {
     SmallRyeConfig config =
         new SmallRyeConfigBuilder()
             .setAddDefaultSources(false)
@@ -70,15 +68,15 @@ public class TestCatalogSecretsConfig {
 
     soft.assertThat(basicMap(catalogConfig.account()))
         .containsExactlyInAnyOrderEntriesOf(basicMap(top));
-    soft.assertThat(tokenMap(catalogConfig.sasToken())).isEqualTo(tokenMap(sas));
+    soft.assertThat(keyMap(catalogConfig.sasToken())).isEqualTo(keyMap(sas));
     soft.assertThat(basicMap(b1.flatMap(CatalogAdlsFileSystemOptions::account)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(bucket1));
-    soft.assertThat(tokenMap(b1.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
-        .isEqualTo(tokenMap(sas1));
+    soft.assertThat(keyMap(b1.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
+        .isEqualTo(keyMap(sas1));
     soft.assertThat(basicMap(b2.flatMap(CatalogAdlsFileSystemOptions::account)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(bucket2));
-    soft.assertThat(tokenMap(b2.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
-        .isEqualTo(tokenMap(sas2));
+    soft.assertThat(keyMap(b2.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
+        .isEqualTo(keyMap(sas2));
   }
 
   static Stream<Arguments> adlsOptions() {
@@ -92,11 +90,11 @@ public class TestCatalogSecretsConfig {
                 "nessie.catalog.service.adls.file-systems.bucket1.account.secret", "bucket-secret",
                 "nessie.catalog.service.adls.file-systems.bucket2.sas-token", "bucket2-sas"),
             basicCredentials("id", "secret"),
-            TokenSecret.tokenSecret("sas"),
+            keySecret("sas"),
             basicCredentials("bucket-name", "bucket-secret"),
             null,
             null,
-            TokenSecret.tokenSecret("bucket2-sas")),
+            keySecret("bucket2-sas")),
         arguments(
             Map.of(
                 "nessie.catalog.service.adls.sas-token", "sas",
@@ -106,11 +104,11 @@ public class TestCatalogSecretsConfig {
                 "nessie.catalog.service.adls.file-systems.bucket2.account.secret", "secret",
                 "nessie.catalog.service.adls.file-systems.bucket2.sas-token", "bucket2-sas"),
             null,
-            TokenSecret.tokenSecret("sas"),
+            keySecret("sas"),
             basicCredentials("bucket-name", "bucket-secret"),
             null,
             basicCredentials("id", "secret"),
-            TokenSecret.tokenSecret("bucket2-sas"))
+            keySecret("bucket2-sas"))
         //
         );
   }
@@ -290,14 +288,6 @@ public class TestCatalogSecretsConfig {
                 Map.of(
                     "token", c.token(), "secret", c.expiresAt().map(Instant::toString).orElse("")))
         .orElse(Map.of());
-  }
-
-  static String tokenMap(TokenSecret tokenSecret) {
-    return tokenMap(Optional.ofNullable(tokenSecret));
-  }
-
-  static String tokenMap(Optional<TokenSecret> tokenCredentials) {
-    return tokenCredentials.map(TokenSecret::token).orElse(null);
   }
 
   static String keyMap(KeySecret keySecret) {

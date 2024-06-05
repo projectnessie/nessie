@@ -20,15 +20,15 @@ import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface CatalogAdlsFileSystemOptions extends AdlsFileSystemOptions {
   @Override
   Optional<BasicCredentials> account();
 
   @Override
-  @WithConverter(TokenCredentialsConverter.class)
-  Optional<TokenSecret> sasToken();
+  @WithConverter(KeyCredentialsConverter.class)
+  Optional<KeySecret> sasToken();
 
   @Override
   Optional<String> endpoint();

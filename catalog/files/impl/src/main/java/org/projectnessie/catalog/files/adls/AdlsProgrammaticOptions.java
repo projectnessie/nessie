@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.Map;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 @Value.Immutable
 public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptions> {
@@ -63,7 +63,7 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
     Builder account(BasicCredentials account);
 
     @CanIgnoreReturnValue
-    Builder sasToken(TokenSecret sasToken);
+    Builder sasToken(KeySecret sasToken);
 
     @CanIgnoreReturnValue
     Builder endpoint(String endpoint);
@@ -101,7 +101,7 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
       Builder account(BasicCredentials account);
 
       @CanIgnoreReturnValue
-      Builder sasToken(TokenSecret sasToken);
+      Builder sasToken(KeySecret sasToken);
 
       @CanIgnoreReturnValue
       Builder endpoint(String endpoint);

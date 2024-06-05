@@ -72,7 +72,7 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
                   AdlsPerFileSystemOptions.Builder::account),
               secretAttribute(
                   "sasToken",
-                  SecretType.TOKEN,
+                  SecretType.KEY,
                   AdlsFileSystemOptions::sasToken,
                   AdlsPerFileSystemOptions.Builder::sasToken));
 

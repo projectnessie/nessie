@@ -26,7 +26,7 @@ import java.util.OptionalLong;
 import org.projectnessie.catalog.files.adls.AdlsConfig;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 /**
  * Configuration for ADLS Gen2 object stores.
@@ -87,8 +87,8 @@ public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFi
   Optional<BasicCredentials> account();
 
   @Override
-  @WithConverter(TokenCredentialsConverter.class)
-  Optional<TokenSecret> sasToken();
+  @WithConverter(KeyCredentialsConverter.class)
+  Optional<KeySecret> sasToken();
 
   @Override
   Optional<String> endpoint();

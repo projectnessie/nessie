@@ -289,7 +289,7 @@ public class IcebergConfigurer {
             });
     fileSystemOptions
         .sasToken()
-        .ifPresent(s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + accountName, s.token()));
+        .ifPresent(s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + accountName, s.key()));
     fileSystemOptions
         .endpoint()
         .ifPresent(e -> configOverrides.put(ADLS_CONNECTION_STRING_PREFIX + accountName, e));

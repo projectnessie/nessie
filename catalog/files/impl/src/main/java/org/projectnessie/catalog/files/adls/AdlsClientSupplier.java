@@ -84,7 +84,7 @@ public final class AdlsClientSupplier {
         fileSystemOptions.endpoint().orElse(location.getUri().resolve("/").toString()));
 
     if (fileSystemOptions.sasToken().isPresent()) {
-      clientBuilder.sasToken(fileSystemOptions.sasToken().get().token());
+      clientBuilder.sasToken(fileSystemOptions.sasToken().get().key());
     } else if (fileSystemOptions.account().isPresent()) {
       String accountKey = fileSystemOptions.account().get().secret();
       clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
