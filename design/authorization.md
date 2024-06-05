@@ -126,6 +126,7 @@ An implementation of the `BatchAccessChecker` interface could be written with th
 Some example rules are shown below:
 ```
 nessie.server.authorization.enabled=true
+nessie.server.authorization.type=CEL
 nessie.server.authorization.rules.allow_branch_listing="op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
 nessie.server.authorization.rules.allow_branch_creation="op=='CREATE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
 nessie.server.authorization.rules.allow_branch_deletion="op=='DELETE_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')"
