@@ -35,12 +35,17 @@ public class AccessContextProvider {
     return new AccessContext() {
       @Override
       public Principal user() {
-        return securityIdentity.isResolvable() ? securityIdentity.get().getPrincipal() : () -> null;
+        return securityIdentity.isResolvable() ? securityIdentity.get().getPrincipal() : () -> "";
       }
 
       @Override
       public Set<String> roleIds() {
         return securityIdentity.isResolvable() ? securityIdentity.get().getRoles() : emptySet();
+      }
+
+      @Override
+      public boolean isAnonymous() {
+        return !securityIdentity.isResolvable() || securityIdentity.get().isAnonymous();
       }
     };
   }

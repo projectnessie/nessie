@@ -30,4 +30,8 @@ public interface AccessContext {
     String name = user().getName();
     return name.isEmpty() ? emptySet() : singleton(name);
   }
+
+  default boolean isAnonymous() {
+    return user().getName().isEmpty();
+  }
 }
