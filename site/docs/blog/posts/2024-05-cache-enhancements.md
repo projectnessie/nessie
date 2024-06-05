@@ -1,5 +1,5 @@
 ---
-date: 2024-05-16
+date: 2024-06-05
 authors:
   - snazy
 ---
@@ -41,9 +41,10 @@ other words, management endpoints are not publicly available, which is what we w
 
 The Nessie endpoint to receive cache invalidation messages is only available on the management port. If you deploy
 Nessie via the [Helm chart](../../guides/kubernetes.md), or via our
-[Kubernetes operator](https://github.com/projectnessie/nessie/pull/7967) (not released yet). If you deploy Nessie via
-our Helm chart, there's nothing you need to configure for distributed cache invalidations - it's setup and configured
-automatically.
+[Kubernetes operator](https://github.com/projectnessie/nessie/pull/7967) (not released yet), you don't need any
+additional configuration for distributed cache invalidations - it's setup and configured automatically. If you have
+your own Helm chart or custom deployment, make sure to configure the IPs of all Nessie instances via
+`nessie.version.store.persist.cache-invalidations.service-names`.
 
 Reference caching itself is _not_ enabled by default. You can give it a try by setting these configuration options:
 

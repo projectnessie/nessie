@@ -166,7 +166,7 @@ public class PersistProvider {
 
       return cacheBackend;
     } else {
-      LOGGER.info("Using no objects.");
+      LOGGER.info("Using no objects cache.");
       return CacheBackend.noopCacheBackend();
     }
   }

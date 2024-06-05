@@ -161,6 +161,12 @@ public interface QuarkusStoreConfig extends StoreConfig {
    * Host names or IP addresses or kubernetes headless-service name of all Nessie server instances
    * accessing the same repository.
    *
+   * <p>This value is automatically configured via the <a href="../../guides/kubernetes/">Nessie
+   * Helm chart</a> or the Kubernetes operator (not released yet), you don't need any additional
+   * configuration for distributed cache invalidations - it's setup and configured automatically. If
+   * you have your own Helm chart or custom deployment, make sure to configure the IPs of all Nessie
+   * instances here.
+   *
    * <p>Names that start with an equal sign are not resolved but used "as is".
    */
   @WithName(CONFIG_CACHE_INVALIDATIONS_SERVICE_NAMES)
@@ -170,7 +176,10 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @WithName(CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS)
   Optional<List<String>> cacheInvalidationValidTokens();
 
-  /** URI of the cache-invalidation endpoint. */
+  /**
+   * URI of the cache-invalidation endpoint, only available on the Quarkus management port, defaults
+   * to 9000.
+   */
   @WithName(CONFIG_CACHE_INVALIDATIONS_URI)
   @WithDefault("/nessie-management/cache-coherency")
   String cacheInvalidationUri();

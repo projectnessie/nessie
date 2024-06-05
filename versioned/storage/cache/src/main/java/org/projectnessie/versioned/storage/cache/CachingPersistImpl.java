@@ -52,7 +52,7 @@ class CachingPersistImpl implements Persist {
     }
     try {
       o = persist.fetchObj(id);
-      cache.put(o);
+      cache.putLocal(o);
       return o;
     } catch (ObjNotFoundException e) {
       cache.remove(id);

@@ -122,21 +122,24 @@ public class CacheInvalidationReceiver {
       return;
     }
 
-    for (CacheInvalidations.CacheInvalidation invalidation : invs) {
-      switch (invalidation.type()) {
-        case CacheInvalidations.CacheInvalidationEvictObj.TYPE:
-          CacheInvalidations.CacheInvalidationEvictObj putObj =
-              (CacheInvalidations.CacheInvalidationEvictObj) invalidation;
-          invalidator.invalidation.evictObj(putObj.repoId(), objIdFromByteArray(putObj.id()));
-          break;
-        case CacheInvalidations.CacheInvalidationEvictReference.TYPE:
-          CacheInvalidationEvictReference putReference =
-              (CacheInvalidations.CacheInvalidationEvictReference) invalidation;
-          invalidator.invalidation.evictReference(putReference.repoId(), putReference.refName());
-          break;
-        default:
-          // nothing we can do about a new invalidation type here
-          break;
+    DistributedCacheInvalidation cacheInvalidation = invalidator.invalidation;
+    if (cacheInvalidation != null) {
+      for (CacheInvalidations.CacheInvalidation invalidation : invs) {
+        switch (invalidation.type()) {
+          case CacheInvalidations.CacheInvalidationEvictObj.TYPE:
+            CacheInvalidations.CacheInvalidationEvictObj putObj =
+                (CacheInvalidations.CacheInvalidationEvictObj) invalidation;
+            cacheInvalidation.evictObj(putObj.repoId(), objIdFromByteArray(putObj.id()));
+            break;
+          case CacheInvalidations.CacheInvalidationEvictReference.TYPE:
+            CacheInvalidationEvictReference putReference =
+                (CacheInvalidations.CacheInvalidationEvictReference) invalidation;
+            cacheInvalidation.evictReference(putReference.repoId(), putReference.refName());
+            break;
+          default:
+            // nothing we can do about a new invalidation type here
+            break;
+        }
       }
     }
 
