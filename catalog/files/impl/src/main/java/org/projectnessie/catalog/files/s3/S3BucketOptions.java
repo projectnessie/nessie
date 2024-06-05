@@ -18,6 +18,7 @@ package org.projectnessie.catalog.files.s3;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
+import org.projectnessie.catalog.secrets.BasicCredentials;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 public interface S3BucketOptions {
@@ -40,7 +41,7 @@ public interface S3BucketOptions {
 
   /**
    * Endpoint URI, required for private (non-AWS) clouds, specified either per bucket or in the
-   * default/fallback {@link S3Options S3Options}.
+   * top-level S3 settings.
    *
    * <p>If the endpoint URIs for the Nessie server and clients differ, this one defines the endpoint
    * used for the Nessie server.
@@ -48,9 +49,9 @@ public interface S3BucketOptions {
   Optional<URI> endpoint();
 
   /**
-   * When using a {@linkplain #endpoint() specific endpoint} and the endpoint URIs for the Nessie
-   * server differ, you can specify the URI passed down to clients using this setting. Otherwise
-   * clients will receive the value from the {@link #endpoint()} setting.
+   * When using a specific endpoint ({@code endpoint}) and the endpoint URIs for the Nessie server
+   * differ, you can specify the URI passed down to clients using this setting. Otherwise, clients
+   * will receive the value from the {@code endpoint} setting.
    */
   Optional<URI> externalEndpoint();
 
@@ -74,7 +75,7 @@ public interface S3BucketOptions {
   Optional<String> accessPoint();
 
   /**
-   * Authorize cross-region calls when contacting an {@link #accessPoint()}.
+   * Authorize cross-region calls when contacting an {@code access-point}.
    *
    * <p>By default, attempting to use an access point in a different region will throw an exception.
    * When enabled, this property allows using access points in other regions.
@@ -83,23 +84,17 @@ public interface S3BucketOptions {
 
   /**
    * DNS name of the region, required for AWS. The region must be specified for AWS, either per
-   * bucket or in {@link S3Options S3Options}.
+   * bucket or in the top-level S3 settings.
    */
   Optional<String> region();
 
   /**
-   * An access-key-id must be configured, either per bucket or in {@link S3Options S3Options}. For
-   * STS, this defines the Access Key ID to be used as a basic credential for obtaining temporary
+   * An access-key-id and secret-access-key must be configured using the {@code name} and {@code
+   * secret} fields, either per bucket or in the top-level S3 settings. For STS, this defines the
+   * Access Key ID and Secret Key ID to be used as a basic credential for obtaining temporary
    * session credentials.
    */
-  Optional<String> accessKeyId();
-
-  /**
-   * A secret-access-key must be configured, either per bucket or in {@link S3Options S3Options}.
-   * For STS, this defines the Secret Key ID to be used as a basic credential for obtaining
-   * temporary session credentials.
-   */
-  Optional<String> secretAccessKey();
+  Optional<BasicCredentials> accessKey();
 
   /**
    * The <a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">Security Token
@@ -138,7 +133,7 @@ public interface S3BucketOptions {
    * An identifier for the party assuming the role. This parameter must match the external ID
    * configured in IAM rules that <a
    * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html">govern</a>
-   * the assume role process for the specified {@link #roleArn()}.
+   * the assume role process for the specified {@code role-arn}.
    *
    * <p>This parameter is essential in preventing the <a
    * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html">Confused
@@ -161,15 +156,15 @@ public interface S3BucketOptions {
    * side. This value is used for validating expiration times of credentials associated with the
    * warehouse.
    *
-   * <p>This parameter is relevant only when {@link #clientAuthenticationMode()} is {@link
-   * S3ClientAuthenticationMode#ASSUME_ROLE}.
+   * <p>This parameter is relevant only when {@code client-authentication-mode} is {@code
+   * ASSUME_ROLE}.
    */
   Optional<Duration> clientSessionDuration();
 
   /**
-   * The minimum required validity period for session credentials. The value of {@link
-   * #clientSessionDuration()} is used if set, otherwise the {@link #DEFAULT_SESSION_DURATION
-   * default} session duration is assumed.
+   * The minimum required validity period for session credentials. The value of {@code
+   * client-session-duration} is used if set, otherwise the default ({@code
+   * DEFAULT_SESSION_DURATION}) session duration is assumed.
    */
   default Duration minSessionCredentialValidityPeriod() {
     return clientSessionDuration().orElse(DEFAULT_SESSION_DURATION);

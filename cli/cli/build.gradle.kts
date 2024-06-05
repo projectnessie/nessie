@@ -89,6 +89,7 @@ dependencies {
   intTestImplementation("org.testcontainers:testcontainers")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
   intTestImplementation(project(":nessie-container-spec-helper"))
+  intTestImplementation(project(":nessie-catalog-secrets-api"))
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }

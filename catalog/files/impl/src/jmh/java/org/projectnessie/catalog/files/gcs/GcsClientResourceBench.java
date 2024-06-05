@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
 import com.google.auth.http.HttpTransportFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -37,6 +38,8 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -61,13 +64,19 @@ public class GcsClientResourceBench {
       HttpTransportFactory httpTransportFactory = GcsClients.buildSharedHttpTransportFactory();
 
       GcsOptions<GcsBucketOptions> gcsOptions =
-          GcsProgrammaticOptions.builder().oauth2Token("foo").host(server.getGcsBaseUri()).build();
+          GcsProgrammaticOptions.builder()
+              .oauth2Token(TokenSecret.tokenSecret("foo", null))
+              .host(server.getGcsBaseUri())
+              .build();
 
       storageSupplier =
           new GcsStorageSupplier(
               httpTransportFactory,
               gcsOptions,
-              (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> k)));
+              new SecretsProvider(
+                  (names) ->
+                      names.stream()
+                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
     }
 
     @TearDown

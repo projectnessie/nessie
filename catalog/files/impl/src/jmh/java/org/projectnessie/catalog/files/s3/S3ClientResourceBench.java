@@ -18,10 +18,12 @@ package org.projectnessie.catalog.files.s3;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
+import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -36,6 +38,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -64,8 +67,7 @@ public class S3ClientResourceBench {
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
-              .accessKeyId("foo")
-              .secretAccessKey("bar")
+              .accessKey(basicCredentials("foo", "bar"))
               .region("eu-central-1")
               .endpoint(server.getS3BaseUri())
               .pathStyleAccess(true)
@@ -78,7 +80,10 @@ public class S3ClientResourceBench {
               httpClient,
               s3config,
               s3options,
-              (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> k)),
+              new SecretsProvider(
+                  (names) ->
+                      names.stream()
+                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
               sessions);
     }
 

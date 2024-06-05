@@ -20,6 +20,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import org.immutables.value.Value;
+import org.projectnessie.catalog.secrets.BasicCredentials;
 
 @Value.Immutable
 public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
@@ -46,10 +47,7 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
     Builder pathStyleAccess(boolean pathStyleAccess);
 
     @CanIgnoreReturnValue
-    Builder accessKeyId(String accessKeyId);
-
-    @CanIgnoreReturnValue
-    Builder secretAccessKey(String secretAccessKey);
+    Builder accessKey(BasicCredentials credentials);
 
     @CanIgnoreReturnValue
     Builder sessionCredentialCacheMaxEntries(int sessionCredentialCacheMaxEntries);
@@ -99,10 +97,7 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
       Builder pathStyleAccess(boolean pathStyleAccess);
 
       @CanIgnoreReturnValue
-      Builder accessKeyId(String accessKeyId);
-
-      @CanIgnoreReturnValue
-      Builder secretAccessKey(String secretAccessKey);
+      Builder accessKey(BasicCredentials accessKey);
 
       @CanIgnoreReturnValue
       Builder accessPoint(String accessPoint);

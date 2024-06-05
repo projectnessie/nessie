@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import static org.projectnessie.catalog.files.secrets.SecretsHelper.Specializeable.specializable;
+import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
 
 import com.google.common.collect.ImmutableList;
 import java.net.URI;
@@ -25,8 +25,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
-import org.projectnessie.catalog.files.secrets.SecretsHelper;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.SecretAttribute;
+import org.projectnessie.catalog.secrets.SecretType;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketOptions {
@@ -41,9 +43,8 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   Duration DEFAULT_SESSION_REFRESH_GRACE_PERIOD = Duration.ofMinutes(5);
 
   /**
-   * The default endpoint override to use, if not configured {@linkplain #buckets() per bucket}. The
-   * endpoint must be specified for private (non-AWS) clouds, either {@linkplain #buckets() per
-   * bucket} or here.
+   * The default endpoint override to use, if not configured per bucket (see {@code buckets}). The
+   * endpoint must be specified for private (non-AWS) clouds, either per bucket or here.
    *
    * <p>If the endpoint URIs for the Nessie server and clients differ, this one defines the endpoint
    * used for the Nessie server.
@@ -52,9 +53,9 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   Optional<URI> endpoint();
 
   /**
-   * When using a {@linkplain #endpoint() specific endpoint} and the endpoint URIs for the Nessie
-   * server differ, you can specify the URI passed down to clients using this setting. Otherwise
-   * clients will receive the value from the {@link #endpoint()} setting.
+   * When using a specific {@code endpoint} and the endpoint URIs for the Nessie server differ, you
+   * can specify the URI passed down to clients using this setting. Otherwise, clients will receive
+   * the value from the {@code endpoint} setting.
    */
   @Override
   Optional<URI> externalEndpoint();
@@ -69,26 +70,18 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   Optional<Boolean> pathStyleAccess();
 
   /**
-   * The default DNS name of the region to use, if not configured {@linkplain #buckets() per
-   * bucket}. The region must be specified for AWS, either {@linkplain #buckets() per bucket} or
-   * here.
+   * The default DNS name of the region to use, if not configured per bucket. The region must be
+   * specified for AWS, either per bucket or here.
    */
   @Override
   Optional<String> region();
 
   /**
-   * The default access-key-id to use, if not configured {@linkplain #buckets() per bucket}. An
-   * access-key-id must be configured, either {@linkplain #buckets() per bucket} or here.
+   * The default access-key-id and secret-access-key to use, if not configured per bucket. An
+   * access-key-id must be configured, either per bucket or here.
    */
   @Override
-  Optional<String> accessKeyId();
-
-  /**
-   * The default secret-access-key to use, if not configured {@linkplain #buckets() per bucket}. A
-   * secret-access-key must be configured, either {@linkplain #buckets() per bucket} or here.
-   */
-  @Override
-  Optional<String> secretAccessKey();
+  Optional<BasicCredentials> accessKey();
 
   /**
    * The time period to subtract from the S3 session credentials (assumed role credentials) expiry
@@ -118,7 +111,7 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
-   * setting. If no per-bucket setting is present, uses the values from {@link S3Options}.
+   * setting. If no per-bucket setting is present, uses the values from top-level S3 settings.
    */
   @ConfigPropertyName("bucket-name")
   Map<String, PER_BUCKET> buckets();
@@ -137,14 +130,13 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
     return resolveSecrets(name, perBucket, secretsProvider);
   }
 
-  List<SecretsHelper.Specializeable<S3BucketOptions, S3PerBucketOptions.Builder>> SECRETS =
+  List<SecretAttribute<S3BucketOptions, S3PerBucketOptions.Builder, ?>> SECRET_ATTRIBUTES =
       ImmutableList.of(
-          specializable(
-              "accessKeyId", S3BucketOptions::accessKeyId, S3PerBucketOptions.Builder::accessKeyId),
-          specializable(
-              "secretAccessKey",
-              S3BucketOptions::secretAccessKey,
-              S3PerBucketOptions.Builder::secretAccessKey));
+          secretAttribute(
+              "accessKey",
+              SecretType.BASIC,
+              S3BucketOptions::accessKey,
+              S3PerBucketOptions.Builder::accessKey));
 
   default S3BucketOptions resolveSecrets(
       String filesystemName, S3BucketOptions specific, SecretsProvider secretsProvider) {
@@ -153,8 +145,9 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
       builder.from(specific);
     }
 
-    return SecretsHelper.resolveSecrets(
-            secretsProvider, "object-stores.s3", builder, this, filesystemName, specific, SECRETS)
+    return secretsProvider
+        .applySecrets(
+            builder, "object-stores.s3", this, filesystemName, specific, SECRET_ATTRIBUTES)
         .build();
   }
 }

@@ -19,6 +19,7 @@ import static java.lang.Math.floorMod;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
+import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 
 import java.net.URI;
 import java.util.List;
@@ -73,8 +74,7 @@ public class S3SessionCacheResourceBench {
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
-              .accessKeyId("foo")
-              .secretAccessKey("bar")
+              .accessKey(basicCredentials("foo", "bar"))
               .region("eu-central-1")
               .pathStyleAccess(true)
               .build();
@@ -95,8 +95,7 @@ public class S3SessionCacheResourceBench {
               .mapToObj(
                   i ->
                       S3ProgrammaticOptions.S3PerBucketOptions.builder()
-                          .accessKeyId("key" + i)
-                          .secretAccessKey("secret" + i)
+                          .accessKey(basicCredentials("foo" + i, "bar" + 1))
                           .externalId("externalId" + i)
                           .region(regions.get(i % regions.size()))
                           .roleSessionName("roleSessionName" + i)

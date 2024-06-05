@@ -17,10 +17,11 @@ package org.projectnessie.catalog.files.gcs;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface GcsBucketOptions {
 
@@ -33,9 +34,9 @@ public interface GcsBucketOptions {
   Optional<URI> host();
 
   /**
-   * When using a {@linkplain #host() specific endpoint} and the endpoint URIs for the Nessie server
-   * differ, you can specify the URI passed down to clients using this setting. Otherwise clients
-   * will receive the value from the {@link #host()} setting.
+   * When using a specific endpoint, see {@code host}, and the endpoint URIs for the Nessie server
+   * differ, you can specify the URI passed down to clients using this setting. Otherwise, clients
+   * will receive the value from the {@code host} setting.
    */
   Optional<URI> externalHost();
 
@@ -61,19 +62,16 @@ public interface GcsBucketOptions {
   Optional<GcsAuthType> authType();
 
   /**
-   * Reference to the credentials-JSON. This value is the name of the credential to use, the actual
-   * credential is defined via secrets.
+   * Auth-credentials-JSON, this value is the name of the credential to use, the actual credential
+   * is defined via secrets.
    */
-  Optional<String> authCredentialsJson();
+  Optional<KeySecret> authCredentialsJson();
 
   /**
-   * Reference to the OAuth2 token. This value is the name of the credential to use, the actual
-   * credential is defined via secrets.
+   * OAuth2 token, this value is the name of the credential to use, the actual credential is defined
+   * via secrets.
    */
-  Optional<String> oauth2Token();
-
-  /** Timestamp when the OAuth2 token referenced via {@code oauth2-token-ref} expires. */
-  Optional<Instant> oauth2TokenExpiresAt();
+  Optional<TokenSecret> oauth2Token();
 
   /** Override the default maximum number of attempts. */
   OptionalInt maxAttempts();
@@ -116,14 +114,14 @@ public interface GcsBucketOptions {
    *
    * @implNote This is currently unsupported.
    */
-  Optional<String> encryptionKey();
+  Optional<KeySecret> encryptionKey();
 
   /**
    * Customer-supplied AES256 key for blob decryption when reading.
    *
    * @implNote This is currently unsupported.
    */
-  Optional<String> decryptionKey();
+  Optional<KeySecret> decryptionKey();
 
   enum GcsAuthType {
     NONE,

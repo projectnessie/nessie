@@ -15,12 +15,17 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import static java.util.function.Function.identity;
+import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+
 import java.time.Clock;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -53,8 +58,7 @@ public class TestS3Clients extends AbstractClients {
                 S3ProgrammaticOptions.S3PerBucketOptions.builder()
                     .endpoint(server1.getS3BaseUri())
                     .region("us-west-1")
-                    .accessKeyId("ak1")
-                    .secretAccessKey("sak1")
+                    .accessKey(basicCredentials("ak1", "sak1"))
                     .accessPoint(BUCKET_1)
                     .build());
     if (server2 != null) {
@@ -63,8 +67,7 @@ public class TestS3Clients extends AbstractClients {
           S3ProgrammaticOptions.S3PerBucketOptions.builder()
               .endpoint(server2.getS3BaseUri())
               .region("eu-central-2")
-              .accessKeyId("ak2")
-              .secretAccessKey("sak2")
+              .accessKey(basicCredentials("ak2", "sak2"))
               .build());
     }
 
@@ -73,7 +76,10 @@ public class TestS3Clients extends AbstractClients {
             sdkHttpClient,
             S3Config.builder().build(),
             s3options.build(),
-            (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> "secret")),
+            new SecretsProvider(
+                names ->
+                    names.stream()
+                        .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret")))),
             null);
     return new S3ObjectIO(supplier, Clock.systemUTC());
   }

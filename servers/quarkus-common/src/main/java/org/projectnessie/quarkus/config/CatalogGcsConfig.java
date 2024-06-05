@@ -16,15 +16,17 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithConverter;
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsConfig;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
+import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
@@ -62,13 +64,11 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   Optional<GcsAuthType> authType();
 
   @Override
-  Optional<String> authCredentialsJson();
+  @WithConverter(KeySecretConverter.class)
+  Optional<KeySecret> authCredentialsJson();
 
   @Override
-  Optional<String> oauth2Token();
-
-  @Override
-  Optional<Instant> oauth2TokenExpiresAt();
+  Optional<TokenSecret> oauth2Token();
 
   @Override
   OptionalInt maxAttempts();
@@ -107,10 +107,12 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   OptionalInt deleteBatchSize();
 
   @Override
-  Optional<String> encryptionKey();
+  @WithConverter(KeySecretConverter.class)
+  Optional<KeySecret> encryptionKey();
 
   @Override
-  Optional<String> decryptionKey();
+  @WithConverter(KeySecretConverter.class)
+  Optional<KeySecret> decryptionKey();
 
   @Override
   Optional<String> userProject();

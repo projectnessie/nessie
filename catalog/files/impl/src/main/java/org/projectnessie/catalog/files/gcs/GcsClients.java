@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 public final class GcsClients {
   private GcsClients() {}
@@ -123,7 +124,7 @@ public final class GcsClients {
         try {
           return UserCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJson().orElseThrow().getBytes(UTF_8)),
+                  bucketOptions.authCredentialsJson().orElseThrow().key().getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -132,19 +133,17 @@ public final class GcsClients {
         try {
           return ServiceAccountCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJson().orElseThrow().getBytes(UTF_8)),
+                  bucketOptions.authCredentialsJson().orElseThrow().key().getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       case ACCESS_TOKEN:
+        TokenSecret oauth2token = bucketOptions.oauth2Token().orElseThrow();
         AccessToken accessToken =
             new AccessToken(
-                bucketOptions.oauth2Token().orElseThrow(),
-                bucketOptions
-                    .oauth2TokenExpiresAt()
-                    .map(i -> new Date(i.toEpochMilli()))
-                    .orElse(null));
+                oauth2token.token(),
+                oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
         return OAuth2Credentials.create(accessToken);
       default:
         throw new IllegalArgumentException("Unsupported auth type " + authType);

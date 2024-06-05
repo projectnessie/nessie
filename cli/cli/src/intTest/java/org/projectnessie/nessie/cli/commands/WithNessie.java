@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateMetadataWithManifestList;
+import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
@@ -39,6 +40,7 @@ import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -89,8 +91,8 @@ public abstract class WithNessie {
         "nessie.catalog.service.s3.endpoint", objectStorage.getS3BaseUri().toString());
     nessieProperties.put("nessie.catalog.service.s3.path-style-access", "true");
     nessieProperties.put("nessie.catalog.service.s3.region", "eu-central-1");
-    nessieProperties.put("nessie.catalog.service.s3.access-key-id", "accessKey");
-    nessieProperties.put("nessie.catalog.service.s3.secret-access-key", "secretKey");
+    nessieProperties.put("nessie.catalog.service.s3.access-key.name", "accessKey");
+    nessieProperties.put("nessie.catalog.service.s3.access-key.secret", "secretKey");
     nessieProperties.putAll(serverConfig);
 
     NessieProcess.start(nessieProperties);
@@ -106,8 +108,7 @@ public abstract class WithNessie {
 
     S3Options<S3BucketOptions> s3options =
         S3ProgrammaticOptions.builder()
-            .accessKeyId("foo")
-            .secretAccessKey("bar")
+            .accessKey(basicCredentials("foo", "bar"))
             .region("eu-central-1")
             .endpoint(objectStorage.getS3BaseUri())
             .pathStyleAccess(true)
@@ -120,7 +121,10 @@ public abstract class WithNessie {
             httpClient,
             s3config,
             s3options,
-            (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> "secret")),
+            new SecretsProvider(
+                (names) ->
+                    names.stream()
+                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
             sessions);
 
     ObjectIO objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());

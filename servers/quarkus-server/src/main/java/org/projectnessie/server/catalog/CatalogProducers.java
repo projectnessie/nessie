@@ -31,7 +31,6 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.time.Clock;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -58,7 +57,7 @@ import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
@@ -154,12 +153,7 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public SecretsProvider secretsProvider(QuarkusCatalogConfig config) {
-    return new SecretsProvider() {
-      @Override
-      public Map<String, String> resolveSecrets(Set<String> names) {
-        return Map.of();
-      }
-    };
+    return new SecretsProvider(names -> Map.of());
   }
 
   @Produces

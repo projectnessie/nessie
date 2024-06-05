@@ -30,6 +30,7 @@ import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.storage.uri.StorageUri;
 
 public class GcsObjectIO implements ObjectIO {
@@ -48,6 +49,7 @@ public class GcsObjectIO implements ObjectIO {
     List<BlobSourceOption> sourceOptions = new ArrayList<>();
     bucketOptions
         .decryptionKey()
+        .map(KeySecret::key)
         .map(BlobSourceOption::decryptionKey)
         .ifPresent(sourceOptions::add);
     bucketOptions.userProject().map(BlobSourceOption::userProject).ifPresent(sourceOptions::add);
@@ -67,7 +69,11 @@ public class GcsObjectIO implements ObjectIO {
     Storage client = storageSupplier.forLocation(bucketOptions);
     List<BlobWriteOption> writeOptions = new ArrayList<>();
 
-    bucketOptions.encryptionKey().map(BlobWriteOption::encryptionKey).ifPresent(writeOptions::add);
+    bucketOptions
+        .encryptionKey()
+        .map(KeySecret::key)
+        .map(BlobWriteOption::encryptionKey)
+        .ifPresent(writeOptions::add);
     bucketOptions.userProject().map(BlobWriteOption::userProject).ifPresent(writeOptions::add);
 
     BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(location.bucket(), location.path())).build();

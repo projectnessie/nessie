@@ -18,9 +18,10 @@ package org.projectnessie.catalog.files.gcs;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import org.immutables.value.Value;
+import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.TokenSecret;
 
 @Value.Immutable
 public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
@@ -60,13 +61,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     Builder authType(GcsAuthType authType);
 
     @CanIgnoreReturnValue
-    Builder authCredentialsJson(String authCredentialsJson);
+    Builder authCredentialsJson(KeySecret authCredentialsJson);
 
     @CanIgnoreReturnValue
-    Builder oauth2Token(String oauth2token);
-
-    @CanIgnoreReturnValue
-    Builder oauth2TokenExpiresAt(Instant oauth2TokenExpiresAt);
+    Builder oauth2Token(TokenSecret oauth2token);
 
     @CanIgnoreReturnValue
     Builder maxAttempts(int maxAttempts);
@@ -102,7 +100,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     Builder writeChunkSize(int writeChunkSize);
 
     @CanIgnoreReturnValue
-    Builder encryptionKey(String encryptionKey);
+    Builder encryptionKey(KeySecret encryptionKey);
+
+    @CanIgnoreReturnValue
+    Builder decryptionKey(KeySecret decryptionKey);
 
     @CanIgnoreReturnValue
     Builder userProject(String userProject);
@@ -146,13 +147,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder authType(GcsAuthType authType);
 
       @CanIgnoreReturnValue
-      Builder authCredentialsJson(String authCredentialsJson);
+      Builder authCredentialsJson(KeySecret authCredentialsJson);
 
       @CanIgnoreReturnValue
-      Builder oauth2Token(String oauth2token);
-
-      @CanIgnoreReturnValue
-      Builder oauth2TokenExpiresAt(Instant oauth2TokenExpiresAt);
+      Builder oauth2Token(TokenSecret oauth2token);
 
       @CanIgnoreReturnValue
       Builder maxAttempts(int maxAttempts);
@@ -188,10 +186,10 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder writeChunkSize(int writeChunkSize);
 
       @CanIgnoreReturnValue
-      Builder encryptionKey(String encryptionKey);
+      Builder encryptionKey(KeySecret encryptionKey);
 
       @CanIgnoreReturnValue
-      Builder decryptionKey(String decryptionKey);
+      Builder decryptionKey(KeySecret decryptionKey);
 
       @CanIgnoreReturnValue
       Builder userProject(String userProject);
