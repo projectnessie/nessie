@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.serialize;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,6 +33,7 @@ import org.projectnessie.versioned.storage.common.util.Compressions;
 public final class SmileSerialization {
 
   private static final ObjectMapper SMILE_MAPPER = new SmileMapper().findAndRegisterModules();
+  private static final ObjectWriter SMILE_WRITER = SMILE_MAPPER.writerWithView(StorageView.class);
 
   private SmileSerialization() {}
 
@@ -64,7 +66,7 @@ public final class SmileSerialization {
 
   public static byte[] serializeObj(Obj obj, Consumer<Compression> compression) {
     try {
-      return Compressions.compressDefault(SMILE_MAPPER.writeValueAsBytes(obj), compression);
+      return Compressions.compressDefault(SMILE_WRITER.writeValueAsBytes(obj), compression);
     } catch (JsonProcessingException e) {
       throw new UncheckedIOException(e);
     }
