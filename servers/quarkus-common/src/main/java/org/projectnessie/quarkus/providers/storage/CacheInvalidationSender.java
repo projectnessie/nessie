@@ -21,6 +21,7 @@ import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_I
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST;
 import static org.projectnessie.quarkus.providers.storage.AddressResolver.LOCAL_ADDRESSES;
+import static org.projectnessie.quarkus.providers.storage.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
@@ -232,7 +233,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
               .compose(
                   req ->
                       req.putHeader("Content-Type", APPLICATION_JSON)
-                          .putHeader("Nessie-Cache-Invalidation-Token", token)
+                          .putHeader(NESSIE_CACHE_INVALIDATION_TOKEN_HEADER, token)
                           .send(json))
               .compose(resp -> resp.body().map(b -> Map.entry(resp, b)))
               .timeout(requestTimeout, TimeUnit.MILLISECONDS)

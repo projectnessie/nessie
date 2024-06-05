@@ -15,10 +15,42 @@
  */
 package org.projectnessie.server;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import org.junit.jupiter.api.Test;
+import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
-class TestBasicOperations extends AbstractTestBasicOperations {}
+class TestBasicOperations extends AbstractTestBasicOperations {
+
+  @Inject QuarkusStoreConfig storeConfig;
+
+  @Test
+  public void receiveCacheInvalidationSmoke() throws Exception {
+    int managementPort = Integer.getInteger("quarkus.management.port");
+    URI uri =
+        new URI(
+            "http",
+            null,
+            "127.0.0.1",
+            managementPort,
+            storeConfig.cacheInvalidationUri(),
+            null,
+            null);
+
+    HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+    conn.setRequestMethod("POST");
+    conn.connect();
+    int code = conn.getResponseCode();
+    String msg = conn.getResponseMessage();
+    assertThat(tuple(code, msg)).isEqualTo(tuple(400, "Invalid token"));
+  }
+}

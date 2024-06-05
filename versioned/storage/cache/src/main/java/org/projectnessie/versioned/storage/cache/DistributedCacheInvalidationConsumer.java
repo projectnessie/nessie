@@ -17,5 +17,5 @@ package org.projectnessie.versioned.storage.cache;
 
 /** Interface for type safety for CDI injection. */
 public interface DistributedCacheInvalidationConsumer {
-  void accept(DistributedCacheInvalidation distributedCacheInvalidation);
+  void applyDistributedCacheInvalidation(DistributedCacheInvalidation distributedCacheInvalidation);
 }

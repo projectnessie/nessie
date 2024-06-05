@@ -39,13 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // See https://quarkus.io/guides/management-interface-reference#management-endpoint-application
-public class CacheInvalidationReceiver {
+@Singleton
+public class CacheInvalidationReceiver implements DistributedCacheInvalidationConsumer {
   public static final String NESSIE_CACHE_INVALIDATION_TOKEN_HEADER =
       "Nessie-Cache-Invalidation-Token";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheInvalidationReceiver.class);
 
-  private final DistributedCacheInvalidationHolder invalidator;
+  private DistributedCacheInvalidation distributedCacheInvalidation;
   private final String serverInstanceId;
   private final Set<String> validTokens;
   private final String invalidationPath;
@@ -53,10 +54,7 @@ public class CacheInvalidationReceiver {
 
   @Inject
   public CacheInvalidationReceiver(
-      QuarkusStoreConfig storeConfig,
-      DistributedCacheInvalidationHolder invalidationHolder,
-      @ServerInstanceId String serverInstanceId) {
-    this.invalidator = invalidationHolder;
+      QuarkusStoreConfig storeConfig, @ServerInstanceId String serverInstanceId) {
     this.serverInstanceId = serverInstanceId;
     this.invalidationPath = storeConfig.cacheInvalidationUri();
     this.validTokens =
@@ -65,6 +63,12 @@ public class CacheInvalidationReceiver {
         new ObjectMapper()
             // forward compatibility
             .disable(FAIL_ON_UNKNOWN_PROPERTIES);
+  }
+
+  @Override
+  public void applyDistributedCacheInvalidation(
+      DistributedCacheInvalidation distributedCacheInvalidation) {
+    this.distributedCacheInvalidation = distributedCacheInvalidation;
   }
 
   public void registerManagementRoutes(@Observes ManagementInterface mi) {
@@ -122,7 +126,7 @@ public class CacheInvalidationReceiver {
       return;
     }
 
-    DistributedCacheInvalidation cacheInvalidation = invalidator.invalidation;
+    DistributedCacheInvalidation cacheInvalidation = distributedCacheInvalidation;
     if (cacheInvalidation != null) {
       for (CacheInvalidations.CacheInvalidation invalidation : invs) {
         switch (invalidation.type()) {
@@ -160,16 +164,5 @@ public class CacheInvalidationReceiver {
 
   private void responseNoContent(RoutingContext rc) {
     rc.response().setStatusCode(204).setStatusMessage("No content").end();
-  }
-
-  @Singleton
-  public static class DistributedCacheInvalidationHolder
-      implements DistributedCacheInvalidationConsumer {
-    DistributedCacheInvalidation invalidation;
-
-    @Override
-    public void accept(DistributedCacheInvalidation distributedCacheInvalidation) {
-      this.invalidation = distributedCacheInvalidation;
-    }
   }
 }

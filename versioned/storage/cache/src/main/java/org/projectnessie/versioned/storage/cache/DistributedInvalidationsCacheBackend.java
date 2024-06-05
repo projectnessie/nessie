@@ -32,7 +32,7 @@ final class DistributedInvalidationsCacheBackend implements CacheBackend {
     this.sender = distributedCacheInvalidations.invalidationSender();
     distributedCacheInvalidations
         .invalidationListenerReceiver()
-        .accept(
+        .applyDistributedCacheInvalidation(
             new DistributedCacheInvalidation() {
               @Override
               public void evictObj(String repositoryId, ObjId objId) {

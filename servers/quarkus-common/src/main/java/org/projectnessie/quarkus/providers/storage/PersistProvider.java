@@ -42,7 +42,6 @@ import org.projectnessie.versioned.storage.cache.CacheBackend;
 import org.projectnessie.versioned.storage.cache.CacheConfig;
 import org.projectnessie.versioned.storage.cache.CacheSizing;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
-import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidationConsumer;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidations;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -126,7 +125,7 @@ public class PersistProvider {
   public CacheBackend produceCacheBackend(
       MeterRegistry meterRegistry,
       DistributedCacheInvalidation invalidationSender,
-      DistributedCacheInvalidationConsumer distributedCacheInvalidationConsumer) {
+      CacheInvalidationReceiver cacheInvalidationReceiver) {
     CacheSizing cacheSizing =
         CacheSizing.builder()
             .fixedSizeInMB(storeConfig.cacheCapacityMB())
@@ -159,7 +158,7 @@ public class PersistProvider {
           DistributedCacheInvalidations.builder()
               .localBackend(cacheBackend)
               .invalidationSender(invalidationSender)
-              .invalidationListenerReceiver(distributedCacheInvalidationConsumer)
+              .invalidationListenerReceiver(cacheInvalidationReceiver)
               .build();
 
       cacheBackend = PersistCaches.wrapBackendForDistributedUsage(distributedCacheInvalidations);

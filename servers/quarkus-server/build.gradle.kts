@@ -128,6 +128,7 @@ dependencies {
   testFixturesImplementation(project(":nessie-versioned-spi"))
   testFixturesImplementation(project(":nessie-versioned-tests"))
   testFixturesApi(project(":nessie-versioned-storage-common"))
+  testFixturesApi(project(":nessie-versioned-storage-cache"))
   testFixturesApi(project(":nessie-versioned-storage-store"))
   testFixturesImplementation(project(":nessie-versioned-storage-testextension")) {
     // Needed to avoid dependency resolution error:

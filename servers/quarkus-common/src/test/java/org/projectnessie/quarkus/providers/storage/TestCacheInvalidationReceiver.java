@@ -46,18 +46,16 @@ public class TestCacheInvalidationReceiver {
 
   @Test
   public void senderReceiver() throws Exception {
-    CacheInvalidationReceiver.DistributedCacheInvalidationHolder invalidationHolder =
-        new CacheInvalidationReceiver.DistributedCacheInvalidationHolder();
     DistributedCacheInvalidation distributedCacheInvalidation =
         mock(DistributedCacheInvalidation.class);
-    invalidationHolder.accept(distributedCacheInvalidation);
 
     String token = "cafe";
     List<String> tokens = singletonList(token);
     String receiverId = "receiverId";
     String senderId = "senderId";
 
-    CacheInvalidationReceiver receiver = buildReceiver(tokens, invalidationHolder, receiverId);
+    CacheInvalidationReceiver receiver = buildReceiver(tokens, receiverId);
+    receiver.applyDistributedCacheInvalidation(distributedCacheInvalidation);
 
     CacheInvalidations invalidations = cacheInvalidations(allInvalidationTypes());
 
@@ -83,18 +81,16 @@ public class TestCacheInvalidationReceiver {
 
   @Test
   public void doesNotAcceptInvalidationsWithoutTokens() {
-    CacheInvalidationReceiver.DistributedCacheInvalidationHolder invalidationHolder =
-        new CacheInvalidationReceiver.DistributedCacheInvalidationHolder();
     DistributedCacheInvalidation distributedCacheInvalidation =
         mock(DistributedCacheInvalidation.class);
-    invalidationHolder.accept(distributedCacheInvalidation);
 
     String token = "cafe";
     List<String> tokens = emptyList();
     String receiverId = "receiverId";
     String senderId = "senderId";
 
-    CacheInvalidationReceiver receiver = buildReceiver(tokens, invalidationHolder, receiverId);
+    CacheInvalidationReceiver receiver = buildReceiver(tokens, receiverId);
+    receiver.applyDistributedCacheInvalidation(distributedCacheInvalidation);
 
     RoutingContext rc = expectResponse();
     receiver.cacheInvalidations(
@@ -108,17 +104,15 @@ public class TestCacheInvalidationReceiver {
 
   @Test
   public void receiveFromSelf() {
-    CacheInvalidationReceiver.DistributedCacheInvalidationHolder invalidationHolder =
-        new CacheInvalidationReceiver.DistributedCacheInvalidationHolder();
     DistributedCacheInvalidation distributedCacheInvalidation =
         mock(DistributedCacheInvalidation.class);
-    invalidationHolder.accept(distributedCacheInvalidation);
 
     String token = "cafe";
     List<String> tokens = singletonList(token);
     String receiverId = "receiverId";
 
-    CacheInvalidationReceiver receiver = buildReceiver(tokens, invalidationHolder, receiverId);
+    CacheInvalidationReceiver receiver = buildReceiver(tokens, receiverId);
+    receiver.applyDistributedCacheInvalidation(distributedCacheInvalidation);
 
     RoutingContext rc = expectResponse();
     receiver.cacheInvalidations(
@@ -132,11 +126,8 @@ public class TestCacheInvalidationReceiver {
 
   @Test
   public void unknownToken() {
-    CacheInvalidationReceiver.DistributedCacheInvalidationHolder invalidationHolder =
-        new CacheInvalidationReceiver.DistributedCacheInvalidationHolder();
     DistributedCacheInvalidation distributedCacheInvalidation =
         mock(DistributedCacheInvalidation.class);
-    invalidationHolder.accept(distributedCacheInvalidation);
 
     String token = "cafe";
     List<String> tokens = singletonList(token);
@@ -144,7 +135,8 @@ public class TestCacheInvalidationReceiver {
     String receiverId = "receiverId";
     String senderId = "senderId";
 
-    CacheInvalidationReceiver receiver = buildReceiver(tokens, invalidationHolder, receiverId);
+    CacheInvalidationReceiver receiver = buildReceiver(tokens, receiverId);
+    receiver.applyDistributedCacheInvalidation(distributedCacheInvalidation);
 
     RoutingContext rc = expectResponse();
     receiver.cacheInvalidations(
@@ -176,14 +168,11 @@ public class TestCacheInvalidationReceiver {
     return rc;
   }
 
-  private static CacheInvalidationReceiver buildReceiver(
-      List<String> tokens,
-      CacheInvalidationReceiver.DistributedCacheInvalidationHolder invalidationHolder,
-      String receiverId) {
+  private static CacheInvalidationReceiver buildReceiver(List<String> tokens, String receiverId) {
     QuarkusStoreConfig config = mock(QuarkusStoreConfig.class);
     when(config.cacheInvalidationValidTokens()).thenReturn(Optional.of(tokens));
 
-    return new CacheInvalidationReceiver(config, invalidationHolder, receiverId);
+    return new CacheInvalidationReceiver(config, receiverId);
   }
 
   List<CacheInvalidations.CacheInvalidation> allInvalidationTypes() {
