@@ -104,7 +104,7 @@ data:
     {{- if .Values.tracing.enabled -}}
     {{- $_ = set $map "quarkus.otel.exporter.otlp.endpoint" .Values.tracing.endpoint -}}
     {{- if .Values.tracing.attributes -}}
-    {{- $_ = set $map "quarkus.otel.resource-attributes" (include "nessie.dictToString" .Values.tracing.attributes) -}}
+    {{- $_ = set $map "quarkus.otel.resource.attributes" (include "nessie.dictToString" .Values.tracing.attributes) -}}
     {{- end -}}
     {{- if .Values.tracing.sample -}}
     {{ if eq .Values.tracing.sample "all" -}}
@@ -113,11 +113,11 @@ data:
     {{- $_ = set $map "quarkus.otel.traces.sampler" "always_off" -}}
     {{- else -}}
     {{- $_ = set $map "quarkus.otel.traces.sampler=" "parentbased_traceidratio" -}}
-    {{- $_ = set $map "quarkus.otel.traces.sampler-arg" .Values.tracing.sample -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler.arg" .Values.tracing.sample -}}
     {{- end -}}
     {{- end -}}
     {{- else -}}
-    {{- $_ = set $map "quarkus.otel.sdk-disabled" true -}}
+    {{- $_ = set $map "quarkus.otel.sdk.disabled" true -}}
     {{- end -}}
 
     {{- list .Values.advancedConfig "" $map | include "nessie.mergeAdvancedConfig" }}
