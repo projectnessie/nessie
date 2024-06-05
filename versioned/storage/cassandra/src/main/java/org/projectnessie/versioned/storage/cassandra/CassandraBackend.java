@@ -85,12 +85,8 @@ import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class CassandraBackend implements Backend {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(CassandraBackend.class);
 
   private final CassandraBackendConfig config;
   private final boolean closeClient;
@@ -377,7 +373,7 @@ public final class CassandraBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public String setupSchema() {
     Metadata metadata = session.getMetadata();
     Optional<KeyspaceMetadata> keyspace = metadata.getKeyspace(config.keyspace());
 
@@ -406,6 +402,12 @@ public final class CassandraBackend implements Backend {
         CREATE_TABLE_OBJS,
         Stream.concat(Stream.of(COL_REPO_ID), COLS_OBJS_ALL.stream()).collect(toImmutableSet()),
         List.of(COL_REPO_ID, COL_OBJ_ID));
+    return "keyspace: "
+        + config.keyspace()
+        + " DDL timeout: "
+        + config.ddlTimeout()
+        + " DML timeout: "
+        + config.dmlTimeout();
   }
 
   private void createTableIfNotExists(
@@ -482,16 +484,6 @@ public final class CassandraBackend implements Backend {
       }
     }
     return missing;
-  }
-
-  @Override
-  public String configInfo() {
-    return "keyspace: "
-        + config.keyspace()
-        + " DDL timeout: "
-        + config.ddlTimeout()
-        + " DML timeout: "
-        + config.dmlTimeout();
   }
 
   @Override

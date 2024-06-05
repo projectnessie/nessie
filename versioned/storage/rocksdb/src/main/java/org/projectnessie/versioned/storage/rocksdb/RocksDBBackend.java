@@ -144,8 +144,9 @@ public final class RocksDBBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public String setupSchema() {
     initialize();
+    return "database path: " + config.databasePath();
   }
 
   @Nonnull
@@ -153,11 +154,6 @@ public final class RocksDBBackend implements Backend {
   public PersistFactory createFactory() {
     initialize();
     return new RocksDBPersistFactory(this);
-  }
-
-  @Override
-  public String configInfo() {
-    return "database path: " + config.databasePath();
   }
 
   RocksDBRepo repo(StoreConfig config) {

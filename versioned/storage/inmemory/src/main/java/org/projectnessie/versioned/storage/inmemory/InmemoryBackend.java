@@ -48,10 +48,7 @@ public final class InmemoryBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {}
-
-  @Override
-  public String configInfo() {
+  public String setupSchema() {
     return "";
   }
 

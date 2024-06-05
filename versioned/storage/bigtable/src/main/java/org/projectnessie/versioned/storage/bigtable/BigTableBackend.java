@@ -123,7 +123,7 @@ public final class BigTableBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public String setupSchema() {
     if (tableAdminClient == null) {
       // If BigTable admin client is not available, check at least that the required tables exist.
       boolean refs = checkTableNoAdmin(tableRefsId);
@@ -134,11 +134,11 @@ public final class BigTableBackend implements Backend {
           tableRefs,
           tableObjs);
       LOGGER.info("No Bigtable admin client available, skipping schema setup");
-      return;
+    } else {
+      checkTable(tableRefs, FAMILY_REFS);
+      checkTable(tableObjs, FAMILY_OBJS);
     }
-
-    checkTable(tableRefs, FAMILY_REFS);
-    checkTable(tableObjs, FAMILY_OBJS);
+    return tableAdminClient != null ? "" : " (no admin client)";
   }
 
   private boolean checkTableNoAdmin(TableId table) {
@@ -225,10 +225,5 @@ public final class BigTableBackend implements Backend {
       }
       return filter;
     }
-  }
-
-  @Override
-  public String configInfo() {
-    return this.tableAdminClient != null ? "" : " (no admin client)";
   }
 }

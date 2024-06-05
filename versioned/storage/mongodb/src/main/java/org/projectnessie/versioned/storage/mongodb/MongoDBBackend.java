@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.projectnessie.versioned.storage.common.persist.Backend;
+import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 
 public class MongoDBBackend implements Backend {
 
@@ -68,7 +69,7 @@ public class MongoDBBackend implements Backend {
 
   @Override
   @Nonnull
-  public MongoDBPersistFactory createFactory() {
+  public PersistFactory createFactory() {
     initialize();
     return new MongoDBPersistFactory(this);
   }
@@ -81,12 +82,8 @@ public class MongoDBBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public String setupSchema() {
     initialize();
-  }
-
-  @Override
-  public String configInfo() {
     return "database name: " + config.databaseName();
   }
 

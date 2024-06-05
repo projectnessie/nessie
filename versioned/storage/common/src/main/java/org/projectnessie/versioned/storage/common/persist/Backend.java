@@ -20,12 +20,17 @@ import java.util.Set;
 
 public interface Backend extends AutoCloseable {
 
-  void setupSchema();
+  /**
+   * Set up the schema for the backend and create the necessary tables / collections / column
+   * families.
+   *
+   * @return any useful information about the schema setup, such as the database name; to be
+   *     displayed when the application starts.
+   */
+  String setupSchema();
 
   @Nonnull
   PersistFactory createFactory();
-
-  String configInfo();
 
   void eraseRepositories(Set<String> repositoryIds);
 }

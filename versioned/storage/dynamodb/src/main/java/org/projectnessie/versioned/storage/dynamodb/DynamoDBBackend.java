@@ -79,9 +79,10 @@ public final class DynamoDBBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public String setupSchema() {
     createIfMissing(tableRefs);
     createIfMissing(tableObjs);
+    return "";
   }
 
   private void createIfMissing(String name) {
@@ -135,11 +136,6 @@ public final class DynamoDBBackend implements Backend {
             "Invalid key schema for table: %s. Key schema should be a hash partitioned "
                 + "attribute with the name '%s'.",
             description.tableName(), KEY_NAME));
-  }
-
-  @Override
-  public String configInfo() {
-    return "";
   }
 
   @Override
