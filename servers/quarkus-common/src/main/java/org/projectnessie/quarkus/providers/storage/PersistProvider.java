@@ -28,6 +28,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
@@ -119,7 +120,7 @@ public class PersistProvider {
     }
 
     Backend b = backend.get();
-    String info = b.setupSchema();
+    Optional<String> info = b.setupSchema();
 
     LOGGER.info("Creating/opening version store {} ...", versionStoreType);
 
@@ -158,10 +159,11 @@ public class PersistProvider {
       cacheInfo = "without objects cache";
     }
 
-    if (!info.isEmpty()) {
-      info = " (" + info + ")";
-    }
-    LOGGER.info("Using {} version store{}, {}", versionStoreType, info, cacheInfo);
+    LOGGER.info(
+        "Using {} version store{}, {}",
+        versionStoreType,
+        info.map(s -> " (" + s + ")").orElse(""),
+        cacheInfo);
 
     return persist;
   }

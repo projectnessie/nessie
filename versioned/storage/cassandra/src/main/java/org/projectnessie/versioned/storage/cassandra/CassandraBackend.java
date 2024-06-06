@@ -373,7 +373,7 @@ public final class CassandraBackend implements Backend {
   }
 
   @Override
-  public String setupSchema() {
+  public Optional<String> setupSchema() {
     Metadata metadata = session.getMetadata();
     Optional<KeyspaceMetadata> keyspace = metadata.getKeyspace(config.keyspace());
 
@@ -402,12 +402,13 @@ public final class CassandraBackend implements Backend {
         CREATE_TABLE_OBJS,
         Stream.concat(Stream.of(COL_REPO_ID), COLS_OBJS_ALL.stream()).collect(toImmutableSet()),
         List.of(COL_REPO_ID, COL_OBJ_ID));
-    return "keyspace: "
-        + config.keyspace()
-        + " DDL timeout: "
-        + config.ddlTimeout()
-        + " DML timeout: "
-        + config.dmlTimeout();
+    return Optional.of(
+        "keyspace: "
+            + config.keyspace()
+            + " DDL timeout: "
+            + config.ddlTimeout()
+            + " DML timeout: "
+            + config.dmlTimeout());
   }
 
   private void createTableIfNotExists(

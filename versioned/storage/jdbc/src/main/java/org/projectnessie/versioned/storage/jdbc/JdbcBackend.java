@@ -50,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -186,7 +187,7 @@ public final class JdbcBackend implements Backend {
   }
 
   @Override
-  public String setupSchema() {
+  public Optional<String> setupSchema() {
     try (Connection conn = borrowConnection()) {
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
@@ -223,7 +224,7 @@ public final class JdbcBackend implements Backend {
         }
         info.append("schema: ").append(s);
       }
-      return info.toString();
+      return Optional.of(info.toString());
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }

@@ -44,6 +44,7 @@ import jakarta.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -123,7 +124,7 @@ public final class BigTableBackend implements Backend {
   }
 
   @Override
-  public String setupSchema() {
+  public Optional<String> setupSchema() {
     if (tableAdminClient == null) {
       // If BigTable admin client is not available, check at least that the required tables exist.
       boolean refs = checkTableNoAdmin(tableRefsId);
@@ -138,7 +139,7 @@ public final class BigTableBackend implements Backend {
       checkTable(tableRefs, FAMILY_REFS);
       checkTable(tableObjs, FAMILY_OBJS);
     }
-    return tableAdminClient != null ? "" : " (no admin client)";
+    return tableAdminClient != null ? Optional.empty() : Optional.of("no admin client");
   }
 
   private boolean checkTableNoAdmin(TableId table) {

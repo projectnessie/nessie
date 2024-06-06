@@ -25,6 +25,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import jakarta.annotation.Nonnull;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.bson.Document;
@@ -82,9 +83,9 @@ public class MongoDBBackend implements Backend {
   }
 
   @Override
-  public String setupSchema() {
+  public Optional<String> setupSchema() {
     initialize();
-    return "database name: " + config.databaseName();
+    return Optional.of("database name: " + config.databaseName());
   }
 
   @Override
