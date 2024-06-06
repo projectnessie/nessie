@@ -53,6 +53,7 @@ dependencies {
   implementation("io.quarkus:quarkus-jdbc-mariadb")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-micrometer")
+  implementation("io.smallrye.config:smallrye-config-source-keystore")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation("software.amazon.awssdk:sts")
