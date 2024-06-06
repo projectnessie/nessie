@@ -19,6 +19,8 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Duration;
 import java.util.Map;
 import org.immutables.value.Value;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.KeySecret;
 
 @Value.Immutable
 public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptions> {
@@ -58,13 +60,10 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
     Builder putAllFileSystems(Map<String, ? extends AdlsFileSystemOptions> entries);
 
     @CanIgnoreReturnValue
-    Builder accountName(String accountName);
+    Builder account(BasicCredentials account);
 
     @CanIgnoreReturnValue
-    Builder accountKey(String accountKey);
-
-    @CanIgnoreReturnValue
-    Builder sasToken(String sasToken);
+    Builder sasToken(KeySecret sasToken);
 
     @CanIgnoreReturnValue
     Builder endpoint(String endpoint);
@@ -99,13 +98,10 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
       Builder from(AdlsFileSystemOptions instance);
 
       @CanIgnoreReturnValue
-      Builder accountName(String accountName);
+      Builder account(BasicCredentials account);
 
       @CanIgnoreReturnValue
-      Builder accountKey(String accountKey);
-
-      @CanIgnoreReturnValue
-      Builder sasToken(String sasToken);
+      Builder sasToken(KeySecret sasToken);
 
       @CanIgnoreReturnValue
       Builder endpoint(String endpoint);

@@ -43,4 +43,9 @@ public class ITGcsIcebergCatalog extends AbstractIcebergCatalogTests {
   protected String temporaryLocation() {
     return warehouseLocation.toString() + "/temp/" + randomUUID();
   }
+
+  @Override
+  protected String scheme() {
+    return warehouseLocation.getScheme();
+  }
 }

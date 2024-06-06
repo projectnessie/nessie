@@ -15,10 +15,14 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+
 import com.azure.core.http.HttpClient;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -40,16 +44,14 @@ public class TestAdlsClients extends AbstractClients {
                 BUCKET_1,
                 AdlsProgrammaticOptions.AdlsPerFileSystemOptions.builder()
                     .endpoint(server1.getAdlsGen2BaseUri().toString())
-                    .accountName("accountName")
-                    .accountKey("accountKey")
+                    .account(basicCredentials("accountName", "accountKey"))
                     .build());
     if (server2 != null) {
       adlsOptions.putFileSystems(
           BUCKET_2,
           AdlsProgrammaticOptions.AdlsPerFileSystemOptions.builder()
               .endpoint(server2.getAdlsGen2BaseUri().toString())
-              .accountName("accountName")
-              .accountKey("accountKey")
+              .account(basicCredentials("accountName", "accountKey"))
               .build());
     }
 
@@ -57,7 +59,10 @@ public class TestAdlsClients extends AbstractClients {
         new AdlsClientSupplier(
             httpClient,
             adlsOptions.build(),
-            (names) -> names.stream().collect(Collectors.toMap(k -> k, k -> "secret")));
+            new SecretsProvider(
+                (names) ->
+                    names.stream()
+                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
 
     return new AdlsObjectIO(supplier);
   }

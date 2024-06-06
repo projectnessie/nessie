@@ -66,6 +66,7 @@ dependencies {
   implementation(project(":nessie-catalog-service-common"))
   implementation(project(":nessie-catalog-service-impl"))
   implementation(project(":nessie-catalog-service-rest"))
+  implementation(project(":nessie-catalog-secrets-api"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
@@ -78,12 +79,7 @@ dependencies {
   implementation("io.quarkus:quarkus-smallrye-context-propagation")
   implementation("io.quarkus:quarkus-smallrye-health")
   implementation("io.quarkus:quarkus-smallrye-openapi")
-  implementation("io.quarkus:quarkus-hibernate-validator")
-  implementation("io.quarkus:quarkus-elytron-security-properties-file")
   implementation("io.quarkus:quarkus-security")
-  implementation("io.quarkus:quarkus-oidc")
-  implementation("io.quarkus:quarkus-micrometer")
-  implementation("io.quarkus:quarkus-core-deployment")
   implementation("io.quarkus:quarkus-elytron-security-properties-file")
   implementation("io.quarkus:quarkus-oidc")
   implementation("io.quarkus:quarkus-micrometer")
@@ -112,16 +108,6 @@ dependencies {
   implementation(libs.guava)
 
   compileOnly(libs.microprofile.openapi)
-
-  if (project.hasProperty("k8s")) {
-    /*
-     * Use the k8s project property to generate manifest files for K8s & Minikube, which will be
-     * located under target/kubernetes.
-     * See also https://quarkus.io/guides/deploying-to-kubernetes for additional details
-     */
-    implementation("io.quarkus:quarkus-kubernetes")
-    implementation("io.quarkus:quarkus-minikube")
-  }
 
   openapiSource(project(":nessie-model-quarkus", "openapiSource"))
 

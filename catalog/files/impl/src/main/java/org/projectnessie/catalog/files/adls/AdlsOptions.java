@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.files.adls;
 
-import static org.projectnessie.catalog.files.secrets.SecretsHelper.Specializeable.specializable;
+import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -24,14 +24,18 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileSystemOptions;
-import org.projectnessie.catalog.files.secrets.SecretsHelper;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.SecretAttribute;
+import org.projectnessie.catalog.secrets.SecretType;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
     extends AdlsFileSystemOptions {
 
-  /** For configuration options, see {@link com.azure.core.util.Configuration}. */
+  /**
+   * For custom ADLS configuration options, consult javadocs for {@code
+   * com.azure.core.util.Configuration}.
+   */
   Map<String, String> configurationOptions();
 
   /** Override the default read block size used when writing to ADLS. */
@@ -58,19 +62,17 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
     return resolveSecrets(name, perBucket, secretsProvider);
   }
 
-  List<SecretsHelper.Specializeable<AdlsFileSystemOptions, AdlsPerFileSystemOptions.Builder>>
-      SECRETS =
+  List<SecretAttribute<AdlsFileSystemOptions, AdlsPerFileSystemOptions.Builder, ?>>
+      SECRET_ATTRIBUTES =
           ImmutableList.of(
-              specializable(
-                  "accountName",
-                  AdlsFileSystemOptions::accountName,
-                  AdlsPerFileSystemOptions.Builder::accountName),
-              specializable(
-                  "accountKey",
-                  AdlsFileSystemOptions::accountKey,
-                  AdlsPerFileSystemOptions.Builder::accountKey),
-              specializable(
+              secretAttribute(
+                  "account",
+                  SecretType.BASIC,
+                  AdlsFileSystemOptions::account,
+                  AdlsPerFileSystemOptions.Builder::account),
+              secretAttribute(
                   "sasToken",
+                  SecretType.KEY,
                   AdlsFileSystemOptions::sasToken,
                   AdlsPerFileSystemOptions.Builder::sasToken));
 
@@ -81,8 +83,9 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
       builder.from(specific);
     }
 
-    return SecretsHelper.resolveSecrets(
-            secretsProvider, "object-stores.adls", builder, this, filesystemName, specific, SECRETS)
+    return secretsProvider
+        .applySecrets(
+            builder, "object-stores.adls", this, filesystemName, specific, SECRET_ATTRIBUTES)
         .build();
   }
 }

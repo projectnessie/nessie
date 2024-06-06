@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.files.s3;
 
 import java.util.Optional;
+import org.projectnessie.catalog.secrets.BasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -55,7 +56,9 @@ public class S3Clients {
       S3BucketOptions bucketOptions, S3Sessions sessions) {
     Optional<String> role = bucketOptions.roleArn();
     if (role.isEmpty()) {
-      return basicCredentialsProvider(bucketOptions.accessKeyId(), bucketOptions.secretAccessKey());
+      return basicCredentialsProvider(
+          bucketOptions.accessKey().map(BasicCredentials::name),
+          bucketOptions.accessKey().map(BasicCredentials::secret));
     }
 
     return sessions.assumeRoleForServer(bucketOptions);

@@ -62,8 +62,8 @@ services:
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
       - nessie.catalog.service.s3.region=us-east-1
       - nessie.catalog.service.s3.path-style-access=true
-      - nessie.catalog.service.s3.access-key-id=minioadmin
-      - nessie.catalog.service.s3.secret-access-key=minioadmin
+      - nessie.catalog.service.s3.access-key.name=minioadmin
+      - nessie.catalog.service.s3.access-key.secret=minioadmin
       # MinIO endpoint for Nessie server
       - nessie.catalog.service.s3.endpoint=http://minio:9000/
       # MinIO endpoint for clients (on the Podman/Docker host)
@@ -104,7 +104,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-06-04T19-20-08Z
+    image: quay.io/minio/minio:RELEASE.2024-06-06T09-36-42Z
     ports:
       # API port, used by Nessie
       - "9000:9000"
@@ -124,7 +124,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2024-06-04T19-20-08Z
+    image: quay.io/minio/minio:RELEASE.2024-06-06T09-36-42Z
     depends_on:
       minio:
         condition: service_healthy

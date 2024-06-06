@@ -26,6 +26,7 @@ import java.util.OptionalInt;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3Options;
+import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
@@ -85,10 +86,7 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
   Optional<String> region();
 
   @Override
-  Optional<String> accessKeyId();
-
-  @Override
-  Optional<String> secretAccessKey();
+  Optional<BasicCredentials> accessKey();
 
   @Override
   Optional<String> accessPoint();

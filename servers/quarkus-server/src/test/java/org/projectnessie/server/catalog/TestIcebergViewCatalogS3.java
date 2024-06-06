@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.secrets;
+package org.projectnessie.server.catalog;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
 
-public interface SecretsProvider {
-  Map<String, String> resolveSecrets(Set<String> names);
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import java.util.UUID;
 
-  static SecretsProvider mapSecretsProvider(Map<String, String> secretsMap) {
-    return names -> {
-      Map<String, String> resolved = new HashMap<>();
-      for (String name : names) {
-        String r = secretsMap.get(name);
-        if (r != null) {
-          resolved.put(name, r);
-        }
-      }
-      return resolved;
-    };
+@QuarkusTest
+@TestProfile(S3UnitTestProfiles.S3UnitTestProfile.class)
+public class TestIcebergViewCatalogS3 extends AbstractIcebergViewCatalogUnitTests {
+
+  @Override
+  protected String temporaryLocation() {
+    return S3_WAREHOUSE_LOCATION + "/temp/" + UUID.randomUUID();
   }
 }

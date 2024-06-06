@@ -21,8 +21,10 @@ import static org.projectnessie.services.authz.Check.CheckType.CREATE_REFERENCE;
 import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
 
 import jakarta.enterprise.inject.Instance;
-import java.util.Collections;
+import java.security.Principal;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -35,6 +37,7 @@ import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessCheckException;
+import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthorizerType;
 import org.projectnessie.services.authz.Check;
@@ -49,8 +52,10 @@ public class TestCELAuthZ {
   public void addsViewAllRefsRule() throws ScriptException {
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(buildConfig(true));
     soft.assertThat(rules.getRules())
-        .hasSize(2)
+        .hasSize(4)
         .containsKey("foo")
+        .containsKey("bar")
+        .containsKey("baz")
         .containsKey("__ALLOW_VIEWING_REF_ID");
 
     soft.assertThat(
@@ -74,17 +79,51 @@ public class TestCELAuthZ {
   @Test
   void celBatchAccessChecker() {
     QuarkusNessieAuthorizationConfig config = buildConfig(true);
+
+    AtomicReference<String> user = new AtomicReference<>("some-user");
+    AtomicReference<Set<String>> roles = new AtomicReference<>(Set.of("some-user"));
+
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
     CelBatchAccessChecker batchAccessChecker =
-        new CelBatchAccessChecker(rules, () -> () -> "some-user");
+        new CelBatchAccessChecker(
+            rules,
+            new AccessContext() {
+              @Override
+              public Principal user() {
+                return user::get;
+              }
 
-    soft.assertThatCode(
-            () -> batchAccessChecker.canViewReference(BranchName.of("main")).checkAndThrow())
+              @Override
+              public Set<String> roleIds() {
+                return roles.get();
+              }
+            });
+
+    BranchName main = BranchName.of("main");
+    soft.assertThatCode(() -> batchAccessChecker.canViewReference(main).checkAndThrow())
         .doesNotThrowAnyException();
-    soft.assertThatThrownBy(
-            () -> batchAccessChecker.canCreateReference(BranchName.of("main")).checkAndThrow())
+    soft.assertThatThrownBy(() -> batchAccessChecker.canCreateReference(main).checkAndThrow())
         .isInstanceOf(AccessCheckException.class)
         .hasMessage("'CREATE_REFERENCE' is not allowed for role 'some-user' on reference 'main'");
+
+    soft.assertThatThrownBy(
+            () -> batchAccessChecker.canCommitChangeAgainstReference(main).checkAndThrow())
+        .isInstanceOf(AccessCheckException.class);
+
+    user.set("baz");
+    roles.set(Set.of("baz"));
+    soft.assertThatCode(
+            () -> batchAccessChecker.canCommitChangeAgainstReference(main).checkAndThrow())
+        .doesNotThrowAnyException();
+    user.set("foo");
+    roles.set(Set.of("foo"));
+    soft.assertThatThrownBy(
+            () -> batchAccessChecker.canCommitChangeAgainstReference(main).checkAndThrow())
+        .isInstanceOf(AccessCheckException.class);
+    roles.set(Set.of("foo", "bar"));
+    soft.assertThatCode(
+            () -> batchAccessChecker.canCommitChangeAgainstReference(main).checkAndThrow())
+        .doesNotThrowAnyException();
   }
 
   @ParameterizedTest
@@ -145,7 +184,7 @@ public class TestCELAuthZ {
 
       @Override
       public Map<String, String> rules() {
-        return Collections.singletonMap("foo", "false");
+        return Map.of("foo", "false", "bar", "'bar' in roles", "baz", "role=='baz'");
       }
     };
   }

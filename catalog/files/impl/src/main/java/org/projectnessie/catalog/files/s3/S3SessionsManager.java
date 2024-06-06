@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
+import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -228,8 +229,8 @@ public class S3SessionsManager {
             options
                 .roleArn()
                 .orElseThrow(() -> new IllegalArgumentException("Role ARN must be configured")))
-        .accessKeyId(options.accessKeyId())
-        .secretAccessKey(options.secretAccessKey())
+        .accessKeyId(options.accessKey().map(BasicCredentials::name))
+        .secretAccessKey(options.accessKey().map(BasicCredentials::secret))
         .stsEndpoint(options.stsEndpoint())
         .iamPolicy(options.iamPolicy())
         .roleSessionName(options.roleSessionName())

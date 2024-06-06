@@ -38,6 +38,11 @@ See [here](https://smallrye.io/smallrye-config/Main/config/environment-variables
 
 For more information on docker images, see [Docker image options](#docker-image-options) below.
 
+## Providing secrets
+
+Instead of providing secrets like passwords in clear text, you can also use a keystore. This
+functionality is provided [natively via Quarkus](https://quarkus.io/guides/config-secrets#store-secrets-in-a-keystore).
+
 ## Core Nessie Configuration Settings
 
 ### Core Settings

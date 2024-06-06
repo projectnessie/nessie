@@ -18,7 +18,7 @@ package org.projectnessie.catalog.files.gcs;
 import com.google.auth.http.HttpTransportFactory;
 import com.google.cloud.storage.Storage;
 import java.util.Optional;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 
 public final class GcsStorageSupplier {
   private final HttpTransportFactory httpTransportFactory;

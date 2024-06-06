@@ -17,12 +17,13 @@ package org.projectnessie.catalog.files.s3;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.catalog.files.s3.S3Clients.awsCredentialsProvider;
+import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
 
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Optional;
 import java.util.function.Function;
-import org.projectnessie.catalog.files.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,7 @@ public class S3ClientSupplier {
   public S3Client getClient(StorageUri location) {
 
     String scheme = location.scheme();
-    checkArgument("s3".equals(scheme), "Invalid S3 scheme: %s", location);
+    checkArgument(isS3scheme(scheme), "Invalid S3 scheme: %s", location);
     String bucketName = location.requiredAuthority();
 
     // Supply an empty profile file

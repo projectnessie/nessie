@@ -26,6 +26,8 @@ as necessary. Empty sections will not end in the release notes.
 - Support for Iceberg REST is in "beta" state. We appreciate early feedback, comments and suggestions.
   Take a look at the [Guides](http://projectnessie.org/guides/) and [Docs](http://projectnessie.org/docs/)
   on our web site projectnessie.org for more information.
+- CEL access check scripts now receive the variable `roles` that can be used to check whether the current
+  principal has a role assigned using a CEL expression like `'rolename' in roles`.
 
 ### Changes
 

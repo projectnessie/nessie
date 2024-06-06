@@ -29,4 +29,9 @@ public class TestAdlsIcebergCatalog extends AbstractIcebergCatalogUnitTests {
   protected String temporaryLocation() {
     return ADLS_WAREHOUSE_LOCATION + "/temp/" + UUID.randomUUID();
   }
+
+  @Override
+  protected String scheme() {
+    return "adls";
+  }
 }

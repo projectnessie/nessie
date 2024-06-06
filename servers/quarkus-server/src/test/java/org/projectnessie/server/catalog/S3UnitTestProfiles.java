@@ -17,7 +17,7 @@ package org.projectnessie.server.catalog;
 
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.INIT_ADDRESS;
-import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
+import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.bucketWarehouseLocation;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -25,7 +25,28 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class S3UnitTestProfile implements QuarkusTestProfile {
+public abstract class S3UnitTestProfiles implements QuarkusTestProfile {
+
+  public static final class S3UnitTestProfile extends S3UnitTestProfiles {
+    @Override
+    protected String scheme() {
+      return "s3";
+    }
+  }
+
+  public static final class S3AUnitTestProfile extends S3UnitTestProfiles {
+    @Override
+    protected String scheme() {
+      return "s3a";
+    }
+  }
+
+  public static final class S3NUnitTestProfile extends S3UnitTestProfiles {
+    @Override
+    protected String scheme() {
+      return "s3n";
+    }
+  }
 
   @Override
   public List<TestResourceEntry> testResources() {
@@ -38,7 +59,11 @@ public class S3UnitTestProfile implements QuarkusTestProfile {
   @Override
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location", S3_WAREHOUSE_LOCATION)
+        .put(
+            "nessie.catalog.warehouses." + WAREHOUSE_NAME + ".location",
+            bucketWarehouseLocation(scheme()))
         .build();
   }
+
+  protected abstract String scheme();
 }

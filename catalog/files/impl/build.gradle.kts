@@ -25,6 +25,7 @@ extra["maven.name"] = "Nessie - Catalog - Object I/O"
 dependencies {
   implementation(project(":nessie-catalog-model"))
   implementation(project(":nessie-catalog-files-api"))
+  implementation(project(":nessie-catalog-secrets-api"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 
@@ -61,9 +62,6 @@ dependencies {
   testFixturesApi(libs.bundles.junit.testing)
 
   testFixturesApi(project(":nessie-object-storage-mock"))
-
-  testCompileOnly(project(":nessie-immutables"))
-  testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
 
   testRuntimeOnly(libs.logback.classic)
 
