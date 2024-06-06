@@ -194,20 +194,35 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   private Void sendInvalidations() {
-    while (true) {
-      List<CacheInvalidation> batch = new ArrayList<>(batchSize);
-      lock.lock();
-      try {
-        invalidations.drainTo(batch, 100);
-        if (batch.isEmpty()) {
-          LOGGER.trace("Done sending invalidations");
-          triggered = false;
-          break;
+    List<CacheInvalidation> batch = new ArrayList<>(batchSize);
+    try {
+      while (true) {
+        lock.lock();
+        try {
+          invalidations.drainTo(batch, 100);
+          if (batch.isEmpty()) {
+            LOGGER.trace("Done sending invalidations");
+            triggered = false;
+            break;
+          }
+        } finally {
+          lock.unlock();
         }
-      } finally {
-        lock.unlock();
+        submit(batch, resolvedAddresses);
+        batch = new ArrayList<>(batchSize);
       }
-      submit(batch, resolvedAddresses);
+    } finally {
+      // Handle the very unlikely case that the call to submit() failed and we cannot be sure that
+      // the current batch was submitted.
+      if (!batch.isEmpty()) {
+        lock.lock();
+        try {
+          invalidations.addAll(batch);
+          triggered = false;
+        } finally {
+          lock.unlock();
+        }
+      }
     }
     return null;
   }
