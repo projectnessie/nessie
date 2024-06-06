@@ -48,6 +48,7 @@ public final class CELUtil {
   public static final String VAR_ENTRY = "entry";
   public static final String VAR_PATH = "path";
   public static final String VAR_ROLE = "role";
+  public static final String VAR_ROLES = "roles";
   public static final String VAR_OP = "op";
   public static final String VAR_OPERATIONS = "operations";
 
@@ -78,6 +79,7 @@ public final class CELUtil {
           Decls.newVar(VAR_REF, Decls.String),
           Decls.newVar(VAR_PATH, Decls.String),
           Decls.newVar(VAR_ROLE, Decls.String),
+          Decls.newVar(VAR_ROLES, Decls.newListType(Decls.String)),
           Decls.newVar(VAR_OP, Decls.String));
 
   public static final List<Object> COMMIT_LOG_TYPES =

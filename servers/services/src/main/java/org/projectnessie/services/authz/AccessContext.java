@@ -28,10 +28,11 @@ public interface AccessContext {
 
   default Set<String> roleIds() {
     String name = user().getName();
-    return name.isEmpty() ? emptySet() : singleton(name);
+    return name == null || name.isEmpty() ? emptySet() : singleton(name);
   }
 
   default boolean isAnonymous() {
-    return user().getName().isEmpty();
+    String name = user().getName();
+    return name == null || name.isEmpty();
   }
 }
