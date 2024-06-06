@@ -60,23 +60,55 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
    */
   private static final String MINIO_DOMAIN_NIP = "s3.127-0-0-1.nip.io";
 
+  /**
+   * Whether random bucket names cannot be used. Randomized bucket names can only be used when
+   * either `*.localhost` (on Linux) or `*.s3.127-0-0-1.nip.io` (on macOS, if DNS rebind protection
+   * is not active) can be resolved. Otherwise we have to use a fixed bucket name and users have to
+   * configure that in `/etc/hosts`.
+   */
+  private static final String FIXED_BUCKET_NAME;
+
   static boolean canRunOnMacOs() {
     return MINIO_DOMAIN_NAME.equals(MINIO_DOMAIN_NIP);
   }
 
   static {
     String name;
-    try {
-      InetAddress ignored = InetAddress.getByName(MINIO_DOMAIN_NIP);
-      name = MINIO_DOMAIN_NIP;
-    } catch (UnknownHostException e) {
-      LOGGER.warn(
-          "Could not resolve '{}', falling back to 'localhost'. "
-              + "This usually happens when your router or DNS provider is unable to resolve the nip.io addresses.",
-          MINIO_DOMAIN_NIP);
+    String fixedBucketName = null;
+    if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("linux")) {
       name = "localhost";
+    } else {
+      try {
+        InetAddress ignored = InetAddress.getByName(MINIO_DOMAIN_NIP);
+        name = MINIO_DOMAIN_NIP;
+      } catch (UnknownHostException x) {
+        LOGGER.warn(
+            "Could not resolve '{}', falling back to 'localhost'. "
+                + "This usually happens when your router or DNS provider is unable to resolve the nip.io addresses.",
+            MINIO_DOMAIN_NIP);
+        name = "localhost";
+        fixedBucketName = "miniobucket";
+        validateBucketHost(fixedBucketName);
+      }
     }
     MINIO_DOMAIN_NAME = name;
+    FIXED_BUCKET_NAME = fixedBucketName;
+  }
+
+  /** Validates the bucket host name, on non-Linux, if necessary. */
+  private static String validateBucketHost(String bucketName) {
+    if (FIXED_BUCKET_NAME != null) {
+      String test = bucketName + ".localhost";
+      try {
+        InetAddress ignored = InetAddress.getByName(test);
+      } catch (UnknownHostException e) {
+        LOGGER.warn(
+            "Could not resolve '{}',\n  Please add the line \n    '127.0.0.1   {}'\n  to your local '/etc/hosts' file.\n  Tests are expected to fail unless name resolution works.",
+            test,
+            test);
+      }
+    }
+    return bucketName;
   }
 
   private final String accessKey;
@@ -106,7 +138,10 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
     addExposedPort(DEFAULT_PORT);
     this.accessKey = accessKey != null ? accessKey : randomString("access");
     this.secretKey = secretKey != null ? secretKey : randomString("secret");
-    this.bucket = bucket != null ? bucket : randomString("bucket");
+    this.bucket =
+        bucket != null
+            ? validateBucketHost(bucket)
+            : (FIXED_BUCKET_NAME != null ? FIXED_BUCKET_NAME : randomString("bucket"));
     withEnv(MINIO_ACCESS_KEY, this.accessKey);
     withEnv(MINIO_SECRET_KEY, this.secretKey);
     // S3 SDK encodes bucket names in host names - need to tell Minio which domain to use
