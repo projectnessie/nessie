@@ -39,8 +39,13 @@ extra:
     provider: google
     property: UA-177850801-1
   social:
+    - icon: fontawesome/solid/rss
+      link: https://projectnessie.org/feed_rss_updated.xml
+      name: RSS Feed
+    # There's no JSON-Feed icon :(
     - icon: simple/zulip
       link: https://project-nessie.zulipchat.com/
+      name: Projectnessie Zulip Chat
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
     - icon: fontawesome/brands/docker
@@ -59,6 +64,13 @@ plugins:
       authors_file: ./blog/.authors.yml
       post_excerpt: required
       pagination_per_page: 5
+  - rss:
+      match_path: (blog/posts|guides)/.*
+      image: https://projectnessie.org/img/nessie-120.png
+      # default: 20
+      length: 200
+      # 6 hours (default is 1 day)
+      feed_ttl: 360
   - include-markdown:
       start: "<!--start-->"
   - macros:
