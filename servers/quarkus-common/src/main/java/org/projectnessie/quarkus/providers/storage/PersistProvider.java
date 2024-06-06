@@ -28,6 +28,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
@@ -83,11 +84,7 @@ public class PersistProvider {
 
   public void closeBackend(@Disposes Backend backend) throws Exception {
     if (backend != null) {
-      String info = backend.configInfo();
-      if (!info.isEmpty()) {
-        info = " (" + info + ")";
-      }
-      LOGGER.info("Stopping storage for {}{}", versionStoreConfig.getVersionStoreType(), info);
+      LOGGER.info("Stopping storage for {}", versionStoreConfig.getVersionStoreType());
       backend.close();
     }
   }
@@ -123,17 +120,12 @@ public class PersistProvider {
     }
 
     Backend b = backend.get();
-    b.setupSchema();
+    Optional<String> info = b.setupSchema();
 
     LOGGER.info("Creating/opening version store {} ...", versionStoreType);
 
     PersistFactory persistFactory = b.createFactory();
     Persist persist = persistFactory.newPersist(storeConfig);
-
-    String info = b.configInfo();
-    if (!info.isEmpty()) {
-      info = " (" + info + ")";
-    }
 
     CacheSizing cacheSizing =
         CacheSizing.builder()
@@ -167,7 +159,11 @@ public class PersistProvider {
       cacheInfo = "without objects cache";
     }
 
-    LOGGER.info("Using {} version store{}, {}", versionStoreType, info, cacheInfo);
+    LOGGER.info(
+        "Using {} version store{}, {}",
+        versionStoreType,
+        info.map(s -> " (" + s + ")").orElse(""),
+        cacheInfo);
 
     return persist;
   }

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -144,8 +145,9 @@ public final class RocksDBBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public Optional<String> setupSchema() {
     initialize();
+    return Optional.of("database path: " + config.databasePath());
   }
 
   @Nonnull
@@ -153,11 +155,6 @@ public final class RocksDBBackend implements Backend {
   public PersistFactory createFactory() {
     initialize();
     return new RocksDBPersistFactory(this);
-  }
-
-  @Override
-  public String configInfo() {
-    return "database path: " + config.databasePath();
   }
 
   RocksDBRepo repo(StoreConfig config) {

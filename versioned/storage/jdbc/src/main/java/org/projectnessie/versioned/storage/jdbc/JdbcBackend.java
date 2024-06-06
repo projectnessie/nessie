@@ -50,8 +50,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
@@ -70,10 +70,6 @@ public final class JdbcBackend implements Backend {
   private final boolean closeDataSource;
   private final String createTableRefsSql;
   private final String createTableObjsSql;
-
-  private final AtomicBoolean first = new AtomicBoolean(true);
-  private String catalog;
-  private String schema;
 
   @SuppressWarnings("removal")
   public JdbcBackend(
@@ -187,23 +183,11 @@ public final class JdbcBackend implements Backend {
   Connection borrowConnection() throws SQLException {
     Connection c = dataSource.getConnection();
     c.setAutoCommit(false);
-    if (first.compareAndSet(true, false)) {
-      catalog = c.getCatalog();
-      schema = c.getSchema();
-      if (catalog == null) {
-        LOGGER.warn(
-            "Could not determine catalog name from JDBC properties: schema checks might fail");
-      }
-      if (schema == null) {
-        LOGGER.warn(
-            "Could not determine schema name from JDBC properties: schema checks might fail");
-      }
-    }
     return c;
   }
 
   @Override
-  public void setupSchema() {
+  public Optional<String> setupSchema() {
     try (Connection conn = borrowConnection()) {
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
@@ -228,6 +212,19 @@ public final class JdbcBackend implements Backend {
           Stream.concat(Stream.of(COL_REPO_ID), COLS_OBJS_ALL.keySet().stream())
               .collect(Collectors.toSet()),
           ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_OBJ_ID, objIdTypeId));
+      StringBuilder info = new StringBuilder();
+      String s = conn.getCatalog();
+      if (s != null && !s.isEmpty()) {
+        info.append("catalog: ").append(s);
+      }
+      s = conn.getSchema();
+      if (s != null && !s.isEmpty()) {
+        if (info.length() > 0) {
+          info.append(", ");
+        }
+        info.append("schema: ").append(s);
+      }
+      return Optional.of(info.toString());
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -311,23 +308,6 @@ public final class JdbcBackend implements Backend {
 
   private static String sortedColumnNames(Collection<?> input) {
     return input.stream().map(Object::toString).sorted().collect(Collectors.joining(","));
-  }
-
-  @Override
-  public String configInfo() {
-    StringBuilder info = new StringBuilder();
-    String s = catalog;
-    if (s != null && !s.isEmpty()) {
-      info.append("catalog: ").append(s);
-    }
-    s = schema;
-    if (s != null && !s.isEmpty()) {
-      if (info.length() > 0) {
-        info.append(", ");
-      }
-      info.append("schema: ").append(s);
-    }
-    return info.toString();
   }
 
   @Override

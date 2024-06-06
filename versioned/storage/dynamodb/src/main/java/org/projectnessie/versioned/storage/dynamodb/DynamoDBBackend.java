@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.TAB
 
 import jakarta.annotation.Nonnull;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,9 +80,10 @@ public final class DynamoDBBackend implements Backend {
   }
 
   @Override
-  public void setupSchema() {
+  public Optional<String> setupSchema() {
     createIfMissing(tableRefs);
     createIfMissing(tableObjs);
+    return Optional.empty();
   }
 
   private void createIfMissing(String name) {
@@ -135,11 +137,6 @@ public final class DynamoDBBackend implements Backend {
             "Invalid key schema for table: %s. Key schema should be a hash partitioned "
                 + "attribute with the name '%s'.",
             description.tableName(), KEY_NAME));
-  }
-
-  @Override
-  public String configInfo() {
-    return "";
   }
 
   @Override
