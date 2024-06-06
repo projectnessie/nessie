@@ -24,13 +24,6 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
-Create a random cache-invalidation token.
-*/}}
-{{- define "nessie.cacheInvalidation.token" -}}
-{{- randAlpha 24 | nospace -}}
-{{- end -}}
-
-{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "nessie.chart" -}}
