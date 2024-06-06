@@ -67,7 +67,7 @@ import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.storage.uri.StorageUri;
 
 @QuarkusTest
-@TestProfile(value = S3UnitTestProfile.class)
+@TestProfile(value = S3UnitTestProfiles.S3UnitTestProfile.class)
 public class TestNessieCore {
   protected SoftAssertions soft;
   private static HttpClient httpClient;

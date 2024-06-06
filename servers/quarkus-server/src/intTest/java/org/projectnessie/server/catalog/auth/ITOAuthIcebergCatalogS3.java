@@ -16,12 +16,14 @@
 package org.projectnessie.server.catalog.auth;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.TestProfile;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
 
 @QuarkusIntegrationTest
-public class ITOAuthIcebergCatalog extends AbstractAuthEnabledTests {
+@TestProfile(AbstractAuthEnabledTests.Profiles.S3.class)
+public class ITOAuthIcebergCatalogS3 extends AbstractAuthEnabledTests {
 
   @Override
   protected Map<String, String> catalogOptions() {
@@ -30,5 +32,10 @@ public class ITOAuthIcebergCatalog extends AbstractAuthEnabledTests {
     options.put(OAuth2Properties.OAUTH2_SERVER_URI, tokenEndpoint.toString());
     options.put(OAuth2Properties.CREDENTIAL, clientId + ":" + clientSecret);
     return options;
+  }
+
+  @Override
+  protected String scheme() {
+    return "s3";
   }
 }

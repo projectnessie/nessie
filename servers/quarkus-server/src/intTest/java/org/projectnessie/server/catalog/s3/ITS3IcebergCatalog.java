@@ -38,11 +38,17 @@ public class ITS3IcebergCatalog extends AbstractIcebergCatalogTests {
 
   @Override
   protected Map<String, String> catalogOptions() {
-    return singletonMap(CatalogProperties.WAREHOUSE_LOCATION, minio.s3BucketUri("").toString());
+    return singletonMap(
+        CatalogProperties.WAREHOUSE_LOCATION, minio.s3BucketUri(scheme(), "").toString());
   }
 
   @Override
   protected String temporaryLocation() {
-    return minio.s3BucketUri("") + "/temp/" + UUID.randomUUID();
+    return minio.s3BucketUri(scheme(), "") + "/temp/" + UUID.randomUUID();
+  }
+
+  @Override
+  protected String scheme() {
+    return "s3";
   }
 }

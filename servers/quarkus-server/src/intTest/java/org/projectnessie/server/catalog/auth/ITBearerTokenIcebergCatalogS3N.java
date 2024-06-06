@@ -16,6 +16,7 @@
 package org.projectnessie.server.catalog.auth;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.TestProfile;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
@@ -25,7 +26,8 @@ import org.projectnessie.client.auth.oauth2.OAuth2Authenticator;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticatorConfig;
 
 @QuarkusIntegrationTest
-public class ITBearerTokenIcebergCatalog extends AbstractAuthEnabledTests {
+@TestProfile(AbstractAuthEnabledTests.Profiles.S3N.class)
+public class ITBearerTokenIcebergCatalogS3N extends AbstractAuthEnabledTests {
 
   @Override
   protected Map<String, String> catalogOptions() {
@@ -45,5 +47,10 @@ public class ITBearerTokenIcebergCatalog extends AbstractAuthEnabledTests {
     options.put(OAuth2Properties.SCOPE, "email");
     options.put(OAuth2Properties.TOKEN, accessToken.getPayload());
     return options;
+  }
+
+  @Override
+  protected String scheme() {
+    return "s3n";
   }
 }

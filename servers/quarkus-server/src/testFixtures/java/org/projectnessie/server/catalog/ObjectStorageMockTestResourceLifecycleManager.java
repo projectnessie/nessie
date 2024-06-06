@@ -29,8 +29,15 @@ public class ObjectStorageMockTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager {
 
   public static final String BUCKET = "bucket1";
-  public static final String S3_WAREHOUSE_LOCATION = "s3://" + BUCKET + "/warehouse";
-  public static final String GCS_WAREHOUSE_LOCATION = "gs://" + BUCKET + "/warehouse";
+
+  public static String bucketWarehouseLocation(String scheme) {
+    return String.format("%s://%s/warehouse", scheme, BUCKET);
+  }
+
+  public static final String S3_WAREHOUSE_LOCATION = bucketWarehouseLocation("s3");
+  public static final String S3A_WAREHOUSE_LOCATION = bucketWarehouseLocation("s3a");
+  public static final String S3N_WAREHOUSE_LOCATION = bucketWarehouseLocation("s3n");
+  public static final String GCS_WAREHOUSE_LOCATION = bucketWarehouseLocation("gs");
   public static final String ADLS_WAREHOUSE_LOCATION =
       "abfs://" + BUCKET + "@account.dfs.core.windows.net/warehouse";
 

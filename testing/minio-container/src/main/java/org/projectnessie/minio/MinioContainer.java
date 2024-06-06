@@ -86,7 +86,6 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
   private String hostPort;
   private String s3endpoint;
   private S3Client s3;
-  private URI bucketBaseUri;
   private String region;
 
   @SuppressWarnings("unused")
@@ -184,8 +183,12 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
 
   @Override
   public URI s3BucketUri(String path) {
-    Preconditions.checkState(bucketBaseUri != null, "Container not yet started");
-    return bucketBaseUri.resolve(path);
+    return s3BucketUri("s3", path);
+  }
+
+  public URI s3BucketUri(String scheme, String path) {
+    Preconditions.checkState(bucket != null, "Container not yet started");
+    return URI.create(String.format("%s://%s/", scheme, bucket)).resolve(path);
   }
 
   @Override
@@ -194,7 +197,6 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
 
     this.hostPort = MINIO_DOMAIN_NAME + ":" + getMappedPort(DEFAULT_PORT);
     this.s3endpoint = String.format("http://%s/", hostPort);
-    this.bucketBaseUri = URI.create(String.format("s3://%s/", bucket()));
 
     this.s3 = createS3Client();
     this.s3.createBucket(CreateBucketRequest.builder().bucket(bucket()).build());
