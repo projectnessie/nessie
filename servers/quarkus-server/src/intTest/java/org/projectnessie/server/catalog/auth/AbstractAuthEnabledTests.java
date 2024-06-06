@@ -16,12 +16,11 @@
 package org.projectnessie.server.catalog.auth;
 
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.INIT_ADDRESS;
-import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
+import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.bucketWarehouseLocation;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTestProfile;
-import io.quarkus.test.junit.TestProfile;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -49,7 +48,6 @@ import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleMa
     restrictToAnnotatedClass = true,
     parallel = true,
     value = KeycloakTestResourceLifecycleManager.class)
-@TestProfile(AbstractAuthEnabledTests.Profile.class)
 public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTests {
 
   @KeycloakTokenEndpointUri protected URI tokenEndpoint;
@@ -107,7 +105,28 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTes
                     .build()));
   }
 
-  public static class Profile implements QuarkusTestProfile {
+  public abstract static class Profiles implements QuarkusTestProfile {
+
+    public static final class S3 extends Profiles {
+      @Override
+      protected String scheme() {
+        return "s3";
+      }
+    }
+
+    public static final class S3A extends Profiles {
+      @Override
+      protected String scheme() {
+        return "s3a";
+      }
+    }
+
+    public static final class S3N extends Profiles {
+      @Override
+      protected String scheme() {
+        return "s3n";
+      }
+    }
 
     @Override
     public Map<String, String> getConfigOverrides() {
@@ -117,8 +136,10 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTes
           "nessie.catalog.default-warehouse",
           "warehouse",
           "nessie.catalog.warehouses.warehouse.location",
-          S3_WAREHOUSE_LOCATION);
+          bucketWarehouseLocation(scheme()));
     }
+
+    protected abstract String scheme();
 
     @Override
     public List<TestResourceEntry> testResources() {
@@ -132,6 +153,6 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTes
 
   @Override
   protected String temporaryLocation() {
-    return S3_WAREHOUSE_LOCATION + "/temp/" + UUID.randomUUID();
+    return bucketWarehouseLocation(scheme()) + "/temp/" + UUID.randomUUID();
   }
 }

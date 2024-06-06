@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-final class S3Utils {
+public final class S3Utils {
 
   private static final Pattern S3_HOST_PATTERN =
       Pattern.compile("^((.+)\\.)?s3[.-]([a-z0-9-]+)\\..*");
@@ -35,12 +35,28 @@ final class S3Utils {
     String scheme = requireNonNull(uri).getScheme();
     switch (scheme) {
       case "s3":
+      case "s3a":
+      case "s3n":
         return extractBucketFromS3Uri(uri);
       case "http":
       case "https":
         return extractBucketFromHttpUri(uri);
       default:
         throw new IllegalArgumentException("Unsupported URI scheme: " + scheme);
+    }
+  }
+
+  public static boolean isS3scheme(String scheme) {
+    if (scheme == null) {
+      return false;
+    }
+    switch (scheme) {
+      case "s3":
+      case "s3a":
+      case "s3n":
+        return true;
+      default:
+        return false;
     }
   }
 

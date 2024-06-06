@@ -15,23 +15,23 @@
  */
 package org.projectnessie.server.catalog;
 
-import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.ADLS_WAREHOUSE_LOCATION;
+import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.bucketWarehouseLocation;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.util.UUID;
 
 @QuarkusTest
-@TestProfile(AdlsUnitTestProfile.class)
-public class TestAdlsIcebergCatalog extends AbstractIcebergCatalogUnitTests {
+@TestProfile(S3UnitTestProfiles.S3AUnitTestProfile.class)
+public class TestIcebergCatalogS3A extends AbstractIcebergCatalogUnitTests {
 
   @Override
   protected String temporaryLocation() {
-    return ADLS_WAREHOUSE_LOCATION + "/temp/" + UUID.randomUUID();
+    return bucketWarehouseLocation(scheme()) + "/temp/" + UUID.randomUUID();
   }
 
   @Override
   protected String scheme() {
-    return "adls";
+    return "s3a";
   }
 }

@@ -47,6 +47,8 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
     }
     switch (scheme) {
       case "s3":
+      case "s3a":
+      case "s3n":
         return s3ObjectIO;
       case "gs":
         return gcsObjectIO;
@@ -66,6 +68,8 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
     }
     switch (scheme) {
       case "s3":
+      case "s3a":
+      case "s3n":
       case "gs":
       case "abfs":
       case "abfss":

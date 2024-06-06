@@ -15,7 +15,7 @@
  */
 package org.projectnessie.server.catalog;
 
-import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.GCS_WAREHOUSE_LOCATION;
+import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.bucketWarehouseLocation;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -27,6 +27,11 @@ public class TestGcsIcebergCatalog extends AbstractIcebergCatalogUnitTests {
 
   @Override
   protected String temporaryLocation() {
-    return GCS_WAREHOUSE_LOCATION + "/temp/" + UUID.randomUUID();
+    return bucketWarehouseLocation(scheme()) + "/temp/" + UUID.randomUUID();
+  }
+
+  @Override
+  protected String scheme() {
+    return "gs";
   }
 }

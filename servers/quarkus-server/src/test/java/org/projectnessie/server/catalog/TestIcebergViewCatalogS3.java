@@ -22,8 +22,8 @@ import io.quarkus.test.junit.TestProfile;
 import java.util.UUID;
 
 @QuarkusTest
-@TestProfile(S3UnitTestProfile.class)
-public class TestS3IcebergCatalog extends AbstractIcebergCatalogUnitTests {
+@TestProfile(S3UnitTestProfiles.S3UnitTestProfile.class)
+public class TestIcebergViewCatalogS3 extends AbstractIcebergViewCatalogUnitTests {
 
   @Override
   protected String temporaryLocation() {

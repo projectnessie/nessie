@@ -17,6 +17,7 @@ package org.projectnessie.catalog.files.s3;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,7 +48,8 @@ public class S3ObjectIO implements ObjectIO {
   @Override
   public InputStream readObject(StorageUri uri) throws IOException {
     checkArgument(uri != null, "Invalid location: null");
-    checkArgument("s3".equals(uri.scheme()), "Invalid S3 scheme: %s", uri);
+    String scheme = uri.scheme();
+    checkArgument(isS3scheme(scheme), "Invalid S3 scheme: %s", uri);
 
     S3Client s3client = s3clientSupplier.getClient(uri);
 
@@ -73,7 +75,7 @@ public class S3ObjectIO implements ObjectIO {
   @Override
   public OutputStream writeObject(StorageUri uri) {
     checkArgument(uri != null, "Invalid location: null");
-    checkArgument("s3".equals(uri.scheme()), "Invalid S3 scheme: %s", uri);
+    checkArgument(isS3scheme(uri.scheme()), "Invalid S3 scheme: %s", uri);
 
     return new ByteArrayOutputStream() {
       @Override
@@ -94,7 +96,7 @@ public class S3ObjectIO implements ObjectIO {
 
   @Override
   public boolean isValidUri(StorageUri uri) {
-    return uri != null && "s3".equals(uri.scheme());
+    return uri != null && isS3scheme(uri.scheme());
   }
 
   private static String withoutLeadingSlash(StorageUri uri) {

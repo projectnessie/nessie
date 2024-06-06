@@ -18,6 +18,7 @@ package org.projectnessie.catalog.service.rest;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
+import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -25,7 +26,6 @@ import jakarta.ws.rs.core.Context;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsLocation;
@@ -141,7 +141,7 @@ public class IcebergConfigurer {
     URI location = URI.create(tableMetadata.location());
     // TODO this is the place to add vended authorization tokens for file/object access
     // TODO add (correct) S3_CLIENT_REGION for the table here (based on the table's location?)
-    if ("s3".equals(location.getScheme())) {
+    if (isS3scheme(location.getScheme())) {
       config.put(
           S3_SIGNER_ENDPOINT,
           // TODO does it make sense to use a separate endpoint (service) just for signing?
@@ -164,20 +164,28 @@ public class IcebergConfigurer {
 
   public Map<String, String> storeConfigDefaults(URI warehouseLocation) {
     Map<String, String> configDefaults = new HashMap<>();
-    if (Objects.equals(warehouseLocation.getScheme(), "s3")) {
+    if (isS3scheme(warehouseLocation.getScheme())) {
       s3Options.region().ifPresent(x -> configDefaults.put(S3_CLIENT_REGION, x));
     }
     return configDefaults;
   }
 
   public Map<String, String> storeConfigOverrides(StorageUri warehouseLocation) {
-    if (Objects.equals(warehouseLocation.scheme(), "s3")) {
-      return s3ConfigOverrides(warehouseLocation);
-    } else if (Objects.equals(warehouseLocation.scheme(), "gs")) {
-      return gcsConfigOverrides(warehouseLocation);
-    } else if (Objects.equals(warehouseLocation.scheme(), "abfs")
-        || Objects.equals(warehouseLocation.scheme(), "abfss")) {
-      return adlsConfigOverrides(warehouseLocation);
+    String scheme = warehouseLocation.scheme();
+    if (scheme != null) {
+      switch (scheme) {
+        case "s3":
+        case "s3a":
+        case "s3n":
+          return s3ConfigOverrides(warehouseLocation);
+        case "gs":
+          return gcsConfigOverrides(warehouseLocation);
+        case "abfs":
+        case "abfss":
+          return adlsConfigOverrides(warehouseLocation);
+        default:
+          break;
+      }
     }
     return Map.of();
   }

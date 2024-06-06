@@ -129,9 +129,9 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   }
 
   @Override
-  protected String temporaryLocation() {
-    throw new UnsupportedOperationException("Implement in a super class");
-  }
+  protected abstract String temporaryLocation();
+
+  protected abstract String scheme();
 
   /**
    * Similar to {@link #testRegisterTable()} but places a table-metadata file in the local file
