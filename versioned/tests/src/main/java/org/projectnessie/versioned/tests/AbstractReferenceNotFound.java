@@ -91,18 +91,23 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
         new ReferenceNotFoundFunction("getValue/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
-                s -> s.getValue(BranchName.of("this-one-should-not-exist"), ContentKey.of("foo"))),
+                s ->
+                    s.getValue(
+                        BranchName.of("this-one-should-not-exist"), ContentKey.of("foo"), false)),
         new ReferenceNotFoundFunction("getValue/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
-                s -> s.getValue(TagName.of("this-one-should-not-exist"), ContentKey.of("foo"))),
+                s ->
+                    s.getValue(
+                        TagName.of("this-one-should-not-exist"), ContentKey.of("foo"), false)),
         new ReferenceNotFoundFunction("getValue/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.getValue(
                         Hash.of("12341234123412341234123412341234123412341234"),
-                        ContentKey.of("foo"))),
+                        ContentKey.of("foo"),
+                        false)),
         // getValues()
         new ReferenceNotFoundFunction("getValues/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -110,21 +115,24 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                 s ->
                     s.getValues(
                         BranchName.of("this-one-should-not-exist"),
-                        singletonList(ContentKey.of("foo")))),
+                        singletonList(ContentKey.of("foo")),
+                        false)),
         new ReferenceNotFoundFunction("getValues/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
                 s ->
                     s.getValues(
                         TagName.of("this-one-should-not-exist"),
-                        singletonList(ContentKey.of("foo")))),
+                        singletonList(ContentKey.of("foo")),
+                        false)),
         new ReferenceNotFoundFunction("getValues/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.getValues(
                         Hash.of("12341234123412341234123412341234123412341234"),
-                        singletonList(ContentKey.of("foo")))),
+                        singletonList(ContentKey.of("foo")),
+                        false)),
         // getKeys()
         new ReferenceNotFoundFunction("getKeys/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")

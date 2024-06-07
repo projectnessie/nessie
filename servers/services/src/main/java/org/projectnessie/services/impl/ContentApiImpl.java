@@ -60,7 +60,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       ResolvedHash ref =
           getHashResolver()
               .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
-      ContentResult obj = getStore().getValue(ref.getHash(), key);
+      ContentResult obj = getStore().getValue(ref.getHash(), key, false);
       BatchAccessChecker accessCheck = startAccessCheck();
       if (obj != null) {
         accessCheck.canReadEntityValue(ref.getValue(), obj.identifiedKey()).checkAndThrow();
@@ -84,7 +84,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
       BatchAccessChecker check = startAccessCheck().canViewReference(ref.getValue());
 
-      Map<ContentKey, ContentResult> values = getStore().getValues(ref.getHash(), keys);
+      Map<ContentKey, ContentResult> values = getStore().getValues(ref.getHash(), keys, false);
       List<ContentWithKey> output =
           values.entrySet().stream()
               .map(

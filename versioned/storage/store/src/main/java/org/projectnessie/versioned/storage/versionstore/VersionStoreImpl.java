@@ -17,13 +17,13 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.ContentResult.contentResult;
 import static org.projectnessie.versioned.ReferenceHistory.ReferenceHistoryElement.referenceHistoryElement;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.emptyImmutableIndex;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -34,6 +34,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.fromString;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
@@ -887,11 +888,12 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public ContentResult getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
+  public ContentResult getValue(Ref ref, ContentKey key, boolean returnNotFound)
+      throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
     if (head == null) {
-      return emptyOrNotFound(ref, null);
+      return getValueNotFound(key, returnNotFound, emptyImmutableIndex(COMMIT_OP_SERIALIZER));
     }
     try {
 
@@ -903,7 +905,7 @@ public class VersionStoreImpl implements VersionStore {
 
       StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
       if (indexElement == null || !indexElement.content().action().exists()) {
-        return null;
+        return getValueNotFound(key, returnNotFound, index);
       }
 
       ContentMapping contentMapping = new ContentMapping(persist);
@@ -917,6 +919,15 @@ public class VersionStoreImpl implements VersionStore {
     } catch (ObjNotFoundException e) {
       throw objectNotFound(e);
     }
+  }
+
+  private static ContentResult getValueNotFound(
+      ContentKey key, boolean returnNotFound, StoreIndex<CommitOp> index) {
+    if (!returnNotFound) {
+      return null;
+    }
+    IdentifiedContentKey identifiedKey = buildIdentifiedKey(key, index, null, null, x -> null);
+    return contentResult(identifiedKey, null, null);
   }
 
   static IdentifiedContentKey buildIdentifiedKey(
@@ -962,28 +973,41 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Map<ContentKey, ContentResult> getValues(Ref ref, Collection<ContentKey> keys)
+  public Map<ContentKey, ContentResult> getValues(
+      Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
-    if (head == null) {
-      return emptyOrNotFound(ref, emptyMap());
-    }
 
     try {
       IndexesLogic indexesLogic = indexesLogic(persist);
-      StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(head, Optional.empty());
+      StoreIndex<CommitOp> index =
+          head != null
+              ? indexesLogic.buildCompleteIndex(head, Optional.empty())
+              : emptyImmutableIndex(COMMIT_OP_SERIALIZER);
 
       ContentMapping contentMapping = new ContentMapping(persist);
-      return contentMapping.fetchContents(index, keys).entrySet().stream()
-          .collect(
-              Collectors.toMap(
-                  Map.Entry::getKey,
-                  e ->
-                      contentResult(
-                          buildIdentifiedKey(e.getKey(), index, e.getValue(), x -> null),
-                          e.getValue(),
-                          null)));
+      Map<ContentKey, ContentResult> result =
+          contentMapping.fetchContents(index, keys).entrySet().stream()
+              .collect(
+                  Collectors.toMap(
+                      Map.Entry::getKey,
+                      e ->
+                          contentResult(
+                              buildIdentifiedKey(e.getKey(), index, e.getValue(), x -> null),
+                              e.getValue(),
+                              null)));
+      if (returnNotFound) {
+        keys.stream()
+            .filter(k -> !result.containsKey(k))
+            .forEach(
+                key -> {
+                  IdentifiedContentKey identifiedKey =
+                      buildIdentifiedKey(key, index, null, null, x -> null);
+                  result.put(key, contentResult(identifiedKey, null, null));
+                });
+      }
+      return result;
     } catch (ObjNotFoundException e) {
       throw objectNotFound(e);
     }

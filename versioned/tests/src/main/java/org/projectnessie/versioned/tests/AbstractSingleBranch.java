@@ -154,7 +154,9 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     ContentResult existing =
         store()
             .getValue(
-                store.hashOnReference(branch, Optional.of(hashKnownByUser), emptyList()), key);
+                store.hashOnReference(branch, Optional.of(hashKnownByUser), emptyList()),
+                key,
+                false);
     Content value =
         existing != null
             ? onRef(

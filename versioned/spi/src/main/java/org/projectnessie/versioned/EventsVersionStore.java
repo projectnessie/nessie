@@ -168,14 +168,16 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public ContentResult getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
-    return delegate.getValue(ref, key);
+  public ContentResult getValue(Ref ref, ContentKey key, boolean returnNotFound)
+      throws ReferenceNotFoundException {
+    return delegate.getValue(ref, key, returnNotFound);
   }
 
   @Override
-  public Map<ContentKey, ContentResult> getValues(Ref ref, Collection<ContentKey> keys)
+  public Map<ContentKey, ContentResult> getValues(
+      Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException {
-    return delegate.getValues(ref, keys);
+    return delegate.getValues(ref, keys, returnNotFound);
   }
 
   @Override

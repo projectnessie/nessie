@@ -541,7 +541,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("create a table"),
             singletonList(Put.of(key1, newOnRef("value"))));
 
-    Content table = store().getValue(branch, key1).content();
+    Content table = store().getValue(branch, key1, false).content();
 
     soft.assertThatThrownBy(
             () ->

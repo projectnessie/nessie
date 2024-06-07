@@ -124,7 +124,8 @@ final class ExportContents extends ExportCommon {
         Map<ContentKey, ContentResult> values =
             store.getValues(
                 ref.getHash(),
-                batch.stream().map(e -> e.getKey().contentKey()).collect(Collectors.toList()));
+                batch.stream().map(e -> e.getKey().contentKey()).collect(Collectors.toList()),
+                false);
         for (Map.Entry<ContentKey, ContentResult> entry : values.entrySet()) {
           Operation op = putOperationFromCommit(entry.getKey(), entry.getValue().content()).build();
           hasher.putBytes(op.toByteArray());

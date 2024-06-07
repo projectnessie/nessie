@@ -127,7 +127,7 @@ public class ContentOpsBench {
   @Benchmark
   public ContentResult getValue(BenchmarkParam param) throws Exception {
     ContentKey key = param.randomKey();
-    return param.versionStore.getValue(param.ref.getNamedRef(), key);
+    return param.versionStore.getValue(param.ref.getNamedRef(), key, false);
   }
 
   @Benchmark
@@ -136,6 +136,6 @@ public class ContentOpsBench {
     while (k.size() < 10) {
       k.add(param.randomKey());
     }
-    return param.versionStore.getValues(param.ref.getNamedRef(), k);
+    return param.versionStore.getValues(param.ref.getNamedRef(), k, false);
   }
 }

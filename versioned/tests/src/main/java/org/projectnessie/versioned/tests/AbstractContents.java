@@ -17,9 +17,14 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
+import static org.projectnessie.versioned.ContentResult.contentResult;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -29,14 +34,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
-import org.projectnessie.versioned.ReferenceAlreadyExistsException;
-import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -48,13 +53,53 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
   }
 
   @Test
-  public void getValueForEmptyBranch()
-      throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public void getValueNonExisting() throws Exception {
     BranchName branch = BranchName.of("empty-branch");
     store().create(branch, Optional.empty());
-    final Hash hash = store().hashOnReference(branch, Optional.empty(), emptyList());
+    Hash hash = store().hashOnReference(branch, Optional.empty(), emptyList());
 
-    soft.assertThat(store().getValue(hash, ContentKey.of("arbitrary"))).isNull();
+    ContentKey key1 = ContentKey.of("key1");
+    ContentKey keyNs = ContentKey.of("ns");
+    ContentKey key2 = ContentKey.of("ns", "key2");
+    IdentifiedContentKey notFoundIdentifiedKey1 =
+        identifiedContentKeyFromContent(key1, null, null, l -> null);
+    IdentifiedContentKey notFoundIdentifiedKey2 =
+        identifiedContentKeyFromContent(key2, null, null, l -> null);
+
+    // Verify non-existing keys against a non-existing commit ("beginning of epoch")
+
+    soft.assertThat(store().getValue(hash, key1, false)).isNull();
+    soft.assertThat(store().getValues(hash, List.of(key1), false)).isEmpty();
+    soft.assertThat(store().getValue(hash, key1, true))
+        .isEqualTo(contentResult(notFoundIdentifiedKey1, null, null));
+
+    soft.assertThat(store().getValues(hash, List.of(key1, key2), false)).isEmpty();
+    soft.assertThat(store().getValues(hash, List.of(key1, key2), true))
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                key1, contentResult(notFoundIdentifiedKey1, null, null),
+                key2, contentResult(notFoundIdentifiedKey2, null, null)));
+
+    hash = commit("Initial Commit").put(keyNs, Namespace.of(keyNs)).toBranch(branch);
+
+    String contentIdNs = requireNonNull(store().getValue(hash, keyNs, false).content()).getId();
+    notFoundIdentifiedKey2 =
+        identifiedContentKeyFromContent(
+            key2, null, null, l -> List.of("ns").equals(l) ? contentIdNs : null);
+
+    // Verify non-existing keys against an existing commit
+
+    soft.assertThat(store().getValue(hash, key1, false)).isNull();
+    soft.assertThat(store().getValues(hash, List.of(key1), false)).isEmpty();
+    soft.assertThat(store().getValue(hash, key1, true))
+        .isEqualTo(contentResult(notFoundIdentifiedKey1, null, null));
+
+    soft.assertThat(store().getValues(hash, List.of(key1, key2), false)).isEmpty();
+    soft.assertThat(store().getValues(hash, List.of(key1, key2), true))
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                key1, contentResult(notFoundIdentifiedKey1, null, null),
+                key2, contentResult(notFoundIdentifiedKey2, null, null)));
   }
 
   @Test
@@ -73,8 +118,8 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("create table"),
                 singletonList(Put.of(key, initialState)));
-    soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(initialState);
-    soft.assertThat(contentWithoutId(store().getValue(ancestor.getCommitHash(), key)))
+    soft.assertThat(contentWithoutId(store().getValue(branch, key, false))).isEqualTo(initialState);
+    soft.assertThat(contentWithoutId(store().getValue(ancestor.getCommitHash(), key, false)))
         .isEqualTo(initialState);
 
     CommitResult<Commit> delete =
@@ -84,8 +129,8 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Delete.of(key)));
-    soft.assertThat(store().getValue(branch, key)).isNull();
-    soft.assertThat(store().getValue(delete.getCommitHash(), key)).isNull();
+    soft.assertThat(store().getValue(branch, key, false)).isNull();
+    soft.assertThat(store().getValue(delete.getCommitHash(), key, false)).isNull();
 
     Content recreateState = newOnRef("value");
     CommitResult<Commit> recreate =
@@ -95,8 +140,9 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Put.of(key, recreateState)));
-    soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(recreateState);
-    soft.assertThat(contentWithoutId(store().getValue(recreate.getCommitHash(), key)))
+    soft.assertThat(contentWithoutId(store().getValue(branch, key, false)))
+        .isEqualTo(recreateState);
+    soft.assertThat(contentWithoutId(store().getValue(recreate.getCommitHash(), key, false)))
         .isEqualTo(recreateState);
   }
 }

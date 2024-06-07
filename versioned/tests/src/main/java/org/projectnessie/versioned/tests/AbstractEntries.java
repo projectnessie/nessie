@@ -208,10 +208,10 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
             .put(key23a, newOnRef("v23a"))
             .toBranch(branch);
 
-    ContentResult content2 = store().getValue(commit, key2);
-    ContentResult content2a = store().getValue(commit, key2a);
-    ContentResult content23 = store().getValue(commit, key23);
-    ContentResult content23a = store().getValue(commit, key23a);
+    ContentResult content2 = store().getValue(commit, key2, false);
+    ContentResult content2a = store().getValue(commit, key2a, false);
+    ContentResult content23 = store().getValue(commit, key23, false);
+    ContentResult content23a = store().getValue(commit, key23a, false);
 
     try (PaginationIterator<KeyEntry> iter =
         store.getKeys(commit, null, true, NO_KEY_RESTRICTIONS)) {
