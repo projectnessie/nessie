@@ -71,9 +71,8 @@ abstract class IcebergS3SignParams {
   abstract S3BucketOptions s3options();
 
   @Check
-  public void check() {
-    checkArgument(
-        URI.create(baseLocation()).getScheme().equals("s3"), "baseLocation must be an S3 URI");
+  void check() {
+    checkArgument(baseLocation().startsWith("s3:"), "baseLocation must be an S3 URI");
   }
 
   @Value.Lazy
