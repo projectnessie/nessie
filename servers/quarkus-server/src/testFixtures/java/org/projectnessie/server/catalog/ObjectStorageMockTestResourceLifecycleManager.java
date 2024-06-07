@@ -72,7 +72,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".region", "us-east-1")
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".path-style-access", "true")
         .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key.name", "accessKey")
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key.secret", "accessKey")
+        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key.secret", "secretKey")
         // GCS
         .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".host", gcsEndpoint)
         .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".project-id", "my-project")

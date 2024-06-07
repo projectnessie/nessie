@@ -32,14 +32,15 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultPartitionSpec.setDefaultPartitionSpec;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
+import com.google.common.collect.Lists;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
@@ -63,7 +64,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -210,19 +210,16 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     if (spec == null) {
       spec = unpartitioned();
     }
-    String location = createTableRequest.location();
-    if (location == null) {
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
-      location = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
-    }
 
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createTableRequest.properties());
 
+    String uuid = randomUUID().toString();
+
     List<IcebergMetadataUpdate> updates =
-        Arrays.asList(
-            assignUUID(randomUUID().toString()),
+        Lists.newArrayList(
+            assignUUID(uuid),
             upgradeFormatVersion(2),
             addSchema(createTableRequest.schema(), 0),
             setCurrentSchema(-1),
@@ -230,7 +227,6 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             setDefaultPartitionSpec(-1),
             addSortOrder(sortOrder),
             setDefaultSortOrder(-1),
-            setLocation(location),
             setProperties(properties));
 
     GetMultipleContentsResponse contentResponse =
@@ -249,14 +245,21 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     if (createTableRequest.stageCreate()) {
 
+      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
+      String location = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
+      updates.add(setTrustedLocation(location));
+
       NessieTableSnapshot snapshot =
           new IcebergTableMetadataUpdateState(
-                  newIcebergTableSnapshot(updates), tableRef.contentKey(), false)
+                  newIcebergTableSnapshot(uuid), tableRef.contentKey(), false)
               .applyUpdates(updates)
               .snapshot();
 
       IcebergTableMetadata stagedTableMetadata =
-          nessieTableSnapshotToIceberg(snapshot, Optional.empty(), map -> {});
+          nessieTableSnapshotToIceberg(
+              snapshot,
+              Optional.empty(),
+              map -> map.put(IcebergTableMetadata.STAGED_PROPERTY, "true"));
 
       return Uni.createFrom()
           .item(

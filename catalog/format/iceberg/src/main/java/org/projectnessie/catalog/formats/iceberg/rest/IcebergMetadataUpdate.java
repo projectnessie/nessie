@@ -479,6 +479,20 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      // don't trust locations sent by clients
+    }
+
+    @Override
+    default void applyToView(IcebergViewMetadataUpdateState state) {
+      // don't trust locations sent by clients
+    }
+  }
+
+  @NessieImmutable
+  interface SetTrustedLocation extends SetLocation {
+
+    @Override
+    default void applyToTable(IcebergTableMetadataUpdateState state) {
       NessieModelIceberg.setLocation(this, state.builder());
     }
 
@@ -487,8 +501,8 @@ public interface IcebergMetadataUpdate {
       NessieModelIceberg.setLocation(this, state.builder());
     }
 
-    static SetLocation setLocation(String location) {
-      return ImmutableSetLocation.of(location);
+    static SetTrustedLocation setTrustedLocation(String location) {
+      return ImmutableSetTrustedLocation.of(location);
     }
   }
 

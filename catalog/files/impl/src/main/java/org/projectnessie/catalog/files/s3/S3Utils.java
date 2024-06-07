@@ -60,6 +60,16 @@ public final class S3Utils {
     }
   }
 
+  public static String normalizeS3Scheme(String uri) {
+    if (uri.startsWith("s3a://")) {
+      return uri.replaceFirst("s3a://", "s3://");
+    }
+    if (uri.startsWith("s3n://")) {
+      return uri.replaceFirst("s3n://", "s3://");
+    }
+    return uri;
+  }
+
   private static Optional<String> extractBucketFromHttpUri(URI uri) {
     String host = uri.getHost();
     checkArgument(host != null, "No host in non-s3 scheme URI: '%s'", uri);
@@ -81,5 +91,30 @@ public final class S3Utils {
   private static Optional<String> extractBucketFromS3Uri(URI uri) {
     String auth = uri.getAuthority();
     return Optional.ofNullable(auth);
+  }
+
+  public static String asS3Location(String uri) {
+    URI httpUri = URI.create(uri);
+    checkArgument(httpUri.getScheme() != null, "No scheme in URI: '%s'", httpUri);
+    checkArgument(httpUri.getHost() != null, "No host in URI: '%s'", httpUri);
+    checkArgument(
+        httpUri.getScheme().matches("http|https"),
+        "Unsupported URI scheme: '%s'",
+        httpUri.getScheme());
+    String bucket;
+    String key;
+    Matcher matcher = S3_HOST_PATTERN.matcher(httpUri.getHost());
+    if (matcher.matches() && matcher.group(2) != null) {
+      // virtual-hosted style
+      bucket = matcher.group(2);
+      key = httpUri.getPath();
+    } else {
+      // path-style access style
+      matcher = S3_PATH_PATTERN.matcher(httpUri.getPath());
+      checkArgument(matcher.matches(), "Invalid S3 URI: '%s'", httpUri);
+      bucket = matcher.group(1);
+      key = httpUri.getPath().substring(bucket.length() + 1);
+    }
+    return "s3://" + bucket + key;
   }
 }

@@ -47,9 +47,4 @@ public class LocalObjectIO implements ObjectIO {
   private static Path filePath(StorageUri uri) {
     return Paths.get(uri.requiredPath());
   }
-
-  @Override
-  public boolean isValidUri(StorageUri uri) {
-    return uri != null && ("file".equals(uri.scheme()) || uri.scheme() == null);
-  }
 }

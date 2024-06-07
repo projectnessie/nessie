@@ -59,23 +59,4 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
         throw new IllegalArgumentException("Unknown or unsupported scheme: " + scheme);
     }
   }
-
-  @Override
-  public boolean isValidUri(StorageUri uri) {
-    String scheme = uri.scheme();
-    if (scheme == null) {
-      return false;
-    }
-    switch (scheme) {
-      case "s3":
-      case "s3a":
-      case "s3n":
-      case "gs":
-      case "abfs":
-      case "abfss":
-        return true;
-      default:
-        return false;
-    }
-  }
 }

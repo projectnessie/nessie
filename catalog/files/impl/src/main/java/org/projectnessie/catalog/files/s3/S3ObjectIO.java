@@ -94,11 +94,6 @@ public class S3ObjectIO implements ObjectIO {
     };
   }
 
-  @Override
-  public boolean isValidUri(StorageUri uri) {
-    return uri != null && isS3scheme(uri.scheme());
-  }
-
   private static String withoutLeadingSlash(StorageUri uri) {
     String path = uri.requiredPath();
     return path.startsWith("/") ? path.substring(1) : path;

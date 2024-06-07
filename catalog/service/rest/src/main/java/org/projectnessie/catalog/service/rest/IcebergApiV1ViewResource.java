@@ -19,13 +19,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddViewVersion.addViewVersion;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID.assignUUID;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentViewVersion.setCurrentViewVersion;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -72,7 +70,6 @@ import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
-import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -113,19 +110,12 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createViewRequest.properties());
 
-    String location = createViewRequest.location();
-    if (location == null) {
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
-      location = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
-    }
-
     List<IcebergMetadataUpdate> updates =
         Arrays.asList(
             assignUUID(randomUUID().toString()),
             upgradeFormatVersion(1),
             addSchema(createViewRequest.schema(), 0),
             setCurrentSchema(-1),
-            setLocation(location),
             setProperties(properties),
             addViewVersion(createViewRequest.viewVersion()),
             setCurrentViewVersion(-1L));

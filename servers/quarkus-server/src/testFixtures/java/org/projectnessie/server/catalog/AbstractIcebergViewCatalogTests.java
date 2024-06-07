@@ -98,9 +98,4 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
     // TODO Nessie Catalog should force the metadata location
     return super.overridesRequestedLocation();
   }
-
-  @Override
-  protected String temporaryLocation() {
-    throw new UnsupportedOperationException("Implement in a super class");
-  }
 }

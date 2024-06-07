@@ -43,8 +43,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.jboss.resteasy.reactive.RestMulti;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.RequestSigner;
-import org.projectnessie.catalog.files.api.SigningRequest;
-import org.projectnessie.catalog.files.api.SigningResponse;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
@@ -132,15 +130,5 @@ public class NessieCatalogResource extends AbstractCatalogResource {
     return Uni.createFrom()
         .completionStage(catalogService.commit(reference, commit, reqParams))
         .map(v -> Response.ok().build());
-  }
-
-  @POST
-  @Path("trees/{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/sign/{key}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public SigningResponse signRequest(
-      @PathParam("ref") String ref, @PathParam("key") ContentKey key, SigningRequest request)
-      throws NessieNotFoundException {
-    // TODO access check
-    return signer.sign(request);
   }
 }

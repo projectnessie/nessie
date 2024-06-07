@@ -15,11 +15,11 @@
  */
 package org.projectnessie.catalog.service.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
@@ -27,6 +27,8 @@ import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceber
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergViewSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.typeToEntityName;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.service.api.NessieSnapshotResponse.nessieSnapshotResponse;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
@@ -34,12 +36,14 @@ import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,7 +65,10 @@ import org.projectnessie.catalog.formats.iceberg.nessie.IcebergTableMetadataUpda
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergViewMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate;
 import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.catalog.model.ops.CatalogOperation;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
@@ -175,7 +182,7 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   public CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams, ContentKey key, Content.Type expectedType)
+      SnapshotReqParams reqParams, ContentKey key, @Nullable Content.Type expectedType)
       throws NessieNotFoundException {
 
     ParsedReference reference = reqParams.ref();
@@ -193,7 +200,7 @@ public class CatalogServiceImpl implements CatalogService {
             .hashOnRef(reference.hashWithRelativeSpec())
             .getSingle(key);
     Content content = contentResponse.getContent();
-    if (!content.getType().equals(expectedType)) {
+    if (expectedType != null && !content.getType().equals(expectedType)) {
       throw new NessieContentNotFoundException(key, reference.name());
     }
     Reference effectiveReference = contentResponse.getEffectiveReference();
@@ -371,11 +378,14 @@ public class CatalogServiceImpl implements CatalogService {
           .append(op.getType())
           .append(" ")
           .append(op.getKey());
+
       if (op.getType().equals(ICEBERG_TABLE)) {
+        verifyIcebergOperation(op, reference, content);
         commitBuilderStage =
             applyIcebergTableCommitOperation(
                 target, op, content, multiTableUpdate, commitBuilderStage);
       } else if (op.getType().equals(Content.Type.ICEBERG_VIEW)) {
+        verifyIcebergOperation(op, reference, content);
         commitBuilderStage =
             applyIcebergViewCommitOperation(
                 target, op, content, multiTableUpdate, commitBuilderStage);
@@ -434,43 +444,52 @@ public class CatalogServiceImpl implements CatalogService {
                             commitResponse.getTargetBranch())));
   }
 
+  private static void verifyIcebergOperation(
+      CatalogOperation op, ParsedReference reference, Content content)
+      throws NessieContentNotFoundException, NessieReferenceConflictException {
+    IcebergCatalogOperation icebergOp = (IcebergCatalogOperation) op;
+    boolean hasAssertCreate = icebergOp.hasRequirement(AssertCreate.class);
+    if (hasAssertCreate && content != null) {
+      throw new CatalogEntityAlreadyExistsException(
+          true, op.getType(), op.getKey(), content.getType());
+    }
+    if (!hasAssertCreate && content == null) {
+      throw new NessieContentNotFoundException(op.getKey(), reference.name());
+    }
+    if (content != null) {
+      if (!op.getType().equals(content.getType())) {
+        String msg =
+            format(
+                "Cannot update %s %s as a %s",
+                typeToEntityName(content.getType()).toLowerCase(Locale.ROOT),
+                op.getKey(),
+                typeToEntityName(op.getType()).toLowerCase(Locale.ROOT));
+        throw new NessieReferenceConflictException(
+            referenceConflicts(conflict(Conflict.ConflictType.PAYLOAD_DIFFERS, op.getKey(), msg)),
+            msg,
+            null);
+      }
+    }
+  }
+
   private CompletionStage<MultiTableUpdate> applyIcebergTableCommitOperation(
       Branch reference,
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
       CompletionStage<MultiTableUpdate> commitBuilderStage)
-      throws NessieContentNotFoundException, NessieReferenceConflictException {
+      throws NessieContentNotFoundException {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
     IcebergCatalogOperation icebergOp = (IcebergCatalogOperation) op;
 
-    validateIcebergOperation(icebergOp);
-
-    if (icebergOp.hasAssertCreate()) {
-      if (content != null) {
-        throw new CatalogEntityAlreadyExistsException(
-            true, op.getType(), op.getKey(), content.getType());
-      }
-    } else if (!op.getType().equals(content.getType())) {
-      String msg =
-          format(
-              "Cannot update %s %s as a %s",
-              typeToEntityName(content.getType()).toLowerCase(Locale.ROOT),
-              op.getKey(),
-              typeToEntityName(op.getType()).toLowerCase(Locale.ROOT));
-      throw new NessieReferenceConflictException(
-          referenceConflicts(conflict(Conflict.ConflictType.PAYLOAD_DIFFERS, op.getKey(), msg)),
-          msg,
-          null);
-    }
-
     String contentId;
     CompletionStage<NessieTableSnapshot> snapshotStage;
     if (content == null) {
       contentId = null;
-      snapshotStage = completedStage(newIcebergTableSnapshot(icebergOp.updates()));
+      String icebergUuid = icebergOp.getSingleUpdateValue(AssignUUID.class, AssignUUID::uuid);
+      snapshotStage = completedStage(newIcebergTableSnapshot(icebergUuid));
     } else {
       contentId = content.getId();
       snapshotStage = loadExistingTableSnapshot(content);
@@ -492,7 +511,7 @@ public class CatalogServiceImpl implements CatalogService {
                   return new IcebergTableMetadataUpdateState(
                           nessieSnapshot, op.getKey(), content != null)
                       .checkRequirements(icebergOp.requirements())
-                      .applyUpdates(icebergOp.updates())
+                      .applyUpdates(pruneUpdates(icebergOp, content != null))
                       .snapshot();
                   // TODO handle the case when nothing changed -> do not update
                   //  e.g. when adding a schema/spec/order that already exists
@@ -539,13 +558,12 @@ public class CatalogServiceImpl implements CatalogService {
 
     IcebergCatalogOperation icebergOp = (IcebergCatalogOperation) op;
 
-    validateIcebergOperation(icebergOp);
-
     String contentId;
     CompletionStage<NessieViewSnapshot> snapshotStage;
     if (content == null) {
       contentId = null;
-      snapshotStage = completedStage(newIcebergViewSnapshot(icebergOp.updates()));
+      String icebergUuid = icebergOp.getSingleUpdateValue(AssignUUID.class, AssignUUID::uuid);
+      snapshotStage = completedStage(newIcebergViewSnapshot(icebergUuid));
     } else {
       contentId = content.getId();
       snapshotStage = loadExistingViewSnapshot(content);
@@ -567,7 +585,7 @@ public class CatalogServiceImpl implements CatalogService {
                   return new IcebergViewMetadataUpdateState(
                           nessieSnapshot, op.getKey(), content != null)
                       .checkRequirements(icebergOp.requirements())
-                      .applyUpdates(icebergOp.updates())
+                      .applyUpdates(pruneUpdates(icebergOp, content != null))
                       .snapshot();
                   // TODO handle the case when nothing changed -> do not update
                   //  e.g. when adding a schema/spec/order that already exists
@@ -601,16 +619,31 @@ public class CatalogServiceImpl implements CatalogService {
     return commitBuilderStage;
   }
 
-  private void validateIcebergOperation(IcebergCatalogOperation icebergOp) {
-    for (IcebergMetadataUpdate u : icebergOp.updates()) {
-      if (u instanceof SetLocation) {
-        StorageUri uri = StorageUri.of(((SetLocation) u).location());
-        checkArgument(objectIO.isValidUri(uri), "Unsupported table or view location: %s", uri);
-        WarehouseConfig warehouse = catalogConfig.getWarehouse(icebergOp.warehouse());
-        boolean inWarehouse = !StorageUri.of(warehouse.location()).relativize(uri).isAbsolute();
-        checkArgument(inWarehouse, "Invalid table or view location : %s", uri);
+  private List<IcebergMetadataUpdate> pruneUpdates(IcebergCatalogOperation op, boolean update) {
+    if (update) {
+      return op.updates();
+    }
+    List<IcebergMetadataUpdate> prunedUpdates = new ArrayList<>(op.updates());
+    String location = null;
+    if (op.hasUpdate(SetProperties.class)) {
+      Map<String, String> properties =
+          op.getSingleUpdateValue(SetProperties.class, SetProperties::updates);
+      if (properties.containsKey(IcebergTableMetadata.STAGED_PROPERTY)) {
+        String stagedLocation = op.getSingleUpdateValue(SetLocation.class, SetLocation::location);
+        // TODO verify integrity of staged location
+        prunedUpdates.removeIf(u -> u instanceof SetProperties);
+        properties = new HashMap<>(properties);
+        properties.remove(IcebergTableMetadata.STAGED_PROPERTY);
+        prunedUpdates.add(setProperties(properties));
+        location = stagedLocation;
       }
     }
+    if (location == null) {
+      WarehouseConfig w = catalogConfig.getWarehouse(op.warehouse());
+      location = icebergBaseLocation(w.location(), op.getKey());
+    }
+    prunedUpdates.add(setTrustedLocation(location));
+    return prunedUpdates;
   }
 
   static final class MultiTableUpdate {

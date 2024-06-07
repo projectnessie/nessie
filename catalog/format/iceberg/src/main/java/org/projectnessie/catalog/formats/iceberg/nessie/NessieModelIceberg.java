@@ -82,8 +82,8 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddS
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveProperties;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergDecimalType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergFixedType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergListType;
@@ -769,7 +769,15 @@ public class NessieModelIceberg {
     return value != null ? value : defaultValue;
   }
 
-  /** Returns the default table or view base location. */
+  /**
+   * Returns a unique base location for the given key.
+   *
+   * <p>Different tables or views with same name can exist across references in Nessie. To avoid
+   * sharing the same path between two tables or views with the same name, we randomize it by
+   * appending a uuid suffix to the path.
+   *
+   * <p>Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
+   */
   public static String icebergBaseLocation(String warehouseLocation, ContentKey key) {
     // FIXME escape or remove forbidden chars, cf. #8524
     String baseLocation = warehouseLocation;
@@ -778,10 +786,6 @@ public class NessieModelIceberg {
       baseLocation = concatLocation(warehouseLocation, ns.toString());
     }
     baseLocation = concatLocation(baseLocation, key.getName());
-    // Different tables with same table name can exist across references in Nessie.
-    // To avoid sharing same table path between two tables with same name, use uuid in the table
-    // path.
-    // Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
     return baseLocation + "_" + randomUUID();
   }
 
@@ -794,14 +798,7 @@ public class NessieModelIceberg {
     return String.format("%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID());
   }
 
-  public static NessieTableSnapshot newIcebergTableSnapshot(List<IcebergMetadataUpdate> updates) {
-    String icebergUuid =
-        updates.stream()
-            .filter(u -> u instanceof AssignUUID)
-            .map(u -> ((AssignUUID) u).uuid())
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Missing UUID for new table"));
-
+  public static NessieTableSnapshot newIcebergTableSnapshot(String icebergUuid) {
     // Use a transient ID for this snapshot because it is not stored as a Nessie snapshot,
     // but is used only to generate Iceberg snapshot data. A proper Nessie snapshot will
     // be created later, when the Iceberg snapshot is loaded after a successful Nessie commit.
@@ -823,14 +820,7 @@ public class NessieModelIceberg {
         .build();
   }
 
-  public static NessieViewSnapshot newIcebergViewSnapshot(List<IcebergMetadataUpdate> updates) {
-    String icebergUuid =
-        updates.stream()
-            .filter(u -> u instanceof AssignUUID)
-            .map(u -> ((AssignUUID) u).uuid())
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Missing UUID for new view"));
-
+  public static NessieViewSnapshot newIcebergViewSnapshot(String icebergUuid) {
     // Use a transient ID for this snapshot because it is not stored as a Nessie snapshot,
     // but is used only to generate Iceberg snapshot data. A proper Nessie snapshot will
     // be created later, when the Iceberg snapshot is loaded after a successful Nessie commit.
@@ -1096,7 +1086,7 @@ public class NessieModelIceberg {
         uuid);
   }
 
-  public static void setLocation(SetLocation u, NessieEntitySnapshot.Builder<?> builder) {
+  public static void setLocation(SetTrustedLocation u, NessieEntitySnapshot.Builder<?> builder) {
     builder.icebergLocation(u.location());
   }
 

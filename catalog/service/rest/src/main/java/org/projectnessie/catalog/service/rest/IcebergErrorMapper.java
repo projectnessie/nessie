@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergErrorResponse;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ContentKeyErrorDetails;
@@ -75,6 +76,8 @@ public class IcebergErrorMapper {
       body = mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
     } else if (ex instanceof IllegalArgumentException) {
       body = errorResponse(400, "IllegalArgumentException", ex.getMessage(), ex);
+    } else if (ex instanceof IcebergException) {
+      body = ((IcebergException) ex).toErrorResponse();
     }
 
     if (body == null) {

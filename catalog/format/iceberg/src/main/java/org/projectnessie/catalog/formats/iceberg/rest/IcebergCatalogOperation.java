@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate;
@@ -33,46 +34,77 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergCatalogOperation.class)
 @JsonDeserialize(as = ImmutableIcebergCatalogOperation.class)
-public interface IcebergCatalogOperation extends CatalogOperation {
+public abstract class IcebergCatalogOperation implements CatalogOperation {
   @Override
-  ContentKey getKey();
+  public abstract ContentKey getKey();
 
   @Override
-  Content.Type getType();
+  public abstract Content.Type getType();
 
   @Override
   @Nullable
-  String warehouse();
+  public abstract String warehouse();
 
-  List<IcebergMetadataUpdate> updates();
+  public abstract List<IcebergMetadataUpdate> updates();
 
-  List<IcebergUpdateRequirement> requirements();
+  public abstract List<IcebergUpdateRequirement> requirements();
 
-  static Builder builder() {
+  public static Builder builder() {
     return ImmutableIcebergCatalogOperation.builder();
   }
 
   @JsonIgnore
   @Value.Derived
-  default boolean hasAssertCreate() {
-    return requirements().stream().anyMatch(u -> u instanceof AssertCreate);
+  public boolean hasRequirement(Class<? extends IcebergUpdateRequirement> requirement) {
+    return requirements().stream().anyMatch(requirement::isInstance);
+  }
+
+  @JsonIgnore
+  @Value.Derived
+  public boolean hasUpdate(Class<? extends IcebergMetadataUpdate> update) {
+    return updates().stream().anyMatch(update::isInstance);
+  }
+
+  /**
+   * Get the single update of the given type. Throws an exception if there are multiple updates of
+   * the given type. Throws an exception if there is no update of the given type.
+   */
+  @JsonIgnore
+  @Value.Derived
+  public <T, U extends IcebergMetadataUpdate> T getSingleUpdateValue(
+      Class<U> update, Function<U, T> mapper) {
+    return updates().stream()
+        .filter(update::isInstance)
+        .map(update::cast)
+        .map(mapper)
+        .reduce(
+            (e1, e2) -> {
+              throw new IllegalArgumentException(
+                  "Found multiple updates of type " + update.getSimpleName());
+            })
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Could not find any updates of type " + update.getSimpleName()));
   }
 
   @Value.Check
-  default void check() {
-    if (hasAssertCreate() && requirements().size() > 1) {
-      throw new IllegalArgumentException(
-          "Invalid create requirements: "
-              + requirements().stream()
-                  .filter(r -> !(r instanceof AssertCreate))
-                  .map(Object::getClass)
-                  .map(Class::getSimpleName)
-                  .collect(Collectors.joining(", ")));
+  protected void check() {
+    if (hasRequirement(AssertCreate.class)) {
+      if (requirements().size() > 1) {
+        throw new IllegalArgumentException(
+            "Invalid create requirements: "
+                + requirements().stream()
+                    .filter(r -> !(r instanceof AssertCreate))
+                    .map(Object::getClass)
+                    .map(Class::getSimpleName)
+                    .collect(Collectors.joining(", ")));
+      }
     }
   }
 
   @SuppressWarnings("unused")
-  interface Builder {
+  public interface Builder {
     @CanIgnoreReturnValue
     Builder from(CatalogOperation instance);
 
