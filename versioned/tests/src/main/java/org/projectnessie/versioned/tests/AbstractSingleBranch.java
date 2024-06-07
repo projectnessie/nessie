@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
@@ -160,7 +161,8 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     Content value =
         existing != null
             ? onRef(
-                String.format("data_file_%03d_%03d", user, commitNum), existing.content().getId())
+                String.format("data_file_%03d_%03d", user, commitNum),
+                requireNonNull(existing.content()).getId())
             : newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
     ops = ImmutableList.of(Put.of(key, value));
     return ops;

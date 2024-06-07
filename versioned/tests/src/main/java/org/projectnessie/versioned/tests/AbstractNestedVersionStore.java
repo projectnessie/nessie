@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADATA_REWRITER;
 
 import java.util.ArrayList;
@@ -147,7 +148,7 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected static Content contentWithoutId(ContentResult content) {
-    return content != null ? content.content().withId(null) : null;
+    return content != null ? requireNonNull(content.content()).withId(null) : null;
   }
 
   protected static Content contentWithoutId(Content content) {

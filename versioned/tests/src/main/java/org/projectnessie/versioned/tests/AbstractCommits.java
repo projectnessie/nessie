@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tests;
 import static com.google.common.collect.Streams.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.tuple;
@@ -181,7 +182,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t1 = store().getValue(branch, ContentKey.of("t1"), false).content();
+    Content t1 = requireNonNull(store().getValue(branch, ContentKey.of("t1"), false).content());
 
     Hash secondCommit =
         commit("Second Commit")
@@ -275,15 +276,15 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t1 = store().getValue(branch, ContentKey.of("t1"), false).content();
-    Content t3 = store().getValue(branch, ContentKey.of("t3"), false).content();
+    Content t1 = requireNonNull(store().getValue(branch, ContentKey.of("t1"), false).content());
+    Content t3 = requireNonNull(store().getValue(branch, ContentKey.of("t3"), false).content());
 
     Hash t1Commit =
         commit("T1 Commit")
             .fromReference(initialCommit)
             .put("t1", V_1_2.withId(t1.getId()))
             .toBranch(branch);
-    t1 = store().getValue(branch, ContentKey.of("t1"), false).content();
+    t1 = requireNonNull(store().getValue(branch, ContentKey.of("t1"), false).content());
 
     Hash t2Commit = commit("T2 Commit").fromReference(initialCommit).delete("t2").toBranch(branch);
     Hash t3Commit =
@@ -413,8 +414,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash initialCommit =
         commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
 
-    Content t1 = store().getValue(branch, ContentKey.of("t1"), false).content();
-    Content t2 = store().getValue(branch, ContentKey.of("t2"), false).content();
+    Content t1 = requireNonNull(store().getValue(branch, ContentKey.of("t1"), false).content());
+    Content t2 = requireNonNull(store().getValue(branch, ContentKey.of("t2"), false).content());
 
     Hash secondCommit =
         commit("Second Commit")
@@ -422,7 +423,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t3 = store().getValue(branch, ContentKey.of("t3"), false).content();
+    Content t3 = requireNonNull(store().getValue(branch, ContentKey.of("t3"), false).content());
 
     soft.assertThatThrownBy(
             () ->
@@ -592,14 +593,14 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
 
     commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
-    Content t1 = store().getValue(branch, ContentKey.of("t1"), false).content();
+    Content t1 = requireNonNull(store().getValue(branch, ContentKey.of("t1"), false).content());
 
     commit("Second Commit")
         .put("t1", V_1_2.withId(t1.getId()))
         .delete("t2")
         .put("t3", V_3_1)
         .toBranch(branch);
-    Content t3 = store().getValue(branch, ContentKey.of("t3"), false).content();
+    Content t3 = requireNonNull(store().getValue(branch, ContentKey.of("t3"), false).content());
 
     Hash putCommit =
         forceCommit("Conflicting Commit")
@@ -792,7 +793,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 Collections.singletonList(Put.of(original, IcebergTable.of("loc", 1, 2, 3, 4))))
             .getCommitHash();
 
-    Content table = store().getValue(branch, original, false).content();
+    Content table = requireNonNull(store().getValue(branch, original, false).content());
 
     Delete deleteOp = Delete.of(original);
 
@@ -856,7 +857,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             CommitMeta.fromMessage("commit"),
             singletonList(Put.of(key, tableOld)))
         .getCommitHash();
-    tableOld = (IcebergTable) store().getValue(branch, key, false).content();
+    tableOld = (IcebergTable) requireNonNull(store().getValue(branch, key, false).content());
 
     soft.assertThat(
             store().getValues(branch, keys, false).entrySet().stream()
@@ -872,7 +873,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             Optional.empty(),
             CommitMeta.fromMessage("new"),
             singletonList(Put.of(keyTemp, tableNew)));
-    tableNew = (IcebergTable) store().getValue(branch, keyTemp, false).content();
+    tableNew = (IcebergTable) requireNonNull(store().getValue(branch, keyTemp, false).content());
 
     soft.assertThat(
             store().getValues(branch, keys, false).entrySet().stream()
