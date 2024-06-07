@@ -29,6 +29,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
 import java.time.Clock;
 import java.util.Map;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -46,6 +48,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
@@ -73,10 +76,26 @@ import org.projectnessie.nessie.tasks.service.impl.TaskServiceMetrics;
 import org.projectnessie.nessie.tasks.service.impl.TasksServiceImpl;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.ConfigApiImpl;
+import org.projectnessie.services.impl.ContentApiImpl;
+import org.projectnessie.services.impl.DiffApiImpl;
+import org.projectnessie.services.impl.TreeApiImpl;
+import org.projectnessie.services.rest.RestV2ConfigResource;
+import org.projectnessie.services.rest.RestV2TreeResource;
+import org.projectnessie.services.spi.ConfigService;
+import org.projectnessie.services.spi.ContentService;
+import org.projectnessie.services.spi.DiffService;
+import org.projectnessie.services.spi.TreeService;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessiePersistCache;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
+import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import software.amazon.awssdk.http.SdkHttpClient;
 
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
@@ -92,10 +111,12 @@ public abstract class AbstractCatalogService {
   protected ScheduledExecutorService executor;
   protected TasksServiceImpl tasksService;
   protected HeapStorageBucket heapStorageBucket;
-  protected ObjectStorageMock.MockServer server;
+  protected ObjectStorageMock.MockServer objectStorageServer;
   protected SdkHttpClient httpClient;
+  protected ObjectIO objectIO;
   protected CatalogServiceImpl catalogService;
   protected NessieApiV2 api;
+  protected volatile Function<AccessContext, BatchAccessChecker> batchAccessCheckerFactory;
 
   protected ParsedReference commitSingle(Reference branch, ContentKey key)
       throws InterruptedException, ExecutionException, BaseNessieClientServerException {
@@ -128,6 +149,18 @@ public abstract class AbstractCatalogService {
 
   @BeforeEach
   public void createCatalogServiceInstance() {
+    setupTasksService();
+
+    setupNessieApi();
+
+    setupObjectStorage();
+
+    setupObjectIO();
+
+    setupCatalogService();
+  }
+
+  private void setupTasksService() {
     executor = Executors.newScheduledThreadPool(2);
     JavaPoolTasksAsync tasksAsync = new JavaPoolTasksAsync(executor, Clock.systemUTC(), 1L);
     tasksService =
@@ -135,42 +168,9 @@ public abstract class AbstractCatalogService {
             tasksAsync,
             mock(TaskServiceMetrics.class),
             TasksServiceConfig.tasksServiceConfig("t", 1L, 20L));
+  }
 
-    heapStorageBucket = HeapStorageBucket.newHeapStorageBucket();
-    server =
-        ObjectStorageMock.builder()
-            .initAddress("localhost")
-            .putBuckets(BUCKET, heapStorageBucket.bucket())
-            .build()
-            .start();
-    S3Sessions sessions = new S3Sessions("foo", null);
-
-    S3Config s3config = S3Config.builder().build();
-    httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
-    S3Options<S3BucketOptions> s3options =
-        S3ProgrammaticOptions.builder()
-            .defaultOptions(
-                S3ProgrammaticOptions.S3PerBucketOptions.builder()
-                    .accessKey(basicCredentials("foo", "bar"))
-                    .region("eu-central-1")
-                    .endpoint(server.getS3BaseUri())
-                    .pathStyleAccess(true)
-                    .build())
-            .build();
-    S3ClientSupplier clientSupplier =
-        new S3ClientSupplier(
-            httpClient,
-            s3config,
-            s3options,
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
-            sessions);
-    S3ObjectIO objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());
-
-    api = new CombinedClientBuilder().withPersist(persist).build(NessieApiV2.class);
-
+  private void setupCatalogService() {
     catalogService = new CatalogServiceImpl();
     catalogService.catalogConfig =
         ImmutableCatalogConfigForTest.builder()
@@ -188,19 +188,96 @@ public abstract class AbstractCatalogService {
     catalogService.nessieApi = api;
   }
 
+  private void setupObjectIO() {
+    S3Sessions sessions = new S3Sessions("foo", null);
+    S3Config s3config = S3Config.builder().build();
+    httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+    S3Options<S3BucketOptions> s3options =
+        S3ProgrammaticOptions.builder()
+            .defaultOptions(
+                S3ProgrammaticOptions.S3PerBucketOptions.builder()
+                    .accessKey(basicCredentials("foo", "bar"))
+                    .region("eu-central-1")
+                    .endpoint(objectStorageServer.getS3BaseUri())
+                    .pathStyleAccess(true)
+                    .build())
+            .build();
+    S3ClientSupplier clientSupplier =
+        new S3ClientSupplier(
+            httpClient,
+            s3config,
+            s3options,
+            new SecretsProvider(
+                (names) ->
+                    names.stream()
+                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
+            sessions);
+    objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());
+  }
+
+  private void setupObjectStorage() {
+    heapStorageBucket = HeapStorageBucket.newHeapStorageBucket();
+    objectStorageServer =
+        ObjectStorageMock.builder()
+            .initAddress("localhost")
+            .putBuckets(BUCKET, heapStorageBucket.bucket())
+            .build()
+            .start();
+  }
+
+  private void setupNessieApi() {
+    batchAccessCheckerFactory = accessContext -> NOOP_ACCESS_CHECKER;
+
+    ServerConfig config =
+        new ServerConfig() {
+          @Override
+          public String getDefaultBranch() {
+            return "main";
+          }
+
+          @Override
+          public boolean sendStacktraceToClient() {
+            return true;
+          }
+        };
+    VersionStore versionStore = new VersionStoreImpl(persist);
+    Authorizer authorizer = context -> batchAccessCheckerFactory.apply(context);
+    AccessContext accessContext = () -> () -> null;
+    ConfigService configService =
+        new ConfigApiImpl(config, versionStore, authorizer, accessContext, 2);
+    TreeService treeService = new TreeApiImpl(config, versionStore, authorizer, accessContext);
+    ContentService contentService =
+        new ContentApiImpl(config, versionStore, authorizer, accessContext);
+    DiffService diffService = new DiffApiImpl(config, versionStore, authorizer, accessContext);
+
+    RestV2TreeResource treeResource =
+        new RestV2TreeResource(configService, treeService, contentService, diffService);
+    RestV2ConfigResource configResource =
+        new RestV2ConfigResource(config, versionStore, authorizer, accessContext);
+    api =
+        new CombinedClientBuilder()
+            .withTreeResource(treeResource)
+            .withConfigResource(configResource)
+            .build(NessieApiV2.class);
+  }
+
   @AfterEach
   public void shutdown() throws Exception {
     try {
-      server.close();
+      api.close();
     } finally {
       try {
-        httpClient.close();
+        objectStorageServer.close();
       } finally {
         try {
-          tasksService.shutdown().toCompletableFuture().get(5, TimeUnit.MINUTES);
+          httpClient.close();
         } finally {
-          executor.shutdown();
-          assertThat(executor.awaitTermination(5, TimeUnit.MINUTES)).isTrue();
+          try {
+            tasksService.shutdown().toCompletableFuture().get(5, TimeUnit.MINUTES);
+          } finally {
+            executor.shutdown();
+            assertThat(executor.awaitTermination(5, TimeUnit.MINUTES)).isTrue();
+          }
         }
       }
     }

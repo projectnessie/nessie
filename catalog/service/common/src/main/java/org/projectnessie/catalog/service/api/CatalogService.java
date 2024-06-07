@@ -39,12 +39,16 @@ public interface CatalogService {
    *     more.
    * @param key content key of the table or view
    * @param expectedType The expected content-type.
+   * @param forWrite indicates whether access checks shall be performed for a write/update request
    * @return The response is either a response object or callback to produce the result. The latter
    *     is useful to return results that are quite big, for example Iceberg manifest lists or
    *     manifest files.
    */
   CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams, ContentKey key, @Nullable Content.Type expectedType)
+      SnapshotReqParams reqParams,
+      ContentKey key,
+      @Nullable Content.Type expectedType,
+      boolean forWrite)
       throws NessieNotFoundException;
 
   Stream<Supplier<CompletionStage<SnapshotResponse>>> retrieveSnapshots(

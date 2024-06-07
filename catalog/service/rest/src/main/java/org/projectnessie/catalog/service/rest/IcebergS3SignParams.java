@@ -102,11 +102,13 @@ abstract class IcebergS3SignParams {
 
   private Uni<SnapshotResponse> fetchSnapshot() {
     try {
-      // TODO pass write() to CatalogServiceImpl.retrieveSnapshot() once #8768 is merged
       CompletionStage<SnapshotResponse> stage =
           catalogService()
               .retrieveSnapshot(
-                  SnapshotReqParams.forSnapshotHttpReq(ref(), "iceberg", null), key(), null);
+                  SnapshotReqParams.forSnapshotHttpReq(ref(), "iceberg", null),
+                  key(),
+                  null,
+                  write());
       // consider an import failure as a non-existing content:
       // signing will be authorized for the future location only.
       return Uni.createFrom().completionStage(stage).onFailure().recoverWithNull();
