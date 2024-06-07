@@ -167,5 +167,5 @@ nessie-run = { id = "org.projectnessie", version = "0.32.2" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "3.10.0" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "3.11.0" }
 jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.2.0"}
