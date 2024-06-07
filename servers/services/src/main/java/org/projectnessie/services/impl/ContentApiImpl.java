@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.services.authz.AccessContext;
@@ -64,13 +67,33 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       ResolvedHash ref =
           getHashResolver()
               .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
-      ContentResult obj = getStore().getValue(ref.getHash(), key, false);
+      ContentResult obj = getStore().getValue(ref.getHash(), key, forWrite);
       BatchAccessChecker accessCheck = startAccessCheck();
-      if (obj != null) {
-        accessCheck.canReadEntityValue(ref.getValue(), obj.identifiedKey()).checkAndThrow();
+
+      NamedRef r = ref.getValue();
+      accessCheck.canViewReference(r);
+      if (forWrite) {
+        accessCheck.canCommitChangeAgainstReference(r);
+      }
+
+      if (obj != null && obj.content() != null) {
+        accessCheck.canReadEntityValue(r, obj.identifiedKey());
+        if (forWrite) {
+          accessCheck.canUpdateEntity(r, obj.identifiedKey());
+        }
+
+        accessCheck.checkAndThrow();
+
         return ContentResponse.of(obj.content(), makeReference(ref), null);
       }
-      accessCheck.canViewReference(ref.getValue()).checkAndThrow();
+
+      if (forWrite) {
+        accessCheck
+            .canReadEntityValue(r, requireNonNull(obj).identifiedKey())
+            .canCreateEntity(r, obj.identifiedKey());
+      }
+      accessCheck.checkAndThrow();
+
       throw new NessieContentNotFoundException(key, namedRef);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -90,16 +113,38 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
           getHashResolver()
               .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
 
-      BatchAccessChecker check = startAccessCheck().canViewReference(ref.getValue());
+      NamedRef r = ref.getValue();
+      BatchAccessChecker check = startAccessCheck().canViewReference(r);
+      if (forWrite) {
+        check.canCommitChangeAgainstReference(r);
+      }
 
-      Map<ContentKey, ContentResult> values = getStore().getValues(ref.getHash(), keys, false);
+      Map<ContentKey, ContentResult> values = getStore().getValues(ref.getHash(), keys, forWrite);
       List<ContentWithKey> output =
           values.entrySet().stream()
+              .filter(
+                  e -> {
+                    ContentResult contentResult = e.getValue();
+                    IdentifiedContentKey identifiedKey = contentResult.identifiedKey();
+                    check.canReadEntityValue(r, identifiedKey);
+                    if (contentResult.content() != null) {
+                      if (forWrite) {
+                        check.canUpdateEntity(r, identifiedKey);
+                      }
+                      check.canReadEntityValue(r, identifiedKey);
+                      return true;
+                    } else {
+                      if (forWrite) {
+                        check.canCreateEntity(r, identifiedKey);
+                      }
+                      return false;
+                    }
+                  })
               .map(
                   e -> {
-                    check.canReadEntityValue(ref.getValue(), e.getValue().identifiedKey());
+                    ContentResult contentResult = e.getValue();
                     return ContentWithKey.of(
-                        e.getKey(), e.getValue().content(), e.getValue().documentation());
+                        e.getKey(), contentResult.content(), contentResult.documentation());
                   })
               .collect(Collectors.toList());
 
