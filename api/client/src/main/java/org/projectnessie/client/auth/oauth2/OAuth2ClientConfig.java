@@ -78,6 +78,11 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     return ImmutableOAuth2ClientConfig.builder();
   }
 
+  @Value.Derived
+  String getClientName() {
+    return "nessie-oauth2-client-" + OAuth2Utils.randomAlphaNumString(4);
+  }
+
   @Value.Default
   Duration getMinDefaultAccessTokenLifespan() {
     return Duration.ofSeconds(10);

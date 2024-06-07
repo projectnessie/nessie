@@ -66,11 +66,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   OAuth2Client(OAuth2ClientConfig config) {
     this.config = config;
     httpClient = config.getHttpClient();
-    executor =
-        config
-            .getExecutor()
-            .orElseGet(
-                () -> new OAuth2TokenRefreshExecutor(config.getBackgroundThreadIdleTimeout()));
+    executor = config.getExecutor().orElseGet(() -> new OAuth2TokenRefreshExecutor(config));
     // when user interaction is not required, token fetch can happen immediately upon start();
     // otherwise, it will be deferred until authenticate() is called the first time.
     CompletableFuture<?> ready =
@@ -85,6 +81,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   @Override
   public AccessToken authenticate() {
+    if (closing.get()) {
+      throw new IllegalStateException("Client is closing");
+    }
     used.complete(null);
     Instant now = config.getClock().get();
     lastAccess = now;
@@ -130,7 +129,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   @Override
   public void close() {
     if (closing.compareAndSet(false, true)) {
-      LOGGER.debug("Closing...");
+      LOGGER.debug("[{}] Closing...", config.getClientName());
       try {
         currentTokensStage.toCompletableFuture().cancel(true);
         ScheduledFuture<?> tokenRefreshFuture = this.tokenRefreshFuture;
@@ -148,37 +147,44 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         used.cancel(true);
         tokenRefreshFuture = null;
       }
-      LOGGER.debug("Closed");
+      LOGGER.debug("[{}] Closed", config.getClientName());
     }
+  }
+
+  @Override
+  public OAuth2Authenticator copy() {
+    return new OAuth2Client(OAuth2ClientConfig.builder().from(config).build());
   }
 
   private void wakeUp(Instant now) {
     if (closing.get()) {
-      LOGGER.debug("Not waking up, client is closing");
+      LOGGER.debug("[{}] Not waking up, client is closing", config.getClientName());
       return;
     }
-    LOGGER.debug("Waking up...");
+    LOGGER.debug("[{}] Waking up...", config.getClientName());
     Tokens currentTokens = getCurrentTokensIfAvailable();
     Duration delay = nextTokenRefresh(currentTokens, now, Duration.ZERO);
     if (delay.compareTo(config.getMinRefreshSafetyWindow()) < 0) {
-      LOGGER.debug("Refreshing tokens immediately");
+      LOGGER.debug("[{}] Refreshing tokens immediately", config.getClientName());
       renewTokens();
     } else {
-      LOGGER.debug("Tokens are still valid");
+      LOGGER.debug("[{}] Tokens are still valid", config.getClientName());
       scheduleTokensRenewal(delay);
     }
   }
 
   private void maybeScheduleTokensRenewal(Tokens currentTokens) {
     if (closing.get()) {
-      LOGGER.debug("Not checking if token renewal is required, client is closing");
+      LOGGER.debug(
+          "[{}] Not checking if token renewal is required, client is closing",
+          config.getClientName());
       return;
     }
     Instant now = config.getClock().get();
     if (Duration.between(lastAccess, now).compareTo(config.getPreemptiveTokenRefreshIdleTimeout())
         > 0) {
       sleeping.set(true);
-      LOGGER.debug("Sleeping...");
+      LOGGER.debug("[{}] Sleeping...", config.getClientName());
     } else {
       Duration delay = nextTokenRefresh(currentTokens, now, config.getMinRefreshSafetyWindow());
       scheduleTokensRenewal(delay);
@@ -187,10 +193,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private void scheduleTokensRenewal(Duration delay) {
     if (closing.get()) {
-      LOGGER.debug("Not scheduling token renewal, client is closing");
+      LOGGER.debug("[{}] Not scheduling token renewal, client is closing", config.getClientName());
       return;
     }
-    LOGGER.debug("Scheduling token refresh in {}", delay);
+    LOGGER.debug("[{}] Scheduling token refresh in {}", config.getClientName(), delay);
     try {
       tokenRefreshFuture =
           executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
@@ -225,14 +231,15 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       if (error instanceof CompletionException) {
         error = error.getCause();
       }
-      maybeWarn("Failed to renew tokens", error);
+      maybeWarn("Failed to fetch new tokens", error);
     } else {
-      LOGGER.debug("Successfully renewed tokens");
+      LOGGER.debug("[{}] Successfully fetched new tokens", config.getClientName());
     }
   }
 
   Tokens fetchNewTokens() {
-    LOGGER.debug("Fetching new tokens using {}", config.getGrantType());
+    LOGGER.debug(
+        "[{}] Fetching new tokens using {}", config.getClientName(), config.getGrantType());
     try (Flow flow = config.getGrantType().newFlow(config)) {
       return flow.fetchNewTokens(null);
     } finally {
@@ -247,7 +254,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         currentTokens.getRefreshToken() == null
             ? GrantType.TOKEN_EXCHANGE
             : GrantType.REFRESH_TOKEN;
-    LOGGER.debug("Refreshing tokens using {}", grantType);
+    LOGGER.debug("[{}] Refreshing tokens using {}", config.getClientName(), grantType);
     try (Flow flow = grantType.newFlow(config)) {
       return flow.fetchNewTokens(currentTokens);
     }

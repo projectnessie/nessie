@@ -48,4 +48,6 @@ public interface OAuth2Authenticator extends AutoCloseable {
    */
   @Override
   void close();
+
+  OAuth2Authenticator copy();
 }
