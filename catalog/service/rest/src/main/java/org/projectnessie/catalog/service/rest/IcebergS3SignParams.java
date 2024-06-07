@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergError.icebergError;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse.icebergS3SignResponse;
 
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Check;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningRequest;
@@ -68,6 +70,12 @@ abstract class IcebergS3SignParams {
 
   abstract S3BucketOptions s3options();
 
+  @Check
+  public void check() {
+    checkArgument(
+        URI.create(baseLocation()).getScheme().equals("s3"), "baseLocation must be an S3 URI");
+  }
+
   @Value.Lazy
   String requestedS3Uri() {
     return S3Utils.asS3Location(request().uri());
@@ -97,6 +105,7 @@ abstract class IcebergS3SignParams {
 
   private Uni<SnapshotResponse> fetchSnapshot() {
     try {
+      // TODO pass write() to CatalogServiceImpl.retrieveSnapshot() once #8768 is merged
       CompletionStage<SnapshotResponse> stage =
           catalogService()
               .retrieveSnapshot(
@@ -114,6 +123,7 @@ abstract class IcebergS3SignParams {
   private Uni<?> checkForbiddenLocations(SnapshotResponse snapshotResponse) {
     if (snapshotResponse != null && write()) {
       Content content = snapshotResponse.content();
+      // TODO disallow all table and view metadata objects, not only the metadata json location
       String metadataLocation = null;
       if (content instanceof IcebergTable) {
         metadataLocation = ((IcebergTable) content).getMetadataLocation();

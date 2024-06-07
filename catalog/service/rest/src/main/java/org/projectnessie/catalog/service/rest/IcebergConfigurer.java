@@ -145,7 +145,6 @@ public class IcebergConfigurer {
     if (isS3scheme(location.getScheme())) {
       config.put(
           S3_SIGNER_ENDPOINT,
-          // TODO does it make sense to use a separate endpoint (service) just for signing?
           uriInfo
               .icebergS3SignerUri(prefix, contentKey, normalizeS3Scheme(tableMetadata.location()))
               .toString());
