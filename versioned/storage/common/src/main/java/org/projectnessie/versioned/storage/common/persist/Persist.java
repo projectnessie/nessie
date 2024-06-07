@@ -17,6 +17,8 @@ package org.projectnessie.versioned.storage.common.persist;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -237,9 +239,34 @@ public interface Persist {
    * @see #fetchObjType(ObjId)
    * @see #fetchTypedObj(ObjId, ObjType, Class)
    * @see #fetchObj(ObjId)
+   * @see #fetchObjsIfExist(ObjId[])
    */
   @Nonnull
-  Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException;
+  default Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
+    Obj[] r = fetchObjsIfExist(ids);
+
+    List<ObjId> notFound = null;
+    for (int i = 0; i < ids.length; i++) {
+      ObjId id = ids[i];
+      if (r[i] == null && id != null) {
+        if (notFound == null) {
+          notFound = new ArrayList<>();
+        }
+        notFound.add(id);
+      }
+    }
+    if (notFound != null) {
+      throw new ObjNotFoundException(notFound);
+    }
+
+    return r;
+  }
+
+  /**
+   * Same as {@link #fetchObjs(ObjId[])}, does not throw an {@link ObjNotFoundException} but returns
+   * {@code null} instead.
+   */
+  Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids);
 
   /**
    * Stores the given object as a new record.

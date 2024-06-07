@@ -144,6 +144,11 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+    return delegate.fetchObjsIfExist(ids);
+  }
+
+  @Override
   public boolean storeObj(@Nonnull Obj obj) throws ObjTooLargeException {
     return delegate.storeObj(obj);
   }

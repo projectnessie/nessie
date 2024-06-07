@@ -295,7 +295,7 @@ class RocksDBPersist implements Persist {
 
   @Override
   @Nonnull
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     try {
       RocksDBBackend b = backend;
       TransactionDB db = b.db();
@@ -313,24 +313,15 @@ class RocksDBPersist implements Persist {
       }
 
       if (!keys.isEmpty()) {
-        List<ObjId> notFound = null;
         List<byte[]> dbResult = db.multiGetAsList(handles, keys);
         for (int i = 0, ri = 0; i < num; i++) {
           ObjId id = ids[i];
           if (id != null) {
             byte[] obj = dbResult.get(ri++);
-            if (obj == null) {
-              if (notFound == null) {
-                notFound = new ArrayList<>();
-              }
-              notFound.add(id);
-            } else {
+            if (obj != null) {
               r[i] = deserializeObj(id, obj, null);
             }
           }
-        }
-        if (notFound != null) {
-          throw new ObjNotFoundException(notFound);
         }
       }
 

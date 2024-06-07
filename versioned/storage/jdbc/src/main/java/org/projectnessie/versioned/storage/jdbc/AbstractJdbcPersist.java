@@ -360,9 +360,36 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
+  protected final Obj[] fetchObjsIfExist(@Nonnull Connection conn, @Nonnull ObjId[] ids) {
+    return fetchObjsIfExist(conn, ids, null);
+  }
+
+  @Nonnull
   protected final Obj[] fetchObjs(
       @Nonnull Connection conn, @Nonnull ObjId[] ids, @Nullable ObjType type)
       throws ObjNotFoundException {
+    Obj[] r = fetchObjsIfExist(conn, ids, type);
+
+    List<ObjId> notFound = null;
+    for (int i = 0; i < ids.length; i++) {
+      ObjId id = ids[i];
+      if (r[i] == null && id != null) {
+        if (notFound == null) {
+          notFound = new ArrayList<>();
+        }
+        notFound.add(id);
+      }
+    }
+    if (notFound != null) {
+      throw new ObjNotFoundException(notFound);
+    }
+
+    return r;
+  }
+
+  @Nonnull
+  protected final Obj[] fetchObjsIfExist(
+      @Nonnull Connection conn, @Nonnull ObjId[] ids, @Nullable ObjType type) {
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
     Obj[] r = new Obj[ids.length];
@@ -399,20 +426,6 @@ abstract class AbstractJdbcPersist implements Persist {
           if (i != -1) {
             r[i] = obj;
           }
-        }
-
-        List<ObjId> notFound = null;
-        for (int i = 0; i < ids.length; i++) {
-          ObjId id = ids[i];
-          if (r[i] == null && id != null) {
-            if (notFound == null) {
-              notFound = new ArrayList<>();
-            }
-            notFound.add(id);
-          }
-        }
-        if (notFound != null) {
-          throw new ObjNotFoundException(notFound);
         }
 
         return r;

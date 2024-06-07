@@ -101,6 +101,17 @@ class CachingPersistImpl implements Persist {
     ObjId[] backendIds = null;
     Obj[] r = new Obj[ids.length];
 
+    backendIds = fetchObjsPre(ids, r, backendIds);
+
+    if (backendIds == null) {
+      return r;
+    }
+
+    Obj[] backendResult = persist.fetchObjs(backendIds);
+    return fetchObjsPost(backendResult, r);
+  }
+
+  private ObjId[] fetchObjsPre(ObjId[] ids, Obj[] r, ObjId[] backendIds) {
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
       if (id == null) {
@@ -116,12 +127,10 @@ class CachingPersistImpl implements Persist {
         backendIds[i] = id;
       }
     }
+    return backendIds;
+  }
 
-    if (backendIds == null) {
-      return r;
-    }
-
-    Obj[] backendResult = persist.fetchObjs(backendIds);
+  private Obj[] fetchObjsPost(Obj[] backendResult, Obj[] r) {
     for (int i = 0; i < backendResult.length; i++) {
       Obj o = backendResult[i];
       if (o != null) {
@@ -130,6 +139,22 @@ class CachingPersistImpl implements Persist {
       }
     }
     return r;
+  }
+
+  @Override
+  @Nonnull
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+    ObjId[] backendIds = null;
+    Obj[] r = new Obj[ids.length];
+
+    backendIds = fetchObjsPre(ids, r, backendIds);
+
+    if (backendIds == null) {
+      return r;
+    }
+
+    Obj[] backendResult = persist.fetchObjsIfExist(backendIds);
+    return fetchObjsPost(backendResult, r);
   }
 
   @Override

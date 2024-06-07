@@ -20,9 +20,7 @@ import static java.util.Collections.singleton;
 
 import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -216,25 +214,14 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   @Nonnull
-  public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
+  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     Obj[] r = new Obj[ids.length];
-    List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
       if (id == null) {
         continue;
       }
-      try {
-        r[i] = fetchObj(id);
-      } catch (ObjNotFoundException e) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
-        }
-        notFound.addAll(e.objIds());
-      }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
+      r[i] = inmemory.objects.get(compositeKey(id));
     }
     return r;
   }

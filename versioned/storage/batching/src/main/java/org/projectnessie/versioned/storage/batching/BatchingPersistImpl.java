@@ -252,6 +252,17 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     ObjId[] backendIds = null;
     Obj[] r = new Obj[ids.length];
 
+    backendIds = fetchObjsPre(ids, r, backendIds);
+
+    if (backendIds == null) {
+      return r;
+    }
+
+    Obj[] backendResult = delegate().fetchObjs(backendIds);
+    return fetchObjsPost(backendResult, r);
+  }
+
+  private ObjId[] fetchObjsPre(ObjId[] ids, Obj[] r, ObjId[] backendIds) {
     readLock();
     try {
       for (int i = 0; i < ids.length; i++) {
@@ -272,12 +283,10 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
     } finally {
       readUnlock();
     }
+    return backendIds;
+  }
 
-    if (backendIds == null) {
-      return r;
-    }
-
-    Obj[] backendResult = delegate().fetchObjs(backendIds);
+  private static Obj[] fetchObjsPost(Obj[] backendResult, Obj[] r) {
     for (int i = 0; i < backendResult.length; i++) {
       Obj o = backendResult[i];
       if (o != null) {
@@ -285,6 +294,24 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
       }
     }
     return r;
+  }
+
+  @Override
+  @Nonnull
+  @javax.annotation.Nonnull
+  public Obj[] fetchObjsIfExist(@Nonnull @javax.annotation.Nonnull ObjId[] ids) {
+
+    ObjId[] backendIds = null;
+    Obj[] r = new Obj[ids.length];
+
+    backendIds = fetchObjsPre(ids, r, backendIds);
+
+    if (backendIds == null) {
+      return r;
+    }
+
+    Obj[] backendResult = delegate().fetchObjsIfExist(backendIds);
+    return fetchObjsPost(backendResult, r);
   }
 
   @Override
