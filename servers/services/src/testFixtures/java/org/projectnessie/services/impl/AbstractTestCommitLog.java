@@ -392,7 +392,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
       Put op;
       try {
         Content existing =
-            contentApi().getContent(key, branch.getName(), currentHash, false).getContent();
+            contentApi().getContent(key, branch.getName(), currentHash, false, false).getContent();
         op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()));
       } catch (NessieNotFoundException notFound) {
         op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));

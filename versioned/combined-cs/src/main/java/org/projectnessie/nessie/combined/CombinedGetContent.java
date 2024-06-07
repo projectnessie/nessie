@@ -48,7 +48,7 @@ final class CombinedGetContent extends BaseGetContentBuilder {
       if (ref.isEmpty()) {
         ref = "-";
       }
-      return treeApi.getContent(key, ref, false);
+      return treeApi.getContent(key, ref, false, forWrite);
     } catch (RuntimeException e) {
       throw CombinedClientImpl.maybeWrapException(e);
     }
@@ -64,7 +64,7 @@ final class CombinedGetContent extends BaseGetContentBuilder {
         // pass.
         ref = "-";
       }
-      return treeApi.getMultipleContents(ref, request.build(), false);
+      return treeApi.getMultipleContents(ref, request.build(), false, forWrite);
     } catch (RuntimeException e) {
       throw CombinedClientImpl.maybeWrapException(e);
     }

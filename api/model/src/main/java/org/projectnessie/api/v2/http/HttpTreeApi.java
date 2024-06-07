@@ -18,6 +18,7 @@ package org.projectnessie.api.v2.http;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_INFO;
 import static org.projectnessie.api.v2.doc.ApiDoc.COMMIT_BRANCH_DESCRIPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.FOR_WRITE_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.MERGE_TRANSPLANT_BRANCH_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.PAGING_INFO;
@@ -612,7 +613,11 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(description = WITH_DOC_PARAMETER_DESCRIPTION)
           @QueryParam("with-doc")
           @jakarta.ws.rs.QueryParam("with-doc")
-          boolean withDocumentation)
+          boolean withDocumentation,
+      @Parameter(description = FOR_WRITE_PARAMETER_DESCRIPTION)
+          @QueryParam("for-write")
+          @jakarta.ws.rs.QueryParam("for-write")
+          boolean forWrite)
       throws NessieNotFoundException;
 
   @GET
@@ -687,7 +692,11 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(description = WITH_DOC_PARAMETER_DESCRIPTION)
           @QueryParam("with-doc")
           @jakarta.ws.rs.QueryParam("with-doc")
-          boolean withDocumentation)
+          boolean withDocumentation,
+      @Parameter(description = FOR_WRITE_PARAMETER_DESCRIPTION)
+          @QueryParam("for-write")
+          @jakarta.ws.rs.QueryParam("for-write")
+          boolean forWrite)
       throws NessieNotFoundException;
 
   @Override
@@ -760,7 +769,11 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(description = WITH_DOC_PARAMETER_DESCRIPTION)
           @QueryParam("with-doc")
           @jakarta.ws.rs.QueryParam("with-doc")
-          boolean withDocumentation)
+          boolean withDocumentation,
+      @Parameter(description = FOR_WRITE_PARAMETER_DESCRIPTION)
+          @QueryParam("for-write")
+          @jakarta.ws.rs.QueryParam("for-write")
+          boolean forWrite)
       throws NessieNotFoundException;
 
   @Override
