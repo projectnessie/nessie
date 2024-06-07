@@ -54,7 +54,11 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   @Override
   public ContentResponse getContent(
-      ContentKey key, String namedRef, String hashOnRef, boolean withDocumentation)
+      ContentKey key,
+      String namedRef,
+      String hashOnRef,
+      boolean withDocumentation,
+      boolean forWrite)
       throws NessieNotFoundException {
     try {
       ResolvedHash ref =
@@ -75,7 +79,11 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, List<ContentKey> keys, boolean withDocumentation)
+      String namedRef,
+      String hashOnRef,
+      List<ContentKey> keys,
+      boolean withDocumentation,
+      boolean forWrite)
       throws NessieNotFoundException {
     try {
       ResolvedHash ref =

@@ -48,7 +48,8 @@ public interface ContentService {
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
-      boolean withDocumentation)
+      boolean withDocumentation,
+      boolean forWrite)
       throws NessieNotFoundException;
 
   GetMultipleContentsResponse getMultipleContents(
@@ -61,6 +62,7 @@ public interface ContentService {
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
       @Valid @Size @jakarta.validation.constraints.Size(min = 1) List<ContentKey> keys,
-      boolean withDocumentation)
+      boolean withDocumentation,
+      boolean forWrite)
       throws NessieNotFoundException;
 }

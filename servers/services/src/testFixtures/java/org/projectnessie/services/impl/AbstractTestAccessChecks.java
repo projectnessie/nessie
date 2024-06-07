@@ -437,7 +437,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(READ_MSG);
       soft.assertThatThrownBy(
-              () -> contentApi().getContent(key, ref.getName(), ref.getHash(), false))
+              () -> contentApi().getContent(key, ref.getName(), ref.getHash(), false, false))
           .describedAs("ref='%s', getContent", ref)
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(ENTITIES_MSG);

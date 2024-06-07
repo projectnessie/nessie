@@ -26,6 +26,8 @@ public abstract class BaseGetContentBuilder extends BaseOnReferenceBuilder<GetCo
   protected final ImmutableGetMultipleContentsRequest.Builder request =
       ImmutableGetMultipleContentsRequest.builder();
 
+  protected boolean forWrite;
+
   @Override
   public GetContentBuilder key(ContentKey key) {
     request.addRequestedKeys(key);
@@ -35,6 +37,12 @@ public abstract class BaseGetContentBuilder extends BaseOnReferenceBuilder<GetCo
   @Override
   public GetContentBuilder keys(List<ContentKey> keys) {
     request.addAllRequestedKeys(keys);
+    return this;
+  }
+
+  @Override
+  public GetContentBuilder forWrite(boolean forWrite) {
+    this.forWrite = forWrite;
     return this;
   }
 }

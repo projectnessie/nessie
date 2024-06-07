@@ -48,6 +48,7 @@ final class HttpGetContent extends BaseGetContentBuilder {
         .path("trees/{ref}/contents/{key}")
         .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
         .resolveTemplate("key", key.toPathString())
+        .queryParam("for-write", forWrite ? "true" : null)
         .unwrap(NessieNotFoundException.class)
         .get()
         .readEntity(ContentResponse.class);
@@ -59,6 +60,7 @@ final class HttpGetContent extends BaseGetContentBuilder {
         .newRequest()
         .path("trees/{ref}/contents")
         .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
+        .queryParam("for-write", forWrite ? "true" : null)
         .unwrap(NessieNotFoundException.class)
         .post(request.build())
         .readEntity(GetMultipleContentsResponse.class);

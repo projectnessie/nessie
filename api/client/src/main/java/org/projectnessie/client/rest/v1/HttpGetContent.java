@@ -17,6 +17,7 @@ package org.projectnessie.client.rest.v1;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.builder.BaseGetContentBuilder;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
@@ -50,5 +51,13 @@ final class HttpGetContent extends BaseGetContentBuilder {
   public GetMultipleContentsResponse getWithResponse() {
     throw new UnsupportedOperationException(
         "Extended contents response data is not available in API v1");
+  }
+
+  @Override
+  public GetContentBuilder forWrite(boolean forWrite) {
+    if (forWrite) {
+      throw new UnsupportedOperationException("forWrite is not available in API v1");
+    }
+    return super.forWrite(forWrite);
   }
 }
