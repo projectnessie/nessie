@@ -147,7 +147,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0.5
+    image: quay.io/keycloak/keycloak:25.0.0
     ports:
       - "8080:8080"
     environment:
