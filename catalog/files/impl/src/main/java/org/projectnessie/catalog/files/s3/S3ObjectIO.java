@@ -16,26 +16,18 @@
 package org.projectnessie.catalog.files.s3;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.time.Clock;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import org.projectnessie.catalog.files.api.BackendThrottledException;
-import org.projectnessie.catalog.files.api.NonRetryableException;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Delete;
@@ -45,14 +37,11 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class S3ObjectIO implements ObjectIO {
-  private static final Logger LOGGER = LoggerFactory.getLogger(S3ObjectIO.class);
 
   private final S3ClientSupplier s3clientSupplier;
-  private final Clock clock;
 
-  public S3ObjectIO(S3ClientSupplier s3clientSupplier, Clock clock) {
+  public S3ObjectIO(S3ClientSupplier s3clientSupplier) {
     this.s3clientSupplier = s3clientSupplier;
-    this.clock = clock;
   }
 
   @Override
@@ -79,16 +68,8 @@ public class S3ObjectIO implements ObjectIO {
               .bucket(uri.requiredAuthority())
               .key(withoutLeadingSlash(uri))
               .build());
-    } catch (SdkServiceException e) {
-      if (e.isThrottlingException()) {
-        throw new BackendThrottledException(
-            clock
-                .instant()
-                .plus(s3clientSupplier.s3config().retryAfter().orElse(Duration.of(10, SECONDS))),
-            "S3 throttled",
-            e);
-      }
-      throw new NonRetryableException(e);
+    } catch (Exception e) {
+      throw new IOException(e);
     }
   }
 

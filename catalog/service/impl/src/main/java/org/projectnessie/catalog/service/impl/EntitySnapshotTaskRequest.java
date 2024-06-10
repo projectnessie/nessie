@@ -43,10 +43,7 @@ public interface EntitySnapshotTaskRequest
   }
 
   @Override
-  @Value.NonAttribute
-  default TaskBehavior<EntitySnapshotObj, EntitySnapshotObj.Builder> behavior() {
-    return EntitySnapshotTaskBehavior.INSTANCE;
-  }
+  TaskBehavior<EntitySnapshotObj, EntitySnapshotObj.Builder> behavior();
 
   @Override
   ObjId objId();
@@ -92,10 +89,11 @@ public interface EntitySnapshotTaskRequest
       ObjId objId,
       Content content,
       NessieEntitySnapshot<?> snapshot,
+      EntitySnapshotTaskBehavior behavior,
       Persist persist,
       ObjectIO objectIO,
       Executor executor) {
     return ImmutableEntitySnapshotTaskRequest.of(
-        objId, content, snapshot, persist, objectIO, executor);
+        behavior, objId, content, snapshot, persist, objectIO, executor);
   }
 }

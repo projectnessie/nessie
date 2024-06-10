@@ -13,31 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.api;
+package org.projectnessie.objectstoragemock;
 
-import java.time.Instant;
-import java.util.Optional;
-
-public class NonRetryableException extends ObjectIOException {
-  public NonRetryableException(Throwable cause) {
-    super(cause);
-  }
-
-  public NonRetryableException(String message) {
-    super(message);
-  }
-
-  public NonRetryableException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  @Override
-  public boolean isRetryable() {
-    return false;
-  }
-
-  @Override
-  public Optional<Instant> retryNotBefore() {
-    return Optional.empty();
-  }
+public interface AccessCheckHandler {
+  boolean accessAllowed(String objectKey);
 }

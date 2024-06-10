@@ -69,27 +69,37 @@ public interface TaskState {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String message();
 
-  TaskState SUCCESS = ImmutableTaskState.of(TaskStatus.SUCCESS, null, null, null);
+  @Value.Parameter(order = 5)
+  @Nullable
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  String errorCode();
+
+  TaskState SUCCESS = ImmutableTaskState.of(TaskStatus.SUCCESS, null, null, null, null);
 
   static TaskState successState() {
     return SUCCESS;
   }
 
   static TaskState runningState(@Nonnull Instant retryNotBefore, @Nonnull Instant lostNotBefore) {
-    return ImmutableTaskState.of(TaskStatus.RUNNING, retryNotBefore, lostNotBefore, null);
+    return ImmutableTaskState.of(TaskStatus.RUNNING, retryNotBefore, lostNotBefore, null, null);
   }
 
-  static TaskState retryableErrorState(@Nonnull Instant retryNotBefore, @Nonnull String message) {
-    return ImmutableTaskState.of(TaskStatus.ERROR_RETRY, retryNotBefore, null, message);
+  static TaskState retryableErrorState(
+      @Nonnull Instant retryNotBefore, @Nonnull String message, @Nonnull String errorCode) {
+    return ImmutableTaskState.of(TaskStatus.ERROR_RETRY, retryNotBefore, null, message, errorCode);
   }
 
-  static TaskState failureState(@Nonnull String message) {
-    return ImmutableTaskState.of(TaskStatus.FAILURE, null, null, message);
+  static TaskState failureState(@Nonnull String message, String errorCode) {
+    return ImmutableTaskState.of(TaskStatus.FAILURE, null, null, message, errorCode);
   }
 
   static TaskState taskState(
-      TaskStatus taskStatus, Instant retryNotBefore, Instant lostNotBefore, String message) {
-    return ImmutableTaskState.of(taskStatus, retryNotBefore, lostNotBefore, message);
+      TaskStatus taskStatus,
+      Instant retryNotBefore,
+      Instant lostNotBefore,
+      String message,
+      String errorCode) {
+    return ImmutableTaskState.of(taskStatus, retryNotBefore, lostNotBefore, message, errorCode);
   }
 
   @Value.Check

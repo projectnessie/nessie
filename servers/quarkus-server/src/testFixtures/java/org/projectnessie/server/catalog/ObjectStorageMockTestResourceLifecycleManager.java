@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.projectnessie.objectstoragemock.AccessCheckHandler;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
@@ -45,6 +46,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
       "ObjectStorageMockTestResourceLifecycleManager.initAddress";
 
   private final AssumeRoleHandlerHolder assumeRoleHandler = new AssumeRoleHandlerHolder();
+  private final AccessCheckHandlerHolder accessCheckHandler = new AccessCheckHandlerHolder();
 
   private HeapStorageBucket heapStorageBucket;
   private MockServer server;
@@ -58,6 +60,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
             .initAddress("localhost")
             .putBuckets(BUCKET, heapStorageBucket.bucket())
             .assumeRoleHandler(assumeRoleHandler)
+            .accessCheckHandler(accessCheckHandler)
             .build()
             .start();
 
@@ -92,6 +95,9 @@ public class ObjectStorageMockTestResourceLifecycleManager
 
     testInjector.injectIntoFields(
         assumeRoleHandler, new TestInjector.MatchesType(AssumeRoleHandlerHolder.class));
+
+    testInjector.injectIntoFields(
+        accessCheckHandler, new TestInjector.MatchesType(AccessCheckHandlerHolder.class));
   }
 
   @Override
@@ -135,6 +141,20 @@ public class ObjectStorageMockTestResourceLifecycleManager
               durationSeconds,
               externalId,
               serialNumber);
+    }
+  }
+
+  public static final class AccessCheckHandlerHolder implements AccessCheckHandler {
+    private final AtomicReference<AccessCheckHandler> handler = new AtomicReference<>();
+
+    public void set(AccessCheckHandler handler) {
+      this.handler.set(handler);
+    }
+
+    @Override
+    public boolean accessAllowed(String objectKey) {
+      AccessCheckHandler delegate = handler.get();
+      return delegate == null || delegate.accessAllowed(objectKey);
     }
   }
 }

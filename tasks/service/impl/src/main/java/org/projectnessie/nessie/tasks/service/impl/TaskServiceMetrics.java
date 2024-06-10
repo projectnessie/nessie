@@ -40,6 +40,8 @@ public interface TaskServiceMetrics {
   /** Task attempt detected that task ran into a retryable error. */
   void taskAttemptErrorRetry();
 
+  void taskAttemptRecover();
+
   /** New task object is being created in the database. */
   void taskCreation();
 

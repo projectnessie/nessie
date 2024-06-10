@@ -84,6 +84,7 @@ public class AdlsGen2Resource {
 
     return withFilesystem(
         filesystem,
+        normalizedPath,
         b -> {
           Bucket.ObjectUpdater updater =
               b.updater().update(normalizedPath, Bucket.UpdaterMode.CREATE_NEW);
@@ -116,6 +117,7 @@ public class AdlsGen2Resource {
 
     return withFilesystem(
         filesystem,
+        normalizedPath,
         b -> {
           if (!action.appendOrFlush()) {
             return notImplemented();
@@ -151,6 +153,7 @@ public class AdlsGen2Resource {
 
     return withFilesystem(
         filesystem,
+        normalizedPath,
         b -> {
           MockObject obj = b.object().retrieve(normalizedPath);
           if (obj == null) {
@@ -194,6 +197,7 @@ public class AdlsGen2Resource {
 
     return withFilesystem(
         filesystem,
+        normalizedPath,
         b -> {
           MockObject obj = b.object().retrieve(normalizedPath);
           if (obj == null) {
@@ -225,6 +229,7 @@ public class AdlsGen2Resource {
 
     return withFilesystem(
         filesystem,
+        normalizedPath,
         b -> {
           if (recursive) {
             try (Stream<Bucket.ListElement> listStream =
@@ -262,6 +267,7 @@ public class AdlsGen2Resource {
 
     return withFilesystem(
         filesystem,
+        normalizedPath,
         b -> {
           try (Stream<Bucket.ListElement> listStream =
               b.lister().list(normalizedPath, continuationToken)) {
@@ -349,6 +355,10 @@ public class AdlsGen2Resource {
         Status.NOT_FOUND, "PathNotFound", "The specified path does not exist.");
   }
 
+  private static Response accessDenied() {
+    return dataLakeStorageError(Status.FORBIDDEN, "Forbidden", "Access Denied.");
+  }
+
   private static Response dataLakeStorageError(Status status, String code, String message) {
     return Response.status(status)
         .header("x-ms-error-code", code)
@@ -361,7 +371,12 @@ public class AdlsGen2Resource {
     return Response.status(Status.NOT_IMPLEMENTED).build();
   }
 
-  private Response withFilesystem(String filesystem, Function<Bucket, Response> worker) {
+  private Response withFilesystem(
+      String filesystem, String path, Function<Bucket, Response> worker) {
+    if (!mockServer.accessCheckHandler().accessAllowed(path)) {
+      return accessDenied();
+    }
+
     Bucket bucket = mockServer.buckets().get(filesystem);
     if (bucket == null) {
       return bucketNotFound();

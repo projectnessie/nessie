@@ -91,6 +91,11 @@ public abstract class ObjectStorageMock {
             .build());
   }
 
+  @Value.Default
+  public AccessCheckHandler accessCheckHandler() {
+    return (key) -> true;
+  }
+
   public interface MockServer extends AutoCloseable {
     URI getS3BaseUri();
 

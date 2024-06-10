@@ -55,9 +55,9 @@ public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskOb
   @Override
   public TaskState asErrorTaskState(Clock clock, BasicTaskObj base, Throwable t) {
     if (t instanceof RetryableException) {
-      return retryableErrorState(retryableErrorNotBefore(clock), t.getMessage());
+      return retryableErrorState(retryableErrorNotBefore(clock), t.getMessage(), "test");
     }
-    return failureState(t.toString());
+    return failureState(t.toString(), null);
   }
 
   @Override

@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -40,7 +39,7 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
       AdlsClientSupplier adlsClientSupplier,
       GcsStorageSupplier gcsStorageSupplier) {
     this(
-        new S3ObjectIO(s3ClientSupplier, Clock.systemUTC()),
+        new S3ObjectIO(s3ClientSupplier),
         new GcsObjectIO(gcsStorageSupplier),
         new AdlsObjectIO(adlsClientSupplier));
   }

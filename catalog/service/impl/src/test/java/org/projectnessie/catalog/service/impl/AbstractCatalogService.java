@@ -32,6 +32,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
@@ -198,6 +200,13 @@ public abstract class AbstractCatalogService {
     catalogService.persist = persist;
     catalogService.executor = executor;
     catalogService.nessieApi = api;
+
+    BackendExceptionMapper exceptionMapper =
+        BackendExceptionMapper.builder()
+            .clock(Clock.systemUTC())
+            .retryAfterThrottled(Duration.ofMillis(1))
+            .build();
+    catalogService.snapshotTaskBehavior = new EntitySnapshotTaskBehavior(exceptionMapper);
   }
 
   private void setupObjectIO() {
@@ -224,7 +233,7 @@ public abstract class AbstractCatalogService {
                     names.stream()
                         .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
             sessions);
-    objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());
+    objectIO = new S3ObjectIO(clientSupplier);
   }
 
   private void setupObjectStorage() {

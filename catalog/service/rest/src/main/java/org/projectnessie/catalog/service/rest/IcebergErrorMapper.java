@@ -28,8 +28,10 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CompletionException;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.projectnessie.catalog.files.api.BackendErrorStatus;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergErrorResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
@@ -55,29 +57,34 @@ public class IcebergErrorMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(IcebergErrorMapper.class);
 
   private final ExceptionConfig exceptionConfig;
+  private final BackendExceptionMapper ioExceptionMapper;
 
   @Inject
-  public IcebergErrorMapper(ExceptionConfig exceptionConfig) {
+  public IcebergErrorMapper(
+      ExceptionConfig exceptionConfig, BackendExceptionMapper ioExceptionMapper) {
     this.exceptionConfig = exceptionConfig;
+    this.ioExceptionMapper = ioExceptionMapper;
   }
 
   public Response toResponse(Throwable ex, IcebergEntityKind kind) {
-    if (ex instanceof CompletionException) {
-      ex = ex.getCause();
-    }
-
-    if (ex.getClass() == RuntimeException.class && ex.getCause() != null) {
-      ex = ex.getCause();
-    }
-
     IcebergErrorResponse body = null;
-    if (ex instanceof BaseNessieClientServerException) {
-      BaseNessieClientServerException e = (BaseNessieClientServerException) ex;
-      body = mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
-    } else if (ex instanceof IllegalArgumentException) {
-      body = errorResponse(400, "IllegalArgumentException", ex.getMessage(), ex);
-    } else if (ex instanceof IcebergException) {
-      body = ((IcebergException) ex).toErrorResponse();
+    for (Throwable th = ex; th != null; th = th.getCause()) {
+      if (th instanceof BaseNessieClientServerException) {
+        BaseNessieClientServerException e = (BaseNessieClientServerException) th;
+        body = mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
+        break;
+      } else if (th instanceof IllegalArgumentException) {
+        body = errorResponse(400, "IllegalArgumentException", th.getMessage(), th);
+        break;
+      } else if (th instanceof IcebergException) {
+        body = ((IcebergException) th).toErrorResponse();
+        break;
+      }
+    }
+
+    Optional<BackendErrorStatus> status = ioExceptionMapper.analyze(ex);
+    if (status.isPresent()) {
+      body = mapStorageFailure(status.get(), ex);
     }
 
     if (body == null) {
@@ -87,6 +94,30 @@ public class IcebergErrorMapper {
 
     Integer code = body.error().code();
     return Response.status(code == null ? 500 : code).entity(body).build();
+  }
+
+  private static String message(BackendErrorStatus status, Throwable ex) {
+    return String.format("%s (due to: %s)", ex.getMessage(), status.cause().toString());
+  }
+
+  private IcebergErrorResponse mapStorageFailure(BackendErrorStatus status, Throwable ex) {
+    // Log full stack trace on the server side for troubleshooting
+    LOGGER.info("Propagating storage failure to client: {}", status, ex);
+
+    switch (status.statusCode()) {
+      case THROTTLED:
+        return errorResponse(429, "RuntimeException", message(status, ex), ex);
+      case UNAUTHORIZED:
+        return errorResponse(401, "NotAuthorizedException", message(status, ex), ex);
+      case FORBIDDEN:
+        return errorResponse(403, "ForbiddenException", message(status, ex), ex);
+      case NOT_FOUND:
+        // Convert storage-side "not found" into `IllegalArgumentException`.
+        // In most cases this results from bad locations in Iceberg metadata.
+        return errorResponse(400, "IllegalArgumentException", message(status, ex), ex);
+      default:
+        return null;
+    }
   }
 
   private IcebergErrorResponse mapNessieError(

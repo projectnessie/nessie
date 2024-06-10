@@ -43,24 +43,30 @@ import org.eclipse.microprofile.context.ThreadContext;
 import org.projectnessie.catalog.files.ResolvingObjectIO;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsClients;
+import org.projectnessie.catalog.files.adls.AdlsExceptionMapper;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.files.gcs.GcsClients;
+import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
+import org.projectnessie.catalog.files.s3.S3ExceptionMapper;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.impl.EntitySnapshotTaskBehavior;
+import org.projectnessie.catalog.service.impl.PreviousTaskExceptionMapper;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
@@ -180,6 +186,7 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public ObjectIO objectIO(
+      BackendExceptionMapper exceptionMapper,
       CatalogS3Config s3config,
       @CatalogS3Client SdkHttpClient sdkClient,
       CatalogAdlsConfig adlsConfig,
@@ -205,6 +212,26 @@ public class CatalogProducers {
   public RequestSigner signer(
       CatalogS3Config s3config, SecretsProvider secretsProvider, S3Sessions s3sessions) {
     return new S3Signer(s3config, secretsProvider, s3sessions);
+  }
+
+  @Produces
+  @Singleton
+  public EntitySnapshotTaskBehavior entitySnapshotTaskBehavior(
+      CatalogServiceConfig config, BackendExceptionMapper mapper) {
+    return new EntitySnapshotTaskBehavior(mapper);
+  }
+
+  @Produces
+  @Singleton
+  public BackendExceptionMapper objectIOExceptionMapper(CatalogServiceConfig config) {
+    return BackendExceptionMapper.builder()
+        .clock(systemUTC())
+        .retryAfterThrottled(config.retryAfterThrottled())
+        .addAnalyzer(PreviousTaskExceptionMapper.INSTANCE)
+        .addAnalyzer(AdlsExceptionMapper.INSTANCE)
+        .addAnalyzer(GcsExceptionMapper.INSTANCE)
+        .addAnalyzer(S3ExceptionMapper.INSTANCE)
+        .build();
   }
 
   /**

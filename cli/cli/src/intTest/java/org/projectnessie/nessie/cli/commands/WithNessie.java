@@ -23,7 +23,6 @@ import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStora
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -134,7 +133,7 @@ public abstract class WithNessie {
                         .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
             sessions);
 
-    ObjectIO objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());
+    ObjectIO objectIO = new S3ObjectIO(clientSupplier);
 
     tableOneMetadataLocation =
         generateMetadataWithManifestList(

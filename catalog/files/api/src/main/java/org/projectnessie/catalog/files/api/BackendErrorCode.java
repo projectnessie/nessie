@@ -15,24 +15,10 @@
  */
 package org.projectnessie.catalog.files.api;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Optional;
-
-public abstract class ObjectIOException extends IOException {
-  public ObjectIOException(Throwable cause) {
-    super(cause);
-  }
-
-  public ObjectIOException(String message) {
-    super(message);
-  }
-
-  public ObjectIOException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public abstract boolean isRetryable();
-
-  public abstract Optional<Instant> retryNotBefore();
+public enum BackendErrorCode {
+  UNKNOWN,
+  THROTTLED,
+  NOT_FOUND,
+  UNAUTHORIZED,
+  FORBIDDEN,
 }
