@@ -18,7 +18,6 @@ package org.projectnessie.catalog.files.s3;
 import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 
-import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
@@ -81,7 +80,7 @@ public class TestS3Clients extends AbstractClients {
                     names.stream()
                         .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret")))),
             null);
-    return new S3ObjectIO(supplier, Clock.systemUTC());
+    return new S3ObjectIO(supplier);
   }
 
   @Override

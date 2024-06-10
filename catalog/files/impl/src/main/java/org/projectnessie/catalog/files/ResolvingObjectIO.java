@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.files;
 
-import java.time.Clock;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsObjectIO;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -34,7 +33,7 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
       S3ClientSupplier s3ClientSupplier,
       AdlsClientSupplier adlsClientSupplier,
       GcsStorageSupplier gcsStorageSupplier) {
-    this.s3ObjectIO = new S3ObjectIO(s3ClientSupplier, Clock.systemUTC());
+    this.s3ObjectIO = new S3ObjectIO(s3ClientSupplier);
     this.gcsObjectIO = new GcsObjectIO(gcsStorageSupplier);
     this.adlsObjectIO = new AdlsObjectIO(adlsClientSupplier);
   }

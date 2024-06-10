@@ -24,7 +24,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
+import javax.annotation.Nullable;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
+import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
@@ -36,6 +38,8 @@ public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskOb
       Duration.of(1, ChronoUnit.MINUTES);
   public static final TemporalAmount RETRYABLE_ERROR_NOT_BEFORE =
       Duration.of(5, ChronoUnit.SECONDS);
+  public static final Duration RETRYABLE_ERROR_TOTAL_TIMEOUT = Duration.of(5, ChronoUnit.MINUTES);
+  public static final TemporalAmount RECOVER_NOT_BEFORE = Duration.of(10, ChronoUnit.HOURS);
   public static final TemporalAmount RUNNING_UPDATE_INTERVAL = Duration.of(250, ChronoUnit.MILLIS);
 
   public static final BasicTaskBehavior INSTANCE = new BasicTaskBehavior();
@@ -52,12 +56,22 @@ public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskOb
     return clock.instant().plus(RUNNING_UPDATE_INTERVAL);
   }
 
+  @Nullable
+  private TaskState taskState(@Nullable TaskObj obj) {
+    return obj == null ? null : obj.taskState();
+  }
+
+  private Instant deadline(Clock clock) {
+    return clock.instant().plus(RETRYABLE_ERROR_TOTAL_TIMEOUT);
+  }
+
   @Override
   public TaskState asErrorTaskState(Clock clock, BasicTaskObj base, Throwable t) {
     if (t instanceof RetryableException) {
-      return retryableErrorState(retryableErrorNotBefore(clock), t.getMessage());
+      return retryableErrorState(
+          retryableErrorNotBefore(clock), t.getMessage(), taskState(base), () -> deadline(clock));
     }
-    return failureState(t.toString());
+    return failureState(recoverNotBefore(clock), t.toString());
   }
 
   @Override
@@ -67,7 +81,16 @@ public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskOb
 
   @Override
   public TaskState runningTaskState(Clock clock, BasicTaskObj running) {
-    return runningState(freshRunningRetryNotBefore(clock), freshLostRetryNotBefore(clock));
+    return runningState(
+        freshRunningRetryNotBefore(clock),
+        freshLostRetryNotBefore(clock),
+        taskState(running),
+        () -> deadline(clock));
+  }
+
+  @Override
+  public TaskState timedOutTaskState(Clock clock, BasicTaskObj base, Throwable t) {
+    return failureState(clock.instant(), t.toString());
   }
 
   @Override
@@ -85,5 +108,9 @@ public class BasicTaskBehavior implements TaskBehavior<BasicTaskObj, BasicTaskOb
 
   private Instant retryableErrorNotBefore(Clock clock) {
     return clock.instant().plus(RETRYABLE_ERROR_NOT_BEFORE);
+  }
+
+  private Instant recoverNotBefore(Clock clock) {
+    return clock.instant().plus(RECOVER_NOT_BEFORE);
   }
 }

@@ -19,9 +19,34 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.time.Duration;
+import org.projectnessie.catalog.files.api.ObjectIOConfig;
 
 @ConfigMapping(prefix = "nessie.catalog.service")
-public interface CatalogServiceConfig {
+public interface CatalogServiceConfig extends ObjectIOConfig {
+  /**
+   * Interval after which a request is retried when storage I/O responds with some "retry later"
+   * response.
+   */
+  @WithName("throttled-retry-after") // TODO: update helm helpers
+  @WithDefault("PT10S")
+  Duration retryAfterThrottled();
+
+  @WithName("network-error-retry-after")
+  @WithDefault("PT30S")
+  Duration retryAfterNetworkError();
+
+  @WithName("reattempt-after-fetch-error")
+  @WithDefault("PT60S")
+  Duration reattemptAfterFetchError();
+
+  /**
+   * The maximum time period to wait for tasks importing data from object stores (including
+   * retries).
+   */
+  @WithName("imports.task-timeout")
+  @WithDefault("PT10M")
+  Duration importTaskTimeout();
+
   /** Advanced property, defines the maximum number of concurrent imports from object stores. */
   @WithName("imports.max-concurrent")
   @WithDefault("32")

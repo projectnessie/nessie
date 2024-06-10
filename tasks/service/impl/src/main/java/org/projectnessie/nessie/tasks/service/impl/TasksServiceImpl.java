@@ -31,6 +31,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.immutables.value.Value;
@@ -114,11 +115,16 @@ public class TasksServiceImpl implements TasksService {
     Obj obj = persist.getImmediate(taskRequest.objId());
     if (obj != null) {
       T taskObj = castObj(taskRequest, obj);
-      TaskStatus status = taskObj.taskState().status();
+      TaskState taskState = taskObj.taskState();
+      TaskStatus status = taskState.status();
       switch (status) {
         case FAILURE:
-          metrics.taskHasFinalFailure();
-          return failedStage(taskRequest.behavior().stateAsException(taskObj));
+          if (canRetryNow(taskState)) {
+            break;
+          } else {
+            metrics.taskHasFinalFailure();
+            return failedStage(taskRequest.behavior().stateAsException(taskObj));
+          }
         case SUCCESS:
           metrics.taskHasFinalSuccess();
           return completedStage(taskObj);
@@ -153,6 +159,20 @@ public class TasksServiceImpl implements TasksService {
                   return execParams.resultFuture;
                 });
     return r;
+  }
+
+  private boolean canRetryNow(TaskState state) {
+    Instant now = async.clock().instant();
+    return now.compareTo(requireNonNull(state.retryNotBefore())) >= 0;
+  }
+
+  private boolean expired(TaskState state) {
+    Instant deadline = state.deadline();
+    if (deadline == null) {
+      return false;
+    }
+    Instant now = async.clock().instant();
+    return now.compareTo(deadline) >= 0;
   }
 
   private void finalResult(ExecParams params, TaskObj result) {
@@ -196,8 +216,13 @@ public class TasksServiceImpl implements TasksService {
           finalResult(params, obj);
           break;
         case FAILURE:
-          metrics.taskAttemptFinalFailure();
-          finalFailure(params, params.taskRequest.behavior().stateAsException(obj));
+          if (canRetryNow(state)) {
+            metrics.taskAttemptRecover();
+            maybeAttemptErrorRetry(params, obj, true);
+          } else {
+            metrics.taskAttemptFinalFailure();
+            finalFailure(params, params.taskRequest.behavior().stateAsException(obj));
+          }
           break;
         case RUNNING:
           metrics.taskAttemptRunning();
@@ -205,7 +230,7 @@ public class TasksServiceImpl implements TasksService {
           break;
         case ERROR_RETRY:
           metrics.taskAttemptErrorRetry();
-          maybeAttemptErrorRetry(params, state, obj);
+          maybeAttemptErrorRetry(params, obj, false);
           break;
         default:
           throw new IllegalStateException("Unknown task status " + state.status());
@@ -285,17 +310,18 @@ public class TasksServiceImpl implements TasksService {
   }
 
   // Called while ExecParams is locked from tryLocal()
-  private void maybeAttemptErrorRetry(ExecParams params, TaskState state, TaskObj obj)
+  private void maybeAttemptErrorRetry(ExecParams params, TaskObj obj, boolean recoverFromFailure)
       throws ObjTooLargeException {
-    Instant now = async.clock().instant();
-    if (now.compareTo(requireNonNull(state.retryNotBefore())) >= 0) {
+    if (recoverFromFailure || canRetryNow(obj.taskState())) {
       TaskBehavior<TaskObj, TaskObj.Builder> behavior = params.taskRequest.behavior();
       TaskObj retryState =
           withNewVersionToken(
               behavior
                   .newObjBuilder()
                   .from(obj)
-                  .taskState(behavior.runningTaskState(async.clock(), obj)));
+                  .taskState(
+                      // Use null TaskObj to reset deadlines when recovering from failures.
+                      behavior.runningTaskState(async.clock(), recoverFromFailure ? null : obj)));
 
       if (params.persist.updateConditional(obj, retryState)) {
         metrics.taskRetryStateChangeSucceeded();
@@ -305,7 +331,7 @@ public class TasksServiceImpl implements TasksService {
         reattemptAfterRace(params);
       }
     } else {
-      async.schedule(() -> tryLocal(params), state.retryNotBefore());
+      async.schedule(() -> tryLocal(params), obj.taskState().retryNotBefore());
     }
   }
 
@@ -379,7 +405,15 @@ public class TasksServiceImpl implements TasksService {
         LOGGER.trace("{}: Task execution for {} failed, updating database", name, params);
 
         TaskBehavior<TaskObj, TaskObj.Builder> behavior = params.taskRequest.behavior();
-        TaskState newState = behavior.asErrorTaskState(async.clock(), expected, failure);
+        TaskState newState;
+        if (expired(expected.taskState())) {
+          Exception te = new TimeoutException("Deadline exceeded after: " + failure);
+          te.addSuppressed(failure);
+          failure = te;
+          newState = behavior.timedOutTaskState(async.clock(), expected, failure);
+        } else {
+          newState = behavior.asErrorTaskState(async.clock(), expected, failure);
+        }
         checkState(newState.status().isError());
         TaskObj updatedObj =
             withNewVersionToken(behavior.newObjBuilder().from(expected).taskState(newState));

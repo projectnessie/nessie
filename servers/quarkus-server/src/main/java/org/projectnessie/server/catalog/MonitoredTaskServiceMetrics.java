@@ -45,6 +45,9 @@ public class MonitoredTaskServiceMetrics implements TaskServiceMetrics {
   public void taskAttemptErrorRetry() {}
 
   @Override
+  public void taskAttemptRecover() {}
+
+  @Override
   public void taskCreation() {}
 
   @Override

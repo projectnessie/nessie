@@ -15,24 +15,18 @@
  */
 package org.projectnessie.catalog.files.api;
 
-import java.io.IOException;
 import java.time.Instant;
-import java.util.Optional;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-public abstract class ObjectIOException extends IOException {
-  public ObjectIOException(Throwable cause) {
-    super(cause);
+@NessieImmutable
+public interface ObjectIOStatus {
+  int httpStatusCode();
+
+  boolean isRetryable();
+
+  Instant reattemptAfter();
+
+  static ObjectIOStatus of(int httpCode, boolean retryable, Instant reattemptAfter) {
+    return ImmutableObjectIOStatus.of(httpCode, retryable, reattemptAfter);
   }
-
-  public ObjectIOException(String message) {
-    super(message);
-  }
-
-  public ObjectIOException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public abstract boolean isRetryable();
-
-  public abstract Optional<Instant> retryNotBefore();
 }
