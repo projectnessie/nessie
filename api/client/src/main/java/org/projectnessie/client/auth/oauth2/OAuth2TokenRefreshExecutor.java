@@ -15,10 +15,10 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.time.Duration;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +28,12 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2TokenRefreshExecutor.class);
 
-  OAuth2TokenRefreshExecutor(Duration keepAlive) {
-    super(1, new OAuth2TokenRefreshThreadFactory());
-    setKeepAliveTime(keepAlive.toNanos(), TimeUnit.NANOSECONDS);
+  private final OAuth2ClientConfig config;
+
+  OAuth2TokenRefreshExecutor(OAuth2ClientConfig config) {
+    super(1, new OAuth2TokenRefreshThreadFactory(config.getClientName()));
+    this.config = config;
+    setKeepAliveTime(config.getBackgroundThreadIdleTimeout().toNanos(), TimeUnit.NANOSECONDS);
     allowCoreThreadTimeOut(true);
   }
 
@@ -41,11 +44,16 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
       try {
         if (!awaitTermination(10, TimeUnit.SECONDS)) {
           if (!shutdownNow().isEmpty()) {
-            LOGGER.warn("OAuth2 token refresh executor did not terminate within 10 seconds");
+            LOGGER.warn(
+                "[{}] OAuth2 token refresh executor did not terminate within 10 seconds",
+                config.getClientName());
           }
         }
       } catch (InterruptedException e) {
-        LOGGER.warn("OAuth2 token refresh executor termination interrupted", e);
+        LOGGER.warn(
+            "[{}] OAuth2 token refresh executor termination interrupted",
+            config.getClientName(),
+            e);
         Thread.currentThread().interrupt();
       }
     }
@@ -53,28 +61,28 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
 
   private static final class OAuth2TokenRefreshThreadFactory implements ThreadFactory {
 
+    private final String clientName;
+    private final AtomicInteger threadCounter = new AtomicInteger();
+
+    public OAuth2TokenRefreshThreadFactory(String clientName) {
+      this.clientName = clientName;
+    }
+
     @Override
     public Thread newThread(@Nonnull Runnable r) {
-      Thread thread = new TokenRefreshThread(r);
+      Thread thread =
+          new Thread(
+              () -> {
+                LOGGER.debug("[{}] Starting new OAuth2 token refresh thread", clientName);
+                try {
+                  r.run();
+                } finally {
+                  LOGGER.debug("[{}] OAuth2 token refresh thread exiting", clientName);
+                }
+              });
+      thread.setName(clientName + "-token-refresh-" + threadCounter.incrementAndGet());
       thread.setDaemon(true);
       return thread;
-    }
-  }
-
-  private static final class TokenRefreshThread extends Thread {
-
-    TokenRefreshThread(Runnable r) {
-      super(r, "nessie-client-oauth2-token-refresh");
-    }
-
-    @Override
-    public void run() {
-      LOGGER.debug("Starting new OAuth2 token refresh thread");
-      try {
-        super.run();
-      } finally {
-        LOGGER.debug("OAuth2 token refresh thread exiting");
-      }
     }
   }
 }

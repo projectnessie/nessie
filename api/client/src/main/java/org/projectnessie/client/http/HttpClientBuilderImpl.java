@@ -77,13 +77,13 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
 
   HttpClientBuilderImpl(HttpClientBuilderImpl other) {
     this.baseUri = other.baseUri;
-    this.mapper = other.mapper;
+    this.mapper = other.mapper == null ? null : other.mapper.copy();
     this.jsonView = other.jsonView;
     this.responseFactory = other.responseFactory;
     this.sslNoCertificateVerification = other.sslNoCertificateVerification;
     this.sslContext = other.sslContext;
     this.sslParameters = other.sslParameters;
-    this.authentication = other.authentication;
+    this.authentication = other.authentication == null ? null : other.authentication.copy();
     this.readTimeoutMillis = other.readTimeoutMillis;
     this.connectionTimeoutMillis = other.connectionTimeoutMillis;
     this.disableCompression = other.disableCompression;

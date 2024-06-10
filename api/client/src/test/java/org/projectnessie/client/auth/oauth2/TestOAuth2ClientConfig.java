@@ -269,6 +269,7 @@ class TestOAuth2ClientConfig {
       assertThat(actual)
           .usingRecursiveComparison()
           .ignoringFields(
+              "clientName",
               "clientSecret",
               "password",
               "objectMapper",

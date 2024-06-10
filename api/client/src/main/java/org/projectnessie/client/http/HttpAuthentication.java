@@ -43,4 +43,9 @@ public interface HttpAuthentication extends NessieAuthentication {
     throw new UnsupportedOperationException(
         "This authentication method does not support per-request authentication");
   }
+
+  @Override
+  default HttpAuthentication copy() {
+    return this;
+  }
 }

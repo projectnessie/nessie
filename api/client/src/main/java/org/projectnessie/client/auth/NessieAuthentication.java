@@ -36,4 +36,8 @@ public interface NessieAuthentication extends AutoCloseable {
   default void close() {
     // no-op
   }
+
+  default NessieAuthentication copy() {
+    return this;
+  }
 }

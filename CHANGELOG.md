@@ -44,6 +44,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- A bug in the API compatibility filter has been discovered and fixed: when OAuth2 authentication is
+  being used, the filter causes the OAuth2 client to close prematurely, thus triggering unauthorized
+  errors. A workaround is to simply disable the filter (set `nessie.enable-api-compatibility-check` 
+  to `false`), but this is no longer necessary.
+
 ### Commits
 
 ## [0.83.2] Release (2024-05-23)

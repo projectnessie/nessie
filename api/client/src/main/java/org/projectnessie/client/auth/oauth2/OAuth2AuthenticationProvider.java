@@ -94,6 +94,11 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
     }
 
     @Override
+    public HttpAuthentication copy() {
+      return new OAuth2Authentication(authenticator.copy());
+    }
+
+    @Override
     public void applyToHttpClient(HttpClient.Builder client) {
       client.addRequestFilter(this::applyToHttpRequest);
     }
