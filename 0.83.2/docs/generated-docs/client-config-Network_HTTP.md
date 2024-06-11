@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Description |
 |----------|-------------|
 | `nessie.http2-upgrade` | Optional, allow HTTP/2 upgrade, if set to `true`. <br><br>This parameter only works on Java 11 and newer with the Java HTTP client. |
