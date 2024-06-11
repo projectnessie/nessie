@@ -66,7 +66,6 @@ public class ITAuthAndIcebergREST extends WithNessie {
 
     Map<String, String> serverConfig = new HashMap<>();
     serverConfig.put("quarkus.oidc.auth-server-url", keycloak.getExternalRealmUri().toString());
-    serverConfig.put("quarkus.oidc.token.issuer", keycloak.getTokenIssuerUri().toString());
     serverConfig.put("quarkus.oidc.client-id", serviceClientId);
     serverConfig.put("quarkus.oidc.credentials.secret", CustomKeycloakContainer.CLIENT_SECRET);
     serverConfig.put("nessie.server.authentication.enabled", "true");
