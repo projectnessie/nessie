@@ -8,24 +8,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
-### Upgrade notes
-
-### Breaking changes
-
-### New Features
-
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
-
-## [0.90.0] Release (2024-06-11)
-
-### Highlights
-
 - Nessie has got support for Iceberg REST.
 - MySQL users can now configure the JDBC connection using the `quarkus.datasource.mysql.*`
   properties. Also, JDBC URLs can now use the `mysql` prefix, e.g.
@@ -37,6 +19,8 @@ as necessary. Empty sections will not end in the release notes.
   old `cassandra.auth.username` and `cassandra.auth.password` properties still work, but are now
   deprecated and will be removed in a future release. Use the `cassandra.secret` property instead.
 
+### Breaking changes
+
 ### New Features
 
 - Support for Iceberg REST is in "beta" state. We appreciate early feedback, comments and suggestions.
@@ -44,6 +28,8 @@ as necessary. Empty sections will not end in the release notes.
   on our web site projectnessie.org for more information.
 - CEL access check scripts now receive the variable `roles` that can be used to check whether the current
   principal has a role assigned using a CEL expression like `'rolename' in roles`.
+
+### Changes
 
 ### Deprecations
 
@@ -62,6 +48,8 @@ as necessary. Empty sections will not end in the release notes.
   being used, the filter causes the OAuth2 client to close prematurely, thus triggering unauthorized
   errors. A workaround is to simply disable the filter (set `nessie.enable-api-compatibility-check` 
   to `false`), but this is no longer necessary.
+
+### Commits
 
 ## [0.83.2] Release (2024-05-23)
 
@@ -505,8 +493,7 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.0...HEAD
-[0.90.0]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...nessie-0.90.0
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...HEAD
 [0.83.2]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.2
 [0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
 [0.81.1]: https://github.com/projectnessie/nessie/compare/nessie-0.81.0...nessie-0.81.1
