@@ -52,7 +52,7 @@ class CachingPersistImpl implements Persist {
     }
     try {
       o = persist.fetchObj(id);
-      cache.put(o);
+      cache.putLocal(o);
       return o;
     } catch (ObjNotFoundException e) {
       cache.remove(id);
@@ -76,7 +76,7 @@ class CachingPersistImpl implements Persist {
       }
     } else {
       o = persist.fetchTypedObj(id, type, typeClass);
-      cache.put(o);
+      cache.putLocal(o);
     }
     @SuppressWarnings("unchecked")
     T r = (T) o;
@@ -135,7 +135,7 @@ class CachingPersistImpl implements Persist {
       Obj o = backendResult[i];
       if (o != null) {
         r[i] = o;
-        cache.put(o);
+        cache.putLocal(o);
       }
     }
     return r;
@@ -371,7 +371,7 @@ class CachingPersistImpl implements Persist {
       if (r == null) {
         cache.putNegative(name);
       } else {
-        cache.putReference(r);
+        cache.putReferenceLocal(r);
       }
     }
     return r;
@@ -422,7 +422,7 @@ class CachingPersistImpl implements Persist {
           Reference ref = br[i];
           if (ref != null) {
             r[i] = ref;
-            cache.putReference(ref);
+            cache.putReferenceLocal(ref);
           } else {
             cache.putNegative(name);
           }

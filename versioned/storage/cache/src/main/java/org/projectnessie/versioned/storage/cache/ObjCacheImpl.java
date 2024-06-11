@@ -41,6 +41,11 @@ final class ObjCacheImpl implements ObjCache {
   }
 
   @Override
+  public void putLocal(@Nonnull Obj obj) {
+    backend.putLocal(repositoryId, obj);
+  }
+
+  @Override
   public void remove(@Nonnull ObjId id) {
     backend.remove(repositoryId, id);
   }
@@ -58,6 +63,11 @@ final class ObjCacheImpl implements ObjCache {
   @Override
   public void putReference(@Nonnull Reference r) {
     backend.putReference(repositoryId, r);
+  }
+
+  @Override
+  public void putReferenceLocal(@Nonnull Reference r) {
+    backend.putReferenceLocal(repositoryId, r);
   }
 
   @Override

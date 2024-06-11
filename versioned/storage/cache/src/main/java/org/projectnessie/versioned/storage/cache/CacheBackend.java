@@ -35,7 +35,14 @@ public interface CacheBackend {
 
   Obj get(@Nonnull String repositoryId, @Nonnull ObjId id);
 
+  /**
+   * Adds the given object to the local cache and sends a cache-invalidation message to Nessie
+   * peers.
+   */
   void put(@Nonnull String repositoryId, @Nonnull Obj obj);
+
+  /** Adds the given object only to the local cache, does not send a cache-invalidation message. */
+  void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj);
 
   void remove(@Nonnull String repositoryId, @Nonnull ObjId id);
 
@@ -47,7 +54,20 @@ public interface CacheBackend {
 
   void removeReference(@Nonnull String repositoryId, @Nonnull String name);
 
+  /**
+   * Adds the given reference to the local cache and sends a cache-invalidation message to Nessie
+   * peers.
+   */
   void putReference(@Nonnull String repositoryId, @Nonnull Reference r);
 
+  /**
+   * Adds the given reference only to the local cache, does not send a cache-invalidation message.
+   */
+  void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r);
+
   void putNegative(@Nonnull String repositoryId, @Nonnull String name);
+
+  static CacheBackend noopCacheBackend() {
+    return NoopCacheBackend.INSTANCE;
+  }
 }

@@ -12,6 +12,11 @@ data:
     {{- $map := dict -}}
     {{- $_ := set $map "nessie.version.store.type" .Values.versionStoreType -}}
 
+    {{- $serviceNamesMgmt := include "nessie.fullname" . | printf "%s-mgmt" -}}
+    {{- $cacheInvalToken := include (print $.Template.BasePath "/management-service.yaml") . | sha1sum -}}
+    {{- $_ = set $map "nessie.version.store.persist.cache-invalidations.service-names" $serviceNamesMgmt -}}
+    {{- $_ = set $map "nessie.version.store.persist.cache-invalidations.valid-tokens" $cacheInvalToken -}}
+
     {{- if .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}

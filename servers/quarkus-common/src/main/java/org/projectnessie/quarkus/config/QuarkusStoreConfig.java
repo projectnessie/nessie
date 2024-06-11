@@ -21,14 +21,24 @@ import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
 @StaticInitSafe
-@ConfigMapping(prefix = "nessie.version.store.persist")
+@ConfigMapping(prefix = QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST)
 public interface QuarkusStoreConfig extends StoreConfig {
+
+  String NESSIE_VERSION_STORE_PERSIST = "nessie.version.store.persist";
+  String CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS = "cache-invalidations.valid-tokens";
+  String CONFIG_CACHE_INVALIDATIONS_SERVICE_NAMES = "cache-invalidations.service-names";
+  String CONFIG_CACHE_INVALIDATIONS_URI = "cache-invalidations.uri";
+  String CONFIG_CACHE_INVALIDATIONS_BATCH_SIZE = "cache-invalidations.batch-size";
+  String CONFIG_CACHE_INVALIDATIONS_SERVICE_NAME_LOOKUP_INTERVAL =
+      "cache-invalidations.service-name-lookup-interval";
+  String CONFIG_CACHE_INVALIDATIONS_REQUEST_TIMEOUT = "cache-invalidations.request-timeout";
 
   @WithName(CONFIG_REPOSITORY_ID)
   @WithDefault(DEFAULT_REPOSITORY_ID)
@@ -146,4 +156,46 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @WithName(CONFIG_REFERENCE_NEGATIVE_CACHE_TTL)
   @Override
   Optional<Duration> referenceCacheNegativeTtl();
+
+  /**
+   * Host names or IP addresses or kubernetes headless-service name of all Nessie server instances
+   * accessing the same repository.
+   *
+   * <p>This value is automatically configured via the <a href="../../guides/kubernetes/">Nessie
+   * Helm chart</a> or the Kubernetes operator (not released yet), you don't need any additional
+   * configuration for distributed cache invalidations - it's setup and configured automatically. If
+   * you have your own Helm chart or custom deployment, make sure to configure the IPs of all Nessie
+   * instances here.
+   *
+   * <p>Names that start with an equal sign are not resolved but used "as is".
+   */
+  @WithName(CONFIG_CACHE_INVALIDATIONS_SERVICE_NAMES)
+  Optional<List<String>> cacheInvalidationServiceNames();
+
+  /** List of cache-invalidation tokens to authenticate incoming cache-invalidation messages. */
+  @WithName(CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS)
+  Optional<List<String>> cacheInvalidationValidTokens();
+
+  /**
+   * URI of the cache-invalidation endpoint, only available on the Quarkus management port, defaults
+   * to 9000.
+   */
+  @WithName(CONFIG_CACHE_INVALIDATIONS_URI)
+  @WithDefault("/nessie-management/cache-coherency")
+  String cacheInvalidationUri();
+
+  /**
+   * Interval of service-name lookups to resolve the {@linkplain #cacheInvalidationServiceNames()
+   * service names} into IP addresses.
+   */
+  @WithName(CONFIG_CACHE_INVALIDATIONS_SERVICE_NAME_LOOKUP_INTERVAL)
+  @WithDefault("PT10S")
+  Duration cacheInvalidationServiceNameLookupInterval();
+
+  @WithName(CONFIG_CACHE_INVALIDATIONS_BATCH_SIZE)
+  @WithDefault("20")
+  int cacheInvalidationBatchSize();
+
+  @WithName(CONFIG_CACHE_INVALIDATIONS_REQUEST_TIMEOUT)
+  Optional<Duration> cacheInvalidationRequestTimeout();
 }

@@ -29,16 +29,20 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Optional;
+import java.util.UUID;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.NotObserved;
+import org.projectnessie.quarkus.providers.ServerInstanceId;
 import org.projectnessie.quarkus.providers.UninitializedRepository;
 import org.projectnessie.quarkus.providers.versionstore.StoreType.Literal;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
 import org.projectnessie.versioned.storage.cache.CacheConfig;
 import org.projectnessie.versioned.storage.cache.CacheSizing;
+import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
+import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidations;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -97,6 +101,13 @@ public class PersistProvider {
     return persist;
   }
 
+  @Produces
+  @Singleton
+  @ServerInstanceId
+  public String ephemeralServerInstanceId() {
+    return UUID.randomUUID().toString();
+  }
+
   /**
    * Eagerly initialize the not-observed {@link Persist} instance.
    *
@@ -111,22 +122,10 @@ public class PersistProvider {
 
   @Produces
   @Singleton
-  @NotObserved
-  public Persist producePersist(MeterRegistry meterRegistry) {
-    VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
-
-    if (backend.isUnsatisfied()) {
-      throw new IllegalStateException("No Quarkus backend for " + versionStoreType);
-    }
-
-    Backend b = backend.get();
-    Optional<String> info = b.setupSchema();
-
-    LOGGER.info("Creating/opening version store {} ...", versionStoreType);
-
-    PersistFactory persistFactory = b.createFactory();
-    Persist persist = persistFactory.newPersist(storeConfig);
-
+  public CacheBackend produceCacheBackend(
+      MeterRegistry meterRegistry,
+      DistributedCacheInvalidation invalidationSender,
+      CacheInvalidationReceiver cacheInvalidationReceiver) {
     CacheSizing cacheSizing =
         CacheSizing.builder()
             .fixedSizeInMB(storeConfig.cacheCapacityMB())
@@ -136,7 +135,6 @@ public class PersistProvider {
             .build();
     int effectiveCacheSizeMB = cacheSizing.effectiveSizeInMB();
 
-    String cacheInfo;
     if (effectiveCacheSizeMB > 0) {
       CacheConfig.Builder cacheConfig =
           CacheConfig.builder().capacityMb(effectiveCacheSizeMB).meterRegistry(meterRegistry);
@@ -152,18 +150,48 @@ public class PersistProvider {
               });
       storeConfig.referenceCacheNegativeTtl().ifPresent(cacheConfig::referenceNegativeTtl);
 
+      LOGGER.info("Using objects cache with {} MB.", effectiveCacheSizeMB);
+
       CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig.build());
-      persist = cacheBackend.wrap(persist);
-      cacheInfo = "with " + effectiveCacheSizeMB + " MB objects cache";
+
+      DistributedCacheInvalidations distributedCacheInvalidations =
+          DistributedCacheInvalidations.builder()
+              .localBackend(cacheBackend)
+              .invalidationSender(invalidationSender)
+              .invalidationListenerReceiver(cacheInvalidationReceiver)
+              .build();
+
+      cacheBackend = PersistCaches.wrapBackendForDistributedUsage(distributedCacheInvalidations);
+
+      return cacheBackend;
     } else {
-      cacheInfo = "without objects cache";
+      LOGGER.info("Using no objects cache.");
+      return CacheBackend.noopCacheBackend();
+    }
+  }
+
+  @Produces
+  @Singleton
+  @NotObserved
+  public Persist producePersist(CacheBackend cacheBackend) {
+    VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
+
+    if (backend.isUnsatisfied()) {
+      throw new IllegalStateException("No Quarkus backend for " + versionStoreType);
     }
 
+    Backend b = backend.get();
+    Optional<String> info = b.setupSchema();
+
+    LOGGER.info("Creating/opening version store {} ...", versionStoreType);
+
+    PersistFactory persistFactory = b.createFactory();
+    Persist persist = persistFactory.newPersist(storeConfig);
+
+    persist = cacheBackend.wrap(persist);
+
     LOGGER.info(
-        "Using {} version store{}, {}",
-        versionStoreType,
-        info.map(s -> " (" + s + ")").orElse(""),
-        cacheInfo);
+        "Using {} version store{}", versionStoreType, info.map(s -> " (" + s + ")").orElse(""));
 
     return persist;
   }

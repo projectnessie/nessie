@@ -128,6 +128,7 @@ dependencies {
   testFixturesImplementation(project(":nessie-versioned-spi"))
   testFixturesImplementation(project(":nessie-versioned-tests"))
   testFixturesApi(project(":nessie-versioned-storage-common"))
+  testFixturesApi(project(":nessie-versioned-storage-cache"))
   testFixturesApi(project(":nessie-versioned-storage-store"))
   testFixturesImplementation(project(":nessie-versioned-storage-testextension")) {
     // Needed to avoid dependency resolution error:
@@ -144,6 +145,7 @@ dependencies {
   testFixturesImplementation(libs.microprofile.openapi)
   testFixturesImplementation(libs.awaitility)
   testFixturesApi(libs.jakarta.validation.api)
+  testFixturesApi(testFixtures(project(":nessie-quarkus-common")))
 
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")

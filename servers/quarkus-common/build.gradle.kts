@@ -68,6 +68,13 @@ dependencies {
     exclude("com.github.spotbugs", "spotbugs-annotations")
   }
 
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable
   implementation("io.micrometer:micrometer-core")
@@ -86,4 +93,6 @@ dependencies {
 
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesApi("io.quarkus:quarkus-core")
+
+  testRuntimeOnly(libs.logback.classic)
 }

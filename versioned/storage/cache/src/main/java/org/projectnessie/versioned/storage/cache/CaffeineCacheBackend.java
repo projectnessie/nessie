@@ -40,7 +40,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 
-final class CaffeineCacheBackend implements CacheBackend {
+class CaffeineCacheBackend implements CacheBackend {
 
   public static final String CACHE_NAME = "nessie-objects";
   private static final byte[] NON_EXISTING_SENTINEL = "NON_EXISTING".getBytes(UTF_8);
@@ -135,6 +135,11 @@ final class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public void put(@Nonnull String repositoryId, @Nonnull Obj obj) {
+    putLocal(repositoryId, obj);
+  }
+
+  @Override
+  public void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj) {
     long expiresAt =
         obj.type()
             .cachedObjectExpiresAtMicros(
@@ -182,6 +187,11 @@ final class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public void putReference(@Nonnull String repositoryId, @Nonnull Reference r) {
+    putReferenceLocal(repositoryId, r);
+  }
+
+  @Override
+  public void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r) {
     if (refCacheTtlNanos <= 0L) {
       return;
     }
