@@ -201,7 +201,7 @@ class MemoizedGitInfo {
         rootProject.extra["gitReleaseInfo"] as Map<String, String>
       } else {
         val gitHead = execProc(rootProject, "git", "rev-parse", "HEAD")
-        val gitDescribe = execProc(rootProject, "git", "describe")
+        val gitDescribe = execProc(rootProject, "git", "describe", "--tags")
         val timestamp = execProc(rootProject, "date", "+%Y-%m-%d-%H:%M:%S%:z")
         val system = execProc(rootProject, "uname", "-a")
         val javaVersion = System.getProperty("java.version")

@@ -133,9 +133,9 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         run: |
           # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan || \
-            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan || \
-            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan
+          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan --stacktrace
 
       - name: Generate changelog
         run: ./gradlew --no-scan --quiet --console=plain getChangelog --no-header --no-links > "${ARTIFACTS}/nessie-changelog-${RELEASE_VERSION}.md"
