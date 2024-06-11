@@ -88,7 +88,7 @@ jobs:
       - prepare
     env:
       RELEASE_VERSION: ${{needs.prepare.outputs.release-version}}
-      ARTIFACTS: ../build-artifacts
+      ARTIFACTS: build-artifacts
     steps:
       ### BEGIN runner setup
       - name: Checkout
@@ -152,7 +152,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         with:
           name: nessie-release-artifacts
-          path: ../build-artifacts
+          path: build-artifacts
           if-no-files-found: error
 
 
