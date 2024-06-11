@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Connect to a Nessie repository using the Nessie REST API base URI specified via `Uri`.
 
 Nessie client options can be specified using the `ParamKey = Value` pairs, see
