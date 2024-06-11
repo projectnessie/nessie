@@ -305,7 +305,7 @@ jobs:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
           SWAGGERHUB_URL: "https://api.swaggerhub.com"
         with:
-          args: api:create projectnessie/nessie -f ./nessie-openapi-${RELEASE_VERSION}.yaml --published=publish --setdefault --visibility=public
+          args: api:create projectnessie/nessie -f ./nessie-openapi-${{ env.RELEASE_VERSION }}.yaml --published=publish --setdefault --visibility=public
 
 
   create-github-release:
