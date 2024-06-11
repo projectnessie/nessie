@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.projectnessie.versioned.storage.cache.ObjCache.NOT_FOUND_OBJ_SENTINEL;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.CACHE_UNLIMITED;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.NOT_CACHED;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
@@ -227,7 +226,7 @@ class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
-  public void putNegative(@Nonnull String repositoryId, @Nonnull String name) {
+  public void putReferenceNegative(@Nonnull String repositoryId, @Nonnull String name) {
     if (refCacheNegativeTtlNanos <= 0L) {
       return;
     }

@@ -47,7 +47,7 @@ final class ObjCacheImpl implements ObjCache {
   }
 
   @Override
-  public void putNegative(ObjId id, ObjType type) {
+  public void putReferenceNegative(ObjId id, ObjType type) {
     if (type != null) {
       backend.putNegative(repositoryId, id, type);
     } else {
@@ -86,7 +86,7 @@ final class ObjCacheImpl implements ObjCache {
   }
 
   @Override
-  public void putNegative(@Nonnull String name) {
-    backend.putNegative(repositoryId, name);
+  public void putReferenceNegative(@Nonnull String name) {
+    backend.putReferenceNegative(repositoryId, name);
   }
 }

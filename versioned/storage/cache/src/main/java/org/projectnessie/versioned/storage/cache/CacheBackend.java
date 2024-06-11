@@ -31,14 +31,35 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  * repositories. It is adviseable to have one {@link CacheBackend} per {@link Backend}.
  */
 public interface CacheBackend {
+  /**
+   * Special sentinel reference instance to indicate that a referenc object has been marked as "not
+   * found". This object is only for cache-internal purposes.
+   */
   Reference NON_EXISTENT_REFERENCE_SENTINEL =
       reference("NON_EXISTENT", zeroLengthObjId(), false, -1L, null);
+
+  /**
+   * Special sentinel object instance to indicate that an object has been marked as "not found".
+   * This object is only for cache-internal purposes.
+   */
+  Obj NOT_FOUND_OBJ_SENTINEL =
+      new Obj() {
+        @Override
+        public ObjType type() {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ObjId id() {
+          throw new UnsupportedOperationException();
+        }
+      };
 
   /**
    * Returns the {@link Obj} for the given {@link ObjId id}.
    *
    * @return One of these alternatives: the cached object if present, the {@link
-   *     ObjCache#NOT_FOUND_OBJ_SENTINEL} indicating that the object does <em>not</em> exist as
+   *     CacheBackend#NOT_FOUND_OBJ_SENTINEL} indicating that the object does <em>not</em> exist as
    *     previously marked via {@link #putNegative(String, ObjId, ObjType)}, or {@code null}.
    */
   Obj get(@Nonnull String repositoryId, @Nonnull ObjId id);
@@ -79,7 +100,7 @@ public interface CacheBackend {
    */
   void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r);
 
-  void putNegative(@Nonnull String repositoryId, @Nonnull String name);
+  void putReferenceNegative(@Nonnull String repositoryId, @Nonnull String name);
 
   static CacheBackend noopCacheBackend() {
     return NoopCacheBackend.INSTANCE;

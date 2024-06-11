@@ -113,7 +113,7 @@ final class DistributedInvalidationsCacheBackend implements CacheBackend {
   }
 
   @Override
-  public void putNegative(@Nonnull String repositoryId, @Nonnull String name) {
-    local.putNegative(repositoryId, name);
+  public void putReferenceNegative(@Nonnull String repositoryId, @Nonnull String name) {
+    local.putReferenceNegative(repositoryId, name);
   }
 }

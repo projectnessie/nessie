@@ -34,7 +34,7 @@ final class NoopCacheBackend implements CacheBackend {
   }
 
   @Override
-  public void putNegative(@Nonnull String repositoryId, @Nonnull String name) {}
+  public void putReferenceNegative(@Nonnull String repositoryId, @Nonnull String name) {}
 
   @Override
   public void putReference(@Nonnull String repositoryId, @Nonnull Reference r) {}

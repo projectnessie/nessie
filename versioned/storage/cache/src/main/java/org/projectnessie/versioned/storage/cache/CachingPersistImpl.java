@@ -16,7 +16,7 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static org.projectnessie.versioned.storage.cache.CacheBackend.NON_EXISTENT_REFERENCE_SENTINEL;
-import static org.projectnessie.versioned.storage.cache.ObjCache.NOT_FOUND_OBJ_SENTINEL;
+import static org.projectnessie.versioned.storage.cache.CacheBackend.NOT_FOUND_OBJ_SENTINEL;
 
 import jakarta.annotation.Nonnull;
 import java.util.Set;
@@ -90,7 +90,7 @@ class CachingPersistImpl implements Persist {
         o = persist.fetchTypedObj(id, type, typeClass);
         cache.putLocal(o);
       } catch (ObjNotFoundException e) {
-        cache.putNegative(id, type);
+        cache.putReferenceNegative(id, type);
         throw e;
       }
     }
@@ -164,7 +164,7 @@ class CachingPersistImpl implements Persist {
           r[i] = o;
           cache.putLocal(o);
         } else {
-          cache.putNegative(id, type);
+          cache.putReferenceNegative(id, type);
         }
       }
     }
@@ -398,7 +398,7 @@ class CachingPersistImpl implements Persist {
     if (r == null) {
       r = persist.fetchReferenceForUpdate(name);
       if (r == null) {
-        cache.putNegative(name);
+        cache.putReferenceNegative(name);
       } else {
         cache.putReferenceLocal(r);
       }
@@ -453,7 +453,7 @@ class CachingPersistImpl implements Persist {
             r[i] = ref;
             cache.putReferenceLocal(ref);
           } else {
-            cache.putNegative(name);
+            cache.putReferenceNegative(name);
           }
         }
       }

@@ -29,8 +29,8 @@ public interface ObjCache {
    * Returns the {@link Obj} for the given {@link ObjId id}.
    *
    * @return One of these alternatives: the cached object if present, the {@link
-   *     #NOT_FOUND_OBJ_SENTINEL} indicating that the object does <em>not</em> exist as previously
-   *     marked via {@link #putNegative(ObjId, ObjType)}, or {@code null}.
+   *     CacheBackend#NOT_FOUND_OBJ_SENTINEL} indicating that the object does <em>not</em> exist as
+   *     previously marked via {@link #putReferenceNegative(ObjId, ObjType)}, or {@code null}.
    */
   Obj get(@Nonnull ObjId id);
 
@@ -47,7 +47,7 @@ public interface ObjCache {
    * Record the "not found" sentinel for the given {@link ObjId id} and {@link ObjType type}.
    * Behaves like {@link #remove(ObjId)}, if {@code type} is {@code null}.
    */
-  void putNegative(ObjId id, ObjType type);
+  void putReferenceNegative(ObjId id, ObjType type);
 
   void remove(@Nonnull ObjId id);
 
@@ -68,23 +68,5 @@ public interface ObjCache {
    */
   void putReferenceLocal(@Nonnull Reference r);
 
-  void putNegative(@Nonnull String name);
-
-  /**
-   * Special sentinel object instance to indicate that an object has been marked as "not found" via
-   * {@link #putNegative(ObjId, ObjType)}, returned from {@link #get(ObjId)}. This object is only
-   * for cache-internal purposes.
-   */
-  Obj NOT_FOUND_OBJ_SENTINEL =
-      new Obj() {
-        @Override
-        public ObjType type() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ObjId id() {
-          throw new UnsupportedOperationException();
-        }
-      };
+  void putReferenceNegative(@Nonnull String name);
 }
