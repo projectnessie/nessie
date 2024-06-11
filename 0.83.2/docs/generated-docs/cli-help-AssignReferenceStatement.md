@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Assigns a Nessie branch or tag using the name specified using the `ReferenceName` parameter to
 another commit. The reference type is specified using the `ReferenceType` parameter.
 
