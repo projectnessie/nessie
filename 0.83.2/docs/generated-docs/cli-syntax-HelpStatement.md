@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 > `HELP`
   \[
           `USE` | `CONNECT` | `CREATE`

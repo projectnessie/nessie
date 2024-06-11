@@ -1,1 +1,0 @@
-Exits the Nessie CLI.

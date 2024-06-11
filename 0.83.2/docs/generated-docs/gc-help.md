@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ```
 Usage: nessie-gc.jar [-hV] [COMMAND]
   -h, --help      Show this help message and exit.
