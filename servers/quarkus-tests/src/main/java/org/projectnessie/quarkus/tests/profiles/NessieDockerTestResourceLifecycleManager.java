@@ -78,7 +78,7 @@ public class NessieDockerTestResourceLifecycleManager
         containerConfig
             .oidcHostIp(keycloak.getExternalIp())
             .oidcInternalRealmUri(keycloak.getInternalRealmUri().toString())
-            .oidcTokenIssuerUri(keycloak.getTokenIssuerUri().toString())
+            .oidcTokenIssuerUri(keycloak.getInternalRealmUri().toString())
             .build()
             .createContainer();
 

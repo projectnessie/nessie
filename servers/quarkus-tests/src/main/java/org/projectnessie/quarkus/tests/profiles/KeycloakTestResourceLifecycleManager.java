@@ -183,11 +183,14 @@ public class KeycloakTestResourceLifecycleManager
     keycloak.start();
 
     return Map.of(
-        "keycloak.url", keycloak.getAuthServerUrl(), // TODO check if this is needed
-        "quarkus.oidc.auth-server-url", keycloak.getExternalRealmUri().toString(),
-        "quarkus.oidc.token.issuer", keycloak.getTokenIssuerUri().toString(),
-        "quarkus.oidc.client-id", serviceClientId,
-        "quarkus.oidc.credentials.secret", CustomKeycloakContainer.CLIENT_SECRET);
+        "keycloak.url",
+        keycloak.getAuthServerUrl(), // TODO check if this is needed
+        "quarkus.oidc.auth-server-url",
+        keycloak.getExternalRealmUri().toString(),
+        "quarkus.oidc.client-id",
+        serviceClientId,
+        "quarkus.oidc.credentials.secret",
+        CustomKeycloakContainer.CLIENT_SECRET);
   }
 
   @Override
