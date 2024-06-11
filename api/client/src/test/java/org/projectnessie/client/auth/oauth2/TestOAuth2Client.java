@@ -737,19 +737,6 @@ class TestOAuth2Client {
         .build();
   }
 
-  private ImmutableTokensExchangeResponse getTokensExchangeResponse() {
-    return ImmutableTokensExchangeResponse.builder()
-        .issuedTokenType(TokenExchangeFlow.ACCESS_TOKEN_ID)
-        .tokenType("bearer")
-        .accessTokenPayload("access-exchanged")
-        .accessTokenExpiresInSeconds(300)
-        .refreshTokenPayload("refresh-exchanged")
-        .refreshTokenExpiresInSeconds(3000)
-        .scope("test")
-        .extraParameters(ImmutableMap.of("foo", "bar"))
-        .build();
-  }
-
   private void checkInitialResponse(Tokens tokens, boolean expectRefreshToken) throws Exception {
     soft.assertThat(tokens.getAccessToken()).isNotNull();
     soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-initial");
@@ -782,22 +769,6 @@ class TestOAuth2Client {
     TokensResponseBase response = asResponse(tokens);
     soft.assertThat(response.getScope()).isEqualTo("test");
     soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
-  }
-
-  private void checkExchangeResponse(Tokens tokens) throws Exception {
-    assertThat(tokens.getAccessToken()).isNotNull();
-    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-exchanged");
-    soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
-    soft.assertThat(tokens.getAccessToken().getExpirationTime())
-        .isAfterOrEqualTo(now.plus(Duration.ofSeconds(300)).minusSeconds(10));
-    assertThat(tokens.getRefreshToken()).isNotNull();
-    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-exchanged");
-    soft.assertThat(tokens.getRefreshToken().getExpirationTime())
-        .isAfterOrEqualTo(now.plus(Duration.ofSeconds(3000)).minusSeconds(10));
-    TokensExchangeResponse response = (TokensExchangeResponse) asResponse(tokens);
-    soft.assertThat(response.getScope()).isEqualTo("test");
-    soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
-    soft.assertThat(response.getIssuedTokenType()).isEqualTo(TokenExchangeFlow.ACCESS_TOKEN_ID);
   }
 
   private OAuth2ClientConfig.Builder configBuilder(HttpTestServer server, boolean discovery) {
