@@ -58,7 +58,11 @@ public interface EntitySnapshotObj extends TaskObj {
 
   ObjType OBJ_TYPE =
       dynamicCaching(
-          "catalog-snapshot", "c-s", EntitySnapshotObj.class, TaskObj.taskDefaultCacheExpire());
+          "catalog-snapshot",
+          "c-s",
+          EntitySnapshotObj.class,
+          TaskObj.taskDefaultCacheExpire(),
+          c -> ObjType.NOT_CACHED);
 
   static Builder builder() {
     return ImmutableEntitySnapshotObj.builder();

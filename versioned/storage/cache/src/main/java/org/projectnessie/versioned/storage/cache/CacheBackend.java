@@ -22,6 +22,7 @@ import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
@@ -30,9 +31,37 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  * repositories. It is adviseable to have one {@link CacheBackend} per {@link Backend}.
  */
 public interface CacheBackend {
+  /**
+   * Special sentinel reference instance to indicate that a referenc object has been marked as "not
+   * found". This object is only for cache-internal purposes.
+   */
   Reference NON_EXISTENT_REFERENCE_SENTINEL =
       reference("NON_EXISTENT", zeroLengthObjId(), false, -1L, null);
 
+  /**
+   * Special sentinel object instance to indicate that an object has been marked as "not found".
+   * This object is only for cache-internal purposes.
+   */
+  Obj NOT_FOUND_OBJ_SENTINEL =
+      new Obj() {
+        @Override
+        public ObjType type() {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ObjId id() {
+          throw new UnsupportedOperationException();
+        }
+      };
+
+  /**
+   * Returns the {@link Obj} for the given {@link ObjId id}.
+   *
+   * @return One of these alternatives: the cached object if present, the {@link
+   *     CacheBackend#NOT_FOUND_OBJ_SENTINEL} indicating that the object does <em>not</em> exist as
+   *     previously marked via {@link #putNegative(String, ObjId, ObjType)}, or {@code null}.
+   */
   Obj get(@Nonnull String repositoryId, @Nonnull ObjId id);
 
   /**
@@ -43,6 +72,12 @@ public interface CacheBackend {
 
   /** Adds the given object only to the local cache, does not send a cache-invalidation message. */
   void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj);
+
+  /**
+   * Record the "not found" sentinel for the given {@link ObjId id} and {@link ObjType type}.
+   * Behaves like {@link #remove(String, ObjId)}, if {@code type} is {@code null}.
+   */
+  void putNegative(@Nonnull String repositoryId, @Nonnull ObjId id, @Nonnull ObjType type);
 
   void remove(@Nonnull String repositoryId, @Nonnull ObjId id);
 
@@ -65,7 +100,7 @@ public interface CacheBackend {
    */
   void putReferenceLocal(@Nonnull String repositoryId, @Nonnull Reference r);
 
-  void putNegative(@Nonnull String repositoryId, @Nonnull String name);
+  void putReferenceNegative(@Nonnull String repositoryId, @Nonnull String name);
 
   static CacheBackend noopCacheBackend() {
     return NoopCacheBackend.INSTANCE;

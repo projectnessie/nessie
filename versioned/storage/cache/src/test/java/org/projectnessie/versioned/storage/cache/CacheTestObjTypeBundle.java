@@ -31,6 +31,7 @@ public class CacheTestObjTypeBundle implements ObjTypeBundle {
     registrar.accept(DefaultCachingObj.TYPE);
     registrar.accept(NonCachingObj.TYPE);
     registrar.accept(DynamicCachingObj.TYPE);
+    registrar.accept(NegativeCachingObj.TYPE);
   }
 
   @Value.Immutable
@@ -70,7 +71,8 @@ public class CacheTestObjTypeBundle implements ObjTypeBundle {
             "dynamic-caching",
             "cdc",
             DynamicCachingObj.class,
-            (obj, currentTimeMicros) -> obj.thatExpireTimestamp() + currentTimeMicros);
+            (obj, currentTimeMicros) -> obj.thatExpireTimestamp() + currentTimeMicros,
+            c -> ObjType.NOT_CACHED);
 
     @Override
     default ObjType type() {
@@ -78,5 +80,23 @@ public class CacheTestObjTypeBundle implements ObjTypeBundle {
     }
 
     long thatExpireTimestamp();
+  }
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableNegativeCachingObj.class)
+  @JsonDeserialize(as = ImmutableNegativeCachingObj.class)
+  interface NegativeCachingObj extends Obj {
+    ObjType TYPE =
+        CustomObjType.dynamicCaching(
+            "negative-caching",
+            "cnegc",
+            NegativeCachingObj.class,
+            (obj, currentTimeMicros) -> CustomObjType.CACHE_UNLIMITED,
+            currentTimeMicros -> CustomObjType.CACHE_UNLIMITED);
+
+    @Override
+    default ObjType type() {
+      return TYPE;
+    }
   }
 }

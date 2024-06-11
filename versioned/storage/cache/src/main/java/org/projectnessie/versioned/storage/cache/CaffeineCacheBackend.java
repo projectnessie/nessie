@@ -36,6 +36,7 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
@@ -130,7 +131,13 @@ class CaffeineCacheBackend implements CacheBackend {
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKeyValue key = cacheKey(repositoryId, id);
     byte[] value = cache.getIfPresent(key);
-    return value != null ? ProtoSerialization.deserializeObj(id, value, null) : null;
+    if (value == null) {
+      return null;
+    }
+    if (value == NON_EXISTING_SENTINEL) {
+      return NOT_FOUND_OBJ_SENTINEL;
+    }
+    return ProtoSerialization.deserializeObj(id, value, null);
   }
 
   @Override
@@ -158,6 +165,23 @@ class CaffeineCacheBackend implements CacheBackend {
       // this should never happen
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public void putNegative(@Nonnull String repositoryId, @Nonnull ObjId id, @Nonnull ObjType type) {
+    long expiresAt =
+        type.negativeCacheExpiresAtMicros(
+            () -> NANOSECONDS.toMicros(config.clockNanos().getAsLong()));
+    if (expiresAt == NOT_CACHED) {
+      remove(repositoryId, id);
+      return;
+    }
+
+    long expiresAtNanos =
+        expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
+    CacheKeyValue keyValue = cacheKeyValue(repositoryId, id, expiresAtNanos);
+
+    cache.put(keyValue, NON_EXISTING_SENTINEL);
   }
 
   @Override
@@ -202,7 +226,7 @@ class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
-  public void putNegative(@Nonnull String repositoryId, @Nonnull String name) {
+  public void putReferenceNegative(@Nonnull String repositoryId, @Nonnull String name) {
     if (refCacheNegativeTtlNanos <= 0L) {
       return;
     }

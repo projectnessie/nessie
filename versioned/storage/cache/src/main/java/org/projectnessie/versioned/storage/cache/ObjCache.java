@@ -18,12 +18,20 @@ package org.projectnessie.versioned.storage.cache;
 import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 /** Cache primitives for a specific repository ID, used for one {@link Persist} instance. */
 public interface ObjCache {
 
+  /**
+   * Returns the {@link Obj} for the given {@link ObjId id}.
+   *
+   * @return One of these alternatives: the cached object if present, the {@link
+   *     CacheBackend#NOT_FOUND_OBJ_SENTINEL} indicating that the object does <em>not</em> exist as
+   *     previously marked via {@link #putReferenceNegative(ObjId, ObjType)}, or {@code null}.
+   */
   Obj get(@Nonnull ObjId id);
 
   /**
@@ -34,6 +42,12 @@ public interface ObjCache {
 
   /** Adds the given object only to the local cache, does not send a cache-invalidation message. */
   void putLocal(@Nonnull Obj obj);
+
+  /**
+   * Record the "not found" sentinel for the given {@link ObjId id} and {@link ObjType type}.
+   * Behaves like {@link #remove(ObjId)}, if {@code type} is {@code null}.
+   */
+  void putReferenceNegative(ObjId id, ObjType type);
 
   void remove(@Nonnull ObjId id);
 
@@ -54,5 +68,5 @@ public interface ObjCache {
    */
   void putReferenceLocal(@Nonnull Reference r);
 
-  void putNegative(@Nonnull String name);
+  void putReferenceNegative(@Nonnull String name);
 }

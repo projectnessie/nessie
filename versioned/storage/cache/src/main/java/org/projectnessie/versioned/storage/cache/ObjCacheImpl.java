@@ -19,6 +19,7 @@ import jakarta.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 final class ObjCacheImpl implements ObjCache {
@@ -43,6 +44,15 @@ final class ObjCacheImpl implements ObjCache {
   @Override
   public void putLocal(@Nonnull Obj obj) {
     backend.putLocal(repositoryId, obj);
+  }
+
+  @Override
+  public void putReferenceNegative(ObjId id, ObjType type) {
+    if (type != null) {
+      backend.putNegative(repositoryId, id, type);
+    } else {
+      backend.remove(repositoryId, id);
+    }
   }
 
   @Override
@@ -76,7 +86,7 @@ final class ObjCacheImpl implements ObjCache {
   }
 
   @Override
-  public void putNegative(@Nonnull String name) {
-    backend.putNegative(repositoryId, name);
+  public void putReferenceNegative(@Nonnull String name) {
+    backend.putReferenceNegative(repositoryId, name);
   }
 }

@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static org.projectnessie.versioned.storage.cache.CacheBackend.NON_EXISTENT_REFERENCE_SENTINEL;
+import static org.projectnessie.versioned.storage.cache.CacheBackend.NOT_FOUND_OBJ_SENTINEL;
 
 import jakarta.annotation.Nonnull;
 import java.util.Set;
@@ -48,7 +49,10 @@ class CachingPersistImpl implements Persist {
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
-      return o;
+      if (o != NOT_FOUND_OBJ_SENTINEL) {
+        return o;
+      }
+      throw new ObjNotFoundException(id);
     }
     try {
       o = persist.fetchObj(id);
@@ -62,21 +66,33 @@ class CachingPersistImpl implements Persist {
 
   @Override
   public Obj getImmediate(@Nonnull ObjId id) {
-    return cache.get(id);
+    Obj o = cache.get(id);
+    if (o == NOT_FOUND_OBJ_SENTINEL) {
+      return null;
+    }
+    return o;
   }
 
   @Override
   @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     Obj o = cache.get(id);
+    if (o == NOT_FOUND_OBJ_SENTINEL) {
+      throw new ObjNotFoundException(id);
+    }
     if (o != null) {
-      if (!o.type().equals(type)) {
+      if (type != null && !type.equals(o.type())) {
         throw new ObjNotFoundException(id);
       }
     } else {
-      o = persist.fetchTypedObj(id, type, typeClass);
-      cache.putLocal(o);
+      try {
+        o = persist.fetchTypedObj(id, type, typeClass);
+        cache.putLocal(o);
+      } catch (ObjNotFoundException e) {
+        cache.putReferenceNegative(id, type);
+        throw e;
+      }
     }
     @SuppressWarnings("unchecked")
     T r = (T) o;
@@ -87,6 +103,9 @@ class CachingPersistImpl implements Persist {
   @Nonnull
   public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
+    if (o == NOT_FOUND_OBJ_SENTINEL) {
+      throw new ObjNotFoundException(id);
+    }
     if (o != null) {
       return o.type();
     }
@@ -98,20 +117,21 @@ class CachingPersistImpl implements Persist {
   @Override
   @Nonnull
   public Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
-    ObjId[] backendIds = null;
     Obj[] r = new Obj[ids.length];
 
-    backendIds = fetchObjsPre(ids, r, backendIds);
+    ObjId[] backendIds = fetchObjsPre(ids, r, null, Obj.class);
 
     if (backendIds == null) {
       return r;
     }
 
     Obj[] backendResult = persist.fetchObjs(backendIds);
-    return fetchObjsPost(backendResult, r);
+    return fetchObjsPost(backendIds, backendResult, r, null);
   }
 
-  private ObjId[] fetchObjsPre(ObjId[] ids, Obj[] r, ObjId[] backendIds) {
+  private <T extends Obj> ObjId[] fetchObjsPre(
+      ObjId[] ids, T[] r, ObjType type, @Nonnull Class<T> typeClass) {
+    ObjId[] backendIds = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
       if (id == null) {
@@ -119,7 +139,11 @@ class CachingPersistImpl implements Persist {
       }
       Obj o = cache.get(id);
       if (o != null) {
-        r[i] = o;
+        if (o != NOT_FOUND_OBJ_SENTINEL && (type == null || type.equals(o.type()))) {
+          @SuppressWarnings("unchecked")
+          T typed = (T) o;
+          r[i] = typed;
+        }
       } else {
         if (backendIds == null) {
           backendIds = new ObjId[ids.length];
@@ -130,12 +154,18 @@ class CachingPersistImpl implements Persist {
     return backendIds;
   }
 
-  private Obj[] fetchObjsPost(Obj[] backendResult, Obj[] r) {
+  private <T extends Obj> T[] fetchObjsPost(
+      ObjId[] backendIds, T[] backendResult, T[] r, ObjType type) {
     for (int i = 0; i < backendResult.length; i++) {
-      Obj o = backendResult[i];
-      if (o != null) {
-        r[i] = o;
-        cache.putLocal(o);
+      ObjId id = backendIds[i];
+      if (id != null) {
+        T o = backendResult[i];
+        if (o != null) {
+          r[i] = o;
+          cache.putLocal(o);
+        } else {
+          cache.putReferenceNegative(id, type);
+        }
       }
     }
     return r;
@@ -144,17 +174,16 @@ class CachingPersistImpl implements Persist {
   @Override
   @Nonnull
   public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
-    ObjId[] backendIds = null;
     Obj[] r = new Obj[ids.length];
 
-    backendIds = fetchObjsPre(ids, r, backendIds);
+    ObjId[] backendIds = fetchObjsPre(ids, r, null, Obj.class);
 
     if (backendIds == null) {
       return r;
     }
 
     Obj[] backendResult = persist.fetchObjsIfExist(backendIds);
-    return fetchObjsPost(backendResult, r);
+    return fetchObjsPost(backendIds, backendResult, r, null);
   }
 
   @Override
@@ -369,7 +398,7 @@ class CachingPersistImpl implements Persist {
     if (r == null) {
       r = persist.fetchReferenceForUpdate(name);
       if (r == null) {
-        cache.putNegative(name);
+        cache.putReferenceNegative(name);
       } else {
         cache.putReferenceLocal(r);
       }
@@ -424,7 +453,7 @@ class CachingPersistImpl implements Persist {
             r[i] = ref;
             cache.putReferenceLocal(ref);
           } else {
-            cache.putNegative(name);
+            cache.putReferenceNegative(name);
           }
         }
       }
