@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Connect to a Nessie repository using the Nessie REST API base URI specified via `Uri`.
 
 When using Nessie with Iceberg REST, it is recommended to use the Iceberg REST base URI

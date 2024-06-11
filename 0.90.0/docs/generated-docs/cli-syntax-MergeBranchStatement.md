@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `MERGE`
   \[ `DRY` \]
   \[ **ReferenceType** \]

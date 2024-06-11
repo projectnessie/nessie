@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Configuration for S3 compatible object stores. 
 
 Contains the default settings to be applied to all buckets. Specific settings for each bucket  can be specified via the `buckets` map.   
