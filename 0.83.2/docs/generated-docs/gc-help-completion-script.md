@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ```
 Usage: nessie-gc.jar completion-script [-hV] -O=<outputFile>
 Extracts the command-line completion script.

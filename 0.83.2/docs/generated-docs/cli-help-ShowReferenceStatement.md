@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Shows information about the current or given reference.
 
 If no reference is specified, information about the current reference of the Nessie CLI

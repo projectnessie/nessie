@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 > `SHOW` `LOG`
   \[ `ON`
       \[ **ReferenceType** \]

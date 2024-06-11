@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Configuration for Nessie authorization settings.
 
 | Property | Default Value | Type | Description |

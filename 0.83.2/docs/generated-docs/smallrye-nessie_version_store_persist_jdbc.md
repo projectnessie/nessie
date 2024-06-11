@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Setting `nessie.version.store.type=JDBC` enables transactional/RDBMS as the version store  used by the Nessie server.  
 
 Configuration of the datastore will be done by Quarkus and depends on many factors, such as  the actual database to use. The property `nessie.version.store.persist.jdbc.datasource` will be used to select one of the built-in datasources; currently supported values are: `postgresql` (which activates the PostgresQL driver) and `mariadb` (which activates the  MariaDB driver, compatible with MySQL servers).   
