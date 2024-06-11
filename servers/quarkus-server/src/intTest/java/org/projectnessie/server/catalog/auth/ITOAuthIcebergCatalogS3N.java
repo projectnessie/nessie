@@ -31,6 +31,7 @@ public class ITOAuthIcebergCatalogS3N extends AbstractAuthEnabledTests {
     options.put(OAuth2Properties.SCOPE, "email");
     options.put(OAuth2Properties.OAUTH2_SERVER_URI, tokenEndpoint.toString());
     options.put(OAuth2Properties.CREDENTIAL, clientId + ":" + clientSecret);
+    options.put(OAuth2Properties.TOKEN_REFRESH_ENABLED, "false");
     return options;
   }
 
