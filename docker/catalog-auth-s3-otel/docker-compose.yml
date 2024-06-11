@@ -104,7 +104,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-06-06T09-36-42Z
+    image: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
     ports:
       # API port, used by Nessie
       - "9000:9000"
@@ -124,7 +124,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2024-06-06T09-36-42Z
+    image: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
     depends_on:
       minio:
         condition: service_healthy
