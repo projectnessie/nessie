@@ -189,7 +189,9 @@ public interface Persist {
    * @see #fetchObjs(ObjId[])
    */
   @Nonnull
-  Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException;
+  default Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
+    return fetchTypedObj(id, null, Obj.class);
+  }
 
   default Obj getImmediate(@Nonnull ObjId id) {
     return null;
@@ -206,8 +208,10 @@ public interface Persist {
    * @see #fetchObjs(ObjId[])
    */
   @Nonnull
-  <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException;
+  default <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+    return fetchTypedObjs(new ObjId[] {id}, type, typeClass)[0];
+  }
 
   /**
    * Retrieves the type of the object with ID {@code id}.
@@ -219,7 +223,9 @@ public interface Persist {
    * @see #fetchObjs(ObjId[])
    */
   @Nonnull
-  ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException;
+  default ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
+    return fetchObj(id).type();
+  }
 
   /**
    * Like {@link #fetchObj(ObjId)}, but finds multiple objects by name at once, leveraging bulk
@@ -240,10 +246,29 @@ public interface Persist {
    * @see #fetchTypedObj(ObjId, ObjType, Class)
    * @see #fetchObj(ObjId)
    * @see #fetchObjsIfExist(ObjId[])
+   * @see #fetchTypedObjs(ObjId[], ObjType, Class)
+   * @see #fetchTypedObjsIfExist(ObjId[], ObjType, Class)
    */
   @Nonnull
   default Obj[] fetchObjs(@Nonnull ObjId[] ids) throws ObjNotFoundException {
-    Obj[] r = fetchObjsIfExist(ids);
+    return fetchTypedObjs(ids, null, Obj.class);
+  }
+
+  /**
+   * Type-safe variant of {@link #fetchObjs(ObjId[])}.
+   *
+   * @param ids IDs of the objects to fetch.
+   * @param type The expected type of objects to fetch. Can be {@code null}, meaning that any object
+   *     type is fine, must use {@code typeClass=Obj.class}.
+   * @param typeClass The Java type that corresponds to {@code type}. Must not be {@code null}, use
+   *     {@code Obj.class} for "any" object type in combination with {@code type=null}.
+   * @throws ObjNotFoundException If any of the given {@link ObjId}s does not exist or has not the
+   *     requested {@code type}
+   */
+  @Nonnull
+  default <T extends Obj> T[] fetchTypedObjs(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+    T[] r = fetchTypedObjsIfExist(ids, type, typeClass);
 
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
@@ -266,7 +291,22 @@ public interface Persist {
    * Same as {@link #fetchObjs(ObjId[])}, does not throw an {@link ObjNotFoundException} but returns
    * {@code null} instead.
    */
-  Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids);
+  default Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+    return fetchTypedObjsIfExist(ids, null, Obj.class);
+  }
+
+  /**
+   * Same as {@link #fetchTypedObjs(ObjId[], ObjType, Class)}, but returns {@code null} for objects
+   * that do not exist instead of throwing an {@link ObjNotFoundException}.
+   *
+   * @param ids IDs of the objects to fetch.
+   * @param type The expected type of objects to fetch. Can be {@code null}, meaning that any object
+   *     type is fine, must use {@code typeClass=Obj.class}.
+   * @param typeClass The Java type that corresponds to {@code type}. Must not be {@code null}, use
+   *     {@code Obj.class} for "any" object type in combination with {@code type=null}.
+   */
+  <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass);
 
   /**
    * Stores the given object as a new record.

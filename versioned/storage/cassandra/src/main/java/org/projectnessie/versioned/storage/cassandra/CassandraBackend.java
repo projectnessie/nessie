@@ -213,10 +213,12 @@ public final class CassandraBackend implements Backend {
                 try {
                   for (Row row : rs.currentPage()) {
                     R resultItem = rowToResult.apply(row);
-                    K id = idExtractor.apply(resultItem);
-                    int i = idToIndex.getValue(id);
-                    if (i != -1) {
-                      result.set(i, resultItem);
+                    if (resultItem != null) {
+                      K id = idExtractor.apply(resultItem);
+                      int i = idToIndex.getValue(id);
+                      if (i != -1) {
+                        result.set(i, resultItem);
+                      }
                     }
                   }
 

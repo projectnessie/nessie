@@ -19,6 +19,9 @@ import static org.projectnessie.versioned.storage.cache.CacheBackend.NON_EXISTEN
 import static org.projectnessie.versioned.storage.cache.CacheBackend.NOT_FOUND_OBJ_SENTINEL;
 
 import jakarta.annotation.Nonnull;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -127,6 +130,53 @@ class CachingPersistImpl implements Persist {
 
     Obj[] backendResult = persist.fetchObjs(backendIds);
     return fetchObjsPost(backendIds, backendResult, r, null);
+  }
+
+  @Nonnull
+  @Override
+  public <T extends Obj> T[] fetchTypedObjs(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
+
+    ObjId[] backendIds = fetchObjsPre(ids, r, type, typeClass);
+
+    if (backendIds != null) {
+      T[] backendResult = persist.fetchTypedObjsIfExist(backendIds, type, typeClass);
+      r = fetchObjsPost(backendIds, backendResult, r, type);
+    }
+
+    List<ObjId> notFound = null;
+    for (int i = 0; i < ids.length; i++) {
+      ObjId id = ids[i];
+      if (r[i] == null && id != null) {
+        if (notFound == null) {
+          notFound = new ArrayList<>();
+        }
+        notFound.add(id);
+      }
+    }
+    if (notFound != null) {
+      throw new ObjNotFoundException(notFound);
+    }
+
+    return r;
+  }
+
+  @Override
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
+
+    ObjId[] backendIds = fetchObjsPre(ids, r, type, typeClass);
+
+    if (backendIds == null) {
+      return r;
+    }
+
+    T[] backendResult = persist.fetchTypedObjsIfExist(backendIds, type, typeClass);
+    return fetchObjsPost(backendIds, backendResult, r, type);
   }
 
   private <T extends Obj> ObjId[] fetchObjsPre(

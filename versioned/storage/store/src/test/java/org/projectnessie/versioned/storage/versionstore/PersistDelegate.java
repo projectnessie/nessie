@@ -126,8 +126,8 @@ public class PersistDelegate implements Persist {
 
   @Override
   @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     return delegate.fetchTypedObj(id, type, typeClass);
   }
 
@@ -146,6 +146,19 @@ public class PersistDelegate implements Persist {
   @Override
   public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
     return delegate.fetchObjsIfExist(ids);
+  }
+
+  @Override
+  @Nonnull
+  public <T extends Obj> T[] fetchTypedObjs(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+    return delegate.fetchTypedObjs(ids, type, typeClass);
+  }
+
+  @Override
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+    return delegate.fetchTypedObjsIfExist(ids, type, typeClass);
   }
 
   @Override

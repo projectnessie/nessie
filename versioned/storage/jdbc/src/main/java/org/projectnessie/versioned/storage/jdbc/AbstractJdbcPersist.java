@@ -49,6 +49,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -322,18 +323,14 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   protected <T extends Obj> T fetchTypedObj(
-      Connection conn, ObjId id, ObjType type, @SuppressWarnings("unused") Class<T> typeClass)
-      throws ObjNotFoundException {
-    Obj obj = fetchObjs(conn, new ObjId[] {id}, type)[0];
+      Connection conn, ObjId id, ObjType type, Class<T> typeClass) throws ObjNotFoundException {
+    T obj = fetchTypedObjsIfExist(conn, new ObjId[] {id}, type, typeClass)[0];
 
-    @SuppressWarnings("unchecked")
-    T r = (T) obj;
-    return r;
-  }
+    if (obj == null) {
+      throw new ObjNotFoundException(id);
+    }
 
-  protected final Obj fetchObj(@Nonnull Connection conn, @Nonnull ObjId id)
-      throws ObjNotFoundException {
-    return fetchObjs(conn, new ObjId[] {id})[0];
+    return obj;
   }
 
   protected ObjType fetchObjType(@Nonnull Connection conn, @Nonnull ObjId id)
@@ -354,45 +351,15 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   @Nonnull
-  protected final Obj[] fetchObjs(@Nonnull Connection conn, @Nonnull ObjId[] ids)
-      throws ObjNotFoundException {
-    return fetchObjs(conn, ids, null);
-  }
-
-  @Nonnull
-  protected final Obj[] fetchObjsIfExist(@Nonnull Connection conn, @Nonnull ObjId[] ids) {
-    return fetchObjsIfExist(conn, ids, null);
-  }
-
-  @Nonnull
-  protected final Obj[] fetchObjs(
-      @Nonnull Connection conn, @Nonnull ObjId[] ids, @Nullable ObjType type)
-      throws ObjNotFoundException {
-    Obj[] r = fetchObjsIfExist(conn, ids, type);
-
-    List<ObjId> notFound = null;
-    for (int i = 0; i < ids.length; i++) {
-      ObjId id = ids[i];
-      if (r[i] == null && id != null) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
-        }
-        notFound.add(id);
-      }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
-    }
-
-    return r;
-  }
-
-  @Nonnull
-  protected final Obj[] fetchObjsIfExist(
-      @Nonnull Connection conn, @Nonnull ObjId[] ids, @Nullable ObjType type) {
+  protected final <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull Connection conn,
+      @Nonnull ObjId[] ids,
+      ObjType type,
+      @SuppressWarnings("unused") Class<T> typeClass) {
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
-    Obj[] r = new Obj[ids.length];
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
     List<ObjId> keys = new ArrayList<>();
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
@@ -424,7 +391,9 @@ abstract class AbstractJdbcPersist implements Persist {
           Obj obj = deserializeObj(rs);
           int i = idToIndex.getValue(obj.id());
           if (i != -1) {
-            r[i] = obj;
+            @SuppressWarnings("unchecked")
+            T typed = (T) obj;
+            r[i] = typed;
           }
         }
 

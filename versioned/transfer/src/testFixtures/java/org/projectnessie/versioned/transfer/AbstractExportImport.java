@@ -344,7 +344,8 @@ public abstract class AbstractExportImport {
           @Nonnull
           @Override
           public <T extends Obj> T fetchTypedObj(
-              @Nonnull ObjId id, ObjType type, Class<T> typeClass) throws ObjNotFoundException {
+              @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass)
+              throws ObjNotFoundException {
             return inmemory.fetchTypedObj(id, type, typeClass);
           }
 
@@ -362,8 +363,23 @@ public abstract class AbstractExportImport {
 
           @Nonnull
           @Override
+          public <T extends Obj> T[] fetchTypedObjs(
+              @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass)
+              throws ObjNotFoundException {
+            return inmemory.fetchTypedObjs(ids, type, typeClass);
+          }
+
+          @Nonnull
+          @Override
           public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
             return inmemory.fetchObjsIfExist(ids);
+          }
+
+          @Nonnull
+          @Override
+          public <T extends Obj> T[] fetchTypedObjsIfExist(
+              @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+            return inmemory.fetchTypedObjsIfExist(ids, type, typeClass);
           }
 
           @Override

@@ -22,6 +22,7 @@ import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remo
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
@@ -181,11 +182,13 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
         branch.getName(),
         referenceHash.map(Hash::asString).orElse("not specified"));
 
-    Obj[] objs;
+    CommitObj[] objs;
     try {
       objs =
-          persist.fetchObjs(
-              commitHashes.stream().map(TypeMapping::hashToObjId).toArray(ObjId[]::new));
+          persist.fetchTypedObjs(
+              commitHashes.stream().map(TypeMapping::hashToObjId).toArray(ObjId[]::new),
+              COMMIT,
+              CommitObj.class);
     } catch (ObjNotFoundException e) {
       throw referenceNotFound(e);
     }
@@ -193,11 +196,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
     CommitObj parent = null;
     CommitLogic commitLogic = commitLogic(persist);
     for (int i = 0; i < objs.length; i++) {
-      Obj o = objs[i];
-      if (o == null) {
-        throw RefMapping.hashNotFound(commitHashes.get(i));
-      }
-      CommitObj commit = (CommitObj) o;
+      CommitObj commit = objs[i];
       if (i > 0) {
         if (!commit.directParent().equals(commits.get(i - 1).id())) {
           throw new IllegalArgumentException("Sequence of hashes is not contiguous.");

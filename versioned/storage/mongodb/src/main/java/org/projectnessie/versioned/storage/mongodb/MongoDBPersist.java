@@ -67,6 +67,7 @@ import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import jakarta.annotation.Nonnull;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -345,46 +346,27 @@ public class MongoDBPersist implements Persist {
 
   @Override
   @Nonnull
-  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
-    FindIterable<Document> result;
-    try {
-      result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
-    } catch (RuntimeException e) {
-      throw unhandledException(e);
-    }
-
-    Document doc = result.first();
-    if (doc == null) {
-      throw new ObjNotFoundException(id);
-    }
-
-    return docToObj(id, doc);
-  }
-
-  @Override
-  @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     FindIterable<Document> result;
     try {
       result =
-          backend
-              .objs()
-              .find(and(eq(ID_PROPERTY_NAME, idObjDoc(id)), eq(COL_OBJ_TYPE, type.shortName())));
+          type != null
+              ? backend
+                  .objs()
+                  .find(and(eq(ID_PROPERTY_NAME, idObjDoc(id)), eq(COL_OBJ_TYPE, type.shortName())))
+              : backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
     } catch (RuntimeException e) {
       throw unhandledException(e);
     }
 
     Document doc = result.first();
-    if (doc == null) {
+
+    T obj = docToObj(id, doc, type, typeClass);
+    if (obj == null) {
       throw new ObjNotFoundException(id);
     }
-
-    Obj obj = docToObj(id, doc);
-
-    @SuppressWarnings("unchecked")
-    T r = (T) obj;
-    return r;
+    return obj;
   }
 
   @Override
@@ -405,13 +387,14 @@ public class MongoDBPersist implements Persist {
     return ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
   }
 
-  @Nonnull
   @Override
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
     List<Document> list = new ArrayList<>(ids.length);
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(ids.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
-    Obj[] r = new Obj[ids.length];
+    @SuppressWarnings("unchecked")
+    T[] r = (T[]) Array.newInstance(typeClass, ids.length);
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
       if (id != null) {
@@ -421,13 +404,18 @@ public class MongoDBPersist implements Persist {
     }
 
     if (!list.isEmpty()) {
-      fetchObjsPage(r, list, idToIndex);
+      fetchObjsPage(r, list, idToIndex, type, typeClass);
     }
 
     return r;
   }
 
-  private void fetchObjsPage(Obj[] r, List<Document> list, Object2IntHashMap<ObjId> idToIndex) {
+  private <T extends Obj> void fetchObjsPage(
+      Obj[] r,
+      List<Document> list,
+      Object2IntHashMap<ObjId> idToIndex,
+      ObjType type,
+      Class<T> typeClass) {
     FindIterable<Document> result;
     try {
       result = backend.objs().find(in(ID_PROPERTY_NAME, list));
@@ -435,10 +423,12 @@ public class MongoDBPersist implements Persist {
       throw unhandledException(e);
     }
     for (Document doc : result) {
-      Obj obj = docToObj(doc);
-      int idx = idToIndex.getValue(obj.id());
-      if (idx != -1) {
-        r[idx] = obj;
+      T obj = docToObj(doc, type, typeClass);
+      if (obj != null) {
+        int idx = idToIndex.getValue(obj.id());
+        if (idx != -1) {
+          r[idx] = obj;
+        }
       }
     }
   }
@@ -668,14 +658,22 @@ public class MongoDBPersist implements Persist {
     backend.eraseRepositories(singleton(config.repositoryId()));
   }
 
-  private Obj docToObj(Document doc) {
+  private <T extends Obj> T docToObj(Document doc, ObjType type, Class<T> typeClass) {
     ObjId id = objIdFromDoc(doc);
-    return docToObj(id, doc);
+    return docToObj(id, doc, type, typeClass);
   }
 
-  private Obj docToObj(@Nonnull ObjId id, Document doc) {
+  private <T extends Obj> T docToObj(
+      @Nonnull ObjId id, Document doc, ObjType t, @SuppressWarnings("unused") Class<T> typeClass) {
+    if (doc == null) {
+      return null;
+    }
     ObjType type = ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
-    ObjSerializer<?> serializer = ObjSerializers.forType(type);
+    if (t != null && !t.equals(type)) {
+      return null;
+    }
+    @SuppressWarnings("unchecked")
+    ObjSerializer<T> serializer = (ObjSerializer<T>) ObjSerializers.forType(type);
     Document inner = doc.get(serializer.fieldName(), Document.class);
     String versionToken = doc.getString(COL_OBJ_VERS);
     return serializer.docToObj(id, type, inner, versionToken);
@@ -735,7 +733,7 @@ public class MongoDBPersist implements Persist {
 
       try {
         Document doc = result.next();
-        return docToObj(doc);
+        return docToObj(doc, null, Obj.class);
       } catch (RuntimeException e) {
         throw unhandledException(e);
       }

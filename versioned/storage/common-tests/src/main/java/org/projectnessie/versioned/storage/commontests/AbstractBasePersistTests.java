@@ -833,6 +833,12 @@ public class AbstractBasePersistTests {
         .extracting(ObjNotFoundException::objIds, list(ObjId.class))
         .containsExactly(id);
 
+    soft.assertThatThrownBy(() -> persist.fetchTypedObj(id, null, Obj.class))
+        .isInstanceOf(ObjNotFoundException.class)
+        .asInstanceOf(type(ObjNotFoundException.class))
+        .extracting(ObjNotFoundException::objIds, list(ObjId.class))
+        .containsExactly(id);
+
     soft.assertThatThrownBy(() -> persist.fetchObjs(new ObjId[] {EMPTY_OBJ_ID, id}))
         .isInstanceOf(ObjNotFoundException.class)
         .asInstanceOf(type(ObjNotFoundException.class))
@@ -840,6 +846,10 @@ public class AbstractBasePersistTests {
         .containsExactly(EMPTY_OBJ_ID, id);
 
     soft.assertThat(persist.fetchObjsIfExist(new ObjId[] {EMPTY_OBJ_ID, id}))
+        .hasSize(2)
+        .containsOnlyNulls();
+
+    soft.assertThat(persist.fetchTypedObjsIfExist(new ObjId[] {EMPTY_OBJ_ID, id}, null, Obj.class))
         .hasSize(2)
         .containsOnlyNulls();
 

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -56,6 +58,7 @@ public class TestNegativeCaching {
         .isInstanceOf(ObjNotFoundException.class);
     verify(cachedPersist).fetchObj(id);
     verify(backing).fetchObj(id);
+    verify(backing).fetchTypedObj(eq(id), any(), any());
     verifyNoMoreInteractions(backing, cachedPersist);
     reset(backing, cachedPersist);
 
@@ -64,6 +67,7 @@ public class TestNegativeCaching {
         .isInstanceOf(ObjNotFoundException.class);
     verify(cachedPersist).fetchObj(id);
     verify(backing).fetchObj(id);
+    verify(backing).fetchTypedObj(eq(id), any(), any());
     verifyNoMoreInteractions(backing, cachedPersist);
     reset(backing, cachedPersist);
   }
@@ -123,6 +127,28 @@ public class TestNegativeCaching {
     verifyNoMoreInteractions(backing, cachedPersist);
     reset(backing, cachedPersist);
 
+    soft.assertThatThrownBy(
+            () ->
+                cachedPersist.fetchTypedObjs(
+                    new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+        .isInstanceOf(ObjNotFoundException.class);
+    verify(cachedPersist)
+        .fetchTypedObjs(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
+    // backing.fetch*() must not be invoked
+    verifyNoMoreInteractions(backing, cachedPersist);
+    reset(backing, cachedPersist);
+
+    soft.assertThat(
+            cachedPersist.fetchTypedObjsIfExist(
+                new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+        .hasSize(1)
+        .containsOnlyNulls();
+    verify(cachedPersist)
+        .fetchTypedObjsIfExist(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
+    // backing.fetch*() must not be invoked
+    verifyNoMoreInteractions(backing, cachedPersist);
+    reset(backing, cachedPersist);
+
     soft.assertThat(cachedPersist.fetchObjsIfExist(new ObjId[] {id}))
         .hasSize(1)
         .containsOnlyNulls();
@@ -130,5 +156,59 @@ public class TestNegativeCaching {
     // backing.fetch*() must not be invoked
     verifyNoMoreInteractions(backing, cachedPersist);
     reset(backing, cachedPersist);
+  }
+
+  @Test
+  public void negativeCacheFetchTypedObjs() throws Exception {
+    Persist backing = spy(persist);
+    CacheBackend cacheBackend =
+        PersistCaches.newBackend(CacheConfig.builder().capacityMb(16).build());
+    Persist cachedPersist = spy(cacheBackend.wrap(backing));
+
+    verify(backing).config();
+    reset(backing);
+
+    ObjId id = randomObjId();
+
+    soft.assertThatThrownBy(
+            () ->
+                cachedPersist.fetchTypedObjs(
+                    new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+        .isInstanceOf(ObjNotFoundException.class);
+    verify(cachedPersist)
+        .fetchTypedObjs(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
+    verify(backing)
+        .fetchTypedObjsIfExist(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
+    verifyNoMoreInteractions(backing, cachedPersist);
+    reset(backing, cachedPersist);
+
+    negativeCacheFetchRepeat(cachedPersist, backing, id);
+  }
+
+  @Test
+  public void negativeCacheFetchTypedObjsIfExist() throws Exception {
+    Persist backing = spy(persist);
+    CacheBackend cacheBackend =
+        PersistCaches.newBackend(CacheConfig.builder().capacityMb(16).build());
+    Persist cachedPersist = spy(cacheBackend.wrap(backing));
+
+    verify(backing).config();
+    reset(backing);
+
+    ObjId id = randomObjId();
+
+    soft.assertThat(
+            cachedPersist.fetchTypedObjsIfExist(
+                new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+        .hasSize(1)
+        .containsOnlyNulls();
+    verify(cachedPersist)
+        .fetchTypedObjsIfExist(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
+    verify(backing)
+        .fetchTypedObjsIfExist(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
+    verifyNoMoreInteractions(backing, cachedPersist);
+    reset(backing, cachedPersist);
+
+    negativeCacheFetchRepeat(cachedPersist, backing, id);
   }
 }

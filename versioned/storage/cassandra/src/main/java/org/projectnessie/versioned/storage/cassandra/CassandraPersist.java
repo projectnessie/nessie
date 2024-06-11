@@ -234,23 +234,15 @@ public class CassandraPersist implements Persist {
   @SuppressWarnings("unused")
   @Override
   @Nonnull
-  public <T extends Obj> T fetchTypedObj(@Nonnull ObjId id, ObjType type, Class<T> typeClass)
-      throws ObjNotFoundException {
-    Obj obj = fetchObjsIfExist(new ObjId[] {id})[0];
+  public <T extends Obj> T fetchTypedObj(
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+    T obj = fetchTypedObjsIfExist(new ObjId[] {id}, type, typeClass)[0];
 
-    if (obj == null || !obj.type().equals(type)) {
+    if (obj == null || (type != null && !type.equals(obj.type()))) {
       throw new ObjNotFoundException(id);
     }
 
-    @SuppressWarnings("unchecked")
-    T r = (T) obj;
-    return r;
-  }
-
-  @Override
-  @Nonnull
-  public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
-    return fetchObjs(new ObjId[] {id})[0];
+    return obj;
   }
 
   @Override
@@ -269,7 +261,8 @@ public class CassandraPersist implements Persist {
 
   @Nonnull
   @Override
-  public Obj[] fetchObjsIfExist(@Nonnull ObjId[] ids) {
+  public <T extends Obj> T[] fetchTypedObjsIfExist(
+      @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
     Function<List<ObjId>, List<String>> idsToStrings =
         queryIds -> queryIds.stream().map(ObjId::toString).collect(Collectors.toList());
 
@@ -279,17 +272,22 @@ public class CassandraPersist implements Persist {
                 backend.buildStatement(
                     FIND_OBJS, true, config.repositoryId(), idsToStrings.apply(keys)));
 
-    Function<Row, Obj> rowMapper =
+    Function<Row, T> rowMapper =
         row -> {
           ObjType objType = ObjTypes.forName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
+          if (type != null && !type.equals(objType)) {
+            return null;
+          }
           ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
           String versionToken = row.getString(COL_OBJ_VERS.name());
-          return ObjSerializers.forType(objType).deserialize(row, objType, id, versionToken);
+          @SuppressWarnings("unchecked")
+          T typed = (T) ObjSerializers.forType(objType).deserialize(row, objType, id, versionToken);
+          return typed;
         };
 
-    Obj[] r;
-    try (BatchedQuery<ObjId, Obj> batchedQuery =
-        backend.newBatchedQuery(queryFunc, rowMapper, Obj::id, ids.length, Obj.class)) {
+    T[] r;
+    try (BatchedQuery<ObjId, T> batchedQuery =
+        backend.newBatchedQuery(queryFunc, rowMapper, Obj::id, ids.length, typeClass)) {
 
       for (int i = 0; i < ids.length; i++) {
         ObjId id = ids[i];
