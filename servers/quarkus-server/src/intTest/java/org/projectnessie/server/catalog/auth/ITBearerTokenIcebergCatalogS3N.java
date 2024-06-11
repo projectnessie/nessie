@@ -46,6 +46,7 @@ public class ITBearerTokenIcebergCatalogS3N extends AbstractAuthEnabledTests {
     Map<String, String> options = new HashMap<>();
     options.put(OAuth2Properties.SCOPE, "email");
     options.put(OAuth2Properties.TOKEN, accessToken.getPayload());
+    options.put(OAuth2Properties.TOKEN_REFRESH_ENABLED, "false");
     return options;
   }
 
