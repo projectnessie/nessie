@@ -18,6 +18,8 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
@@ -27,6 +29,17 @@ import org.projectnessie.client.http.Status;
 class OAuth2Utils {
 
   private static final Random RANDOM = new SecureRandom();
+
+  /**
+   * Common locations for OpenID provider metadata.
+   *
+   * @see <a
+   *     href="https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata">OpenID
+   *     Connect Discovery 1.0</a>
+   * @see <a href="https://tools.ietf.org/html/rfc8414#section-5">RFC 8414 Section 5</a>
+   */
+  private static final String[] WELL_KNOWN_PATHS =
+      new String[] {".well-known/openid-configuration", ".well-known/oauth-authorization-server"};
 
   static String randomAlphaNumString(int length) {
     return RANDOM
@@ -38,17 +51,32 @@ class OAuth2Utils {
   }
 
   public static JsonNode fetchOpenIdProviderMetadata(HttpClient httpClient, URI issuerUrl) {
-    HttpResponse response =
-        httpClient.newRequest(issuerUrl).path(".well-known/openid-configuration").get();
-    Status status = response.getStatus();
-    if (status != Status.OK) {
-      throw new HttpClientException(
-          "OpenID provider metadata request returned status code " + status.getCode());
+    List<Exception> failures = null;
+    for (String path : WELL_KNOWN_PATHS) {
+      try {
+        HttpResponse response = httpClient.newRequest(issuerUrl).path(path).get();
+        Status status = response.getStatus();
+        if (status != Status.OK) {
+          throw new HttpClientException(
+              "OpenID provider metadata request returned status code " + status.getCode());
+        }
+        JsonNode data = response.readEntity(JsonNode.class);
+        if (!data.has("issuer") || !data.has("authorization_endpoint")) {
+          throw new HttpClientException("Invalid OpenID provider metadata");
+        }
+        return data;
+      } catch (Exception e) {
+        if (failures == null) {
+          failures = new ArrayList<>(WELL_KNOWN_PATHS.length);
+        }
+        failures.add(e);
+      }
     }
-    JsonNode data = response.readEntity(JsonNode.class);
-    if (!data.has("issuer") || !data.has("authorization_endpoint")) {
-      throw new HttpClientException("Invalid OpenID provider metadata");
+    HttpClientException e =
+        new HttpClientException("Failed to fetch OpenID provider metadata", failures.get(0));
+    for (int i = 1; i < failures.size(); i++) {
+      e.addSuppressed(failures.get(i));
     }
-    return data;
+    throw e;
   }
 }

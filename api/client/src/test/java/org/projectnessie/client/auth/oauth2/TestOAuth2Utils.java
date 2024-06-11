@@ -16,7 +16,8 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchException;
+import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAPPER;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -57,8 +58,12 @@ class TestOAuth2Utils {
   @CsvSource({
     "''              , /.well-known/openid-configuration",
     "/               , /.well-known/openid-configuration",
+    "''              , /.well-known/oauth-authorization-server",
+    "/               , /.well-known/oauth-authorization-server",
     "/realms/master  , /realms/master/.well-known/openid-configuration",
-    "/realms/master/ , /realms/master/.well-known/openid-configuration"
+    "/realms/master/ , /realms/master/.well-known/openid-configuration",
+    "/realms/master  , /realms/master/.well-known/oauth-authorization-server",
+    "/realms/master/ , /realms/master/.well-known/oauth-authorization-server"
   })
   void fetchOpenIdProviderMetadataSuccess(String issuerPath, String wellKnownPath)
       throws Exception {
@@ -75,9 +80,18 @@ class TestOAuth2Utils {
     try (HttpTestServer server = new HttpTestServer(handler("/wrong/path", DATA), true);
         HttpClient httpClient = newHttpClient(server)) {
       URI issuerUrl = server.getUri().resolve("/realms/master/");
-      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl))
+      Exception e =
+          catchException(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl));
+      assertThat(e)
+          .isInstanceOf(HttpClientException.class)
+          .hasMessageContaining("Failed to fetch OpenID provider metadata");
+      assertThat(e.getCause())
           .isInstanceOf(HttpClientException.class)
           .hasMessageContaining("404"); // messages differ between HttpClient impls
+      assertThat(e.getSuppressed())
+          .singleElement()
+          .asInstanceOf(throwable(HttpClientException.class))
+          .hasMessageContaining("404");
     }
   }
 
@@ -88,9 +102,18 @@ class TestOAuth2Utils {
                 handler("/realms/master/.well-known/openid-configuration", WRONG_DATA), true);
         HttpClient httpClient = newHttpClient(server)) {
       URI issuerUrl = server.getUri().resolve("/realms/master/");
-      assertThatThrownBy(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl))
-          .isInstanceOfAny(HttpClientException.class)
+      Exception e =
+          catchException(() -> OAuth2Utils.fetchOpenIdProviderMetadata(httpClient, issuerUrl));
+      assertThat(e)
+          .isInstanceOf(HttpClientException.class)
+          .hasMessageContaining("Failed to fetch OpenID provider metadata");
+      assertThat(e.getCause())
+          .isInstanceOf(HttpClientException.class)
           .hasMessage("Invalid OpenID provider metadata");
+      assertThat(e.getSuppressed())
+          .singleElement()
+          .asInstanceOf(throwable(HttpClientException.class))
+          .hasMessageContaining("404"); // messages differ between HttpClient impls
     }
   }
 
