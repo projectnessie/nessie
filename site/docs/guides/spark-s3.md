@@ -131,7 +131,7 @@ Time taken: 3.225 seconds, Fetched 1 row(s)
 ```
 
 Branches, merges and other git-like commands can be run as well, as explained in the 
-[Getting Started](../downloads/index.md) guide. 
+[Getting Started](../guides/index.md) guide. 
 
 Note: The above example uses the `spark-sql` shell, but the same configuration options apply to `spark-shell`.
 

@@ -34,7 +34,7 @@ extra_css:
 extra:
   versions:
     nessie: 0.90.2
-    iceberg: 1.5.0
+    iceberg: 1.5.2
   analytics:
     provider: google
     property: UA-177850801-1
