@@ -296,10 +296,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     check(
         violations,
         CONF_NESSIE_OAUTH2_GRANT_TYPE,
-        grantType == GrantType.CLIENT_CREDENTIALS
-            || grantType == GrantType.PASSWORD
-            || grantType == GrantType.AUTHORIZATION_CODE
-            || grantType == GrantType.DEVICE_CODE,
+        grantType.isInitial(),
         "grant type must be either '%s', '%s', '%s' or '%s'",
         CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
         CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD,
@@ -460,9 +457,6 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
     @Override
     Builder scope(String scope);
-
-    @Override
-    Builder tokenExchangeEnabled(boolean tokenExchangeEnabled);
 
     @Override
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

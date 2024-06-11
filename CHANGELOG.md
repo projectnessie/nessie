@@ -41,6 +41,10 @@ as necessary. Empty sections will not end in the release notes.
   specified explicitly in the JDBC URL.
   - `nessie.version.store.persist.jdbc.catalog`
   - `nessie.version.store.persist.jdbc.schema`
+- Support for token exchange in the Nessie client is deprecated and will be removed in a future 
+  release. The token exchange flow was being used to exchange a refresh token for an access token, 
+  but this is not its recommended usage. Instead, the client will now fall back to the configured
+  initial grant type, if a refresh token is not provided by the authorization server.
 
 ### Fixes
 

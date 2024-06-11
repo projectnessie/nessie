@@ -33,7 +33,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT;
@@ -93,11 +92,6 @@ public interface OAuth2AuthenticatorConfig {
     applyConfigOption(config, CONF_NESSIE_OAUTH2_USERNAME, builder::username);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_PASSWORD, builder::password);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_CLIENT_SCOPES, builder::scope);
-    applyConfigOption(
-        config,
-        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
-        builder::tokenExchangeEnabled,
-        Boolean::parseBoolean);
     applyConfigOption(
         config,
         CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN,
@@ -226,11 +220,8 @@ public interface OAuth2AuthenticatorConfig {
    */
   Optional<String> getScope();
 
-  /**
-   * Whether token exchange is enabled. Defaults to {@code true}.
-   *
-   * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED
-   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   @Value.Default
   default boolean getTokenExchangeEnabled() {
     return true;
@@ -414,8 +405,11 @@ public interface OAuth2AuthenticatorConfig {
     @CanIgnoreReturnValue
     Builder scope(String scope);
 
+    @Deprecated
     @CanIgnoreReturnValue
-    Builder tokenExchangeEnabled(boolean tokenExchangeEnabled);
+    default Builder tokenExchangeEnabled(boolean tokenExchangeEnabled) {
+      return this;
+    }
 
     @CanIgnoreReturnValue
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

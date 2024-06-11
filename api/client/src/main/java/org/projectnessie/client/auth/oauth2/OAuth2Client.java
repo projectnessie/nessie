@@ -250,12 +250,11 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   Tokens refreshTokens(Tokens currentTokens) {
-    GrantType grantType =
-        currentTokens.getRefreshToken() == null
-            ? GrantType.TOKEN_EXCHANGE
-            : GrantType.REFRESH_TOKEN;
-    LOGGER.debug("[{}] Refreshing tokens using {}", config.getClientName(), grantType);
-    try (Flow flow = grantType.newFlow(config)) {
+    if (currentTokens.getRefreshToken() == null) {
+      throw new MustFetchNewTokensException("No refresh token available");
+    }
+    LOGGER.debug("[{}] Refreshing tokens", config.getClientName());
+    try (Flow flow = GrantType.REFRESH_TOKEN.newFlow(config)) {
       return flow.fetchNewTokens(currentTokens);
     }
   }

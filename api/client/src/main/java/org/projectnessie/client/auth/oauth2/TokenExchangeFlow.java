@@ -35,9 +35,6 @@ class TokenExchangeFlow extends AbstractFlow {
 
   @Override
   public Tokens fetchNewTokens(Tokens currentTokens) {
-    if (!config.getTokenExchangeEnabled()) {
-      throw new MustFetchNewTokensException("Token exchange is disabled");
-    }
     Objects.requireNonNull(currentTokens);
     TokensExchangeRequest.Builder request =
         TokensExchangeRequest.builder()
