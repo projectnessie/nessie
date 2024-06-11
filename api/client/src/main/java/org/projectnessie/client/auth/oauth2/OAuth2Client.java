@@ -200,6 +200,11 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     try {
       tokenRefreshFuture =
           executor.schedule(this::renewTokens, delay.toMillis(), TimeUnit.MILLISECONDS);
+      if (closing.get()) {
+        // We raced with close() but the executor wasn't closed yet,
+        // so the task was accepted: cancel the future now.
+        tokenRefreshFuture.cancel(true);
+      }
     } catch (RejectedExecutionException e) {
       if (closing.get()) {
         // We raced with close(), ignore
