@@ -14,6 +14,16 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Support for token exchange in the Nessie client has been completely redesigned. The new API and
+  configuration options are described in the [Nessie authentication settings]. If this feature is
+  enabled, each time a new access token is obtained, the client will exchange it for another one by
+  performing a token exchange with the authorization server. We hope that this new feature will
+  unlock many advanced use cases for Nessie users, such as impersonation and delegation. Please note
+  that token exchange is considered in beta state and both the API and configuration options are
+  subject to change at any time; we appreciate early feedback, comments and suggestions.
+
+[Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings
+
 ### Changes
 
 ### Deprecations
@@ -44,15 +54,6 @@ as necessary. Empty sections will not end in the release notes.
   on our web site projectnessie.org for more information.
 - CEL access check scripts now receive the variable `roles` that can be used to check whether the current
   principal has a role assigned using a CEL expression like `'rolename' in roles`.
-- Support for token exchange in the Nessie client has been completely redesigned. The new API and
-  configuration options are described in the [Nessie authentication settings]. If this feature is
-  enabled, each time a new access token is obtained, the client will exchange it for another one by
-  performing a token exchange with the authorization server. We hope that this new feature will 
-  unlock many advanced use cases for Nessie users, such as impersonation and delegation. Please note 
-  that token exchange is considered in beta state and both the API and configuration options are 
-  subject to change at any time; we appreciate early feedback, comments and suggestions.
-
-[Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings
 
 ### Deprecations
 
@@ -64,14 +65,14 @@ as necessary. Empty sections will not end in the release notes.
   specified explicitly in the JDBC URL.
   - `nessie.version.store.persist.jdbc.catalog`
   - `nessie.version.store.persist.jdbc.schema`
-- As mentioned above, token exchange in the Nessie client has been redesigned. As part of this
-  refactoring, _token exchange is not being used anymore to refresh tokens, because this is not its
-  recommended usage_. As a consequence, the `nessie.authentication.oauth2.token-exchange-enabled`
-  configuration property is now deprecated and has no effect; it will be removed soon. From now on,
-  if a refresh token is provided by the authorization server, the Nessie client will always use the
-  `refresh_token` grant type to obtain a new access token; if a refresh token is not provided, the
-  client will always fall back to the configured initial grant type in order to fetch a new access
-  token. _This change should thus be transparent to all users._
+- OAuth2 client: _token exchange is not being used anymore to refresh tokens, because this is not
+  its recommended usage_. As a consequence, the
+  `nessie.authentication.oauth2.token-exchange-enabled` configuration property is now deprecated and
+  has no effect; it will be removed soon. From now on, if a refresh token is provided by the
+  authorization server, the Nessie client will always use the `refresh_token` grant type to obtain a
+  new access token; if a refresh token is not provided, the client will always fall back to the
+  configured initial grant type in order to fetch a new access token. _This change should thus be
+  transparent to all users._
 
 ### Fixes
 
