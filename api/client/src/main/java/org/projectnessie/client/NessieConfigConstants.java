@@ -310,7 +310,7 @@ public final class NessieConfigConstants {
    * For token exchanges only. The root URL of an alternate OpenID Connect identity issuer provider,
    * to use when exchanging tokens only.
    *
-   * <p>If neither this property nor {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL} are
+   * <p>If neither this property nor {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT} are
    * defined, the global token endpoint will be used. This means that the same authorization server
    * will be used for both the initial token request and the token exchange.
    *
