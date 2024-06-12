@@ -375,6 +375,129 @@ public class ITOAuth2ClientKeycloak {
   }
 
   /**
+   * Tests a simple delegation scenario with a fixed subject token and the client playing the role
+   * of the actor.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeDelegation1() {
+    AccessToken subjectToken;
+    try (OAuth2Client subjectClient =
+        new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
+      subjectToken = subjectClient.fetchNewTokens().getAccessToken();
+    }
+    TokenExchangeConfig tokenExchangeConfig =
+        TokenExchangeConfig.builder()
+            .enabled(true)
+            .subjectToken(TypedToken.fromAccessToken(subjectToken))
+            .actorTokenProvider(
+                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
+            .build();
+    try (OAuth2Client client =
+        new OAuth2Client(
+            clientConfig("Private2", true, true)
+                .tokenExchangeConfig(tokenExchangeConfig)
+                .build())) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+    }
+  }
+
+  /**
+   * Tests a simple delegation scenario with a fixed actor token and the client playing the role of
+   * the subject.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeDelegation2() {
+    AccessToken actorToken;
+    try (OAuth2Client client =
+        new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
+      actorToken = client.fetchNewTokens().getAccessToken();
+    }
+    TokenExchangeConfig tokenExchangeConfig =
+        TokenExchangeConfig.builder()
+            .enabled(true)
+            .subjectTokenProvider(
+                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
+            .actorToken(TypedToken.fromAccessToken(actorToken))
+            .build();
+    try (OAuth2Client client =
+        new OAuth2Client(
+            clientConfig("Private2", true, true)
+                .tokenExchangeConfig(tokenExchangeConfig)
+                .build())) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+    }
+  }
+
+  /**
+   * Tests a simple delegation scenario with the client playing both the role of the subject and the
+   * actor.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeDelegation3() {
+    TokenExchangeConfig tokenExchangeConfig =
+        TokenExchangeConfig.builder()
+            .enabled(true)
+            .subjectTokenProvider(
+                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
+            .actorTokenProvider(
+                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
+            .build();
+    try (OAuth2Client client =
+        new OAuth2Client(
+            clientConfig("Private1", true, true)
+                .tokenExchangeConfig(tokenExchangeConfig)
+                .build())) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+    }
+  }
+
+  /**
+   * Tests a simple impersonation scenario with a fixed subject token (and no actor token). The
+   * client discards its own token.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeImpersonation1() {
+    AccessToken subjectToken;
+    try (OAuth2Client subjectClient =
+        new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
+      subjectToken = subjectClient.fetchNewTokens().getAccessToken();
+    }
+    TokenExchangeConfig tokenExchangeConfig =
+        TokenExchangeConfig.builder()
+            .enabled(true)
+            .subjectToken(TypedToken.fromAccessToken(subjectToken))
+            .build();
+    try (OAuth2Client client =
+        new OAuth2Client(
+            clientConfig("Private2", true, true)
+                .tokenExchangeConfig(tokenExchangeConfig)
+                .build())) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+    }
+  }
+
+  /**
+   * Tests a simple impersonation scenario with the client using its own token as the subject token,
+   * and no actor token. The client swaps its token for another one, roughly equivalent.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeImpersonation2() {
+    TokenExchangeConfig tokenExchangeConfig = TokenExchangeConfig.builder().enabled(true).build();
+    try (OAuth2Client client =
+        new OAuth2Client(
+            clientConfig("Private2", true, true)
+                .tokenExchangeConfig(tokenExchangeConfig)
+                .build())) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+    }
+  }
+
+  /**
    * Attempts to use the access token to obtain a UMA (User Management Access) ticket from Keycloak,
    * authorizing the client represented by the token to access resources hosted by "ResourceServer".
    */
