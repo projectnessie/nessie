@@ -24,15 +24,15 @@ import org.immutables.value.Value;
 
 /**
  * A <a href="https://datatracker.ietf.org/doc/html/rfc8693/#section-2.2.1">Token Response</a> in
- * reply to a {@link TokensExchangeRequest}.
+ * reply to a {@link TokenExchangeRequest}.
  *
  * <p>A token exchange response is a normal OAuth 2.0 response from the token endpoint with a few
  * additional parameters.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableTokensExchangeResponse.class)
-@JsonDeserialize(as = ImmutableTokensExchangeResponse.class)
-interface TokensExchangeResponse extends TokensResponseBase {
+@JsonSerialize(as = ImmutableTokenExchangeResponse.class)
+@JsonDeserialize(as = ImmutableTokenExchangeResponse.class)
+interface TokenExchangeResponse extends TokenResponseBase {
 
   /**
    * REQUIRED. An identifier, as described in <a

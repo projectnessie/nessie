@@ -220,9 +220,9 @@ class AuthorizationCodeFlow extends AbstractFlow {
 
   private Tokens fetchNewTokens(String code) {
     LOGGER.debug("Authorization Code Flow: fetching new tokens");
-    AuthorizationCodeTokensRequest.Builder request =
-        AuthorizationCodeTokensRequest.builder().code(code).redirectUri(redirectUri);
-    Tokens tokens = invokeTokenEndpoint(request, AuthorizationCodeTokensResponse.class);
+    AuthorizationCodeTokenRequest.Builder request =
+        AuthorizationCodeTokenRequest.builder().code(code).redirectUri(redirectUri);
+    Tokens tokens = invokeTokenEndpoint(request, AuthorizationCodeTokenResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
   }

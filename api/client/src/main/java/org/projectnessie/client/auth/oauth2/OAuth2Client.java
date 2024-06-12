@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientUtils.tokenExpirationTime;
+import static org.projectnessie.client.auth.oauth2.OAuth2Utils.tokenExpirationTime;
 
 import java.io.Closeable;
 import java.time.Duration;
@@ -303,7 +303,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     Instant refreshExpirationTime =
         tokenExpirationTime(
             now, currentTokens.getRefreshToken(), config.getDefaultRefreshTokenLifespan());
-    return OAuth2ClientUtils.shortestDelay(
+    return OAuth2Utils.shortestDelay(
         now,
         accessExpirationTime,
         refreshExpirationTime,

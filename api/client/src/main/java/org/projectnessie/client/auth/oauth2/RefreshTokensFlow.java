@@ -32,8 +32,8 @@ class RefreshTokensFlow extends AbstractFlow {
   public Tokens fetchNewTokens(@Nullable Tokens currentTokens) {
     Objects.requireNonNull(currentTokens);
     Objects.requireNonNull(currentTokens.getRefreshToken());
-    RefreshTokensRequest.Builder request =
-        RefreshTokensRequest.builder().refreshToken(currentTokens.getRefreshToken().getPayload());
-    return invokeTokenEndpoint(request, RefreshTokensResponse.class);
+    RefreshTokenRequest.Builder request =
+        RefreshTokenRequest.builder().refreshToken(currentTokens.getRefreshToken().getPayload());
+    return invokeTokenEndpoint(request, RefreshTokenResponse.class);
   }
 }

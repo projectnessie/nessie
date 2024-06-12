@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.4">Token Response</a> in
- * reply to a {@link AuthorizationCodeTokensRequest}.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.3">Token Response</a> in
+ * reply to a {@link ClientCredentialsTokenRequest}.
  *
  * <p>Example of response:
  *
@@ -35,12 +35,11 @@ import org.immutables.value.Value;
  *   "access_token":"2YotnFZFEjr1zCsicMWpAA",
  *   "token_type":"example",
  *   "expires_in":3600,
- *   "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
  *   "example_parameter":"example_value"
  * }
  * </pre>
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableAuthorizationCodeTokensResponse.class)
-@JsonDeserialize(as = ImmutableAuthorizationCodeTokensResponse.class)
-interface AuthorizationCodeTokensResponse extends TokensResponseBase {}
+@JsonSerialize(as = ImmutableClientCredentialsTokenResponse.class)
+@JsonDeserialize(as = ImmutableClientCredentialsTokenResponse.class)
+interface ClientCredentialsTokenResponse extends TokenResponseBase {}

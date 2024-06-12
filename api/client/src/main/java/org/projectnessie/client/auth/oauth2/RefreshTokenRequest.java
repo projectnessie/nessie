@@ -15,14 +15,16 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
- * the "client_credentials" grant type to obtain a new access token.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-6">Token Request</a> that uses
+ * the "refresh_tokens" grant type to refresh an existing access token.
  *
  * <p>Example:
  *
@@ -32,25 +34,37 @@ import org.immutables.value.Value;
  * Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
  * Content-Type: application/x-www-form-urlencoded
  *
- * grant_type=client_credentials
+ * grant_type=refresh_token&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA
  * </pre>
+ *
+ * The response to this request is a {@link RefreshTokenResponse}.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableClientCredentialsTokensRequest.class)
-@JsonDeserialize(as = ImmutableClientCredentialsTokensRequest.class)
-@JsonTypeName(GrantType.Constants.CLIENT_CREDENTIALS)
-interface ClientCredentialsTokensRequest extends TokensRequestBase {
+@JsonSerialize(as = ImmutableRefreshTokenRequest.class)
+@JsonDeserialize(as = ImmutableRefreshTokenRequest.class)
+@JsonTypeName(GrantType.Constants.REFRESH_TOKEN)
+interface RefreshTokenRequest extends TokenRequestBase, PublicClientRequest {
 
-  /** REQUIRED. Value MUST be set to "client_credentials". */
+  /** REQUIRED. Value MUST be set to "refresh_token". */
   @Value.Derived
   @Override
   default GrantType getGrantType() {
-    return GrantType.CLIENT_CREDENTIALS;
+    return GrantType.REFRESH_TOKEN;
   }
+
+  /** REQUIRED. The refresh token issued to the client. */
+  @JsonProperty("refresh_token")
+  String getRefreshToken();
 
   static Builder builder() {
-    return ImmutableClientCredentialsTokensRequest.builder();
+    return ImmutableRefreshTokenRequest.builder();
   }
 
-  interface Builder extends TokensRequestBase.Builder<ClientCredentialsTokensRequest> {}
+  interface Builder
+      extends TokenRequestBase.Builder<RefreshTokenRequest>,
+          PublicClientRequest.Builder<RefreshTokenRequest> {
+
+    @CanIgnoreReturnValue
+    Builder refreshToken(String refreshToken);
+  }
 }

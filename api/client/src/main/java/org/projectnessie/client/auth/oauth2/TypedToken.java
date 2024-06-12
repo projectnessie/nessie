@@ -18,6 +18,7 @@ package org.projectnessie.client.auth.oauth2;
 import java.net.URI;
 import org.immutables.value.Value;
 
+/** Represents a token with a specific type URI. Such tokens are used in the Token Exchange flow. */
 @Value.Immutable
 public interface TypedToken extends Token {
 

@@ -24,13 +24,13 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /**
- * Common base for {@link ClientCredentialsTokensResponse}, {@link RefreshTokensResponse} and {@link
- * TokensExchangeResponse}, since they share most of their schema, which is declared in <a
+ * Common base for {@link ClientCredentialsTokenResponse}, {@link RefreshTokenResponse} and {@link
+ * TokenExchangeResponse}, since they share most of their schema, which is declared in <a
  * href="https://datatracker.ietf.org/doc/html/rfc6749#section-5.1">Section 5.1</a>.
  *
  * <p>It is also a flattened representation of a {@link Tokens} pair.
  */
-interface TokensResponseBase {
+interface TokenResponseBase {
 
   /** Convert this response to a {@link Tokens} pair using the provided clock. */
   default Tokens asTokens(Supplier<Instant> clock) {
