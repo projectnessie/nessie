@@ -487,6 +487,34 @@ class TestOAuth2Client {
   }
 
   @Test
+  void testExchangeTokens() throws Exception {
+
+    try (HttpTestServer server1 = new HttpTestServer(handler(), true);
+        HttpTestServer server2 = new HttpTestServer(handler(), true)) {
+
+      TokenExchangeConfig tokenExchangeConfig =
+          TokenExchangeConfig.builder()
+              .enabled(true)
+              .issuerUrl(server2.getUri().resolve("/"))
+              .resource(URI.create("urn:resource"))
+              .audience("audience")
+              .scope("test-exchanged")
+              .clientId("Client1")
+              .clientSecret("s3cr3t")
+              .actorToken(TypedToken.of("actor-token", TypedToken.URN_ID_TOKEN))
+              .build();
+      OAuth2ClientConfig config =
+          configBuilder(server1, false).tokenExchangeConfig(tokenExchangeConfig).build();
+
+      try (OAuth2Client client = new OAuth2Client(config)) {
+        Tokens tokens = client.fetchNewTokens();
+        tokens = client.maybeExchangeTokens(tokens);
+        checkExchangeResponse(tokens);
+      }
+    }
+  }
+
+  @Test
   void testRefreshTokenExpired() throws Exception {
     HttpTestServer.RequestHandler handler = (req, resp) -> {};
     try (HttpTestServer server = new HttpTestServer(handler, false)) {
@@ -590,6 +618,23 @@ class TestOAuth2Client {
             .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
         soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
         response = getRefreshTokensResponse();
+      } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, TokensExchangeRequest.class);
+        soft.assertThat(request.getScope()).isEqualTo("test-exchanged");
+        soft.assertThat(((TokensExchangeRequest) request).getResource())
+            .isEqualTo(URI.create("urn:resource"));
+        soft.assertThat(((TokensExchangeRequest) request).getAudience()).isEqualTo("audience");
+        soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
+            .isEqualTo("access-initial");
+        soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
+            .isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+        soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isEqualTo("actor-token");
+        soft.assertThat(((TokensExchangeRequest) request).getActorTokenType())
+            .isEqualTo(TypedToken.URN_ID_TOKEN);
+        soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
+            .isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+        soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
+        response = getTokensExchangeResponse();
       } else if (grantType.equals(GrantType.AUTHORIZATION_CODE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, AuthorizationCodeTokensRequest.class);
         soft.assertThat(request.getScope()).isEqualTo("test");
@@ -737,6 +782,19 @@ class TestOAuth2Client {
         .build();
   }
 
+  private ImmutableTokensExchangeResponse getTokensExchangeResponse() {
+    return ImmutableTokensExchangeResponse.builder()
+        .issuedTokenType(TypedToken.URN_ACCESS_TOKEN)
+        .tokenType("bearer")
+        .accessTokenPayload("access-exchanged")
+        .accessTokenExpiresInSeconds(300)
+        .refreshTokenPayload("refresh-exchanged")
+        .refreshTokenExpiresInSeconds(3000)
+        .scope("test-exchanged")
+        .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
   private void checkInitialResponse(Tokens tokens, boolean expectRefreshToken) throws Exception {
     soft.assertThat(tokens.getAccessToken()).isNotNull();
     soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-initial");
@@ -769,6 +827,22 @@ class TestOAuth2Client {
     TokensResponseBase response = asResponse(tokens);
     soft.assertThat(response.getScope()).isEqualTo("test");
     soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
+  }
+
+  private void checkExchangeResponse(Tokens tokens) throws Exception {
+    assertThat(tokens.getAccessToken()).isNotNull();
+    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-exchanged");
+    soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
+    soft.assertThat(tokens.getAccessToken().getExpirationTime())
+        .isAfterOrEqualTo(now.plus(Duration.ofSeconds(300)).minusSeconds(10));
+    assertThat(tokens.getRefreshToken()).isNotNull();
+    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-exchanged");
+    soft.assertThat(tokens.getRefreshToken().getExpirationTime())
+        .isAfterOrEqualTo(now.plus(Duration.ofSeconds(3000)).minusSeconds(10));
+    TokensExchangeResponse response = (TokensExchangeResponse) asResponse(tokens);
+    soft.assertThat(response.getScope()).isEqualTo("test-exchanged");
+    soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
+    soft.assertThat(response.getIssuedTokenType()).isEqualTo(TypedToken.URN_ACCESS_TOKEN);
   }
 
   private OAuth2ClientConfig.Builder configBuilder(HttpTestServer server, boolean discovery) {

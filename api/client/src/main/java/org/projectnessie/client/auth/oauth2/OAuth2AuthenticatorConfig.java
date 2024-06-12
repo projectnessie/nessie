@@ -137,6 +137,8 @@ public interface OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
         builder::deviceCodeFlowPollInterval,
         Duration::parse);
+    TokenExchangeConfig tokenExchangeConfig = TokenExchangeConfig.fromConfigSupplier(config);
+    builder.tokenExchangeConfig(tokenExchangeConfig);
     return builder.build();
   }
 
@@ -225,6 +227,12 @@ public interface OAuth2AuthenticatorConfig {
   @Value.Default
   default boolean getTokenExchangeEnabled() {
     return true;
+  }
+
+  /** The token exchange configuration. Optional. */
+  @Value.Default
+  default TokenExchangeConfig getTokenExchangeConfig() {
+    return TokenExchangeConfig.DISABLED;
   }
 
   /**
@@ -407,9 +415,10 @@ public interface OAuth2AuthenticatorConfig {
 
     @Deprecated
     @CanIgnoreReturnValue
-    default Builder tokenExchangeEnabled(boolean tokenExchangeEnabled) {
-      return this;
-    }
+    Builder tokenExchangeEnabled(boolean tokenExchangeEnabled);
+
+    @CanIgnoreReturnValue
+    Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);
 
     @CanIgnoreReturnValue
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

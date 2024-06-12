@@ -39,6 +39,18 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 
 import com.google.common.collect.ImmutableMap;
@@ -48,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -324,6 +337,26 @@ class TestOAuth2ClientConfig {
                 .put(CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT, "PT30S")
                 .put(CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL, "PT8S")
                 .put(CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT, "PT45S")
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL, "https://token-exchange.com/")
+                .put(
+                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT, "https://token-exchange.com/")
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID, "token-exchange-client-id")
+                .put(
+                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET, "token-exchange-client-secret")
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, "scope1 scope2")
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, "audience")
+                .put(
+                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE,
+                    "https://token-exchange.com/resource")
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN, "subject-token")
+                .put(
+                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+                    TypedToken.URN_ID_TOKEN.toString())
+                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN, "actor-token")
+                .put(
+                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
+                    TypedToken.URN_JWT.toString())
                 .build(),
             OAuth2ClientConfig.builder()
                 .issuerUrl(URI.create("https://example.com/"))
@@ -345,7 +378,44 @@ class TestOAuth2ClientConfig {
                 .authorizationCodeFlowTimeout(Duration.ofSeconds(30))
                 .deviceCodeFlowPollInterval(Duration.ofSeconds(8))
                 .deviceCodeFlowTimeout(Duration.ofSeconds(45))
+                .tokenExchangeConfig(
+                    TokenExchangeConfig.builder()
+                        .enabled(true)
+                        .issuerUrl(URI.create("https://token-exchange.com/"))
+                        .tokenEndpoint(URI.create("https://token-exchange.com/"))
+                        .clientId("token-exchange-client-id")
+                        .clientSecret("token-exchange-client-secret")
+                        .audience("audience")
+                        .scope("scope1 scope2")
+                        .resource(URI.create("https://token-exchange.com/resource"))
+                        .subjectToken(TypedToken.of("subject-token", TypedToken.URN_ID_TOKEN))
+                        .actorToken(TypedToken.of("actor-token", TypedToken.URN_JWT))
+                        .build())
                 .build(),
             null));
+  }
+
+  @Test
+  void testTokenExchangeStaticTokens() {
+    OAuth2ClientConfig config =
+        OAuth2ClientConfig.builder()
+            .issuerUrl(URI.create("https://example.com/"))
+            .clientId("Client")
+            .clientSecret("w00t")
+            .tokenExchangeConfig(
+                TokenExchangeConfig.builder()
+                    .enabled(true)
+                    .subjectToken(TypedToken.of("subject-token", TypedToken.URN_ID_TOKEN))
+                    .actorToken(TypedToken.of("actor-token", TypedToken.URN_JWT))
+                    .build())
+            .build();
+    TypedToken subjectToken =
+        config.getTokenExchangeConfig().getSubjectTokenProvider().apply(null, null);
+    assertThat(subjectToken.getPayload()).isEqualTo("subject-token");
+    assertThat(subjectToken.getTokenType()).isEqualTo(TypedToken.URN_ID_TOKEN);
+    TypedToken actorToken =
+        config.getTokenExchangeConfig().getActorTokenProvider().apply(null, null);
+    assertThat(actorToken.getPayload()).isEqualTo("actor-token");
+    assertThat(actorToken.getTokenType()).isEqualTo(TypedToken.URN_JWT);
   }
 }
