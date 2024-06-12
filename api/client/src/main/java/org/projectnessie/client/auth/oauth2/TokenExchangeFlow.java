@@ -39,14 +39,15 @@ class TokenExchangeFlow extends AbstractFlow {
 
     TokenExchangeConfig tokenExchangeConfig = config.getTokenExchangeConfig();
 
+    AccessToken accessToken = currentTokens.getAccessToken();
+    RefreshToken refreshToken = currentTokens.getRefreshToken();
+
     TypedToken subjectToken =
-        tokenExchangeConfig
-            .getSubjectTokenProvider()
-            .apply(currentTokens.getAccessToken(), currentTokens.getRefreshToken());
+        tokenExchangeConfig.getSubjectTokenProvider().apply(accessToken, refreshToken);
     TypedToken actorToken =
-        tokenExchangeConfig
-            .getActorTokenProvider()
-            .apply(currentTokens.getAccessToken(), currentTokens.getRefreshToken());
+        tokenExchangeConfig.getActorTokenProvider().apply(accessToken, refreshToken);
+
+    Objects.requireNonNull(subjectToken);
 
     TokensExchangeRequest.Builder request =
         TokensExchangeRequest.builder()
