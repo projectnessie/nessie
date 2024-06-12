@@ -399,8 +399,7 @@ public final class NessieConfigConstants {
 
   /**
    * For token exchanges only. The type of the subject token. By default, {@code
-   * urn:ietf:params:oauth:token-type:access_token}. Only used if {@value
-   * #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN} is defined, ignored otherwise.
+   * urn:ietf:params:oauth:token-type:access_token}.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE =
@@ -418,8 +417,7 @@ public final class NessieConfigConstants {
 
   /**
    * For token exchanges only. The type of the actor token. By default, {@code
-   * urn:ietf:params:oauth:token-type:access_token}. Only used if {@value
-   * #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN} is defined, ignored otherwise.
+   * urn:ietf:params:oauth:token-type:access_token}.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE =

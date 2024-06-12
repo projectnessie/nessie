@@ -71,19 +71,27 @@ public interface TokenExchangeConfig {
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, builder::scope);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, builder::audience);
     String subjectToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN);
+    String subjectTokenType = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE);
     if (subjectToken != null) {
-      String subjectTokenType = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE);
       builder.subjectToken(
           TypedToken.of(
               subjectToken,
               subjectTokenType == null ? URN_ACCESS_TOKEN : URI.create(subjectTokenType)));
+    } else if (subjectTokenType != null) {
+      builder.subjectTokenProvider(
+          (accessToken, refreshToken) ->
+              TypedToken.of(accessToken.getPayload(), URI.create(subjectTokenType)));
     }
     String actorToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN);
+    String actorTokenType = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE);
     if (actorToken != null) {
-      String actorTokenType = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE);
       builder.actorToken(
           TypedToken.of(
               actorToken, actorTokenType == null ? URN_ACCESS_TOKEN : URI.create(actorTokenType)));
+    } else if (actorTokenType != null) {
+      builder.actorTokenProvider(
+          (accessToken, refreshToken) ->
+              TypedToken.of(accessToken.getPayload(), URI.create(actorTokenType)));
     }
     return builder.build();
   }
