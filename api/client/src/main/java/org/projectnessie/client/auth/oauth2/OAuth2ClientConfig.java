@@ -128,14 +128,40 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     return Clock.systemUTC()::instant;
   }
 
+  String getClientIdForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getClientId().isPresent()) {
+      return getClientId();
+    }
+    return getTokenExchangeConfig().getClientId().get();
+  }
+
   @Value.Derived
   boolean isPublicClient() {
     return !getClientSecret().isPresent();
   }
 
+  boolean isPublicClientForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getClientId().isPresent()) {
+      return isPublicClient();
+    }
+    return !getTokenExchangeConfig().getClientSecret().isPresent();
+  }
+
   @Value.Lazy
   JsonNode getOpenIdProviderMetadata() {
     URI issuerUrl = getIssuerUrl().orElseThrow(IllegalStateException::new);
+    return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
+  }
+
+  @Value.Lazy
+  JsonNode getOpenIdProviderMetadataForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getIssuerUrl().isPresent()) {
+      return getOpenIdProviderMetadata();
+    }
+    URI issuerUrl = getTokenExchangeConfig().getIssuerUrl().get();
     return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
   }
 
@@ -177,6 +203,38 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         "OpenID provider metadata does not contain a device authorization endpoint");
   }
 
+  @Value.Lazy
+  URI getResolvedTokenEndpointForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || (!getTokenExchangeConfig().getIssuerUrl().isPresent()
+            && !getTokenExchangeConfig().getTokenEndpoint().isPresent())) {
+      return getResolvedTokenEndpoint();
+    }
+    if (getTokenExchangeConfig().getTokenEndpoint().isPresent()) {
+      return getTokenExchangeConfig().getTokenEndpoint().get();
+    }
+    JsonNode json = getOpenIdProviderMetadataForTokenExchange();
+    if (json.has("token_endpoint")) {
+      return URI.create(json.get("token_endpoint").asText());
+    }
+    throw new IllegalStateException("OpenID provider metadata does not contain a token endpoint");
+  }
+
+  @Value.Lazy
+  Optional<String> getScopeForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()) {
+      return getScope();
+    }
+    String scope = getTokenExchangeConfig().getScope();
+    if (scope == null || scope.isEmpty()) {
+      return Optional.empty();
+    }
+    if (TokenExchangeConfig.SCOPES_INHERIT.equals(scope)) {
+      return getScope();
+    }
+    return Optional.of(scope);
+  }
+
   /**
    * Returns the BASIC {@link HttpAuthentication} that will be used to authenticate with the OAuth2
    * server, for all endpoints that require such authentication.
@@ -189,6 +247,20 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   Optional<HttpAuthentication> getBasicAuthentication() {
     return getClientSecret()
         .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()));
+  }
+
+  @Value.Lazy
+  Optional<HttpAuthentication> getBasicAuthenticationForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getClientId().isPresent()) {
+      return getBasicAuthentication();
+    }
+    return getTokenExchangeConfig()
+        .getClientSecret()
+        .map(
+            s ->
+                BasicAuthenticationProvider.create(
+                    getTokenExchangeConfig().getClientId().get(), s.getString()));
   }
 
   /**
@@ -397,17 +469,15 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     }
   }
 
-  static void applyConfigOption(
-      Function<String, String> config,
-      String option,
-      Function<String, OAuth2AuthenticatorConfig.Builder> setter) {
+  static <B> void applyConfigOption(
+      Function<String, String> config, String option, Function<String, B> setter) {
     applyConfigOption(config, option, setter, Function.identity());
   }
 
-  static <T> void applyConfigOption(
+  static <T, B> void applyConfigOption(
       Function<String, String> config,
       String option,
-      Function<T, OAuth2AuthenticatorConfig.Builder> setter,
+      Function<T, B> setter,
       Function<String, T> converter) {
     String s = config.apply(option);
     if (s != null) {
@@ -457,6 +527,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
     @Override
     Builder scope(String scope);
+
+    @Override
+    Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);
 
     @Override
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

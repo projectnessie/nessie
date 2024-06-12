@@ -148,7 +148,18 @@ public class ITOAuth2ClientKeycloak {
             new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
 
       OAuth2ClientConfig config1 =
-          clientConfig("Private1", true, false).grantType(CLIENT_CREDENTIALS).build();
+          clientConfig("Private1", true, false)
+              .grantType(CLIENT_CREDENTIALS)
+              .tokenExchangeConfig(
+                  TokenExchangeConfig.builder()
+                      .enabled(true)
+                      .clientId("Private1")
+                      .clientSecret("s3cr3t")
+                      .issuerUrl(issuerUrl)
+                      .audience("Private1")
+                      .scope("exchange")
+                      .build())
+              .build();
       OAuth2ClientConfig config2 =
           clientConfig("Private2", true, false).grantType(PASSWORD).build();
       OAuth2ClientConfig config3 =
