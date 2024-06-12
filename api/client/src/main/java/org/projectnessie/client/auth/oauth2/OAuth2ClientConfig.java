@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
@@ -469,19 +470,19 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     }
   }
 
-  static <B> void applyConfigOption(
-      Function<String, String> config, String option, Function<String, B> setter) {
+  static void applyConfigOption(
+      Function<String, String> config, String option, Consumer<String> setter) {
     applyConfigOption(config, option, setter, Function.identity());
   }
 
-  static <T, B> void applyConfigOption(
+  static <T> void applyConfigOption(
       Function<String, String> config,
       String option,
-      Function<T, B> setter,
+      Consumer<T> setter,
       Function<String, T> converter) {
     String s = config.apply(option);
     if (s != null) {
-      setter.apply(converter.apply(s));
+      setter.accept(converter.apply(s));
     }
   }
 
