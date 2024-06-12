@@ -72,12 +72,21 @@ public interface TokenExchangeConfig {
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, builder::scope);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, builder::audience);
     String subjectToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN);
+    String actorToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN);
     AtomicReference<URI> subjectTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
+    AtomicReference<URI> actorTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
     applyConfigOption(
         config,
         CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
         subjectTokenType::set,
         URI::create);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
+        actorTokenType::set,
+        URI::create);
+    // If a subject token is statically provided, use it. If no subject token is provided, then let
+    // the client be the subject, since a subject token is always required.
     if (subjectToken != null) {
       builder.subjectToken(TypedToken.of(subjectToken, subjectTokenType.get()));
     } else {
@@ -85,15 +94,15 @@ public interface TokenExchangeConfig {
           (accessToken, refreshToken) ->
               TypedToken.of(accessToken.getPayload(), subjectTokenType.get()));
     }
-    String actorToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN);
+    // If an actor token is statically provided, use it. If no actor token is provided, but a
+    // subject token is statically provided, then let the client be the actor; otherwise, no actor
+    // token should be used.
     if (actorToken != null) {
-      AtomicReference<URI> actorTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
-      applyConfigOption(
-          config,
-          CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
-          actorTokenType::set,
-          URI::create);
       builder.actorToken(TypedToken.of(actorToken, actorTokenType.get()));
+    } else if (subjectToken != null) {
+      builder.actorTokenProvider(
+          (accessToken, refreshToken) ->
+              TypedToken.of(accessToken.getPayload(), actorTokenType.get()));
     }
     return builder.build();
   }
