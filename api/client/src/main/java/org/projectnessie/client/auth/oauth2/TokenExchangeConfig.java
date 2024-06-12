@@ -33,6 +33,7 @@ import static org.projectnessie.client.auth.oauth2.TypedToken.URN_ACCESS_TOKEN;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.immutables.value.Value;
@@ -71,27 +72,28 @@ public interface TokenExchangeConfig {
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, builder::scope);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, builder::audience);
     String subjectToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN);
-    String subjectTokenType = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE);
+    AtomicReference<URI> subjectTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+        subjectTokenType::set,
+        URI::create);
     if (subjectToken != null) {
-      builder.subjectToken(
-          TypedToken.of(
-              subjectToken,
-              subjectTokenType == null ? URN_ACCESS_TOKEN : URI.create(subjectTokenType)));
-    } else if (subjectTokenType != null) {
+      builder.subjectToken(TypedToken.of(subjectToken, subjectTokenType.get()));
+    } else {
       builder.subjectTokenProvider(
           (accessToken, refreshToken) ->
-              TypedToken.of(accessToken.getPayload(), URI.create(subjectTokenType)));
+              TypedToken.of(accessToken.getPayload(), subjectTokenType.get()));
     }
     String actorToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN);
-    String actorTokenType = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE);
     if (actorToken != null) {
-      builder.actorToken(
-          TypedToken.of(
-              actorToken, actorTokenType == null ? URN_ACCESS_TOKEN : URI.create(actorTokenType)));
-    } else if (actorTokenType != null) {
-      builder.actorTokenProvider(
-          (accessToken, refreshToken) ->
-              TypedToken.of(accessToken.getPayload(), URI.create(actorTokenType)));
+      AtomicReference<URI> actorTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
+      applyConfigOption(
+          config,
+          CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
+          actorTokenType::set,
+          URI::create);
+      builder.actorToken(TypedToken.of(actorToken, actorTokenType.get()));
     }
     return builder.build();
   }
