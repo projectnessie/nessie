@@ -36,6 +36,7 @@ services:
       QUARKUS_OIDC_ENABLED: true
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/iceberg
       QUARKUS_OIDC_CLIENT_ID: client1
+      QUARKUS_OIDC_TOKEN_ISSUER: http://127.0.0.1:8080/realms/iceberg
     healthcheck:
       test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
       interval: 5s
