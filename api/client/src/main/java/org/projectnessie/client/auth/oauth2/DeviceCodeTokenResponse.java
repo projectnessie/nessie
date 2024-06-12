@@ -20,27 +20,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.3">Token Response</a> in
- * reply to a {@link PasswordTokensRequest}.
- *
- * <p>Example of response:
- *
- * <pre>
- * HTTP/1.1 200 OK
- * Content-Type: application/json;charset=UTF-8
- * Cache-Control: no-store
- * Pragma: no-cache
- *
- * {
- *   "access_token":"2YotnFZFEjr1zCsicMWpAA",
- *   "token_type":"example",
- *   "expires_in":3600,
- *   "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
- *   "example_parameter":"example_value"
- * }
- * </pre>
+ * A device access token response as defined in <a
+ * href="https://tools.ietf.org/html/rfc8628#section-3.5">RFC 8628 Section 3.5</a>.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutablePasswordTokensResponse.class)
-@JsonDeserialize(as = ImmutablePasswordTokensResponse.class)
-interface PasswordTokensResponse extends TokensResponseBase {}
+@JsonSerialize(as = ImmutableDeviceCodeTokenResponse.class)
+@JsonDeserialize(as = ImmutableDeviceCodeTokenResponse.class)
+interface DeviceCodeTokenResponse extends TokenResponseBase {}

@@ -30,7 +30,7 @@ class ClientCredentialsFlow extends AbstractFlow {
 
   @Override
   public Tokens fetchNewTokens(@Nullable Tokens ignored) {
-    ClientCredentialsTokensRequest.Builder request = ClientCredentialsTokensRequest.builder();
-    return invokeTokenEndpoint(request, ClientCredentialsTokensResponse.class);
+    ClientCredentialsTokenRequest.Builder request = ClientCredentialsTokenRequest.builder();
+    return invokeTokenEndpoint(request, ClientCredentialsTokenResponse.class);
   }
 }

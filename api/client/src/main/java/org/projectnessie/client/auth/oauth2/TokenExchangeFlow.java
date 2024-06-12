@@ -49,8 +49,8 @@ class TokenExchangeFlow extends AbstractFlow {
 
     Objects.requireNonNull(subjectToken);
 
-    TokensExchangeRequest.Builder request =
-        TokensExchangeRequest.builder()
+    TokenExchangeRequest.Builder request =
+        TokenExchangeRequest.builder()
             .subjectToken(subjectToken.getPayload())
             .subjectTokenType(subjectToken.getTokenType())
             .actorToken(actorToken == null ? null : actorToken.getPayload())
@@ -59,7 +59,7 @@ class TokenExchangeFlow extends AbstractFlow {
             .audience(tokenExchangeConfig.getAudience().orElse(null))
             .requestedTokenType(tokenExchangeConfig.getRequestedTokenType());
 
-    return invokeTokenEndpoint(request, TokensExchangeResponse.class);
+    return invokeTokenEndpoint(request, TokenExchangeResponse.class);
   }
 
   @Override

@@ -151,9 +151,9 @@ class DeviceCodeFlow extends AbstractFlow {
   private void pollForNewTokens(String deviceCode) {
     try {
       LOGGER.debug("Device Code Flow: polling for new tokens");
-      DeviceCodeTokensRequest.Builder request =
-          DeviceCodeTokensRequest.builder().deviceCode(deviceCode);
-      Tokens tokens = invokeTokenEndpoint(request, DeviceCodeTokensResponse.class);
+      DeviceCodeTokenRequest.Builder request =
+          DeviceCodeTokenRequest.builder().deviceCode(deviceCode);
+      Tokens tokens = invokeTokenEndpoint(request, DeviceCodeTokenResponse.class);
       LOGGER.debug("Device Code Flow: new tokens received");
       tokensFuture.complete(tokens);
     } catch (OAuth2Exception e) {

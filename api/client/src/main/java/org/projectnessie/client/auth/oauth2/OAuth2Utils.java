@@ -18,6 +18,8 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -78,5 +80,41 @@ class OAuth2Utils {
       e.addSuppressed(failures.get(i));
     }
     throw e;
+  }
+
+  static Duration shortestDelay(
+      Instant now,
+      Instant accessExpirationTime,
+      Instant refreshExpirationTime,
+      Duration refreshSafetyWindow,
+      Duration minRefreshDelay) {
+    Instant expirationTime =
+        accessExpirationTime.isBefore(refreshExpirationTime)
+            ? accessExpirationTime
+            : refreshExpirationTime;
+    Duration delay = Duration.between(now, expirationTime).minus(refreshSafetyWindow);
+    if (delay.compareTo(minRefreshDelay) < 0) {
+      delay = minRefreshDelay;
+    }
+    return delay;
+  }
+
+  static Instant tokenExpirationTime(Instant now, Token token, Duration defaultLifespan) {
+    Instant expirationTime = null;
+    if (token != null) {
+      expirationTime = token.getExpirationTime();
+      if (expirationTime == null) {
+        try {
+          JwtToken jwtToken = JwtToken.parse(token.getPayload());
+          expirationTime = jwtToken.getExpirationTime();
+        } catch (Exception ignored) {
+          // fall through
+        }
+      }
+    }
+    if (expirationTime == null) {
+      expirationTime = now.plus(defaultLifespan);
+    }
+    return expirationTime;
   }
 }

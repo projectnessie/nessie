@@ -37,8 +37,8 @@ class PasswordFlow extends AbstractFlow {
             .getPassword()
             .map(Secret::getString)
             .orElseThrow(() -> new IllegalStateException("Password is required"));
-    PasswordTokensRequest.Builder request =
-        PasswordTokensRequest.builder().username(username).password(password);
-    return invokeTokenEndpoint(request, PasswordTokensResponse.class);
+    PasswordTokenRequest.Builder request =
+        PasswordTokenRequest.builder().username(username).password(password);
+    return invokeTokenEndpoint(request, PasswordTokenResponse.class);
   }
 }

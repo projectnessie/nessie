@@ -21,7 +21,7 @@ import org.immutables.value.Value;
 
 /**
  * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.3">Token Response</a> in
- * reply to a {@link RefreshTokensRequest}.
+ * reply to a {@link RefreshTokenRequest}.
  *
  * <p>Example of response:
  *
@@ -40,6 +40,6 @@ import org.immutables.value.Value;
  * </pre>
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableRefreshTokensResponse.class)
-@JsonDeserialize(as = ImmutableRefreshTokensResponse.class)
-interface RefreshTokensResponse extends TokensResponseBase {}
+@JsonSerialize(as = ImmutableRefreshTokenResponse.class)
+@JsonDeserialize(as = ImmutableRefreshTokenResponse.class)
+interface RefreshTokenResponse extends TokenResponseBase {}
