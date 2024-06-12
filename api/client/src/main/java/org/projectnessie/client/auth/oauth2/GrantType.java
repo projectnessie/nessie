@@ -47,7 +47,7 @@ public enum GrantType {
     }
   },
 
-  // grant types for refreshing tokens (cannot be used for initial token acquisition)
+  // non-initial grant types (cannot be used for initial token acquisition)
 
   REFRESH_TOKEN(Constants.REFRESH_TOKEN) {
     @Override
@@ -88,6 +88,13 @@ public enum GrantType {
 
   public boolean requiresUserInteraction() {
     return this == AUTHORIZATION_CODE || this == DEVICE_CODE;
+  }
+
+  public boolean isInitial() {
+    return this == CLIENT_CREDENTIALS
+        || this == PASSWORD
+        || this == AUTHORIZATION_CODE
+        || this == DEVICE_CODE;
   }
 
   public static class Constants {

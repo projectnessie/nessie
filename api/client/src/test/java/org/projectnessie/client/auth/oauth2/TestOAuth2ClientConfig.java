@@ -39,7 +39,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 
 import com.google.common.collect.ImmutableMap;
@@ -118,7 +117,7 @@ class TestOAuth2ClientConfig {
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
-                .grantType(GrantType.TOKEN_EXCHANGE),
+                .grantType(GrantType.REFRESH_TOKEN),
             singletonList(
                 "grant type must be either 'client_credentials', 'password', 'authorization_code' or 'device_code' (nessie.authentication.oauth2.grant-type)")),
         Arguments.of(
@@ -316,7 +315,6 @@ class TestOAuth2ClientConfig {
                 .put(CONF_NESSIE_OAUTH2_USERNAME, "Alice")
                 .put(CONF_NESSIE_OAUTH2_PASSWORD, "s3cr3t")
                 .put(CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "test")
-                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "false")
                 .put(CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN, "PT30S")
                 .put(CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN, "PT30S")
                 .put(CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW, "PT10S")
@@ -338,7 +336,6 @@ class TestOAuth2ClientConfig {
                 .username("Alice")
                 .password("s3cr3t")
                 .scope("test")
-                .tokenExchangeEnabled(false)
                 .defaultAccessTokenLifespan(Duration.ofSeconds(30))
                 .defaultRefreshTokenLifespan(Duration.ofSeconds(30))
                 .refreshSafetyWindow(Duration.ofSeconds(10))

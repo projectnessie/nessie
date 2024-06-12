@@ -288,15 +288,11 @@ public final class NessieConfigConstants {
       "nessie.authentication.oauth2.client-scopes";
 
   /**
-   * Enables token exchange, if set to {@code true}, the Nessie client will attempt to exchange
-   * access tokens for refresh tokens whenever appropriate. This, however, can only work if the
-   * OAuth2 server supports token exchange. Optional, defaults to {@code true} (enabled).
+   * This setting is no longer used and will be removed in 1.0.0.
    *
-   * <p>Note that recent versions of Keycloak support token exchange, but it is disabled by default.
-   * See <a
-   * href="https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange">Using
-   * token exchange</a> for more information and how to enable this feature.
+   * @deprecated This setting is no longer used and will be removed in 1.0.0.
    */
+  @Deprecated
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED =
       "nessie.authentication.oauth2.token-exchange-enabled";
