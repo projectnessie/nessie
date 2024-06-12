@@ -28,6 +28,8 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -69,6 +71,7 @@ public class TestAddressResolver {
   }
 
   @Test
+  @DisabledOnOs(value = OS.MAC, disabledReason = "Resolving 'localhost' doesn't work on macOS")
   public void resolveSingleName() throws Exception {
     soft.assertThat(
             new AddressResolver(dnsClient)
