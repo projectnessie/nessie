@@ -291,6 +291,7 @@ public final class NessieConfigConstants {
    * This setting is no longer used and will be removed in 1.0.0.
    *
    * @deprecated This setting is no longer used and will be removed in 1.0.0.
+   * @hidden
    */
   @Deprecated
   @ConfigItem(section = "OAuth2 Authentication")
