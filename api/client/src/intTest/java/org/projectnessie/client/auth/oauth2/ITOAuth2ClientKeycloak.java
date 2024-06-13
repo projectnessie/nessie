@@ -17,10 +17,18 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE;
 import static org.projectnessie.client.auth.oauth2.GrantType.AUTHORIZATION_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.CLIENT_CREDENTIALS;
 import static org.projectnessie.client.auth.oauth2.GrantType.DEVICE_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.PASSWORD;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_ACCESS_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_REFRESH_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TypedToken.URN_ID_TOKEN;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +41,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -385,20 +394,25 @@ public class ITOAuth2ClientKeycloak {
         new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
       subjectToken = subjectClient.fetchNewTokens().getAccessToken();
     }
-    TokenExchangeConfig tokenExchangeConfig =
-        TokenExchangeConfig.builder()
-            .enabled(true)
-            .subjectToken(TypedToken.fromAccessToken(subjectToken))
-            .actorTokenProvider(
-                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
-            .build();
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            subjectToken.getPayload(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+            URN_ID_TOKEN.toString(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN,
+            CURRENT_ACCESS_TOKEN);
     try (OAuth2Client client =
-        new OAuth2Client(
-            clientConfig("Private2", true, true)
-                .tokenExchangeConfig(tokenExchangeConfig)
-                .build())) {
+            new OAuth2Client(
+                clientConfig("Private2", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -413,20 +427,25 @@ public class ITOAuth2ClientKeycloak {
         new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
       actorToken = client.fetchNewTokens().getAccessToken();
     }
-    TokenExchangeConfig tokenExchangeConfig =
-        TokenExchangeConfig.builder()
-            .enabled(true)
-            .subjectTokenProvider(
-                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
-            .actorToken(TypedToken.fromAccessToken(actorToken))
-            .build();
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            CURRENT_ACCESS_TOKEN,
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN,
+            actorToken.getPayload(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
+            URN_ID_TOKEN.toString());
     try (OAuth2Client client =
-        new OAuth2Client(
-            clientConfig("Private2", true, true)
-                .tokenExchangeConfig(tokenExchangeConfig)
-                .build())) {
+            new OAuth2Client(
+                clientConfig("Private2", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -436,21 +455,23 @@ public class ITOAuth2ClientKeycloak {
    */
   @Test
   void testOAuth2ClientTokenExchangeDelegation3() {
-    TokenExchangeConfig tokenExchangeConfig =
-        TokenExchangeConfig.builder()
-            .enabled(true)
-            .subjectTokenProvider(
-                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
-            .actorTokenProvider(
-                (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken))
-            .build();
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            CURRENT_REFRESH_TOKEN,
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN,
+            CURRENT_ACCESS_TOKEN);
     try (OAuth2Client client =
-        new OAuth2Client(
-            clientConfig("Private1", true, true)
-                .tokenExchangeConfig(tokenExchangeConfig)
-                .build())) {
+            new OAuth2Client(
+                clientConfig("Private1", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -465,18 +486,23 @@ public class ITOAuth2ClientKeycloak {
         new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
       subjectToken = subjectClient.fetchNewTokens().getAccessToken();
     }
-    TokenExchangeConfig tokenExchangeConfig =
-        TokenExchangeConfig.builder()
-            .enabled(true)
-            .subjectToken(TypedToken.fromAccessToken(subjectToken))
-            .build();
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            subjectToken.getPayload(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+            URN_ID_TOKEN.toString());
     try (OAuth2Client client =
-        new OAuth2Client(
-            clientConfig("Private2", true, true)
-                .tokenExchangeConfig(tokenExchangeConfig)
-                .build())) {
+            new OAuth2Client(
+                clientConfig("Private2", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -486,14 +512,21 @@ public class ITOAuth2ClientKeycloak {
    */
   @Test
   void testOAuth2ClientTokenExchangeImpersonation2() {
-    TokenExchangeConfig tokenExchangeConfig = TokenExchangeConfig.builder().enabled(true).build();
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            CURRENT_ACCESS_TOKEN);
     try (OAuth2Client client =
-        new OAuth2Client(
-            clientConfig("Private2", true, true)
-                .tokenExchangeConfig(tokenExchangeConfig)
-                .build())) {
+            new OAuth2Client(
+                clientConfig("Private1", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
     }
   }
 

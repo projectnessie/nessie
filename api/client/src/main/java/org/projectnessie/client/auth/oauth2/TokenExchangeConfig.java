@@ -29,11 +29,11 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.applyConfigOption;
 import static org.projectnessie.client.auth.oauth2.TypedToken.URN_ACCESS_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TypedToken.URN_REFRESH_TOKEN;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.immutables.value.Value;
@@ -50,6 +50,10 @@ public interface TokenExchangeConfig {
   TokenExchangeConfig DISABLED = builder().enabled(false).build();
 
   String SCOPES_INHERIT = "\\inherit\\";
+
+  String CURRENT_ACCESS_TOKEN = "current_access_token";
+  String CURRENT_REFRESH_TOKEN = "current_refresh_token";
+  String NO_TOKEN = "no_token";
 
   static TokenExchangeConfig fromConfigSupplier(Function<String, String> config) {
     String enabled = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED);
@@ -71,39 +75,45 @@ public interface TokenExchangeConfig {
         config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE, builder::resource, URI::create);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, builder::scope);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, builder::audience);
+
     String subjectToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN);
     String actorToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN);
-    AtomicReference<URI> subjectTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
-    AtomicReference<URI> actorTokenType = new AtomicReference<>(URN_ACCESS_TOKEN);
-    applyConfigOption(
-        config,
-        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
-        subjectTokenType::set,
-        URI::create);
-    applyConfigOption(
-        config,
-        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
-        actorTokenType::set,
-        URI::create);
-    // If a subject token is statically provided, use it. If no subject token is provided, then let
-    // the client be the subject, since a subject token is always required.
-    if (subjectToken != null) {
-      builder.subjectToken(TypedToken.of(subjectToken, subjectTokenType.get()));
-    } else {
+
+    Optional<URI> subjectTokenType =
+        Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE))
+            .map(URI::create);
+    Optional<URI> actorTokenType =
+        Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE))
+            .map(URI::create);
+
+    if (subjectToken == null || subjectToken.equalsIgnoreCase(CURRENT_ACCESS_TOKEN)) {
       builder.subjectTokenProvider(
           (accessToken, refreshToken) ->
-              TypedToken.of(accessToken.getPayload(), subjectTokenType.get()));
-    }
-    // If an actor token is statically provided, use it. If no actor token is provided, but a
-    // subject token is statically provided, then let the client be the actor; otherwise, no actor
-    // token should be used.
-    if (actorToken != null) {
-      builder.actorToken(TypedToken.of(actorToken, actorTokenType.get()));
-    } else if (subjectToken != null) {
-      builder.actorTokenProvider(
+              TypedToken.of(accessToken, subjectTokenType.orElse(URN_ACCESS_TOKEN)));
+    } else if (subjectToken.equalsIgnoreCase(CURRENT_REFRESH_TOKEN)) {
+      builder.subjectTokenProvider(
           (accessToken, refreshToken) ->
-              TypedToken.of(accessToken.getPayload(), actorTokenType.get()));
+              TypedToken.of(refreshToken, subjectTokenType.orElse(URN_REFRESH_TOKEN)));
+    } else {
+      builder.subjectToken(TypedToken.of(subjectToken, subjectTokenType.orElse(URN_ACCESS_TOKEN)));
     }
+
+    if (actorToken != null && !actorToken.equalsIgnoreCase(NO_TOKEN)) {
+      if (actorToken.equalsIgnoreCase(CURRENT_ACCESS_TOKEN)) {
+        builder.actorTokenProvider(
+            (accessToken, refreshToken) ->
+                TypedToken.of(accessToken, actorTokenType.orElse(URN_ACCESS_TOKEN)));
+      } else if (actorToken.equalsIgnoreCase(CURRENT_REFRESH_TOKEN)) {
+        builder.actorTokenProvider(
+            (accessToken, refreshToken) ->
+                refreshToken == null
+                    ? null
+                    : TypedToken.of(refreshToken, actorTokenType.orElse(URN_REFRESH_TOKEN)));
+      } else {
+        builder.actorToken(TypedToken.of(actorToken, actorTokenType.orElse(URN_ACCESS_TOKEN)));
+      }
+    }
+
     return builder.build();
   }
 
@@ -222,7 +232,7 @@ public interface TokenExchangeConfig {
   @Value.Default
   @Value.Auxiliary
   default BiFunction<AccessToken, RefreshToken, TypedToken> getSubjectTokenProvider() {
-    return (accessToken, refreshToken) -> TypedToken.fromAccessToken(accessToken);
+    return (accessToken, refreshToken) -> TypedToken.of(accessToken);
   }
 
   /**
