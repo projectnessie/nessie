@@ -14,18 +14,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
-
-## [0.90.3] Release (2024-06-13)
-
-### New Features
-
 - Support for token exchange in the Nessie client has been completely redesigned. The new API and
   configuration options are described in the [Nessie authentication settings]. If this feature is
   enabled, each time a new access token is obtained, the client will exchange it for another one by
@@ -33,6 +21,16 @@ as necessary. Empty sections will not end in the release notes.
   unlock many advanced use cases for Nessie users, such as impersonation and delegation. Please note
   that token exchange is considered in beta state and both the API and configuration options are
   subject to change at any time; we appreciate early feedback, comments and suggestions.
+
+[Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
 
 ## [0.90.2] Release (2024-06-11)
 
@@ -524,8 +522,7 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.3...HEAD
-[0.90.3]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...nessie-0.90.3
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...HEAD
 [0.90.2]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...nessie-0.90.2
 [0.83.2]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.2
 [0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
@@ -553,4 +550,3 @@ as necessary. Empty sections will not end in the release notes.
 [0.66.0]: https://github.com/projectnessie/nessie/compare/nessie-0.65.1...nessie-0.66.0
 [0.65.1]: https://github.com/projectnessie/nessie/compare/nessie-0.65.0...nessie-0.65.1
 [0.65.0]: https://github.com/projectnessie/nessie/compare/nessie-0.64.0...nessie-0.65.0
-[Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings
