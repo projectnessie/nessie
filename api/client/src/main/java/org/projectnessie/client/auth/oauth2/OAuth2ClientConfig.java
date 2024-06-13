@@ -222,18 +222,15 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   }
 
   @Value.Lazy
-  Optional<String> getScopeForTokenExchange() {
+  List<String> getScopesForTokenExchange() {
     if (!getTokenExchangeConfig().isEnabled()) {
-      return getScope();
+      return getScopes();
     }
-    String scope = getTokenExchangeConfig().getScope();
-    if (scope == null || scope.isEmpty()) {
-      return Optional.empty();
+    List<String> scopes = getTokenExchangeConfig().getScopes();
+    if (scopes.equals(TokenExchangeConfig.SCOPES_INHERIT)) {
+      return getScopes();
     }
-    if (TokenExchangeConfig.SCOPES_INHERIT.equals(scope)) {
-      return getScope();
-    }
-    return Optional.of(scope);
+    return scopes;
   }
 
   /**
@@ -527,7 +524,13 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     }
 
     @Override
-    Builder scope(String scope);
+    Builder addScope(String scope);
+
+    @Override
+    Builder addScopes(String... scopes);
+
+    @Override
+    Builder scopes(Iterable<String> scopes);
 
     @Override
     Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);

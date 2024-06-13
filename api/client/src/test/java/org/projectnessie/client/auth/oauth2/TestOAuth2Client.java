@@ -498,7 +498,7 @@ class TestOAuth2Client {
               .issuerUrl(server2.getUri().resolve("/"))
               .resource(URI.create("urn:resource"))
               .audience("audience")
-              .scope("test-exchanged")
+              .addScope("test-exchanged")
               .clientId("Client1")
               .clientSecret("s3cr3t")
               .actorToken(TypedToken.of("actor-token", TypedToken.URN_ID_TOKEN))
@@ -537,7 +537,7 @@ class TestOAuth2Client {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      OAuth2ClientConfig config = configBuilder(server, false).scope("invalid-scope").build();
+      OAuth2ClientConfig config = configBuilder(server, false).addScope("invalid-scope").build();
 
       try (OAuth2Client client = new OAuth2Client(config)) {
 
@@ -587,7 +587,7 @@ class TestOAuth2Client {
       soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
       soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic Q2xpZW50MTpzM2NyM3Q=");
       Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
-      if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
+      if (data.containsKey("scope") && data.get("scope").contains("invalid-scope")) {
         ErrorResponse response =
             ImmutableErrorResponse.builder()
                 .errorCode("invalid_request")
@@ -849,7 +849,7 @@ class TestOAuth2Client {
         OAuth2ClientConfig.builder()
             .clientId("Client1")
             .clientSecret("s3cr3t")
-            .scope("test")
+            .addScope("test")
             .clock(() -> now);
     if (server.getSslContext() != null) {
       builder.sslContext(server.getSslContext());
