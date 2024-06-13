@@ -60,6 +60,7 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-notice"))
   implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(project(":nessie-catalog-files-api"))
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-model"))

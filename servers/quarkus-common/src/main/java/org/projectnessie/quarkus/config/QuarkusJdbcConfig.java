@@ -65,6 +65,14 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  *   <li>Other MySQL-specific properties can be set using {@code quarkus.datasource.mysql.*}
  * </ul>
  *
+ * <p>To connect to an H2 in-memory database, the following configuration should be used (note that
+ * H2 is not recommended for production):
+ *
+ * <ul>
+ *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.persist.jdbc.datasource=h2}
+ * </ul>
+ *
  * Note: for MySQL, the MariaDB driver is used, as it is compatible with MySQL. You can use either
  * {@code jdbc:mysql} or {@code jdbc:mariadb} as the URL prefix.
  *
@@ -77,9 +85,9 @@ public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
 
   /**
    * The name of the datasource to use. Must correspond to a configured datasource under {@code
-   * quarkus.datasource.<name>}. Supported values are: {@code postgresql} {@code mariadb} and {@code
-   * mysql}. If not provided, the default Quarkus datasource, defined using the {@code
-   * quarkus.datasource.*} configuration keys, will be used (the corresponding driver is
+   * quarkus.datasource.<name>}. Supported values are: {@code postgresql} {@code mariadb}, {@code
+   * mysql} and {@code h2}. If not provided, the default Quarkus datasource, defined using the
+   * {@code quarkus.datasource.*} configuration keys, will be used (the corresponding driver is
    * PostgresQL). Note that it is recommended to define "named" JDBC datasources, see <a
    * href="https://quarkus.io/guides/datasource#jdbc-configuration">Quarkus JDBC config
    * reference</a>.
