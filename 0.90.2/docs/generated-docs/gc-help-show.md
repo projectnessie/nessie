@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ```
 Usage: nessie-gc.jar show [-BCDhV] [--time-zone=<zoneId>] ([--inmemory] | [[--jdbc]
                           --jdbc-url=<url> [--jdbc-properties[=<String=String>[,

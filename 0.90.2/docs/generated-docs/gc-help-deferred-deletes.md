@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ```
 Usage: nessie-gc.jar deferred-deletes [-hV] [--time-zone=<zoneId>] [-H=<String=String>[,
                                       <String=String>...]]... [-I=<String=String>[,
