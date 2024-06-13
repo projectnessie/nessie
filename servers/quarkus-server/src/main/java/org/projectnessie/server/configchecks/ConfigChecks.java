@@ -43,8 +43,8 @@ public class ConfigChecks {
               + "Recommended action: Use a supported database, see https://projectnessie.org/nessie-latest/configuration/");
     }
     if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.JDBC) {
-      if (jdbcConfig.datasource().isPresent()
-          && jdbcConfig.datasource().get().equalsIgnoreCase("h2")) {
+      if (jdbcConfig.datasourceName().isPresent()
+          && jdbcConfig.datasourceName().get().equalsIgnoreCase("h2")) {
         LOGGER.warn(
             "Configured datasource H2 is only for testing purposes and experimentation, not for production use. "
                 + "Data will be lost when the process is shut down. "
