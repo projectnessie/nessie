@@ -35,6 +35,16 @@ See also [Authentication Settings](#authentication-settings) below.
 
 {% include './generated-docs/client-config-OAuth2_Authentication.md' %}
 
+#### OAuth2 Token Exchange settings
+
+The Nessie client now supports token exchange, which allows the client to exchange an access token
+for another access token.
+
+!!! warning
+    The feature is still experimental and subject to change.
+
+{% include './generated-docs/client-config-OAuth2_Authentication_Token_Exchange.md' %}
+
 ### AWS authentication settings
 
 Additional AWS authentication configuration should be provided via standard AWS configuration files.
@@ -181,126 +191,7 @@ use when authenticating against the OAuth2 server. Valid values are:
 [Authorization Code grant]: https://datatracker.ietf.org/doc/html/rfc6749#section-4.1
 [Device Authorization grant]: https://datatracker.ietf.org/doc/html/rfc8628
 
-The full list of available properties is shown hereafter. Depending on the grant type, some of them 
-must be provided:
-
-* For the "client_credentials" grant type, at least the following properties must be provided:
-  * `authentication.oauth2.issuer-url` or `authentication.oauth2.token-endpoint`
-  * `authentication.oauth2.client-id`
-  * `authentication.oauth2.client-secret`
-* For the "password" grant type, at least the following properties must be provided:
-  * `authentication.oauth2.issuer-url` or `authentication.oauth2.token-endpoint`
-  * `authentication.oauth2.client-id`
-  * `authentication.oauth2.client-secret`
-  * `authentication.oauth2.username`
-  * `authentication.oauth2.password`
-* For the "authorization_code" grant type, at least the following properties must be provided:
-  * `authentication.oauth2.issuer-url`, or both `authentication.oauth2.token-endpoint` 
-    and `authentication.oauth2.auth-endpoint`
-  * `authentication.oauth2.client-id`
-  * `authentication.oauth2.client-secret`
-  * `authentication.oauth2.auth-endpoint`
-* For the "device_code" grant type, at least the following properties must be provided:
-  * `authentication.oauth2.issuer-url`, or both `authentication.oauth2.token-endpoint` 
-    and `authentication.oauth2.deivce-auth-endpoint`
-  * `authentication.oauth2.client-id`
-  * `authentication.oauth2.client-secret`
-  * `authentication.oauth2.auth-endpoint`
-
-Here are the available properties for the `OAUTH2` authentication type:
-
-* `authentication.oauth2.issuer-url`: The root URL of the OpenID Connect identity issuer provider,
-  which will be used for discovering supported endpoints and their locations. For Keycloak, this is 
-  typically the realm URL: `https://<keycloak-server>/realms/<realm-name>`. Optional. Either this 
-  property or the `authentication.oauth2.token-endpoint` property must be provided. Endpoint 
-  discovery is performed using the OpenID Connect Discovery metadata published by the issuer. 
-  See [OpenID Connect Discovery 1.0] for more information.
-
-* `authentication.oauth2.token-endpoint`: the URL of the OAuth2 token endpoint. For Keycloak, this 
-  is typically `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token`. 
-  Optional. Either this property or the `authentication.oauth2.issuer-url` property must be 
-  provided.
-
-* `authentication.oauth2.auth-endpoint`: the URL of the OAuth2 auth endpoint. For Keycloak, this is 
-  typically `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth`. If using 
-  the "authorization_code" grant type, either this property or the 
-  `authentication.oauth2.issuer-url` property must be provided.
-
-* `authentication.oauth2.device-auth-endpoint`: the URL of the OAuth2 device auth endpoint. For 
-  Keycloak, this is typically 
-  `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth/device`. If using 
-  the "device_code" grant type, either this property or the `authentication.oauth2.issuer-url` 
-  property must be provided.
-
-* `authentication.oauth2.client-id`: the client ID to use when authenticating against the OAuth2
-  server. Required.
-
-* `authentication.oauth2.client-secret`: the client secret to use when authenticating against the
-  OAuth2 server. Required.
-
-* `authentication.oauth2.username`: the username to use when authenticating against the OAuth2
-  server. Required if using the "password" grant type.
-
-* `authentication.oauth2.password`: the password to use when authenticating against the OAuth2
-  server. Required if using the "password" grant type.
-
-* `authentication.oauth2.default-access-token-lifespan`: the default access token lifespan; if the
-  OAuth2 server returns an access token without specifying its expiration time, this value will be
-  used. Optional, defaults to `PT1M` (1 minute). Must be a valid [ISO-8601 duration].
-
-* `authentication.oauth2.default-refresh-token-lifespan`: the default refresh token lifespan;
-  if the OAuth2 server returns a refresh token without specifying its expiration time, this value
-  will be used. Optional, defaults to `PT30M` (30 minutes). Must be a valid [ISO-8601 duration].
-
-* `authentication.oauth2.refresh-safety-window`: the refresh safety window to use; a new token will
-  be fetched when the current token's remaining lifespan is less than this value. Optional, defaults
-  to `PT10S` (10 seconds). Must be a valid [ISO-8601 duration].
-
-* `authentication.oauth2.client-scopes`: space-separated list of scopes to include in each request
-  to the OAuth2 server. Optional, defaults to empty (no scopes). The scope names will not be
-  validated by the Nessie client; make sure they are valid according to [RFC 6749 Section 3.3].
-
-* `authentication.oauth2.token-exchange-enabled`: if set to `true`, the Nessie client will attempt
-  to exchange access tokens for refresh tokens whenever appropriate. This, however, can only work if
-  the OAuth2 server supports token exchange. Optional, defaults to `true` (enabled). Note that
-  recent versions of Keycloak support token exchange, but it is disabled by default. See [Using
-  token exchange] for more information and how to enable this feature.
-
-* `authentication.oauth2.preemptive-token-refresh-idle-timeout`: for how long the Nessie 
-  client should keep the tokens fresh, if the client is not being actively used. Setting this value 
-  too high may cause an excessive usage of network I/O and thread resources; conversely, when 
-  setting it too low, if the client is used again, the calling thread may block if the tokens are 
-  expired and need to be renewed synchronously. Optional, defaults to `PT30S` (30 seconds). Must be 
-  a valid [ISO-8601 duration].
-
-* `authentication.oauth2.background-thread-idle-timeout`: how long the Nessie client should 
-  keep a background thread alive, if the client is not being actively used, or no token refreshes 
-  are being executed. Setting this value too high will cause the background thread to keep running 
-  even if the client is not used anymore, potentially leaking thread and memory resources; 
-  conversely, setting it too low could cause the background thread to be restarted too often.
-  Optional, defaults to `PT30S` (30 seconds). Must be a valid [ISO-8601 duration].
-
-* `authentication.oauth2.auth-code-flow.web-port`: The port used for the embedded web server 
-  that listens for the authorization code callback. This is only used if the grant type to use is 
-  "authorization_code". Optional; if not present, a random port will be used.
-
-* `authentication.oauth2.auth-code-flow.timeout`: How long the client should wait for the
-  authorization code flow to complete. This is only used if the grant type to use is
-  "authorization_code". Optional, defaults to `PT5M` (5 minutes). Must be a valid 
-  [ISO-8601 duration].
-
-* `authentication.oauth2.device-code-flow.timeout`: How long the client should wait for the
-  device code flow to complete. This is only used if the grant type to use is
-  "device_code". Optional, defaults to `PT5M` (5 minutes). Must be a valid [ISO-8601 duration].
-
-* `authentication.oauth2.device-code-flow.poll-interval`: How often the client should poll the 
-  device authorization endpoint for a token. This is only used if the grant type to use is
-  "device_code". Optional, defaults to `PT5S` (5 seconds). Must be a valid [ISO-8601 duration].
-
-[ISO-8601 duration]: https://en.wikipedia.org/wiki/ISO_8601#Durations
-[RFC 6749 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
-[Using token exchange]: https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange
-[OpenID Connect Discovery 1.0]: https://openid.net/specs/openid-connect-discovery-1_0.html
+The full list of available properties is shown above.
 
 #### Which grant type to use?
 

@@ -303,7 +303,7 @@ public final class NessieConfigConstants {
    * will be exchanged for a new token, using the token endpoint and the token exchange grant type,
    * as defined in <a href="https://datatracker.ietf.org/doc/html/rfc8693">RFC 8693</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED =
       "nessie.authentication.oauth2.token-exchange.enabled";
 
@@ -318,10 +318,8 @@ public final class NessieConfigConstants {
    * <p>Endpoint discovery is performed using the OpenID Connect Discovery metadata published by the
    * issuer. See <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">OpenID Connect
    * Discovery 1.0</a> for more information.
-   *
-   * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL =
       "nessie.authentication.oauth2.token-exchange.issuer-url";
 
@@ -333,7 +331,7 @@ public final class NessieConfigConstants {
    * defined, the global token endpoint will be used. This means that the same authorization server
    * will be used for both the initial token request and the token exchange.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT =
       "nessie.authentication.oauth2.token-exchange.token-endpoint";
 
@@ -343,7 +341,7 @@ public final class NessieConfigConstants {
    * as well with {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET} – the global client
    * secret will NOT be used.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID =
       "nessie.authentication.oauth2.token-exchange.client-id";
 
@@ -352,7 +350,7 @@ public final class NessieConfigConstants {
    * #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID} is defined and the token exchange client is
    * confidential.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET =
       "nessie.authentication.oauth2.token-exchange.client-secret";
 
@@ -360,7 +358,7 @@ public final class NessieConfigConstants {
    * For token exchanges only. A URI that indicates the target service or resource where the client
    * intends to use the requested security token. Optional.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE =
       "nessie.authentication.oauth2.token-exchange.resource";
 
@@ -369,21 +367,21 @@ public final class NessieConfigConstants {
    * use the requested security token. This serves a purpose similar to the resource parameter but
    * with the client providing a logical name for the target service.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE =
       "nessie.authentication.oauth2.token-exchange.audience";
 
   /**
    * For token exchanges only. Space-separated list of scopes to include in each token exchange
    * request to the OAuth2 server. Optional. If undefined, the global scopes configured through
-   * {@link #CONF_NESSIE_OAUTH2_CLIENT_SCOPES} will be used. If defined and null or empty, no scopes
-   * will be used.
+   * {@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES} will be used. If defined and null or empty, no
+   * scopes will be used.
    *
    * <p>The scope names will not be validated by the Nessie client; make sure they are valid
    * according to <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">RFC 6749
    * Section 3.3</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES =
       "nessie.authentication.oauth2.token-exchange.scopes";
 
@@ -403,7 +401,7 @@ public final class NessieConfigConstants {
    *
    * The default is to use the current access token.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN =
       "nessie.authentication.oauth2.token-exchange.subject-token";
 
@@ -416,7 +414,7 @@ public final class NessieConfigConstants {
    * <p>If the client is configured to use its access or refresh token as the subject token, please
    * note that if an incorrect token type is provided here, the token exchange could fail.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE =
       "nessie.authentication.oauth2.token-exchange.subject-token-type";
 
@@ -438,7 +436,7 @@ public final class NessieConfigConstants {
    *
    * The default is to not include any actor token.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN =
       "nessie.authentication.oauth2.token-exchange.actor-token";
 
@@ -451,7 +449,7 @@ public final class NessieConfigConstants {
    * <p>If the client is configured to use its access or refresh token as the actor token, please
    * note that if an incorrect token type is provided here, the token exchange could fail.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE =
       "nessie.authentication.oauth2.token-exchange.actor-token-type";
 
