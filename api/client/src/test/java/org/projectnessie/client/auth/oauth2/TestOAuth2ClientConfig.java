@@ -54,6 +54,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_ACCESS_TOKEN;
 import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_REFRESH_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.NO_TOKEN;
 
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
@@ -464,5 +465,36 @@ class TestOAuth2ClientConfig {
                 RefreshToken.of("dynamic-refresh", null));
     assertThat(actorToken.getPayload()).isEqualTo("dynamic-refresh");
     assertThat(actorToken.getTokenType()).isEqualTo(TypedToken.URN_REFRESH_TOKEN);
+  }
+
+  @Test
+  void testTokenExchangeNoActorToken() {
+    ImmutableMap<String, String> map =
+        ImmutableMap.<String, String>builder()
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN, NO_TOKEN)
+            .build();
+    OAuth2ClientConfig config =
+        OAuth2ClientConfig.builder()
+            .issuerUrl(URI.create("https://example.com/"))
+            .clientId("Client")
+            .clientSecret("w00t")
+            .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(map::get))
+            .build();
+    TypedToken subjectToken =
+        config
+            .getTokenExchangeConfig()
+            .getSubjectTokenProvider()
+            .apply(AccessToken.of("dynamic-access", "Bearer", null), null);
+    assertThat(subjectToken.getPayload()).isEqualTo("dynamic-access");
+    assertThat(subjectToken.getTokenType()).isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+    TypedToken actorToken =
+        config
+            .getTokenExchangeConfig()
+            .getActorTokenProvider()
+            .apply(
+                AccessToken.of("dynamic-access", "Bearer", null),
+                RefreshToken.of("dynamic-refresh", null));
+    assertThat(actorToken).isNull();
   }
 }
