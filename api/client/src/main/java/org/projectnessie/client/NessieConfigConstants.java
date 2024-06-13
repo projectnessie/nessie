@@ -388,46 +388,68 @@ public final class NessieConfigConstants {
       "nessie.authentication.oauth2.token-exchange.scopes";
 
   /**
-   * For token exchanges only. The subject token to exchange.
+   * For token exchanges only. The subject token to exchange. This can take 3 kinds of values:
    *
-   * <p>By default, the client will use its current access token as the subject token. But if this
-   * property is set, the client will use the static token provided here instead.
+   * <ul>
+   *   <li>The value {@value
+   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_ACCESS_TOKEN}, if the
+   *       client should use its current access token;
+   *   <li>The value {@value
+   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_REFRESH_TOKEN}, if the
+   *       client should use its current refresh token (if available);
+   *   <li>An arbitrary token: in this case, the client will always use the static token provided
+   *       here.
+   * </ul>
+   *
+   * The default is to use the current access token.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN =
       "nessie.authentication.oauth2.token-exchange.subject-token";
 
   /**
-   * For token exchanges only. The type of the subject token. By default, {@code
-   * urn:ietf:params:oauth:token-type:access_token}.
+   * For token exchanges only. The type of the subject token. Must be a valid URN. The default is
+   * either {@code urn:ietf:params:oauth:token-type:access_token} or {@code
+   * urn:ietf:params:oauth:token-type:refresh_token}, depending on the value of {@value
+   * #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN}.
    *
-   * <p>If {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN} is set, this property will be
-   * used to define the type of the provided subject token. If that property not set, this property
-   * will define the type of the access token obtained by the client – in this case, please note
-   * that if an incorrect token type is provided, the token exchange could fail.
+   * <p>If the client is configured to use its access or refresh token as the subject token, please
+   * note that if an incorrect token type is provided here, the token exchange could fail.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE =
       "nessie.authentication.oauth2.token-exchange.subject-token-type";
 
   /**
-   * For token exchanges only. The actor token to exchange.
+   * For token exchanges only. The actor token to exchange. This can take 4 kinds of values:
    *
-   * <p>By default, the client will not use an actor token. But if this property is set, the client
-   * will use the static token provided here as the actor token.
+   * <ul>
+   *   <li>The value {@value org.projectnessie.client.auth.oauth2.TokenExchangeConfig#NO_TOKEN}, if
+   *       the client should not include any actor token in the exchange request;
+   *   <li>The value {@value
+   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_ACCESS_TOKEN}, if the
+   *       client should use its current access token;
+   *   <li>The value {@value
+   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_REFRESH_TOKEN}, if the
+   *       client should use its current refresh token (if available);
+   *   <li>An arbitrary token: in this case, the client will always use the static token provided
+   *       here.
+   * </ul>
+   *
+   * The default is to not include any actor token.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN =
       "nessie.authentication.oauth2.token-exchange.actor-token";
 
   /**
-   * For token exchanges only. The type of the actor token. By default, {@code
-   * urn:ietf:params:oauth:token-type:access_token}.
+   * For token exchanges only. The type of the actor token. Must be a valid URN. The default is
+   * either {@code urn:ietf:params:oauth:token-type:access_token} or {@code
+   * urn:ietf:params:oauth:token-type:refresh_token}, depending on the value of {@value
+   * #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN}.
    *
-   * <p>If {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN} is set, this property will be
-   * used to define the type of the provided subject token. If that property not set, this property
-   * will define the type of the access token obtained by the client – in this case, please note
-   * that if an incorrect token type is provided, the token exchange could fail.
+   * <p>If the client is configured to use its access or refresh token as the actor token, please
+   * note that if an incorrect token type is provided here, the token exchange could fail.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE =
