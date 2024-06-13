@@ -36,6 +36,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientResponse;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -378,9 +379,12 @@ public class TestCacheInvalidationSender {
         new HttpTestServer(
             config.cacheInvalidationUri(),
             exchange -> {
-              body.set(new String(exchange.getRequestBody().readAllBytes(), UTF_8));
+              try (InputStream requestBody = exchange.getRequestBody()) {
+                body.set(new String(requestBody.readAllBytes(), UTF_8));
+              }
               reqUri.set(exchange.getRequestURI());
               exchange.sendResponseHeaders(204, 0);
+              exchange.getResponseBody().close();
             })) {
 
       URI uri = receiver.getUri();
@@ -433,9 +437,12 @@ public class TestCacheInvalidationSender {
         new HttpTestServer(
             config.cacheInvalidationUri(),
             exchange -> {
-              body.set(new String(exchange.getRequestBody().readAllBytes(), UTF_8));
+              try (InputStream requestBody = exchange.getRequestBody()) {
+                body.set(new String(requestBody.readAllBytes(), UTF_8));
+              }
               reqUri.set(exchange.getRequestURI());
               exchange.sendResponseHeaders(204, 0);
+              exchange.getResponseBody().close();
             })) {
 
       URI uri = receiver.getUri();
@@ -482,7 +489,11 @@ public class TestCacheInvalidationSender {
         new HttpTestServer(
             config.cacheInvalidationUri(),
             exchange -> {
+              try (InputStream requestBody = exchange.getRequestBody()) {
+                requestBody.readAllBytes();
+              }
               // don't send a response -> provoke a timeout
+              exchange.getResponseBody().close();
             })) {
 
       URI uri = receiver.getUri();
