@@ -70,7 +70,7 @@ abstract class AbstractFlow implements Flow {
   }
 
   Optional<String> getScope() {
-    return config.getScope();
+    return config.getScopes().stream().reduce((a, b) -> a + " " + b);
   }
 
   URI getResolvedTokenEndpoint() {

@@ -64,7 +64,7 @@ class TokenExchangeFlow extends AbstractFlow {
 
   @Override
   Optional<String> getScope() {
-    return config.getScopeForTokenExchange();
+    return config.getScopesForTokenExchange().stream().reduce((a, b) -> a + " " + b);
   }
 
   @Override

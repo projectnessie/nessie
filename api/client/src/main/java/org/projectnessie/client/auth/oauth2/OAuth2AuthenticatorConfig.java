@@ -48,6 +48,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -91,7 +93,10 @@ public interface OAuth2AuthenticatorConfig {
         config, CONF_NESSIE_OAUTH2_GRANT_TYPE, builder::grantType, GrantType::fromConfigName);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_USERNAME, builder::username);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_PASSWORD, builder::password);
-    applyConfigOption(config, CONF_NESSIE_OAUTH2_CLIENT_SCOPES, builder::scope);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_CLIENT_SCOPES,
+        scope -> Arrays.stream(scope.split(" ")).forEach(builder::addScope));
     applyConfigOption(
         config,
         CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN,
@@ -215,12 +220,18 @@ public interface OAuth2AuthenticatorConfig {
    */
   Optional<Secret> getPassword();
 
+  @Value.Derived
+  @Deprecated
+  default Optional<String> getScope() {
+    return getScopes().stream().reduce((a, b) -> a + " " + b);
+  }
+
   /**
-   * The OAuth2 scope. Optional.
+   * The OAuth2 scopes. Optional.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SCOPES
    */
-  Optional<String> getScope();
+  List<String> getScopes();
 
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
@@ -411,7 +422,20 @@ public interface OAuth2AuthenticatorConfig {
     }
 
     @CanIgnoreReturnValue
-    Builder scope(String scope);
+    @Deprecated
+    default Builder scope(String scope) {
+      Arrays.stream(scope.split(" ")).forEach(this::addScope);
+      return this;
+    }
+
+    @CanIgnoreReturnValue
+    Builder addScope(String scope);
+
+    @CanIgnoreReturnValue
+    Builder addScopes(String... scopes);
+
+    @CanIgnoreReturnValue
+    Builder scopes(Iterable<String> scopes);
 
     @Deprecated
     @CanIgnoreReturnValue

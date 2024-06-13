@@ -116,7 +116,8 @@ class AuthorizationCodeFlow extends AbstractFlow {
             .path(authEndpoint.getPath())
             .queryParam("response_type", "code")
             .queryParam("client_id", config.getClientId())
-            .queryParam("scope", config.getScope().orElse(null))
+            .queryParam(
+                "scope", config.getScopes().stream().reduce((a, b) -> a + " " + b).orElse(null))
             .queryParam("redirect_uri", redirectUri)
             .queryParam("state", state)
             .build();

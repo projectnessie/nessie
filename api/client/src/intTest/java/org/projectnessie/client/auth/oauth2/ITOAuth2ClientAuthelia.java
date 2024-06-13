@@ -150,7 +150,7 @@ public class ITOAuth2ClientAuthelia {
         .clientSecret("s3cr3t")
         // offline_access is required to get a refresh token when using authorization code flow
         // note: Authelia has issues when more than one scope is requested
-        .scope(clientId.equals("nessie-private-cc") ? "profile" : "offline_access")
+        .addScope(clientId.equals("nessie-private-cc") ? "profile" : "offline_access")
         .authorizationCodeFlowWebServerPort(NESSIE_CALLBACK_PORT)
         .issuerUrl(issuerUrl)
         .sslContext(insecureSslContext());

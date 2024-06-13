@@ -157,7 +157,7 @@ public class ITOAuth2ClientKeycloak {
                       .clientSecret("s3cr3t")
                       .issuerUrl(issuerUrl)
                       .audience("Private1")
-                      .scope("exchange")
+                      .addScope("exchange")
                       .build())
               .build();
       OAuth2ClientConfig config2 =
@@ -548,7 +548,7 @@ public class ITOAuth2ClientKeycloak {
             .username("Alice")
             .password("s3cr3t")
             // Otherwise Keycloak complains about missing scope, but still issues tokens
-            .scope("openid")
+            .addScope("openid")
             .defaultAccessTokenLifespan(Duration.ofSeconds(10))
             .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
             .refreshSafetyWindow(Duration.ofSeconds(5))

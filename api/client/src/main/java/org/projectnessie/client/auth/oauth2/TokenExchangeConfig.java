@@ -32,6 +32,9 @@ import static org.projectnessie.client.auth.oauth2.TypedToken.URN_ACCESS_TOKEN;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -47,9 +50,9 @@ import org.projectnessie.client.NessieConfigConstants;
 @Value.Immutable
 public interface TokenExchangeConfig {
 
-  TokenExchangeConfig DISABLED = builder().enabled(false).build();
+  List<String> SCOPES_INHERIT = Collections.singletonList("\\inherit\\");
 
-  String SCOPES_INHERIT = "\\inherit\\";
+  TokenExchangeConfig DISABLED = builder().enabled(false).build();
 
   static TokenExchangeConfig fromConfigSupplier(Function<String, String> config) {
     String enabled = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED);
@@ -69,7 +72,10 @@ public interface TokenExchangeConfig {
         URI::create);
     applyConfigOption(
         config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE, builder::resource, URI::create);
-    applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, builder::scope);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES,
+        scope -> Arrays.stream(scope.split(" ")).forEach(builder::addScope));
     applyConfigOption(config, CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, builder::audience);
     String subjectToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN);
     String actorToken = config.apply(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN);
@@ -192,15 +198,15 @@ public interface TokenExchangeConfig {
   Optional<String> getAudience();
 
   /**
-   * The OAuth2 scope. Optional.
+   * The OAuth2 scopes. Optional.
    *
-   * <p>The special value {@link #SCOPES_INHERIT} (default) means that the scope will be inherited
+   * <p>The special value {@link #SCOPES_INHERIT} (default) means that the scopes will be inherited
    * from the global OAuth2 configuration.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES
    */
   @Value.Default
-  default String getScope() {
+  default List<String> getScopes() {
     return SCOPES_INHERIT;
   }
 
@@ -282,7 +288,13 @@ public interface TokenExchangeConfig {
     Builder audience(String audience);
 
     @CanIgnoreReturnValue
-    Builder scope(String scope);
+    Builder addScope(String scope);
+
+    @CanIgnoreReturnValue
+    Builder addScopes(String... scopes);
+
+    @CanIgnoreReturnValue
+    Builder scopes(Iterable<String> scopes);
 
     @CanIgnoreReturnValue
     Builder subjectTokenProvider(BiFunction<AccessToken, RefreshToken, TypedToken> provider);
