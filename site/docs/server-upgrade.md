@@ -14,7 +14,7 @@ are not supported and must be avoided.
 
 | Rolling Upgrade Supported | _From_ Nessie version | _To_ Nessie version |
 |---------------------------|-----------------------|---------------------|
-| :heavy_check_mark:        | 0.61.0 or newer       | 0.90.2 or newer     |
+| :heavy_check_mark:        | 0.61.0 or newer       | 0.90.4 or newer     |
 | :x:                       | 0.40.0 or newer       | 0.61.0 or newer     |
 | :heavy_check_mark:        | 0.40.0 or newer       | 0.60.0 or newer     |
 | :x:                       | < 0.40.0              | 0.40.0 or newer     |

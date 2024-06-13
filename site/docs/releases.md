@@ -2,6 +2,41 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.90.4 Release (June 13, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.90.4).
+
+### New Features
+
+- Support for token exchange in the Nessie client has been completely redesigned. The new API and
+  configuration options are described in the [Nessie authentication settings]. If this feature is
+  enabled, each time a new access token is obtained, the client will exchange it for another one by
+  performing a token exchange with the authorization server. We hope that this new feature will
+  unlock many advanced use cases for Nessie users, such as impersonation and delegation. Please note
+  that token exchange is considered in beta state and both the API and configuration options are
+  subject to change at any time; we appreciate early feedback, comments and suggestions.
+
+### Commits
+* Skip 0.90.3
+* Fix compilation failure (#8817)
+* Revert commits for 0.90.3 release
+* JDBC: add proper support for H2 (#8751)
+* Fix cache-deserialization for `UpdateableObj` (#8815)
+* OAuth2Client: refactor scopes (#8814)
+* Token exchange: documentation enhancements (#8813)
+* Token exchange: more flexible subject / actor configuration (#8812)
+* OAuth2Client: integration tests for token exchange (#8810)
+* Fix docker-compose files after Keycloak upgrade to 25.0 (#8804)
+* HTTP client: introduce specialized HttpClientResponseException (#8806)
+* OAuth2Client: internal code cleanup (#8807)
+* OAuthClient: configurable subject and actor token types (#8805)
+* OAuth2Client: introduce proper support for token exchange (#8803)
+* OAuth2Client: don't refresh tokens using token exchange (#8790)
+* Disable a test on macOS (#8799)
+* Helm chart: minor improvement to JDBC section in docs (#8717)
+* Nessie w/ Iceberg REST / post-release site changes (#8510)
+* Ninja: fix release-create workflow issues in "create github release" job
+
 ## 0.90.2 Release (June 11, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.90.2).

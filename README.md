@@ -108,7 +108,7 @@ Nessie Iceberg's integration is compatible with Iceberg as in the following tabl
 
 | Nessie version | Iceberg version | Spark version (Scala 2.12+2.13) | Hive version | Flink version          | Presto version                      | Trino version |
 |----------------|-----------------|---------------------------------|--------------|------------------------|-------------------------------------|---------------|
-| 0.90.2         | 1.5.0           | 3.3.x, 3.4.x, 3.5.x             | n/a          | 1.16.x, 1.17.x, 1.18.x | 0.277, 0.278.x, 0.279, 0.280, 0.281 | 419           |
+| 0.90.4         | 1.5.0           | 3.3.x, 3.4.x, 3.5.x             | n/a          | 1.16.x, 1.17.x, 1.18.x | 0.277, 0.278.x, 0.279, 0.280, 0.281 | 419           |
 
 ### Distribution
 To run:

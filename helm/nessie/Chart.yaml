@@ -2,7 +2,7 @@ apiVersion: v2
 name: nessie
 description: A Helm chart for Nessie
 type: application
-version: 0.90.2
+version: 0.90.4
 home: https://projectnessie.org/
 icon: https://raw.githubusercontent.com/projectnessie/nessie/main/site/docs/img/nessie.svg
 sources:
