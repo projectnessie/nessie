@@ -15,7 +15,14 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import jakarta.annotation.Nullable;
+import java.time.Instant;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface RefreshToken extends Token {}
+public interface RefreshToken extends Token {
+
+  static RefreshToken of(String payload, @Nullable Instant expirationTime) {
+    return ImmutableRefreshToken.builder().payload(payload).expirationTime(expirationTime).build();
+  }
+}

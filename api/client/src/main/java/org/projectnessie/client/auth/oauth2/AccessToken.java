@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import jakarta.annotation.Nullable;
+import java.time.Instant;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -22,4 +24,12 @@ public interface AccessToken extends Token {
 
   /** The type of the token issued, typically "Bearer". */
   String getTokenType();
+
+  static AccessToken of(String payload, String tokenType, @Nullable Instant expirationTime) {
+    return ImmutableAccessToken.builder()
+        .payload(payload)
+        .tokenType(tokenType)
+        .expirationTime(expirationTime)
+        .build();
+  }
 }

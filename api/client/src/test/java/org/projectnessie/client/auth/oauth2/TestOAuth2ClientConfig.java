@@ -52,6 +52,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_ACCESS_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_REFRESH_TOKEN;
 
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
@@ -397,25 +399,70 @@ class TestOAuth2ClientConfig {
 
   @Test
   void testTokenExchangeStaticTokens() {
+    ImmutableMap<String, String> map =
+        ImmutableMap.<String, String>builder()
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN, "static-subject")
+            .put(
+                CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+                TypedToken.URN_SAML1.toString())
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN, "static-actor")
+            .put(
+                CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE, TypedToken.URN_SAML2.toString())
+            .build();
     OAuth2ClientConfig config =
         OAuth2ClientConfig.builder()
             .issuerUrl(URI.create("https://example.com/"))
             .clientId("Client")
             .clientSecret("w00t")
-            .tokenExchangeConfig(
-                TokenExchangeConfig.builder()
-                    .enabled(true)
-                    .subjectToken(TypedToken.of("subject-token", TypedToken.URN_ID_TOKEN))
-                    .actorToken(TypedToken.of("actor-token", TypedToken.URN_JWT))
-                    .build())
+            .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(map::get))
             .build();
     TypedToken subjectToken =
-        config.getTokenExchangeConfig().getSubjectTokenProvider().apply(null, null);
-    assertThat(subjectToken.getPayload()).isEqualTo("subject-token");
-    assertThat(subjectToken.getTokenType()).isEqualTo(TypedToken.URN_ID_TOKEN);
+        config
+            .getTokenExchangeConfig()
+            .getSubjectTokenProvider()
+            .apply(AccessToken.of("dynamic-access", "Bearer", null), null);
+    assertThat(subjectToken.getPayload()).isEqualTo("static-subject");
+    assertThat(subjectToken.getTokenType()).isEqualTo(TypedToken.URN_SAML1);
     TypedToken actorToken =
-        config.getTokenExchangeConfig().getActorTokenProvider().apply(null, null);
-    assertThat(actorToken.getPayload()).isEqualTo("actor-token");
-    assertThat(actorToken.getTokenType()).isEqualTo(TypedToken.URN_JWT);
+        config
+            .getTokenExchangeConfig()
+            .getActorTokenProvider()
+            .apply(AccessToken.of("dynamic-access", "Bearer", null), null);
+    assertThat(actorToken.getPayload()).isEqualTo("static-actor");
+    assertThat(actorToken.getTokenType()).isEqualTo(TypedToken.URN_SAML2);
+  }
+
+  @Test
+  void testTokenExchangeDynamicTokens() {
+    ImmutableMap<String, String> map =
+        ImmutableMap.<String, String>builder()
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN, CURRENT_ACCESS_TOKEN)
+            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN, CURRENT_REFRESH_TOKEN)
+            .build();
+    OAuth2ClientConfig config =
+        OAuth2ClientConfig.builder()
+            .issuerUrl(URI.create("https://example.com/"))
+            .clientId("Client")
+            .clientSecret("w00t")
+            .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(map::get))
+            .build();
+    TypedToken subjectToken =
+        config
+            .getTokenExchangeConfig()
+            .getSubjectTokenProvider()
+            .apply(AccessToken.of("dynamic-access", "Bearer", null), null);
+    assertThat(subjectToken.getPayload()).isEqualTo("dynamic-access");
+    assertThat(subjectToken.getTokenType()).isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+    TypedToken actorToken =
+        config
+            .getTokenExchangeConfig()
+            .getActorTokenProvider()
+            .apply(
+                AccessToken.of("dynamic-access", "Bearer", null),
+                RefreshToken.of("dynamic-refresh", null));
+    assertThat(actorToken.getPayload()).isEqualTo("dynamic-refresh");
+    assertThat(actorToken.getTokenType()).isEqualTo(TypedToken.URN_REFRESH_TOKEN);
   }
 }
