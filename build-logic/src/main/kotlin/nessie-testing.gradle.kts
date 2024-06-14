@@ -107,8 +107,8 @@ tasks.withType<Test>().configureEach {
       }
     )
 
-    minHeapSize = if (testHeapSize != null) testHeapSize as String else "512m"
-    maxHeapSize = if (testHeapSize != null) testHeapSize as String else "1536m"
+    minHeapSize = if (testHeapSize != null) testHeapSize as String else "768m"
+    maxHeapSize = if (testHeapSize != null) testHeapSize as String else "2048m"
   } else if (testHeapSize != null) {
     minHeapSize = testHeapSize!!
     maxHeapSize = testHeapSize!!
