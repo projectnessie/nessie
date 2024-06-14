@@ -119,6 +119,330 @@ bigtable:
     # # -- The secret key storing the Google Cloud service account JSON key.
     # key: sa_json
 
+# -- The Nessie catalog server configuration.
+catalog:
+
+  # -- Whether to enable the REST catalog service.
+  enabled: false
+
+  # -- Iceberg catalog settings.
+  iceberg:
+
+    # -- The default warehouse name (must refer to a declared warehouse below).
+    defaultWarehouse: warehouse1
+
+    # -- Iceberg config defaults applicable to all clients and warehouses. Any properties that are
+    # common to all iceberg clients should be included here. They will be passed to all clients on
+    # all warehouses as config defaults. These defaults can be overridden on a per-warehouse basis,
+    # see below.
+    configDefaults: {}
+    # io-impl: org.apache.iceberg.hadoop.HadoopFileIO
+
+    # -- Iceberg config overrides applicable to all clients and warehouses. Any properties that are
+    # common to all iceberg clients should be included here. They will be passed to all clients on
+    # all warehouses as config overrides. These overrides can be overridden on a per-warehouse
+    # basis, see below.
+    configOverrides: {}
+    # s3.acl: public-read-write
+
+    # -- Iceberg warehouses. Each warehouse is a location where Iceberg tables are stored. Each
+    # warehouse has a name, a location, and optional config defaults and overrides.
+    warehouses:
+    - name: warehouse1
+      # -- Location of the warehouse. Required. Used to determine the base location of a table.
+      # Scheme must be either s3 (Amazon S3), gs (Google GCS) or abfs / abfss (Azure ADLS). Storage
+      # properties for each location can be defined below.
+      location: s3://bucket1/
+      # -- Iceberg config defaults specific to this warehouse. They override any defaults specified
+      # above in catalog.iceberg.configDefaults.
+      configDefaults: {}
+      # -- Iceberg config overrides specific to this warehouse. They override any defaults specified
+      # above in catalog.iceberg.configOverrides.
+      configOverrides: {}
+
+  # -- Catalog storage settings.
+  storage:
+
+    s3:
+
+      # Global S3 settings. Can be overridden on a per-bucket basis below.
+
+      # -- DNS name of the region, required for AWS.
+      region: ~  # us-west-2
+      # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
+      # used.
+      endpoint: ~  # "https://bucket1.s3.amazonaws.com"
+      # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
+      # used. If the endpoint URIs for the Nessie server and clients differ, this one defines the
+      # endpoint used for the Nessie server.
+      externalEndpoint: ~
+      # -- Whether to use path-style access. Optional; if not provided, the default is used. If
+      # true, path-style access will be used, as in: https://<domain>/<bucket>. If false, a
+      # virtual-hosted style will be used instead, as in: https://<bucket>.<domain>.
+      pathStyleAccess: false
+      # -- AWS Access point for this bucket. Access points can be used to perform S3 operations by
+      # specifying a mapping of bucket to access points. This is useful for multi-region access,
+      # cross-region access, disaster recovery, etc. See
+      # https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html.
+      accessPoint: ~
+      # -- Authorize cross-region calls when contacting an access point. The default is false.
+      allowCrossRegionAccessPoint: false
+      # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
+      # are:
+      # - REQUEST_SIGNING: Each client I/O request is individually authorized (signed) by the
+      # Catalog server. This is the default.
+      # - ASSUME_ROLE: Clients receive session credentials (according to the role and IAM policy
+      # from bucket configuration) for the whole duration of client sessions.
+      clientAuthenticationMode: ~  # REQUEST_SIGNING
+
+      # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
+      assumeRole:
+        # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
+        # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
+        # sessions (e.g. to use the "assume role" functionality).
+        stsEndpoint: ~  # "https://sts.amazonaws.com"
+        # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
+        # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
+        # at all).
+        roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+        # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
+        sessionIamPolicy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
+        # -- An identifier for the assumed role session. This parameter is most important in cases
+        # when the same role is assumed by different principals in different use cases.
+        roleSessionName: ~  # nessie
+        # -- An identifier for the party assuming the role. This parameter must match the external
+        # ID configured in IAM rules that govern the assume role process for the specified roleArn.
+        externalId: ~
+        # -- A higher bound estimate of the expected duration of client "sessions" working with data in
+        # this bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on
+        # the client side. This value is used for validating expiration times of credentials
+        # associated with the warehouse. If unset, a default of one hour is assumed.
+        clientSessionDuration: ~
+        # -- The time period to subtract from the S3 session credentials (assumed role credentials)
+        # expiry time to define the time when those credentials become eligible for refreshing.
+        # Not overridable on a per-bucket basis. The default is PT5M (5 minutes).
+        sessionCredentialRefreshGracePeriod: ~  # PT5M
+        # -- Maximum number of entries to keep in the session credentials cache (assumed role
+        # credentials). Not overridable on a per-bucket basis. The default is 1000.
+        sessionCredentialCacheMaxEntries: ~  # 1000
+        # -- Maximum number of entries to keep in the STS clients cache. Not overridable on a
+        # per-bucket basis. The default is 50.
+        stsClientsCacheMaxEntries: ~  # 50
+
+      # -- AWS credentials. For STS, this defines the Access Key ID and Secret Key ID to be used as
+      # a basic credential for obtaining temporary session credentials.
+      accessKeySecret:
+        # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
+        # credentials provider chain is used.
+        name: ~
+        # -- The secret key storing the AWS secret key id.
+        awsAccessKeyId: ~
+        # -- The secret key storing the AWS secret access key.
+        awsSecretAccessKey: ~
+
+      # -- S3 transport settings. Not overridable on a per-bucket basis.
+      transport:
+        # -- Override the default maximum number of pooled connections.
+        maxHttpConnections: ~
+        # -- Override the default connection read timeout. Must be a valid ISO duration.
+        readTimeout: ~
+        # -- Override the default TCP connect timeout. Must be a valid ISO duration.
+        connectTimeout: ~
+        # -- Override default connection acquisition timeout. This is the time a request will wait
+        # for a connection from the pool. Must be a valid ISO duration.
+        connectionAcquisitionTimeout: ~
+        # -- Override default max idle time of a pooled connection. Must be a valid ISO duration.
+        connectionMaxIdleTime: ~
+        # -- Override default time-time of a pooled connection. Must be a valid ISO duration.
+        connectionTimeToLive: ~
+        # -- Override default behavior whether to expect an HTTP/100-Continue. Must be a valid ISO
+        # duration.
+        expectContinueEnabled: ~
+        # -- Interval after which a request is retried when S3 response with some "retry later"
+        # response. Must be a valid ISO duration.
+        retryAfter: ~
+
+      # -- Per-bucket S3 settings. Override the general settings above.
+      buckets: []
+      # - name: bucket1
+      #   endpoint: "https://bucket1.s3.amazonaws.com"
+      #   accessKeySecret:
+      #     name: awscreds
+      #     awsAccessKeyId: aws_access_key_id
+      #     awsSecretAccessKey: aws_secret_access_key
+
+    gcs:
+
+      # Global GCS settings. Can be overridden on a per-bucket basis below.
+
+      # -- The default endpoint override to use. The endpoint is almost always used for testing
+      # purposes. If the endpoint URIs for the Nessie server and clients differ, this one defines
+      # the endpoint used for the Nessie server.
+      host: ~
+      # -- When using a specific endpoint, see host, and the endpoint URIs for the Nessie server
+      # differ, you can specify the URI passed down to clients using this setting. Otherwise,
+      # clients will receive the value from the host setting.
+      externalHost: ~
+      # -- Optionally specify the user project (Google term).
+      userProject: ~
+      # --  The Google project ID.
+      projectId: ~
+      # -- The Google quota project ID.
+      quotaProjectId: ~
+      # -- The Google client lib token.
+      clientLibToken: ~
+      # -- The authentication type to use. Valid values are: NONE, USER, SERVICE_ACCOUNT,
+      # ACCESS_TOKEN. The default is NONE.
+      authType: ~
+
+      # -- The Google Cloud service account key secret. This is required when authType is USER or
+      # SERVICE_ACCOUNT.
+      authCredentialsJsonSecret:
+        # -- The secret name to pull a valid Google Cloud service account key from.
+        name: ~
+        # -- The secret key storing the Google Cloud service account JSON key.
+        key: ~
+
+      # -- The oauth2 token secret. This is required when authType is ACCESS_TOKEN.
+      oauth2TokenSecret:
+        # # -- The secret name to pull a valid Google Cloud service account key from.
+        name: ~
+        # # -- The secret key storing the token.
+        token: ~
+        # # -- The secret key storing the token's expiresAt value (optional).
+        expiresAt: ~
+
+      # -- Customer-supplied AES256 key for blob encryption when writing. Currently unsupported.
+      encryptionKey: ~
+      # -- Customer-supplied AES256 key for blob decryption when reading. Currently unsupported.
+      decryptionKey: ~
+
+      # -- GCS transport settings.
+      transport:
+        # -- Override the default maximum number of attempts.
+        maxAttempts: ~
+        # -- Override the default connection timeout. Must be a valid ISO duration.
+        connectTimeout: ~
+        # -- Override the default read timeout. Must be a valid ISO duration.
+        readTimeout: ~
+        # -- Override the default initial retry delay. Must be a valid ISO duration.
+        initialRetryDelay: ~
+        # -- Override the default maximum retry delay. Must be a valid ISO duration.
+        maxRetryDelay: ~
+        # -- Override the default retry delay multiplier. Must be a valid ISO duration.
+        retryDelayMultiplier: ~
+        # -- Override the default initial RPC timeout. Must be a valid ISO duration.
+        initialRpcTimeout: ~
+        # -- Override the default maximum RPC timeout. Must be a valid ISO duration.
+        maxRpcTimeout: ~
+        # -- Override the default RPC timeout multiplier. Must be a valid ISO duration.
+        rpcTimeoutMultiplier: ~
+        # -- Override the default logical request timeout. Must be a valid ISO duration.
+        logicalTimeout: ~
+        # -- Override the default total timeout. Must be a valid ISO duration.
+        totalTimeout: ~
+        # -- The read chunk size in bytes. Must be a valid ISO duration.
+        readChunkSize: ~
+        # -- The write chunk size in bytes. Must be a valid ISO duration.
+        writeChunkSize: ~
+        # -- The delete batch size.
+        deleteBatchSize: ~
+
+      # -- Per-bucket GCS settings. Override the general settings above.
+      buckets: []
+      # - name: bucket1
+      #   authType: ACCESS_TOKEN
+      #   oauth2TokenSecret:
+      #     - name: gcs-creds
+      #       key: token
+      #       expiresAt: expiresAt
+
+    adls:
+
+      # Global ADLS settings. Can be overridden on a per-filesystem basis below.
+
+      # -- A secret containing the account name and key to use. Either this option or sasTokenSecret
+      # must be set. If both are set, sasTokenSecret takes precedence.
+      accountSecret:
+        # -- Name of the secret containing the account name and key.
+        name: ~
+        # -- Secret key containing the fully-qualified account name, e.g. "myaccount.dfs.core.windows.net".
+        accountName: ~
+        # -- Secret key containing the account key.
+        accountKey: ~
+
+      # -- A secret containing the SAS token to use. Either this option or accountSecret must
+      # be set. If both are set, sasTokenSecret takes precedence.
+      sasTokenSecret:
+        # -- Name of the secret containing the SAS token.
+        name: ~
+        # -- Secret key containing the SAS token.
+        sasToken: ~
+
+      # -- Custom HTTP endpoint. In case clients need to use a different URI, use externalEndpoint.
+      endpoint: ~
+
+      # -- Custom HTTP endpoint to be used by clients. If not set, the endpoint value is used.
+      externalEndpoint: ~
+
+      # -- ADLS transport settings. Only some settings can be overridden on a per-filesystem basis.
+      transport:
+        # -- The retry strategy to use. Valid values are: NONE, EXPONENTIAL_BACKOFF, FIXED_DELAY.
+        # The default is EXPONENTIAL_BACKOFF.
+        retryPolicy: ~
+        # -- The maximum number of retries. Must be a positive integer. Default is 4. Optional.
+        # Valid if retryPolicy is EXPONENTIAL_BACKOFF or FIXED_DELAY.
+        maxRetries: ~
+        # -- The maximum time allowed before a request is cancelled and assumed failed, default is
+        # Integer.MAX_VALUE. Optional. Must be a valid ISO duration. Valid if retryPolicy is
+        # EXPONENTIAL_BACKOFF or FIXED_DELAY.
+        tryTimeout: ~
+        # -- Specifies the amount of delay to use before retrying an operation, default value is
+        # PT4S (4 seconds) when retryPolicy is EXPONENTIAL_BACKOFF and PT30S (30 seconds) when
+        # retryPolicy is FIXED_DELAY. Must be a valid ISO duration.
+        retryDelay: ~
+        # --  Specifies the maximum delay allowed before retrying an operation, default value is
+        # PT120s (120 seconds). Must be a valid ISO duration. Valid if retryPolicy is
+        # EXPONENTIAL_BACKOFF.
+        maxRetryDelay: ~
+        # -- The default maximum connection pool size is determined by the underlying HTTP client.
+        # Not overridable on a per-filesystem basis.
+        maxHttpConnections: ~
+        # -- Sets the connection timeout for a request to be sent. The default is PT10S (10
+        # seconds). Must be a valid ISO duration. Not overridable on a per-filesystem basis.
+        connectTimeout: ~
+        # -- Sets the read timeout duration used when reading the server response. The default is
+        # PT60S (60 seconds). Must be a valid ISO duration. Not overridable on a per-filesystem
+        # basis.
+        readTimeout: ~
+        # -- Sets the write timeout duration used when writing the request to the server. The
+        # default is PT60S (60 seconds). Must be a valid ISO duration. Not overridable on a
+        # per-filesystem basis.
+        writeTimeout: ~
+        # -- Sets the maximum idle time for a connection to be kept alive. The default is PT60S (60
+        # seconds). Must be a valid ISO duration. Not overridable on a per-filesystem basis.
+        connectionIdleTimeout: ~
+        # -- The size of each data chunk returned from the service in bytes. The default value is 4
+        # MB. Not overridable on a per-filesystem basis.
+        readBlockSize: ~
+        # -- Sets the block size in bytes to transfer at a time. Not overridable on a per-filesystem
+        # basis.
+        writeBlockSize: ~
+
+      # -- Custom ADLS configuration options, see javadocs of com.azure.core.util.Configuration.
+      # Not overridable on a per-filesystem basis.
+      advancedConfig: {}
+
+      # -- Per-filesystem ADLS settings. Override the general settings above.
+      filesystems: []
+      # - name: filesystem1
+      #   endpoint: http://localhost/adlsgen2/bucket
+      #   accountSecret:
+      #     name: adls-account-secret
+      #     accountName: accountName
+      #     accountKey: accountKeyRef
+
+
 # -- Advanced configuration.
 # You can pass here any valid Nessie or Quarkus configuration property.
 # Any property that is defined here takes precedence over all the other configuration values generated by this chart.

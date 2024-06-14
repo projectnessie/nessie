@@ -119,6 +119,25 @@ data:
     {{- $_ = set $map "quarkus.otel.sdk.disabled" true -}}
     {{- end -}}
 
+    {{- if .Values.catalog.enabled -}}
+    {{- list .Values.catalog.iceberg $map | include "nessie.applyCatalogIcebergOptions" -}}
+    {{ list .Values.catalog.storage.s3 "nessie.catalog.service.s3." $map | include "nessie.applyCatalogStorageS3Options"}}
+    {{- range $i, $bucket := .Values.catalog.storage.s3.buckets -}}
+    {{- if not $bucket.name -}}{{- required ( printf "catalog.storage.s3.buckets[%d]: missing bucket name" $i ) $bucket.name -}}{{- end -}}
+    {{ list $bucket ( printf "nessie.catalog.service.s3.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageS3Options"}}
+    {{- end -}}
+    {{ list .Values.catalog.storage.gcs "nessie.catalog.service.gcs." $map | include "nessie.applyCatalogStorageGcsOptions"}}
+    {{- range $i, $bucket := .Values.catalog.storage.gcs.buckets -}}
+    {{- if not $bucket.name -}}{{- required ( printf "catalog.storage.gcs.buckets[%d]: missing bucket name" $i ) $bucket.name -}}{{- end -}}
+    {{ list $bucket ( printf "nessie.catalog.service.gcs.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageGcsOptions"}}
+    {{- end -}}
+    {{ list .Values.catalog.storage.adls "nessie.catalog.service.adls." $map | include "nessie.applyCatalogStorageAdlsOptions"}}
+    {{- range $i, $filesystem := .Values.catalog.storage.adls.filesystems -}}
+    {{- if not $filesystem.name -}}{{- required ( printf "catalog.storage.adls.filesystems[%d]: missing filesystem name" $i ) $filesystem.name -}}{{- end -}}
+    {{ list $filesystem ( printf "nessie.catalog.service.adls.file-systems.%s." (quote $filesystem.name ) ) $map | include "nessie.applyCatalogStorageAdlsOptions"}}
+    {{- end -}}
+    {{- end -}}
+
     {{- list .Values.advancedConfig "" $map | include "nessie.mergeAdvancedConfig" }}
 
     {{- range $k, $v := $map }}

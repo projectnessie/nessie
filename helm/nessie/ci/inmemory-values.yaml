@@ -4,3 +4,64 @@ tracing:
   enabled: true
 service:
   sessionAffinity: ClientIP
+catalog:
+  enabled: true
+  iceberg:
+    defaultWarehouse: warehouse1
+    configDefaults:
+      default1: value1
+      default2: value2
+    configOverrides:
+      override1: value1
+      override2: value2
+    warehouses:
+    - name: warehouse1
+      location: s3://bucket1.prod-us/warehouse
+      configDefaults:
+        default1: value11
+        default2: value22
+      configOverrides:
+        override1: value11
+        override2: value22
+  storage:
+    s3:
+      region: us-west-2
+      endpoint: s3.amazonaws.com
+      transport:
+        readTimeout: PT1M
+      buckets:
+        - name: bucket1.prod-us
+          endpoint: prod-us.s3.amazonaws.com
+          region: us-east-1
+#          accessKeySecret:
+#            name: s3-access-key
+#            awsAccessKeyId: access-key-id
+#            awsSecretAccessKey: secret-access-key
+    gcs:
+      host: https://storage.googleapis.com
+      transport:
+        readTimeout: PT1M
+      buckets:
+      - name: bucket1.prod-us
+        projectId: project-id
+#        authCredentialsJsonSecret:
+#          name: gcs-credentials
+#          key: credentials.json
+
+    adls:
+      endpoint: adl://account.azuredatalakestore.net
+      transport:
+        readTimeout: PT1M
+      advancedConfig:
+        flat1.flat2.key1: value1
+        nested1:
+          nested2:
+            key2: value2
+            key3: value3
+      filesystems:
+      - name: filesystem1
+        endpoint: adl://account.azuredatalakestore.net
+#        accountSecret:
+#          name: adls-account-secret
+#          accountName: account-name
+#          accountKey: account-key
