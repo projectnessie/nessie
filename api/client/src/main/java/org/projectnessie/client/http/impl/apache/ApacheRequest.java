@@ -29,9 +29,11 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
+import org.projectnessie.client.http.Status;
 import org.projectnessie.client.http.impl.BaseHttpRequest;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 import org.projectnessie.client.http.impl.RequestContextImpl;
@@ -86,8 +88,10 @@ final class ApacheRequest extends BaseHttpRequest {
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
 
       if (response.getCode() >= 400) {
-        throw new HttpClientException(
-            String.format("%s request to %s failed with HTTP/%d", method, uri, response.getCode()));
+        Status status = Status.fromCode(response.getCode());
+        throw new HttpClientResponseException(
+            String.format("%s request to %s failed with HTTP/%d", method, uri, response.getCode()),
+            status);
       }
 
       response = null;

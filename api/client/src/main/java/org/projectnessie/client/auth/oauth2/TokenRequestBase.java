@@ -24,29 +24,27 @@ import javax.annotation.Nullable;
 /**
  * Common base for all requests to the token endpoint.
  *
- * @see ClientCredentialsTokensRequest
- * @see PasswordTokensRequest
- * @see AuthorizationCodeTokensRequest
+ * @see ClientCredentialsTokenRequest
+ * @see PasswordTokenRequest
+ * @see AuthorizationCodeTokenRequest
  * @see DeviceCodeRequest
- * @see RefreshTokensRequest
- * @see TokensExchangeRequest
+ * @see RefreshTokenRequest
+ * @see TokenExchangeRequest
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "grant_type")
 @JsonSubTypes({
   @JsonSubTypes.Type(
-      value = AuthorizationCodeTokensRequest.class,
+      value = AuthorizationCodeTokenRequest.class,
       name = GrantType.Constants.AUTHORIZATION_CODE),
   @JsonSubTypes.Type(
-      value = ClientCredentialsTokensRequest.class,
+      value = ClientCredentialsTokenRequest.class,
       name = GrantType.Constants.CLIENT_CREDENTIALS),
-  @JsonSubTypes.Type(value = DeviceCodeTokensRequest.class, name = GrantType.Constants.DEVICE_CODE),
-  @JsonSubTypes.Type(value = PasswordTokensRequest.class, name = GrantType.Constants.PASSWORD),
-  @JsonSubTypes.Type(value = RefreshTokensRequest.class, name = GrantType.Constants.REFRESH_TOKEN),
-  @JsonSubTypes.Type(
-      value = TokensExchangeRequest.class,
-      name = GrantType.Constants.TOKEN_EXCHANGE),
+  @JsonSubTypes.Type(value = DeviceCodeTokenRequest.class, name = GrantType.Constants.DEVICE_CODE),
+  @JsonSubTypes.Type(value = PasswordTokenRequest.class, name = GrantType.Constants.PASSWORD),
+  @JsonSubTypes.Type(value = RefreshTokenRequest.class, name = GrantType.Constants.REFRESH_TOKEN),
+  @JsonSubTypes.Type(value = TokenExchangeRequest.class, name = GrantType.Constants.TOKEN_EXCHANGE),
 })
-interface TokensRequestBase {
+interface TokenRequestBase {
 
   /** REQUIRED. The authorization grant type. */
   @JsonProperty("grant_type")
@@ -65,7 +63,7 @@ interface TokensRequestBase {
   @JsonProperty("scope")
   String getScope();
 
-  interface Builder<T extends TokensRequestBase> {
+  interface Builder<T extends TokenRequestBase> {
 
     @CanIgnoreReturnValue
     Builder<T> scope(String scope);

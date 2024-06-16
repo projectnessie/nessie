@@ -1,3 +1,24 @@
+#
+# Copyright (C) 2024 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# To request an access token, use the following command:
+# token=$(curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client1:s3cr3t -d 'grant_type=client_credentials' -d 'scope=profile' | jq -r .access_token)
+
+# Then use the access token in the Authorization header:
+# curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
 
 version: '3'
 
@@ -60,6 +81,7 @@ services:
       - nessie.server.authentication.enabled=true
       - quarkus.oidc.auth-server-url=http://keycloak:8080/realms/iceberg
       - quarkus.oidc.client-id=client1
+      - quarkus.oidc.token.issuer=http://127.0.0.1:8080/realms/iceberg
       # Object store settings.
       # This example uses MinIO as the object store.
       - nessie.catalog.default-warehouse=warehouse
@@ -109,7 +131,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
+    image: quay.io/minio/minio:RELEASE.2024-06-13T22-53-53Z
     ports:
       # API port, used by Nessie
       - "9000:9000"
@@ -129,7 +151,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
+    image: quay.io/minio/minio:RELEASE.2024-06-13T22-53-53Z
     depends_on:
       minio:
         condition: service_healthy
@@ -157,6 +179,7 @@ services:
       - postgres
     ports:
       - "8080:8080"
+      - "9001:9000"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -170,13 +193,11 @@ services:
       "start-dev",
       "--features=token-exchange",
       "--spi-connections-jpa-quarkus-migration-strategy=update",
-      "--hostname-admin-url=http://127.0.0.1:8080/",
-      "--hostname-url=http://127.0.0.1:8080/",
       "--import-realm",
       "--health-enabled=true"
     ]
     healthcheck:
-      test: "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
       interval: 5s
       timeout: 2s
       retries: 15

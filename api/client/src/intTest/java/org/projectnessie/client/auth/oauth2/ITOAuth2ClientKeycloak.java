@@ -17,10 +17,18 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE;
 import static org.projectnessie.client.auth.oauth2.GrantType.AUTHORIZATION_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.CLIENT_CREDENTIALS;
 import static org.projectnessie.client.auth.oauth2.GrantType.DEVICE_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.PASSWORD;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_ACCESS_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_REFRESH_TOKEN;
+import static org.projectnessie.client.auth.oauth2.TypedToken.URN_ID_TOKEN;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +41,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -148,7 +157,18 @@ public class ITOAuth2ClientKeycloak {
             new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t")) {
 
       OAuth2ClientConfig config1 =
-          clientConfig("Private1", true, false).grantType(CLIENT_CREDENTIALS).build();
+          clientConfig("Private1", true, false)
+              .grantType(CLIENT_CREDENTIALS)
+              .tokenExchangeConfig(
+                  TokenExchangeConfig.builder()
+                      .enabled(true)
+                      .clientId("Private1")
+                      .clientSecret("s3cr3t")
+                      .issuerUrl(issuerUrl)
+                      .audience("Private1")
+                      .addScope("exchange")
+                      .build())
+              .build();
       OAuth2ClientConfig config2 =
           clientConfig("Private2", true, false).grantType(PASSWORD).build();
       OAuth2ClientConfig config3 =
@@ -246,69 +266,6 @@ public class ITOAuth2ClientKeycloak {
   }
 
   /**
-   * This test exercises the OAuth2 client with the following setup: endpoint discovery off; no
-   * refresh token sent on the initial response; token exchange for obtaining the refresh token.
-   */
-  @ParameterizedTest
-  @EnumSource(
-      value = GrantType.class,
-      names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2ConfidentialClientRefreshTokenOff(GrantType initialGrantType) throws Exception {
-    try (ResourceOwnerEmulator resourceOwner = newResourceOwner(initialGrantType)) {
-      OAuth2ClientConfig config =
-          clientConfig("Private1", true, false)
-              .grantType(initialGrantType)
-              .console(resourceOwner.getConsole())
-              .build();
-      try (OAuth2Client client = new OAuth2Client(config);
-          HttpClient validatingClient = validatingHttpClient("Private1").build()) {
-        resourceOwner.setErrorListener(e -> client.close());
-        // first request: initial grant
-        Tokens firstTokens = client.fetchNewTokens();
-        soft.assertThat(firstTokens.getRefreshToken()).isNull();
-        tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
-        // second request: token exchange since no refresh token was sent
-        Tokens exchangedTokens = client.refreshTokens(firstTokens);
-        soft.assertThat(exchangedTokens.getRefreshToken()).isNull();
-        tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
-        compareTokens(firstTokens, exchangedTokens, "Private1");
-      }
-    }
-  }
-
-  /**
-   * This test exercises the OAuth2 client with the following setup: endpoint discovery off; no
-   * refresh token sent on the initial response; no token exchange for obtaining the refresh token.
-   */
-  @ParameterizedTest
-  @EnumSource(
-      value = GrantType.class,
-      names = {"CLIENT_CREDENTIALS", "PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2ConfidentialClientRefreshTokenOffTokenExchangeOff(GrantType initialGrantType)
-      throws Exception {
-    try (ResourceOwnerEmulator resourceOwner = newResourceOwner(initialGrantType)) {
-      OAuth2ClientConfig config =
-          clientConfig("Private1", true, false)
-              .grantType(initialGrantType)
-              .tokenExchangeEnabled(false)
-              .console(resourceOwner.getConsole())
-              .build();
-      try (OAuth2Client client = new OAuth2Client(config);
-          HttpClient validatingClient = validatingHttpClient("Private1").build()) {
-        resourceOwner.setErrorListener(e -> client.close());
-        // first request: client credentials grant
-        Tokens firstTokens = client.fetchNewTokens();
-        soft.assertThat(firstTokens.getRefreshToken()).isNull();
-        tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
-        // second request: since no refresh token was sent
-        // and token exchange is disabled, cannot call refreshTokens() tokens here
-        soft.assertThatThrownBy(() -> client.refreshTokens(firstTokens))
-            .isInstanceOf(MustFetchNewTokensException.class);
-      }
-    }
-  }
-
-  /**
    * This test exercises the OAuth2 client with the following setup: endpoint discovery on; public
    * client (no client secret); refresh token sent on the initial response; refresh_token grant type
    * for refreshing the access token.
@@ -336,71 +293,6 @@ public class ITOAuth2ClientKeycloak {
         soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
         tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
         compareTokens(firstTokens, refreshedTokens, "Public2");
-      }
-    }
-  }
-
-  /**
-   * This test exercises the OAuth2 client with the following setup: endpoint discovery on; public
-   * client (no client secret); no refresh token sent on the initial response; token exchange for
-   * obtaining the refresh token.
-   */
-  @ParameterizedTest
-  @EnumSource(
-      value = GrantType.class,
-      names = {"PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2PublicClientRefreshTokenOff(GrantType initialGrantType) throws Exception {
-    try (ResourceOwnerEmulator resourceOwner = newResourceOwner(initialGrantType)) {
-      OAuth2ClientConfig config =
-          clientConfig("Public1", false, true)
-              .grantType(initialGrantType)
-              .console(resourceOwner.getConsole())
-              .build();
-      try (OAuth2Client client = new OAuth2Client(config);
-          HttpClient validatingClient = validatingHttpClient("Private2").build()) {
-        resourceOwner.setErrorListener(e -> client.close());
-        // first request: initial grant
-        Tokens firstTokens = client.fetchNewTokens();
-        soft.assertThat(firstTokens.getRefreshToken()).isNull();
-        tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
-        // second request: token exchange since no refresh token was sent
-        Tokens exchangedTokens = client.refreshTokens(firstTokens);
-        soft.assertThat(exchangedTokens.getRefreshToken()).isNull();
-        tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
-        compareTokens(firstTokens, exchangedTokens, "Public1");
-      }
-    }
-  }
-
-  /**
-   * This test exercises the OAuth2 client with the following setup: endpoint discovery on; public
-   * client (no client secret); no refresh token sent on the initial response; no token exchange for
-   * obtaining the refresh token.
-   */
-  @ParameterizedTest
-  @EnumSource(
-      value = GrantType.class,
-      names = {"PASSWORD", "AUTHORIZATION_CODE", "DEVICE_CODE"})
-  void testOAuth2PublicClientRefreshTokenOffTokenExchangeOff(GrantType initialGrantType)
-      throws Exception {
-    try (ResourceOwnerEmulator resourceOwner = newResourceOwner(initialGrantType)) {
-      OAuth2ClientConfig config =
-          clientConfig("Public1", false, true)
-              .grantType(initialGrantType)
-              .tokenExchangeEnabled(false)
-              .console(resourceOwner.getConsole())
-              .build();
-      try (OAuth2Client client = new OAuth2Client(config);
-          HttpClient validatingClient = validatingHttpClient("Private2").build()) {
-        resourceOwner.setErrorListener(e -> client.close());
-        // first request: initial grant
-        Tokens firstTokens = client.fetchNewTokens();
-        soft.assertThat(firstTokens.getRefreshToken()).isNull();
-        tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
-        // second request: since no refresh token was sent
-        // and token exchange is disabled, cannot call refreshTokens() tokens here
-        soft.assertThatThrownBy(() -> client.refreshTokens(firstTokens))
-            .isInstanceOf(MustFetchNewTokensException.class);
       }
     }
   }
@@ -492,6 +384,153 @@ public class ITOAuth2ClientKeycloak {
   }
 
   /**
+   * Tests a simple delegation scenario with a fixed subject token and the client playing the role
+   * of the actor.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeDelegation1() {
+    AccessToken subjectToken;
+    try (OAuth2Client subjectClient =
+        new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
+      subjectToken = subjectClient.fetchNewTokens().getAccessToken();
+    }
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            subjectToken.getPayload(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+            URN_ID_TOKEN.toString(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN,
+            CURRENT_ACCESS_TOKEN);
+    try (OAuth2Client client =
+            new OAuth2Client(
+                clientConfig("Private2", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+    }
+  }
+
+  /**
+   * Tests a simple delegation scenario with a fixed actor token and the client playing the role of
+   * the subject.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeDelegation2() {
+    AccessToken actorToken;
+    try (OAuth2Client client =
+        new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
+      actorToken = client.fetchNewTokens().getAccessToken();
+    }
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            CURRENT_ACCESS_TOKEN,
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN,
+            actorToken.getPayload(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
+            URN_ID_TOKEN.toString());
+    try (OAuth2Client client =
+            new OAuth2Client(
+                clientConfig("Private2", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+    }
+  }
+
+  /**
+   * Tests a simple delegation scenario with the client playing both the role of the subject and the
+   * actor.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeDelegation3() {
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            CURRENT_REFRESH_TOKEN,
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN,
+            CURRENT_ACCESS_TOKEN);
+    try (OAuth2Client client =
+            new OAuth2Client(
+                clientConfig("Private1", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+    }
+  }
+
+  /**
+   * Tests a simple impersonation scenario with a fixed subject token (and no actor token). The
+   * client discards its own token.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeImpersonation1() {
+    AccessToken subjectToken;
+    try (OAuth2Client subjectClient =
+        new OAuth2Client(clientConfig("Private1", true, true).grantType(PASSWORD).build())) {
+      subjectToken = subjectClient.fetchNewTokens().getAccessToken();
+    }
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            subjectToken.getPayload(),
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
+            URN_ID_TOKEN.toString());
+    try (OAuth2Client client =
+            new OAuth2Client(
+                clientConfig("Private2", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+    }
+  }
+
+  /**
+   * Tests a simple impersonation scenario with the client using its own token as the subject token,
+   * and no actor token. The client swaps its token for another one, roughly equivalent.
+   */
+  @Test
+  void testOAuth2ClientTokenExchangeImpersonation2() {
+    Map<String, String> config =
+        ImmutableMap.of(
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            "true",
+            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
+            CURRENT_ACCESS_TOKEN);
+    try (OAuth2Client client =
+            new OAuth2Client(
+                clientConfig("Private1", true, true)
+                    .tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config::get))
+                    .build());
+        HttpClient validatingClient = validatingHttpClient("Private2").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      soft.assertThat(tokens.getAccessToken()).isNotNull();
+      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+    }
+  }
+
+  /**
    * Attempts to use the access token to obtain a UMA (User Management Access) ticket from Keycloak,
    * authorizing the client represented by the token to access resources hosted by "ResourceServer".
    */
@@ -542,7 +581,7 @@ public class ITOAuth2ClientKeycloak {
             .username("Alice")
             .password("s3cr3t")
             // Otherwise Keycloak complains about missing scope, but still issues tokens
-            .scope("openid")
+            .addScope("openid")
             .defaultAccessTokenLifespan(Duration.ofSeconds(10))
             .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
             .refreshSafetyWindow(Duration.ofSeconds(5))

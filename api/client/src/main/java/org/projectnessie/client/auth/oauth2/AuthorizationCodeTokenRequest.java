@@ -23,8 +23,8 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
- * the "password" grant type to obtain a new access token.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3">Token Request</a> using
+ * the "authorization_code" grant type to obtain a new access token.
  *
  * <p>Example:
  *
@@ -34,41 +34,42 @@ import org.immutables.value.Value;
  * Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
  * Content-Type: application/x-www-form-urlencoded
  *
- * grant_type=password&username=johndoe&password=A3ddj3w
+ * grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
+ * &redirect_uri=https%3A%2F%2Fclient%2Eexample%2Ecom%2Fcb
  * </pre>
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutablePasswordTokensRequest.class)
-@JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
-@JsonTypeName(GrantType.Constants.PASSWORD)
-interface PasswordTokensRequest extends TokensRequestBase, PublicClientRequest {
+@JsonSerialize(as = ImmutableAuthorizationCodeTokenRequest.class)
+@JsonDeserialize(as = ImmutableAuthorizationCodeTokenRequest.class)
+@JsonTypeName(GrantType.Constants.AUTHORIZATION_CODE)
+interface AuthorizationCodeTokenRequest extends TokenRequestBase, PublicClientRequest {
 
-  /** REQUIRED. Value MUST be set to "password". */
+  /** REQUIRED. Value MUST be set to "authorization_code". */
   @Value.Derived
   @Override
   default GrantType getGrantType() {
-    return GrantType.PASSWORD;
+    return GrantType.AUTHORIZATION_CODE;
   }
 
-  /** REQUIRED. The resource owner username. */
-  @JsonProperty("username")
-  String getUsername();
+  /** REQUIRED. The authorization code received from the authorization server. */
+  @JsonProperty("code")
+  String getCode();
 
-  /** REQUIRED. The resource owner password. */
-  @JsonProperty("password")
-  String getPassword();
+  /** REQUIRED. The redirect URI used in the initial request. */
+  @JsonProperty("redirect_uri")
+  String getRedirectUri();
 
   static Builder builder() {
-    return ImmutablePasswordTokensRequest.builder();
+    return ImmutableAuthorizationCodeTokenRequest.builder();
   }
 
   interface Builder
-      extends TokensRequestBase.Builder<PasswordTokensRequest>,
-          PublicClientRequest.Builder<PasswordTokensRequest> {
+      extends TokenRequestBase.Builder<AuthorizationCodeTokenRequest>,
+          PublicClientRequest.Builder<AuthorizationCodeTokenRequest> {
     @CanIgnoreReturnValue
-    Builder username(String username);
+    Builder code(String code);
 
     @CanIgnoreReturnValue
-    Builder password(String password);
+    Builder redirectUri(String redirectUri);
   }
 }

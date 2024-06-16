@@ -46,13 +46,7 @@ case class ShowLogExec(
         bridge.getCurrentRef.getName
       )
 
-    val ref = NessieUtils.calculateRef(refName, timestampOrHash, api)
-    NessieUtils.setCurrentRefForSpark(
-      currentCatalog,
-      catalog,
-      ref,
-      timestampOrHash.isDefined
-    )
+    val ref = NessieUtils.calculateRef(refName, timestampOrHash, bridge.api)
 
     val stream = bridge.api.getCommitLog.reference(ref).stream()
 

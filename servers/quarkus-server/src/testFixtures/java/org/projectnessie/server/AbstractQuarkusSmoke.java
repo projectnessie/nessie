@@ -18,7 +18,6 @@ package org.projectnessie.server;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.hash.Hashing;
-import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.Locale;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +40,6 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
 
 @SuppressWarnings("resource")
-@QuarkusIntegrationTest
 @ExtendWith(QuarkusNessieClientResolver.class)
 @NessieApiVersions(versions = NessieApiVersion.V2) // one version is fine
 public abstract class AbstractQuarkusSmoke {

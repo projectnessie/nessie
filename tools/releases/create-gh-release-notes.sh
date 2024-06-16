@@ -79,7 +79,8 @@ if [[ -z ${NOTES_FILE} || -z ${LAST_TAG} || -z ${GIT_TAG} || -z ${RELEASE_VERSIO
   exit 1
 fi
 
-NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD^1 | wc -l)
+# xargs trims
+NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD^1 | wc -l | xargs)
 
 git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ./release-log
 

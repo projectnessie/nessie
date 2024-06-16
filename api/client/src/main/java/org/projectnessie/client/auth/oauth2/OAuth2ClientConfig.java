@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
@@ -128,14 +129,40 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     return Clock.systemUTC()::instant;
   }
 
+  String getClientIdForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getClientId().isPresent()) {
+      return getClientId();
+    }
+    return getTokenExchangeConfig().getClientId().get();
+  }
+
   @Value.Derived
   boolean isPublicClient() {
     return !getClientSecret().isPresent();
   }
 
+  boolean isPublicClientForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getClientId().isPresent()) {
+      return isPublicClient();
+    }
+    return !getTokenExchangeConfig().getClientSecret().isPresent();
+  }
+
   @Value.Lazy
   JsonNode getOpenIdProviderMetadata() {
     URI issuerUrl = getIssuerUrl().orElseThrow(IllegalStateException::new);
+    return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
+  }
+
+  @Value.Lazy
+  JsonNode getOpenIdProviderMetadataForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getIssuerUrl().isPresent()) {
+      return getOpenIdProviderMetadata();
+    }
+    URI issuerUrl = getTokenExchangeConfig().getIssuerUrl().get();
     return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
   }
 
@@ -177,6 +204,35 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         "OpenID provider metadata does not contain a device authorization endpoint");
   }
 
+  @Value.Lazy
+  URI getResolvedTokenEndpointForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || (!getTokenExchangeConfig().getIssuerUrl().isPresent()
+            && !getTokenExchangeConfig().getTokenEndpoint().isPresent())) {
+      return getResolvedTokenEndpoint();
+    }
+    if (getTokenExchangeConfig().getTokenEndpoint().isPresent()) {
+      return getTokenExchangeConfig().getTokenEndpoint().get();
+    }
+    JsonNode json = getOpenIdProviderMetadataForTokenExchange();
+    if (json.has("token_endpoint")) {
+      return URI.create(json.get("token_endpoint").asText());
+    }
+    throw new IllegalStateException("OpenID provider metadata does not contain a token endpoint");
+  }
+
+  @Value.Lazy
+  List<String> getScopesForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()) {
+      return getScopes();
+    }
+    List<String> scopes = getTokenExchangeConfig().getScopes();
+    if (scopes.equals(TokenExchangeConfig.SCOPES_INHERIT)) {
+      return getScopes();
+    }
+    return scopes;
+  }
+
   /**
    * Returns the BASIC {@link HttpAuthentication} that will be used to authenticate with the OAuth2
    * server, for all endpoints that require such authentication.
@@ -189,6 +245,20 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   Optional<HttpAuthentication> getBasicAuthentication() {
     return getClientSecret()
         .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()));
+  }
+
+  @Value.Lazy
+  Optional<HttpAuthentication> getBasicAuthenticationForTokenExchange() {
+    if (!getTokenExchangeConfig().isEnabled()
+        || !getTokenExchangeConfig().getClientId().isPresent()) {
+      return getBasicAuthentication();
+    }
+    return getTokenExchangeConfig()
+        .getClientSecret()
+        .map(
+            s ->
+                BasicAuthenticationProvider.create(
+                    getTokenExchangeConfig().getClientId().get(), s.getString()));
   }
 
   /**
@@ -296,10 +366,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     check(
         violations,
         CONF_NESSIE_OAUTH2_GRANT_TYPE,
-        grantType == GrantType.CLIENT_CREDENTIALS
-            || grantType == GrantType.PASSWORD
-            || grantType == GrantType.AUTHORIZATION_CODE
-            || grantType == GrantType.DEVICE_CODE,
+        grantType.isInitial(),
         "grant type must be either '%s', '%s', '%s' or '%s'",
         CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
         CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD,
@@ -401,20 +468,18 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   }
 
   static void applyConfigOption(
-      Function<String, String> config,
-      String option,
-      Function<String, OAuth2AuthenticatorConfig.Builder> setter) {
+      Function<String, String> config, String option, Consumer<String> setter) {
     applyConfigOption(config, option, setter, Function.identity());
   }
 
   static <T> void applyConfigOption(
       Function<String, String> config,
       String option,
-      Function<T, OAuth2AuthenticatorConfig.Builder> setter,
+      Consumer<T> setter,
       Function<String, T> converter) {
     String s = config.apply(option);
     if (s != null) {
-      setter.apply(converter.apply(s));
+      setter.accept(converter.apply(s));
     }
   }
 
@@ -459,10 +524,16 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     }
 
     @Override
-    Builder scope(String scope);
+    Builder addScope(String scope);
 
     @Override
-    Builder tokenExchangeEnabled(boolean tokenExchangeEnabled);
+    Builder addScopes(String... scopes);
+
+    @Override
+    Builder scopes(Iterable<String> scopes);
+
+    @Override
+    Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);
 
     @Override
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

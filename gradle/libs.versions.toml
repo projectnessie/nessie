@@ -26,8 +26,8 @@ opentelemetryAlpha = "1.31.0-alpha"
 opentracing = "0.33.0"
 picocli = "4.7.6"
 protobuf = "3.25.3"
-quarkusPlatform = "3.11.1"
-quarkusPlugin = "3.11.1"
+quarkusPlatform = "3.11.2"
+quarkusPlugin = "3.11.2"
 slf4j = "2.0.13"
 smallryeConfig = "3.8.2"
 undertow = "2.2.28.Final"
@@ -64,7 +64,7 @@ findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.39.5" }
 google-cloud-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version = "hadoop3-2.2.21" }
-google-cloud-nio = { module = "com.google.cloud:google-cloud-nio", version = "0.127.18" }
+google-cloud-nio = { module = "com.google.cloud:google-cloud-nio", version = "0.127.19" }
 google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.40.0" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
 guava = { module = "com.google.guava:guava", version = "33.2.1-jre" }
@@ -112,7 +112,7 @@ microprofile-contextpropagation-api = { module = "org.eclipse.microprofile.conte
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1.1" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "5.1.0" }
+mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "5.1.1" }
 nessie-runner-common = { module = "org.projectnessie.nessie-runner:nessie-runner-common", version = "0.32.2" }
 nessie-ui = { module = "org.projectnessie.nessie.ui:nessie-ui", version = "0.63.6" }
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }

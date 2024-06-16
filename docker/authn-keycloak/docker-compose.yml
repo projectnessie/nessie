@@ -24,7 +24,7 @@ version: '3'
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.90.2
+    image: ghcr.io/projectnessie/nessie:0.90.4
     ports:
       - "19120:19120"
     depends_on:
@@ -36,6 +36,7 @@ services:
       QUARKUS_OIDC_ENABLED: true
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/iceberg
       QUARKUS_OIDC_CLIENT_ID: client1
+      QUARKUS_OIDC_TOKEN_ISSUER: http://127.0.0.1:8080/realms/iceberg
     healthcheck:
       test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
       interval: 5s
@@ -46,6 +47,7 @@ services:
     image: quay.io/keycloak/keycloak:25.0.0
     ports:
       - "8080:8080"
+      - "9000:9000"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -54,13 +56,11 @@ services:
     command: [
       "start-dev",
       "--features=token-exchange",
-      "--hostname-admin-url=http://127.0.0.1:8080/",
-      "--hostname-url=http://127.0.0.1:8080/",
       "--import-realm",
       "--health-enabled=true"
     ]
     healthcheck:
-      test: "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
       interval: 5s
       timeout: 2s
       retries: 15

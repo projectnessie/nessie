@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@Value.Style(
+    depluralize = true,
+    get = {"get*", "is*"})
 package org.projectnessie.client.auth.oauth2;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-
-/**
- * A device access token response as defined in <a
- * href="https://tools.ietf.org/html/rfc8628#section-3.5">RFC 8628 Section 3.5</a>.
- */
-@Value.Immutable
-@JsonSerialize(as = ImmutableDeviceCodeTokensResponse.class)
-@JsonDeserialize(as = ImmutableDeviceCodeTokensResponse.class)
-interface DeviceCodeTokensResponse extends TokensResponseBase {}

@@ -297,7 +297,10 @@ public final class ProtoSerialization {
       return deserializeUniqueId(id, obj.getUniqueId());
     }
     if (obj.hasCustom()) {
-      return deserializeCustom(id, obj.getCustom(), versionToken);
+      return deserializeCustom(
+          id,
+          obj.getCustom(),
+          versionToken != null ? versionToken : obj.getCustom().getVersionToken());
     }
     throw new UnsupportedOperationException("Cannot deserialize " + obj);
   }
@@ -506,9 +509,14 @@ public final class ProtoSerialization {
 
   private static Obj deserializeCustom(ObjId id, CustomProto custom, String versionToken) {
     ObjType type = ObjTypes.forShortName(custom.getObjType());
+    if (versionToken == null) {
+      // versionToken is set when reading objects from the database, but cache-deserialization has
+      // the versionToken in the object
+      versionToken = custom.getVersionToken();
+    }
     return SmileSerialization.deserializeObj(
         id,
-        versionToken != null ? versionToken : custom.getVersionToken(),
+        versionToken,
         custom.getData().toByteArray(),
         type.targetClass(),
         custom.getCompression().name());

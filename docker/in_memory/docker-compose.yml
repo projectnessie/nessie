@@ -17,7 +17,7 @@
 version: '3'
 services:
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.90.2
+    image: ghcr.io/projectnessie/nessie:0.90.4
     ports:
       - 19120:19120
     environment:

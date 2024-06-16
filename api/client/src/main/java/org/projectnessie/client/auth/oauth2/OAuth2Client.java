@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static org.projectnessie.client.auth.oauth2.OAuth2Utils.tokenExpirationTime;
+
 import java.io.Closeable;
 import java.time.Duration;
 import java.time.Instant;
@@ -73,7 +75,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         config.getGrantType().requiresUserInteraction()
             ? CompletableFuture.allOf(started, used)
             : started;
-    currentTokensStage = ready.thenApplyAsync((v) -> fetchNewTokens(), executor);
+    currentTokensStage =
+        ready
+            .thenApplyAsync((v) -> fetchNewTokens(), executor)
+            .thenApply(this::maybeExchangeTokens);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
@@ -222,7 +227,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             // try refreshing the current tokens (if they exist)
             .thenApply(this::refreshTokens)
             // if that fails, of if tokens weren't available, try fetching brand-new tokens
-            .exceptionally(error -> fetchNewTokens());
+            .exceptionally(error -> fetchNewTokens())
+            .thenApply(this::maybeExchangeTokens);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
@@ -255,14 +261,32 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   }
 
   Tokens refreshTokens(Tokens currentTokens) {
-    GrantType grantType =
-        currentTokens.getRefreshToken() == null
-            ? GrantType.TOKEN_EXCHANGE
-            : GrantType.REFRESH_TOKEN;
-    LOGGER.debug("[{}] Refreshing tokens using {}", config.getClientName(), grantType);
-    try (Flow flow = grantType.newFlow(config)) {
+    if (currentTokens.getRefreshToken() == null) {
+      throw new MustFetchNewTokensException("No refresh token available");
+    }
+    if (isAboutToExpire(currentTokens.getRefreshToken(), config.getDefaultRefreshTokenLifespan())) {
+      throw new MustFetchNewTokensException("Refresh token is about to expire");
+    }
+    LOGGER.debug("[{}] Refreshing tokens", config.getClientName());
+    try (Flow flow = GrantType.REFRESH_TOKEN.newFlow(config)) {
       return flow.fetchNewTokens(currentTokens);
     }
+  }
+
+  Tokens maybeExchangeTokens(Tokens currentTokens) {
+    if (config.getTokenExchangeConfig().isEnabled()) {
+      LOGGER.debug("[{}] Exchanging tokens", config.getClientName());
+      try (Flow flow = GrantType.TOKEN_EXCHANGE.newFlow(config)) {
+        return flow.fetchNewTokens(currentTokens);
+      }
+    }
+    return currentTokens;
+  }
+
+  private boolean isAboutToExpire(Token token, Duration defaultLifespan) {
+    Instant now = config.getClock().get();
+    Instant expirationTime = tokenExpirationTime(now, token, defaultLifespan);
+    return expirationTime.isBefore(now.plus(config.getRefreshSafetyWindow()));
   }
 
   /**
@@ -274,12 +298,12 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       return minRefreshDelay;
     }
     Instant accessExpirationTime =
-        OAuth2ClientUtils.tokenExpirationTime(
+        tokenExpirationTime(
             now, currentTokens.getAccessToken(), config.getDefaultAccessTokenLifespan());
     Instant refreshExpirationTime =
-        OAuth2ClientUtils.tokenExpirationTime(
+        tokenExpirationTime(
             now, currentTokens.getRefreshToken(), config.getDefaultRefreshTokenLifespan());
-    return OAuth2ClientUtils.shortestDelay(
+    return OAuth2Utils.shortestDelay(
         now,
         accessExpirationTime,
         refreshExpirationTime,

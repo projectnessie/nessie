@@ -116,7 +116,8 @@ class AuthorizationCodeFlow extends AbstractFlow {
             .path(authEndpoint.getPath())
             .queryParam("response_type", "code")
             .queryParam("client_id", config.getClientId())
-            .queryParam("scope", config.getScope().orElse(null))
+            .queryParam(
+                "scope", config.getScopes().stream().reduce((a, b) -> a + " " + b).orElse(null))
             .queryParam("redirect_uri", redirectUri)
             .queryParam("state", state)
             .build();
@@ -220,9 +221,9 @@ class AuthorizationCodeFlow extends AbstractFlow {
 
   private Tokens fetchNewTokens(String code) {
     LOGGER.debug("Authorization Code Flow: fetching new tokens");
-    AuthorizationCodeTokensRequest.Builder request =
-        AuthorizationCodeTokensRequest.builder().code(code).redirectUri(redirectUri);
-    Tokens tokens = invokeTokenEndpoint(request, AuthorizationCodeTokensResponse.class);
+    AuthorizationCodeTokenRequest.Builder request =
+        AuthorizationCodeTokenRequest.builder().code(code).redirectUri(redirectUri);
+    Tokens tokens = invokeTokenEndpoint(request, AuthorizationCodeTokenResponse.class);
     LOGGER.debug("Authorization Code Flow: new tokens received");
     return tokens;
   }

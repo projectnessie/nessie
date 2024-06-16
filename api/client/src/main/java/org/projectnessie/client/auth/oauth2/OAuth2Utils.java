@@ -18,11 +18,14 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.Status;
 
@@ -57,8 +60,8 @@ class OAuth2Utils {
         HttpResponse response = httpClient.newRequest(issuerUrl).path(path).get();
         Status status = response.getStatus();
         if (status != Status.OK) {
-          throw new HttpClientException(
-              "OpenID provider metadata request returned status code " + status.getCode());
+          throw new HttpClientResponseException(
+              "OpenID provider metadata request returned status code " + status.getCode(), status);
         }
         JsonNode data = response.readEntity(JsonNode.class);
         if (!data.has("issuer") || !data.has("authorization_endpoint")) {
@@ -78,5 +81,41 @@ class OAuth2Utils {
       e.addSuppressed(failures.get(i));
     }
     throw e;
+  }
+
+  static Duration shortestDelay(
+      Instant now,
+      Instant accessExpirationTime,
+      Instant refreshExpirationTime,
+      Duration refreshSafetyWindow,
+      Duration minRefreshDelay) {
+    Instant expirationTime =
+        accessExpirationTime.isBefore(refreshExpirationTime)
+            ? accessExpirationTime
+            : refreshExpirationTime;
+    Duration delay = Duration.between(now, expirationTime).minus(refreshSafetyWindow);
+    if (delay.compareTo(minRefreshDelay) < 0) {
+      delay = minRefreshDelay;
+    }
+    return delay;
+  }
+
+  static Instant tokenExpirationTime(Instant now, Token token, Duration defaultLifespan) {
+    Instant expirationTime = null;
+    if (token != null) {
+      expirationTime = token.getExpirationTime();
+      if (expirationTime == null) {
+        try {
+          JwtToken jwtToken = JwtToken.parse(token.getPayload());
+          expirationTime = jwtToken.getExpirationTime();
+        } catch (Exception ignored) {
+          // fall through
+        }
+      }
+    }
+    if (expirationTime == null) {
+      expirationTime = now.plus(defaultLifespan);
+    }
+    return expirationTime;
   }
 }

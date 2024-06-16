@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.auth.oauth2;
+package org.projectnessie.client.http;
 
-import jakarta.annotation.Nullable;
-import java.time.Instant;
-import org.immutables.value.Value;
+public class HttpClientResponseException extends HttpClientException {
 
-@Value.Immutable
-public interface AccessToken extends Token {
+  private final Status status;
 
-  /** The type of the token issued, typically "Bearer". */
-  String getTokenType();
+  public HttpClientResponseException(String message, Status status) {
+    super(message);
+    this.status = status;
+  }
 
-  static AccessToken of(String payload, String tokenType, @Nullable Instant expirationTime) {
-    return ImmutableAccessToken.builder()
-        .payload(payload)
-        .tokenType(tokenType)
-        .expirationTime(expirationTime)
-        .build();
+  public Status getStatus() {
+    return status;
   }
 }

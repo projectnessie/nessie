@@ -15,17 +15,15 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.Status;
 
-public class OAuth2Exception extends HttpClientException {
+public class OAuth2Exception extends HttpClientResponseException {
 
-  private final Status status;
   private final String errorCode;
 
   OAuth2Exception(Status status, ErrorResponse errorResponse) {
-    super(createMessage(status, errorResponse));
-    this.status = status;
+    super(createMessage(status, errorResponse), status);
     this.errorCode = errorResponse.getErrorCode();
   }
 
@@ -41,10 +39,6 @@ public class OAuth2Exception extends HttpClientException {
       builder.append(": ").append(errorResponse.getErrorDescription());
     }
     return builder.toString();
-  }
-
-  public Status getStatus() {
-    return status;
   }
 
   public String getErrorCode() {

@@ -33,7 +33,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_BACKGROUND_THREAD_IDLE_TIMEOUT;
@@ -49,6 +48,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -92,12 +93,10 @@ public interface OAuth2AuthenticatorConfig {
         config, CONF_NESSIE_OAUTH2_GRANT_TYPE, builder::grantType, GrantType::fromConfigName);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_USERNAME, builder::username);
     applyConfigOption(config, CONF_NESSIE_OAUTH2_PASSWORD, builder::password);
-    applyConfigOption(config, CONF_NESSIE_OAUTH2_CLIENT_SCOPES, builder::scope);
     applyConfigOption(
         config,
-        CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
-        builder::tokenExchangeEnabled,
-        Boolean::parseBoolean);
+        CONF_NESSIE_OAUTH2_CLIENT_SCOPES,
+        scope -> Arrays.stream(scope.split(" ")).forEach(builder::addScope));
     applyConfigOption(
         config,
         CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN,
@@ -143,6 +142,8 @@ public interface OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
         builder::deviceCodeFlowPollInterval,
         Duration::parse);
+    TokenExchangeConfig tokenExchangeConfig = TokenExchangeConfig.fromConfigSupplier(config);
+    builder.tokenExchangeConfig(tokenExchangeConfig);
     return builder.build();
   }
 
@@ -219,21 +220,30 @@ public interface OAuth2AuthenticatorConfig {
    */
   Optional<Secret> getPassword();
 
+  @Value.Derived
+  @Deprecated
+  default Optional<String> getScope() {
+    return getScopes().stream().reduce((a, b) -> a + " " + b);
+  }
+
   /**
-   * The OAuth2 scope. Optional.
+   * The OAuth2 scopes. Optional.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SCOPES
    */
-  Optional<String> getScope();
+  List<String> getScopes();
 
-  /**
-   * Whether token exchange is enabled. Defaults to {@code true}.
-   *
-   * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED
-   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   @Value.Default
   default boolean getTokenExchangeEnabled() {
     return true;
+  }
+
+  /** The token exchange configuration. Optional. */
+  @Value.Default
+  default TokenExchangeConfig getTokenExchangeConfig() {
+    return TokenExchangeConfig.DISABLED;
   }
 
   /**
@@ -412,10 +422,27 @@ public interface OAuth2AuthenticatorConfig {
     }
 
     @CanIgnoreReturnValue
-    Builder scope(String scope);
+    @Deprecated
+    default Builder scope(String scope) {
+      Arrays.stream(scope.split(" ")).forEach(this::addScope);
+      return this;
+    }
 
     @CanIgnoreReturnValue
+    Builder addScope(String scope);
+
+    @CanIgnoreReturnValue
+    Builder addScopes(String... scopes);
+
+    @CanIgnoreReturnValue
+    Builder scopes(Iterable<String> scopes);
+
+    @Deprecated
+    @CanIgnoreReturnValue
     Builder tokenExchangeEnabled(boolean tokenExchangeEnabled);
+
+    @CanIgnoreReturnValue
+    Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);
 
     @CanIgnoreReturnValue
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

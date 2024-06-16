@@ -22,11 +22,11 @@ import javax.annotation.Nullable;
 /**
  * Common interface for requests using grant types compatible with public clients.
  *
- * @see AuthorizationCodeTokensRequest
+ * @see AuthorizationCodeTokenRequest
  * @see DeviceCodeRequest
- * @see PasswordTokensRequest
- * @see RefreshTokensRequest
- * @see TokensExchangeRequest
+ * @see PasswordTokenRequest
+ * @see RefreshTokenRequest
+ * @see TokenExchangeRequest
  */
 interface PublicClientRequest {
 

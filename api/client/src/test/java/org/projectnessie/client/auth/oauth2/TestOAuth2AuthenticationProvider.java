@@ -111,8 +111,8 @@ class TestOAuth2AuthenticationProvider {
 
   private void handleAuth(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
-    TokensResponseBase tokenResponse =
-        ImmutableClientCredentialsTokensResponse.builder()
+    TokenResponseBase tokenResponse =
+        ImmutableClientCredentialsTokenResponse.builder()
             .accessTokenPayload("cafebabe")
             .tokenType("bearer")
             .build();

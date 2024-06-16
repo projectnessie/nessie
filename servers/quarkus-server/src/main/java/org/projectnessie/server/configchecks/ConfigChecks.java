@@ -18,6 +18,7 @@ package org.projectnessie.server.configchecks;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import org.projectnessie.quarkus.config.QuarkusJdbcConfig;
 import org.projectnessie.quarkus.config.QuarkusServerConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
@@ -32,6 +33,7 @@ public class ConfigChecks {
   @Inject QuarkusNessieAuthenticationConfig authenticationConfig;
   @Inject QuarkusNessieAuthorizationConfig authorizationConfig;
   @Inject QuarkusServerConfig serverConfig;
+  @Inject QuarkusJdbcConfig jdbcConfig;
 
   public void configCheck(@Observes StartupEvent event) {
     if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.IN_MEMORY) {
@@ -39,6 +41,15 @@ public class ConfigChecks {
           "Configured version store type IN_MEMORY is only for testing purposes and experimentation, not for production use. "
               + "Data will be lost when the process is shut down. "
               + "Recommended action: Use a supported database, see https://projectnessie.org/nessie-latest/configuration/");
+    }
+    if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.JDBC) {
+      if (jdbcConfig.datasourceName().isPresent()
+          && jdbcConfig.datasourceName().get().equalsIgnoreCase("h2")) {
+        LOGGER.warn(
+            "Configured datasource H2 is only for testing purposes and experimentation, not for production use. "
+                + "Data will be lost when the process is shut down. "
+                + "Recommended action: Use a supported production-ready database, see https://projectnessie.org/nessie-latest/configuration/");
+      }
     }
 
     // AuthZ + AuthN warnings

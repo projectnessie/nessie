@@ -41,8 +41,10 @@ import java.util.function.BiConsumer;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
+import org.projectnessie.client.http.Status;
 import org.projectnessie.client.http.impl.BaseHttpRequest;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
@@ -145,9 +147,11 @@ final class JavaRequest extends BaseHttpRequest {
         if (response.statusCode() >= 400) {
           // This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that
           // throws an IOException for these status codes.
-          throw new HttpClientException(
+          Status status = Status.fromCode(response.statusCode());
+          throw new HttpClientResponseException(
               String.format(
-                  "%s request to %s failed with HTTP/%d", method, uri, response.statusCode()));
+                  "%s request to %s failed with HTTP/%d", method, uri, response.statusCode()),
+              status);
         }
 
         response = null;

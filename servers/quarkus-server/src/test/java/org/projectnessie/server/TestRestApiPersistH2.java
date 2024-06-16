@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.auth.oauth2;
+package org.projectnessie.server;
 
-import jakarta.annotation.Nullable;
-import java.time.Instant;
-import org.immutables.value.Value;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistH2;
 
-@Value.Immutable
-public interface RefreshToken extends Token {
-
-  static RefreshToken of(String payload, @Nullable Instant expirationTime) {
-    return ImmutableRefreshToken.builder().payload(payload).expirationTime(expirationTime).build();
-  }
-}
+@QuarkusTest
+@TestProfile(QuarkusTestProfilePersistH2.class)
+class TestRestApiPersistH2 extends AbstractQuarkusSmoke {}

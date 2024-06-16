@@ -22,6 +22,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Commits
 
+## [0.90.4] Release (2024-06-13)
+
+### New Features
+
+- Support for token exchange in the Nessie client has been completely redesigned. The new API and
+  configuration options are described in the [Nessie authentication settings]. If this feature is
+  enabled, each time a new access token is obtained, the client will exchange it for another one by
+  performing a token exchange with the authorization server. We hope that this new feature will
+  unlock many advanced use cases for Nessie users, such as impersonation and delegation. Please note
+  that token exchange is considered in beta state and both the API and configuration options are
+  subject to change at any time; we appreciate early feedback, comments and suggestions.
+
 ## [0.90.2] Release (2024-06-11)
 
 ### Highlights
@@ -55,6 +67,13 @@ as necessary. Empty sections will not end in the release notes.
   specified explicitly in the JDBC URL.
   - `nessie.version.store.persist.jdbc.catalog`
   - `nessie.version.store.persist.jdbc.schema`
+- Support for token exchange in the Nessie client, in its current form, is now deprecated. The token
+  exchange flow was being used to exchange a refresh token for an access token, but this is not its
+  recommended usage. From now on, if a refresh token is provided by the authorization server, the
+  Nessie client will use the `refresh_token` grant type to obtain a new access token; if a refresh
+  token is not provided, the client will use the configured initial grant type to fetch a new access
+  token. _This change should thus be transparent to all users._ The `token_exchange` flow will be
+  redesigned in a future release to support more advanced use cases.
 
 ### Fixes
 
@@ -505,7 +524,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...HEAD
+[0.90.4]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...nessie-0.90.4
 [0.90.2]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...nessie-0.90.2
 [0.83.2]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.2
 [0.82.0]: https://github.com/projectnessie/nessie/compare/nessie-0.81.1...nessie-0.82.0
@@ -533,3 +553,4 @@ as necessary. Empty sections will not end in the release notes.
 [0.66.0]: https://github.com/projectnessie/nessie/compare/nessie-0.65.1...nessie-0.66.0
 [0.65.1]: https://github.com/projectnessie/nessie/compare/nessie-0.65.0...nessie-0.65.1
 [0.65.0]: https://github.com/projectnessie/nessie/compare/nessie-0.64.0...nessie-0.65.0
+[Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings

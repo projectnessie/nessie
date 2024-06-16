@@ -17,6 +17,8 @@ package org.projectnessie.client.auth.oauth2;
 
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
+import org.projectnessie.client.http.HttpAuthentication;
 
 /**
  * An implementation of the <a href="https://datatracker.ietf.org/doc/html/rfc8693">Token
@@ -27,29 +29,61 @@ import java.util.Objects;
  */
 class TokenExchangeFlow extends AbstractFlow {
 
-  static final URI ACCESS_TOKEN_ID = URI.create("urn:ietf:params:oauth:token-type:access_token");
-
   TokenExchangeFlow(OAuth2ClientConfig config) {
     super(config);
   }
 
   @Override
   public Tokens fetchNewTokens(Tokens currentTokens) {
-    if (!config.getTokenExchangeEnabled()) {
-      throw new MustFetchNewTokensException("Token exchange is disabled");
-    }
     Objects.requireNonNull(currentTokens);
-    TokensExchangeRequest.Builder request =
-        TokensExchangeRequest.builder()
-            .subjectToken(currentTokens.getAccessToken().getPayload())
-            .subjectTokenType(ACCESS_TOKEN_ID)
-            .requestedTokenType(ACCESS_TOKEN_ID);
-    Tokens response = invokeTokenEndpoint(request, TokensExchangeResponse.class);
-    // Keycloak may return the same access token instead of a new one,
-    // so we need to check if the access token is about to expire.
-    if (isAboutToExpire(response.getAccessToken(), config.getDefaultAccessTokenLifespan())) {
-      throw new MustFetchNewTokensException("Access token is about to expire");
-    }
-    return response;
+
+    TokenExchangeConfig tokenExchangeConfig = config.getTokenExchangeConfig();
+
+    AccessToken accessToken = currentTokens.getAccessToken();
+    RefreshToken refreshToken = currentTokens.getRefreshToken();
+
+    TypedToken subjectToken =
+        tokenExchangeConfig.getSubjectTokenProvider().apply(accessToken, refreshToken);
+    TypedToken actorToken =
+        tokenExchangeConfig.getActorTokenProvider().apply(accessToken, refreshToken);
+
+    Objects.requireNonNull(subjectToken);
+
+    TokenExchangeRequest.Builder request =
+        TokenExchangeRequest.builder()
+            .subjectToken(subjectToken.getPayload())
+            .subjectTokenType(subjectToken.getTokenType())
+            .actorToken(actorToken == null ? null : actorToken.getPayload())
+            .actorTokenType(actorToken == null ? null : actorToken.getTokenType())
+            .resource(tokenExchangeConfig.getResource().orElse(null))
+            .audience(tokenExchangeConfig.getAudience().orElse(null))
+            .requestedTokenType(tokenExchangeConfig.getRequestedTokenType());
+
+    return invokeTokenEndpoint(request, TokenExchangeResponse.class);
+  }
+
+  @Override
+  Optional<String> getScope() {
+    return config.getScopesForTokenExchange().stream().reduce((a, b) -> a + " " + b);
+  }
+
+  @Override
+  URI getResolvedTokenEndpoint() {
+    return config.getResolvedTokenEndpointForTokenExchange();
+  }
+
+  @Override
+  String getClientId() {
+    return config.getClientIdForTokenExchange();
+  }
+
+  @Override
+  boolean isPublicClient() {
+    return config.isPublicClientForTokenExchange();
+  }
+
+  @Override
+  Optional<HttpAuthentication> getBasicAuthentication() {
+    return config.getBasicAuthenticationForTokenExchange();
   }
 }

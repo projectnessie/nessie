@@ -15,11 +15,9 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import static org.projectnessie.client.auth.oauth2.OAuth2ClientUtils.tokenExpirationTime;
-
 import java.net.URI;
-import java.time.Duration;
-import java.time.Instant;
+import java.util.Optional;
+import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 
@@ -55,39 +53,53 @@ abstract class AbstractFlow implements Flow {
     this.config = config;
   }
 
-  <REQ extends TokensRequestBase, RESP extends TokensResponseBase> Tokens invokeTokenEndpoint(
-      TokensRequestBase.Builder<REQ> request, Class<? extends RESP> responseClass) {
-    config.getScope().ifPresent(request::scope);
+  <REQ extends TokenRequestBase, RESP extends TokenResponseBase> Tokens invokeTokenEndpoint(
+      TokenRequestBase.Builder<REQ> request, Class<? extends RESP> responseClass) {
+    getScope().ifPresent(request::scope);
     maybeAddClientId(request);
-    return invokeEndpoint(config.getResolvedTokenEndpoint(), request.build(), responseClass)
+    return invokeEndpoint(getResolvedTokenEndpoint(), request.build(), responseClass)
         .asTokens(config.getClock());
   }
 
   DeviceCodeResponse invokeDeviceAuthEndpoint() {
     DeviceCodeRequest.Builder request = DeviceCodeRequest.builder();
-    config.getScope().ifPresent(request::scope);
+    getScope().ifPresent(request::scope);
     maybeAddClientId(request);
     return invokeEndpoint(
         config.getResolvedDeviceAuthEndpoint(), request.build(), DeviceCodeResponse.class);
   }
 
+  Optional<String> getScope() {
+    return config.getScopes().stream().reduce((a, b) -> a + " " + b);
+  }
+
+  URI getResolvedTokenEndpoint() {
+    return config.getResolvedTokenEndpoint();
+  }
+
+  String getClientId() {
+    return config.getClientId();
+  }
+
+  boolean isPublicClient() {
+    return config.isPublicClient();
+  }
+
+  Optional<HttpAuthentication> getBasicAuthentication() {
+    return config.getBasicAuthentication();
+  }
+
   private void maybeAddClientId(Object request) {
-    if (config.isPublicClient() && request instanceof PublicClientRequest.Builder) {
-      ((PublicClientRequest.Builder<?>) request).clientId(config.getClientId());
+    if (isPublicClient() && request instanceof PublicClientRequest.Builder) {
+      ((PublicClientRequest.Builder<?>) request).clientId(getClientId());
     }
   }
 
   private <REQ, RESP> RESP invokeEndpoint(
       URI endpoint, REQ request, Class<? extends RESP> responseClass) {
     HttpRequest req = config.getHttpClient().newRequest(endpoint);
-    config.getBasicAuthentication().ifPresent(req::authentication);
+    getBasicAuthentication().ifPresent(req::authentication);
     HttpResponse response = req.postForm(request);
     return response.readEntity(responseClass);
-  }
-
-  protected boolean isAboutToExpire(Token token, Duration defaultLifespan) {
-    Instant now = config.getClock().get();
-    Instant expirationTime = tokenExpirationTime(now, token, defaultLifespan);
-    return expirationTime.isBefore(now.plus(config.getRefreshSafetyWindow()));
   }
 }

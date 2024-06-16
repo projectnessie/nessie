@@ -27,7 +27,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>8</maven.compiler.release>
     <versionMavenResolver>1.9.20</versionMavenResolver>
-    <nessie.version>0.90.2</nessie.version>
+    <nessie.version>0.90.4</nessie.version>
   </properties>
 
   <dependencyManagement>
@@ -123,7 +123,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.2.5</version>
+          <version>3.3.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
