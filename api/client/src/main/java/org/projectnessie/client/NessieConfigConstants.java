@@ -90,7 +90,7 @@ public final class NessieConfigConstants {
    * will be discovered from the {@link #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}, using the OpenID
    * Connect Discovery metadata published by the issuer.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Authorization Code")
   public static final String CONF_NESSIE_OAUTH2_AUTH_ENDPOINT =
       "nessie.authentication.oauth2.auth-endpoint";
 
@@ -101,7 +101,7 @@ public final class NessieConfigConstants {
    * <p>If using the "Device Code" grant type, either this property or {@link
    * #CONF_NESSIE_OAUTH2_ISSUER_URL} must be set.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Device Code")
   public static final String CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT =
       "nessie.authentication.oauth2.device-auth-endpoint";
 
@@ -115,6 +115,8 @@ public final class NessieConfigConstants {
 
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE = "device_code";
 
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_TOKEN_EXCHANGE = "token_exchange";
+
   /**
    * The grant type to use when authenticating against the OAuth2 server. Valid values are:
    *
@@ -123,56 +125,10 @@ public final class NessieConfigConstants {
    *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}
    *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}
    *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE}
+   *   <li>{@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_TOKEN_EXCHANGE}
    * </ul>
    *
    * Optional, defaults to {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS}.
-   *
-   * <p>Depending on the grant type, different properties must be provided.
-   *
-   * <p>For the "client_credentials" grant type, the following properties must be provided:
-   *
-   * <ul>
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint} or {@linkplain
-   *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
-   * </ul>
-   *
-   * <p>For the "password" grant type, the following properties must be provided:
-   *
-   * <ul>
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint} or {@linkplain
-   *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_USERNAME username}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_PASSWORD password}
-   * </ul>
-   *
-   * <p>For the "authorization_code" grant type, the following properties must be provided:
-   *
-   * <ul>
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint} or {@linkplain
-   *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_AUTH_ENDPOINT authorization endpoint} or {@linkplain
-   *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
-   * </ul>
-   *
-   * <p>For the "device_code" grant type, the following properties must be provided:
-   *
-   * <ul>
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT token endpoint} or {@linkplain
-   *       #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT device authorization endpoint} or
-   *       {@linkplain #CONF_NESSIE_OAUTH2_ISSUER_URL issuer URL}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID}
-   *   <li>{@linkplain #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} (if required)
-   * </ul>
-   *
-   * <p>Both client and user must be properly configured with appropriate permissions in the OAuth2
-   * server for the authentication to succeed.
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE =
@@ -198,14 +154,14 @@ public final class NessieConfigConstants {
    * Username to use when authenticating against the OAuth2 server. Required if using OAuth2
    * authentication and "password" grant type, ignored otherwise.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Password")
   public static final String CONF_NESSIE_OAUTH2_USERNAME = "nessie.authentication.oauth2.username";
 
   /**
    * Password to use when authenticating against the OAuth2 server. Required if using OAuth2
    * authentication and the "password" grant type, ignored otherwise.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Password")
   public static final String CONF_NESSIE_OAUTH2_PASSWORD = "nessie.authentication.oauth2.password";
 
   public static final String DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN = "PT1M";
@@ -217,7 +173,7 @@ public final class NessieConfigConstants {
    * <p>Optional, defaults to {@value #DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Refresh")
   public static final String CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN =
       "nessie.authentication.oauth2.default-access-token-lifespan";
 
@@ -230,7 +186,7 @@ public final class NessieConfigConstants {
    * <p>Optional, defaults to {@value #DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Refresh")
   public static final String CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN =
       "nessie.authentication.oauth2.default-refresh-token-lifespan";
 
@@ -242,7 +198,7 @@ public final class NessieConfigConstants {
    * #DEFAULT_REFRESH_SAFETY_WINDOW}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Refresh")
   public static final String CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW =
       "nessie.authentication.oauth2.refresh-safety-window";
 
@@ -256,7 +212,7 @@ public final class NessieConfigConstants {
    * Optional, defaults to {@value #DEFAULT_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT}. Must be a valid
    * <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Refresh")
   public static final String CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT =
       "nessie.authentication.oauth2.preemptive-token-refresh-idle-timeout";
 
@@ -271,7 +227,7 @@ public final class NessieConfigConstants {
    * restarted too often. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Token Refresh")
   public static final String CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT =
       "nessie.authentication.oauth2.background-thread-idle-timeout";
 
@@ -299,62 +255,6 @@ public final class NessieConfigConstants {
       "nessie.authentication.oauth2.token-exchange-enabled";
 
   /**
-   * Enable OAuth2 token exchange. If enabled, each access token obtained from the OAuth2 server
-   * will be exchanged for a new token, using the token endpoint and the token exchange grant type,
-   * as defined in <a href="https://datatracker.ietf.org/doc/html/rfc8693">RFC 8693</a>.
-   */
-  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
-  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED =
-      "nessie.authentication.oauth2.token-exchange.enabled";
-
-  /**
-   * For token exchanges only. The root URL of an alternate OpenID Connect identity issuer provider,
-   * to use when exchanging tokens only.
-   *
-   * <p>If neither this property nor {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT} are
-   * defined, the global token endpoint will be used. This means that the same authorization server
-   * will be used for both the initial token request and the token exchange.
-   *
-   * <p>Endpoint discovery is performed using the OpenID Connect Discovery metadata published by the
-   * issuer. See <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">OpenID Connect
-   * Discovery 1.0</a> for more information.
-   */
-  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
-  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL =
-      "nessie.authentication.oauth2.token-exchange.issuer-url";
-
-  /**
-   * For token exchanges only. The URL of an alternate OAuth2 token endpoint to use when exchanging
-   * tokens only.
-   *
-   * <p>If neither this property nor {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL} are
-   * defined, the global token endpoint will be used. This means that the same authorization server
-   * will be used for both the initial token request and the token exchange.
-   */
-  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
-  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT =
-      "nessie.authentication.oauth2.token-exchange.token-endpoint";
-
-  /**
-   * For token exchanges only. An alternate client ID to use. If not provided, the global client ID
-   * will be used. If provided, and if the client is confidential, then its secret must be provided
-   * as well with {@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET} – the global client
-   * secret will NOT be used.
-   */
-  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
-  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID =
-      "nessie.authentication.oauth2.token-exchange.client-id";
-
-  /**
-   * For token exchanges only. The client secret to use, if {@value
-   * #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID} is defined and the token exchange client is
-   * confidential.
-   */
-  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
-  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET =
-      "nessie.authentication.oauth2.token-exchange.client-secret";
-
-  /**
    * For token exchanges only. A URI that indicates the target service or resource where the client
    * intends to use the requested security token. Optional.
    */
@@ -371,35 +271,25 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE =
       "nessie.authentication.oauth2.token-exchange.audience";
 
-  /**
-   * For token exchanges only. Space-separated list of scopes to include in each token exchange
-   * request to the OAuth2 server. Optional. If undefined, the global scopes configured through
-   * {@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES} will be used. If defined and null or empty, no
-   * scopes will be used.
-   *
-   * <p>The scope names will not be validated by the Nessie client; make sure they are valid
-   * according to <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">RFC 6749
-   * Section 3.3</a>.
-   */
-  @ConfigItem(section = "OAuth2 Authentication Token Exchange")
-  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES =
-      "nessie.authentication.oauth2.token-exchange.scopes";
+  public static final String CURRENT_ACCESS_TOKEN = "current_access_token";
+  public static final String CURRENT_REFRESH_TOKEN = "current_refresh_token";
+  public static final String NO_TOKEN = "no_token";
 
   /**
    * For token exchanges only. The subject token to exchange. This can take 3 kinds of values:
    *
    * <ul>
-   *   <li>The value {@value
-   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_ACCESS_TOKEN}, if the
-   *       client should use its current access token;
-   *   <li>The value {@value
-   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_REFRESH_TOKEN}, if the
-   *       client should use its current refresh token (if available);
+   *   <li>The value {@value #CURRENT_ACCESS_TOKEN}, if the client should use its current access
+   *       token;
+   *   <li>The value {@value #CURRENT_REFRESH_TOKEN}, if the client should use its current refresh
+   *       token (if available);
    *   <li>An arbitrary token: in this case, the client will always use the static token provided
    *       here.
    * </ul>
    *
-   * The default is to use the current access token.
+   * The default is to use the current access token. Note: when using token exchange as the initial
+   * grant type, no current access token will eb available: in this case, a valid, static subject
+   * token to exchange must be provided via configuration.
    */
   @ConfigItem(section = "OAuth2 Authentication Token Exchange")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN =
@@ -422,14 +312,12 @@ public final class NessieConfigConstants {
    * For token exchanges only. The actor token to exchange. This can take 4 kinds of values:
    *
    * <ul>
-   *   <li>The value {@value org.projectnessie.client.auth.oauth2.TokenExchangeConfig#NO_TOKEN}, if
-   *       the client should not include any actor token in the exchange request;
-   *   <li>The value {@value
-   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_ACCESS_TOKEN}, if the
-   *       client should use its current access token;
-   *   <li>The value {@value
-   *       org.projectnessie.client.auth.oauth2.TokenExchangeConfig#CURRENT_REFRESH_TOKEN}, if the
-   *       client should use its current refresh token (if available);
+   *   <li>The value {@value #NO_TOKEN}, if the client should not include any actor token in the
+   *       exchange request;
+   *   <li>The value {@value #CURRENT_ACCESS_TOKEN}, if the client should use its current access
+   *       token;
+   *   <li>The value {@value #CURRENT_REFRESH_TOKEN}, if the client should use its current refresh
+   *       token (if available);
    *   <li>An arbitrary token: in this case, the client will always use the static token provided
    *       here.
    * </ul>
@@ -454,6 +342,76 @@ public final class NessieConfigConstants {
       "nessie.authentication.oauth2.token-exchange.actor-token-type";
 
   /**
+   * Whether to enable "impersonation" mode. If enabled, each access token obtained from the OAuth2
+   * server using the configured initial grant type will be exchanged for a new token, using the
+   * token exchange grant type.
+   */
+  @ConfigItem(section = "OAuth2 Authentication Impersonation")
+  public static final String CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED =
+      "nessie.authentication.oauth2.impersonation.enabled";
+
+  /**
+   * For impersonation only. The root URL of an alternate OpenID Connect identity issuer provider,
+   * to use when exchanging tokens only.
+   *
+   * <p>If neither this property nor {@value #CONF_NESSIE_OAUTH2_IMPERSONATION_TOKEN_ENDPOINT} are
+   * defined, the global token endpoint will be used. This means that the same authorization server
+   * will be used for both the initial token request and the token exchange.
+   *
+   * <p>Endpoint discovery is performed using the OpenID Connect Discovery metadata published by the
+   * issuer. See <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">OpenID Connect
+   * Discovery 1.0</a> for more information.
+   */
+  @ConfigItem(section = "OAuth2 Authentication Impersonation")
+  public static final String CONF_NESSIE_OAUTH2_IMPERSONATION_ISSUER_URL =
+      "nessie.authentication.oauth2.impersonation.issuer-url";
+
+  /**
+   * For impersonation only. The URL of an alternate OAuth2 token endpoint to use when exchanging
+   * tokens only.
+   *
+   * <p>If neither this property nor {@value #CONF_NESSIE_OAUTH2_IMPERSONATION_ISSUER_URL} are
+   * defined, the global token endpoint will be used. This means that the same authorization server
+   * will be used for both the initial token request and the token exchange.
+   */
+  @ConfigItem(section = "OAuth2 Authentication Impersonation")
+  public static final String CONF_NESSIE_OAUTH2_IMPERSONATION_TOKEN_ENDPOINT =
+      "nessie.authentication.oauth2.impersonation.token-endpoint";
+
+  /**
+   * For impersonation only. An alternate client ID to use. If not provided, the global client ID
+   * will be used. If provided, and if the client is confidential, then its secret must be provided
+   * as well with {@value #CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET} – the global client
+   * secret will NOT be used.
+   */
+  @ConfigItem(section = "OAuth2 Authentication Impersonation")
+  public static final String CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_ID =
+      "nessie.authentication.oauth2.impersonation.client-id";
+
+  /**
+   * For impersonation only. The client secret to use, if {@value
+   * #CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_ID} is defined and the token exchange client is
+   * confidential.
+   */
+  @ConfigItem(section = "OAuth2 Authentication Impersonation")
+  public static final String CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET =
+      "nessie.authentication.oauth2.impersonation.client-secret";
+
+  /**
+   * For impersonation only. Space-separated list of scopes to include in each token exchange
+   * request to the OAuth2 server. Optional. If undefined, the global scopes configured through
+   * {@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES} will be used. If defined and null or empty, no
+   * scopes will be used.
+   *
+   * <p>The scope names will not be validated by the Nessie client; make sure they are valid
+   * according to <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">RFC 6749
+   * Section 3.3</a>.
+   */
+  @ConfigItem(section = "OAuth2 Authentication Impersonation")
+  public static final String CONF_NESSIE_OAUTH2_IMPERSONATION_SCOPES =
+      "nessie.authentication.oauth2.impersonation.scopes";
+
+  /**
    * Port of the OAuth2 authorization code flow web server.
    *
    * <p>When running a client inside a container make sure to specify a port and forward the port to
@@ -465,7 +423,7 @@ public final class NessieConfigConstants {
    *
    * <p>Optional; if not present, a random port will be used.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Authorization Code")
   public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_WEB_PORT =
       "nessie.authentication.oauth2.auth-code-flow.web-port";
 
@@ -475,7 +433,7 @@ public final class NessieConfigConstants {
    * #CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE}. Optional, defaults to {@value
    * #DEFAULT_AUTHORIZATION_CODE_FLOW_TIMEOUT}.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Authorization Code")
   public static final String CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT =
       "nessie.authentication.oauth2.auth-code-flow.timeout";
 
@@ -486,7 +444,7 @@ public final class NessieConfigConstants {
    * if the grant type to use is {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE}. Optional,
    * defaults to {@value #DEFAULT_DEVICE_CODE_FLOW_TIMEOUT}.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Device Code")
   public static final String CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT =
       "nessie.authentication.oauth2.device-code-flow.timeout";
 
@@ -498,7 +456,7 @@ public final class NessieConfigConstants {
    * #CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE}. Optional, defaults to {@value
    * #DEFAULT_DEVICE_CODE_FLOW_POLL_INTERVAL}.
    */
-  @ConfigItem(section = "OAuth2 Authentication")
+  @ConfigItem(section = "OAuth2 Authentication Device Code")
   public static final String CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL =
       "nessie.authentication.oauth2.device-code-flow.poll-interval";
 

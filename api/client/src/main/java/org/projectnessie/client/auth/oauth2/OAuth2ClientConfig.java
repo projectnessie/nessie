@@ -31,6 +31,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_TOKEN_EXCHANGE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
@@ -47,12 +49,14 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import org.immutables.value.Value;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
@@ -124,25 +128,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     return Clock.systemUTC()::instant;
   }
 
-  String getClientIdForTokenExchange() {
-    if (!getTokenExchangeConfig().isEnabled()
-        || !getTokenExchangeConfig().getClientId().isPresent()) {
-      return getClientId();
-    }
-    return getTokenExchangeConfig().getClientId().get();
-  }
-
   @Value.Derived
   boolean isPublicClient() {
     return !getClientSecret().isPresent();
-  }
-
-  boolean isPublicClientForTokenExchange() {
-    if (!getTokenExchangeConfig().isEnabled()
-        || !getTokenExchangeConfig().getClientId().isPresent()) {
-      return isPublicClient();
-    }
-    return !getTokenExchangeConfig().getClientSecret().isPresent();
   }
 
   @Value.Lazy
@@ -152,12 +140,8 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   }
 
   @Value.Lazy
-  JsonNode getOpenIdProviderMetadataForTokenExchange() {
-    if (!getTokenExchangeConfig().isEnabled()
-        || !getTokenExchangeConfig().getIssuerUrl().isPresent()) {
-      return getOpenIdProviderMetadata();
-    }
-    URI issuerUrl = getTokenExchangeConfig().getIssuerUrl().get();
+  JsonNode getImpersonationOpenIdProviderMetadata() {
+    URI issuerUrl = getImpersonationConfig().getIssuerUrl().orElseThrow(IllegalStateException::new);
     return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
   }
 
@@ -200,41 +184,20 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   }
 
   @Value.Lazy
-  URI getResolvedTokenEndpointForTokenExchange() {
-    if (!getTokenExchangeConfig().isEnabled()
-        || (!getTokenExchangeConfig().getIssuerUrl().isPresent()
-            && !getTokenExchangeConfig().getTokenEndpoint().isPresent())) {
-      return getResolvedTokenEndpoint();
+  URI getResolvedImpersonationTokenEndpoint() {
+    if (getImpersonationConfig().getTokenEndpoint().isPresent()) {
+      return getImpersonationConfig().getTokenEndpoint().get();
     }
-    if (getTokenExchangeConfig().getTokenEndpoint().isPresent()) {
-      return getTokenExchangeConfig().getTokenEndpoint().get();
-    }
-    JsonNode json = getOpenIdProviderMetadataForTokenExchange();
+    JsonNode json = getImpersonationOpenIdProviderMetadata();
     if (json.has("token_endpoint")) {
       return URI.create(json.get("token_endpoint").asText());
     }
     throw new IllegalStateException("OpenID provider metadata does not contain a token endpoint");
   }
 
-  @Value.Lazy
-  List<String> getScopesForTokenExchange() {
-    if (!getTokenExchangeConfig().isEnabled()) {
-      return getScopes();
-    }
-    List<String> scopes = getTokenExchangeConfig().getScopes();
-    if (scopes.equals(TokenExchangeConfig.SCOPES_INHERIT)) {
-      return getScopes();
-    }
-    return scopes;
-  }
-
   /**
    * Returns the BASIC {@link HttpAuthentication} that will be used to authenticate with the OAuth2
    * server, for all endpoints that require such authentication.
-   *
-   * <p>The value is lazily computed then memoized; this is required because creating the {@link
-   * HttpAuthentication} object will consume the client secret. It can be safely reused for all
-   * requests since it's immutable and its close method is a no-op.
    */
   @Value.Lazy
   Optional<HttpAuthentication> getBasicAuthentication() {
@@ -242,18 +205,19 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()));
   }
 
+  /**
+   * Returns the BASIC {@link HttpAuthentication} that will be used to authenticate with the OAuth2
+   * server, for impersonation token exchanges only.
+   */
   @Value.Lazy
-  Optional<HttpAuthentication> getBasicAuthenticationForTokenExchange() {
-    if (!getTokenExchangeConfig().isEnabled()
-        || !getTokenExchangeConfig().getClientId().isPresent()) {
-      return getBasicAuthentication();
-    }
-    return getTokenExchangeConfig()
-        .getClientSecret()
-        .map(
-            s ->
-                BasicAuthenticationProvider.create(
-                    getTokenExchangeConfig().getClientId().get(), s.getString()));
+  Optional<HttpAuthentication> getImpersonationBasicAuthentication() {
+    return getImpersonationConfig()
+        .getClientId()
+        .flatMap(
+            clientId ->
+                getImpersonationConfig()
+                    .getClientSecret()
+                    .map(s -> BasicAuthenticationProvider.create(clientId, s.getString())));
   }
 
   /**
@@ -333,11 +297,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         violations,
         CONF_NESSIE_OAUTH2_GRANT_TYPE,
         grantType.isInitial(),
-        "grant type must be either '%s', '%s', '%s' or '%s'",
-        CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
-        CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD,
-        CONF_NESSIE_OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE,
-        CONF_NESSIE_OAUTH2_GRANT_TYPE_DEVICE_CODE);
+        "grant type must be one of: %s",
+        Arrays.stream(GrantType.values())
+            .filter(GrantType::isInitial)
+            .map(GrantType::name)
+            .map(String::toLowerCase)
+            .collect(Collectors.joining("', '", "'", "'")));
     if (grantType == GrantType.PASSWORD) {
       check(
           violations,
@@ -425,7 +390,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_BACKGROUND_THREAD_IDLE_TIMEOUT,
         getBackgroundThreadIdleTimeout().compareTo(Duration.ZERO) > 0,
         "background thread idle timeout must be greater than zero");
-
+    check(
+        violations,
+        CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED + " / " + CONF_NESSIE_OAUTH2_GRANT_TYPE,
+        !getImpersonationConfig().isEnabled() || grantType != GrantType.TOKEN_EXCHANGE,
+        "impersonation cannot be enabled if grant type is '%s'",
+        CONF_NESSIE_OAUTH2_GRANT_TYPE_TOKEN_EXCHANGE);
     if (!violations.isEmpty()) {
       throw new IllegalArgumentException(
           "OAuth2 authentication is missing some parameters and could not be initialized: "
@@ -500,6 +470,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
     @Override
     Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);
+
+    @Override
+    Builder impersonationConfig(ImpersonationConfig tokenExchangeConfig);
 
     @Override
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

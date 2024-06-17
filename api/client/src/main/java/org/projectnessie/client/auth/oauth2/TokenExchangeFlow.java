@@ -15,17 +15,11 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.net.URI;
 import java.util.Objects;
-import java.util.Optional;
-import org.projectnessie.client.http.HttpAuthentication;
 
 /**
  * An implementation of the <a href="https://datatracker.ietf.org/doc/html/rfc8693">Token
  * Exchange</a> flow.
- *
- * <p>This implementation is limited to the use case of exchanging an OAuth 2.0 access token for an
- * OAuth 2.0 refresh token.
  */
 class TokenExchangeFlow extends AbstractFlow {
 
@@ -35,19 +29,18 @@ class TokenExchangeFlow extends AbstractFlow {
 
   @Override
   public Tokens fetchNewTokens(Tokens currentTokens) {
-    Objects.requireNonNull(currentTokens);
-
     TokenExchangeConfig tokenExchangeConfig = config.getTokenExchangeConfig();
 
-    AccessToken accessToken = currentTokens.getAccessToken();
-    RefreshToken refreshToken = currentTokens.getRefreshToken();
+    AccessToken accessToken = currentTokens == null ? null : currentTokens.getAccessToken();
+    RefreshToken refreshToken = currentTokens == null ? null : currentTokens.getRefreshToken();
 
     TypedToken subjectToken =
         tokenExchangeConfig.getSubjectTokenProvider().apply(accessToken, refreshToken);
     TypedToken actorToken =
         tokenExchangeConfig.getActorTokenProvider().apply(accessToken, refreshToken);
 
-    Objects.requireNonNull(subjectToken);
+    Objects.requireNonNull(
+        subjectToken, "Cannot execute token exchange: missing required subject token");
 
     TokenExchangeRequest.Builder request =
         TokenExchangeRequest.builder()
@@ -60,30 +53,5 @@ class TokenExchangeFlow extends AbstractFlow {
             .requestedTokenType(tokenExchangeConfig.getRequestedTokenType());
 
     return invokeTokenEndpoint(request, TokenExchangeResponse.class);
-  }
-
-  @Override
-  Optional<String> getScope() {
-    return config.getScopesForTokenExchange().stream().reduce((a, b) -> a + " " + b);
-  }
-
-  @Override
-  URI getResolvedTokenEndpoint() {
-    return config.getResolvedTokenEndpointForTokenExchange();
-  }
-
-  @Override
-  String getClientId() {
-    return config.getClientIdForTokenExchange();
-  }
-
-  @Override
-  boolean isPublicClient() {
-    return config.isPublicClientForTokenExchange();
-  }
-
-  @Override
-  Optional<HttpAuthentication> getBasicAuthentication() {
-    return config.getBasicAuthenticationForTokenExchange();
   }
 }

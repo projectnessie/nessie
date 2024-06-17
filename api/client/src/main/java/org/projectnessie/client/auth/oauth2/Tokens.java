@@ -16,9 +16,15 @@
 package org.projectnessie.client.auth.oauth2;
 
 import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 /** Represents a pair of access and refresh tokens, issued by an authorization server. */
+@Value.Immutable
 interface Tokens {
+
+  static Tokens of(AccessToken accessToken, RefreshToken refreshToken) {
+    return ImmutableTokens.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+  }
 
   AccessToken getAccessToken();
 

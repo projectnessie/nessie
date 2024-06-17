@@ -16,7 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.entry;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
@@ -26,11 +26,13 @@ import static org.mockito.Mockito.when;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAPPER;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -62,6 +64,8 @@ class TestOAuth2Client {
 
   private Instant now;
 
+  private final TestObjectMapper objectMapper = new TestObjectMapper();
+
   @BeforeEach
   void resetClock() {
     now = START;
@@ -92,8 +96,7 @@ class TestOAuth2Client {
         // should fetch the initial token
         AccessToken token = client.authenticate();
         soft.assertThat(token.getPayload()).isEqualTo("access-initial");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(PasswordTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(PasswordTokenResponse.class);
 
         // emulate executor running the scheduled renewal task
         currentRenewalTask.get().run();
@@ -101,8 +104,7 @@ class TestOAuth2Client {
         // should have refreshed the token
         token = client.authenticate();
         soft.assertThat(token.getPayload()).isEqualTo("access-refreshed");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(RefreshTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(RefreshTokenResponse.class);
 
         // emulate executor running the scheduled renewal task
         currentRenewalTask.get().run();
@@ -110,8 +112,7 @@ class TestOAuth2Client {
         // should have refreshed the token
         token = client.authenticate();
         soft.assertThat(token.getPayload()).isEqualTo("access-refreshed");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(RefreshTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(RefreshTokenResponse.class);
 
         // emulate executor running the scheduled renewal task and detecting that the client is idle
         // after 30+ seconds of inactivity
@@ -191,8 +192,7 @@ class TestOAuth2Client {
         // then sleep
         client.start();
         soft.assertThat(client.sleeping).isTrue();
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
         soft.assertThat(currentRenewalTask.get()).isNull();
 
         // will wake up, then reject scheduling the next refresh, then sleep again,
@@ -200,8 +200,7 @@ class TestOAuth2Client {
         AccessToken token = client.authenticate();
         soft.assertThat(client.sleeping).isTrue();
         soft.assertThat(token.getPayload()).isEqualTo("access-initial");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
         soft.assertThat(currentRenewalTask.get()).isNull();
 
         // will wake up, then refresh the token immediately (since it's expired),
@@ -211,8 +210,7 @@ class TestOAuth2Client {
         token = client.authenticate();
         soft.assertThat(client.sleeping).isTrue();
         soft.assertThat(token.getPayload()).isEqualTo("access-initial");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
         soft.assertThat(currentRenewalTask.get()).isNull();
       }
     }
@@ -270,8 +268,7 @@ class TestOAuth2Client {
         renewalTask = currentRenewalTask.get();
         AccessToken token = client.authenticate();
         soft.assertThat(token.getPayload()).isEqualTo("access-initial");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
 
         // failure recovery when in sleep mode
 
@@ -281,8 +278,7 @@ class TestOAuth2Client {
         renewalTask.run();
         soft.assertThat(currentRenewalTask.get()).isSameAs(renewalTask);
         soft.assertThat(client.sleeping).isTrue();
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
 
         // Emulate waking up when current token has expired,
         // then getting an error when renewing tokens immediately
@@ -308,8 +304,7 @@ class TestOAuth2Client {
         token = client.authenticate();
         soft.assertThat(client.sleeping).isFalse();
         soft.assertThat(token.getPayload()).isEqualTo("access-initial");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
         soft.assertThat(currentRenewalTask.get()).isNotSameAs(renewalTask);
         renewalTask = currentRenewalTask.get();
 
@@ -319,16 +314,14 @@ class TestOAuth2Client {
         renewalTask.run();
         soft.assertThat(currentRenewalTask.get()).isSameAs(renewalTask);
         soft.assertThat(client.sleeping).isTrue();
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
 
         // Emulate waking up, then rescheduling a refresh since current token is still valid
         handlerRef.set(defaultHandler);
         token = client.authenticate();
         soft.assertThat(client.sleeping).isFalse();
         soft.assertThat(token.getPayload()).isEqualTo("access-initial");
-        soft.assertThat(asResponse(client.getCurrentTokens()))
-            .isInstanceOf(ClientCredentialsTokenResponse.class);
+        soft.assertThat(lastResponse).isInstanceOf(ClientCredentialsTokenResponse.class);
         soft.assertThat(currentRenewalTask.get()).isNotSameAs(renewalTask);
       }
     }
@@ -487,29 +480,59 @@ class TestOAuth2Client {
   }
 
   @Test
-  void testExchangeTokens() throws Exception {
+  void testTokenExchange() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      OAuth2ClientConfig config =
+          configBuilder(server, false)
+              .grantType(GrantType.TOKEN_EXCHANGE)
+              .tokenExchangeConfig(
+                  TokenExchangeConfig.builder()
+                      .resource(URI.create("urn:resource"))
+                      .audience("audience")
+                      .subjectToken(TypedToken.of("subject-token", TypedToken.URN_ID_TOKEN))
+                      .build())
+              .build();
+
+      try (OAuth2Client client = new OAuth2Client(config)) {
+        Tokens tokens = client.fetchNewTokens();
+        checkTokenExchangeResponse(tokens);
+      }
+    }
+  }
+
+  @Test
+  void testImpersonation() throws Exception {
 
     try (HttpTestServer server1 = new HttpTestServer(handler(), true);
         HttpTestServer server2 = new HttpTestServer(handler(), true)) {
 
-      TokenExchangeConfig tokenExchangeConfig =
-          TokenExchangeConfig.builder()
-              .enabled(true)
-              .issuerUrl(server2.getUri().resolve("/"))
-              .resource(URI.create("urn:resource"))
-              .audience("audience")
-              .addScope("test-exchanged")
-              .clientId("Client1")
-              .clientSecret("s3cr3t")
-              .actorToken(TypedToken.of("actor-token", TypedToken.URN_ID_TOKEN))
-              .build();
       OAuth2ClientConfig config =
-          configBuilder(server1, false).tokenExchangeConfig(tokenExchangeConfig).build();
+          configBuilder(server1, false)
+              .grantType(GrantType.PASSWORD)
+              .username("Bob")
+              .password("s3cr3t")
+              .tokenExchangeConfig(
+                  TokenExchangeConfig.builder()
+                      .resource(URI.create("urn:resource"))
+                      .audience("audience")
+                      .actorToken(TypedToken.of("actor-token", TypedToken.URN_ID_TOKEN))
+                      .build())
+              .impersonationConfig(
+                  ImpersonationConfig.builder()
+                      .enabled(true)
+                      .tokenEndpoint(server2.getUri().resolve("/impersonation"))
+                      .addScope("test-impersonation")
+                      .clientId("Client2")
+                      .clientSecret("s3cr3t")
+                      .build())
+              .build();
 
       try (OAuth2Client client = new OAuth2Client(config)) {
         Tokens tokens = client.fetchNewTokens();
-        tokens = client.maybeExchangeTokens(tokens);
-        checkExchangeResponse(tokens);
+        tokens = client.maybeImpersonate(tokens);
+        checkImpersonationResponse(tokens);
       }
     }
   }
@@ -563,6 +586,9 @@ class TestOAuth2Client {
       switch (requestUri) {
         case "/token":
           handleTokenEndpoint(req, resp);
+          break;
+        case "/impersonation":
+          handleImpersonationEndpoint(req, resp);
           break;
         case "/auth":
           handleAuthorizationEndpoint(req, resp);
@@ -620,17 +646,15 @@ class TestOAuth2Client {
         response = getRefreshTokensResponse();
       } else if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, TokenExchangeRequest.class);
-        soft.assertThat(request.getScope()).isEqualTo("test-exchanged");
+        soft.assertThat(request.getScope()).isEqualTo("test");
         soft.assertThat(((TokenExchangeRequest) request).getResource())
             .isEqualTo(URI.create("urn:resource"));
         soft.assertThat(((TokenExchangeRequest) request).getAudience()).isEqualTo("audience");
         soft.assertThat(((TokenExchangeRequest) request).getSubjectToken())
-            .isEqualTo("access-initial");
+            .isEqualTo("subject-token");
         soft.assertThat(((TokenExchangeRequest) request).getSubjectTokenType())
-            .isEqualTo(TypedToken.URN_ACCESS_TOKEN);
-        soft.assertThat(((TokenExchangeRequest) request).getActorToken()).isEqualTo("actor-token");
-        soft.assertThat(((TokenExchangeRequest) request).getActorTokenType())
             .isEqualTo(TypedToken.URN_ID_TOKEN);
+        soft.assertThat(((TokenExchangeRequest) request).getActorToken()).isNull();
         soft.assertThat(((TokenExchangeRequest) request).getRequestedTokenType())
             .isEqualTo(TypedToken.URN_ACCESS_TOKEN);
         soft.assertThat(((PublicClientRequest) request).getClientId()).isNull();
@@ -720,6 +744,31 @@ class TestOAuth2Client {
       }
     }
 
+    private void handleImpersonationEndpoint(HttpServletRequest req, HttpServletResponse resp)
+        throws IOException {
+      soft.assertThat(req.getMethod()).isEqualTo("POST");
+      soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
+      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic Q2xpZW50MjpzM2NyM3Q=");
+      Map<String, String> data = BaseTestHttpClient.decodeFormData(req.getInputStream());
+      String grantType = data.get("grant_type");
+      TokenExchangeRequest request;
+      if (grantType.equals(GrantType.TOKEN_EXCHANGE.canonicalName())) {
+        request = OBJECT_MAPPER.convertValue(data, TokenExchangeRequest.class);
+        soft.assertThat(request.getRequestedTokenType()).isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+        soft.assertThat(request.getClientId()).isNull();
+        soft.assertThat(request.getResource()).isEqualTo(URI.create("urn:resource"));
+        soft.assertThat(request.getAudience()).isEqualTo("audience");
+        soft.assertThat(request.getScope()).isEqualTo("test-impersonation");
+        soft.assertThat(request.getSubjectToken()).isEqualTo("access-initial");
+        soft.assertThat(request.getSubjectTokenType()).isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+        soft.assertThat(request.getActorToken()).isEqualTo("actor-token");
+        soft.assertThat(request.getActorTokenType()).isEqualTo(TypedToken.URN_ID_TOKEN);
+        writeResponseBody(resp, getImpersonationResponse(), "application/json", 200);
+      } else {
+        throw new AssertionError("Unexpected grant type: " + grantType);
+      }
+    }
+
     private void handleOpenIdProviderMetadataEndpoint(
         HttpServletRequest req, HttpServletResponse resp) throws IOException {
       URI uri = URI.create(req.getRequestURL().toString());
@@ -794,7 +843,21 @@ class TestOAuth2Client {
         .build();
   }
 
-  private void checkInitialResponse(Tokens tokens, boolean expectRefreshToken) throws Exception {
+  private ImmutableTokenExchangeResponse getImpersonationResponse() {
+    return ImmutableTokenExchangeResponse.builder()
+        .issuedTokenType(TypedToken.URN_ACCESS_TOKEN)
+        .tokenType("bearer")
+        .accessTokenPayload("access-impersonation")
+        .accessTokenExpiresInSeconds(400)
+        // refresh token from impersonation will be ignored
+        .refreshTokenPayload("refresh-impersonation")
+        .refreshTokenExpiresInSeconds(4000)
+        .scope("test-impersonation")
+        .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
+  private void checkInitialResponse(Tokens tokens, boolean expectRefreshToken) {
     soft.assertThat(tokens.getAccessToken()).isNotNull();
     soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-initial");
     soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
@@ -808,12 +871,11 @@ class TestOAuth2Client {
     } else {
       assertThat(tokens.getRefreshToken()).isNull();
     }
-    TokenResponseBase response = asResponse(tokens);
-    soft.assertThat(response.getScope()).isEqualTo("test");
-    soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
+    soft.assertThat(lastResponse.getScope()).isEqualTo("test");
+    soft.assertThat(lastResponse.getExtraParameters()).containsExactly(entry("foo", "bar"));
   }
 
-  private void checkRefreshResponse(Tokens tokens) throws Exception {
+  private void checkRefreshResponse(Tokens tokens) {
     assertThat(tokens.getAccessToken()).isNotNull();
     soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-refreshed");
     soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
@@ -823,12 +885,11 @@ class TestOAuth2Client {
     soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-refreshed");
     soft.assertThat(tokens.getRefreshToken().getExpirationTime())
         .isAfterOrEqualTo(now.plus(Duration.ofSeconds(2000)).minusSeconds(10));
-    TokenResponseBase response = asResponse(tokens);
-    soft.assertThat(response.getScope()).isEqualTo("test");
-    soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
+    soft.assertThat(lastResponse.getScope()).isEqualTo("test");
+    soft.assertThat(lastResponse.getExtraParameters()).containsExactly(entry("foo", "bar"));
   }
 
-  private void checkExchangeResponse(Tokens tokens) throws Exception {
+  private void checkTokenExchangeResponse(Tokens tokens) {
     assertThat(tokens.getAccessToken()).isNotNull();
     soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-exchanged");
     soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
@@ -838,10 +899,29 @@ class TestOAuth2Client {
     soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-exchanged");
     soft.assertThat(tokens.getRefreshToken().getExpirationTime())
         .isAfterOrEqualTo(now.plus(Duration.ofSeconds(3000)).minusSeconds(10));
-    TokenExchangeResponse response = (TokenExchangeResponse) asResponse(tokens);
-    soft.assertThat(response.getScope()).isEqualTo("test-exchanged");
-    soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
-    soft.assertThat(response.getIssuedTokenType()).isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+    soft.assertThat(lastResponse.getScope()).isEqualTo("test-exchanged");
+    soft.assertThat(lastResponse.getExtraParameters()).containsExactly(entry("foo", "bar"));
+    soft.assertThat(((TokenExchangeResponse) lastResponse).getIssuedTokenType())
+        .isEqualTo(TypedToken.URN_ACCESS_TOKEN);
+  }
+
+  private void checkImpersonationResponse(Tokens tokens) {
+    assertThat(tokens.getAccessToken()).isNotNull();
+    // access token must be the one sent by the impersonation server
+    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-impersonation");
+    soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
+    soft.assertThat(tokens.getAccessToken().getExpirationTime())
+        .isAfterOrEqualTo(now.plus(Duration.ofSeconds(400)).minusSeconds(10));
+    // refresh token must be the original one, even if the impersonation server sent another refresh
+    // token back.
+    assertThat(tokens.getRefreshToken()).isNotNull();
+    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-initial");
+    soft.assertThat(tokens.getRefreshToken().getExpirationTime())
+        .isAfterOrEqualTo(now.plus(Duration.ofSeconds(1000)).minusSeconds(10));
+    soft.assertThat(lastResponse.getScope()).isEqualTo("test-impersonation");
+    soft.assertThat(lastResponse.getExtraParameters()).containsExactly(entry("foo", "bar"));
+    soft.assertThat(((TokenExchangeResponse) lastResponse).getIssuedTokenType())
+        .isEqualTo(TypedToken.URN_ACCESS_TOKEN);
   }
 
   private OAuth2ClientConfig.Builder configBuilder(HttpTestServer server, boolean discovery) {
@@ -850,7 +930,8 @@ class TestOAuth2Client {
             .clientId("Client1")
             .clientSecret("s3cr3t")
             .addScope("test")
-            .clock(() -> now);
+            .clock(() -> now)
+            .objectMapper(objectMapper);
     if (server.getSslContext() != null) {
       builder.sslContext(server.getSslContext());
     }
@@ -900,9 +981,29 @@ class TestOAuth2Client {
     return task;
   }
 
-  private static TokenResponseBase asResponse(Tokens tokens) throws Exception {
-    Field enclosingInstance = tokens.getClass().getDeclaredField("this$0");
-    enclosingInstance.setAccessible(true);
-    return (TokenResponseBase) enclosingInstance.get(tokens);
+  volatile TokenResponseBase lastResponse;
+
+  class TestObjectMapper extends ObjectMapper {
+
+    @Override
+    public ObjectReader readerFor(Class<?> type) {
+      return new TestObjectReader(super.readerFor(type));
+    }
+
+    class TestObjectReader extends ObjectReader {
+
+      TestObjectReader(ObjectReader delegate) {
+        super(delegate, delegate.getConfig());
+      }
+
+      @Override
+      public <T> T readValue(InputStream src) throws IOException {
+        T value = super.readValue(src);
+        if (value instanceof TokenResponseBase) {
+          lastResponse = (TokenResponseBase) value;
+        }
+        return value;
+      }
+    }
   }
 }

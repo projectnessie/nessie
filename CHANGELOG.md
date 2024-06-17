@@ -12,6 +12,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- We have improved Nessie client's support for impersonation scenarios using the token exchange
+  grant type. A few options starting with `nessie.authentication.oauth2.token-exchange.*` were
+  renamed to `nessie.authentication.oauth2.impersonation.*`. Check the [Nessie authentication
+  settings] for details. Please note that token exchange and impersonation are both considered in
+  beta state. Their APIs and configuration options are subject to change at any time.
+
 ### New Features
 
 ### Changes
