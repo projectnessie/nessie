@@ -19,8 +19,8 @@ import static java.util.Collections.singletonList;
 import static org.projectnessie.quarkus.providers.storage.AddressResolver.LOCAL_ADDRESSES;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.dns.DnsClient;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -37,20 +37,25 @@ public class TestAddressResolver {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   protected Vertx vertx;
-  protected DnsClient dnsClient;
+  AddressResolver addressResolver;
 
   @BeforeEach
   void setUp() {
     vertx = Vertx.builder().build();
-    dnsClient = vertx.createDnsClient();
   }
 
   @AfterEach
   void tearDown() throws Exception {
     try {
-      dnsClient.close().toCompletionStage().toCompletableFuture().get(1, TimeUnit.MINUTES);
+      if (addressResolver != null) {
+        addressResolver
+            .dnsClient()
+            .close()
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(1, TimeUnit.MINUTES);
+      }
     } finally {
-      dnsClient = null;
       try {
         vertx.close().toCompletionStage().toCompletableFuture().get(1, TimeUnit.MINUTES);
       } finally {
@@ -61,8 +66,9 @@ public class TestAddressResolver {
 
   @Test
   public void resolveNoName() throws Exception {
+    addressResolver = new AddressResolver(vertx);
     soft.assertThat(
-            new AddressResolver(dnsClient)
+            addressResolver
                 .resolveAll(Collections.emptyList())
                 .toCompletionStage()
                 .toCompletableFuture()
@@ -72,9 +78,47 @@ public class TestAddressResolver {
 
   @Test
   @DisabledOnOs(value = OS.MAC, disabledReason = "Resolving 'localhost' doesn't work on macOS")
+  public void resolveGoodName() throws Exception {
+    addressResolver = new AddressResolver(vertx);
+    List<String> withoutSearchList =
+        addressResolver
+            .resolveAll(singletonList("projectnessie.org"))
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(1, TimeUnit.MINUTES)
+            .toList();
+    soft.assertThat(withoutSearchList).isNotEmpty();
+
+    AddressResolver addressResolverWithSearch =
+        new AddressResolver(AddressResolver.createDnsClient(vertx), List.of("org"));
+    List<String> withSearchList =
+        addressResolverWithSearch
+            .resolveAll(singletonList("projectnessie"))
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(1, TimeUnit.MINUTES)
+            .toList();
+    soft.assertThat(withSearchList).isNotEmpty().isNotEmpty();
+
+    List<String> withSearchListQualified =
+        addressResolverWithSearch
+            .resolveAll(singletonList("projectnessie.org."))
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(1, TimeUnit.MINUTES)
+            .toList();
+    soft.assertThat(withSearchListQualified).isNotEmpty().isNotEmpty();
+
+    soft.assertThat(withSearchList).containsExactlyInAnyOrderElementsOf(withoutSearchList);
+    soft.assertThat(withSearchListQualified).containsExactlyInAnyOrderElementsOf(withoutSearchList);
+  }
+
+  @Test
+  @DisabledOnOs(value = OS.MAC, disabledReason = "Resolving 'localhost' doesn't work on macOS")
   public void resolveSingleName() throws Exception {
+    addressResolver = new AddressResolver(vertx);
     soft.assertThat(
-            new AddressResolver(dnsClient)
+            addressResolver
                 .resolveAll(singletonList("localhost"))
                 .toCompletionStage()
                 .toCompletableFuture()
@@ -85,8 +129,9 @@ public class TestAddressResolver {
 
   @Test
   public void resolveBadName() throws Exception {
+    addressResolver = new AddressResolver(vertx);
     soft.assertThat(
-            new AddressResolver(dnsClient)
+            addressResolver
                 .resolveAll(singletonList("wepofkjeopiwkf.wepofkeowpkfpoew.weopfkewopfk.local"))
                 .toCompletionStage()
                 .toCompletableFuture()
@@ -96,8 +141,9 @@ public class TestAddressResolver {
 
   @Test
   public void resolveFilterLocalAddresses() throws Exception {
+    addressResolver = new AddressResolver(vertx);
     soft.assertThat(
-            new AddressResolver(dnsClient)
+            addressResolver
                 .resolveAll(singletonList("localhost"))
                 .map(s -> s.filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
                 .toCompletionStage()
