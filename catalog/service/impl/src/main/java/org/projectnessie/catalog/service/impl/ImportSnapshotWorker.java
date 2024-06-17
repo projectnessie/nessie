@@ -109,7 +109,7 @@ final class ImportSnapshotWorker {
       StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
       try {
         InputStream input = taskRequest.objectIO().readObject(metadataLocation);
-        if (metadataLocation.requiredPath().endsWith(".gz")) {
+        if (metadataLocation.requiredPath().endsWith("metadata.json.gz") || metadataLocation.requiredPath().endsWith(".gz.metadata.json")) {
           input = new GZIPInputStream(input);
         }
         tableMetadata = IcebergJson.objectMapper().readValue(input, IcebergTableMetadata.class);
