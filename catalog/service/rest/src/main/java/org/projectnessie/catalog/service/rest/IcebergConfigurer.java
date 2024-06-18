@@ -53,6 +53,8 @@ public class IcebergConfigurer {
   private static final String ICEBERG_PREFIX = "prefix";
   private static final String FILE_IO_IMPL = "io-impl";
 
+  private static final String METRICS_REPORTING_ENABLED = "rest-metrics-reporting-enabled";
+
   private static final String S3_CLIENT_REGION = "client.region";
   private static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
   private static final String S3_SECRET_ACCESS_KEY = "s3.secret-access-key";
@@ -99,6 +101,8 @@ public class IcebergConfigurer {
 
     String branch = defaultBranchName(reference);
     Map<String, String> config = new HashMap<>();
+    // Not fully implemented yet
+    config.put(METRICS_REPORTING_ENABLED, "false");
     config.put(FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
     config.put(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     config.putAll(uriInfo.icebergConfigDefaults());
