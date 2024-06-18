@@ -76,10 +76,19 @@ public class IcebergGenerateFixtures {
       gzip.flush();
       data = bytes.toByteArray();
     }
-    return writer.write(
-        URI.create(
-            "table-metadata-simple-no-manifest/table-metadata-simple-compressed-no-manifest.json.gz"),
-        data);
+    String metadataPath = "table-metadata-simple-no-manifest/";
+    switch (icebergSpecVersion) {
+      case 1:
+        metadataPath += "table-metadata-simple-compressed-no-manifest.metadata.json.gz";
+        break;
+      case 2:
+        metadataPath += "table-metadata-simple-compressed-no-manifest.gz.metadata.json";
+        break;
+      default:
+        metadataPath += "table-metadata-simple-compressed-no-manifest.json.gz";
+        break;
+    }
+    return writer.write(URI.create(metadataPath), data);
   }
 
   public static String generateSimpleMetadata(ObjectWriter writer, int icebergSpecVersion)
