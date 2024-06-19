@@ -122,7 +122,9 @@ public class TestIcebergStuff {
   static Stream<Arguments> icebergTableImports() throws Exception {
     IcebergGenerateFixtures.ObjectWriter objectWriter = objectWriterForPath(tempDir);
     return Stream.of(
-        arguments("compressed table-metadata", generateCompressedMetadata(objectWriter, 2)),
+        arguments("compressed table-metadata generic", generateCompressedMetadata(objectWriter, 0)),
+        arguments("compressed table-metadata v1", generateCompressedMetadata(objectWriter, 1)),
+        arguments("compressed table-metadata v2", generateCompressedMetadata(objectWriter, 2)),
         arguments("simple table-metadata", generateSimpleMetadata(objectWriter, 2)));
   }
 }
