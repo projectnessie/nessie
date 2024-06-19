@@ -17,17 +17,35 @@ package org.projectnessie.server.catalog;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.catalog.service.rest.ExternalBaseUri;
 
 @RequestScoped
 public class ExternalBaseUriImpl implements ExternalBaseUri {
 
   @Inject UriInfo uriInfo;
+  @Inject HttpHeaders httpHeaders;
+
+  @ConfigProperty(name = "quarkus.http.proxy.enable-forwarded-prefix")
+  boolean enableForwardedPrefix;
 
   @Override
   public URI externalBaseURI() {
-    return uriInfo.getBaseUri();
+    URI base = uriInfo.getBaseUri();
+    if (enableForwardedPrefix) {
+      // Use the value of the `X-Forwarded-Prefix` as the "prefix", if present and only if
+      // `quarkus.http.proxy.enable-forwarded-prefix` is set to `true`.
+      String prefix = httpHeaders.getHeaderString("X-Forwarded-Prefix");
+      if (prefix != null && !prefix.isEmpty()) {
+        if (!prefix.endsWith("/")) {
+          prefix += "/";
+        }
+        base = base.resolve(prefix);
+      }
+    }
+    return base;
   }
 }

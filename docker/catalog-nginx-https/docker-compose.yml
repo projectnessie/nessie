@@ -51,7 +51,7 @@ services:
   ##
   nessie:
     image: localhost/projectnessie/nessie:latest
-    # Nessie ports not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/...
+    # Nessie ports not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/nessie/...
     # ports:
     #   - "19120:19120"
     depends_on:
@@ -73,7 +73,7 @@ services:
       - nessie.catalog.service.s3.endpoint=http://minio:9000/
       # MinIO endpoint for clients (on the Podman/Docker host)
       - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
-      # X-Forwarded headers
+      # X-Forwarded headers - see https://quarkus.io/guides/http-reference#reverse-proxy
       - quarkus.http.proxy.proxy-address-forwarding=true
       - quarkus.http.proxy.allow-x-forwarded=true
       - quarkus.http.proxy.enable-forwarded-host=true
@@ -87,12 +87,12 @@ services:
   nginx:
     image: docker.io/nginx:1.27.0
     ports:
-      # http://nessie-nginx.localhost.localdomain:8080/ ...
+      # http://nessie-nginx.localhost.localdomain:8080/nessie/ ...
       #   redirected to https
       - "8080:8080"
-      # https://nessie-nginx.localhost.localdomain:8443/
-      # https://nessie-nginx.localhost.localdomain:8443/iceberg/v1/config
-      # https://nessie-nginx.localhost.localdomain:8443/api/v2/config
+      # https://nessie-nginx.localhost.localdomain:8443/nessie/
+      # https://nessie-nginx.localhost.localdomain:8443/nessie/iceberg/v1/config
+      # https://nessie-nginx.localhost.localdomain:8443/nessie/api/v2/config
       - "8443:8443"
     depends_on:
       nessie:

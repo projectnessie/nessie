@@ -24,6 +24,14 @@ quarkus.http.proxy.enable-forwarded-prefix=true
     Do NOT enable the above options unless your reverse proxy (for example istio or nginx)
     is properly setup to set these headers but also filter those from incoming requests.
 
+## Using path prefixes on the ingress / reverse proxy
+
+Usually, all HTTP requests to the reverse proxy are passed down to Nessie. If only requests that
+start with for example `/nessie/` to be proxied to Nessie, then the reverse proxy needs to be
+configured to also pass the `X-Forwarded-Prefix` with the that prefix and Quarkus must be configured
+to respect the `X-Forwarded-Prefix` header using the `quarkus.http.proxy.enable-forwarded-prefix=true`
+configuration.
+
 ## istio/envoy
 
 Related istio/envoy documentation pages:
@@ -34,18 +42,19 @@ Related istio/envoy documentation pages:
 ## nginx
 
 Related nginx documentation pages:
-* 
+
 * [Reverse Proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/#passing-a-request-to-a-proxied-server)
 * [Proxy module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html)
 * [Load Balancer](https://nginx.org/en/docs/http/load_balancing.html)
 
 See the [example configuration](https://github.com/projectnessie/nessie/tree/main/docker/catalog-nginx-https/nginx.conf) from the [Docker Compose example](#docker-compose-example) below:
-```
+```apacheconf
 events {
   worker_connections 1024;
 }
 
 http {
+  # Redirect non-HTTPS to HTTPS
   server {
     listen 8080;
     server_name nessie-nginx.localhost.localdomain;
@@ -61,11 +70,18 @@ http {
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
-    location / {
+    # This example uses /nessie/ as the path-prefix. It is not mandatory to do this.
+    # To use no prefix and route all requests to Nessie, set '/' as the 'location' and
+    # remove the 'proxy_set_header X-Forwarded-Prefix' line.
+    location /nessie/ {
       proxy_buffering off;
+      # The X-Forwarded-* headers needed by Quarkus
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
       proxy_set_header X-Forwarded-Port $server_port;
+      # X-Forwarded-Prefix is needed when the ingress shall use prefixes. Must set
+      # quarkus.http.proxy.enable-forwarded-prefix=true for Nessie/Quarkus in that case.
+      proxy_set_header X-Forwarded-Prefix /nessie/;
 
       proxy_pass http://nessie:19120;
     }
@@ -108,7 +124,7 @@ Then start the Docker compose:
  
 Run `spark-sql` against Nessie running behind the reverse proxy:
 ```shell
-catalog/bin/spark-sql.sh --no-nessie-start --aws --iceberg https://nessie-nginx.localhost.localdomain:8443/iceberg/main
+catalog/bin/spark-sql.sh --no-nessie-start --aws --iceberg https://nessie-nginx.localhost.localdomain:8443/nessie/iceberg/main
 ```
 
 Within the Spark SQL shell:
@@ -129,13 +145,13 @@ java -jar cli/cli/build/libs/nessie-cli-*-SNAPSHOT.jar
 
 In Nessie CLI:
 ```sql
-CONNECT TO https://nessie-nginx.localhost.localdomain:8443/api/v2
+CONNECT TO https://nessie-nginx.localhost.localdomain:8443/nessie/api/v2
 ```
 It will print the following informational messages:
 ```
-Connecting to https://nessie-nginx.localhost.localdomain:8443/api/v2 ...
-Successfully connected to Iceberg REST at https://nessie-nginx.localhost.localdomain:8443/iceberg/
-Successfully connected to Nessie REST at https://nessie-nginx.localhost.localdomain:8443/api/v2/ - Nessie API version 2, spec version 2.1.0
+Connecting to https://nessie-nginx.localhost.localdomain:8443/nessie/api/v2 ...
+Successfully connected to Iceberg REST at https://nessie-nginx.localhost.localdomain:8443/nessie/iceberg/
+Successfully connected to Nessie REST at https://nessie-nginx.localhost.localdomain:8443/nessie/api/v2/ - Nessie API version 2, spec version 2.1.0
 ```
 
 More CLI commands to try out:
