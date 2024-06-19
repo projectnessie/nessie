@@ -125,6 +125,9 @@ bigtable:
 # Properties can be passed "flattened" or as nested YAML objects (see examples below).
 advancedConfig:
   {}
+# Nessie version store settings
+# -----------------------------
+#
 #  See description of the various cache size parameters and their defaults.
 #
 #  nessie.version.store.persist.cache-capacity-mb: (defaults to fractional size, based on max-heap size)
@@ -136,11 +139,14 @@ advancedConfig:
 #
 #  nessie.version.store.persist.repository-id: my-repository
 #
+# Logging (via Quarkus)
+# ---------------------
+#
 #  quarkus:
 #    log:
 #      console.format: "%d{HH:mm:ss} %s%e%n"
 #      category."org.projectnessie".level: DEBUG
-
+#
 # Reverse Proxy Settings
 # ----------------------
 #

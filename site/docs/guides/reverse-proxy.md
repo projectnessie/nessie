@@ -23,7 +23,6 @@ quarkus.http.proxy.enable-forwarded-prefix=true
 !!! warn
     Do NOT enable the above options unless your reverse proxy (for example istio or nginx)
     is properly setup to set these headers but also filter those from incoming requests.
-    Make sure to understand what the actual settings mean. Misconfigurations can lead to security issues!
 
 ## istio/envoy
 
