@@ -89,9 +89,9 @@ final class ApacheRequest extends BaseHttpRequest {
 
       if (response.getCode() >= 400) {
         Status status = Status.fromCode(response.getCode());
+        String responseBody = responseContext.getErrorStream().capture();
         throw new HttpClientResponseException(
-            String.format("%s request to %s failed with HTTP/%d", method, uri, response.getCode()),
-            status);
+            responseContext.getRequestedUri(), status, responseBody);
       }
 
       response = null;

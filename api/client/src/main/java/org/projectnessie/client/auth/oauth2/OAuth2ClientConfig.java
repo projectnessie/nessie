@@ -42,7 +42,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.time.Clock;
@@ -61,8 +60,10 @@ import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
+import org.projectnessie.client.rest.io.CapturingInputStream;
 
 /**
  * Subtype of {@link OAuth2AuthenticatorConfig} that contains configuration options that are not
@@ -281,30 +282,31 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   private void checkErrorResponse(ResponseContext responseContext) {
     try {
       Status status = responseContext.getResponseCode();
-      if (status.getCode() >= 400) {
-        if (!responseContext.isJsonCompatibleResponse()) {
-          throw genericError(status);
-        }
-        InputStream is = responseContext.getErrorStream();
-        if (is != null) {
-          try {
-            ErrorResponse errorResponse = getObjectMapper().readValue(is, ErrorResponse.class);
-            throw new OAuth2Exception(status, errorResponse);
-          } catch (IOException ignored) {
-            throw genericError(status);
+      // The only normal responses are 200 OK and 302 Found (in the authorization code flow).
+      if (status != Status.OK && status != Status.FOUND) {
+        String body = null;
+        if (responseContext.getErrorStream() != null) {
+          try (CapturingInputStream capturing =
+              new CapturingInputStream(responseContext.getErrorStream())) {
+            if (responseContext.isJsonCompatibleResponse()) {
+              try {
+                ErrorResponse errorResponse =
+                    getObjectMapper().readValue(capturing, ErrorResponse.class);
+                throw new OAuth2Exception(
+                    responseContext.getRequestedUri(), status, errorResponse, capturing.captured());
+              } catch (IOException ignored) {
+              }
+            }
+            body = capturing.capture();
           }
         }
+        throw new HttpClientResponseException(responseContext.getRequestedUri(), status, body);
       }
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
       throw new HttpClientException(e);
     }
-  }
-
-  private static HttpClientException genericError(Status status) {
-    return new HttpClientException(
-        "OAuth2 server replied with HTTP status code: " + status.getCode());
   }
 
   private static void check(

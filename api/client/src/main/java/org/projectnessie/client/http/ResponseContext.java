@@ -16,17 +16,17 @@
 package org.projectnessie.client.http;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import org.projectnessie.client.rest.io.CapturingInputStream;
 
 /** Interface for the important parts of a response. This is created after executing the request. */
 public interface ResponseContext {
 
   Status getResponseCode() throws IOException;
 
-  InputStream getInputStream() throws IOException;
+  CapturingInputStream getInputStream() throws IOException;
 
-  InputStream getErrorStream() throws IOException;
+  CapturingInputStream getErrorStream() throws IOException;
 
   default boolean isJsonCompatibleResponse() {
     String contentType = getContentType();

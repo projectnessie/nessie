@@ -148,14 +148,14 @@ final class JavaRequest extends BaseHttpRequest {
           // This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that
           // throws an IOException for these status codes.
           Status status = Status.fromCode(response.statusCode());
-          throw new HttpClientResponseException(
-              String.format(
-                  "%s request to %s failed with HTTP/%d", method, uri, response.statusCode()),
-              status);
+          String responseBody = responseContext.getErrorStream().capture();
+          throw new HttpClientResponseException(uri, status, responseBody);
         }
 
         response = null;
         return config.responseFactory().make(responseContext, config.getMapper());
+      } catch (IOException e) {
+        throw new HttpClientException(e);
       } finally {
         if (response != null) {
           try {
