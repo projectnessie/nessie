@@ -17,7 +17,6 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.http.Status;
 
@@ -32,80 +31,22 @@ class TestOAuth2Exception {
       ImmutableErrorResponse.builder().errorCode("invalid_request").build();
 
   @Test
-  void testGetMessage() {
-    assertThat(
-            new OAuth2Exception(
-                    URI.create("https://auth.com/token"), Status.BAD_REQUEST, errorResponse, null)
-                .getMessage())
-        .isEqualTo(
-            "Server replied to https://auth.com/token with HTTP status code 400 and error code \"invalid_request\": Try Again");
-    assertThat(
-            new OAuth2Exception(
-                    URI.create("https://auth.com/token"),
-                    Status.BAD_REQUEST,
-                    errorResponseNoDescription,
-                    null)
-                .getMessage())
-        .isEqualTo(
-            "Server replied to https://auth.com/token with HTTP status code 400 and error code \"invalid_request\"");
-  }
-
-  @Test
   void testGetStatus() {
-    OAuth2Exception exception =
-        new OAuth2Exception(
-            URI.create("https://auth.com/token"),
-            Status.BAD_REQUEST,
-            errorResponseNoDescription,
-            null);
+    OAuth2Exception exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponse);
     assertThat(exception.getStatus()).isEqualTo(Status.BAD_REQUEST);
   }
 
   @Test
   void testGetErrorCode() {
-    OAuth2Exception exception =
-        new OAuth2Exception(
-            URI.create("https://auth.com/token"),
-            Status.BAD_REQUEST,
-            errorResponseNoDescription,
-            null);
+    OAuth2Exception exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponse);
     assertThat(exception.getErrorCode()).isEqualTo("invalid_request");
-    assertThat(exception.getUri()).isEqualTo(URI.create("https://auth.com/token"));
   }
 
   @Test
-  void testGetUri() {
-    OAuth2Exception exception =
-        new OAuth2Exception(
-            URI.create("https://auth.com/token"),
-            Status.BAD_REQUEST,
-            errorResponseNoDescription,
-            null);
-    assertThat(exception.getUri()).isEqualTo(URI.create("https://auth.com/token"));
-  }
-
-  @Test
-  void testGetBody() {
-    OAuth2Exception exception =
-        new OAuth2Exception(
-            URI.create("https://auth.com/token"),
-            Status.BAD_REQUEST,
-            errorResponseNoDescription,
-            "body");
-    assertThat(exception.getBody()).contains("body");
-    exception =
-        new OAuth2Exception(
-            URI.create("https://auth.com/token"),
-            Status.BAD_REQUEST,
-            errorResponseNoDescription,
-            "");
-    assertThat(exception.getBody()).isEmpty();
-    exception =
-        new OAuth2Exception(
-            URI.create("https://auth.com/token"),
-            Status.BAD_REQUEST,
-            errorResponseNoDescription,
-            null);
-    assertThat(exception.getBody()).isEmpty();
+  void testGetErrorDescription() {
+    OAuth2Exception exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponse);
+    assertThat(exception.getErrorDescription()).isEqualTo("Try Again");
+    exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponseNoDescription);
+    assertThat(exception.getErrorDescription()).isNull();
   }
 }

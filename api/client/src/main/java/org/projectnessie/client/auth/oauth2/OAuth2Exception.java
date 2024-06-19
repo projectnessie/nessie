@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import java.net.URI;
 import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.Status;
 
@@ -23,29 +22,19 @@ import org.projectnessie.client.http.Status;
 public class OAuth2Exception extends HttpClientResponseException {
 
   private final String errorCode;
+  private final String errorDescription;
 
-  OAuth2Exception(URI uri, Status status, ErrorResponse decodedBody, String rawBody) {
-    super(createMessage(uri, status, decodedBody), uri, status, rawBody);
-    this.errorCode = decodedBody.getErrorCode();
-  }
-
-  private static String createMessage(URI uri, Status status, ErrorResponse errorResponse) {
-    StringBuilder builder =
-        new StringBuilder()
-            .append("Server replied to ")
-            .append(uri)
-            .append(" with HTTP status code ")
-            .append(status.getCode())
-            .append(" and error code \"")
-            .append(errorResponse.getErrorCode())
-            .append("\"");
-    if (errorResponse.getErrorDescription() != null) {
-      builder.append(": ").append(errorResponse.getErrorDescription());
-    }
-    return builder.toString();
+  OAuth2Exception(String message, Status status, ErrorResponse errorResponse) {
+    super(message, status);
+    this.errorCode = errorResponse.getErrorCode();
+    this.errorDescription = errorResponse.getErrorDescription();
   }
 
   public String getErrorCode() {
     return errorCode;
+  }
+
+  public String getErrorDescription() {
+    return errorDescription;
   }
 }

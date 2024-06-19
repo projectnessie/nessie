@@ -29,7 +29,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
-import org.projectnessie.client.rest.io.CapturingInputStream;
 
 /**
  * Implements Nessie HTTP response processing using Java's new {@link HttpClient}, which is rather
@@ -39,11 +38,16 @@ import org.projectnessie.client.rest.io.CapturingInputStream;
 final class JavaResponseContext implements ResponseContext {
 
   private final HttpResponse<InputStream> response;
-
-  private CapturingInputStream inputStream;
+  private final InputStream inputStream;
 
   JavaResponseContext(HttpResponse<InputStream> response) {
     this.response = response;
+
+    try {
+      this.inputStream = maybeDecompress();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -52,16 +56,13 @@ final class JavaResponseContext implements ResponseContext {
   }
 
   @Override
-  public CapturingInputStream getInputStream() throws IOException {
-    if (inputStream == null) {
-      inputStream = new CapturingInputStream(maybeDecompress());
-    }
+  public InputStream getInputStream() {
     return inputStream;
   }
 
   @Override
-  public CapturingInputStream getErrorStream() throws IOException {
-    return getInputStream();
+  public InputStream getErrorStream() {
+    return inputStream;
   }
 
   @Override

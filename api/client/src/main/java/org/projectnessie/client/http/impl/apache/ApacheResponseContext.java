@@ -25,14 +25,11 @@ import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.Header;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
-import org.projectnessie.client.rest.io.CapturingInputStream;
 
 final class ApacheResponseContext implements ResponseContext {
 
   private final ClassicHttpResponse response;
   private final URI uri;
-
-  private CapturingInputStream inputStream;
 
   ApacheResponseContext(ClassicHttpResponse response, URI uri) {
     this.response = response;
@@ -45,16 +42,13 @@ final class ApacheResponseContext implements ResponseContext {
   }
 
   @Override
-  public CapturingInputStream getInputStream() throws IOException {
-    if (inputStream == null) {
-      inputStream = new CapturingInputStream(reader());
-    }
-    return inputStream;
+  public InputStream getInputStream() throws IOException {
+    return reader();
   }
 
   @Override
-  public CapturingInputStream getErrorStream() throws IOException {
-    return getInputStream();
+  public InputStream getErrorStream() throws IOException {
+    return reader();
   }
 
   @Override

@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -45,7 +46,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
-import org.projectnessie.client.rest.io.CapturingInputStream;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
@@ -237,14 +237,14 @@ public class TestResponseFilter {
                       }
 
                       @Override
-                      public CapturingInputStream getInputStream() {
+                      public InputStream getInputStream() {
                         Assertions.fail();
                         return null;
                       }
 
                       @Override
-                      public CapturingInputStream getErrorStream() {
-                        return new CapturingInputStream(new StringInputStream("this will fail"));
+                      public InputStream getErrorStream() {
+                        return new StringInputStream("this will fail");
                       }
 
                       @Override
@@ -280,17 +280,16 @@ public class TestResponseFilter {
                       }
 
                       @Override
-                      public CapturingInputStream getInputStream() {
+                      public InputStream getInputStream() {
                         Assertions.fail();
                         return null;
                       }
 
                       @Override
-                      public CapturingInputStream getErrorStream() {
+                      public InputStream getErrorStream() {
                         // Quarkus may sometimes produce JSON error responses like this
-                        return new CapturingInputStream(
-                            new StringInputStream(
-                                "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}"));
+                        return new StringInputStream(
+                            "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
                       }
 
                       @Override
@@ -396,18 +395,18 @@ public class TestResponseFilter {
     }
 
     @Override
-    public CapturingInputStream getInputStream() {
+    public InputStream getInputStream() {
       Assertions.fail();
       return null;
     }
 
     @Override
-    public CapturingInputStream getErrorStream() throws IOException {
+    public InputStream getErrorStream() throws IOException {
       if (error == null) {
         return null;
       }
       String value = MAPPER.writeValueAsString(error);
-      return new CapturingInputStream(new StringInputStream(value));
+      return new StringInputStream(value);
     }
 
     @Override

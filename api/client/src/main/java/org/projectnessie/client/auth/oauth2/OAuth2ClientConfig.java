@@ -41,7 +41,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.time.Clock;
@@ -59,11 +58,6 @@ import org.immutables.value.Value;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpClientResponseException;
-import org.projectnessie.client.http.ResponseContext;
-import org.projectnessie.client.http.Status;
-import org.projectnessie.client.rest.io.CapturingInputStream;
 
 /**
  * Subtype of {@link OAuth2AuthenticatorConfig} that contains configuration options that are not
@@ -275,38 +269,8 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .setObjectMapper(getObjectMapper())
         .setSslContext(getSslContext().orElse(null))
         .setDisableCompression(true)
-        .addResponseFilter(this::checkErrorResponse)
+        .addResponseFilter(new OAuth2ResponseFilter(getObjectMapper()))
         .build();
-  }
-
-  private void checkErrorResponse(ResponseContext responseContext) {
-    try {
-      Status status = responseContext.getResponseCode();
-      // The only normal responses are 200 OK and 302 Found (in the authorization code flow).
-      if (status != Status.OK && status != Status.FOUND) {
-        String body = null;
-        if (responseContext.getErrorStream() != null) {
-          try (CapturingInputStream capturing =
-              new CapturingInputStream(responseContext.getErrorStream())) {
-            if (responseContext.isJsonCompatibleResponse()) {
-              try {
-                ErrorResponse errorResponse =
-                    getObjectMapper().readValue(capturing, ErrorResponse.class);
-                throw new OAuth2Exception(
-                    responseContext.getRequestedUri(), status, errorResponse, capturing.captured());
-              } catch (IOException ignored) {
-              }
-            }
-            body = capturing.capture();
-          }
-        }
-        throw new HttpClientResponseException(responseContext.getRequestedUri(), status, body);
-      }
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new HttpClientException(e);
-    }
   }
 
   private static void check(
