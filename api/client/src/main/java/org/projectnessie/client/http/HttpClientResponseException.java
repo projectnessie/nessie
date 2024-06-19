@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
  */
 package org.projectnessie.client.http;
 
+/**
+ * A generic exception thrown when the server replies with an unexpected status code.
+ *
+ * <p>This exception is generally thrown when the status code is not in the 2xx or 3xx range, and if
+ * a response filter did not throw a more specific exception.
+ */
 public class HttpClientResponseException extends HttpClientException {
 
   private final Status status;

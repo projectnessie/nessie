@@ -41,8 +41,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.time.Clock;
@@ -60,9 +58,6 @@ import org.immutables.value.Value;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.ResponseContext;
-import org.projectnessie.client.http.Status;
 
 /**
  * Subtype of {@link OAuth2AuthenticatorConfig} that contains configuration options that are not
@@ -274,37 +269,8 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .setObjectMapper(getObjectMapper())
         .setSslContext(getSslContext().orElse(null))
         .setDisableCompression(true)
-        .addResponseFilter(this::checkErrorResponse)
+        .addResponseFilter(new OAuth2ResponseFilter(getObjectMapper()))
         .build();
-  }
-
-  private void checkErrorResponse(ResponseContext responseContext) {
-    try {
-      Status status = responseContext.getResponseCode();
-      if (status.getCode() >= 400) {
-        if (!responseContext.isJsonCompatibleResponse()) {
-          throw genericError(status);
-        }
-        InputStream is = responseContext.getErrorStream();
-        if (is != null) {
-          try {
-            ErrorResponse errorResponse = getObjectMapper().readValue(is, ErrorResponse.class);
-            throw new OAuth2Exception(status, errorResponse);
-          } catch (IOException ignored) {
-            throw genericError(status);
-          }
-        }
-      }
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new HttpClientException(e);
-    }
-  }
-
-  private static HttpClientException genericError(Status status) {
-    return new HttpClientException(
-        "OAuth2 server replied with HTTP status code: " + status.getCode());
   }
 
   private static void check(
