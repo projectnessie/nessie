@@ -34,8 +34,6 @@ public interface AdlsConfig {
 
   Optional<Duration> readTimeout();
 
-  Optional<Duration> responseTimeout();
-
   /** For configuration options, see {@link com.azure.core.util.Configuration}. */
   Map<String, String> configurationOptions();
 
@@ -58,9 +56,6 @@ public interface AdlsConfig {
 
     @CanIgnoreReturnValue
     Builder readTimeout(Duration readTimeout);
-
-    @CanIgnoreReturnValue
-    Builder responseTimeout(Duration responseTimeout);
 
     @CanIgnoreReturnValue
     Builder putConfigurationOptions(String key, String value);
