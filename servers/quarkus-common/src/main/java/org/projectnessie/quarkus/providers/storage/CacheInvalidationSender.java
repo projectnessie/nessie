@@ -43,8 +43,10 @@ import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -95,7 +97,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
       @ServerInstanceId String serverInstanceId) {
     this.vertx = vertx;
 
-    this.addressResolver = new AddressResolver(vertx.createDnsClient());
+    this.addressResolver = new AddressResolver(vertx);
     this.requestTimeout =
         config
             .cacheInvalidationRequestTimeout()
@@ -111,18 +113,13 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
     this.token = config.cacheInvalidationValidTokens().map(l -> l.get(0)).orElse(null);
     if (!serviceNames.isEmpty()) {
       try {
-        List<String> resolved =
-            updateServiceNames().toCompletionStage().toCompletableFuture().get();
+        LOGGER.info("Sending remote cache invalidations to service name(s) {}", serviceNames);
+        updateServiceNames().toCompletionStage().toCompletableFuture().get();
         if (config.cacheInvalidationValidTokens().isEmpty()) {
           LOGGER.warn(
               "No token configured for cache invalidation messages - will not send any invalidation message. You need to configure the token(s) via {}.{}",
               NESSIE_VERSION_STORE_PERSIST,
               CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS);
-        } else {
-          LOGGER.info(
-              "Sending remote cache invalidations to {}, currently resolved to {}",
-              serviceNames,
-              resolved);
         }
       } catch (Exception e) {
         throw new RuntimeException(
@@ -138,6 +135,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   private Future<List<String>> updateServiceNames() {
+    Set<String> previous = new HashSet<>(resolvedAddresses);
     return resolveServiceNames(serviceNames)
         .map(all -> all.filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
         .onSuccess(
@@ -145,9 +143,17 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
               // refresh addresses regularly
               scheduleServiceNameResolution();
 
-              LOGGER.debug("Resolved service names {} to {}", serviceNames, all);
+              Set<String> resolved = new HashSet<>(all);
+              if (!resolved.equals(previous)) {
+                LOGGER.info(
+                    "Service names for remote cache invalidations {} now resolve to {}",
+                    serviceNames,
+                    all);
+              }
+
               resolvedAddresses = all;
-            });
+            })
+        .onFailure(t -> LOGGER.error("Failed to resolve service names: {}", t.toString()));
   }
 
   private void updateServiceNamesHandleFailure() {

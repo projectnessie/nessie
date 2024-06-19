@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.providers.storage;
 
+import static com.google.common.base.Preconditions.checkState;
 import static io.vertx.core.Future.succeededFuture;
 import static java.net.NetworkInterface.networkInterfaces;
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -22,8 +23,11 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 import com.google.common.annotations.VisibleForTesting;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsClientOptions;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -39,8 +43,11 @@ final class AddressResolver {
   private static final Logger LOGGER = LoggerFactory.getLogger(AddressResolver.class);
 
   private final DnsClient dnsClient;
+  private final List<String> searchList;
 
   static final Set<String> LOCAL_ADDRESSES;
+
+  private static final boolean IP_V4_ONLY;
 
   static {
     try {
@@ -65,28 +72,79 @@ final class AddressResolver {
                               })
                           .map(InetAddress::getHostAddress))
               .collect(toUnmodifiableSet());
+
+      IP_V4_ONLY = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack", "false"));
     } catch (SocketException e) {
       throw new RuntimeException(e);
     }
   }
 
-  AddressResolver(DnsClient dnsClient) {
+  AddressResolver(DnsClient dnsClient, List<String> searchList) {
     this.dnsClient = dnsClient;
+    this.searchList = searchList;
+  }
+
+  /**
+   * Uses a "default" {@link DnsClient} using the first {@code nameserver} and the {@code search}
+   * list configured in {@code /etc/resolv.conf}.
+   */
+  AddressResolver(Vertx vertx) {
+    this(createDnsClient(vertx), ResolvConf.system().getSearchList());
+  }
+
+  /**
+   * Creates a "default" {@link DnsClient} using the first nameserver configured in {@code
+   * /etc/resolv.conf}.
+   */
+  static DnsClient createDnsClient(Vertx vertx) {
+    List<InetSocketAddress> nameservers = ResolvConf.system().getNameservers();
+    checkState(!nameservers.isEmpty(), "No nameserver configured in /etc/resolv.conf");
+    InetSocketAddress nameserver = nameservers.get(0);
+    LOGGER.info(
+        "Using nameserver {} with search list {}",
+        nameserver.getHostName(),
+        ResolvConf.system().getSearchList());
+    return vertx.createDnsClient(
+        new DnsClientOptions()
+            .setQueryTimeout(250)
+            .setHost(nameserver.getHostName())
+            .setPort(nameserver.getPort()));
+  }
+
+  DnsClient dnsClient() {
+    return dnsClient;
+  }
+
+  private Future<Stream<String>> resolveSingle(String name) {
+    Future<List<String>> resultA = dnsClient.resolveA(name);
+    if (IP_V4_ONLY) {
+      return resultA.map(List::stream);
+    }
+    return resultA.compose(
+        a -> dnsClient.resolveAAAA(name).map(aaaa -> Stream.concat(aaaa.stream(), a.stream())));
   }
 
   Future<Stream<String>> resolve(String name) {
     if (name.startsWith("=")) {
       return Future.succeededFuture(Stream.of(name.substring(1)));
     }
-    return dnsClient
-        .resolveA(name)
-        .compose(
-            a -> dnsClient.resolveAAAA(name).map(aaaa -> Stream.concat(aaaa.stream(), a.stream())))
-        .recover(
-            failure -> {
-              LOGGER.warn("Failed to resolve '{}' to A/AAAA records", name, failure);
-              return succeededFuture(Stream.of());
-            });
+
+    // By convention, do not consult the 'search' list, when the name to query ends with a dot.
+    boolean exact = name.endsWith(".");
+    String query = exact ? name.substring(0, name.length() - 1) : name;
+    Future<Stream<String>> future = resolveSingle(query);
+    if (!exact) {
+      // Consult the 'search' list, if the above 'resolveName' fails.
+      for (String search : searchList) {
+        future = future.recover(t -> resolveSingle(query + '.' + search));
+      }
+    }
+
+    return future.recover(
+        failure -> {
+          LOGGER.warn("Failed to resolve '{}' to A/AAAA records", name, failure);
+          return succeededFuture(Stream.of());
+        });
   }
 
   Future<Stream<String>> resolveAll(List<String> names) {
