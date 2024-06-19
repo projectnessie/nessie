@@ -28,15 +28,11 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
-import org.projectnessie.client.rest.io.CapturingInputStream;
 
 final class UrlConnectionResponseContext implements ResponseContext {
 
   private final HttpURLConnection connection;
   private final URI uri;
-
-  private CapturingInputStream inputStream;
-  private CapturingInputStream errorStream;
 
   UrlConnectionResponseContext(HttpURLConnection connection, URI uri) {
     this.connection = connection;
@@ -49,19 +45,13 @@ final class UrlConnectionResponseContext implements ResponseContext {
   }
 
   @Override
-  public CapturingInputStream getInputStream() throws IOException {
-    if (inputStream == null) {
-      inputStream = new CapturingInputStream(maybeDecompress(connection.getInputStream()));
-    }
-    return inputStream;
+  public InputStream getInputStream() throws IOException {
+    return maybeDecompress(connection.getInputStream());
   }
 
   @Override
-  public CapturingInputStream getErrorStream() throws IOException {
-    if (errorStream == null) {
-      errorStream = new CapturingInputStream(maybeDecompress(connection.getErrorStream()));
-    }
-    return errorStream;
+  public InputStream getErrorStream() throws IOException {
+    return maybeDecompress(connection.getErrorStream());
   }
 
   @Override
