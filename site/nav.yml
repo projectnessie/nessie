@@ -10,6 +10,7 @@ nav:
       - guides/docker.md
       - guides/kubernetes.md
       - guides/minikube.md
+      - guides/reverse-proxy.md
       - guides/tls.md
       - guides/keycloak.md
       - guides/grafana.md

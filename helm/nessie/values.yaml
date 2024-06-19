@@ -141,6 +141,27 @@ advancedConfig:
 #      console.format: "%d{HH:mm:ss} %s%e%n"
 #      category."org.projectnessie".level: DEBUG
 
+# Reverse Proxy Settings
+# ----------------------
+#
+# These config options are mentioned only for documentation purposes. Consult the
+# Quarkus documentation for "Running behind a reverse proxy" and configure those
+# depending on your actual needs.
+#
+# See https://quarkus.io/guides/http-reference#reverse-proxy
+#
+# Do NOT enable these option unless your reverse proxy (for example istio or nginx)
+# is properly setup to set these headers but also filter those from incoming requests.
+#
+#  quarkus:
+#   http:
+#     proxy:
+#       proxy-address-forwarding=true
+#       allow-x-forwarded=true
+#       enable-forwarded-host=true
+#       enable-forwarded-prefix=true
+#       trusted-proxies=127.0.0.1
+
 # -- Advanced configuration via Environment Variables.
 # Extra environment variables to add to the Nessie server container.
 # You can pass here any valid EnvVar object:
