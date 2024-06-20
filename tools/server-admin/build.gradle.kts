@@ -160,7 +160,7 @@ if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
 tasks.named<Test>("intTest").configure {
   // Reduce likelihood of OOM due to too many Quarkus apps in memory;
   // Ideally, set this number to the number of IT classes to run for each backend.
-  forkEvery = 4
+  forkEvery = 5
   // Optional; comma-separated list of backend names to test against;
   // see NessieServerAdminTestBackends for valid values.
   systemProperty("backends", System.getProperty("backends"))
