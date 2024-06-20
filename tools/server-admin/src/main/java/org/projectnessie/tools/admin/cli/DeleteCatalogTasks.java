@@ -45,11 +45,11 @@ import org.projectnessie.versioned.storage.versionstore.ContentMapping;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-    name = "expire-snapshot-tasks",
+    name = "delete-catalog-tasks",
     mixinStandardHelpOptions = true,
     description =
-        "Delete all state of Iceberg snapshot loading tasks previously executed by the Nessie Catalog.")
-public class ExpireSnapshotTasks extends BaseCommand {
+        "Delete persisted state of Iceberg snapshot loading tasks previously executed by the Nessie Catalog.")
+public class DeleteCatalogTasks extends BaseCommand {
 
   @CommandLine.Option(
       names = {"-B", "--batch"},

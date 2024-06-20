@@ -40,9 +40,9 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 @QuarkusMainTest
 @TestProfile(BaseConfigProfile.class)
 @ExtendWith(NessieServerAdminTestExtension.class)
-class ITExpireSnapshotTasks extends AbstractContentTests<String> {
+class ITDeleteCatalogTasks extends AbstractContentTests<String> {
 
-  ITExpireSnapshotTasks(Persist persist) {
+  ITDeleteCatalogTasks(Persist persist) {
     super(persist, String.class);
   }
 
@@ -74,7 +74,7 @@ class ITExpireSnapshotTasks extends AbstractContentTests<String> {
     List<ObjId> ids =
         IntStream.iterate(1, n -> n < 123, n -> n + 1).mapToObj(i -> storeNewEntry()).toList();
 
-    launchNoFile(launcher, "expire-snapshot-tasks", "--batch", "11");
+    launchNoFile(launcher, "delete-catalog-tasks", "--batch", "11");
 
     assertThat(result.getOutputStream())
         .anyMatch(l -> l.contains("Deleted 11 snapshot task object(s)..."));
@@ -102,7 +102,7 @@ class ITExpireSnapshotTasks extends AbstractContentTests<String> {
         storeNewEntry(
             ContentKey.of("ns", "v2"), IcebergView.of(UUID.randomUUID().toString(), "loc2", 1, 2));
 
-    launchNoFile(launcher, "expire-snapshot-tasks", "-k", "ns", "-k", "v2");
+    launchNoFile(launcher, "delete-catalog-tasks", "-k", "ns", "-k", "v2");
 
     assertThat(result.getOutputStream())
         .anyMatch(l -> l.contains("Deleted 1 snapshot task object(s)..."));
