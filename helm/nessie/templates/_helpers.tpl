@@ -239,7 +239,7 @@ Define environkent variables for catalog storage options.
 {{- range $bucket := .gcs.buckets -}}
 {{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "nessie.catalog.service.gcs.buckets.\"%s\".auth-credentials-json.key" $bucket.name)) }}
 {{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.token" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.expiresAt" $bucket.name)) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.expires-at" $bucket.name)) }}
 {{- end -}}
 {{- include "nessie.secretToEnv" (list .adls.accountSecret "accountName" "nessie.catalog.service.adls.account.name") }}
 {{- include "nessie.secretToEnv" (list .adls.accountSecret "accountKey" "nessie.catalog.service.adls.account.secret") }}
