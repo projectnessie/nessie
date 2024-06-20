@@ -118,7 +118,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: prom/prometheus:v2.53.0
+    image: docker.io/prom/prometheus:v2.53.0
     ports:
       # Prometheus UI, browse to http://localhost:9091 to view metrics
       - "9091:9090"
@@ -137,7 +137,7 @@ services:
 
   # Grafana
   grafana:
-    image: grafana/grafana:10.4.4
+    image: docker.io/grafana/grafana:10.4.4
     depends_on:
       - prometheus
     ports:
