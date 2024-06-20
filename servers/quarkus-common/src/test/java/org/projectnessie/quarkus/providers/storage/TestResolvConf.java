@@ -18,8 +18,11 @@ package org.projectnessie.quarkus.providers.storage;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -48,10 +51,17 @@ public class TestResolvConf {
   }
 
   @Test
-  public void system() {
+  public void system() throws IOException {
+    String file = Files.readString(Paths.get("/etc/resolv.conf"));
+
     ResolvConf resolvConf = ResolvConf.system();
     soft.assertThat(resolvConf.getNameservers()).isNotEmpty();
-    soft.assertThat(resolvConf.getSearchList()).isNotEmpty();
+    // This 'if' ensures that this test passes on the macOS test run in CI.
+    if (file.contains("\nsearch ")) {
+      soft.assertThat(resolvConf.getSearchList()).isNotEmpty();
+    } else {
+      soft.assertThat(resolvConf.getSearchList()).isEmpty();
+    }
   }
 
   static Stream<Arguments> resolve() {
