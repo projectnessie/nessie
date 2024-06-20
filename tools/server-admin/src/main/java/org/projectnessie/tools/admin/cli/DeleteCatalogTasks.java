@@ -100,7 +100,10 @@ public class DeleteCatalogTasks extends BaseCommand {
 
     spec.commandLine()
         .getOut()
-        .printf("Deleted %d snapshot task object(s) in total.%n", idsProcessed.get());
+        .printf(
+            "Deleted %d snapshot task object(s) in total.%n%n"
+                + "Note: Catalogs Server likely need to be restarted to reload correct snapshot metadata.%n",
+            idsProcessed.get());
     return 0;
   }
 
