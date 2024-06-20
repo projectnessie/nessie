@@ -21,7 +21,7 @@ jobs:
 
       - name: Sync images
         env:
-          REGCLIENT_VERSION: 0.4.7
+          REGCLIENT_VERSION: 0.6.1
           QUAY_IO_USER: ${{ secrets.QUAY_IO_USER }}
           QUAY_IO_TOKEN: ${{ secrets.QUAY_IO_TOKEN }}
           GHCR_IO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
