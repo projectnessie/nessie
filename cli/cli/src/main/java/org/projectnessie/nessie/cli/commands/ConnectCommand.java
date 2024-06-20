@@ -25,6 +25,8 @@ import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_YELLOW;
 
 import jakarta.annotation.Nonnull;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -125,7 +127,6 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
         icebergProperties.put("token", bearerToken);
       }
 
-      icebergClient = new RESTCatalog();
       try {
         icebergProperties.put("uri", icebergUri);
 
@@ -134,7 +135,32 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
           icebergProperties.put("prefix", URLEncoder.encode(initialReference, UTF_8));
         }
 
-        icebergClient.initialize("iceberg", icebergProperties);
+        // Collect stdout+stderr to prevent the annoying exception printed by
+        // org.apache.iceberg.rest.ErrorHandlers.DefaultErrorHandler when the remote endpoint does
+        // not exist -  for example when connecting to an older Nessie instance w/o Iceberg REST.
+        ByteArrayOutputStream errorCollector = new ByteArrayOutputStream();
+        try {
+          PrintStream out = System.out;
+          PrintStream err = System.err;
+          try (PrintStream ps = new PrintStream(errorCollector)) {
+            System.setOut(ps);
+            System.setErr(ps);
+            // Having the 'new RESTCatalog()' here prevents the 'WARNING:
+            // PropertyNamingStrategy.KebabCaseStrategy ...' message
+            icebergClient = new RESTCatalog();
+            icebergClient.initialize("iceberg", icebergProperties);
+          } finally {
+            System.setErr(out);
+            System.setErr(err);
+          }
+        } catch (RESTException e) {
+          throw e;
+        } catch (Exception e) {
+          writer.print(errorCollector);
+          writer.flush();
+          throw e;
+        }
+
         Map<String, String> properties = icebergClient.properties();
         if (Boolean.parseBoolean(properties.get("nessie.is-nessie-catalog"))) {
           nessieUri = properties.get("nessie.core-base-uri") + "v2/";
@@ -158,8 +184,10 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
                 .toAnsi(cli.terminal()));
         writer.flush();
 
-        icebergClient.close();
-        icebergClient = null;
+        if (icebergClient != null) {
+          icebergClient.close();
+          icebergClient = null;
+        }
       }
 
       NessieConfiguration config;
