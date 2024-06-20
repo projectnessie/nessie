@@ -38,6 +38,39 @@ configured to also pass the `X-Forwarded-Prefix` with the that prefix and Quarku
 to respect the `X-Forwarded-Prefix` header using the `quarkus.http.proxy.enable-forwarded-prefix=true`
 configuration.
 
+## Verifying the reverse proxy configuration
+
+Nessie returns URLs via the Iceberg REST config endpoint and in the returned table/view metadata. These
+URLs are used by Iceberg clients to issue follow-up requests.
+
+Assuming the setup of the below Docker Compose example, issue the following `curl` command against your
+ingress (reverse proxy).
+
+```shell
+curl https://nessie-nginx.localhost.localdomain:8443/nessie/iceberg/v1/config
+```
+
+It should yield the configuration. Look for the `nessie.iceberg-base-uri` property:
+```json5
+{
+  "defaults": {
+    // ...
+  },
+  "overrides": {
+    // ...
+    "nessie.iceberg-base-uri": "https://nessie-nginx.localhost.localdomain:8443/nessie/iceberg/"
+    // ...
+  }
+}
+```
+
+Make sure that the scheme (`https` in this case), the hostname (`nessie-nginx.localhost.localdomain`
+in this case), the port (`8443` in this case) and the prefix (`/nessie/` in this case) match the
+expected values. Differences _will_ result in Iceberg REST request failures.
+
+Consult the documentation of your ingress/reverse-proxy for details how to set those up to meet the
+requirements of your particular environment.
+
 ## istio/envoy
 
 Related istio/envoy documentation pages:
