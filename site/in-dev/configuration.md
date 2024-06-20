@@ -59,6 +59,16 @@ Related Quarkus settings:
 !!! info
     A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
 
+!!! info
+    **Reverse Proxy Settings**
+
+    These config options are mentioned only for documentation purposes. Consult the
+    [Quarkus documentation](https://quarkus.io/guides/http-reference#reverse-proxy)
+    for "Running behind a reverse proxy" and configure those depending on your actual needs.
+
+    Do NOT enable these option unless your reverse proxy (for example istio or nginx)
+    is properly setup to set these headers but also filter those from incoming requests.
+
 ### Catalog and Iceberg REST Settings
 
 {% include './generated-docs/smallrye-nessie_catalog.md' %}

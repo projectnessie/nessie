@@ -8,6 +8,10 @@ described below.
     are interested in deploying Nessie via an operator, please [get in
     touch](https://projectnessie.org/community/).
 
+!!! note
+    See [separate page](reverse-proxy.md) about how to configure Nessie for using a reverse proxy
+    like istio or nginx. 
+
 For more information on Helm and Helm charts, see the [Helm docs](https://helm.sh/docs/).
 
 ## Installing the Helm chart

@@ -31,6 +31,7 @@ WAREHOUSE_LOCATION="$PROJECT_DIR/build/spark-warehouse"
 CLIENT_ID="client1"
 CLIENT_SECRET="s3cr3t"
 OAUTH_SERVER_URI="http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token"
+ICEBERG_URI="http://127.0.0.1:19120/iceberg/main/"
 
 # Parse the command line arguments
 while [[ $# -gt 0 ]]
@@ -93,6 +94,11 @@ do
       ;;
     --aws)
       AWS="true"
+      shift
+      ;;
+    --iceberg)
+      ICEBERG_URI="$2"
+      shift
       shift
       ;;
     --oauth)
@@ -219,7 +225,7 @@ echo "  --packages \"${packages_csv}\" \\"
 echo "  ${SPARK_EXTENSIONS[@]} \\"
 echo "  ${AUTH_CONF_DISPLAY[@]} \\"
 echo "  --conf spark.sql.catalogImplementation=in-memory \\"
-echo "  --conf spark.sql.catalog.nessie.uri=http://127.0.0.1:19120/iceberg/main/ \\"
+echo "  --conf spark.sql.catalog.nessie.uri=${ICEBERG_URI} \\"
 echo "  --conf spark.sql.catalog.nessie.type=rest \\"
 echo "  --conf spark.sql.catalog.nessie=org.apache.iceberg.spark.SparkCatalog"
 echo ""
@@ -230,7 +236,8 @@ spark-sql "${DEBUG_SPARK_SHELL[@]}" \
   --packages "${packages_csv}" \
   "${SPARK_EXTENSIONS[@]}" \
   "${AUTH_CONF[@]}" \
+  --conf spark.sql.ansi.enabled=true \
   --conf spark.sql.catalogImplementation=in-memory \
-  --conf spark.sql.catalog.nessie.uri=http://127.0.0.1:19120/iceberg/main/ \
+  --conf spark.sql.catalog.nessie.uri=${ICEBERG_URI} \
   --conf spark.sql.catalog.nessie.type=rest \
   --conf spark.sql.catalog.nessie=org.apache.iceberg.spark.SparkCatalog
