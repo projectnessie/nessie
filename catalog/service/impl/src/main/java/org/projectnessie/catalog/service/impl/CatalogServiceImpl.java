@@ -31,10 +31,10 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.service.api.NessieSnapshotResponse.nessieSnapshotResponse;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
+import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.snapshotIdFromContent;
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
-import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
@@ -85,8 +85,6 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
-import org.projectnessie.error.ErrorCode;
-import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
@@ -98,9 +96,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.tasks.api.TasksService;
@@ -716,33 +711,5 @@ public class CatalogServiceImpl implements CatalogService {
     return specVersion.isPresent()
         ? Optional.of(IcebergSpec.forVersion(specVersion.getAsInt()))
         : Optional.empty();
-  }
-
-  /** Compute the ID for the given Nessie {@link Content} object. */
-  private ObjId snapshotIdFromContent(Content content) throws NessieContentNotFoundException {
-    if (content instanceof IcebergTable) {
-      IcebergTable icebergTable = (IcebergTable) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergTable.getMetadataLocation())
-          .hash(icebergTable.getSnapshotId())
-          .generate();
-    }
-    if (content instanceof IcebergView) {
-      IcebergView icebergView = (IcebergView) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergView.getMetadataLocation())
-          .hash(icebergView.getVersionId())
-          .generate();
-    }
-    if (content instanceof Namespace) {
-      throw new NessieContentNotFoundException(
-          ImmutableNessieError.builder()
-              .errorCode(ErrorCode.CONTENT_NOT_FOUND)
-              .message("No snapshots for Namespace: " + content)
-              .reason("Not a table")
-              .status(404)
-              .build());
-    }
-    throw new UnsupportedOperationException("IMPLEMENT ME FOR " + content);
   }
 }

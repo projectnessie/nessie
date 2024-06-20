@@ -55,6 +55,11 @@ dependencies {
   implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-rocksdb"))
 
+  implementation(project(":nessie-catalog-service-common"))
+  implementation(project(":nessie-tasks-api"))
+
+  implementation(libs.guava)
+
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-core-deployment")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))

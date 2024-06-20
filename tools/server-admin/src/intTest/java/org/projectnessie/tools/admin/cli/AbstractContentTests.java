@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Namespace;
@@ -71,6 +72,10 @@ abstract class AbstractContentTests<OutputType> {
     this.outputClass = outputClass;
   }
 
+  protected Persist persist() {
+    return persist;
+  }
+
   protected void launchNoFile(QuarkusMainLauncher launcher, String... args) {
     launch(launcher, null, args);
   }
@@ -97,10 +102,14 @@ abstract class AbstractContentTests<OutputType> {
     commit(table, true);
   }
 
-  protected void commit(IcebergTable table, boolean add) throws Exception {
+  protected void commit(Content table, boolean add) throws Exception {
+    commit(table, ContentKey.of("test_namespace", "table_" + table.getId()), add);
+  }
+
+  protected void commit(Content table, ContentKey key, boolean add) throws Exception {
     ByteString serialized = DefaultStoreWorker.instance().toStoreOnReferenceState(table);
     commit(
-        ContentKey.of("test_namespace", "table_" + table.getId()),
+        key,
         UUID.fromString(Objects.requireNonNull(table.getId())),
         (byte) payloadForContent(table),
         serialized,

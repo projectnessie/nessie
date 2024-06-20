@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.service.impl;
+package org.projectnessie.catalog.service.objtypes;
 
 import java.util.function.Consumer;
 import org.projectnessie.versioned.storage.common.persist.ObjType;

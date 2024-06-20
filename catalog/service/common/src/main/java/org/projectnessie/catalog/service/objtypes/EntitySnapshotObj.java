@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.service.impl;
+package org.projectnessie.catalog.service.objtypes;
 
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.dynamicCaching;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -24,6 +25,9 @@ import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskState;
@@ -63,6 +67,27 @@ public interface EntitySnapshotObj extends TaskObj {
           EntitySnapshotObj.class,
           TaskObj.taskDefaultCacheExpire(),
           c -> ObjType.NOT_CACHED);
+
+  static ObjId snapshotIdFromContent(Content content) {
+    if (content instanceof IcebergTable) {
+      IcebergTable icebergTable = (IcebergTable) content;
+      return objIdHasher("ContentSnapshot")
+          .hash(icebergTable.getMetadataLocation())
+          .hash(icebergTable.getSnapshotId())
+          .generate();
+    }
+    if (content instanceof IcebergView) {
+      IcebergView icebergView = (IcebergView) content;
+      return objIdHasher("ContentSnapshot")
+          .hash(icebergView.getMetadataLocation())
+          .hash(icebergView.getVersionId())
+          .generate();
+    }
+    if (content instanceof Namespace) {
+      throw new IllegalArgumentException("No snapshots for Namespace: " + content);
+    }
+    throw new UnsupportedOperationException("IMPLEMENT ME FOR " + content);
+  }
 
   static Builder builder() {
     return ImmutableEntitySnapshotObj.builder();

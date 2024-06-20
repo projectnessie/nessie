@@ -26,6 +26,7 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
+import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
