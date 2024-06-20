@@ -137,7 +137,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:10.4.4
+    image: docker.io/grafana/grafana:11.0.0
     depends_on:
       - prometheus
     ports:
