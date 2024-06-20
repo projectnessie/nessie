@@ -13,6 +13,7 @@ configured accordingly.
 The follow config options are mentioned only for documentation purposes. Consult the
 [Quarkus documentation](https://quarkus.io/guides/http-reference#reverse-proxy) for "Running behind a reverse proxy"
 and configure those depending on your actual needs.
+
 ```properties
 quarkus.http.proxy.proxy-address-forwarding=true
 quarkus.http.proxy.allow-x-forwarded=true
@@ -23,6 +24,11 @@ quarkus.http.proxy.enable-forwarded-prefix=true
 !!! warn
     Do NOT enable the above options unless your reverse proxy (for example istio or nginx)
     is properly setup to set these headers but also filter those from incoming requests.
+
+!!! info
+    The newer `Forwarded` header is the newer version of the older `X-Forwarded-For`, `X-Forwarded-Host`,
+    `X-Forwarded-Proto` headers, but does _not_ provide a replacement for the `X-Forwarded-Prefix` header,
+    which is needed in some scenarios.
 
 ## Using path prefixes on the ingress / reverse proxy
 

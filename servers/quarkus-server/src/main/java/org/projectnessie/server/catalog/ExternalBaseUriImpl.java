@@ -38,6 +38,7 @@ public class ExternalBaseUriImpl implements ExternalBaseUri {
     if (enableForwardedPrefix) {
       // Use the value of the `X-Forwarded-Prefix` as the "prefix", if present and only if
       // `quarkus.http.proxy.enable-forwarded-prefix` is set to `true`.
+      // See https://github.com/projectnessie/nessie/pull/8674#issuecomment-2145309722
       String prefix = httpHeaders.getHeaderString("X-Forwarded-Prefix");
       if (prefix != null && !prefix.isEmpty()) {
         if (!prefix.endsWith("/")) {
