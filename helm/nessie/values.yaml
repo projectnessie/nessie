@@ -128,8 +128,9 @@ catalog:
   # -- Iceberg catalog settings.
   iceberg:
 
-    # -- The default warehouse name (must refer to a declared warehouse below).
-    defaultWarehouse: warehouse1
+    # -- The default warehouse name. Required. This is just a symbolic name; it must refer to a
+    # declared warehouse below.
+    defaultWarehouse: ~  # warehouse1
 
     # -- Iceberg config defaults applicable to all clients and warehouses. Any properties that are
     # common to all iceberg clients should be included here. They will be passed to all clients on
@@ -146,13 +147,15 @@ catalog:
     # s3.acl: public-read-write
 
     # -- Iceberg warehouses. Each warehouse is a location where Iceberg tables are stored. Each
-    # warehouse has a name, a location, and optional config defaults and overrides.
+    # warehouse has a name, a location, and optional config defaults and overrides. At least one
+    # warehouse must be defined.
     warehouses:
-    - name: warehouse1
+      # -- Symbolic name of the warehouse. Required.
+    - name: ~  # warehouse1
       # -- Location of the warehouse. Required. Used to determine the base location of a table.
       # Scheme must be either s3 (Amazon S3), gs (Google GCS) or abfs / abfss (Azure ADLS). Storage
       # properties for each location can be defined below.
-      location: s3://bucket1/
+      location: ~  # s3://bucket1/
       # -- Iceberg config defaults specific to this warehouse. They override any defaults specified
       # above in catalog.iceberg.configDefaults.
       configDefaults: {}
