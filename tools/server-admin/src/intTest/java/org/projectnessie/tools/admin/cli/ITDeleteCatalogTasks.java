@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -47,22 +48,25 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
   }
 
   private ObjId storeNewEntry() {
+    return storeNewEntry(TaskState.failureState("test"));
+  }
+
+  private ObjId storeNewEntry(TaskState state) {
     String id = UUID.randomUUID().toString();
     IcebergTable table = IcebergTable.of("loc_" + id, 1, 2, 3, 4, id);
-    return storeNewEntry(ContentKey.of("ns", "t_" + table.getId()), table);
+    return storeNewEntry(state, ContentKey.of("ns", "t_" + table.getId()), table);
   }
 
   private ObjId storeNewEntry(ContentKey key, Content content) {
+    return storeNewEntry(TaskState.failureState("test"), key, content);
+  }
+
+  private ObjId storeNewEntry(TaskState state, ContentKey key, Content content) {
     try {
       commit(content, key, true);
       ObjId id = EntitySnapshotObj.snapshotIdFromContent(content);
       persist()
-          .storeObj(
-              EntitySnapshotObj.builder()
-                  .id(id)
-                  .taskState(TaskState.SUCCESS)
-                  .versionToken("v1")
-                  .build());
+          .storeObj(EntitySnapshotObj.builder().id(id).taskState(state).versionToken("v1").build());
       return id;
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -72,7 +76,7 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
   @Test
   public void testExpireAll(QuarkusMainLauncher launcher, Persist persist) {
     List<ObjId> ids =
-        IntStream.iterate(1, n -> n < 123, n -> n + 1).mapToObj(i -> storeNewEntry()).toList();
+        IntStream.iterate(0, n -> n < 123, n -> n + 1).mapToObj(i -> storeNewEntry()).toList();
 
     launchNoFile(launcher, "delete-catalog-tasks", "--batch", "11");
 
@@ -115,6 +119,33 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
         .isInstanceOf(ObjNotFoundException.class);
 
     assertThat(persist.fetchTypedObj(id1, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class))
+        .isNotNull();
+  }
+
+  @Test
+  public void testExpireByStatus(QuarkusMainLauncher launcher, Persist persist)
+      throws ObjNotFoundException {
+    ObjId id1 = storeNewEntry(TaskState.SUCCESS);
+    ObjId id2 = storeNewEntry(TaskState.failureState("test2"));
+    ObjId id3 = storeNewEntry(TaskState.retryableErrorState(Instant.ofEpochMilli(0), "test3"));
+
+    launchNoFile(
+        launcher, "delete-catalog-tasks", "--task-status=SUCCESS", "--task-status=FAILURE");
+
+    assertThat(result.getOutputStream())
+        .anyMatch(l -> l.contains("Deleted 2 snapshot task object(s)..."));
+    assertThat(result.getOutputStream())
+        .anyMatch(l -> l.contains("Deleted 2 snapshot task object(s) in total."));
+    assertThat(result.exitCode()).isEqualTo(0);
+
+    assertThatThrownBy(
+            () -> persist.fetchTypedObj(id1, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class))
+        .isInstanceOf(ObjNotFoundException.class);
+    assertThatThrownBy(
+            () -> persist.fetchTypedObj(id2, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class))
+        .isInstanceOf(ObjNotFoundException.class);
+
+    assertThat(persist.fetchTypedObj(id3, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class))
         .isNotNull();
   }
 }

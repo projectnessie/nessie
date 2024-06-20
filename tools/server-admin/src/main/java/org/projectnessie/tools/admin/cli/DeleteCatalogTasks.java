@@ -22,6 +22,8 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashT
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
 import com.google.common.collect.Iterators;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,12 +36,14 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.nessie.tasks.api.TaskStatus;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.versionstore.ContentMapping;
 import picocli.CommandLine;
@@ -65,6 +69,13 @@ public class DeleteCatalogTasks extends BaseCommand {
   private List<String> keyElements;
 
   @CommandLine.Option(
+      names = {"-s", "--task-status"},
+      description =
+          "Delete tasks having these statuses (zero or more). "
+              + "If not set, only failed tasks for matching content objects are deleted.")
+  private List<String> statuses;
+
+  @CommandLine.Option(
       names = {"-r", "--ref"},
       description = "Reference name to use (default branch, if not set).")
   private String ref;
@@ -80,21 +91,41 @@ public class DeleteCatalogTasks extends BaseCommand {
   public Integer call() throws ReferenceNotFoundException {
     warnOnInMemory();
 
+    EnumSet<TaskStatus> deleteStatuses = EnumSet.noneOf(TaskStatus.class);
+    if (statuses == null || statuses.isEmpty()) {
+      deleteStatuses.add(TaskStatus.FAILURE);
+    } else {
+      statuses.forEach(s -> deleteStatuses.add(TaskStatus.valueOf(s)));
+    }
+
     StoreIndex<CommitOp> index = index(hash(hash, ref));
     try (Stream<ContentKey> keys = iterateKeys(index)) {
       Iterators.partition(keys.iterator(), batchSize)
           .forEachRemaining(
               objects -> {
                 Map<ContentKey, Content> values = fetchValues(index, objects);
-                persist.deleteObjs(
+                ObjId[] ids =
                     values.values().stream()
                         .filter(c -> c instanceof IcebergTable || c instanceof IcebergView)
                         .map(EntitySnapshotObj::snapshotIdFromContent)
-                        .toArray(ObjId[]::new));
-                idsProcessed.addAndGet(objects.size());
+                        .toArray(ObjId[]::new);
+
+                EntitySnapshotObj[] objs =
+                    persist.fetchTypedObjsIfExist(
+                        ids, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class);
+
+                ObjId[] idsToDelete =
+                    Arrays.stream(objs)
+                        .filter(Objects::nonNull)
+                        .filter(o -> deleteStatuses.contains(o.taskState().status()))
+                        .map(Obj::id)
+                        .toArray(ObjId[]::new);
+
+                persist.deleteObjs(idsToDelete);
+                idsProcessed.addAndGet(idsToDelete.length);
                 spec.commandLine()
                     .getOut()
-                    .printf("Deleted %d snapshot task object(s)...%n", objects.size());
+                    .printf("Deleted %d snapshot task object(s)...%n", idsToDelete.length);
               });
     }
 
