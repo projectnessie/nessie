@@ -22,6 +22,7 @@ import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.unpartitioned;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.unsorted;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.GC_ENABLED;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
@@ -158,6 +159,13 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap, B builder, String prefix, ContentKey contentKey) {
     IcebergTableMetadata tableMetadata = (IcebergTableMetadata) snap.entityObject().orElseThrow();
+    if (!tableMetadata.properties().containsKey(GC_ENABLED)) {
+      tableMetadata =
+          IcebergTableMetadata.builder()
+              .from(tableMetadata)
+              .putProperty(GC_ENABLED, "false")
+              .build();
+    }
     IcebergTable content = (IcebergTable) snap.content();
     return loadTableResult(
         content.getMetadataLocation(), tableMetadata, builder, prefix, contentKey);
@@ -214,6 +222,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     properties.putAll(createTableRequest.properties());
+    properties.putIfAbsent(GC_ENABLED, "false");
 
     String uuid = randomUUID().toString();
 
