@@ -129,6 +129,7 @@ spec:
                   name: {{ .Values.authentication.oidcClientSecret.name }}
                   key: {{ .Values.authentication.oidcClientSecret.key }}
             {{- end -}}
+            {{- include "nessie.catalogStorageEnv" .Values.catalog.storage | trim | nindent 12 }}
             {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}
