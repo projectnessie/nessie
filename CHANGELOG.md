@@ -20,6 +20,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+* S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
+  S3 request signing before 1.5.0 works now. 
+
 ### Commits
 
 ## [0.90.4] Release (2024-06-13)

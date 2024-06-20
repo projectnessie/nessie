@@ -49,41 +49,46 @@ import org.projectnessie.storage.uri.StorageUri;
 @RequestScoped
 public class IcebergConfigurer {
 
-  private static final String ICEBERG_WAREHOUSE_LOCATION = "warehouse";
-  private static final String ICEBERG_PREFIX = "prefix";
-  private static final String FILE_IO_IMPL = "io-impl";
+  static final String ICEBERG_WAREHOUSE_LOCATION = "warehouse";
+  static final String ICEBERG_PREFIX = "prefix";
+  static final String FILE_IO_IMPL = "io-impl";
 
-  private static final String METRICS_REPORTING_ENABLED = "rest-metrics-reporting-enabled";
+  static final String METRICS_REPORTING_ENABLED = "rest-metrics-reporting-enabled";
 
-  private static final String S3_CLIENT_REGION = "client.region";
-  private static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
-  private static final String S3_SECRET_ACCESS_KEY = "s3.secret-access-key";
-  private static final String S3_SESSION_TOKEN = "s3.session-token";
-  private static final String S3_ENDPOINT = "s3.endpoint";
-  private static final String S3_ACCESS_POINTS_PREFIX = "s3.access-points.";
-  private static final String S3_PATH_STYLE_ACCESS = "s3.path-style-access";
-  private static final String S3_USE_ARN_REGION_ENABLED = "s3.use-arn-region-enabled";
-  private static final String S3_REMOTE_SIGNING_ENABLED = "s3.remote-signing-enabled";
-  private static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
+  static final String S3_CLIENT_REGION = "client.region";
+  static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
+  static final String S3_SECRET_ACCESS_KEY = "s3.secret-access-key";
+  static final String S3_SESSION_TOKEN = "s3.session-token";
+  static final String S3_ENDPOINT = "s3.endpoint";
+  static final String S3_ACCESS_POINTS_PREFIX = "s3.access-points.";
+  static final String S3_PATH_STYLE_ACCESS = "s3.path-style-access";
+  static final String S3_USE_ARN_REGION_ENABLED = "s3.use-arn-region-enabled";
+  static final String S3_REMOTE_SIGNING_ENABLED = "s3.remote-signing-enabled";
 
-  private static final String GCS_PROJECT_ID = "gcs.project-id";
-  private static final String GCS_CLIENT_LIB_TOKEN = "gcs.client-lib-token";
-  private static final String GCS_SERVICE_HOST = "gcs.service.host";
-  private static final String GCS_DECRYPTION_KEY = "gcs.decryption-key";
-  private static final String GCS_ENCRYPTION_KEY = "gcs.encryption-key";
-  private static final String GCS_USER_PROJECT = "gcs.user-project";
-  private static final String GCS_READ_CHUNK_SIZE = "gcs.channel.read.chunk-size-bytes";
-  private static final String GCS_WRITE_CHUNK_SIZE = "gcs.channel.write.chunk-size-bytes";
-  private static final String GCS_DELETE_BATCH_SIZE = "gcs.delete.batch-size";
-  private static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
-  private static final String GCS_OAUTH2_TOKEN_EXPIRES_AT = "gcs.oauth2.token-expires-at";
-  private static final String GCS_NO_AUTH = "gcs.no-auth";
+  /** Base URI of the signer endpoint, defaults to {@code uri}. */
+  static final String S3_SIGNER_URI = "s3.signer.uri";
 
-  private static final String ADLS_SHARED_KEY_ACCOUNT_NAME = "adls.auth.shared-key.account.name";
-  private static final String ADLS_SAS_TOKEN_PREFIX = "adls.sas-token.";
-  private static final String ADLS_CONNECTION_STRING_PREFIX = "adls.connection-string.";
-  private static final String ADLS_READ_BLOCK_SIZE_BYTES = "adls.read.block-size-bytes";
-  private static final String ADLS_WRITE_BLOCK_SIZE_BYTES = "adls.write.block-size-bytes";
+  /** Path of the signer endpoint. */
+  static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
+
+  static final String GCS_PROJECT_ID = "gcs.project-id";
+  static final String GCS_CLIENT_LIB_TOKEN = "gcs.client-lib-token";
+  static final String GCS_SERVICE_HOST = "gcs.service.host";
+  static final String GCS_DECRYPTION_KEY = "gcs.decryption-key";
+  static final String GCS_ENCRYPTION_KEY = "gcs.encryption-key";
+  static final String GCS_USER_PROJECT = "gcs.user-project";
+  static final String GCS_READ_CHUNK_SIZE = "gcs.channel.read.chunk-size-bytes";
+  static final String GCS_WRITE_CHUNK_SIZE = "gcs.channel.write.chunk-size-bytes";
+  static final String GCS_DELETE_BATCH_SIZE = "gcs.delete.batch-size";
+  static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
+  static final String GCS_OAUTH2_TOKEN_EXPIRES_AT = "gcs.oauth2.token-expires-at";
+  static final String GCS_NO_AUTH = "gcs.no-auth";
+
+  static final String ADLS_SHARED_KEY_ACCOUNT_NAME = "adls.auth.shared-key.account.name";
+  static final String ADLS_SAS_TOKEN_PREFIX = "adls.sas-token.";
+  static final String ADLS_CONNECTION_STRING_PREFIX = "adls.connection-string.";
+  static final String ADLS_READ_BLOCK_SIZE_BYTES = "adls.read.block-size-bytes";
+  static final String ADLS_WRITE_BLOCK_SIZE_BYTES = "adls.write.block-size-bytes";
 
   @Inject ServerConfig serverConfig;
   @Inject CatalogConfig catalogConfig;
@@ -147,11 +152,16 @@ public class IcebergConfigurer {
     // TODO this is the place to add vended authorization tokens for file/object access
     // TODO add (correct) S3_CLIENT_REGION for the table here (based on the table's location?)
     if (isS3scheme(location.getScheme())) {
+      // Must use both 's3.signer.uri' and 's3.signer.endpoint', because Iceberg before 1.5.0 does
+      // not handle full URIs passed via 's3.signer.endpoint'. This was changed via
+      // https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216,
+      // first released in Iceberg 1.5.0. It's unclear how other language implementations deal with
+      // this.
+      config.put(S3_SIGNER_URI, uriInfo.icebergBaseURI().toString());
       config.put(
           S3_SIGNER_ENDPOINT,
-          uriInfo
-              .icebergS3SignerUri(prefix, contentKey, normalizeS3Scheme(tableMetadata.location()))
-              .toString());
+          uriInfo.icebergS3SignerPath(
+              prefix, contentKey, normalizeS3Scheme(tableMetadata.location())));
     }
     // TODO GCS and ADLS per-table config overrides
     return config;
