@@ -57,7 +57,7 @@ curl -L -o nessie-cli-::NESSIE_VERSION::.jar \
 java -jar nessie-cli-::NESSIE_VERSION::.jar
 ```
 
-## Nessie GC Tool as Docker image
+### Nessie GC Tool as Docker image
 
 Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 
