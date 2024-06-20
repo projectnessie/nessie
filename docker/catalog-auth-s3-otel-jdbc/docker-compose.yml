@@ -20,6 +20,14 @@
 # Then use the access token in the Authorization header:
 # curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
 
+# To connect using Nessie CLI:
+# connect to http://127.0.0.1:19120/api/v2 using
+#   "nessie.authentication.type"="OAUTH2" AND
+#   "nessie.authentication.oauth2.client-id"=client1 AND
+#   "nessie.authentication.oauth2.client-secret"=s3cr3t AND
+#   "nessie.authentication.oauth2.issuer-url"="http://127.0.0.1:8080/realms/iceberg/"
+
+
 version: '3'
 
 services:
@@ -86,7 +94,6 @@ services:
       # This example uses MinIO as the object store.
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
-      - nessie.catalog.service.s3.cloud=private
       - nessie.catalog.service.s3.region=us-east-1
       - nessie.catalog.service.s3.path-style-access=true
       - nessie.catalog.service.s3.access-key.name=minioadmin
@@ -112,6 +119,38 @@ services:
       interval: 5s
       timeout: 2s
       retries: 15
+
+  # Prometheus
+  prometheus:
+    image: docker.io/prom/prometheus:v2.53.0
+    ports:
+      # Prometheus UI, browse to http://localhost:9091 to view metrics
+      - "9091:9090"
+    depends_on:
+      nessie:
+        condition: service_healthy
+    volumes:
+      - ../catalog-auth-s3-otel/prometheus/:/etc/prometheus/
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    healthcheck:
+        test: "wget -O /dev/null -o /dev/null http://localhost:9090"
+        interval: 5s
+        timeout: 2s
+        retries: 15
+
+  # Grafana
+  grafana:
+    image: docker.io/grafana/grafana:10.4.4
+    depends_on:
+      - prometheus
+    ports:
+      # Grafana UI, browse to http://localhost:3000 to view dashboards
+      - "3000:3000"
+    volumes:
+      - ../catalog-auth-s3-otel/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ../catalog-auth-s3-otel/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ../../grafana/nessie.json:/var/lib/grafana/dashboards/nessie.json
 
   # Jaeger (OpenTelemetry traces collector)
   jaeger:

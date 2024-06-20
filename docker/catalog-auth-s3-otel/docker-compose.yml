@@ -20,6 +20,14 @@
 # Then use the access token in the Authorization header:
 # curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
 
+# To connect using Nessie CLI:
+# connect to http://127.0.0.1:19120/api/v2 using
+#   "nessie.authentication.type"="OAUTH2" AND
+#   "nessie.authentication.oauth2.client-id"=client1 AND
+#   "nessie.authentication.oauth2.client-secret"=s3cr3t AND
+#   "nessie.authentication.oauth2.issuer-url"="http://127.0.0.1:8080/realms/iceberg/"
+
+
 version: '3'
 
 services:
@@ -54,7 +62,7 @@ services:
   ##
   ##      USE nessie.eng;
   ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
-  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+  ##      INSERT INTO city VALUES (2, 'b', 2, 'comment');
   ##      SELECT * FROM city;
   ##
   nessie:
@@ -108,6 +116,38 @@ services:
       timeout: 2s
       retries: 15
 
+  # Prometheus
+  prometheus:
+    image: docker.io/prom/prometheus:v2.53.0
+    ports:
+      # Prometheus UI, browse to http://localhost:9091 to view metrics
+      - "9091:9090"
+    depends_on:
+      nessie:
+        condition: service_healthy
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    healthcheck:
+        test: "wget -O /dev/null -o /dev/null http://localhost:9090"
+        interval: 5s
+        timeout: 2s
+        retries: 15
+
+  # Grafana
+  grafana:
+    image: docker.io/grafana/grafana:10.4.4
+    depends_on:
+      - prometheus
+    ports:
+      # Grafana UI, browse to http://localhost:3000 to view dashboards
+      - "3000:3000"
+    volumes:
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ../../grafana/nessie.json:/var/lib/grafana/dashboards/nessie.json
+
   # Jaeger (OpenTelemetry traces collector)
   jaeger:
     image: docker.io/jaegertracing/all-in-one:1.58.0
@@ -154,7 +194,7 @@ services:
     restart: "no"
     command: [
       "-c",
-      "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket"
+      "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket --ignore-existing"
       ]
 
   # Keycloak with the "iceberg" realm
