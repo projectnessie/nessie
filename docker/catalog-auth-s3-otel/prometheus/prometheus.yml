@@ -1,0 +1,11 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+scrape_configs:
+  - job_name: 'nessie'
+    scrape_interval: 5s
+    metrics_path: /q/metrics
+    static_configs:
+      - targets: ['nessie:9000']
+        labels:
+          service: nessie
