@@ -18,6 +18,7 @@ package org.projectnessie.catalog.formats.iceberg.nessie;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergNamespace.icebergNamespace;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField.partitionField;
@@ -29,6 +30,7 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadat
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.NO_SNAPSHOT_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergViewHistoryEntry.icebergViewHistoryEntry;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.RESERVED_PROPERTIES;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.TRANSIENT_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.ReuseOrCreate.reuseOrCreate;
 import static org.projectnessie.catalog.model.id.NessieId.transientNessieId;
 import static org.projectnessie.catalog.model.schema.types.NessieType.DEFAULT_TIME_PRECISION;
@@ -521,8 +523,17 @@ public class NessieModelIceberg {
         .icebergLocation(iceberg.location())
         .lastUpdatedTimestamp(Instant.ofEpochMilli(iceberg.lastUpdatedMs()))
         .icebergLastColumnId(iceberg.lastColumnId())
-        .icebergLastPartitionId(iceberg.lastPartitionId())
-        .properties(iceberg.properties());
+        .icebergLastPartitionId(iceberg.lastPartitionId());
+
+    snapshot.properties(emptyMap());
+    iceberg
+        .properties()
+        .forEach(
+            (k, v) -> {
+              if (!TRANSIENT_PROPERTIES.contains(k)) {
+                snapshot.putProperty(k, v);
+              }
+            });
 
     int currentSchemaId =
         extractCurrentId(iceberg.currentSchemaId(), iceberg.schema(), IcebergSchema::schemaId);

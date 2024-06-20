@@ -102,11 +102,7 @@ public class ITIcebergREST extends WithNessie {
               "Iceberg metadata:",
               "    \"nessie.catalog.content-id\": \"" + tableOneId + "\"",
               "    \"nessie.commit.id\": \"" + defaultBranch.getHash() + "\"",
-              "    \"nessie.commit.ref\": \""
-                  + defaultBranch.getName()
-                  + "@"
-                  + defaultBranch.getHash()
-                  + "\"");
+              "    \"nessie.commit.ref\": \"" + defaultBranch.getName() + "\"");
 
       // "USE testBranch" & check contents to verify that "USE" works for Nessie + Iceberg REST
 
@@ -133,11 +129,7 @@ public class ITIcebergREST extends WithNessie {
               "Iceberg metadata:",
               "    \"nessie.catalog.content-id\": \"" + tableTwoId + "\"",
               "    \"nessie.commit.id\": \"" + testBranch.getHash() + "\"",
-              "    \"nessie.commit.ref\": \""
-                  + testBranch.getName()
-                  + "@"
-                  + testBranch.getHash()
-                  + "\"");
+              "    \"nessie.commit.ref\": \"" + testBranch.getName() + "\"");
     }
   }
 

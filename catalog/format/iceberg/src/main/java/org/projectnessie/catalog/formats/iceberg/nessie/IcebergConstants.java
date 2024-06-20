@@ -18,7 +18,7 @@ package org.projectnessie.catalog.formats.iceberg.nessie;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 
-final class IcebergConstants {
+public final class IcebergConstants {
   private IcebergConstants() {}
 
   /**
@@ -34,31 +34,40 @@ final class IcebergConstants {
    *
    * <p>Note: incomplete or unstable versions cannot be selected using this property.
    */
-  static final String FORMAT_VERSION = "format-version";
+  public static final String FORMAT_VERSION = "format-version";
 
   /** Reserved table property for table UUID. */
-  static final String UUID = "uuid";
+  public static final String UUID = "uuid";
 
   /** Reserved table property for the total number of snapshots. */
-  static final String SNAPSHOT_COUNT = "snapshot-count";
+  public static final String SNAPSHOT_COUNT = "snapshot-count";
 
   /** Reserved table property for current snapshot summary. */
-  static final String CURRENT_SNAPSHOT_SUMMARY = "current-snapshot-summary";
+  public static final String CURRENT_SNAPSHOT_SUMMARY = "current-snapshot-summary";
 
   /** Reserved table property for current snapshot id. */
-  static final String CURRENT_SNAPSHOT_ID = "current-snapshot-id";
+  public static final String CURRENT_SNAPSHOT_ID = "current-snapshot-id";
 
   /** Reserved table property for current snapshot timestamp. */
-  static final String CURRENT_SNAPSHOT_TIMESTAMP = "current-snapshot-timestamp-ms";
+  public static final String CURRENT_SNAPSHOT_TIMESTAMP = "current-snapshot-timestamp-ms";
 
   /** Reserved table property for the JSON representation of current schema. */
-  static final String CURRENT_SCHEMA = "current-schema";
+  public static final String CURRENT_SCHEMA = "current-schema";
 
   /** Reserved table property for the JSON representation of current(default) partition spec. */
-  static final String DEFAULT_PARTITION_SPEC = "default-partition-spec";
+  public static final String DEFAULT_PARTITION_SPEC = "default-partition-spec";
 
   /** Reserved table property for the JSON representation of current(default) sort order. */
-  static final String DEFAULT_SORT_ORDER = "default-sort-order";
+  public static final String DEFAULT_SORT_ORDER = "default-sort-order";
+
+  /** Reserved property that is only returned from Nessie, but cannot be set from a client. */
+  public static final String NESSIE_CONTENT_ID = "nessie.catalog.content-id";
+
+  /** Reserved property that is only returned from Nessie, but cannot be set from a client. */
+  public static final String NESSIE_COMMIT_ID = "nessie.commit.id";
+
+  /** Reserved property that is only returned from Nessie, but cannot be set from a client. */
+  public static final String NESSIE_COMMIT_REF = "nessie.commit.ref";
 
   /**
    * Reserved Iceberg table properties list.
@@ -66,7 +75,7 @@ final class IcebergConstants {
    * <p>Reserved table properties are only used to control behaviors when creating or updating a
    * table. The value of these properties are not persisted as a part of the table metadata.
    */
-  static final Set<String> RESERVED_PROPERTIES =
+  public static final Set<String> RESERVED_PROPERTIES =
       ImmutableSet.of(
           FORMAT_VERSION,
           UUID,
@@ -76,5 +85,11 @@ final class IcebergConstants {
           CURRENT_SNAPSHOT_TIMESTAMP,
           CURRENT_SCHEMA,
           DEFAULT_PARTITION_SPEC,
-          DEFAULT_SORT_ORDER);
+          DEFAULT_SORT_ORDER,
+          NESSIE_CONTENT_ID,
+          NESSIE_COMMIT_ID,
+          NESSIE_COMMIT_REF);
+
+  public static final Set<String> TRANSIENT_PROPERTIES =
+      ImmutableSet.of(NESSIE_CONTENT_ID, NESSIE_COMMIT_ID, NESSIE_COMMIT_REF);
 }

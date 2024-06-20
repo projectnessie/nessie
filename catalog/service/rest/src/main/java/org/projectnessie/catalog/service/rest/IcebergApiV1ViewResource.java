@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.service.rest;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
@@ -48,17 +47,11 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitViewRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateViewRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergListTablesResponse;
@@ -66,17 +59,13 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadViewResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
-import org.projectnessie.catalog.service.api.CatalogCommit;
-import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
-import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Operation;
 
@@ -106,9 +95,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
 
     createViewRequest.viewVersion();
 
-    Map<String, String> properties = new HashMap<>();
-    properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
-    properties.putAll(createViewRequest.properties());
+    Map<String, String> properties = createEntityProperties(createViewRequest.properties());
 
     List<IcebergMetadataUpdate> updates =
         Arrays.asList(
@@ -120,19 +107,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
             addViewVersion(createViewRequest.viewVersion()),
             setCurrentViewVersion(-1L));
 
-    GetMultipleContentsResponse contentResponse =
-        nessieApi
-            .getContent()
-            .refName(tableRef.reference().name())
-            .hashOnRef(tableRef.reference().hashWithRelativeSpec())
-            .key(tableRef.contentKey())
-            .getWithResponse();
-    if (!contentResponse.getContents().isEmpty()) {
-      Content existing = contentResponse.getContents().get(0).getContent();
-      throw new CatalogEntityAlreadyExistsException(
-          false, ICEBERG_VIEW, tableRef.contentKey(), existing.getType());
-    }
-    checkBranch(contentResponse.getEffectiveReference());
+    createEntityVerifyNotExists(tableRef, ICEBERG_VIEW);
 
     IcebergCommitViewRequest updateTableReq =
         IcebergCommitViewRequest.builder()
@@ -141,7 +116,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
             .addRequirement(IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist())
             .build();
 
-    return createOrUpdateView(tableRef, updateTableReq)
+    return createOrUpdateEntity(tableRef, updateTableReq, ICEBERG_VIEW)
         .map(snap -> loadViewResultFromSnapshotResponse(snap, IcebergLoadViewResponse.builder()));
   }
 
@@ -182,17 +157,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
   }
 
   private ContentResponse fetchIcebergView(TableRef tableRef) throws NessieNotFoundException {
-    ContentResponse content =
-        nessieApi
-            .getContent()
-            .refName(tableRef.reference().name())
-            .hashOnRef(tableRef.reference().hashWithRelativeSpec())
-            .getSingle(tableRef.contentKey());
-    checkArgument(
-        content.getContent().getType().equals(ICEBERG_VIEW),
-        "View is not an Iceberg view, it is of type %s",
-        content.getContent().getType());
-    return content;
+    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view");
   }
 
   @GET
@@ -278,7 +243,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRefWithHash(prefix, namespace, view);
 
-    return createOrUpdateView(tableRef, commitViewRequest)
+    return createOrUpdateEntity(tableRef, commitViewRequest, ICEBERG_VIEW)
         .map(
             snap -> {
               IcebergViewMetadata viewMetadata =
@@ -288,28 +253,5 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
                   .metadataLocation(snapshotMetadataLocation(snap))
                   .build();
             });
-  }
-
-  Uni<SnapshotResponse> createOrUpdateView(
-      TableRef tableRef, IcebergCommitViewRequest commitViewRequest) throws IOException {
-
-    IcebergCatalogOperation op =
-        IcebergCatalogOperation.builder()
-            .updates(commitViewRequest.updates())
-            .requirements(commitViewRequest.requirements())
-            .key(tableRef.contentKey())
-            .warehouse(tableRef.warehouse())
-            .type(ICEBERG_VIEW)
-            .build();
-
-    CatalogCommit commit = CatalogCommit.builder().addOperations(op).build();
-
-    SnapshotReqParams reqParams =
-        SnapshotReqParams.forSnapshotHttpReq(tableRef.reference(), "iceberg", null);
-
-    return Uni.createFrom()
-        .completionStage(catalogService.commit(tableRef.reference(), commit, reqParams))
-        .map(Stream::findFirst)
-        .map(Optional::orElseThrow);
   }
 }
