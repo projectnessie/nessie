@@ -66,10 +66,6 @@ public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFi
   @Override
   Optional<Duration> readTimeout();
 
-  /** Override the default response timeout for HTTP connections. */
-  @Override
-  Optional<Duration> responseTimeout();
-
   /** Custom settings for the ADLS Java client. */
   @WithName("configuration")
   @Override
