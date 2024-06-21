@@ -84,6 +84,7 @@ public class IcebergConfigurer {
   static final String GCS_NO_AUTH = "gcs.no-auth";
 
   static final String ADLS_SHARED_KEY_ACCOUNT_NAME = "adls.auth.shared-key.account.name";
+  static final String ADLS_SHARED_KEY_ACCOUNT_KEY = "adls.auth.shared-key.account.key";
   static final String ADLS_SAS_TOKEN_PREFIX = "adls.sas-token.";
   static final String ADLS_CONNECTION_STRING_PREFIX = "adls.connection-string.";
   static final String ADLS_READ_BLOCK_SIZE_BYTES = "adls.read.block-size-bytes";
@@ -306,7 +307,7 @@ public class IcebergConfigurer {
         .ifPresent(
             key -> {
               configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, key.name());
-              configOverrides.put("adls.auth.shared-key.account.key", key.secret());
+              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_KEY, key.secret());
             });
     fileSystemOptions
         .sasToken()
