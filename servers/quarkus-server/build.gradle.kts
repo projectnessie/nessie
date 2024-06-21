@@ -151,6 +151,7 @@ dependencies {
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
+  testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
   testFixturesApi(project(":nessie-minio-testcontainer"))
   testFixturesApi(project(":nessie-object-storage-mock"))

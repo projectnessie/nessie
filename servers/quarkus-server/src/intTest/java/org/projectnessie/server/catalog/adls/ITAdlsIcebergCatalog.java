@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.catalog.gcs;
+package org.projectnessie.server.catalog.adls;
 
 import static java.util.UUID.randomUUID;
 
@@ -23,14 +23,14 @@ import java.net.URI;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
-import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.AzuriteTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
 @QuarkusTestResource(
     restrictToAnnotatedClass = true,
-    value = GcsEmulatorTestResourceLifecycleManager.class)
+    value = AzuriteTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
-public class ITGcsIcebergCatalog extends AbstractIcebergCatalogTests {
+public class ITAdlsIcebergCatalog extends AbstractIcebergCatalogTests {
 
   @WarehouseLocation URI warehouseLocation;
 
