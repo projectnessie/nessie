@@ -24,6 +24,7 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobSourceOption;
 import com.google.cloud.storage.Storage.BlobWriteOption;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
@@ -38,6 +39,19 @@ public class GcsObjectIO implements ObjectIO {
 
   public GcsObjectIO(GcsStorageSupplier storageSupplier) {
     this.storageSupplier = storageSupplier;
+  }
+
+  @Override
+  public void ping(StorageUri uri) throws IOException {
+    GcsLocation location = gcsLocation(uri);
+    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+    @SuppressWarnings("resource")
+    Storage client = storageSupplier.forLocation(bucketOptions);
+    try {
+      client.get(BlobId.of(uri.requiredAuthority(), uri.requiredPath()));
+    } catch (RuntimeException e) {
+      throw new IOException(e);
+    }
   }
 
   @Override

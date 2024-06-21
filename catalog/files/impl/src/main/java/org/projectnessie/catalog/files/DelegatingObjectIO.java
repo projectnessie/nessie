@@ -25,6 +25,11 @@ public abstract class DelegatingObjectIO implements ObjectIO {
   protected abstract ObjectIO resolve(StorageUri uri);
 
   @Override
+  public void ping(StorageUri uri) throws IOException {
+    resolve(uri).ping(uri);
+  }
+
+  @Override
   public OutputStream writeObject(StorageUri uri) throws IOException {
     return resolve(uri).writeObject(uri);
   }

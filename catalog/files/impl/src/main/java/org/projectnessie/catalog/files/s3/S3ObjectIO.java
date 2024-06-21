@@ -46,6 +46,16 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
+  public void ping(StorageUri uri) throws IOException {
+    S3Client s3client = s3clientSupplier.getClient(uri);
+    try {
+      s3client.headBucket(b -> b.bucket(uri.requiredAuthority()));
+    } catch (RuntimeException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
   public InputStream readObject(StorageUri uri) throws IOException {
     checkArgument(uri != null, "Invalid location: null");
     String scheme = uri.scheme();
