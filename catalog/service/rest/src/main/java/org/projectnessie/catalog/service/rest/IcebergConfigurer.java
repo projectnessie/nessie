@@ -38,7 +38,6 @@ import org.projectnessie.catalog.files.s3.S3Credentials;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
@@ -301,22 +300,22 @@ public class IcebergConfigurer {
     Optional<String> fileSystem = location.container();
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
-    String accountName =
-        fileSystemOptions.account().map(BasicCredentials::name).orElse(location.storageAccount());
     // FIXME send account key and token?
     fileSystemOptions
         .account()
         .ifPresent(
             key -> {
-              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, accountName);
+              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, key.name());
               configOverrides.put("adls.auth.shared-key.account.key", key.secret());
             });
     fileSystemOptions
         .sasToken()
-        .ifPresent(s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + accountName, s.key()));
+        .ifPresent(
+            s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + location.storageAccount(), s.key()));
     fileSystemOptions
         .endpoint()
-        .ifPresent(e -> configOverrides.put(ADLS_CONNECTION_STRING_PREFIX + accountName, e));
+        .ifPresent(
+            e -> configOverrides.put(ADLS_CONNECTION_STRING_PREFIX + location.storageAccount(), e));
     adlsOptions
         .readBlockSize()
         .ifPresent(r -> configOverrides.put(ADLS_READ_BLOCK_SIZE_BYTES, Integer.toString(r)));
