@@ -57,12 +57,19 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractQuarkusRest
     soft.assertThat(body).contains("process_cpu_usage");
     soft.assertThat(body)
         // also assert that VersionStore metrics have the global tag application="Nessie"
-        .containsPattern("nessie_versionstore_request_seconds_max\\{.*application=\"Nessie\".*}");
+        .containsPattern(
+            "nessie_versionstore_request_seconds_max\\{.*application=\""
+                + getApplicationLabel()
+                + "\".*}");
     soft.assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
     soft.assertThat(body).contains("nessie_versionstore_request_seconds_count");
     soft.assertThat(body).contains("nessie_versionstore_request_seconds_sum");
     soft.assertThat(body).contains("http_server_connections_seconds_max");
     soft.assertThat(body).contains("http_server_connections_seconds_active_count");
+  }
+
+  protected String getApplicationLabel() {
+    return "Nessie";
   }
 
   @Test

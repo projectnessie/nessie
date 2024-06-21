@@ -41,6 +41,11 @@ class TestMetricsTags extends AbstractQuarkusRestWithMetrics {
                     .contains("environment=\"dev\""));
   }
 
+  @Override
+  protected String getApplicationLabel() {
+    return "NessieDev";
+  }
+
   public static class Profile extends QuarkusTestProfilePersistInmemory {
 
     @Override
