@@ -16,15 +16,12 @@
 package org.projectnessie.catalog.formats.iceberg.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import jakarta.annotation.Nullable;
-import java.util.List;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -33,15 +30,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @JsonDeserialize(as = ImmutableIcebergCommitViewRequest.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface IcebergCommitViewRequest {
-
-  List<IcebergUpdateRequirement> requirements();
-
-  List<IcebergMetadataUpdate> updates();
-
-  @Nullable // required for IcebergCommitTransactionRequest, null for a single update
-  @JsonInclude(JsonInclude.Include.NON_NULL)
-  IcebergTableIdentifier identifier();
+public interface IcebergCommitViewRequest extends IcebergUpdateEntityRequest {
 
   static Builder builder() {
     return ImmutableIcebergCommitViewRequest.builder();

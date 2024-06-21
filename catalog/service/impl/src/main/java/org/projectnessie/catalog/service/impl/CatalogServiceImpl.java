@@ -19,6 +19,9 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_ID;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_REF;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_CONTENT_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
@@ -237,14 +240,6 @@ public class CatalogServiceImpl implements CatalogService {
     Object result;
     String fileName;
 
-    Consumer<Map<String, String>> tablePropertiesTweak =
-        properties -> {
-          properties.put("nessie.catalog.content-id", snapshot.entity().nessieContentId());
-          properties.put("nessie.catalog.snapshot-id", snapshot.id().idAsString());
-          properties.put("nessie.commit.id", effectiveReference.getHash());
-          properties.put("nessie.commit.ref", effectiveReference.toPathString());
-        };
-
     switch (reqParams.snapshotFormat()) {
       case NESSIE_SNAPSHOT:
         fileName =
@@ -263,7 +258,9 @@ public class CatalogServiceImpl implements CatalogService {
         // TODO Add a check that the original table format was Iceberg (not Delta)
         result =
             nessieTableSnapshotToIceberg(
-                snapshot, optionalIcebergSpec(reqParams.reqVersion()), tablePropertiesTweak);
+                snapshot,
+                optionalIcebergSpec(reqParams.reqVersion()),
+                metadataPropertiesTweak(snapshot, effectiveReference));
 
         fileName = "00000-" + snapshot.id().idAsString() + ".metadata.json";
         break;
@@ -275,6 +272,15 @@ public class CatalogServiceImpl implements CatalogService {
         effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
+  private Consumer<Map<String, String>> metadataPropertiesTweak(
+      NessieEntitySnapshot<?> snapshot, Reference effectiveReference) {
+    return properties -> {
+      properties.put(NESSIE_CONTENT_ID, snapshot.entity().nessieContentId());
+      properties.put(NESSIE_COMMIT_ID, effectiveReference.getHash());
+      properties.put(NESSIE_COMMIT_REF, effectiveReference.getName());
+    };
+  }
+
   private SnapshotResponse snapshotViewResponse(
       ContentKey key,
       Content content,
@@ -283,14 +289,6 @@ public class CatalogServiceImpl implements CatalogService {
       Reference effectiveReference) {
     Object result;
     String fileName;
-
-    Consumer<Map<String, String>> tablePropertiesTweak =
-        properties -> {
-          properties.put("nessie.catalog.content-id", snapshot.entity().nessieContentId());
-          properties.put("nessie.catalog.snapshot-id", snapshot.id().idAsString());
-          properties.put("nessie.commit.id", effectiveReference.getHash());
-          properties.put("nessie.commit.ref", effectiveReference.toPathString());
-        };
 
     switch (reqParams.snapshotFormat()) {
       case NESSIE_SNAPSHOT:
@@ -310,7 +308,9 @@ public class CatalogServiceImpl implements CatalogService {
         // TODO Add a check that the original table format was Iceberg (not Delta)
         result =
             nessieViewSnapshotToIceberg(
-                snapshot, optionalIcebergSpec(reqParams.reqVersion()), tablePropertiesTweak);
+                snapshot,
+                optionalIcebergSpec(reqParams.reqVersion()),
+                metadataPropertiesTweak(snapshot, effectiveReference));
 
         fileName = "00000-" + snapshot.id().idAsString() + ".metadata.json";
         break;
