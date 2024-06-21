@@ -1542,8 +1542,7 @@ public class NessieModelIceberg {
   public static Content icebergMetadataToContent(
       String location, IcebergViewMetadata snapshot, String contentId) {
     IcebergViewVersion version = snapshot.currentVersion();
-    return IcebergView.of(
-        contentId, location, snapshot.currentVersionId(), version.schemaId(), "", "");
+    return IcebergView.of(contentId, location, snapshot.currentVersionId(), version.schemaId());
   }
 
   public static String typeToEntityName(Content.Type type) {
