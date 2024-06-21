@@ -28,7 +28,7 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractQuarkusRest
 
   // this test is executed after all tests from the base class
 
-  private String getMetrics() {
+  protected String getMetrics() {
     int managementPort = Integer.getInteger("quarkus.management.port");
     URI managementBaseUri;
     try {

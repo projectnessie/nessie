@@ -237,6 +237,9 @@ nessie.metrics.tags.environment=prod
 nessie.metrics.tags.region=us-west-2
 ```
 
+Note that by default Nessie adds one tag: `application=Nessie`. You can override this tag by setting
+the `nessie.metrics.tags.application=<new-value>` property.
+
 A standard Grafana dashboard is available in the `grafana` directory of the Nessie repository [here]
 (https://github.com/projectnessie/nessie/blob/main/grafana/nessie.json). You can use this dashboard
 to visualize the metrics scraped by Prometheus. Note that this dashboard is a starting point and may
