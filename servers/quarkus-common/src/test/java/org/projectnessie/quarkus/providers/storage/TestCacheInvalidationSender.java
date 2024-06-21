@@ -105,7 +105,7 @@ public class TestCacheInvalidationSender {
             () ->
                 new CacheInvalidationSender(vertx, config, 80, senderId) {
                   @Override
-                  Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
+                  Future<List<String>> resolveServiceNames(List<String> serviceNames) {
                     return failedFuture(new RuntimeException("foo"));
                   }
 
@@ -139,15 +139,15 @@ public class TestCacheInvalidationSender {
     Semaphore continueSemaphore = new Semaphore(0);
     Semaphore submittedSemaphore = new Semaphore(0);
     List<String> currentAddresses = List.of("127.1.1.1");
-    AtomicReference<Future<Stream<String>>> resolveResult =
-        new AtomicReference<>(succeededFuture(currentAddresses.stream()));
+    AtomicReference<Future<List<String>>> resolveResult =
+        new AtomicReference<>(succeededFuture(currentAddresses));
     AtomicReference<List<String>> submitResolvedAddresses = new AtomicReference<>();
 
     try {
       CacheInvalidationSender sender =
           new CacheInvalidationSender(vertx, config, 80, senderId) {
             @Override
-            Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
+            Future<List<String>> resolveServiceNames(List<String> serviceNames) {
               try {
                 assertThat(resolveSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
               } catch (InterruptedException e) {
@@ -180,7 +180,7 @@ public class TestCacheInvalidationSender {
 
       // simulate change of resolved addresses
       currentAddresses = List.of("127.2.2.2", "127.3.3.3");
-      resolveResult.set(succeededFuture(currentAddresses.stream()));
+      resolveResult.set(succeededFuture(currentAddresses));
       resolveSemaphore.release();
       // wait until next call to resolveServiceNames() has been triggered
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
@@ -205,7 +205,7 @@ public class TestCacheInvalidationSender {
 
       // simulate another change of resolved addresses
       currentAddresses = List.of("127.4.4.4", "127.5.5.5");
-      resolveResult.set(succeededFuture(currentAddresses.stream()));
+      resolveResult.set(succeededFuture(currentAddresses));
       resolveSemaphore.release();
       // wait until next call to resolveServiceNames() has been triggered
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
@@ -234,8 +234,8 @@ public class TestCacheInvalidationSender {
     CacheInvalidationSender sender =
         new CacheInvalidationSender(vertx, config, 80, senderId) {
           @Override
-          Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
-            return succeededFuture(Stream.empty());
+          Future<List<String>> resolveServiceNames(List<String> serviceNames) {
+            return succeededFuture(List.of());
           }
 
           @Override
@@ -280,8 +280,8 @@ public class TestCacheInvalidationSender {
     CacheInvalidationSender sender =
         new CacheInvalidationSender(vertx, config, 80, senderId) {
           @Override
-          Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
-            return succeededFuture(resolvedServiceNames.stream());
+          Future<List<String>> resolveServiceNames(List<String> serviceNames) {
+            return succeededFuture(resolvedServiceNames);
           }
 
           @Override
@@ -319,8 +319,8 @@ public class TestCacheInvalidationSender {
     CacheInvalidationSender sender =
         new CacheInvalidationSender(vertx, config, 80, senderId) {
           @Override
-          Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
-            return succeededFuture(resolvedServiceNames.stream());
+          Future<List<String>> resolveServiceNames(List<String> serviceNames) {
+            return succeededFuture(resolvedServiceNames);
           }
 
           @Override
@@ -392,8 +392,8 @@ public class TestCacheInvalidationSender {
       CacheInvalidationSender sender =
           new CacheInvalidationSender(vertx, config, uri.getPort(), senderId) {
             @Override
-            Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
-              return succeededFuture(Stream.of(uri.getHost()));
+            Future<List<String>> resolveServiceNames(List<String> serviceNames) {
+              return succeededFuture(List.of(uri.getHost()));
             }
           };
 
@@ -450,8 +450,8 @@ public class TestCacheInvalidationSender {
       CacheInvalidationSender sender =
           new CacheInvalidationSender(vertx, config, uri.getPort(), senderId) {
             @Override
-            Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
-              return succeededFuture(Stream.of(uri.getHost()));
+            Future<List<String>> resolveServiceNames(List<String> serviceNames) {
+              return succeededFuture(List.of(uri.getHost()));
             }
           };
 
@@ -501,8 +501,8 @@ public class TestCacheInvalidationSender {
       CacheInvalidationSender sender =
           new CacheInvalidationSender(vertx, config, uri.getPort(), senderId) {
             @Override
-            Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
-              return succeededFuture(Stream.of(uri.getHost()));
+            Future<List<String>> resolveServiceNames(List<String> serviceNames) {
+              return succeededFuture(List.of(uri.getHost()));
             }
           };
 

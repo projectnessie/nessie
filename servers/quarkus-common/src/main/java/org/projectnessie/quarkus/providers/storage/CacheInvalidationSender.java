@@ -53,7 +53,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
@@ -137,7 +136,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   private Future<List<String>> updateServiceNames() {
     Set<String> previous = new HashSet<>(resolvedAddresses);
     return resolveServiceNames(serviceNames)
-        .map(all -> all.filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
+        .map(all -> all.stream().filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
         .onSuccess(
             all -> {
               // refresh addresses regularly
@@ -174,7 +173,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   @VisibleForTesting
-  Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
+  Future<List<String>> resolveServiceNames(List<String> serviceNames) {
     return addressResolver.resolveAll(serviceNames);
   }
 

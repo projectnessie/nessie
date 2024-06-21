@@ -147,7 +147,7 @@ final class AddressResolver {
         });
   }
 
-  Future<Stream<String>> resolveAll(List<String> names) {
+  Future<List<String>> resolveAll(List<String> names) {
     CompositeFuture composite = Future.all(names.stream().map(this::resolve).toList());
     return composite.map(
         c ->
@@ -160,6 +160,7 @@ final class AddressResolver {
                       return casted;
                     })
                 .reduce(Stream::concat)
-                .orElse(Stream.empty()));
+                .map(Stream::toList)
+                .orElse(List.of()));
   }
 }
