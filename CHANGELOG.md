@@ -18,6 +18,7 @@ as necessary. Empty sections will not end in the release notes.
   define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
   Such tags are added to all metrics published by Nessie.
 - Readiness/health check testing the general availability of the object stores configured for the warehouses.
+- Helm chart with support for Iceberg REST
 
 ### Changes
 
@@ -27,6 +28,7 @@ as necessary. Empty sections will not end in the release notes.
 
 * S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
   S3 request signing before 1.5.0 works now. 
+* Fix service-name resolution in k8s, spamming the Nessie log.
 
 ### Commits
 
