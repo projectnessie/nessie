@@ -25,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -66,8 +65,6 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
   private static final String USER_DEVICE_AUTH_URL = "/auth/realms/quarkus/device";
 
   @OidcWireMock private WireMockServer wireMockServer;
-
-  private volatile StubMapping authPendingMapping;
 
   @Test
   void testExpired() {
@@ -202,18 +199,17 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
                     .withHeader("Content-Type", "text/html")
                     .withBody("<html><body>Device code received!</body></html>")));
     // Tokens endpoint: initially configured to return "authorization pending"
-    authPendingMapping =
-        wireMockServer.stubFor(
-            WireMock.post(TOKEN_ENDPOINT_PATH)
-                .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
-                .withRequestBody(containing("device_code"))
-                .willReturn(
-                    WireMock.aResponse()
-                        .withStatus(400)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(
-                            "{\"error\":\"authorization_pending\","
-                                + "\"error_description\":\"Authorization pending\"}")));
+    wireMockServer.stubFor(
+        WireMock.post(TOKEN_ENDPOINT_PATH)
+            .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+            .withRequestBody(containing("device_code"))
+            .willReturn(
+                WireMock.aResponse()
+                    .withStatus(400)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        "{\"error\":\"authorization_pending\","
+                            + "\"error_description\":\"Authorization pending\"}")));
   }
 
   @BeforeAll
@@ -301,11 +297,11 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
           // Reconfigure token endpoint to send a valid token
           wireMockServer.stubFor(
               WireMock.post(TOKEN_ENDPOINT_PATH)
+                  .atPriority(1)
                   .withHeader(
                       "Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
                   .withRequestBody(containing("device_code"))
                   .willReturn(successfulResponse(VALID_TOKEN)));
-          wireMockServer.removeStubMapping(authPendingMapping);
         });
     return resourceOwner;
   }
