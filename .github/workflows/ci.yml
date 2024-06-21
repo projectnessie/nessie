@@ -376,8 +376,8 @@ jobs:
         with:
           job-name: 'int-test-integrations'
 
-  int-test-quarkus:
-    name: CI intTest Quarkus
+  int-test-quarkus-server:
+    name: CI intTest Quarkus Server
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     strategy:
@@ -405,12 +405,110 @@ jobs:
             ./gradlew :nessie-quarkus:intTest --scan || \
             ./gradlew :nessie-quarkus:intTest --scan
 
-      - name: Gradle / intTest Quarkus CLI
+      - name: Dump quarkus.log
+        if: ${{ failure() }}
+        run: |
+          find . -path "**/build/quarkus.log" | while read ql ; do
+            echo "::group::Quarkus build log $ql"
+            cat $ql
+            echo "::endgroup::"
+          done
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-quarkus-server-reports
+          path: |
+            **/build/quarkus.log
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
+
+      - name: Save partial Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          job-name: 'int-test-quarkus-server'
+          java-version: ${{ matrix.java-version }}
+
+  int-test-quarkus-tool:
+    name: CI intTest Admin Tool
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      max-parallel: 2
+      matrix:
+        java-version: ['17']
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
+        uses: ./.github/actions/dev-tool-java
+        with:
+          java-version: ${{ matrix.java-version }}
+
+      - name: Prepare Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          java-version: ${{ matrix.java-version }}
+
+      - name: Gradle / intTest Admin Tool
         run:
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
           ./gradlew :nessie-server-admin-tool:intTest --scan || \
             ./gradlew :nessie-server-admin-tool:intTest --scan || \
             ./gradlew :nessie-server-admin-tool:intTest --scan
+
+      - name: Dump quarkus.log
+        if: ${{ failure() }}
+        run: |
+          find . -path "**/build/quarkus.log" | while read ql ; do
+            echo "::group::Quarkus build log $ql"
+            cat $ql
+            echo "::endgroup::"
+          done
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-quarkus-tool-reports
+          path: |
+            **/build/quarkus.log
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
+
+      - name: Save partial Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          job-name: 'int-test-quarkus-tool'
+          java-version: ${{ matrix.java-version }}
+
+  int-test-quarkus-events:
+    name: CI intTest Quarkus Events
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      max-parallel: 2
+      matrix:
+        java-version: ['17']
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
+        uses: ./.github/actions/dev-tool-java
+        with:
+          java-version: ${{ matrix.java-version }}
+
+      - name: Prepare Gradle build cache
+        uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / intTest Quarkus Events
         run:
@@ -432,7 +530,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         if: ${{ failure() }}
         with:
-          name: ci-inttest-quarkus-reports
+          name: ci-inttest-quarkus-events-reports
           path: |
             **/build/quarkus.log
             **/build/reports/*
@@ -443,7 +541,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-save
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          job-name: 'int-test-quarkus'
+          job-name: 'int-test-quarkus-events'
           java-version: ${{ matrix.java-version }}
 
   determine-jobs:
@@ -938,7 +1036,9 @@ jobs:
       - int-test
       - int-test-stores
       - int-test-integrations
-      - int-test-quarkus
+      - int-test-quarkus-server
+      - int-test-quarkus-tool
+      - int-test-quarkus-events
     strategy:
       max-parallel: 2
       matrix:
