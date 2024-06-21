@@ -70,10 +70,11 @@ public class DeleteCatalogTasks extends BaseCommand {
 
   @CommandLine.Option(
       names = {"-s", "--task-status"},
+      defaultValue = "FAILURE",
       description =
           "Delete tasks having these statuses (zero or more). "
               + "If not set, only failed tasks for matching content objects are deleted.")
-  private List<String> statuses;
+  private EnumSet<TaskStatus> statuses;
 
   @CommandLine.Option(
       names = {"-r", "--ref"},
@@ -90,13 +91,6 @@ public class DeleteCatalogTasks extends BaseCommand {
   @Override
   public Integer call() throws ReferenceNotFoundException {
     warnOnInMemory();
-
-    EnumSet<TaskStatus> deleteStatuses = EnumSet.noneOf(TaskStatus.class);
-    if (statuses == null || statuses.isEmpty()) {
-      deleteStatuses.add(TaskStatus.FAILURE);
-    } else {
-      statuses.forEach(s -> deleteStatuses.add(TaskStatus.valueOf(s)));
-    }
 
     StoreIndex<CommitOp> index = index(hash(hash, ref));
     try (Stream<ContentKey> keys = iterateKeys(index)) {
@@ -117,7 +111,7 @@ public class DeleteCatalogTasks extends BaseCommand {
                 ObjId[] idsToDelete =
                     Arrays.stream(objs)
                         .filter(Objects::nonNull)
-                        .filter(o -> deleteStatuses.contains(o.taskState().status()))
+                        .filter(o -> statuses.contains(o.taskState().status()))
                         .map(Obj::id)
                         .toArray(ObjId[]::new);
 
