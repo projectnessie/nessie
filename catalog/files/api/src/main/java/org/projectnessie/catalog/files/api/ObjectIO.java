@@ -21,6 +21,8 @@ import java.io.OutputStream;
 import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
+  void ping(StorageUri uri) throws IOException;
+
   InputStream readObject(StorageUri uri) throws IOException;
 
   OutputStream writeObject(StorageUri uri) throws IOException;

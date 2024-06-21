@@ -17,6 +17,7 @@ as necessary. Empty sections will not end in the release notes.
 - Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
   define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
   Such tags are added to all metrics published by Nessie.
+- Readiness/health check testing the general availability of the object stores configured for the warehouses.
 
 ### Changes
 

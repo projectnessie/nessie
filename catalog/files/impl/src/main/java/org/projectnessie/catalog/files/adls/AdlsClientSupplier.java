@@ -61,7 +61,7 @@ public final class AdlsClientSupplier {
     return fileSystem.getFileClient(path);
   }
 
-  private DataLakeFileSystemClient fileSystemClient(AdlsLocation location) {
+  DataLakeFileSystemClient fileSystemClient(AdlsLocation location) {
     ConfigurationBuilder clientConfig = new ConfigurationBuilder();
     adlsOptions.configurationOptions().forEach(clientConfig::putProperty);
 

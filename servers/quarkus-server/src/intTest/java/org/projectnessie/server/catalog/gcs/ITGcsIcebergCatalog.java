@@ -22,7 +22,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.URI;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
-import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
+import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
@@ -30,7 +30,7 @@ import org.projectnessie.server.catalog.WarehouseLocation;
     restrictToAnnotatedClass = true,
     value = GcsEmulatorTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
-public class ITGcsIcebergCatalog extends AbstractIcebergCatalogTests {
+public class ITGcsIcebergCatalog extends AbstractIcebergCatalogIntTests {
 
   @WarehouseLocation URI warehouseLocation;
 

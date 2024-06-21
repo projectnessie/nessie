@@ -29,14 +29,14 @@ import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.projectnessie.minio.MinioContainer;
-import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
+import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 
 @QuarkusTestResource(
     restrictToAnnotatedClass = true,
     value = MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
-public class ITS3IcebergCatalog extends AbstractIcebergCatalogTests {
+public class ITS3IcebergCatalog extends AbstractIcebergCatalogIntTests {
 
   @SuppressWarnings("unused")
   // Injected by MinioTestResourceLifecycleManager

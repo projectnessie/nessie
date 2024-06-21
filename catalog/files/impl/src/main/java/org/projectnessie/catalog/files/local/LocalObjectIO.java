@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.local;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +28,14 @@ import org.projectnessie.storage.uri.StorageUri;
 
 /** An {@link ObjectIO} implementation purely for unit tests - and nothing else. */
 public class LocalObjectIO implements ObjectIO {
+  @Override
+  public void ping(StorageUri uri) throws IOException {
+    Path path = filePath(uri);
+    if (!Files.isDirectory(path)) {
+      throw new FileNotFoundException(path.toString());
+    }
+  }
+
   @Override
   public InputStream readObject(StorageUri uri) throws IOException {
     return Files.newInputStream(filePath(uri));

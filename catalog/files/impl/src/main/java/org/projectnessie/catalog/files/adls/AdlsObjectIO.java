@@ -15,11 +15,15 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
+
 import com.azure.storage.blob.models.ParallelTransferOptions;
 import com.azure.storage.file.datalake.DataLakeFileClient;
+import com.azure.storage.file.datalake.DataLakeFileSystemClient;
 import com.azure.storage.file.datalake.options.DataLakeFileInputStreamOptions;
 import com.azure.storage.file.datalake.options.DataLakeFileOutputStreamOptions;
 import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -31,6 +35,18 @@ public class AdlsObjectIO implements ObjectIO {
 
   public AdlsObjectIO(AdlsClientSupplier clientSupplier) {
     this.clientSupplier = clientSupplier;
+  }
+
+  @Override
+  public void ping(StorageUri uri) throws IOException {
+    AdlsLocation location = adlsLocation(uri);
+
+    DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(location);
+    try {
+      fileSystem.getAccessPolicy();
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   @Override
