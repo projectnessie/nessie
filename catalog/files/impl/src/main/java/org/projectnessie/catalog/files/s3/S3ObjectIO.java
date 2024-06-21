@@ -25,17 +25,26 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.BackendThrottledException;
 import org.projectnessie.catalog.files.api.NonRetryableException;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class S3ObjectIO implements ObjectIO {
+  private static final Logger LOGGER = LoggerFactory.getLogger(S3ObjectIO.class);
 
   private final S3ClientSupplier s3clientSupplier;
   private final Clock clock;
@@ -102,6 +111,31 @@ public class S3ObjectIO implements ObjectIO {
             RequestBody.fromBytes(toByteArray()));
       }
     };
+  }
+
+  @Override
+  public void deleteObjects(List<StorageUri> uris) {
+    Map<String, List<StorageUri>> bucketToUris =
+        uris.stream().collect(Collectors.groupingBy(StorageUri::requiredAuthority));
+
+    for (Map.Entry<String, List<StorageUri>> bucketDeletes : bucketToUris.entrySet()) {
+      String bucket = bucketDeletes.getKey();
+      S3Client s3client = s3clientSupplier.getClient(bucket);
+
+      List<StorageUri> locations = bucketDeletes.getValue();
+      List<ObjectIdentifier> objectIdentifiers =
+          locations.stream()
+              .map(S3ObjectIO::withoutLeadingSlash)
+              .map(key -> ObjectIdentifier.builder().key(key).build())
+              .collect(Collectors.toList());
+
+      DeleteObjectsRequest.Builder deleteObjectsRequest =
+          DeleteObjectsRequest.builder()
+              .bucket(bucket)
+              .delete(Delete.builder().objects(objectIdentifiers).build());
+
+      s3client.deleteObjects(deleteObjectsRequest.build());
+    }
   }
 
   private static String withoutLeadingSlash(StorageUri uri) {

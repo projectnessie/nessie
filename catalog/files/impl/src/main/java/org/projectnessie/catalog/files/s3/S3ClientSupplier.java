@@ -81,8 +81,10 @@ public class S3ClientSupplier {
     checkArgument(isS3scheme(scheme), "Invalid S3 scheme: %s", location);
     String bucketName = location.requiredAuthority();
 
-    // Supply an empty profile file
+    return getClient(bucketName);
+  }
 
+  public S3Client getClient(String bucketName) {
     S3BucketOptions bucketOptions =
         s3options.effectiveOptionsForBucket(Optional.of(bucketName), secretsProvider);
 
