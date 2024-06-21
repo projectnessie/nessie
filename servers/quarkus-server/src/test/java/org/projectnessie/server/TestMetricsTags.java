@@ -37,9 +37,8 @@ class TestMetricsTags extends AbstractQuarkusRestWithMetrics {
                 assertThat(line)
                     .contains("nessie_versionstore_request_seconds_max")
                     .contains("application=\"NessieDev\"")
-                    .contains("service=\"Nessie\"")
+                    .contains("service=\"nessie\"")
                     .contains("environment=\"dev\""));
-    ;
   }
 
   public static class Profile extends QuarkusTestProfilePersistInmemory {
@@ -48,7 +47,7 @@ class TestMetricsTags extends AbstractQuarkusRestWithMetrics {
     public Map<String, String> getConfigOverrides() {
       Map<String, String> config = new HashMap<>(super.getConfigOverrides());
       config.put("nessie.metrics.tags.application", "NessieDev");
-      config.put("nessie.metrics.tags.service", "Nessie");
+      config.put("nessie.metrics.tags.service", "nessie");
       config.put("nessie.metrics.tags.environment", "dev");
       return config;
     }
