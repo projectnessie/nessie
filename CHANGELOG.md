@@ -14,6 +14,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
+  define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
+  Such tags are added to all metrics published by Nessie.
+
 ### Changes
 
 ### Deprecations

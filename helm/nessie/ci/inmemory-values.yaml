@@ -2,6 +2,11 @@
 versionStoreType: IN_MEMORY
 tracing:
   enabled: true
+metrics:
+  enabled: true
+  tags:
+    service: nessie
+    environment: dev
 service:
   sessionAffinity: ClientIP
 catalog:
