@@ -21,7 +21,6 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLog
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.hashNotFound;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.objectNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -43,7 +42,6 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.versionstore.ContentMapping;
-import org.projectnessie.versioned.storage.versionstore.RefMapping;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -147,7 +145,7 @@ public class CheckContent extends BaseCommand {
 
     generator.writeStartArray();
 
-    Hash hash = hash();
+    Hash hash = hash(this.hash, ref);
     if (keyElements != null && !keyElements.isEmpty()) {
       check(hash, List.of(ContentKey.of(keyElements)));
     } else {
@@ -156,19 +154,6 @@ public class CheckContent extends BaseCommand {
 
     generator.writeEndArray();
     generator.flush();
-  }
-
-  private Hash hash() throws ReferenceNotFoundException {
-    if (hash != null) {
-      return Hash.of(hash);
-    }
-
-    String effectiveRef = ref;
-    if (effectiveRef == null) {
-      effectiveRef = serverConfig.getDefaultBranch();
-    }
-
-    return resolveRefHead(effectiveRef);
   }
 
   private void check(Hash hash, List<ContentKey> keys) {
@@ -241,10 +226,6 @@ public class CheckContent extends BaseCommand {
     } catch (Exception e) {
       throw new AssertionError(e);
     }
-  }
-
-  private Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
-    return objIdToHash(new RefMapping(persist).resolveNamedRef(effectiveRef).pointer());
   }
 
   private void iterateKeys(Hash hash) throws ReferenceNotFoundException {

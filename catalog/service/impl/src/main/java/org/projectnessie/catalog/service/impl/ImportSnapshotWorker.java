@@ -42,6 +42,8 @@ import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
 import org.projectnessie.catalog.model.snapshot.TableFormat;
+import org.projectnessie.catalog.service.objtypes.EntityObj;
+import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
