@@ -19,6 +19,9 @@ services:
   nessie:
     image: ghcr.io/projectnessie/nessie:0.90.4
     ports:
-      - 19120:19120
+      # API port
+      - "19120:19120"
+      # Management port (metrics and health checks)
+      - "9000:9000"
     environment:
       - nessie.version.store.type=IN_MEMORY # Ephemeral storage, data is lost during reset.
