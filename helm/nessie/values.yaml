@@ -162,6 +162,8 @@ catalog:
       # -- Iceberg config overrides specific to this warehouse. They override any defaults specified
       # above in catalog.iceberg.configOverrides.
       configOverrides: {}
+    # In rare cases it might be legit to turn off the object-stores readiness check.
+    objectStoresHealthCheckEnabled: true
 
   # -- Catalog storage settings.
   storage:

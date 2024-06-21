@@ -12,6 +12,8 @@ service:
 catalog:
   enabled: true
   iceberg:
+    # the sample bucket cannot be checked
+    objectStoresHealthCheckEnabled: false
     defaultWarehouse: warehouse1
     configDefaults:
       default1: value1
