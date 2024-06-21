@@ -232,7 +232,7 @@ to add a tag `environment=prod` to all metrics, set `nessie.metrics.tags.environ
 tags can be added, such as below:
 
 ```properties
-nessie.metrics.tags.service=Nessie
+nessie.metrics.tags.service=nessie
 nessie.metrics.tags.environment=prod
 nessie.metrics.tags.region=us-west-2
 ```
