@@ -15,7 +15,6 @@
  */
 package org.projectnessie.server;
 
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.RestAssured;
