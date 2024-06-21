@@ -90,6 +90,6 @@ public final class IcebergConstants {
           NESSIE_COMMIT_ID,
           NESSIE_COMMIT_REF);
 
-  public static final Set<String> TRANSIENT_PROPERTIES =
+  public static final Set<String> DERIVED_PROPERTIES =
       ImmutableSet.of(NESSIE_CONTENT_ID, NESSIE_COMMIT_ID, NESSIE_COMMIT_REF);
 }

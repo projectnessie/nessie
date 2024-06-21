@@ -29,8 +29,8 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.IN
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.INITIAL_PARTITION_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.NO_SNAPSHOT_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergViewHistoryEntry.icebergViewHistoryEntry;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.DERIVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.RESERVED_PROPERTIES;
-import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.TRANSIENT_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.ReuseOrCreate.reuseOrCreate;
 import static org.projectnessie.catalog.model.id.NessieId.transientNessieId;
 import static org.projectnessie.catalog.model.schema.types.NessieType.DEFAULT_TIME_PRECISION;
@@ -530,7 +530,7 @@ public class NessieModelIceberg {
         .properties()
         .forEach(
             (k, v) -> {
-              if (!TRANSIENT_PROPERTIES.contains(k)) {
+              if (!DERIVED_PROPERTIES.contains(k)) {
                 snapshot.putProperty(k, v);
               }
             });

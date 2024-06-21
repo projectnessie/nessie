@@ -20,7 +20,7 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
-import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.TRANSIENT_PROPERTIES;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.DERIVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.typeToEntityName;
 import static org.projectnessie.catalog.service.rest.DecodedPrefix.decodedPrefix;
 import static org.projectnessie.catalog.service.rest.NamespaceRef.namespaceRef;
@@ -286,7 +286,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
     providedProperties.forEach(
         (k, v) -> {
-          if (!TRANSIENT_PROPERTIES.contains(k)) {
+          if (!DERIVED_PROPERTIES.contains(k)) {
             properties.put(k, v);
           }
         });
