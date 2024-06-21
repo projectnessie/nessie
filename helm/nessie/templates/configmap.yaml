@@ -111,12 +111,20 @@ data:
     {{- else if eq .Values.tracing.sample "none" -}}
     {{- $_ = set $map "quarkus.otel.traces.sampler" "always_off" -}}
     {{- else -}}
-    {{- $_ = set $map "quarkus.otel.traces.sampler=" "parentbased_traceidratio" -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler" "parentbased_traceidratio" -}}
     {{- $_ = set $map "quarkus.otel.traces.sampler.arg" .Values.tracing.sample -}}
     {{- end -}}
     {{- end -}}
     {{- else -}}
     {{- $_ = set $map "quarkus.otel.sdk.disabled" true -}}
+    {{- end -}}
+
+    {{- if .Values.metrics.enabled -}}
+    {{- range $name, $value := .Values.metrics.tags -}}
+    {{- $_ = set $map (print "nessie.metrics.tags." $name) $value -}}
+    {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.micrometer.enabled" "false" -}}
     {{- end -}}
 
     {{- if .Values.catalog.enabled -}}

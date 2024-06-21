@@ -218,8 +218,55 @@ Related Quarkus settings:
 {% include './generated-docs/smallrye-nessie_server_authorization.md' %}
 
 ### Metrics
-Metrics are published using prometheus and can be collected via standard methods. See:
-[Prometheus](https://prometheus.io).
+
+Metrics are published using Micrometer; they are available from Nessie's management interface (port
+9000 by default) under the path `/q/metrics`. For example, if the server is running on localhost,
+the metrics can be accessed via http://localhost:9000/q/metrics.
+
+Metrics can be scraped by Prometheus or any compatible metrics scraping server. See:
+[Prometheus](https://prometheus.io) for more information.
+
+Additional tags can be added to the metrics by setting the `nessie.metrics.tags.*` property. Each
+tag is a key-value pair, where the key is the tag name and the value is the tag value. For example,
+to add a tag `environment=prod` to all metrics, set `nessie.metrics.tags.environment=prod`. Many
+tags can be added, such as below:
+
+```properties
+nessie.metrics.tags.service=nessie
+nessie.metrics.tags.environment=prod
+nessie.metrics.tags.region=us-west-2
+```
+
+Note that by default Nessie adds one tag: `application=Nessie`. You can override this tag by setting
+the `nessie.metrics.tags.application=<new-value>` property.
+
+A standard Grafana dashboard is available in the `grafana` directory of the Nessie repository [here]
+(https://github.com/projectnessie/nessie/blob/main/grafana/nessie.json). You can use this dashboard
+to visualize the metrics scraped by Prometheus. Note that this dashboard is a starting point and may
+need to be customized to fit your specific needs. 
+
+This Grafana dashboard expects the metrics to have a few tags defined: `service` and `instance`. The
+`instance` tag is generally added by Prometheus automatically, but the `service` tag needs to be
+added manually. You can configure Nessie to add this tag to all metrics by setting the below
+property:
+
+```properties
+nessie.metrics.tags.service=<service-name>
+```
+
+Alternatively, you can modify the dashboard to remove unnecessary tags, or configure Prometheus to
+add the missing ones. Here is an example configuration showing how to have the `service` tag added
+by Prometheus:
+
+```yaml
+scrape_configs:
+  - job_name: 'nessie'
+    metrics_path: /q/metrics
+    static_configs:
+      - targets: ['nessie:9000']
+        labels:
+          service: nessie
+```
 
 ### Traces
 

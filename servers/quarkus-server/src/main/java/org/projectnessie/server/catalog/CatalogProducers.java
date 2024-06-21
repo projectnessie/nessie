@@ -25,7 +25,9 @@ import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Disposes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -133,8 +135,9 @@ public class CatalogProducers {
   public S3SessionsManager s3SessionsManager(
       S3Options<?> s3options,
       @CatalogS3Client SdkHttpClient sdkClient,
-      MeterRegistry meterRegistry) {
-    return new S3SessionsManager(s3options, sdkClient, meterRegistry);
+      @Any Instance<MeterRegistry> meterRegistry) {
+    return new S3SessionsManager(
+        s3options, sdkClient, meterRegistry.isResolvable() ? meterRegistry.get() : null);
   }
 
   @Produces

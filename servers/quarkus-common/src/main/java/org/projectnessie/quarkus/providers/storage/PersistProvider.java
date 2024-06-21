@@ -123,7 +123,7 @@ public class PersistProvider {
   @Produces
   @Singleton
   public CacheBackend produceCacheBackend(
-      MeterRegistry meterRegistry,
+      @Any Instance<MeterRegistry> meterRegistry,
       DistributedCacheInvalidation invalidationSender,
       CacheInvalidationReceiver cacheInvalidationReceiver) {
     CacheSizing cacheSizing =
@@ -136,8 +136,10 @@ public class PersistProvider {
     int effectiveCacheSizeMB = cacheSizing.effectiveSizeInMB();
 
     if (effectiveCacheSizeMB > 0) {
-      CacheConfig.Builder cacheConfig =
-          CacheConfig.builder().capacityMb(effectiveCacheSizeMB).meterRegistry(meterRegistry);
+      CacheConfig.Builder cacheConfig = CacheConfig.builder().capacityMb(effectiveCacheSizeMB);
+      if (meterRegistry.isResolvable()) {
+        cacheConfig.meterRegistry(meterRegistry.get());
+      }
 
       storeConfig
           .referenceCacheTtl()

@@ -552,6 +552,15 @@ tracing:
     {}
     # service.name: my-nessie
 
+metrics:
+  # -- Specifies whether metrics for the nessie server should be enabled.
+  enabled: true
+  # -- Additional tags (dimensional labels) to add to the metrics.
+  tags:
+    {}
+    # service: nessie
+    # environment: production
+
 serviceMonitor:
   # -- Specifies whether a ServiceMonitor for Prometheus operator should be created.
   enabled: true

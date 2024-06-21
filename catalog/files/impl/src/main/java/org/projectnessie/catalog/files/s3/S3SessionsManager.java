@@ -63,7 +63,13 @@ public class S3SessionsManager {
 
   public S3SessionsManager(
       S3Options<?> options, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
-    this(options, System::currentTimeMillis, sdkHttpClient, null, Optional.of(meterRegistry), null);
+    this(
+        options,
+        System::currentTimeMillis,
+        sdkHttpClient,
+        null,
+        Optional.ofNullable(meterRegistry),
+        null);
   }
 
   @VisibleForTesting
