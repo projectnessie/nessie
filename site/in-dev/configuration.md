@@ -240,17 +240,20 @@ nessie.metrics.tags.region=us-west-2
 A standard Grafana dashboard is available in the `grafana` directory of the Nessie repository [here]
 (https://github.com/projectnessie/nessie/blob/main/grafana/nessie.json). You can use this dashboard
 to visualize the metrics scraped by Prometheus. Note that this dashboard is a starting point and may
-need to be customized to fit your specific needs. Also, this dashboard expects the metrics to have a
-few tags defined: `service` and `instance`. You can configure Nessie to add these tags by setting
-the below properties:
+need to be customized to fit your specific needs. 
+
+This Grafana dashboard expects the metrics to have a few tags defined: `service` and `instance`. The
+`instance` tag is generally added by Prometheus automatically, but the `service` tag needs to be
+added manually. You can configure Nessie to add this tag to all metrics by setting the below
+property:
 
 ```properties
 nessie.metrics.tags.service=<service-name>
-nessie.metrics.tags.instance=<instance-name>
 ```
 
-Alternatively, you can modify the dashboard to remove these tags, or configure Prometheus to add
-them. Here is an example configuration showing how to have these tags added by Prometheus:
+Alternatively, you can modify the dashboard to remove unnecessary tags, or configure Prometheus to
+add the missing ones. Here is an example configuration showing how to have the `service` tag added
+by Prometheus:
 
 ```yaml
 scrape_configs:
@@ -260,7 +263,6 @@ scrape_configs:
       - targets: ['nessie:9000']
         labels:
           service: nessie
-          instance: nessie
 ```
 
 ### Traces
