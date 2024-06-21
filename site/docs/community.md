@@ -10,6 +10,8 @@ Nessie is developed as a consensus-driven open source product under the Apache 2
 license. Development is done in the open leveraging GitHub issues, PRs and using
 Google Groups as a mailing list.
 
+<img src="../img/nessie-swim.png" width="150" height="auto">
+
 ## Get In Touch
 
 [![Zulip Chat](https://img.shields.io/badge/Zulip-Chat_With_Us-blue?color=4051b5&logo=zulip&style=for-the-badge&logoColor=white)](https://project-nessie.zulipchat.com/)
