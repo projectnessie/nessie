@@ -85,8 +85,7 @@ public class TestAddressResolver {
             .resolveAll(singletonList("projectnessie.org"))
             .toCompletionStage()
             .toCompletableFuture()
-            .get(1, TimeUnit.MINUTES)
-            .toList();
+            .get(1, TimeUnit.MINUTES);
     soft.assertThat(withoutSearchList).isNotEmpty();
 
     AddressResolver addressResolverWithSearch =
@@ -96,8 +95,7 @@ public class TestAddressResolver {
             .resolveAll(singletonList("projectnessie"))
             .toCompletionStage()
             .toCompletableFuture()
-            .get(1, TimeUnit.MINUTES)
-            .toList();
+            .get(1, TimeUnit.MINUTES);
     soft.assertThat(withSearchList).isNotEmpty().isNotEmpty();
 
     List<String> withSearchListQualified =
@@ -105,8 +103,7 @@ public class TestAddressResolver {
             .resolveAll(singletonList("projectnessie.org."))
             .toCompletionStage()
             .toCompletableFuture()
-            .get(1, TimeUnit.MINUTES)
-            .toList();
+            .get(1, TimeUnit.MINUTES);
     soft.assertThat(withSearchListQualified).isNotEmpty().isNotEmpty();
 
     soft.assertThat(withSearchList).containsExactlyInAnyOrderElementsOf(withoutSearchList);
@@ -145,7 +142,7 @@ public class TestAddressResolver {
     soft.assertThat(
             addressResolver
                 .resolveAll(singletonList("localhost"))
-                .map(s -> s.filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
+                .map(s -> s.stream().filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
                 .toCompletionStage()
                 .toCompletableFuture()
                 .get(1, TimeUnit.MINUTES))
