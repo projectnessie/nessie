@@ -83,7 +83,7 @@ jobs:
     name: Publish to Maven Central
     runs-on: ubuntu-22.04
     environment: release
-    timeout-minutes: 60
+    timeout-minutes: 150
     needs:
       - prepare
     env:

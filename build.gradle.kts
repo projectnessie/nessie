@@ -62,8 +62,8 @@ tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.Distribut
 //    closeAndReleaseSonatypeStagingRepository
 nexusPublishing {
   transitionCheckOptions {
-    // default==60 (10 minutes), wait up to 60 minutes
-    maxRetries = 360
+    // default==60 (10 minutes), wait up to 120 minutes
+    maxRetries = 720
     // default 10s
     delayBetween = java.time.Duration.ofSeconds(10)
   }
