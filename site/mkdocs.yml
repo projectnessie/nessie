@@ -13,8 +13,8 @@ use_directory_urls: true
 theme:
   name: material
   custom_dir: overrides
-  logo: img/small.svg
-  favicon: img/fav2.png
+  logo: img/nessie.svg
+  favicon: img/fav3.png
 
   features:
     - navigation.tabs
