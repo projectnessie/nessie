@@ -1,6 +1,8 @@
 ---
 search:
   exclude: true
+search:
+  exclude: true
 title: "Client Configuration"
 ---
 
