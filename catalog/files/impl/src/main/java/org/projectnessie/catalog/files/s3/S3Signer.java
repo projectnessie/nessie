@@ -26,24 +26,22 @@ import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.signer.AwsS3V4Signer;
-import software.amazon.awssdk.auth.signer.internal.SignerConstant;
-import software.amazon.awssdk.auth.signer.params.AwsS3V4SignerParams;
-import software.amazon.awssdk.auth.signer.params.SignerChecksumParams;
-import software.amazon.awssdk.core.checksums.Algorithm;
+import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
-import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
+import software.amazon.awssdk.http.auth.spi.signer.SignRequest;
+import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class S3Signer implements RequestSigner {
 
-  private final AwsS3V4Signer signer = AwsS3V4Signer.create();
+  private final AwsV4HttpSigner signer = AwsV4HttpSigner.create();
   private final S3Options<? extends S3BucketOptions> s3Options;
   private final SecretsProvider secretsProvider;
   private final S3Sessions s3sessions;
-
-  static final String EMPTY_BODY_SHA256 =
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
   public S3Signer(
       S3Options<? extends S3BucketOptions> s3Options,
@@ -66,11 +64,6 @@ public class S3Signer implements RequestSigner {
       throw new IllegalArgumentException("DELETE requests must have a non-empty body");
     }
 
-    S3BucketOptions bucketOptions =
-        s3Options.effectiveOptionsForBucket(clientRequest.bucket(), secretsProvider);
-    AwsCredentialsProvider credentialsProvider =
-        S3Clients.awsCredentialsProvider(bucketOptions, s3sessions);
-
     SdkHttpFullRequest.Builder request =
         SdkHttpFullRequest.builder()
             .uri(uri)
@@ -78,31 +71,31 @@ public class S3Signer implements RequestSigner {
             .method(SdkHttpMethod.fromValue(clientRequest.method()))
             .headers(clientRequest.headers());
 
-    if (body.isEmpty()) {
-      request.putHeader(SignerConstant.X_AMZ_CONTENT_SHA256, EMPTY_BODY_SHA256);
-    } else {
-      request.contentStreamProvider(() -> new ByteArrayInputStream(body.get().getBytes(UTF_8)));
-    }
+    S3BucketOptions bucketOptions =
+        s3Options.effectiveOptionsForBucket(clientRequest.bucket(), secretsProvider);
+    AwsCredentialsProvider credentialsProvider =
+        S3Clients.awsCredentialsProvider(bucketOptions, s3sessions);
+    AwsCredentialsIdentity credentials = credentialsProvider.resolveCredentials();
 
-    AwsS3V4SignerParams params =
-        AwsS3V4SignerParams.builder()
-            .signingRegion(Region.of(clientRequest.region()))
-            .signingName("s3")
-            .awsCredentials(credentialsProvider.resolveCredentials())
-            .enableChunkedEncoding(false)
-            .timeOffset(0)
-            .doubleUrlEncode(false)
-            .enablePayloadSigning(false)
-            .checksumParams(
-                SignerChecksumParams.builder()
-                    .algorithm(Algorithm.SHA256)
-                    .isStreamingRequest(false)
-                    .checksumHeaderName(SignerConstant.X_AMZ_CONTENT_SHA256)
-                    .build())
-            .build();
+    SignRequest.Builder<AwsCredentialsIdentity> signRequest =
+        SignRequest.builder(credentials)
+            .request(request.build())
+            .putProperty(AwsV4HttpSigner.REGION_NAME, clientRequest.region())
+            .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, S3Client.SERVICE_NAME)
+            .putProperty(AwsV4HttpSigner.DOUBLE_URL_ENCODE, false)
+            .putProperty(AwsV4HttpSigner.NORMALIZE_PATH, false)
+            .putProperty(AwsV4HttpSigner.CHUNK_ENCODING_ENABLED, false)
+            .putProperty(AwsV4HttpSigner.PAYLOAD_SIGNING_ENABLED, false);
 
-    SdkHttpFullRequest signed = signer.sign(request.build(), params);
+    body.map(
+            s -> (ContentStreamProvider) () -> new ByteArrayInputStream(body.get().getBytes(UTF_8)))
+        .ifPresent(signRequest::payload);
+    // Eventually refactor the above line to this one:
+    // body.map(ContentStreamProvider::fromUtf8String).ifPresent(signRequest::payload);
 
-    return ImmutableSigningResponse.of(signed.getUri(), signed.headers());
+    SignedRequest signed = signer.sign(signRequest.build());
+    SdkHttpRequest signedRequest = signed.request();
+
+    return ImmutableSigningResponse.of(signedRequest.getUri(), signedRequest.headers());
   }
 }
