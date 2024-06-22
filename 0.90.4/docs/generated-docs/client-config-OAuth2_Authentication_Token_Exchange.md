@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.token-exchange.enabled` | Enable OAuth2 token exchange. If enabled, each access token obtained from the OAuth2 server  will be exchanged for a new token, using the token endpoint and the token exchange grant type,  as defined in [RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693). |
