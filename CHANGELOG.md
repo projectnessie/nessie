@@ -14,23 +14,29 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
-  define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
-  Such tags are added to all metrics published by Nessie.
-- Readiness/health check testing the general availability of the object stores configured for the warehouses.
-- Helm chart with support for Iceberg REST
-
 ### Changes
 
 ### Deprecations
 
 ### Fixes
 
-* S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
-  S3 request signing before 1.5.0 works now. 
-* Fix service-name resolution in k8s, spamming the Nessie log.
-
 ### Commits
+
+## [0.91.0] Release (2024-06-22)
+
+### New Features
+
+- Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
+  define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
+  Such tags are added to all metrics published by Nessie.
+- Readiness/health check testing the general availability of the object stores configured for the warehouses.
+- Helm chart with support for Iceberg REST
+
+### Fixes
+
+- S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
+  S3 request signing before 1.5.0 works now. 
+- Fix service-name resolution in k8s, spamming the Nessie log.
 
 ## [0.90.4] Release (2024-06-13)
 
@@ -534,7 +540,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.91.0...HEAD
+[0.91.0]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...nessie-0.91.0
 [0.90.4]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...nessie-0.90.4
 [0.90.2]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...nessie-0.90.2
 [0.83.2]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.2

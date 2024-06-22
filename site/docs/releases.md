@@ -2,6 +2,57 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.91.0 Release (June 22, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.0).
+
+### New Features
+
+- Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
+  define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
+  Such tags are added to all metrics published by Nessie.
+- Readiness/health check testing the general availability of the object stores configured for the warehouses.
+- Helm chart with support for Iceberg REST
+
+### Fixes
+
+- S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
+  S3 request signing before 1.5.0 works now. 
+- Fix service-name resolution in k8s, spamming the Nessie log.
+
+### Commits
+* Fix Helm chart CI (#8900)
+* NInja: changelog
+* Possibly fix Java stream issuue w/ name resolution (#8899)
+* Expose object store(s) availability as a readiness check (#8893)
+* ADLS: advice against shared account name/key (#8895)
+* Use correct IcebergView.of (#8896)
+* Update nessie-IDs in returned metadata properties, simplify some code (#8879)
+* Catalog/ADLS: Expose the endpoint and sas-token using the correct Iceberg properties (#8894)
+* Add admin command: delete-catalog-tasks (#8869)
+* TestOAuth2Authentication: fix flaky test (#8892)
+* Metrics: support user-defined tags (#8890)
+* Prevent console spam when connecting to a non-Iceberg-REST endpoint (#8885)
+* Add the nice Nessie images (#8880)
+* Add docs and docker-compose illustrating the use of a reverse proxy (#8864)
+* Helm chart: support for REST Catalog (#8831)
+* Docker compose: add examples with Prometheus and Grafana (#8883)
+* Fix heading in index-release.md (#8881)
+* Bump regsync from 0.4.7 to 0.6.1 (#8873)
+* Fix test failure in `TestResolvConf` in macOS CI job (#8874)
+* Make S3 signing work with Iceberg before 1.5.0 (#8871)
+* Relax image registry sync (#8872)
+* Disable Iceberg GC by default (#8870)
+* AdlsConfig: remove unused option (#8868)
+* Support v2 iceberg tables with gzip (#8848)
+* OAuth2 client: improve error reporting (#8861)
+* Use `search` in `resolv.conf` to resolve service names (#8849)
+* REST Catalog: disable metrics by default (#8853)
+* Proper `N commits since x.y.z` in release notes (#8823)
+* Fix release-publish (#8822)
+* Attempt to fix flaky test #8819 (#8821)
+* Increase test worker heap size (#8820)
+
 ## 0.90.4 Release (June 13, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.90.4).
