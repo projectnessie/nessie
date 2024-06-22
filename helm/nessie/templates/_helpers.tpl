@@ -101,6 +101,7 @@ Apply Nessie Catalog (Iceberg REST) options.
 {{- $map := index . 1 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- $_ := set $map "nessie.catalog.default-warehouse" .defaultWarehouse -}}
+{{- $_ := set $map "nessie.catalog.object-stores.health-check.enabled" .objectStoresHealthCheckEnabled -}}
 {{- range $k, $v := .configDefaults -}}
 {{- $_ = set $map ( printf "nessie.catalog.iceberg-config-defaults.%s" $k ) $v -}}
 {{- end -}}
