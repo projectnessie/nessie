@@ -298,7 +298,7 @@ running and that the URL is correct.
 The Swagger UI allows for testing the REST API and reading the API docs. It is available 
 via [localhost:9000/q/swagger-ui](http://localhost:9000/q/swagger-ui/)
 
-# Docker image options
+## Docker image options
 
 By default, Nessie listens on port 19120. To expose that port on the host, use `-p 19120:19120`. 
 To expose that port on a different port on the host system, use the `-p` option and map the
@@ -321,11 +321,11 @@ and expose it to the host system also on 8080, use the following command:
 docker run -p 8080:8080 -e QUARKUS_HTTP_PORT=8080 ghcr.io/projectnessie/nessie
 ```
 
-## Nessie Docker image types
+### Nessie Docker image types
 
 Nessie publishes a Java based multiplatform (for amd64, arm64, ppc64le, s390x) image running on OpenJDK 17.
 
-## Advanced Docker image tuning (Java images only)
+### Advanced Docker image tuning (Java images only)
 
 There are many environment variables available to configure the Docker image. If in doubt, leave
 everything at its default. You can configure the behavior using the following environment
@@ -334,14 +334,14 @@ variables. They come from the base image used by Nessie,
 The extensive list of supported environment variables can be found 
 [here](https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html/red_hat_java_s2i_for_openshift/reference#configuration_environment_variables).
 
-### Examples
+#### Examples
 
 | Example                                    | `docker run` option                                                                                                |
 |--------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | Using another GC                           | `-e GC_CONTAINER_OPTIONS="-XX:+UseShenandoahGC"` lets Nessie use Shenandoah GC instead of the default parallel GC. |
 | Set the Java heap size to a _fixed_ amount | `-e JAVA_OPTS_APPEND="-Xms8g -Xmx8g"` lets Nessie use a Java heap of 8g.                                           | 
 
-### Reference
+#### Reference
 
 | Environment variable             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 |----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
