@@ -40,7 +40,7 @@ on:
         description: 'The branch name the release from, leave empty to release from latest commit on main.'
         required: false
       bumpType:
-        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `major`). Default is `minor`.'
+        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `none` for patch releases). Default is `minor`.'
         required: true
         type: string
         default: "minor"
