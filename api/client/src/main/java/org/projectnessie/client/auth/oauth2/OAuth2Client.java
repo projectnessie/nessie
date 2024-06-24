@@ -76,9 +76,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             ? CompletableFuture.allOf(started, used)
             : started;
     currentTokensStage =
-        ready
-            .thenApplyAsync((v) -> fetchNewTokens(), executor)
-            .thenApply(this::maybeExchangeTokens);
+        ready.thenApplyAsync((v) -> fetchNewTokens(), executor).thenApply(this::maybeImpersonate);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
@@ -228,7 +226,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             .thenApply(this::refreshTokens)
             // if that fails, of if tokens weren't available, try fetching brand-new tokens
             .exceptionally(error -> fetchNewTokens())
-            .thenApply(this::maybeExchangeTokens);
+            .thenApply(this::maybeImpersonate);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));
@@ -273,10 +271,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
-  Tokens maybeExchangeTokens(Tokens currentTokens) {
-    if (config.getTokenExchangeConfig().isEnabled()) {
-      LOGGER.debug("[{}] Exchanging tokens", config.getClientName());
-      try (Flow flow = GrantType.TOKEN_EXCHANGE.newFlow(config)) {
+  Tokens maybeImpersonate(Tokens currentTokens) {
+    if (config.getImpersonationConfig().isEnabled()) {
+      LOGGER.debug("[{}] Performing impersonation", config.getClientName());
+      try (Flow flow = new ImpersonationFlow(config)) {
         return flow.fetchNewTokens(currentTokens);
       }
     }

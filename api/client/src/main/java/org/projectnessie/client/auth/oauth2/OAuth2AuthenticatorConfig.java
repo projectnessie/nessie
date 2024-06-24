@@ -142,8 +142,8 @@ public interface OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
         builder::deviceCodeFlowPollInterval,
         Duration::parse);
-    TokenExchangeConfig tokenExchangeConfig = TokenExchangeConfig.fromConfigSupplier(config);
-    builder.tokenExchangeConfig(tokenExchangeConfig);
+    builder.tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config));
+    builder.impersonationConfig(ImpersonationConfig.fromConfigSupplier(config));
     return builder.build();
   }
 
@@ -243,7 +243,13 @@ public interface OAuth2AuthenticatorConfig {
   /** The token exchange configuration. Optional. */
   @Value.Default
   default TokenExchangeConfig getTokenExchangeConfig() {
-    return TokenExchangeConfig.DISABLED;
+    return TokenExchangeConfig.builder().build();
+  }
+
+  /** The impersonation configuration. Optional. */
+  @Value.Default
+  default ImpersonationConfig getImpersonationConfig() {
+    return ImpersonationConfig.builder().build();
   }
 
   /**
@@ -443,6 +449,9 @@ public interface OAuth2AuthenticatorConfig {
 
     @CanIgnoreReturnValue
     Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);
+
+    @CanIgnoreReturnValue
+    Builder impersonationConfig(ImpersonationConfig tokenExchangeConfig);
 
     @CanIgnoreReturnValue
     Builder defaultAccessTokenLifespan(Duration defaultAccessTokenLifespan);

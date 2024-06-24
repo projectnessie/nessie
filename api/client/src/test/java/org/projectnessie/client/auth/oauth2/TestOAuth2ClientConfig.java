@@ -34,6 +34,12 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_ID;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_ISSUER_URL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_SCOPES;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PREEMPTIVE_TOKEN_REFRESH_IDLE_TIMEOUT;
@@ -42,19 +48,13 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
-import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_ACCESS_TOKEN;
-import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_REFRESH_TOKEN;
-import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.NO_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CURRENT_ACCESS_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CURRENT_REFRESH_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.NO_TOKEN;
 
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
@@ -135,7 +135,7 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.REFRESH_TOKEN),
             singletonList(
-                "grant type must be either 'client_credentials', 'password', 'authorization_code' or 'device_code' (nessie.authentication.oauth2.grant-type)")),
+                "grant type must be one of: 'client_credentials', 'password', 'authorization_code', 'device_code', 'token_exchange' (nessie.authentication.oauth2.grant-type)")),
         Arguments.of(
             OAuth2ClientConfig.builder()
                 .clientId("Alice")
@@ -271,7 +271,16 @@ class TestOAuth2ClientConfig {
                 .tokenEndpoint(URI.create("https://example.com/token"))
                 .backgroundThreadIdleTimeout(Duration.ZERO),
             singletonList(
-                "background thread idle timeout must be greater than zero (nessie.authentication.oauth2.background-thread-idle-timeout)")));
+                "background thread idle timeout must be greater than zero (nessie.authentication.oauth2.background-thread-idle-timeout)")),
+        Arguments.of(
+            OAuth2ClientConfig.builder()
+                .clientId("Alice")
+                .clientSecret("s3cr3t")
+                .issuerUrl(URI.create("https://example.com/"))
+                .grantType(GrantType.TOKEN_EXCHANGE)
+                .impersonationConfig(ImpersonationConfig.builder().enabled(true).build()),
+            singletonList(
+                "impersonation cannot be enabled if grant type is 'token_exchange' (nessie.authentication.oauth2.impersonation.enabled / nessie.authentication.oauth2.grant-type)")));
   }
 
   @ParameterizedTest
@@ -340,14 +349,12 @@ class TestOAuth2ClientConfig {
                 .put(CONF_NESSIE_OAUTH2_AUTHORIZATION_CODE_FLOW_TIMEOUT, "PT30S")
                 .put(CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL, "PT8S")
                 .put(CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT, "PT45S")
-                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
-                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ISSUER_URL, "https://token-exchange.com/")
-                .put(
-                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_TOKEN_ENDPOINT, "https://token-exchange.com/")
-                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_ID, "token-exchange-client-id")
-                .put(
-                    CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_CLIENT_SECRET, "token-exchange-client-secret")
-                .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SCOPES, "scope1 scope2")
+                .put(CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED, "true")
+                .put(CONF_NESSIE_OAUTH2_IMPERSONATION_ISSUER_URL, "https://token-exchange.com/")
+                .put(CONF_NESSIE_OAUTH2_IMPERSONATION_TOKEN_ENDPOINT, "https://token-exchange.com/")
+                .put(CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_ID, "token-exchange-client-id")
+                .put(CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET, "token-exchange-client-secret")
+                .put(CONF_NESSIE_OAUTH2_IMPERSONATION_SCOPES, "scope1 scope2")
                 .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_AUDIENCE, "audience")
                 .put(
                     CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_RESOURCE,
@@ -383,16 +390,19 @@ class TestOAuth2ClientConfig {
                 .deviceCodeFlowTimeout(Duration.ofSeconds(45))
                 .tokenExchangeConfig(
                     TokenExchangeConfig.builder()
+                        .audience("audience")
+                        .resource(URI.create("https://token-exchange.com/resource"))
+                        .subjectToken(TypedToken.of("subject-token", TypedToken.URN_ID_TOKEN))
+                        .actorToken(TypedToken.of("actor-token", TypedToken.URN_JWT))
+                        .build())
+                .impersonationConfig(
+                    ImpersonationConfig.builder()
                         .enabled(true)
                         .issuerUrl(URI.create("https://token-exchange.com/"))
                         .tokenEndpoint(URI.create("https://token-exchange.com/"))
                         .clientId("token-exchange-client-id")
                         .clientSecret("token-exchange-client-secret")
-                        .audience("audience")
                         .addScopes("scope1", "scope2")
-                        .resource(URI.create("https://token-exchange.com/resource"))
-                        .subjectToken(TypedToken.of("subject-token", TypedToken.URN_ID_TOKEN))
-                        .actorToken(TypedToken.of("actor-token", TypedToken.URN_JWT))
                         .build())
                 .build(),
             null));
@@ -402,7 +412,6 @@ class TestOAuth2ClientConfig {
   void testTokenExchangeStaticTokens() {
     ImmutableMap<String, String> map =
         ImmutableMap.<String, String>builder()
-            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
             .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN, "static-subject")
             .put(
                 CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE,
@@ -438,7 +447,6 @@ class TestOAuth2ClientConfig {
   void testTokenExchangeDynamicTokens() {
     ImmutableMap<String, String> map =
         ImmutableMap.<String, String>builder()
-            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
             .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN, CURRENT_ACCESS_TOKEN)
             .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN, CURRENT_REFRESH_TOKEN)
             .build();
@@ -471,7 +479,6 @@ class TestOAuth2ClientConfig {
   void testTokenExchangeNoActorToken() {
     ImmutableMap<String, String> map =
         ImmutableMap.<String, String>builder()
-            .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED, "true")
             .put(CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN, NO_TOKEN)
             .build();
     OAuth2ClientConfig config =

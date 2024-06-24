@@ -19,9 +19,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Locale;
 
 public enum GrantType {
-
-  // initial grant types
-
   CLIENT_CREDENTIALS(Constants.CLIENT_CREDENTIALS) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
@@ -46,9 +43,6 @@ public enum GrantType {
       return new DeviceCodeFlow(config);
     }
   },
-
-  // non-initial grant types (cannot be used for initial token acquisition)
-
   REFRESH_TOKEN(Constants.REFRESH_TOKEN) {
     @Override
     Flow newFlow(OAuth2ClientConfig config) {
@@ -91,10 +85,7 @@ public enum GrantType {
   }
 
   public boolean isInitial() {
-    return this == CLIENT_CREDENTIALS
-        || this == PASSWORD
-        || this == AUTHORIZATION_CODE
-        || this == DEVICE_CODE;
+    return this != REFRESH_TOKEN;
   }
 
   public static class Constants {
