@@ -88,6 +88,10 @@ dependencies {
 
   testRuntimeOnly(libs.logback.classic)
 
+  testCompileOnly(libs.immutables.builder)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
+
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
   intTestImplementation("org.testcontainers:junit-jupiter")
@@ -162,6 +166,12 @@ testing {
 
       configurations.named("testJackson_${safeName}Implementation") {
         extendsFrom(configurations.getByName("testImplementation"))
+      }
+      configurations.named("testJackson_${safeName}CompileOnly") {
+        extendsFrom(configurations.getByName("testCompileOnly"))
+      }
+      configurations.named("testJackson_${safeName}AnnotationProcessor") {
+        extendsFrom(configurations.getByName("testAnnotationProcessor"))
       }
     }
   }
