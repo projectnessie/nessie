@@ -301,8 +301,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         tokenExpirationTime(
             now, currentTokens.getAccessToken(), config.getDefaultAccessTokenLifespan());
     Instant refreshExpirationTime =
-        tokenExpirationTime(
-            now, currentTokens.getRefreshToken(), config.getDefaultRefreshTokenLifespan());
+        currentTokens.getRefreshToken() == null
+            ? null
+            : tokenExpirationTime(
+                now, currentTokens.getRefreshToken(), config.getDefaultRefreshTokenLifespan());
     return OAuth2Utils.shortestDelay(
         now,
         accessExpirationTime,

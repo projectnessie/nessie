@@ -83,7 +83,7 @@ class OAuth2Utils {
       Duration refreshSafetyWindow,
       Duration minRefreshDelay) {
     Instant expirationTime =
-        accessExpirationTime.isBefore(refreshExpirationTime)
+        refreshExpirationTime == null || accessExpirationTime.isBefore(refreshExpirationTime)
             ? accessExpirationTime
             : refreshExpirationTime;
     Duration delay = Duration.between(now, expirationTime).minus(refreshSafetyWindow);
