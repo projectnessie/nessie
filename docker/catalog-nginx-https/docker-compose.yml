@@ -51,9 +51,11 @@ services:
   ##
   nessie:
     image: localhost/projectnessie/nessie:latest
-    # Nessie ports not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/nessie/...
-    # ports:
-    #   - "19120:19120"
+    ports:
+      # Nessie API port not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/nessie/...
+      #   - "19120:19120"
+      # only Nessie's management port is available externally for testing purposes
+      - "9001:9000"
     depends_on:
       minio:
         condition: service_healthy
