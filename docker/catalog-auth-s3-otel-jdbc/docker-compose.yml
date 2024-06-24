@@ -104,7 +104,7 @@ services:
       # MinIO endpoint for Nessie server
       - nessie.catalog.service.s3.endpoint=http://minio:9000/
       # MinIO endpoint for clients (on the Podman/Docker host)
-      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
+      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9002/
       # OpenTelemetry settings.
       # This example uses Jaeger as the OpenTelemetry traces collector.
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
@@ -127,8 +127,8 @@ services:
   prometheus:
     image: docker.io/prom/prometheus:v2.53.0
     ports:
-      # Prometheus UI, browse to http://localhost:9092 to view metrics
-      - "9092:9090"
+      # Prometheus UI, browse to http://localhost:9093 to view metrics
+      - "9093:9090"
     depends_on:
       nessie:
         condition: service_healthy
@@ -177,8 +177,8 @@ services:
     ports:
       # API port
       - "9001:9000"
-      # MinIO UI, browse to http://localhost:9091 to view the MinIO Object Browser
-      - "9091:9090"
+      # MinIO UI, browse to http://localhost:9092 to view the MinIO Object Browser
+      - "9092:9090"
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
@@ -221,7 +221,7 @@ services:
       - postgres
     ports:
       - "8080:8080"
-      - "9003:9000"
+      - "9001:9000"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin

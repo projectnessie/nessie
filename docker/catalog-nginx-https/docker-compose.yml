@@ -74,7 +74,7 @@ services:
       # MinIO endpoint for Nessie server
       - nessie.catalog.service.s3.endpoint=http://minio:9000/
       # MinIO endpoint for clients (on the Podman/Docker host)
-      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
+      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9002/
       # X-Forwarded headers - see https://quarkus.io/guides/http-reference#reverse-proxy
       - quarkus.http.proxy.proxy-address-forwarding=true
       - quarkus.http.proxy.allow-x-forwarded=true
@@ -109,8 +109,8 @@ services:
     ports:
       # API port, used by Nessie
       - "9000:9000"
-      # MinIO UI, browse to http://localhost:9090 to view the MinIO Object Browser
-      - "9090:9090"
+      # MinIO UI, browse to http://localhost:9092 to view the MinIO Object Browser
+      - "9092:9090"
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
