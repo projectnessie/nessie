@@ -94,16 +94,13 @@ class OAuth2Utils {
   }
 
   static Instant tokenExpirationTime(Instant now, Token token, Duration defaultLifespan) {
-    Instant expirationTime = null;
-    if (token != null) {
-      expirationTime = token.getExpirationTime();
-      if (expirationTime == null) {
-        try {
-          JwtToken jwtToken = JwtToken.parse(token.getPayload());
-          expirationTime = jwtToken.getExpirationTime();
-        } catch (Exception ignored) {
-          // fall through
-        }
+    Instant expirationTime = token.getExpirationTime();
+    if (expirationTime == null) {
+      try {
+        JwtToken jwtToken = JwtToken.parse(token.getPayload());
+        expirationTime = jwtToken.getExpirationTime();
+      } catch (Exception ignored) {
+        // fall through
       }
     }
     if (expirationTime == null) {
