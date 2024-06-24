@@ -2,6 +2,25 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.91.2 Release (June 24, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.2).
+
+### Breaking changes
+
+- We have improved Nessie client's support for impersonation scenarios using the token exchange
+  grant type. A few options starting with `nessie.authentication.oauth2.token-exchange.*` were
+  renamed to `nessie.authentication.oauth2.impersonation.*`. Check the [Nessie authentication
+  settings] for details. Please note that token exchange and impersonation are both considered in
+  beta state. Their APIs and configuration options are subject to change at any time.
+
+### Commits
+*  OAuth2Client: differentiate token exchange from impersonation (#8847)
+* Migrate off deprecated `AwsS3V4Signer` to `AwsV4HttpSigner` (#8923)
+* OAuthClient: improve next token refresh computation (#8922)
+* Docker compose: expose Nessie management port (#8888)
+* Site: update headers to appear in ToC (#8916)
+
 ## 0.91.1 Release (June 22, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.1).
