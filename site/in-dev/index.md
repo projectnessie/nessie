@@ -2,7 +2,7 @@
 title: "Nessie (UNRELEASED)"
 ---
 
-# Nessie (UNRELEASED)
+# Nessie (UNRELEASED/SNAPSHOT/unstable/nightly) Docs
 
 **DISCLAIMER** You are viewing the docs for the **next** Nessie version.
 Docs for the [latest release {{ versions.nessie }} are here](../nessie-latest/index.md).
@@ -10,49 +10,82 @@ Docs for the [latest release {{ versions.nessie }} are here](../nessie-latest/in
 This section contains information about an unreleased state, also known as _nightly_ or _snapshot_
 builds. The state of the software as well as the documentation 
 
-## SNAPSHOT / Nightly artifacts
+## Nessie Server unstable/nightly
 
-### Nessie Server UNSTABLE as a Docker image
+The main Nessie server serves the Nessie repository using the Iceberg REST API and Nessie's native REST API.
+
+### As a Docker image
 
 Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 
 **The image tags are updated twice per day during weekdays.**
 
 === "GitHub Container Registry"
+    [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-unstable)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-unstable
     docker run -p 19120:19120 ghcr.io/projectnessie/nessie-unstable
     ```
 === "Quay.io"
+    [quay.io](https://quay.io/repository/projectnessie/nessie-unstable?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-unstable
     docker run -p 19120:19120 quay.io/projectnessie/nessie-unstable
     ```
 
-## Nessie GC Tool as Docker image
+## GC Tool unstable/nightly
+
+[Nessie GC](/nessie-nightly/gc/) allows mark and sweep data files based on flexible
+expiration policies.
+
+### As a Docker image
 
 Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 
 **The image tags are updated twice per day during weekdays.**
 
 === "GitHub Container Registry"
-    [![ghcr.io GitHub Container Registry](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=ghcr.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://github.com/projectnessie/nessie/pkgs/container/nessie-gc)
+    [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-gc-unstable)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-gc-unstable
     docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc-unstable --help
     ```
 === "Quay.io"
-    [![quay.io Quay](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie-gc?tab=tags)
+    [quay.io](https://quay.io/repository/projectnessie/nessie-gc-unstable?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-gc-unstable
     docker run -p 19120:19120 quay.io/projectnessie/nessie-gc-unstable --help
     ```
 
-### Build from source
+## Server Admin Tool unstable/nightly
+
+Nessie's [Server Admin Tool](/nessie-nightly/export-import/) allows migration (export/import) of a
+Nessie repository.
+
+### Docker image
+
+Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+
+**The image tags are updated twice per day during weekdays.**
+
+=== "GitHub Container Registry"
+    [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-server-admin-unstable)
+    ```bash
+    docker pull ghcr.io/projectnessie/nessie-server-admin-unstable
+    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-server-admin-unstable --help
+    ```
+=== "Quay.io"
+    [quay.io](https://quay.io/repository/projectnessie/nessie-server-admin-unstable?tab=tags)
+    ```bash
+    docker pull quay.io/projectnessie/nessie-server-admin-unstable
+    docker run -p 19120:19120 quay.io/projectnessie/nessie-server-admin-unstable --help
+    ```
+
+## Build Nessie from source
 
 See [projectnessie/nessie GitHub](https://github.com/projectnessie/nessie) for build instructions.
 
-### Nessie SNAPSHOT artifacts
+## Nessie SNAPSHOT Maven artifacts
 
 Snapshot artifacts are available from Sonatype. The version of the published _SNAPSHOT_ artifacts
 changes with every Nessie release. The currently published _SHAPSHOT_ version can be [inspected
