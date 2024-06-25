@@ -17,3 +17,7 @@ img.bordered {
 .md-grid {
   max-width: 80%; /* or 100%, if you want to stretch to full-width */
 }
+
+.md-typeset td code {
+  word-break: revert;
+}
