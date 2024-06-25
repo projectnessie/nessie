@@ -14,6 +14,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Nessie CLI now has its own Docker images. Running Nessie CLI is now as simple as: `docker run -it
+  ghcr.io/projectnessie/nessie-cli`. Read more about it
+  [here](https://projectnessie.org/nessie-latest/cli/).
+
 ### Changes
 
 ### Deprecations

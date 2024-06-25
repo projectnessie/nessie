@@ -105,3 +105,8 @@ jobs:
             -p "tools/server-admin" \
             -d "Dockerfile-admintool" \
             ghcr.io/projectnessie/nessie-server-admin-unstable
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-cli" \
+            -p "cli/cli" \
+            -d "Dockerfile-cli" \
+            ghcr.io/projectnessie/nessie-cli-unstable
