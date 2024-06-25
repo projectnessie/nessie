@@ -323,3 +323,8 @@ exchange grant is outside the scope of this document but in general, two use cas
 !!! warning
     When using impersonation, the property `authentication.oauth2.grant-type` _must_ be another
     grant type than `token_exchange`.
+
+!!! warning
+    If a second OAuth2 server is required to perform impersonation, the admin user is responsible 
+    for configuring the trust relationship between the two servers.
+
