@@ -30,13 +30,13 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     [GitHub Container Registry](https://ghcr.io/projectnessie/nessie)
     ```bash
     docker pull ghcr.io/projectnessie/nessie:{{ versions.nessie }}
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie:{{ versions.nessie }}
+    docker run -p 19120:19120 -p 9000:9000 ghcr.io/projectnessie/nessie:{{ versions.nessie }}
     ```
 === "Quay.io"
     [quay.io](https://quay.io/repository/projectnessie/nessie?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie:{{ versions.nessie }}
-    docker run -p 19120:19120 quay.io/projectnessie/nessie:{{ versions.nessie }}
+    docker run -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie:{{ versions.nessie }}
     ```
 
 ### Helm Chart
@@ -84,13 +84,13 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-gc)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-gc:{{ versions.nessie }}
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc:{{ versions.nessie }} --help
+    docker run ghcr.io/projectnessie/nessie-gc:{{ versions.nessie }} --help
     ```
 === "Quay.io"
     [quay.io](https://quay.io/repository/projectnessie/nessie-gc?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-gc:{{ versions.nessie }}
-    docker run -p 19120:19120 quay.io/projectnessie/nessie-gc:{{ versions.nessie }} --help
+    docker run quay.io/projectnessie/nessie-gc:{{ versions.nessie }} --help
     ```
 
 ### Standalone uber jar
@@ -116,13 +116,13 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }}
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }} --help
+    docker run ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }} --help
     ```
 === "Quay.io"
     [quay.io](https://quay.io/repository/projectnessie/nessie-server-admin?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-server-admin:{{ versions.nessie }}
-    docker run -p 19120:19120 quay.io/projectnessie/nessie-server-admin:{{ versions.nessie }} --help
+    docker run quay.io/projectnessie/nessie-server-admin:{{ versions.nessie }} --help
     ```
 
 ### Standalone uber jar

@@ -14,7 +14,7 @@ builds. The state of the software as well as the documentation
 
 The main Nessie server serves the Nessie repository using the Iceberg REST API and Nessie's native REST API.
 
-### As a Docker image
+### Docker image
 
 Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 
@@ -24,13 +24,13 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-unstable)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-unstable
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-unstable
+    docker run -p 19120:19120 -p 9000:9000 ghcr.io/projectnessie/nessie-unstable
     ```
 === "Quay.io"
     [quay.io](https://quay.io/repository/projectnessie/nessie-unstable?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-unstable
-    docker run -p 19120:19120 quay.io/projectnessie/nessie-unstable
+    docker run -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie-unstable
     ```
 
 ## GC Tool unstable/nightly
@@ -38,7 +38,7 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 [Nessie GC](/nessie-nightly/gc/) allows mark and sweep data files based on flexible
 expiration policies.
 
-### As a Docker image
+### Docker image
 
 Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 
@@ -48,13 +48,13 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-gc-unstable)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-gc-unstable
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-gc-unstable --help
+    docker run ghcr.io/projectnessie/nessie-gc-unstable --help
     ```
 === "Quay.io"
     [quay.io](https://quay.io/repository/projectnessie/nessie-gc-unstable?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-gc-unstable
-    docker run -p 19120:19120 quay.io/projectnessie/nessie-gc-unstable --help
+    docker run quay.io/projectnessie/nessie-gc-unstable --help
     ```
 
 ## Server Admin Tool unstable/nightly
@@ -72,13 +72,13 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-server-admin-unstable)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-server-admin-unstable
-    docker run -p 19120:19120 ghcr.io/projectnessie/nessie-server-admin-unstable --help
+    docker run ghcr.io/projectnessie/nessie-server-admin-unstable --help
     ```
 === "Quay.io"
     [quay.io](https://quay.io/repository/projectnessie/nessie-server-admin-unstable?tab=tags)
     ```bash
     docker pull quay.io/projectnessie/nessie-server-admin-unstable
-    docker run -p 19120:19120 quay.io/projectnessie/nessie-server-admin-unstable --help
+    docker run quay.io/projectnessie/nessie-server-admin-unstable --help
     ```
 
 ## Build Nessie from source
