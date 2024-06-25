@@ -115,24 +115,27 @@ final class AddressResolver {
     return dnsClient;
   }
 
-  private Future<Stream<String>> resolveSingle(String name) {
+  private Future<List<String>> resolveSingle(String name) {
     Future<List<String>> resultA = dnsClient.resolveA(name);
     if (IP_V4_ONLY) {
-      return resultA.map(List::stream);
+      return resultA;
     }
     return resultA.compose(
-        a -> dnsClient.resolveAAAA(name).map(aaaa -> Stream.concat(aaaa.stream(), a.stream())));
+        a ->
+            dnsClient
+                .resolveAAAA(name)
+                .map(aaaa -> Stream.concat(aaaa.stream(), a.stream()).toList()));
   }
 
-  Future<Stream<String>> resolve(String name) {
+  Future<List<String>> resolve(String name) {
     if (name.startsWith("=")) {
-      return Future.succeededFuture(Stream.of(name.substring(1)));
+      return Future.succeededFuture(List.of(name.substring(1)));
     }
 
     // By convention, do not consult the 'search' list, when the name to query ends with a dot.
     boolean exact = name.endsWith(".");
     String query = exact ? name.substring(0, name.length() - 1) : name;
-    Future<Stream<String>> future = resolveSingle(query);
+    Future<List<String>> future = resolveSingle(query);
     if (!exact) {
       // Consult the 'search' list, if the above 'resolveName' fails.
       for (String search : searchList) {
@@ -143,7 +146,7 @@ final class AddressResolver {
     return future.recover(
         failure -> {
           LOGGER.warn("Failed to resolve '{}' to A/AAAA records", name, failure);
-          return succeededFuture(Stream.of());
+          return succeededFuture(List.of());
         });
   }
 
@@ -155,9 +158,9 @@ final class AddressResolver {
                 .mapToObj(c::resultAt)
                 .map(
                     e -> {
-                      @SuppressWarnings({"UnnecessaryLocalVariable", "unchecked"})
-                      Stream<String> casted = (Stream<String>) e;
-                      return casted;
+                      @SuppressWarnings("unchecked")
+                      List<String> casted = (List<String>) e;
+                      return casted.stream();
                     })
                 .reduce(Stream::concat)
                 .map(Stream::toList)
