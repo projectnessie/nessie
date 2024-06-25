@@ -181,7 +181,10 @@ public class IcebergConfigurer {
   public Map<String, String> storeConfigDefaults(URI warehouseLocation) {
     Map<String, String> configDefaults = new HashMap<>();
     if (isS3scheme(warehouseLocation.getScheme())) {
-      s3Options.region().ifPresent(x -> configDefaults.put(S3_CLIENT_REGION, x));
+      S3BucketOptions bucketOptions =
+          s3Options.effectiveOptionsForBucket(
+              Optional.of(warehouseLocation.getAuthority()), secretsProvider);
+      bucketOptions.region().ifPresent(x -> configDefaults.put(S3_CLIENT_REGION, x));
     }
     return configDefaults;
   }

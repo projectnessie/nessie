@@ -37,6 +37,7 @@ import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
+import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
@@ -88,11 +89,13 @@ public abstract class WithNessie {
     nessieProperties.put("nessie.catalog.default-warehouse", "warehouse");
     nessieProperties.put("nessie.catalog.warehouses.warehouse.location", S3_BUCKET);
     nessieProperties.put(
-        "nessie.catalog.service.s3.endpoint", objectStorage.getS3BaseUri().toString());
-    nessieProperties.put("nessie.catalog.service.s3.path-style-access", "true");
-    nessieProperties.put("nessie.catalog.service.s3.region", "eu-central-1");
-    nessieProperties.put("nessie.catalog.service.s3.access-key.name", "accessKey");
-    nessieProperties.put("nessie.catalog.service.s3.access-key.secret", "secretKey");
+        "nessie.catalog.service.s3.default-options.endpoint",
+        objectStorage.getS3BaseUri().toString());
+    nessieProperties.put("nessie.catalog.service.s3.default-options.path-style-access", "true");
+    nessieProperties.put("nessie.catalog.service.s3.default-options.region", "eu-central-1");
+    nessieProperties.put("nessie.catalog.service.s3.default-options.access-key.name", "accessKey");
+    nessieProperties.put(
+        "nessie.catalog.service.s3.default-options.access-key.secret", "secretKey");
     nessieProperties.putAll(serverConfig);
 
     NessieProcess.start(nessieProperties);
@@ -108,10 +111,13 @@ public abstract class WithNessie {
 
     S3Options<S3BucketOptions> s3options =
         S3ProgrammaticOptions.builder()
-            .accessKey(basicCredentials("foo", "bar"))
-            .region("eu-central-1")
-            .endpoint(objectStorage.getS3BaseUri())
-            .pathStyleAccess(true)
+            .defaultOptions(
+                S3PerBucketOptions.builder()
+                    .accessKey(basicCredentials("foo", "bar"))
+                    .region("eu-central-1")
+                    .endpoint(objectStorage.getS3BaseUri())
+                    .pathStyleAccess(true)
+                    .build())
             .build();
 
     S3Sessions sessions = new S3Sessions("foo", null);

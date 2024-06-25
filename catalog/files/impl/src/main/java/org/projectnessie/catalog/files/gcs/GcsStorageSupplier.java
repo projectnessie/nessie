@@ -39,6 +39,6 @@ public final class GcsStorageSupplier {
   }
 
   public Storage forLocation(GcsBucketOptions bucketOptions) {
-    return GcsClients.buildStorage(bucketOptions, httpTransportFactory);
+    return GcsClients.buildStorage(gcsOptions, bucketOptions, httpTransportFactory);
   }
 }

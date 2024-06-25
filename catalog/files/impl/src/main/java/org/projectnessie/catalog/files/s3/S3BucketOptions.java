@@ -110,7 +110,7 @@ public interface S3BucketOptions {
    * the role to assume for accessing S3 data. This parameter is required for Amazon S3, but may not
    * be required for other storage providers (e.g. Minio does not use it at all).
    */
-  Optional<String> roleArn();
+  Optional<String> assumeRole();
 
   /**
    * IAM policy in JSON format to be used as an inline <a
@@ -119,7 +119,7 @@ public interface S3BucketOptions {
    *
    * @see AssumeRoleRequest#policy()
    */
-  Optional<String> iamPolicy();
+  Optional<String> sessionIamPolicy();
 
   /**
    * An identifier for the assumed role session. This parameter is most important in cases when the
@@ -168,15 +168,5 @@ public interface S3BucketOptions {
    */
   default Duration minSessionCredentialValidityPeriod() {
     return clientSessionDuration().orElse(DEFAULT_SESSION_DURATION);
-  }
-
-  /**
-   * Extract the bucket name from the URI.
-   *
-   * @param uri URI to extract the bucket name from; both s3 and https schemes are accepted, and
-   *     https schemes can be either path-style or virtual-host-style.
-   */
-  default Optional<String> extractBucket(URI uri) {
-    return S3Utils.extractBucketName(uri);
   }
 }

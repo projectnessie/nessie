@@ -31,76 +31,52 @@ class TestS3Utils {
 
   @ParameterizedTest
   @MethodSource
-  void extractBucket(S3BucketOptions bucketOptions, URI uri, Optional<String> expectedBucket) {
-    Optional<String> actualBucket = bucketOptions.extractBucket(uri);
+  void extractBucketName(URI uri, Optional<String> expectedBucket) {
+    Optional<String> actualBucket = S3Utils.extractBucketName(uri);
     assertThat(actualBucket).isEqualTo(expectedBucket);
   }
 
-  static Stream<Arguments> extractBucket() {
-    S3ProgrammaticOptions emptyOptions = S3ProgrammaticOptions.builder().build();
+  static Stream<Arguments> extractBucketName() {
     return Stream.of(
         // AMAZON
-        Arguments.of(emptyOptions, URI.create("s3://mybucket/myfile"), Optional.of("mybucket")),
+        Arguments.of(URI.create("s3://mybucket/myfile"), Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://mybucket.s3.us-east-1.amazonaws.com/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://mybucket.s3-us-east-1.amazonaws.com/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
-            URI.create("https://mybucket.s3.amazonaws.com/myfile"),
-            Optional.of("mybucket")),
+            URI.create("https://mybucket.s3.amazonaws.com/myfile"), Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://s3.us-east-1.amazonaws.com/mybucket/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://s3-us-east-1.amazonaws.com/mybucket/myfile"),
             Optional.of("mybucket")),
         // PRIVATE
         Arguments.of(
-            emptyOptions,
             URI.create("https://user@mybucket.s3.region1.private.com:9000/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://user@mybucket.s3-region1.private.com:9000/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://user@mybucket.s3.private.com:9000/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://user@s3.region1.private.amazonaws.com:9000/mybucket/myfile"),
             Optional.of("mybucket")),
         Arguments.of(
-            emptyOptions,
             URI.create("https://user@s3-region1.private.amazonaws.com:9000/mybucket/myfile"),
             Optional.of("mybucket")),
         // non-standard ones for testing
+        Arguments.of(URI.create("http://127.0.0.1:9000/mybucket/myfile"), Optional.of("mybucket")),
+        Arguments.of(URI.create("http://127.0.0.1:9000/mybucket/myfile"), Optional.of("mybucket")),
+        Arguments.of(URI.create("http://s3.foo:9000/mybucket/myfile"), Optional.of("mybucket")),
         Arguments.of(
-            S3ProgrammaticOptions.builder().pathStyleAccess(true).build(),
-            URI.create("http://127.0.0.1:9000/mybucket/myfile"),
-            Optional.of("mybucket")),
+            URI.create("http://s3.localhost:9000/mybucket/myfile"), Optional.of("mybucket")),
         Arguments.of(
-            S3ProgrammaticOptions.builder().pathStyleAccess(true).build(),
-            URI.create("http://127.0.0.1:9000/mybucket/myfile"),
-            Optional.of("mybucket")),
-        Arguments.of(
-            S3ProgrammaticOptions.builder().pathStyleAccess(true).build(),
-            URI.create("http://s3.foo:9000/mybucket/myfile"),
-            Optional.of("mybucket")),
-        Arguments.of(
-            S3ProgrammaticOptions.builder().pathStyleAccess(true).build(),
-            URI.create("http://s3.localhost:9000/mybucket/myfile"),
-            Optional.of("mybucket")),
-        Arguments.of(
-            emptyOptions,
             URI.create("http://s3.localhost.localdomain:9000/mybucket/myfile"),
             Optional.of("mybucket")));
   }

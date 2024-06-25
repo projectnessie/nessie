@@ -135,10 +135,16 @@ public class ITS3VendedAssumeRoleIcebergCatalog {
     @Override
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
-          .put("nessie.catalog.service.s3.auth-mode", S3ClientAuthenticationMode.ASSUME_ROLE.name())
-          .put("nessie.catalog.service.s3.session-iam-policy", IAM_POLICY)
-          .put("nessie.catalog.service.s3.assumed-role", "test-role") // Note: unused by Minio
-          .put("nessie.catalog.service.s3.external-id", "test-external-id") // Note: unused by Minio
+          .put(
+              "nessie.catalog.service.s3.default-options.auth-mode",
+              S3ClientAuthenticationMode.ASSUME_ROLE.name())
+          .put("nessie.catalog.service.s3.default-options.session-iam-policy", IAM_POLICY)
+          .put(
+              "nessie.catalog.service.s3.default-options.assume-role",
+              "test-role") // Note: unused by Minio
+          .put(
+              "nessie.catalog.service.s3.default-options.external-id",
+              "test-external-id") // Note: unused by Minio
           .build();
     }
   }

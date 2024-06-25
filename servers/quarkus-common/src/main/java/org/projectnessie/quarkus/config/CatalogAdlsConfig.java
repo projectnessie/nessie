@@ -16,23 +16,20 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithName;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import org.projectnessie.catalog.files.adls.AdlsConfig;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
-import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.KeySecret;
 
 /**
  * Configuration for ADLS Gen2 object stores.
  *
- * <p>Contains the default settings to be applied to all "file systems" (think: buckets). Specific
- * settings for each file system can be specified via the {@code file-systems} map.
+ * <p>Default settings to be applied to all "file systems" (think: buckets) can be set in the {@code
+ * default-options} group. Specific settings for each file system can be specified via the {@code
+ * file-systems} map.
  *
  * <p>All settings are optional. The defaults of these settings are defined by the ADLS client
  * supplied by Microsoft. See <a
@@ -41,30 +38,6 @@ import org.projectnessie.catalog.secrets.KeySecret;
  */
 @ConfigMapping(prefix = "nessie.catalog.service.adls")
 public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFileSystemOptions> {
-  /**
-   * Override the default maximum number of HTTP connections that Nessie can use against all ADLS
-   * Gen2 object stores.
-   */
-  @Override
-  OptionalInt maxHttpConnections();
-
-  /**
-   * Override the default TCP connect timeout for HTTP connections against ADLS Gen2 object stores.
-   */
-  @Override
-  Optional<Duration> connectTimeout();
-
-  /** Override the default idle timeout for HTTP connections. */
-  @Override
-  Optional<Duration> connectionIdleTimeout();
-
-  /** Override the default write timeout for HTTP connections. */
-  @Override
-  Optional<Duration> writeTimeout();
-
-  /** Override the default read timeout for HTTP connections. */
-  @Override
-  Optional<Duration> readTimeout();
 
   /** Custom settings for the ADLS Java client. */
   @WithName("configuration")
@@ -80,32 +53,7 @@ public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFi
   // file-system options
 
   @Override
-  Optional<BasicCredentials> account();
-
-  @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> sasToken();
-
-  @Override
-  Optional<String> endpoint();
-
-  @Override
-  Optional<String> externalEndpoint();
-
-  @Override
-  Optional<AdlsRetryStrategy> retryPolicy();
-
-  @Override
-  Optional<Integer> maxRetries();
-
-  @Override
-  Optional<Duration> tryTimeout();
-
-  @Override
-  Optional<Duration> retryDelay();
-
-  @Override
-  Optional<Duration> maxRetryDelay();
+  Optional<CatalogAdlsFileSystemOptions> defaultOptions();
 
   @Override
   Map<String, CatalogAdlsFileSystemOptions> fileSystems();

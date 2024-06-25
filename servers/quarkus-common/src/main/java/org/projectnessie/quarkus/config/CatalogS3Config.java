@@ -18,22 +18,19 @@ package org.projectnessie.quarkus.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
-import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3Options;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
  * Configuration for S3 compatible object stores.
  *
- * <p>Contains the default settings to be applied to all buckets. Specific settings for each bucket
- * can be specified via the {@code buckets} map.
+ * <p>Default settings to be applied to all buckets can be set in the {@code default-options} group.
+ * Specific settings for each bucket can be specified via the {@code buckets} map.
  *
  * <p>All settings are optional. The defaults of these settings are defined by the AWSSDK Java
  * client.
@@ -73,27 +70,6 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
   @Override
   OptionalInt maxHttpConnections();
 
-  @Override
-  Optional<URI> endpoint();
-
-  @Override
-  Optional<URI> externalEndpoint();
-
-  @Override
-  Optional<Boolean> pathStyleAccess();
-
-  @Override
-  Optional<String> region();
-
-  @Override
-  Optional<BasicCredentials> accessKey();
-
-  @Override
-  Optional<String> accessPoint();
-
-  @Override
-  Optional<Boolean> allowCrossRegionAccessPoint();
-
   @WithName("sts.session-grace-period")
   @Override
   Optional<Duration> sessionCredentialRefreshGracePeriod();
@@ -106,33 +82,11 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
   @Override
   OptionalInt stsClientsCacheMaxEntries();
 
-  @WithName("sts.endpoint")
-  @Override
-  Optional<URI> stsEndpoint();
-
-  @WithName("assumed-role")
-  @Override
-  Optional<String> roleArn();
-
-  @WithName("session-iam-policy")
-  @Override
-  Optional<String> iamPolicy();
-
-  @Override
-  Optional<String> roleSessionName();
-
-  @Override
-  Optional<String> externalId();
-
-  @WithName("auth-mode")
-  @Override
-  Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
-
-  @Override
-  Optional<Duration> clientSessionDuration();
-
   @WithName("buckets")
   @ConfigPropertyName("bucket-name")
   @Override
   Map<String, CatalogS3BucketConfig> buckets();
+
+  @Override
+  Optional<CatalogS3BucketConfig> defaultOptions();
 }

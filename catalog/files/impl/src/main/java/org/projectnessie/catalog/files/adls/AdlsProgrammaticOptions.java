@@ -18,12 +18,27 @@ package org.projectnessie.catalog.files.adls;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 
 @Value.Immutable
 public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptions> {
+  @Override
+  Optional<AdlsFileSystemOptions> defaultOptions();
+
+  @Override
+  OptionalLong writeBlockSize();
+
+  @Override
+  OptionalInt readBlockSize();
+
+  @Override
+  Map<String, String> configurationOptions();
+
   @Override
   Map<String, AdlsFileSystemOptions> fileSystems();
 
@@ -32,6 +47,9 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
   }
 
   interface Builder {
+    @CanIgnoreReturnValue
+    Builder readBlockSize(int readBlockSize);
+
     @CanIgnoreReturnValue
     Builder writeBlockSize(long writeBlockSize);
 
@@ -60,28 +78,7 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
     Builder putAllFileSystems(Map<String, ? extends AdlsFileSystemOptions> entries);
 
     @CanIgnoreReturnValue
-    Builder account(BasicCredentials account);
-
-    @CanIgnoreReturnValue
-    Builder sasToken(KeySecret sasToken);
-
-    @CanIgnoreReturnValue
-    Builder endpoint(String endpoint);
-
-    @CanIgnoreReturnValue
-    Builder retryPolicy(AdlsRetryStrategy retryPolicy);
-
-    @CanIgnoreReturnValue
-    Builder maxRetries(int maxRetries);
-
-    @CanIgnoreReturnValue
-    Builder tryTimeout(Duration tryTimeout);
-
-    @CanIgnoreReturnValue
-    Builder retryDelay(Duration retryDelay);
-
-    @CanIgnoreReturnValue
-    Builder maxRetryDelay(Duration maxRetryDelay);
+    Builder defaultOptions(AdlsFileSystemOptions defaultOptions);
 
     AdlsProgrammaticOptions build();
   }
@@ -92,6 +89,8 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
     static Builder builder() {
       return ImmutableAdlsPerFileSystemOptions.builder();
     }
+
+    AdlsFileSystemOptions FALLBACK = AdlsPerFileSystemOptions.builder().build();
 
     interface Builder {
       @CanIgnoreReturnValue

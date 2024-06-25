@@ -37,7 +37,6 @@ import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.ImmutableSigningResponse;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningResponse;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
@@ -62,7 +61,6 @@ class TestIcebergS3SignParams {
 
   @Mock CatalogService catalogService;
   @Mock RequestSigner signer;
-  @Mock S3BucketOptions s3options;
 
   final String baseLocation = "s3://bucket/warehouse/ns/table1_cafebabe";
   final String oldBaseLocation = "s3://old-bucket/ns/table1";
@@ -285,8 +283,7 @@ class TestIcebergS3SignParams {
         .key(key)
         .baseLocation(baseLocation)
         .catalogService(catalogService)
-        .signer(signer)
-        .s3options(s3options);
+        .signer(signer);
   }
 
   private void expectSuccess(Uni<IcebergS3SignResponse> response) {

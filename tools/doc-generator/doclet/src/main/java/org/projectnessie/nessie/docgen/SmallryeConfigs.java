@@ -20,11 +20,15 @@ import static java.util.Arrays.asList;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappingInterface;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
@@ -47,6 +51,37 @@ public class SmallryeConfigs {
   public SmallryeConfigs(DocletEnvironment env) {
     this.classLoader = env.getJavaFileManager().getClassLoader(StandardLocation.CLASS_PATH);
     this.env = env;
+  }
+
+  public List<SmallRyeConfigSection> buildConfigSections(DocletEnvironment env) {
+    List<SmallRyeConfigSection> sections = new ArrayList<>();
+
+    for (SmallRyeConfigMappingInfo mapping : configMappingInfos.values()) {
+      Map<String, List<SmallRyeConfigPropertyInfo>> additionalPrefixes = new LinkedHashMap<>();
+      additionalPrefixes.put(mapping.prefix, new ArrayList<>());
+
+      mapping
+          .properties(env)
+          .forEach(
+              prop -> {
+                Optional<String> prefixOverride = prop.prefixOverride();
+                String prefix = prefixOverride.orElse(mapping.prefix);
+                additionalPrefixes.computeIfAbsent(prefix, k -> new ArrayList<>()).add(prop);
+              });
+
+      additionalPrefixes.forEach(
+          (k, v) -> {
+            if (!v.isEmpty()) {
+              if (k.equals(mapping.prefix)) {
+                sections.add(new SmallRyeConfigSection(k, v, mapping.element, mapping.typeComment));
+              } else {
+                sections.add(new SmallRyeConfigSection(mapping.prefix + '.' + k, v, null, null));
+              }
+            }
+          });
+    }
+
+    return sections;
   }
 
   public Collection<SmallRyeConfigMappingInfo> getConfigMappingInfos() {

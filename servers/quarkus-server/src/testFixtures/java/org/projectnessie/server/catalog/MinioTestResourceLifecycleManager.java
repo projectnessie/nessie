@@ -34,12 +34,12 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
     minio.start();
     warehouseLocation = minio.s3BucketUri("");
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.service.s3.endpoint", minio.s3endpoint())
-        .put("nessie.catalog.service.s3.path-style-access", "true")
-        .put("nessie.catalog.service.s3.sts.endpoint", minio.s3endpoint())
-        .put("nessie.catalog.service.s3.region", TEST_REGION)
-        .put("nessie.catalog.service.s3.access-key.name", minio.accessKey())
-        .put("nessie.catalog.service.s3.access-key.secret", minio.secretKey())
+        .put("nessie.catalog.service.s3.default-options.endpoint", minio.s3endpoint())
+        .put("nessie.catalog.service.s3.default-options.path-style-access", "true")
+        .put("nessie.catalog.service.s3.default-options.sts-endpoint", minio.s3endpoint())
+        .put("nessie.catalog.service.s3.default-options.region", TEST_REGION)
+        .put("nessie.catalog.service.s3.default-options.access-key.name", minio.accessKey())
+        .put("nessie.catalog.service.s3.default-options.access-key.secret", minio.secretKey())
         .put("nessie.catalog.default-warehouse", "warehouse")
         .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();

@@ -66,9 +66,10 @@ public class TestCatalogSecretsConfig {
     Optional<CatalogAdlsFileSystemOptions> b2 =
         Optional.ofNullable(catalogConfig.fileSystems().get("bucket2"));
 
-    soft.assertThat(basicMap(catalogConfig.account()))
+    soft.assertThat(basicMap(catalogConfig.defaultOptions().orElseThrow().account()))
         .containsExactlyInAnyOrderEntriesOf(basicMap(top));
-    soft.assertThat(keyMap(catalogConfig.sasToken())).isEqualTo(keyMap(sas));
+    soft.assertThat(keyMap(catalogConfig.defaultOptions().orElseThrow().sasToken()))
+        .isEqualTo(keyMap(sas));
     soft.assertThat(basicMap(b1.flatMap(CatalogAdlsFileSystemOptions::account)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(bucket1));
     soft.assertThat(keyMap(b1.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
@@ -83,9 +84,9 @@ public class TestCatalogSecretsConfig {
     return Stream.of(
         arguments(
             Map.of(
-                "nessie.catalog.service.adls.account.name", "id",
-                "nessie.catalog.service.adls.account.secret", "secret",
-                "nessie.catalog.service.adls.sas-token", "sas",
+                "nessie.catalog.service.adls.default-options.account.name", "id",
+                "nessie.catalog.service.adls.default-options.account.secret", "secret",
+                "nessie.catalog.service.adls.default-options.sas-token", "sas",
                 "nessie.catalog.service.adls.file-systems.bucket1.account.name", "bucket-name",
                 "nessie.catalog.service.adls.file-systems.bucket1.account.secret", "bucket-secret",
                 "nessie.catalog.service.adls.file-systems.bucket2.sas-token", "bucket2-sas"),
@@ -97,7 +98,7 @@ public class TestCatalogSecretsConfig {
             keySecret("bucket2-sas")),
         arguments(
             Map.of(
-                "nessie.catalog.service.adls.sas-token", "sas",
+                "nessie.catalog.service.adls.default-options.sas-token", "sas",
                 "nessie.catalog.service.adls.file-systems.bucket1.account.name", "bucket-name",
                 "nessie.catalog.service.adls.file-systems.bucket1.account.secret", "bucket-secret",
                 "nessie.catalog.service.adls.file-systems.bucket2.account.name", "id",
@@ -143,10 +144,13 @@ public class TestCatalogSecretsConfig {
     Optional<CatalogGcsBucketConfig> b2 =
         Optional.ofNullable(catalogConfig.buckets().get("bucket2"));
 
-    soft.assertThat(keyMap(catalogConfig.authCredentialsJson())).isEqualTo(keyMap(ac));
-    soft.assertThat(keyMap(catalogConfig.decryptionKey())).isEqualTo(keyMap(dk));
-    soft.assertThat(keyMap(catalogConfig.encryptionKey())).isEqualTo(keyMap(ek));
-    soft.assertThat(expiringTokenMap(catalogConfig.oauth2Token()))
+    soft.assertThat(keyMap(catalogConfig.defaultOptions().orElseThrow().authCredentialsJson()))
+        .isEqualTo(keyMap(ac));
+    soft.assertThat(keyMap(catalogConfig.defaultOptions().orElseThrow().decryptionKey()))
+        .isEqualTo(keyMap(dk));
+    soft.assertThat(keyMap(catalogConfig.defaultOptions().orElseThrow().encryptionKey()))
+        .isEqualTo(keyMap(ek));
+    soft.assertThat(expiringTokenMap(catalogConfig.defaultOptions().orElseThrow().oauth2Token()))
         .containsExactlyInAnyOrderEntriesOf(expiringTokenMap(o2));
 
     soft.assertThat(keyMap(b1.flatMap(CatalogGcsBucketConfig::authCredentialsJson)))
@@ -172,15 +176,15 @@ public class TestCatalogSecretsConfig {
     return Stream.of(
         arguments(
             Map.of(
-                "nessie.catalog.service.gcs.auth-credentials-json",
+                "nessie.catalog.service.gcs.default-options.auth-credentials-json",
                 "auth-cred",
-                "nessie.catalog.service.gcs.oauth2-token.token",
+                "nessie.catalog.service.gcs.default-options.oauth2-token.token",
                 "oauth2",
-                "nessie.catalog.service.gcs.oauth2-token.expires-at",
+                "nessie.catalog.service.gcs.default-options.oauth2-token.expires-at",
                 "2024-12-24T12:12:12Z",
-                "nessie.catalog.service.gcs.encryption-key",
+                "nessie.catalog.service.gcs.default-options.encryption-key",
                 "enc-key",
-                "nessie.catalog.service.gcs.decryption-key",
+                "nessie.catalog.service.gcs.default-options.decryption-key",
                 "dec-key",
                 "nessie.catalog.service.gcs.buckets.bucket1.oauth2-token.token",
                 "b1-oauth2",
@@ -192,18 +196,18 @@ public class TestCatalogSecretsConfig {
                 "2025-01-01T12:12:12Z",
                 "nessie.catalog.service.gcs.buckets.bucket2.decryption-key",
                 "b2-dec-key"),
-            KeySecret.keySecret("auth-cred"),
-            TokenSecret.tokenSecret("oauth2", Instant.parse("2024-12-24T12:12:12Z")),
-            KeySecret.keySecret("enc-key"),
-            KeySecret.keySecret("dec-key"),
+            keySecret("auth-cred"),
+            tokenSecret("oauth2", Instant.parse("2024-12-24T12:12:12Z")),
+            keySecret("enc-key"),
+            keySecret("dec-key"),
             null,
-            TokenSecret.tokenSecret("b1-oauth2", null),
+            tokenSecret("b1-oauth2", null),
             null,
-            KeySecret.keySecret("b1-dec"),
+            keySecret("b1-dec"),
             null,
-            TokenSecret.tokenSecret("b2-oauth2", Instant.parse("2025-01-01T12:12:12Z")),
+            tokenSecret("b2-oauth2", Instant.parse("2025-01-01T12:12:12Z")),
             null,
-            KeySecret.keySecret("b2-dec-key"))
+            keySecret("b2-dec-key"))
         //
         );
   }
@@ -229,7 +233,8 @@ public class TestCatalogSecretsConfig {
     Optional<CatalogS3BucketConfig> b2 =
         Optional.ofNullable(catalogConfig.buckets().get("bucket2"));
 
-    soft.assertThat(basicMap(catalogConfig.accessKey()))
+    soft.assertThat(
+            basicMap(catalogConfig.defaultOptions().flatMap(CatalogS3BucketConfig::accessKey)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(top));
     soft.assertThat(basicMap(b1.flatMap(CatalogS3BucketConfig::accessKey)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(bucket1));
@@ -241,8 +246,8 @@ public class TestCatalogSecretsConfig {
     return Stream.of(
         arguments(
             Map.of(
-                "nessie.catalog.service.s3.access-key.name", "id",
-                "nessie.catalog.service.s3.access-key.secret", "secret",
+                "nessie.catalog.service.s3.default-options.access-key.name", "id",
+                "nessie.catalog.service.s3.default-options.access-key.secret", "secret",
                 "nessie.catalog.service.s3.buckets.bucket1.access-key.name", "bucket-name",
                 "nessie.catalog.service.s3.buckets.bucket1.access-key.secret", "bucket-secret",
                 "nessie.catalog.service.s3.buckets.bucket2.session-iam-policy", "bucket2-policy"),

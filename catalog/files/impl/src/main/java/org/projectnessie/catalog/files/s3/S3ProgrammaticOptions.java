@@ -19,6 +19,8 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 
@@ -26,28 +28,23 @@ import org.projectnessie.catalog.secrets.BasicCredentials;
 public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
   Map<String, S3BucketOptions> buckets();
 
+  @Override
+  Optional<S3BucketOptions> defaultOptions();
+
+  @Override
+  OptionalInt stsClientsCacheMaxEntries();
+
+  @Override
+  OptionalInt sessionCredentialCacheMaxEntries();
+
+  @Override
+  Optional<Duration> sessionCredentialRefreshGracePeriod();
+
   static Builder builder() {
     return ImmutableS3ProgrammaticOptions.builder();
   }
 
   interface Builder {
-    @CanIgnoreReturnValue
-    Builder endpoint(URI endpoint);
-
-    @CanIgnoreReturnValue
-    Builder externalEndpoint(URI externalEndpoint);
-
-    @CanIgnoreReturnValue
-    Builder region(String region);
-
-    @CanIgnoreReturnValue
-    Builder roleArn(String roleArn);
-
-    @CanIgnoreReturnValue
-    Builder pathStyleAccess(boolean pathStyleAccess);
-
-    @CanIgnoreReturnValue
-    Builder accessKey(BasicCredentials credentials);
 
     @CanIgnoreReturnValue
     Builder sessionCredentialCacheMaxEntries(int sessionCredentialCacheMaxEntries);
@@ -59,9 +56,6 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
     Builder stsClientsCacheMaxEntries(int stsClientsCacheMaxEntries);
 
     @CanIgnoreReturnValue
-    Builder externalId(String externalId);
-
-    @CanIgnoreReturnValue
     Builder putBuckets(String bucket, S3BucketOptions bucketOptions);
 
     @CanIgnoreReturnValue
@@ -69,6 +63,9 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
 
     @CanIgnoreReturnValue
     Builder buckets(Map<String, ? extends S3BucketOptions> bucketOptions);
+
+    @CanIgnoreReturnValue
+    Builder defaultOptions(S3BucketOptions defaultOptions);
 
     S3ProgrammaticOptions build();
   }
@@ -79,6 +76,8 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
     static Builder builder() {
       return ImmutableS3PerBucketOptions.builder();
     }
+
+    S3BucketOptions FALLBACK = S3PerBucketOptions.builder().build();
 
     interface Builder {
       @CanIgnoreReturnValue
@@ -109,10 +108,10 @@ public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
       Builder stsEndpoint(URI stsEndpoint);
 
       @CanIgnoreReturnValue
-      Builder roleArn(String roleArn);
+      Builder assumeRole(String assumeRole);
 
       @CanIgnoreReturnValue
-      Builder iamPolicy(String iamPolicy);
+      Builder sessionIamPolicy(String sessionIamPolicy);
 
       @CanIgnoreReturnValue
       Builder roleSessionName(String roleSessionName);

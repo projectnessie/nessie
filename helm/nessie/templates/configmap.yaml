@@ -129,20 +129,23 @@ data:
 
     {{- if .Values.catalog.enabled -}}
     {{- list .Values.catalog.iceberg $map | include "nessie.applyCatalogIcebergOptions" -}}
-    {{ list .Values.catalog.storage.s3 "nessie.catalog.service.s3." $map | include "nessie.applyCatalogStorageS3Options"}}
+    {{ list .Values.catalog.storage.s3 "nessie.catalog.service.s3." $map | include "nessie.applyCatalogStorageS3RootOptions"}}
+    {{ list .Values.catalog.storage.s3.defaultOptions "nessie.catalog.service.s3.default-options." $map | include "nessie.applyCatalogStorageS3BucketOptions"}}
     {{- range $i, $bucket := .Values.catalog.storage.s3.buckets -}}
     {{- if not $bucket.name -}}{{- required ( printf "catalog.storage.s3.buckets[%d]: missing bucket name" $i ) $bucket.name -}}{{- end -}}
-    {{ list $bucket ( printf "nessie.catalog.service.s3.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageS3Options"}}
+    {{ list $bucket ( printf "nessie.catalog.service.s3.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageS3BucketOptions"}}
     {{- end -}}
-    {{ list .Values.catalog.storage.gcs "nessie.catalog.service.gcs." $map | include "nessie.applyCatalogStorageGcsOptions"}}
+    {{ list .Values.catalog.storage.gcs "nessie.catalog.service.gcs." $map | include "nessie.applyCatalogStorageGcsRootOptions"}}
+    {{ list .Values.catalog.storage.gcs.defaultOptions "nessie.catalog.service.gcs.default-options." $map | include "nessie.applyCatalogStorageGcsBucketOptions"}}
     {{- range $i, $bucket := .Values.catalog.storage.gcs.buckets -}}
     {{- if not $bucket.name -}}{{- required ( printf "catalog.storage.gcs.buckets[%d]: missing bucket name" $i ) $bucket.name -}}{{- end -}}
-    {{ list $bucket ( printf "nessie.catalog.service.gcs.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageGcsOptions"}}
+    {{ list $bucket ( printf "nessie.catalog.service.gcs.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageGcsBucketOptions"}}
     {{- end -}}
-    {{ list .Values.catalog.storage.adls "nessie.catalog.service.adls." $map | include "nessie.applyCatalogStorageAdlsOptions"}}
+    {{ list .Values.catalog.storage.adls "nessie.catalog.service.adls." $map | include "nessie.applyCatalogStorageAdlsRootOptions"}}
+    {{ list .Values.catalog.storage.adls.defaultOptions "nessie.catalog.service.adls.default-options." $map | include "nessie.applyCatalogStorageAdlsFileSystemOptions"}}
     {{- range $i, $filesystem := .Values.catalog.storage.adls.filesystems -}}
     {{- if not $filesystem.name -}}{{- required ( printf "catalog.storage.adls.filesystems[%d]: missing filesystem name" $i ) $filesystem.name -}}{{- end -}}
-    {{ list $filesystem ( printf "nessie.catalog.service.adls.file-systems.%s." (quote $filesystem.name ) ) $map | include "nessie.applyCatalogStorageAdlsOptions"}}
+    {{ list $filesystem ( printf "nessie.catalog.service.adls.file-systems.%s." (quote $filesystem.name ) ) $map | include "nessie.applyCatalogStorageAdlsFileSystemOptions"}}
     {{- end -}}
     {{- end -}}
 

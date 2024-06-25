@@ -16,8 +16,6 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithConverter;
-import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -25,15 +23,13 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsConfig;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
-import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
  * Configuration for Google Cloud Storage (GCS) object stores.
  *
- * <p>Contains the default settings to be applied to all buckets. Specific settings for each bucket
- * can be specified via the {@code buckets} map.
+ * <p>Default settings to be applied to all buckets can be set in the {@code default-options} group.
+ * Specific settings for each bucket can be specified via the {@code buckets} map.
  *
  * <p>All settings are optional. The defaults of these settings are defined by the Google Java SDK
  * client.
@@ -46,29 +42,13 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
   Map<String, CatalogGcsBucketConfig> buckets();
 
   @Override
-  Optional<URI> host();
+  Optional<CatalogGcsBucketConfig> defaultOptions();
 
   @Override
-  Optional<URI> externalHost();
+  Optional<Duration> readTimeout();
 
   @Override
-  Optional<String> projectId();
-
-  @Override
-  Optional<String> quotaProjectId();
-
-  @Override
-  Optional<String> clientLibToken();
-
-  @Override
-  Optional<GcsAuthType> authType();
-
-  @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> authCredentialsJson();
-
-  @Override
-  Optional<TokenSecret> oauth2Token();
+  Optional<Duration> connectTimeout();
 
   @Override
   OptionalInt maxAttempts();
@@ -96,30 +76,4 @@ public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucket
 
   @Override
   OptionalDouble rpcTimeoutMultiplier();
-
-  @Override
-  OptionalInt readChunkSize();
-
-  @Override
-  OptionalInt writeChunkSize();
-
-  @Override
-  OptionalInt deleteBatchSize();
-
-  @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> encryptionKey();
-
-  @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> decryptionKey();
-
-  @Override
-  Optional<String> userProject();
-
-  @Override
-  Optional<Duration> readTimeout();
-
-  @Override
-  Optional<Duration> connectTimeout();
 }
