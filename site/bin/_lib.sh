@@ -97,7 +97,11 @@ get_latest_version () {
 # Creates a 'nightly' version of the documentation that points to the current versioned docs
 # located at the root-level `/docs` directory.
 create_nightly () {
+  local version
+  version="$(cat ../version.txt)"
+
   echo " --> create nightly"
+  echo  "     ... version: ${version}"
 
   # Remove any existing 'nightly' directory and recreate it
   rm -rf build/versions/nightly/
@@ -107,6 +111,10 @@ create_nightly () {
   cp -rL in-dev/* build/versions/nightly/docs
   mv build/versions/nightly/docs/mkdocs.yml build/versions/nightly
   rm build/versions/nightly/docs/index-release.md
+
+  echo "     ... replace version placeholders in versioned docs"
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${version}/g" {} \;
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_DOCKER_SUFFIX::/-unstable:latest/g" {} \;
 
   cd build/versions/
 
@@ -314,8 +322,9 @@ release() {
   echo "     ... replace title in versioned mkdocs.yml"
   sed -i'' -E "s/(^site_name:[[:space:]]+).*$/\1\"Nessie ${RELEASE_VERSION}\"/" "${target}/mkdocs.yml"
 
-  echo "     ... replace version placeholder in versioned docs"
-  find "${target}" -name "*.md" -exec sed -i "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
+  echo "     ... replace version placeholders in versioned docs"
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_DOCKER_SUFFIX::/:${RELEASE_VERSION}/g" {} \;
 
   echo "     ... adding release to nav.yml"
   sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include build\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml
