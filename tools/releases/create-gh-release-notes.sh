@@ -91,8 +91,6 @@ Q_HELM_CHART_URL="https://github.com/projectnessie/nessie/releases/download/ness
 Q_MC_URL="https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}"
 
 cat <<EOF > ${NOTES_FILE}
-# Nessie ${RELEASE_VERSION} release
-
 * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
 * Maven Central: https://search.maven.org/search?q=g:org.projectnessie.nessie+v:${RELEASE_VERSION}
 * Docker images: https://github.com/projectnessie/nessie/pkgs/container/nessie and https://quay.io/repository/projectnessie/nessie?tab=tags
