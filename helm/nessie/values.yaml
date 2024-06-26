@@ -223,16 +223,6 @@ catalog:
           # the client side. This value is used for validating expiration times of credentials
           # associated with the warehouse. If unset, a default of one hour is assumed.
           clientSessionDuration: ~
-          # -- The time period to subtract from the S3 session credentials (assumed role credentials)
-          # expiry time to define the time when those credentials become eligible for refreshing.
-          # Not overridable on a per-bucket basis. The default is PT5M (5 minutes).
-          sessionCredentialRefreshGracePeriod: ~  # PT5M
-          # -- Maximum number of entries to keep in the session credentials cache (assumed role
-          # credentials). Not overridable on a per-bucket basis. The default is 1000.
-          sessionCredentialCacheMaxEntries: ~  # 1000
-          # -- Maximum number of entries to keep in the STS clients cache. Not overridable on a
-          # per-bucket basis. The default is 50.
-          stsClientsCacheMaxEntries: ~  # 50
 
         # -- AWS credentials. For STS, this defines the Access Key ID and Secret Key ID to be used as
         # a basic credential for obtaining temporary session credentials.
@@ -275,6 +265,18 @@ catalog:
         # -- Interval after which a request is retried when S3 response with some "retry later"
         # response. Must be a valid ISO duration.
         retryAfter: ~
+
+      sessionCredentials:
+        # -- The time period to subtract from the S3 session credentials (assumed role credentials)
+        # expiry time to define the time when those credentials become eligible for refreshing.
+        # Not overridable on a per-bucket basis. The default is PT5M (5 minutes).
+        sessionCredentialRefreshGracePeriod: ~  # PT5M
+        # -- Maximum number of entries to keep in the session credentials cache (assumed role
+        # credentials). Not overridable on a per-bucket basis. The default is 1000.
+        sessionCredentialCacheMaxEntries: ~  # 1000
+        # -- Maximum number of entries to keep in the STS clients cache. Not overridable on a
+        # per-bucket basis. The default is 50.
+        stsClientsCacheMaxEntries: ~  # 50
 
     gcs:
 

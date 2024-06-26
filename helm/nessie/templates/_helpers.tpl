@@ -101,7 +101,7 @@ Apply Nessie Catalog (Iceberg REST) options.
 {{- $map := index . 1 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- $_ := set $map "nessie.catalog.default-warehouse" .defaultWarehouse -}}
-{{- $__ := set $map "nessie.catalog.object-stores.health-check.enabled" .objectStoresHealthCheckEnabled -}}
+{{- $_ = set $map "nessie.catalog.object-stores.health-check.enabled" .objectStoresHealthCheckEnabled -}}
 {{- range $k, $v := .configDefaults -}}
 {{- $_ = set $map ( printf "nessie.catalog.iceberg-config-defaults.%s" $k ) $v -}}
 {{- end -}}
@@ -139,6 +139,11 @@ Apply S3 catalog options.
 {{- if .transport.expectContinueEnabled -}}{{- $_ := set $map ( print $prefix "http.expect-continue-enabled" ) .transport.expectContinueEnabled -}}{{- end -}}
 {{- if .transport.retryAfter -}}{{- $_ := set $map ( print $prefix "throttled-retry-after" ) .transport.retryAfter -}}{{- end -}}
 {{- end -}}
+{{- if .sessionCredentials }}
+{{- if .sessionCredentials.sessionCredentialRefreshGracePeriod -}}{{- $_ := set $map ( print $prefix "sts.session-grace-period" ) .sessionCredentials.sessionCredentialRefreshGracePeriod -}}{{- end -}}
+{{- if .sessionCredentials.sessionCredentialCacheMaxEntries -}}{{- $_ := set $map ( print $prefix "sts.session-cache-max-size" ) .sessionCredentials.sessionCredentialCacheMaxEntries -}}{{- end -}}
+{{- if .sessionCredentials.stsClientsCacheMaxEntries -}}{{- $_ := set $map ( print $prefix "sts.clients-cache-max-size" ) .sessionCredentials.stsClientsCacheMaxEntries -}}{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -161,9 +166,6 @@ Apply S3 catalog options.
 {{- if .assumeRole.roleSessionName -}}{{- $_ := set $map ( print $prefix "role-session-name" ) .assumeRole.roleSessionName -}}{{- end -}}
 {{- if .assumeRole.externalId -}}{{- $_ := set $map ( print $prefix "external-id" ) .assumeRole.externalId -}}{{- end -}}
 {{- if .assumeRole.clientSessionDuration -}}{{- $_ := set $map ( print $prefix "client-session-duration" ) .assumeRole.clientSessionDuration -}}{{- end -}}
-{{- if .assumeRole.sessionCredentialRefreshGracePeriod -}}{{- $_ := set $map ( print $prefix "sts.session-grace-period" ) .assumeRole.sessionCredentialRefreshGracePeriod -}}{{- end -}}
-{{- if .assumeRole.sessionCredentialCacheMaxEntries -}}{{- $_ := set $map ( print $prefix "sts.session-cache-max-size" ) .assumeRole.sessionCredentialCacheMaxEntries -}}{{- end -}}
-{{- if .assumeRole.stsClientsCacheMaxEntries -}}{{- $_ := set $map ( print $prefix "sts.clients-cache-max-size" ) .assumeRole.stsClientsCacheMaxEntries -}}{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
