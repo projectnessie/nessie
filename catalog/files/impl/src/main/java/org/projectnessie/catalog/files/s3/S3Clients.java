@@ -54,7 +54,7 @@ public class S3Clients {
 
   public static AwsCredentialsProvider awsCredentialsProvider(
       S3BucketOptions bucketOptions, S3Sessions sessions) {
-    Optional<String> role = bucketOptions.roleArn();
+    Optional<String> role = bucketOptions.assumeRole();
     if (role.isEmpty()) {
       return basicCredentialsProvider(
           bucketOptions.accessKey().map(BasicCredentials::name),

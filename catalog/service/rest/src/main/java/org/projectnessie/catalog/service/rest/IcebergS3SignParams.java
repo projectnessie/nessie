@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.projectnessie.catalog.files.s3.S3Utils.extractBucketName;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergError.icebergError;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse.icebergS3SignResponse;
 
@@ -33,7 +34,6 @@ import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
@@ -67,8 +67,6 @@ abstract class IcebergS3SignParams {
   abstract CatalogService catalogService();
 
   abstract RequestSigner signer();
-
-  abstract S3BucketOptions s3options();
 
   @Check
   void check() {
@@ -170,7 +168,7 @@ abstract class IcebergS3SignParams {
 
   private IcebergS3SignResponse sign(String uriToSign) {
     URI uri = URI.create(uriToSign);
-    Optional<String> bucket = s3options().extractBucket(uri);
+    Optional<String> bucket = extractBucketName(uri);
     Optional<String> body = Optional.ofNullable(request().body());
 
     SigningRequest signingRequest =

@@ -34,6 +34,7 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public class SmallRyeConfigPropertyInfo implements PropertyInfo {
@@ -58,6 +59,22 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
   @Override
   public String propertyName() {
     return propertyName;
+  }
+
+  public Optional<String> prefixOverride() {
+    ConfigItem item = element.getAnnotation(ConfigItem.class);
+    if (item != null) {
+      String section = item.section();
+      if (section != null) {
+        return Optional.of(section);
+      }
+    }
+    return Optional.empty();
+  }
+
+  public boolean firstIsSectionDoc() {
+    ConfigItem item = element.getAnnotation(ConfigItem.class);
+    return item != null && item.firstIsSectionDoc();
   }
 
   @Override

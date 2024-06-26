@@ -21,15 +21,16 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
 public interface WarehouseConfig {
 
   /**
-   * Iceberg config defaults specific to this warehouse. They override any defaults specified in
-   * {@link CatalogConfig#icebergConfigDefaults()}.
+   * Iceberg config defaults specific to this warehouse, potentially overriding any defaults
+   * specified in {@code iceberg-config-defaults} in <a href="#warehouse-defaults">Warehouse
+   * defaults</a>.
    */
   @ConfigPropertyName("iceberg-property")
   Map<String, String> icebergConfigDefaults();
 
   /**
    * Iceberg config overrides specific to this warehouse. They override any overrides specified in
-   * {@link CatalogConfig#icebergConfigOverrides()}.
+   * {@code iceberg-config-overrides} in <a href="#warehouse-defaults">Warehouse defaults</a>.
    */
   @ConfigPropertyName("iceberg-property")
   Map<String, String> icebergConfigOverrides();

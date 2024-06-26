@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.files.api.RequestSigner;
-import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
@@ -46,7 +45,6 @@ import org.projectnessie.model.ContentKey;
 public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
 
   @Inject RequestSigner signer;
-  @Inject S3Options<?> s3options;
   @Inject IcebergErrorMapper errorMapper;
 
   @ServerExceptionMapper
@@ -69,7 +67,6 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
         .baseLocation(baseLocation)
         .catalogService(catalogService)
         .signer(signer)
-        .s3options(s3options)
         .build()
         .verifyAndSign();
   }

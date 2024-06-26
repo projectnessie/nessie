@@ -18,20 +18,19 @@ package org.projectnessie.catalog.files.s3;
 import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
 
 import com.google.common.collect.ImmutableList;
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
-public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketOptions {
+public interface S3Options<PER_BUCKET extends S3BucketOptions> {
 
   /** Default value for {@link #sessionCredentialCacheMaxEntries()}. */
   int DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES = 1000;
@@ -43,50 +42,10 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   Duration DEFAULT_SESSION_REFRESH_GRACE_PERIOD = Duration.ofMinutes(5);
 
   /**
-   * The default endpoint override to use, if not configured per bucket (see {@code buckets}). The
-   * endpoint must be specified for private (non-AWS) clouds, either per bucket or here.
-   *
-   * <p>If the endpoint URIs for the Nessie server and clients differ, this one defines the endpoint
-   * used for the Nessie server.
-   */
-  @Override
-  Optional<URI> endpoint();
-
-  /**
-   * When using a specific {@code endpoint} and the endpoint URIs for the Nessie server differ, you
-   * can specify the URI passed down to clients using this setting. Otherwise, clients will receive
-   * the value from the {@code endpoint} setting.
-   */
-  @Override
-  Optional<URI> externalEndpoint();
-
-  /**
-   * Whether to use path-style access. If true, path-style access will be used, as in: {@code
-   * https://<domain>/<bucket>}. If false, a virtual-hosted style will be used instead, as in:
-   * {@code https://<bucket>.<domain>}. If unspecified, the default will depend on the cloud
-   * provider.
-   */
-  @Override
-  Optional<Boolean> pathStyleAccess();
-
-  /**
-   * The default DNS name of the region to use, if not configured per bucket. The region must be
-   * specified for AWS, either per bucket or here.
-   */
-  @Override
-  Optional<String> region();
-
-  /**
-   * The default access-key-id and secret-access-key to use, if not configured per bucket. An
-   * access-key-id must be configured, either per bucket or here.
-   */
-  @Override
-  Optional<BasicCredentials> accessKey();
-
-  /**
    * The time period to subtract from the S3 session credentials (assumed role credentials) expiry
    * time to define the time when those credentials become eligible for refreshing.
    */
+  @ConfigItem(section = "sts")
   Optional<Duration> sessionCredentialRefreshGracePeriod();
 
   default Duration effectiveSessionCredentialRefreshGracePeriod() {
@@ -96,6 +55,7 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   /**
    * Maximum number of entries to keep in the session credentials cache (assumed role credentials).
    */
+  @ConfigItem(section = "sts")
   OptionalInt sessionCredentialCacheMaxEntries();
 
   default int effectiveSessionCredentialCacheMaxEntries() {
@@ -103,6 +63,7 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   }
 
   /** Maximum number of entries to keep in the STS clients cache. */
+  @ConfigItem(section = "sts")
   OptionalInt stsClientsCacheMaxEntries();
 
   default int effectiveStsClientsCacheMaxEntries() {
@@ -110,9 +71,16 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
   }
 
   /**
+   * Default bucket configuration, default/fallback values for all buckets are taken from this one.
+   */
+  @ConfigItem(section = "default-options", firstIsSectionDoc = true)
+  Optional<PER_BUCKET> defaultOptions();
+
+  /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
    * setting. If no per-bucket setting is present, uses the values from top-level S3 settings.
    */
+  @ConfigItem(section = "buckets", firstIsSectionDoc = true)
   @ConfigPropertyName("bucket-name")
   Map<String, PER_BUCKET> buckets();
 
@@ -140,14 +108,22 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> extends S3BucketO
 
   default S3BucketOptions resolveSecrets(
       String filesystemName, S3BucketOptions specific, SecretsProvider secretsProvider) {
-    S3PerBucketOptions.Builder builder = S3PerBucketOptions.builder().from(this);
+    S3BucketOptions defaultOptions =
+        defaultOptions().map(S3BucketOptions.class::cast).orElse(S3PerBucketOptions.FALLBACK);
+
+    S3PerBucketOptions.Builder builder = S3PerBucketOptions.builder().from(defaultOptions);
     if (specific != null) {
       builder.from(specific);
     }
 
     return secretsProvider
         .applySecrets(
-            builder, "object-stores.s3", this, filesystemName, specific, SECRET_ATTRIBUTES)
+            builder,
+            "object-stores.s3",
+            defaultOptions,
+            filesystemName,
+            specific,
+            SECRET_ATTRIBUTES)
         .build();
   }
 }

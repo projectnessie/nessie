@@ -43,13 +43,15 @@ public final class GcsClients {
   private GcsClients() {}
 
   public static Storage buildStorage(
-      GcsBucketOptions bucketOptions, HttpTransportFactory transportFactory) {
+      GcsOptions<?> gcsOptions,
+      GcsBucketOptions bucketOptions,
+      HttpTransportFactory transportFactory) {
     HttpTransportOptions.Builder transportOptions =
         HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory);
-    bucketOptions
+    gcsOptions
         .connectTimeout()
         .ifPresent(d -> transportOptions.setConnectTimeout((int) d.toMillis()));
-    bucketOptions.readTimeout().ifPresent(d -> transportOptions.setReadTimeout((int) d.toMillis()));
+    gcsOptions.readTimeout().ifPresent(d -> transportOptions.setReadTimeout((int) d.toMillis()));
 
     StorageOptions.Builder builder =
         StorageOptions.http()
@@ -59,29 +61,29 @@ public final class GcsClients {
     bucketOptions.quotaProjectId().ifPresent(builder::setQuotaProjectId);
     bucketOptions.host().map(URI::toString).ifPresent(builder::setHost);
     bucketOptions.clientLibToken().ifPresent(builder::setClientLibToken);
-    builder.setRetrySettings(buildRetrySettings(bucketOptions));
+    builder.setRetrySettings(buildRetrySettings(gcsOptions));
     // TODO ??
     // bucketOptions.buildStorageRetryStrategy().ifPresent(builder::setStorageRetryStrategy);
 
     return builder.build().getService();
   }
 
-  static RetrySettings buildRetrySettings(GcsBucketOptions bucketOptions) {
+  static RetrySettings buildRetrySettings(GcsOptions<?> gcsOptions) {
     Function<Duration, org.threeten.bp.Duration> duration =
         d -> org.threeten.bp.Duration.ofMillis(d.toMillis());
 
     RetrySettings.Builder retry = RetrySettings.newBuilder();
-    bucketOptions.maxAttempts().ifPresent(retry::setMaxAttempts);
-    bucketOptions.logicalTimeout().map(duration).ifPresent(retry::setLogicalTimeout);
-    bucketOptions.totalTimeout().map(duration).ifPresent(retry::setTotalTimeout);
+    gcsOptions.maxAttempts().ifPresent(retry::setMaxAttempts);
+    gcsOptions.logicalTimeout().map(duration).ifPresent(retry::setLogicalTimeout);
+    gcsOptions.totalTimeout().map(duration).ifPresent(retry::setTotalTimeout);
 
-    bucketOptions.initialRetryDelay().map(duration).ifPresent(retry::setInitialRetryDelay);
-    bucketOptions.maxRetryDelay().map(duration).ifPresent(retry::setMaxRetryDelay);
-    bucketOptions.retryDelayMultiplier().ifPresent(retry::setRetryDelayMultiplier);
+    gcsOptions.initialRetryDelay().map(duration).ifPresent(retry::setInitialRetryDelay);
+    gcsOptions.maxRetryDelay().map(duration).ifPresent(retry::setMaxRetryDelay);
+    gcsOptions.retryDelayMultiplier().ifPresent(retry::setRetryDelayMultiplier);
 
-    bucketOptions.initialRpcTimeout().map(duration).ifPresent(retry::setInitialRpcTimeout);
-    bucketOptions.maxRpcTimeout().map(duration).ifPresent(retry::setMaxRpcTimeout);
-    bucketOptions.rpcTimeoutMultiplier().ifPresent(retry::setRpcTimeoutMultiplier);
+    gcsOptions.initialRpcTimeout().map(duration).ifPresent(retry::setInitialRpcTimeout);
+    gcsOptions.maxRpcTimeout().map(duration).ifPresent(retry::setMaxRpcTimeout);
+    gcsOptions.rpcTimeoutMultiplier().ifPresent(retry::setRpcTimeoutMultiplier);
 
     return retry.build();
   }

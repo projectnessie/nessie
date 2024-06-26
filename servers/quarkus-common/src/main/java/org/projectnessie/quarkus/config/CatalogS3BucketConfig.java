@@ -50,11 +50,10 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<URI> stsEndpoint();
 
   @Override
-  Optional<String> roleArn();
+  Optional<String> assumeRole();
 
-  @WithName("session-iam-policy")
   @Override
-  Optional<String> iamPolicy();
+  Optional<String> sessionIamPolicy();
 
   @Override
   Optional<String> roleSessionName();

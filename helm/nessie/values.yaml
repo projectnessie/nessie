@@ -171,79 +171,78 @@ catalog:
     s3:
 
       # Global S3 settings. Can be overridden on a per-bucket basis below.
+      defaultOptions:
+        # -- DNS name of the region, required for AWS.
+        region: ~  # us-west-2
+        # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
+        # used.
+        endpoint: ~  # "https://bucket1.s3.amazonaws.com"
+        # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
+        # used. If the endpoint URIs for the Nessie server and clients differ, this one defines the
+        # endpoint used for the Nessie server.
+        externalEndpoint: ~
+        # -- Whether to use path-style access. Optional; if not provided, the default is used. If
+        # true, path-style access will be used, as in: https://<domain>/<bucket>. If false, a
+        # virtual-hosted style will be used instead, as in: https://<bucket>.<domain>.
+        pathStyleAccess: false
+        # -- AWS Access point for this bucket. Access points can be used to perform S3 operations by
+        # specifying a mapping of bucket to access points. This is useful for multi-region access,
+        # cross-region access, disaster recovery, etc. See
+        # https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html.
+        accessPoint: ~
+        # -- Authorize cross-region calls when contacting an access point. The default is false.
+        allowCrossRegionAccessPoint: false
+        # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
+        # are:
+        # - REQUEST_SIGNING: Each client I/O request is individually authorized (signed) by the
+        # Catalog server. This is the default.
+        # - ASSUME_ROLE: Clients receive session credentials (according to the role and IAM policy
+        # from bucket configuration) for the whole duration of client sessions.
+        clientAuthenticationMode: ~  # REQUEST_SIGNING
 
-      # -- DNS name of the region, required for AWS.
-      region: ~  # us-west-2
-      # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
-      # used.
-      endpoint: ~  # "https://bucket1.s3.amazonaws.com"
-      # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
-      # used. If the endpoint URIs for the Nessie server and clients differ, this one defines the
-      # endpoint used for the Nessie server.
-      externalEndpoint: ~
-      # -- Whether to use path-style access. Optional; if not provided, the default is used. If
-      # true, path-style access will be used, as in: https://<domain>/<bucket>. If false, a
-      # virtual-hosted style will be used instead, as in: https://<bucket>.<domain>.
-      pathStyleAccess: false
-      # -- AWS Access point for this bucket. Access points can be used to perform S3 operations by
-      # specifying a mapping of bucket to access points. This is useful for multi-region access,
-      # cross-region access, disaster recovery, etc. See
-      # https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html.
-      accessPoint: ~
-      # -- Authorize cross-region calls when contacting an access point. The default is false.
-      allowCrossRegionAccessPoint: false
-      # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
-      # are:
-      # - REQUEST_SIGNING: Each client I/O request is individually authorized (signed) by the
-      # Catalog server. This is the default.
-      # - ASSUME_ROLE: Clients receive session credentials (according to the role and IAM policy
-      # from bucket configuration) for the whole duration of client sessions.
-      clientAuthenticationMode: ~  # REQUEST_SIGNING
+        # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
+        assumeRole:
+          # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
+          # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
+          # sessions (e.g. to use the "assume role" functionality).
+          stsEndpoint: ~  # "https://sts.amazonaws.com"
+          # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
+          # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
+          # at all).
+          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
+          sessionIamPolicy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
+          # -- An identifier for the assumed role session. This parameter is most important in cases
+          # when the same role is assumed by different principals in different use cases.
+          roleSessionName: ~  # nessie
+          # -- An identifier for the party assuming the role. This parameter must match the external
+          # ID configured in IAM rules that govern the assume role process for the specified roleArn.
+          externalId: ~
+          # -- A higher bound estimate of the expected duration of client "sessions" working with data in
+          # this bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on
+          # the client side. This value is used for validating expiration times of credentials
+          # associated with the warehouse. If unset, a default of one hour is assumed.
+          clientSessionDuration: ~
 
-      # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
-      assumeRole:
-        # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
-        # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
-        # sessions (e.g. to use the "assume role" functionality).
-        stsEndpoint: ~  # "https://sts.amazonaws.com"
-        # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
-        # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
-        # at all).
-        roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
-        # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
-        sessionIamPolicy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
-        # -- An identifier for the assumed role session. This parameter is most important in cases
-        # when the same role is assumed by different principals in different use cases.
-        roleSessionName: ~  # nessie
-        # -- An identifier for the party assuming the role. This parameter must match the external
-        # ID configured in IAM rules that govern the assume role process for the specified roleArn.
-        externalId: ~
-        # -- A higher bound estimate of the expected duration of client "sessions" working with data in
-        # this bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on
-        # the client side. This value is used for validating expiration times of credentials
-        # associated with the warehouse. If unset, a default of one hour is assumed.
-        clientSessionDuration: ~
-        # -- The time period to subtract from the S3 session credentials (assumed role credentials)
-        # expiry time to define the time when those credentials become eligible for refreshing.
-        # Not overridable on a per-bucket basis. The default is PT5M (5 minutes).
-        sessionCredentialRefreshGracePeriod: ~  # PT5M
-        # -- Maximum number of entries to keep in the session credentials cache (assumed role
-        # credentials). Not overridable on a per-bucket basis. The default is 1000.
-        sessionCredentialCacheMaxEntries: ~  # 1000
-        # -- Maximum number of entries to keep in the STS clients cache. Not overridable on a
-        # per-bucket basis. The default is 50.
-        stsClientsCacheMaxEntries: ~  # 50
+        # -- AWS credentials. For STS, this defines the Access Key ID and Secret Key ID to be used as
+        # a basic credential for obtaining temporary session credentials.
+        accessKeySecret:
+          # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
+          # credentials provider chain is used.
+          name: ~
+          # -- The secret key storing the AWS secret key id.
+          awsAccessKeyId: ~
+          # -- The secret key storing the AWS secret access key.
+          awsSecretAccessKey: ~
 
-      # -- AWS credentials. For STS, this defines the Access Key ID and Secret Key ID to be used as
-      # a basic credential for obtaining temporary session credentials.
-      accessKeySecret:
-        # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
-        # credentials provider chain is used.
-        name: ~
-        # -- The secret key storing the AWS secret key id.
-        awsAccessKeyId: ~
-        # -- The secret key storing the AWS secret access key.
-        awsSecretAccessKey: ~
+      # -- Per-bucket S3 settings. Override the general settings above.
+      buckets: []
+      # - name: bucket1
+      #   endpoint: "https://bucket1.s3.amazonaws.com"
+      #   accessKeySecret:
+      #     name: awscreds
+      #     awsAccessKeyId: aws_access_key_id
+      #     awsSecretAccessKey: aws_secret_access_key
 
       # -- S3 transport settings. Not overridable on a per-bucket basis.
       transport:
@@ -267,62 +266,81 @@ catalog:
         # response. Must be a valid ISO duration.
         retryAfter: ~
 
-      # -- Per-bucket S3 settings. Override the general settings above.
-      buckets: []
-      # - name: bucket1
-      #   endpoint: "https://bucket1.s3.amazonaws.com"
-      #   accessKeySecret:
-      #     name: awscreds
-      #     awsAccessKeyId: aws_access_key_id
-      #     awsSecretAccessKey: aws_secret_access_key
+      sessionCredentials:
+        # -- The time period to subtract from the S3 session credentials (assumed role credentials)
+        # expiry time to define the time when those credentials become eligible for refreshing.
+        # Not overridable on a per-bucket basis. The default is PT5M (5 minutes).
+        sessionCredentialRefreshGracePeriod: ~  # PT5M
+        # -- Maximum number of entries to keep in the session credentials cache (assumed role
+        # credentials). Not overridable on a per-bucket basis. The default is 1000.
+        sessionCredentialCacheMaxEntries: ~  # 1000
+        # -- Maximum number of entries to keep in the STS clients cache. Not overridable on a
+        # per-bucket basis. The default is 50.
+        stsClientsCacheMaxEntries: ~  # 50
 
     gcs:
 
       # Global GCS settings. Can be overridden on a per-bucket basis below.
+      defaultOptions:
+        # -- The default endpoint override to use. The endpoint is almost always used for testing
+        # purposes. If the endpoint URIs for the Nessie server and clients differ, this one defines
+        # the endpoint used for the Nessie server.
+        host: ~
+        # -- When using a specific endpoint, see host, and the endpoint URIs for the Nessie server
+        # differ, you can specify the URI passed down to clients using this setting. Otherwise,
+        # clients will receive the value from the host setting.
+        externalHost: ~
+        # -- Optionally specify the user project (Google term).
+        userProject: ~
+        # --  The Google project ID.
+        projectId: ~
+        # -- The Google quota project ID.
+        quotaProjectId: ~
+        # -- The Google client lib token.
+        clientLibToken: ~
+        # -- The authentication type to use. Valid values are: NONE, USER, SERVICE_ACCOUNT,
+        # ACCESS_TOKEN. The default is NONE.
+        authType: ~
 
-      # -- The default endpoint override to use. The endpoint is almost always used for testing
-      # purposes. If the endpoint URIs for the Nessie server and clients differ, this one defines
-      # the endpoint used for the Nessie server.
-      host: ~
-      # -- When using a specific endpoint, see host, and the endpoint URIs for the Nessie server
-      # differ, you can specify the URI passed down to clients using this setting. Otherwise,
-      # clients will receive the value from the host setting.
-      externalHost: ~
-      # -- Optionally specify the user project (Google term).
-      userProject: ~
-      # --  The Google project ID.
-      projectId: ~
-      # -- The Google quota project ID.
-      quotaProjectId: ~
-      # -- The Google client lib token.
-      clientLibToken: ~
-      # -- The authentication type to use. Valid values are: NONE, USER, SERVICE_ACCOUNT,
-      # ACCESS_TOKEN. The default is NONE.
-      authType: ~
+        # -- The Google Cloud service account key secret. This is required when authType is USER or
+        # SERVICE_ACCOUNT.
+        authCredentialsJsonSecret:
+          # -- The secret name to pull a valid Google Cloud service account key from.
+          name: ~
+          # -- The secret key storing the Google Cloud service account JSON key.
+          key: ~
 
-      # -- The Google Cloud service account key secret. This is required when authType is USER or
-      # SERVICE_ACCOUNT.
-      authCredentialsJsonSecret:
-        # -- The secret name to pull a valid Google Cloud service account key from.
-        name: ~
-        # -- The secret key storing the Google Cloud service account JSON key.
-        key: ~
+        # -- The oauth2 token secret. This is required when authType is ACCESS_TOKEN.
+        oauth2TokenSecret:
+          # # -- The secret name to pull a valid Google Cloud service account key from.
+          name: ~
+          # # -- The secret key storing the token.
+          token: ~
+          # # -- The secret key storing the token's expiresAt value (optional).
+          expiresAt: ~
 
-      # -- The oauth2 token secret. This is required when authType is ACCESS_TOKEN.
-      oauth2TokenSecret:
-        # # -- The secret name to pull a valid Google Cloud service account key from.
-        name: ~
-        # # -- The secret key storing the token.
-        token: ~
-        # # -- The secret key storing the token's expiresAt value (optional).
-        expiresAt: ~
+        # -- Customer-supplied AES256 key for blob encryption when writing. Currently unsupported.
+        encryptionKey: ~
+        # -- Customer-supplied AES256 key for blob decryption when reading. Currently unsupported.
+        decryptionKey: ~
 
-      # -- Customer-supplied AES256 key for blob encryption when writing. Currently unsupported.
-      encryptionKey: ~
-      # -- Customer-supplied AES256 key for blob decryption when reading. Currently unsupported.
-      decryptionKey: ~
+        # -- The read chunk size in bytes. Must be a valid ISO duration.
+        readChunkSize: ~
+        # -- The write chunk size in bytes. Must be a valid ISO duration.
+        writeChunkSize: ~
+        # -- The delete batch size.
+        deleteBatchSize: ~
 
-      # -- GCS transport settings.
+      # -- Per-bucket GCS settings. Override the general settings above.
+      buckets: []
+      # - name: bucket1
+      #   authType: ACCESS_TOKEN
+      #   oauth2TokenSecret:
+      #     - name: gcs-creds
+      #       key: token
+      #       expiresAt: expiresAt
+
+      # -- GCS transport settings. Not overridable on a per-bucket basis.
       transport:
         # -- Override the default maximum number of attempts.
         maxAttempts: ~
@@ -346,51 +364,45 @@ catalog:
         logicalTimeout: ~
         # -- Override the default total timeout. Must be a valid ISO duration.
         totalTimeout: ~
-        # -- The read chunk size in bytes. Must be a valid ISO duration.
-        readChunkSize: ~
-        # -- The write chunk size in bytes. Must be a valid ISO duration.
-        writeChunkSize: ~
-        # -- The delete batch size.
-        deleteBatchSize: ~
-
-      # -- Per-bucket GCS settings. Override the general settings above.
-      buckets: []
-      # - name: bucket1
-      #   authType: ACCESS_TOKEN
-      #   oauth2TokenSecret:
-      #     - name: gcs-creds
-      #       key: token
-      #       expiresAt: expiresAt
 
     adls:
 
       # Global ADLS settings. Can be overridden on a per-filesystem basis below.
+      defaultOptions:
+        # -- A secret containing the account name and key to use. Either this option or sasTokenSecret
+        # must be set. If both are set, sasTokenSecret takes precedence.
+        accountSecret:
+          # -- Name of the secret containing the account name and key.
+          name: ~
+          # -- Secret key containing the fully-qualified account name, e.g. "myaccount.dfs.core.windows.net".
+          accountName: ~
+          # -- Secret key containing the account key.
+          accountKey: ~
 
-      # -- A secret containing the account name and key to use. Either this option or sasTokenSecret
-      # must be set. If both are set, sasTokenSecret takes precedence.
-      accountSecret:
-        # -- Name of the secret containing the account name and key.
-        name: ~
-        # -- Secret key containing the fully-qualified account name, e.g. "myaccount.dfs.core.windows.net".
-        accountName: ~
-        # -- Secret key containing the account key.
-        accountKey: ~
+        # -- A secret containing the SAS token to use. Either this option or accountSecret must
+        # be set. If both are set, sasTokenSecret takes precedence.
+        sasTokenSecret:
+          # -- Name of the secret containing the SAS token.
+          name: ~
+          # -- Secret key containing the SAS token.
+          sasToken: ~
 
-      # -- A secret containing the SAS token to use. Either this option or accountSecret must
-      # be set. If both are set, sasTokenSecret takes precedence.
-      sasTokenSecret:
-        # -- Name of the secret containing the SAS token.
-        name: ~
-        # -- Secret key containing the SAS token.
-        sasToken: ~
+        # -- Custom HTTP endpoint. In case clients need to use a different URI, use externalEndpoint.
+        endpoint: ~
 
-      # -- Custom HTTP endpoint. In case clients need to use a different URI, use externalEndpoint.
-      endpoint: ~
+        # -- Custom HTTP endpoint to be used by clients. If not set, the endpoint value is used.
+        externalEndpoint: ~
 
-      # -- Custom HTTP endpoint to be used by clients. If not set, the endpoint value is used.
-      externalEndpoint: ~
+      # -- Per-filesystem ADLS settings. Override the general settings above.
+      filesystems: []
+      # - name: filesystem1
+      #   endpoint: http://localhost/adlsgen2/bucket
+      #   accountSecret:
+      #     name: adls-account-secret
+      #     accountName: accountName
+      #     accountKey: accountKeyRef
 
-      # -- ADLS transport settings. Only some settings can be overridden on a per-filesystem basis.
+      # -- ADLS transport settings. Not overridable on a per-bucket basis.
       transport:
         # -- The retry strategy to use. Valid values are: NONE, EXPONENTIAL_BACKOFF, FIXED_DELAY.
         # The default is EXPONENTIAL_BACKOFF.
@@ -437,15 +449,6 @@ catalog:
       # -- Custom ADLS configuration options, see javadocs of com.azure.core.util.Configuration.
       # Not overridable on a per-filesystem basis.
       advancedConfig: {}
-
-      # -- Per-filesystem ADLS settings. Override the general settings above.
-      filesystems: []
-      # - name: filesystem1
-      #   endpoint: http://localhost/adlsgen2/bucket
-      #   accountSecret:
-      #     name: adls-account-secret
-      #     accountName: accountName
-      #     accountKey: accountKeyRef
 
 
 # -- Advanced configuration.

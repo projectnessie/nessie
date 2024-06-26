@@ -74,9 +74,12 @@ public class S3SessionCacheResourceBench {
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
-              .accessKey(basicCredentials("foo", "bar"))
-              .region("eu-central-1")
-              .pathStyleAccess(true)
+              .defaultOptions(
+                  S3ProgrammaticOptions.S3PerBucketOptions.builder()
+                      .accessKey(basicCredentials("foo", "bar"))
+                      .region("eu-central-1")
+                      .pathStyleAccess(true)
+                      .build())
               .build();
 
       s3SessionsManager =
@@ -100,7 +103,7 @@ public class S3SessionCacheResourceBench {
                           .region(regions.get(i % regions.size()))
                           .roleSessionName("roleSessionName" + i)
                           .stsEndpoint(stsEndpoint)
-                          .roleArn("roleArn" + i)
+                          .assumeRole("roleArn" + i)
                           .build())
               .toArray(S3ProgrammaticOptions.S3PerBucketOptions[]::new);
     }

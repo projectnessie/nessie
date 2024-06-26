@@ -27,10 +27,10 @@ import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileS
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
-public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
-    extends AdlsFileSystemOptions {
+public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions> {
 
   /**
    * For custom ADLS configuration options, consult javadocs for {@code
@@ -44,7 +44,15 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
   /** Override the default write block size used when writing to ADLS. */
   OptionalLong writeBlockSize();
 
+  /**
+   * Default file-system configuration, default/fallback values for all file-systems are taken from
+   * this one.
+   */
+  @ConfigItem(section = "default-options", firstIsSectionDoc = true)
+  Optional<PER_FILE_SYSTEM> defaultOptions();
+
   /** ADLS file-system specific options, per file system name. */
+  @ConfigItem(section = "buckets", firstIsSectionDoc = true)
   @ConfigPropertyName("filesystem-name")
   Map<String, PER_FILE_SYSTEM> fileSystems();
 
@@ -78,14 +86,25 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions>
 
   default AdlsFileSystemOptions resolveSecrets(
       String filesystemName, AdlsFileSystemOptions specific, SecretsProvider secretsProvider) {
-    AdlsPerFileSystemOptions.Builder builder = AdlsPerFileSystemOptions.builder().from(this);
+    AdlsFileSystemOptions defaultOptions =
+        defaultOptions()
+            .map(AdlsFileSystemOptions.class::cast)
+            .orElse(AdlsPerFileSystemOptions.FALLBACK);
+
+    AdlsPerFileSystemOptions.Builder builder =
+        AdlsPerFileSystemOptions.builder().from(defaultOptions);
     if (specific != null) {
       builder.from(specific);
     }
 
     return secretsProvider
         .applySecrets(
-            builder, "object-stores.adls", this, filesystemName, specific, SECRET_ATTRIBUTES)
+            builder,
+            "object-stores.adls",
+            defaultOptions,
+            filesystemName,
+            specific,
+            SECRET_ATTRIBUTES)
         .build();
   }
 }

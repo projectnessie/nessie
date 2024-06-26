@@ -233,12 +233,12 @@ public class S3SessionsManager {
         .stsEndpoint(options.stsEndpoint())
         .roleArn(
             options
-                .roleArn()
+                .assumeRole()
                 .orElseThrow(() -> new IllegalArgumentException("Role ARN must be configured")))
         .accessKeyId(options.accessKey().map(BasicCredentials::name))
         .secretAccessKey(options.accessKey().map(BasicCredentials::secret))
         .stsEndpoint(options.stsEndpoint())
-        .iamPolicy(options.iamPolicy())
+        .iamPolicy(options.sessionIamPolicy())
         .roleSessionName(options.roleSessionName())
         .externalId(options.externalId())
         .build();

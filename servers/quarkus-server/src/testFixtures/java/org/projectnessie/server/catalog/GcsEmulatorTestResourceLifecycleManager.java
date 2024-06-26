@@ -33,10 +33,10 @@ public class GcsEmulatorTestResourceLifecycleManager
     gcs.start();
     warehouseLocation = URI.create("gs://" + gcs.bucket() + "/warehouse");
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.service.gcs.host", gcs.baseUri())
-        .put("nessie.catalog.service.gcs.project-id", gcs.projectId())
-        .put("nessie.catalog.service.gcs.auth-type", "ACCESS_TOKEN")
-        .put("nessie.catalog.service.gcs.oauth2-token.token", gcs.oauth2token())
+        .put("nessie.catalog.service.gcs.default-options.host", gcs.baseUri())
+        .put("nessie.catalog.service.gcs.default-options.project-id", gcs.projectId())
+        .put("nessie.catalog.service.gcs.default-options.auth-type", "ACCESS_TOKEN")
+        .put("nessie.catalog.service.gcs.default-options.oauth2-token.token", gcs.oauth2token())
         .put("nessie.catalog.default-warehouse", "warehouse")
         .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();

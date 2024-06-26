@@ -20,31 +20,39 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
 @Value.Immutable
 public interface S3Config {
   /** Override the default maximum number of pooled connections. */
+  @ConfigItem(section = "transport")
   OptionalInt maxHttpConnections();
 
   /** Override the default connection read timeout. */
+  @ConfigItem(section = "transport")
   Optional<Duration> readTimeout();
 
   /** Override the default TCP connect timeout. */
+  @ConfigItem(section = "transport")
   Optional<Duration> connectTimeout();
 
   /**
    * Override default connection acquisition timeout. This is the time a request will wait for a
    * connection from the pool.
    */
+  @ConfigItem(section = "transport")
   Optional<Duration> connectionAcquisitionTimeout();
 
   /** Override default max idle time of a pooled connection. */
+  @ConfigItem(section = "transport")
   Optional<Duration> connectionMaxIdleTime();
 
   /** Override default time-time of a pooled connection. */
+  @ConfigItem(section = "transport")
   Optional<Duration> connectionTimeToLive();
 
   /** Override default behavior whether to expect an HTTP/100-Continue. */
+  @ConfigItem(section = "transport")
   Optional<Boolean> expectContinueEnabled();
 
   /**

@@ -39,9 +39,9 @@ public class AzuriteTestResourceLifecycleManager implements QuarkusTestResourceL
                 + "/"
                 + azurite.storageContainer());
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.service.adls.account.name", azurite.account())
-        .put("nessie.catalog.service.adls.account.secret", azurite.secretBase64())
-        .put("nessie.catalog.service.adls.endpoint", azurite.endpoint())
+        .put("nessie.catalog.service.adls.default-options.account.name", azurite.account())
+        .put("nessie.catalog.service.adls.default-options.account.secret", azurite.secretBase64())
+        .put("nessie.catalog.service.adls.default-options.endpoint", azurite.endpoint())
         .put("nessie.catalog.default-warehouse", "warehouse")
         .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();

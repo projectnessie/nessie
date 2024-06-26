@@ -32,14 +32,15 @@ catalog:
         override2: value22
   storage:
     s3:
-      region: us-west-2
-      endpoint: s3.amazonaws.com
-#      accessKeySecret:
-#        name: s3-access-key
-#        awsAccessKeyId: access-key-id
-#        awsSecretAccessKey: secret-access-key
       transport:
         readTimeout: PT1M
+      defaultOptions:
+        region: us-west-2
+        endpoint: s3.amazonaws.com
+#        accessKeySecret:
+#          name: s3-access-key
+#          awsAccessKeyId: access-key-id
+#          awsSecretAccessKey: secret-access-key
       buckets:
         - name: bucket1.prod-us
           endpoint: prod-us.s3.amazonaws.com
@@ -49,12 +50,13 @@ catalog:
 #            awsAccessKeyId: access-key-id
 #            awsSecretAccessKey: secret-access-key
     gcs:
-      host: https://storage.googleapis.com
       transport:
         readTimeout: PT1M
 #      authCredentialsJsonSecret:
 #        name: gcs-credentials
 #        key: credentials.json
+      defaultOptions:
+        host: https://storage.googleapis.com
       buckets:
       - name: bucket1.prod-us
         projectId: project-id
@@ -63,7 +65,6 @@ catalog:
 #          key: credentials.json
 
     adls:
-      endpoint: adl://account.azuredatalakestore.net
       transport:
         readTimeout: PT1M
       advancedConfig:
@@ -72,10 +73,12 @@ catalog:
           nested2:
             key2: value2
             key3: value3
-#      accountSecret:
-#        name: adls-account-secret
-#        accountName: account-name
-#        accountKey: account-key
+      defaultOptions:
+        endpoint: adl://account.azuredatalakestore.net
+#        accountSecret:
+#          name: adls-account-secret
+#          accountName: account-name
+#          accountKey: account-key
       filesystems:
       - name: filesystem1
         endpoint: adl://account.azuredatalakestore.net

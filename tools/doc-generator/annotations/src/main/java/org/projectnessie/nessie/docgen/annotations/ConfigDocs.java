@@ -33,10 +33,14 @@ public interface ConfigDocs {
   }
 
   /**
-   * For properties-configs, declares that a property constant field appears in the generated
-   * markdown files.
+   * Define the "section" in which the config option appears.
+   *
+   * <p>For properties-configs, this declares that a property constant field appears in the
+   * generated markdown files.
+   *
+   * <p>For smallrye-configs, this declares that a property appears under a different "prefix".
    */
-  @Target(ElementType.FIELD)
+  @Target({ElementType.FIELD, ElementType.METHOD})
   @Retention(RetentionPolicy.SOURCE)
   @interface ConfigItem {
     /**
@@ -44,6 +48,12 @@ public interface ConfigDocs {
      * generated markdown file will "end" with this name.
      */
     String section() default "";
+
+    /**
+     * For smallrye-configs only, the section docs are taken from docs of the very first property
+     * and that is omitted in the properties table.
+     */
+    boolean firstIsSectionDoc() default false;
   }
 
   /**

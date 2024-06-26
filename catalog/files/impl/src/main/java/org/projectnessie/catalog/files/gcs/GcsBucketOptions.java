@@ -16,9 +16,7 @@
 package org.projectnessie.catalog.files.gcs;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.TokenSecret;
@@ -43,12 +41,6 @@ public interface GcsBucketOptions {
   /** Optionally specify the user project (Google term). */
   Optional<String> userProject();
 
-  /** Override the default read timeout. */
-  Optional<Duration> readTimeout();
-
-  /** Override the default connection timeout. */
-  Optional<Duration> connectTimeout();
-
   /** The Google project ID. */
   Optional<String> projectId();
 
@@ -72,33 +64,6 @@ public interface GcsBucketOptions {
    * via secrets.
    */
   Optional<TokenSecret> oauth2Token();
-
-  /** Override the default maximum number of attempts. */
-  OptionalInt maxAttempts();
-
-  /** Override the default logical request timeout. */
-  Optional<Duration> logicalTimeout();
-
-  /** Override the default total timeout. */
-  Optional<Duration> totalTimeout();
-
-  /** Override the default initial retry delay. */
-  Optional<Duration> initialRetryDelay();
-
-  /** Override the default maximum retry delay. */
-  Optional<Duration> maxRetryDelay();
-
-  /** Override the default retry delay multiplier. */
-  OptionalDouble retryDelayMultiplier();
-
-  /** Override the default initial RPC timeout. */
-  Optional<Duration> initialRpcTimeout();
-
-  /** Override the default maximum RPC timeout. */
-  Optional<Duration> maxRpcTimeout();
-
-  /** Override the default RPC timeout multiplier. */
-  OptionalDouble rpcTimeoutMultiplier();
 
   /** The read chunk size in bytes. */
   OptionalInt readChunkSize();

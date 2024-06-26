@@ -19,6 +19,7 @@ import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrail
 
 import java.util.Map;
 import java.util.Optional;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface CatalogConfig {
@@ -28,28 +29,32 @@ public interface CatalogConfig {
    * If no default warehouse is configured and a request does not specify a warehouse, the request
    * will fail.
    */
+  @ConfigItem(section = "warehouseDefaults")
   Optional<String> defaultWarehouse();
 
   /** Map of warehouse names to warehouse configurations. */
   @ConfigPropertyName("warehouse-name")
+  @ConfigItem(section = "warehouses")
   Map<String, ? extends WarehouseConfig> warehouses();
 
   /**
    * Iceberg config defaults applicable to all clients and warehouses. Any properties that are
    * common to all iceberg clients should be included here. They will be passed to all clients on
    * all warehouses as config defaults. These defaults can be overridden on a per-warehouse basis,
-   * see {@link WarehouseConfig#icebergConfigDefaults()}.
+   * see {@code iceberg-config-defaults} in <a href="#warehouses">Warehouses</a>.
    */
   @ConfigPropertyName("iceberg-property")
+  @ConfigItem(section = "warehouseDefaults")
   Map<String, String> icebergConfigDefaults();
 
   /**
    * Iceberg config overrides applicable to all clients and warehouses. Any properties that are
    * common to all iceberg clients should be included here. They will be passed to all clients on
    * all warehouses as config overrides. These overrides can be overridden on a per-warehouse basis,
-   * see {@link WarehouseConfig#icebergConfigOverrides()}.
+   * see {@code iceberg-config-overrides} in <a href="#warehouses">Warehouses</a>.
    */
   @ConfigPropertyName("iceberg-property")
+  @ConfigItem(section = "warehouseDefaults")
   Map<String, String> icebergConfigOverrides();
 
   /**

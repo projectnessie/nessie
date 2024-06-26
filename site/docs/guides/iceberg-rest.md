@@ -16,12 +16,12 @@ example using the following configuration example snippet:
 
 ```properties
 # Default/global S3 configuration settings
-nessie.catalog.service.s3.region=us-west-2
-nessie.catalog.service.s3.access-key.name=awsAccessKeyId
-nessie.catalog.service.s3.access-key.secret=awsSecretAccessKey
+nessie.catalog.service.s3.default-options.region=us-west-2
+nessie.catalog.service.s3.default-options.access-key.name=awsAccessKeyId
+nessie.catalog.service.s3.default-options.access-key.secret=awsSecretAccessKey
 # For non-AWS S3 you need to specify the endpoint and possibly enable path-style-access
-nessie.catalog.service.s3.endpoint=http://localhost:9000
-nessie.catalog.service.s3.path-style-access=true
+nessie.catalog.service.s3.default-options.endpoint=http://localhost:9000
+nessie.catalog.service.s3.default-options.path-style-access=true
 
 # S3 configuration settings that are different for "bucket1"
 nessie.catalog.service.s3.buckets.bucket1.access-key.name=awsAccessKeyId1
@@ -30,6 +30,10 @@ nessie.catalog.service.s3.buckets.bucket1.region=us-east-1
 ```
 
 See [Server configuration Reference](../nessie-latest/index.md).
+
+!!! note
+    Up to Nessie including version 0.91.2 the above property names had to be specified without the
+    `default-options.` part.
 
 !!! tip
     Secrets can be encrypted using

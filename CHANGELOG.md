@@ -12,6 +12,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- The config properties for the object storage defaults for S3, GCS and ADLS have been moved under the
+  `default-options` composite object. Inconsistent property names between the old defaults and the per-bucket
+  property names have been resolved.
+
 ### New Features
 
 ### Changes
