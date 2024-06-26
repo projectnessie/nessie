@@ -52,11 +52,11 @@ catalog:
     gcs:
       transport:
         readTimeout: PT1M
-#      authCredentialsJsonSecret:
-#        name: gcs-credentials
-#        key: credentials.json
       defaultOptions:
         host: https://storage.googleapis.com
+#        authCredentialsJsonSecret:
+#          name: gcs-credentials
+#          key: credentials.json
       buckets:
       - name: bucket1.prod-us
         projectId: project-id
