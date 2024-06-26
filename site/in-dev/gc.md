@@ -27,16 +27,10 @@ databases.
     for production use. Any JDBC compliant database can be used, but it must be created and the
     schema initialized before running the Nessie GC tool.
 
-## Running locally
+## Running the standalone uber jar
 
-The Nessie GC tool can be downloaded from the [GitHub
-Releases](https://github.com/projectnessie/nessie/releases) page, for example:
-
-```shell
-curl -L -o nessie-gc.jar https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION_BASE::/nessie-gc-::NESSIE_VERSION_BASE::.jar
-```
-
-To see the available commands and options, run:
+Check download options in the [Nessie download page](../downloads/index.md). Once you downloaded the
+jar, to see the available commands and options, run:
 
 ```shell
 java -jar nessie-gc.jar --help
@@ -108,9 +102,9 @@ docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:
 ```
 
 The GC tool has a great number of options, which can be seen by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: --help`. The main command is `gc`, which is followed by
-subcommands and options. Check the available subcommands and options by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: gc --help`.
+ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: --help`. The main command is `gc`,
+which is followed by subcommands and options. Check the available subcommands and options by running
+`docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: gc --help`.
 
 ## Running with Kubernetes
 
