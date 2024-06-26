@@ -98,6 +98,10 @@ get_latest_version () {
 # located at the root-level `/docs` directory.
 create_nightly () {
   echo " --> create nightly"
+  local version="$(cat ../version.txt)"
+  local version_base="${version%-SNAPSHOT}"
+  echo  "     ... version: ${version}"
+  echo  "     ... version_base: ${version_base}"
 
   # Remove any existing 'nightly' directory and recreate it
   rm -rf build/versions/nightly/
@@ -107,6 +111,12 @@ create_nightly () {
   cp -rL in-dev/* build/versions/nightly/docs
   mv build/versions/nightly/docs/mkdocs.yml build/versions/nightly
   rm build/versions/nightly/docs/index-release.md
+
+  echo "     ... replace version placeholders in versioned docs"
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${version}/g" {} \;
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION_BASE::/${version_base}/g" {} \;
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_TAG::/latest/g" {} \;
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_UNSTABLE::/-unstable/g" {} \;
 
   cd build/versions/
 
@@ -314,8 +324,11 @@ release() {
   echo "     ... replace title in versioned mkdocs.yml"
   sed -i'' -E "s/(^site_name:[[:space:]]+).*$/\1\"Nessie ${RELEASE_VERSION}\"/" "${target}/mkdocs.yml"
 
-  echo "     ... replace version placeholder in versioned docs"
-  find "${target}" -name "*.md" -exec sed -i "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
+  echo "     ... replace version placeholders in versioned docs"
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION_BASE::/${RELEASE_VERSION}/g" {} \;
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_TAG::/${RELEASE_VERSION}/g" {} \;
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_UNSTABLE:://g" {} \;
 
   echo "     ... adding release to nav.yml"
   sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include build\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml

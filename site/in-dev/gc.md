@@ -33,7 +33,7 @@ The Nessie GC tool can be downloaded from the [GitHub
 Releases](https://github.com/projectnessie/nessie/releases) page, for example:
 
 ```shell
-curl -L -o nessie-gc.jar https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION::.jar
+curl -L -o nessie-gc.jar https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION_BASE::/nessie-gc-::NESSIE_VERSION_BASE::.jar
 ```
 
 To see the available commands and options, run:
@@ -92,7 +92,7 @@ docker run --rm -e POSTGRES_USER=pguser -e POSTGRES_PASSWORD=mysecretpassword -e
 Create the database schema if required:
 
 ```shell
-docker run --rm ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: create-sql-schema \
+docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: create-sql-schema \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
@@ -101,16 +101,16 @@ docker run --rm ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: create-sql-sc
 Now we can run the Nessie GC tool:
 
 ```shell
-docker run --rm ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: gc \
+docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: gc \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
 ```
 
 The GC tool has a great number of options, which can be seen by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: --help`. The main command is `gc`, which is followed by
+ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: --help`. The main command is `gc`, which is followed by
 subcommands and options. Check the available subcommands and options by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: gc --help`.
+ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: gc --help`.
 
 ## Running with Kubernetes
 
@@ -142,7 +142,7 @@ spec:
     spec:
       containers:
       - name: nessie-gc
-        image: ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION::
+        image: ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG::
         args: 
           - gc
           - --uri
