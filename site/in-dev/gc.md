@@ -29,8 +29,9 @@ databases.
 
 ## Running the standalone uber jar
 
-Check download options in the [Nessie download page](../downloads/index.md). Once you downloaded the
-jar, to see the available commands and options, run:
+Check download options in the [Nessie download page](../downloads/index.md).
+
+To see the available commands and options, run:
 
 ```shell
 java -jar nessie-gc.jar --help
@@ -86,7 +87,7 @@ docker run --rm -e POSTGRES_USER=pguser -e POSTGRES_PASSWORD=mysecretpassword -e
 Create the database schema if required:
 
 ```shell
-docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: create-sql-schema \
+docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: create-sql-schema \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
@@ -95,16 +96,16 @@ docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:
 Now we can run the Nessie GC tool:
 
 ```shell
-docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: gc \
+docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: gc \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
 ```
 
 The GC tool has a great number of options, which can be seen by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: --help`. The main command is `gc`,
+ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: --help`. The main command is `gc`,
 which is followed by subcommands and options. Check the available subcommands and options by running
-`docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG:: gc --help`.
+`docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: gc --help`.
 
 ## Running with Kubernetes
 
@@ -136,7 +137,7 @@ spec:
     spec:
       containers:
       - name: nessie-gc
-        image: ghcr.io/projectnessie/nessie-gc::NESSIE_UNSTABLE:::::NESSIE_TAG::
+        image: ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX::
         args: 
           - gc
           - --uri

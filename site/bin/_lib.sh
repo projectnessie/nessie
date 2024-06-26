@@ -97,11 +97,11 @@ get_latest_version () {
 # Creates a 'nightly' version of the documentation that points to the current versioned docs
 # located at the root-level `/docs` directory.
 create_nightly () {
+  local version
+  version="$(cat ../version.txt)"
+
   echo " --> create nightly"
-  local version="$(cat ../version.txt)"
-  local version_base="${version%-SNAPSHOT}"
   echo  "     ... version: ${version}"
-  echo  "     ... version_base: ${version_base}"
 
   # Remove any existing 'nightly' directory and recreate it
   rm -rf build/versions/nightly/
@@ -114,9 +114,7 @@ create_nightly () {
 
   echo "     ... replace version placeholders in versioned docs"
   find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${version}/g" {} \;
-  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION_BASE::/${version_base}/g" {} \;
-  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_TAG::/latest/g" {} \;
-  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_UNSTABLE::/-unstable/g" {} \;
+  find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_DOCKER_SUFFIX::/-unstable:latest/g" {} \;
 
   cd build/versions/
 
@@ -326,9 +324,7 @@ release() {
 
   echo "     ... replace version placeholders in versioned docs"
   find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
-  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION_BASE::/${RELEASE_VERSION}/g" {} \;
-  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_TAG::/${RELEASE_VERSION}/g" {} \;
-  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_UNSTABLE:://g" {} \;
+  find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_DOCKER_SUFFIX::/:${RELEASE_VERSION}/g" {} \;
 
   echo "     ... adding release to nav.yml"
   sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include build\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml
