@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - Quarkus Server"
+publishingHelper { mavenName = "Nessie - Quarkus Server" }
 
 val quarkusRunner by
   configurations.creating {

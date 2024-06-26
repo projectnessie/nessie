@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - GC - Standalone command line tool"
+publishingHelper { mavenName = "Nessie - GC - Standalone command line tool" }
 
 dependencies {
   implementation(nessieProject("nessie-client"))
@@ -128,10 +128,11 @@ val generateAutoComplete by
 
     mainClass = "picocli.AutoComplete"
     classpath(configurations.named("runtimeClasspath"), compileJava)
+    workingDir(projectDir)
     args(
       "--force",
       "-o",
-      completionScriptsDir.get().dir("nessie-gc-completion").toString(),
+      completionScriptsDir.get().dir("nessie-gc-completion").asFile.relativeTo(projectDir),
       mainClassName
     )
 

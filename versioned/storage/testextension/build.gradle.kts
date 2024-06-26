@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Testextension"
+publishingHelper { mavenName = "Nessie - Storage - Testextension" }
 
 description = "JUnit 5 test extension providing configurable 'Persist' instances."
 

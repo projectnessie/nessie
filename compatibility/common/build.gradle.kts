@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Backward Compatibility - Common"
+publishingHelper { mavenName = "Nessie - Backward Compatibility - Common" }
 
 dependencies {
   api(project(":nessie-client"))

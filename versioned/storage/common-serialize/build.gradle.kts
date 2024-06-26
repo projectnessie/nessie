@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Common serialization"
+publishingHelper { mavenName = "Nessie - Storage - Common serialization" }
 
 description = "Serialization for storage objects."
 

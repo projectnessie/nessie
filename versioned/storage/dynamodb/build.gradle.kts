@@ -21,7 +21,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - DynamoDB"
+publishingHelper { mavenName = "Nessie - Storage - DynamoDB" }
 
 description = "Storage implementation for DynamoDB."
 

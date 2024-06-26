@@ -22,7 +22,7 @@ plugins {
   alias(libs.plugins.annotations.stripper)
 }
 
-extra["maven.name"] = "Nessie - Client"
+publishingHelper { mavenName = "Nessie - Client" }
 
 dependencies {
   api(project(":nessie-model"))

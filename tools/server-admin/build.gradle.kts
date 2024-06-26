@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - Quarkus CLI"
+publishingHelper { mavenName = "Nessie - Server Admin Tool" }
 
 // Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8

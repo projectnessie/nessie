@@ -27,7 +27,7 @@ plugins {
 
 apply<ReleaseSupportPlugin>()
 
-extra["maven.name"] = "Nessie"
+publishingHelper { mavenName = "Nessie" }
 
 description = "Transactional Catalog for Data Lakes"
 

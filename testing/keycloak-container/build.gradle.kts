@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-iceberg") }
 
-extra["maven.name"] = "Nessie - Keycloak testcontainer"
+publishingHelper { mavenName = "Nessie - Keycloak testcontainer" }
 
 dependencies {
   implementation(libs.slf4j.api)

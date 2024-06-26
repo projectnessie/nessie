@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - MongoDB - Tests"
+publishingHelper { mavenName = "Nessie - Storage - MongoDB - Tests" }
 
 description = "Base test code for creating test backends using MongoDB."
 

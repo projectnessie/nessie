@@ -25,7 +25,7 @@ plugins {
   alias(libs.plugins.smallrye.openapi)
 }
 
-extra["maven.name"] = "Nessie - Model - Variant only for Java 11+ consumers"
+publishingHelper { mavenName = "Nessie - Model - Variant only for Java 11+ consumers" }
 
 description =
   "nessie-model-jakarta is effectively the same as nessie-model, but it is _not_ a " +

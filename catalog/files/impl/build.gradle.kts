@@ -20,7 +20,7 @@ plugins {
   alias(libs.plugins.jmh)
 }
 
-extra["maven.name"] = "Nessie - Catalog - Object I/O"
+publishingHelper { mavenName = "Nessie - Catalog - Object I/O" }
 
 dependencies {
   implementation(project(":nessie-catalog-model"))

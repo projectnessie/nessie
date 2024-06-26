@@ -352,9 +352,3 @@ class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>)
     }
   }
 }
-
-class WriteFile(val file: File, val text: String) : Action<Task> {
-  override fun execute(task: Task) {
-    file.writeText(text)
-  }
-}

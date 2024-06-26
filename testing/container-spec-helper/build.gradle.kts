@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-client") }
 
-extra["maven.name"] = "Nessie - Container Specification Helper"
+publishingHelper { mavenName = "Nessie - Container Specification Helper" }
 
 dependencies {
   implementation(libs.slf4j.api)

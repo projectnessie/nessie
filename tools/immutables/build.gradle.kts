@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-client") }
 
-extra["maven.name"] = "Nessie - Build tool - Immutables"
+publishingHelper { mavenName = "Nessie - Build tool - Immutables" }
 
 val processor by configurations.creating
 

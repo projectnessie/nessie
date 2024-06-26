@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Batching Persist"
+publishingHelper { mavenName = "Nessie - Storage - Batching Persist" }
 
 description = "Storage implementation using in-memory maps, not persisting."
 

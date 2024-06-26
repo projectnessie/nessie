@@ -20,7 +20,7 @@ plugins {
   alias(libs.plugins.jmh)
 }
 
-extra["maven.name"] = "Nessie - Storage - Common"
+publishingHelper { mavenName = "Nessie - Storage - Common" }
 
 description = "Storage interfaces and logic implementations."
 

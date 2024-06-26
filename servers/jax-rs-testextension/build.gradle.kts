@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - JUnit Jupiter Test Extension"
+publishingHelper { mavenName = "Nessie - JUnit Jupiter Test Extension" }
 
 description = "JUnit Jupiter Extension to run tests against an \"embedded\" Nessie instance."
 

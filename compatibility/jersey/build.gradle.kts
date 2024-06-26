@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-server") }
 
-extra["maven.name"] = "Nessie - Backward Compatibility - Jersey"
+publishingHelper { mavenName = "Nessie - Backward Compatibility - Jersey" }
 
 dependencies {
   implementation(project(":nessie-model"))

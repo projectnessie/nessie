@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-server") }
 
-extra["maven.name"] = "Nessie - REST-API Tests"
+publishingHelper { mavenName = "Nessie - REST-API Tests" }
 
 description = "Artifact for REST-API tests, includes Glassfish/Jersey/Weld implementation."
 

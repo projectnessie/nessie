@@ -21,7 +21,7 @@ plugins {
   id("nessie-shadow-jar")
 }
 
-extra["maven.name"] = "Nessie - Antlr Runtime"
+publishingHelper { mavenName = "Nessie - Antlr Runtime" }
 
 dependencies { implementation(libs.antlr.antlr4.runtime) }
 

@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - GC - JDBC live-contents-set persistence"
+publishingHelper { mavenName = "Nessie - GC - JDBC live-contents-set persistence" }
 
 dependencies {
   compileOnly(libs.errorprone.annotations)

@@ -20,7 +20,7 @@ plugins {
   alias(libs.plugins.nessie.run)
 }
 
-extra["maven.name"] = "Nessie - GC - Integration tests"
+publishingHelper { mavenName = "Nessie - GC - Integration tests" }
 
 val sparkScala = useSparkScalaVersionsForProject("3.5", "2.12")
 

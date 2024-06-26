@@ -16,4 +16,4 @@
 
 plugins { id("nessie-conventions-server8") }
 
-extra["maven.name"] = "Nessie - Services Config"
+publishingHelper { mavenName = "Nessie - Services Config" }

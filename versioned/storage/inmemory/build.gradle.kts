@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Inmemory"
+publishingHelper { mavenName = "Nessie - Storage - Inmemory" }
 
 description = "Storage implementation using in-memory maps, not persisting."
 

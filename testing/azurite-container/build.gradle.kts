@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-iceberg") }
 
-extra["maven.name"] = "Nessie - Azurite testcontainer"
+publishingHelper { mavenName = "Nessie - Azurite testcontainer" }
 
 dependencies {
   implementation(libs.slf4j.api)

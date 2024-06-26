@@ -21,7 +21,7 @@ plugins {
   id("nessie-common-base")
 }
 
-extra["maven.name"] = "Nessie - NOTICE file"
+publishingHelper { mavenName = "Nessie - NOTICE file" }
 
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
