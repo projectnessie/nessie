@@ -29,8 +29,9 @@ as necessary. Empty sections will not end in the release notes.
 - We have improved Nessie client's support for impersonation scenarios using the token exchange
   grant type. A few options starting with `nessie.authentication.oauth2.token-exchange.*` were
   renamed to `nessie.authentication.oauth2.impersonation.*`. Check the [Nessie authentication
-  settings] for details. Please note that token exchange and impersonation are both considered in
-  beta state. Their APIs and configuration options are subject to change at any time.
+  settings](https://projectnessie.org/tools/client_config/#authentication-settings) for details.
+  Please note that token exchange and impersonation are both considered in beta state. Their APIs
+  and configuration options are subject to change at any time.
 
 ## [0.91.1] Release (2024-06-22)
 
@@ -53,9 +54,10 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - Support for token exchange in the Nessie client has been completely redesigned. The new API and
-  configuration options are described in the [Nessie authentication settings]. If this feature is
-  enabled, each time a new access token is obtained, the client will exchange it for another one by
-  performing a token exchange with the authorization server. We hope that this new feature will
+  configuration options are described in the [Nessie authentication
+  settings](https://projectnessie.org/tools/client_config/#authentication-settings). If this feature
+  is enabled, each time a new access token is obtained, the client will exchange it for another one
+  by performing a token exchange with the authorization server. We hope that this new feature will
   unlock many advanced use cases for Nessie users, such as impersonation and delegation. Please note
   that token exchange is considered in beta state and both the API and configuration options are
   subject to change at any time; we appreciate early feedback, comments and suggestions.
@@ -581,4 +583,3 @@ as necessary. Empty sections will not end in the release notes.
 [0.66.0]: https://github.com/projectnessie/nessie/compare/nessie-0.65.1...nessie-0.66.0
 [0.65.1]: https://github.com/projectnessie/nessie/compare/nessie-0.65.0...nessie-0.65.1
 [0.65.0]: https://github.com/projectnessie/nessie/compare/nessie-0.64.0...nessie-0.65.0
-[Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings
