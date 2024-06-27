@@ -24,6 +24,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fix console output during `CONNECT` in CLI/REPL (the bug was introduced in 0.91.1)
+
 ### Commits
 
 ## [0.91.2] Release (2024-06-24)

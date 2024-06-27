@@ -150,7 +150,7 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
             icebergClient = new RESTCatalog();
             icebergClient.initialize("iceberg", icebergProperties);
           } finally {
-            System.setErr(out);
+            System.setOut(out);
             System.setErr(err);
           }
         } catch (RESTException e) {
