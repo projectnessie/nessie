@@ -118,13 +118,22 @@ See [projectnessie/nessie GitHub](https://github.com/projectnessie/nessie) for b
 ## Nessie SNAPSHOT Maven artifacts
 
 Snapshot artifacts are available from Sonatype. The version of the published _SNAPSHOT_ artifacts
-changes with every Nessie release. The currently published _SNAPSHOT_ version can be [inspected in a
-browser on GitHub](https://github.com/projectnessie/nessie/blob/main/version.txt) or on the command
-line using the following command:
+changes with every Nessie release. 
+
+!!! note
+    Snapshot artifacts are meant for development and testing purposes only, especially when
+    developing against Nessie. They are not meant for production use.
+
+The currently published _SNAPSHOT_ version can be [inspected in a browser on
+GitHub](https://github.com/projectnessie/nessie/blob/main/version.txt) or on the command line using
+the following command:
 
 ```bash
 curl https://github.com/projectnessie/nessie/blob/main/version.txt
 ```
+
+Snapshot repositories must be added to your build configuration. The following examples show how to
+add the repository to your build configuration:
 
 === "Maven"
     In your Maven `pom.xml` add the SonaType repository:
@@ -162,3 +171,29 @@ curl https://github.com/projectnessie/nessie/blob/main/version.txt
       }
     }
     ```
+
+The following examples show how to add the Nessie BOM to your build configuration:
+
+=== "Maven"
+    In your Maven `pom.xml` add the Nessie BOM as a dependency:
+    ```xml
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-bom</artifactId>
+          <version>::NESSIE_VERSION::</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+    ```
+=== "Gradle (Kotlin)"
+    In your Gradle project's `build.gradle.kts` add the Nessie BOM as an enforced platform:
+    ```kotlin
+    dependencies {
+      enforcedPlatform("org.projectnessie:nessie-bom:::NESSIE_VERSION::")
+    }
+    ```
+

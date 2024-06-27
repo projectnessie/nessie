@@ -293,6 +293,31 @@ Useful links:
 * [Nessie ::NESSIE_VERSION:: `org.projectnessie.nessie` artifacts](https://search.maven.org/search?q=g:org.projectnessie.nessie%20v:::NESSIE_VERSION::)
 * [Nessie ::NESSIE_VERSION:: `org.projectnessie.nessie-integrations` artifacts](https://search.maven.org/search?q=g:org.projectnessie.nessie-integrations%20v:::NESSIE_VERSION::)
 
+The following examples show how to add the Nessie BOM to your build configuration:
+
+=== "Maven"
+    In your Maven `pom.xml` add the Nessie BOM as a dependency:
+    ```xml
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-bom</artifactId>
+          <version>::NESSIE_VERSION::</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+    ```
+=== "Gradle (Kotlin)"
+    In your Gradle project's `build.gradle.kts` add the Nessie BOM as an enforced platform:
+    ```kotlin
+    dependencies {
+      enforcedPlatform("org.projectnessie:nessie-bom:::NESSIE_VERSION::")
+    }
+    ```
+
 ## License Reports
 
 License reports for this release are [available via this link (zip file)](https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-aggregated-license-report-::NESSIE_VERSION::.zip).
