@@ -215,19 +215,7 @@ public class CatalogProducers {
       maxThreads = Math.min(16, Math.max(2, Runtime.getRuntime().availableProcessors()));
     }
 
-    ScheduledThreadPoolExecutor executorService =
-        new ScheduledThreadPoolExecutor(
-            1,
-            new ThreadFactory() {
-              private final ThreadGroup group = Thread.currentThread().getThreadGroup();
-              private final AtomicInteger num = new AtomicInteger();
-
-              @Override
-              public Thread newThread(Runnable r) {
-                return new Thread(group, r, "tasks-async-" + num.incrementAndGet());
-              }
-            });
-    executorService.allowCoreThreadTimeOut(true);
+    ScheduledThreadPoolExecutor executorService = buildScheduledExecutor();
     executorService.setKeepAliveTime(
         config.tasksThreadsKeepAlive().toMillis(), TimeUnit.MILLISECONDS);
     executorService.setMaximumPoolSize(maxThreads);
@@ -249,6 +237,23 @@ public class CatalogProducers {
     // With Vert.x Quarkus runs into this warning quite often:
     //   WARN  [io.qua.ope.run.QuarkusContextStorage] (executor-thread-1) Context in storage not the
     //     expected context, Scope.close was not called correctly. Details: OTel context before:
+  }
+
+  private static ScheduledThreadPoolExecutor buildScheduledExecutor() {
+    ScheduledThreadPoolExecutor executorService =
+        new ScheduledThreadPoolExecutor(
+            1,
+            new ThreadFactory() {
+              private final ThreadGroup group = Thread.currentThread().getThreadGroup();
+              private final AtomicInteger num = new AtomicInteger();
+
+              @Override
+              public Thread newThread(Runnable r) {
+                return new Thread(group, r, "tasks-async-" + num.incrementAndGet());
+              }
+            });
+    executorService.allowCoreThreadTimeOut(true);
+    return executorService;
   }
 
   @Produces

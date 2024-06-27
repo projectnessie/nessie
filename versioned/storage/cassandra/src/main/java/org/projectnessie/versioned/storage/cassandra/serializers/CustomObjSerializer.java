@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -48,8 +47,7 @@ public class CustomObjSerializer extends ObjSerializer<Obj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      Obj obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+      Obj obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize) {
     stmt.setByteBuffer(
         COL_CUSTOM_DATA.name(),
         ByteBuffer.wrap(
@@ -57,7 +55,6 @@ public class CustomObjSerializer extends ObjSerializer<Obj> {
                 obj,
                 compression ->
                     stmt.setString(COL_CUSTOM_COMPRESSION.name(), compression.valueString()))));
-    ;
   }
 
   @Override

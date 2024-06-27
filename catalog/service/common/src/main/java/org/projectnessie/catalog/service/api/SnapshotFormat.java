@@ -28,5 +28,4 @@ public enum SnapshotFormat {
   NESSIE_SNAPSHOT,
   /** Iceberg table metadata. */
   ICEBERG_TABLE_METADATA,
-  ;
 }

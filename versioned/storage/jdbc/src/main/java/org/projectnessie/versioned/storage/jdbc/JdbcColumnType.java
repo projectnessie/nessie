@@ -29,5 +29,5 @@ public enum JdbcColumnType {
   // 5
   BIGINT(),
   // 6
-  VARCHAR();
+  VARCHAR(),
 }

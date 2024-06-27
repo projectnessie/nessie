@@ -47,6 +47,7 @@ public class ListContentsCommand extends NessieListingCommand<ListContentsComman
       }
     }
 
+    @SuppressWarnings("resource")
     GetEntriesBuilder entries = applyReference(cli, spec, cli.mandatoryNessieApi().getEntries());
 
     if (filter != null) {

@@ -69,14 +69,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
       ContentKey key = ContentKey.of("table");
       Hash parent = i == 0 ? createHash : commitHashes[i - 1];
       ContentResult value =
-          store()
-              .getValue(
-                  store()
-                      .hashOnReference(
-                          branch,
-                          Optional.of(i == 0 ? createHash : commitHashes[i - 1]),
-                          emptyList()),
-                  key);
+          store().getValue(store().hashOnReference(branch, Optional.of(parent), emptyList()), key);
       Put op =
           value != null
               ? Put.of(key, onRef(str, value.content().getId()))

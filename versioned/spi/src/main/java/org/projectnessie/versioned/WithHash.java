@@ -39,7 +39,7 @@ public interface WithHash<T> {
    * @param value The value held.
    * @return A new WithHash object.
    */
-  public static <T> WithHash<T> of(Hash hash, T value) {
+  static <T> WithHash<T> of(Hash hash, T value) {
     return ImmutableWithHash.<T>builder().hash(hash).value(value).build();
   }
 }

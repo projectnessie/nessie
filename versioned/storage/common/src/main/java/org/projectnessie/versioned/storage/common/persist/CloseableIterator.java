@@ -16,27 +16,9 @@
 package org.projectnessie.versioned.storage.common.persist;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
 
   @Override
   void close();
-
-  static <T> CloseableIterator<T> emptyCloseableIterator() {
-    return new CloseableIterator<>() {
-      @Override
-      public void close() {}
-
-      @Override
-      public boolean hasNext() {
-        return false;
-      }
-
-      @Override
-      public T next() {
-        throw new NoSuchElementException();
-      }
-    };
-  }
 }

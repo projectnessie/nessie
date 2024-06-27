@@ -1473,7 +1473,7 @@ public abstract class BaseTestNessieApi {
               .removeProperty("foo")
               .updateWithResponse();
       soft.assertThat(updateResponse.getEffectiveBranch()).isNotEqualTo(main);
-      main = updateResponse.getEffectiveBranch();
+      updateResponse.getEffectiveBranch();
     } else {
       api()
           .updateProperties()

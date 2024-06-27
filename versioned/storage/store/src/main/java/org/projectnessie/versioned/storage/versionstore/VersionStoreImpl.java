@@ -539,7 +539,7 @@ public class VersionStoreImpl implements VersionStore {
             NamedRef namedRef = referenceToNamedRef(reference);
             CommitObj head = commitLogic(persist).headCommit(reference);
             return buildReferenceInfo(params, baseRefHead, commitLogic, namedRef, head);
-          } catch (ReferenceNotFoundException | ObjNotFoundException e) {
+          } catch (ObjNotFoundException e) {
             throw new RuntimeException("Could not resolve reference " + reference, e);
           }
         }) {
@@ -567,7 +567,7 @@ public class VersionStoreImpl implements VersionStore {
       CommitLogic commitLogic,
       NamedRef namedRef,
       CommitObj head)
-      throws ObjNotFoundException, ReferenceNotFoundException {
+      throws ObjNotFoundException {
     ImmutableReferenceInfo.Builder<CommitMeta> refInfo =
         ReferenceInfo.<CommitMeta>builder().namedRef(namedRef);
 

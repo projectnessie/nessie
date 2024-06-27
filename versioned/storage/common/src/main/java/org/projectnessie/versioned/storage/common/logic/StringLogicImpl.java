@@ -147,7 +147,7 @@ final class StringLogicImpl implements StringLogic {
     }
 
     @Override
-    public String completeValue() throws ObjNotFoundException {
+    public String completeValue() {
       return obj.text().toStringUtf8();
     }
 

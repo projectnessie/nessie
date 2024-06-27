@@ -88,7 +88,7 @@ abstract class AbstractMultiVersionExtension
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
     Optional<Version> version = nessieVersionFromContext(context);
-    if (!version.isPresent()) {
+    if (version.isEmpty()) {
       if (isNessieMultiVersionTest(context)) {
         return disabled("(not running via multi-nessie-version engine)");
       }
@@ -158,7 +158,7 @@ abstract class AbstractMultiVersionExtension
     checkExtensions(context.getRequiredTestClass());
 
     Optional<Version> nessieVersion = nessieVersionFromContext(context);
-    if (!nessieVersion.isPresent()) {
+    if (nessieVersion.isEmpty()) {
       return null;
     }
     Version version = nessieVersion.get();

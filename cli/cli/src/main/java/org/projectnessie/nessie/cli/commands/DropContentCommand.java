@@ -49,6 +49,7 @@ public class DropContentCommand extends NessieCommittingCommand<DropContentComma
       throws Exception {
     ContentKey contentKey = ContentKey.fromPathString(spec.getContentKey());
 
+    @SuppressWarnings("resource")
     Content content =
         applyReference(cli, spec, cli.mandatoryNessieApi().getContent())
             .getSingle(contentKey)

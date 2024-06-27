@@ -78,11 +78,13 @@ public interface MergeResponse {
   @jakarta.annotation.Nullable
   String getExpectedHash();
 
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal and replaced with something else
   @Schema(deprecated = true, hidden = true)
   @JsonView(Views.V1.class)
   List<LogEntry> getSourceCommits();
 
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Nullable
   @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
@@ -102,6 +104,7 @@ public interface MergeResponse {
 
     MergeBehavior getMergeBehavior();
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated // for removal, #getConflict() is a proper replacement
     @Value.Default
     @JsonDeserialize(using = ContentKeyConflict.Deserializer.class)
@@ -111,11 +114,13 @@ public interface MergeResponse {
       return ContentKeyConflict.NONE;
     }
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated // for removal and replaced with something else
     @Schema(deprecated = true, hidden = true)
     @JsonView(Views.V1.class)
     List<String> getSourceCommits();
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated // for removal and replaced with something else
     @Schema(deprecated = true, hidden = true)
     @JsonView(Views.V1.class)
@@ -129,6 +134,7 @@ public interface MergeResponse {
     Conflict getConflict();
   }
 
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal
   enum ContentKeyConflict {
     NONE,

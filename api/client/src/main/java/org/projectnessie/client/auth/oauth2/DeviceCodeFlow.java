@@ -117,7 +117,7 @@ class DeviceCodeFlow extends AbstractFlow {
     } catch (ExecutionException e) {
       abort();
       Throwable cause = e.getCause();
-      LOGGER.error("Authentication failed: " + cause.getMessage());
+      LOGGER.error("Authentication failed: {}", cause.getMessage());
       if (cause instanceof HttpClientException) {
         throw (HttpClientException) cause;
       }

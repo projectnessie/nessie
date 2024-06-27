@@ -156,7 +156,6 @@ public class CatalogServiceImpl implements CatalogService {
               try {
                 snapshotId = snapshotIdFromContent(c.getContent());
               } catch (Exception e) {
-                e.printStackTrace();
                 return null;
               }
               return (Supplier<CompletionStage<SnapshotResponse>>)
@@ -524,7 +523,6 @@ public class CatalogServiceImpl implements CatalogService {
                   try {
                     snapshotId = snapshotIdFromContent(updated);
                   } catch (Exception e) {
-                    e.printStackTrace();
                     return null;
                   }
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
@@ -597,7 +595,6 @@ public class CatalogServiceImpl implements CatalogService {
                   try {
                     snapshotId = snapshotIdFromContent(updated);
                   } catch (Exception e) {
-                    e.printStackTrace();
                     return null;
                   }
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
@@ -669,15 +666,13 @@ public class CatalogServiceImpl implements CatalogService {
     }
   }
 
-  private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content)
-      throws NessieContentNotFoundException {
+  private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content) {
     ObjId snapshotId = snapshotIdFromContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
         .retrieveIcebergSnapshot(snapshotId, content);
   }
 
-  private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content)
-      throws NessieContentNotFoundException {
+  private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content) {
     ObjId snapshotId = snapshotIdFromContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
         .retrieveIcebergSnapshot(snapshotId, content);

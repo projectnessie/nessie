@@ -79,7 +79,6 @@ public interface CommandContainer extends Node {
               // spec = null;
               break;
           }
-          ;
         }
         if (spec != null) {
           commandSpecs.add(spec);
@@ -162,7 +161,6 @@ public interface CommandContainer extends Node {
             spec = null;
             break;
         }
-        ;
         if (spec != null) {
           commandSpecs.add(spec);
         }

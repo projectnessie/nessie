@@ -77,6 +77,7 @@ public class CLI {
 
   @VisibleForTesting
   public static int runMain(PrintWriter out, PrintWriter err, String... arguments) {
+    @SuppressWarnings("InstantiationOfUtilityClass")
     CommandLine commandLine =
         new CommandLine(new CLI())
             .setExecutionExceptionHandler(

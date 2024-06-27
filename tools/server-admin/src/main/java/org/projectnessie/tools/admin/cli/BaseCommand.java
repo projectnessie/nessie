@@ -53,9 +53,11 @@ public abstract class BaseCommand implements Callable<Integer> {
               spec.commandLine()
                   .getColorScheme()
                   .errorText(
-                      "****************************************************************************************\n"
-                          + "** Repository information & maintenance for an in-memory implementation is meaningless\n"
-                          + "****************************************************************************************\n"));
+                      """
+                      ****************************************************************************************
+                      ** Repository information & maintenance for an in-memory implementation is meaningless
+                      ****************************************************************************************
+                      """));
     }
   }
 

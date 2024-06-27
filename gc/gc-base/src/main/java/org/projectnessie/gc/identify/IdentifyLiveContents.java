@@ -163,6 +163,7 @@ public abstract class IdentifyLiveContents {
       throw new IllegalStateException("identifyLiveContents() has already been called.");
     }
 
+    @SuppressWarnings("resource")
     ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism());
     try {
       return forkJoinPool.invoke(ForkJoinTask.adapt(this::walkAllReferences));
@@ -174,6 +175,7 @@ public abstract class IdentifyLiveContents {
   private UUID walkAllReferences() {
     try (AddContents addContents = liveContentSetsRepository().newAddContents()) {
       try {
+        @SuppressWarnings("resource")
         Stream<Reference> refs = repositoryConnector().allReferences();
 
         // If a Reference comparator is configured, then apply it to the stream of references.
@@ -210,6 +212,7 @@ public abstract class IdentifyLiveContents {
     }
   }
 
+  @SuppressWarnings("resource")
   private ReferencesWalkResult identifyContentsForReference(
       AddContents addContents, Reference namedReference) {
     CutoffPolicy cutoffPolicy = cutOffPolicySupplier().get(namedReference);
@@ -334,6 +337,7 @@ public abstract class IdentifyLiveContents {
     return ReferencesWalkResult.single(numCommits, numContents);
   }
 
+  @SuppressWarnings("resource")
   private long collectAllKeys(AddContents addContents, Detached ref)
       throws NessieNotFoundException {
     return addContents.addLiveContent(

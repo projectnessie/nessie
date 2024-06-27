@@ -92,14 +92,7 @@ class RepositoryConfigBackend {
 
       return Arrays.stream(objs)
           .filter(Objects::nonNull)
-          .map(
-              s -> {
-                try {
-                  return stringLogic.fetchString(s);
-                } catch (ObjNotFoundException e) {
-                  throw new RuntimeException(e);
-                }
-              })
+          .map(stringLogic::fetchString)
           .map(RepositoryConfigBackend::deserialize)
           .collect(Collectors.toList());
     } catch (ObjNotFoundException | RetryTimeoutException e) {
@@ -170,7 +163,7 @@ class RepositoryConfigBackend {
   private static RepositoryConfig deserialize(StringValue value) {
     try {
       return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryConfig.class);
-    } catch (ObjNotFoundException | IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }

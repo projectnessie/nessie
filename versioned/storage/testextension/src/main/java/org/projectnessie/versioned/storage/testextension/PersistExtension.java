@@ -76,7 +76,7 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
       }
 
       Optional<ExtensionContext> p = context.getParent();
-      if (!p.isPresent()) {
+      if (p.isEmpty()) {
         return null;
       }
       context = p.get();

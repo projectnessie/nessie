@@ -176,7 +176,7 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
 
     UUID liveContentSetId = identify.identifyLiveContents();
 
-    LiveContentSet liveContentSet = null;
+    LiveContentSet liveContentSet;
     try {
       liveContentSet = liveContentSetsRepository.getLiveContentSet(liveContentSetId);
     } catch (LiveContentSetNotFoundException e) {

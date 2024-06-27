@@ -58,7 +58,7 @@ public abstract class FileExporter implements ExportFileSupplier {
     if (isDirectory(targetDirectory())) {
       try (Stream<Path> listing = Files.list(targetDirectory())) {
         checkState(
-            !listing.findAny().isPresent(),
+            listing.findAny().isEmpty(),
             "Target directory %s must be empty, but is not",
             targetDirectory());
       }
