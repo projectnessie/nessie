@@ -150,9 +150,14 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
                     all);
               }
 
-              resolvedAddresses = all;
+              updateResolvedAddresses(all);
             })
         .onFailure(t -> LOGGER.error("Failed to resolve service names: {}", t.toString()));
+  }
+
+  @VisibleForTesting
+  void updateResolvedAddresses(List<String> all) {
+    resolvedAddresses = all;
   }
 
   private void updateServiceNamesHandleFailure() {
