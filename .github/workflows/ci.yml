@@ -658,7 +658,7 @@ jobs:
     if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
         with:
           fetch-depth: 0
       - name: Setup runner
