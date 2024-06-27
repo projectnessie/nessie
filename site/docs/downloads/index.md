@@ -66,45 +66,9 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
     java -jar nessie-quarkus-{{ versions.nessie }}-runner.jar
     ```
 
-=== "Maven Central"
-
-    * [Nessie Server on Maven Central](https://search.maven.org/artifact/org.projectnessie.nessie/nessie-quarkus/{{ versions.nessie }}/runner)
-
-    * Gradle Kotlin snippet:
-
-    ```kotlin
-    implementation("org.projectnessie.nessie:nessie-quarkus:{{ versions.nessie }}:runner")
-    ```
-
-    * Maven snippet:
-
-    ```xml
-    <dependency>
-      <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-quarkus</artifactId>
-      <version>{{ versions.nessie }}</version>
-    </dependency>
-    ```
-
-    * Download all dependencies with Maven:
-
-    ```bash 
-    mvn dependency:get -Dartifact=org.projectnessie.nessie:nessie-quarkus:{{ versions.nessie }}:jar:runner
-    ```
-
 ## Nessie CLI & REPL
 
 [Nessie CLI](/nessie-latest/cli/) is both a command-line interface but primarily a REPL.
-
-=== "Standalone Jar"
-
-    Requires Java 11 or newer.
-
-    ```bash
-    curl -L -o nessie-cli-{{ versions.nessie }}.jar \
-      https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-cli-{{ versions.nessie }}.jar
-    java -jar nessie-cli-{{ versions.nessie }}.jar
-    ```
 
 === "Docker Image"
 
@@ -125,30 +89,14 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
     docker run -it quay.io/projectnessie/nessie-cli:{{ versions.nessie }}
     ```
 
-=== "Maven Central"
+=== "Standalone Jar"
 
-    * [Nessie CLI on Maven Central](https://search.maven.org/artifact/org.projectnessie.nessie/nessie-cli/{{ versions.nessie }}/jar)
+    Requires Java 11 or newer.
 
-    * Gradle Kotlin snippet:
-
-    ```kotlin
-    implementation("org.projectnessie.nessie:nessie-cli:{{ versions.nessie }}")
-    ```
-
-    * Maven snippet:
-
-    ```xml
-    <dependency>
-      <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-cli</artifactId>
-      <version>{{ versions.nessie }}</version>
-    </dependency>
-    ```
-
-    * Download all dependencies with Maven:
-
-    ```bash 
-    mvn dependency:get -Dartifact=org.projectnessie.nessie:nessie-cli:{{ versions.nessie }}:jar
+    ```bash
+    curl -L -o nessie-cli-{{ versions.nessie }}.jar \
+      https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-cli-{{ versions.nessie }}.jar
+    java -jar nessie-cli-{{ versions.nessie }}.jar
     ```
 
 ## Nessie GC Tool
@@ -184,32 +132,6 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
     java -jar nessie-gc-{{ versions.nessie }}.jar
     ```
 
-=== "Maven Central"
-
-    * [Nessie GC on Maven Central](https://search.maven.org/artifact/org.projectnessie.nessie-integrations/nessie-gc-tool/{{ versions.nessie }}/jar)
-
-    * Gradle Kotlin snippet:
-
-    ```kotlin
-    implementation("org.projectnessie.nessie-integrations:nessie-gc-tool:{{ versions.nessie }}")
-    ```
-
-    * Maven snippet:
-
-    ```xml
-    <dependency>
-      <groupId>org.projectnessie.nessie-integrations</groupId>
-      <artifactId>nessie-gc-tool</artifactId>
-      <version>{{ versions.nessie }}</version>
-    </dependency>
-    ```
-
-    * Download all dependencies with Maven:
-
-    ```bash 
-    mvn dependency:get -Dartifact=org.projectnessie.nessie-integrations:nessie-gc-tool:{{ versions.nessie }}:jar
-    ```
-
 ## Nessie Server Admin Tool
 
 Nessie's [Server Admin Tool](/nessie-latest/export-import/) allows migration (export/import) of a
@@ -242,32 +164,6 @@ Nessie repository.
     curl -L -o nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
       https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
     java -jar nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
-    ```
-
-=== "Maven Central"
-
-    * [Nessie Server Admin Tool on Maven Central](https://search.maven.org/artifact/org.projectnessie.nessie/nessie-server-admin-tool/{{ versions.nessie }}/runner)
-
-    * Gradle Kotlin snippet:
-
-    ```kotlin
-    implementation("org.projectnessie.nessie:nessie-server-admin-tool:{{ versions.nessie }}:runner")
-    ```
-
-    * Maven snippet:
-
-    ```xml
-    <dependency>
-      <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-server-admin-tool</artifactId>
-      <version>{{ versions.nessie }}</version>
-    </dependency>
-    ```
-
-    * Download all dependencies with Maven:
-
-    ```bash 
-    mvn dependency:get -Dartifact=org.projectnessie.nessie:nessie-server-admin-tool:{{ versions.nessie }}:jar
     ```
 
 ## Nessie REST API
