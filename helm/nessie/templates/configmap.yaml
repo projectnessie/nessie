@@ -21,9 +21,6 @@ data:
     {{- $_ = set $map "quarkus.log.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.file.level" .Values.logLevel -}}
-    {{- if or (eq .Values.logLevel "DEBUG") (eq .Values.logLevel "TRACE") -}}
-    {{- $_ = set $map "quarkus.log.min-level" .Values.logLevel -}}
-    {{- end -}}
     {{- end -}}
 
     {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
