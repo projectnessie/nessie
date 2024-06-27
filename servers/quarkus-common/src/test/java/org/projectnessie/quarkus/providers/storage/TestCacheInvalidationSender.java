@@ -138,6 +138,7 @@ public class TestCacheInvalidationSender {
     Semaphore resolveSemaphore = new Semaphore(1);
     Semaphore continueSemaphore = new Semaphore(0);
     Semaphore submittedSemaphore = new Semaphore(0);
+    Semaphore updateResolvedSemaphore = new Semaphore(0);
     List<String> currentAddresses = List.of("127.1.1.1");
     AtomicReference<Future<List<String>>> resolveResult =
         new AtomicReference<>(succeededFuture(currentAddresses));
@@ -161,6 +162,15 @@ public class TestCacheInvalidationSender {
             }
 
             @Override
+            void updateResolvedAddresses(List<String> all) {
+              try {
+                super.updateResolvedAddresses(all);
+              } finally {
+                updateResolvedSemaphore.release();
+              }
+            }
+
+            @Override
             List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
                 List<CacheInvalidation> batch, List<String> resolvedAddresses) {
               submitResolvedAddresses.set(resolvedAddresses);
@@ -171,6 +181,7 @@ public class TestCacheInvalidationSender {
 
       // "consume" after initial, blocking call to resolveServiceNames() from the constructor
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
+      assertThat(updateResolvedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send an invalidation, compare addresses
       sender.evictObj("repo", EMPTY_OBJ_ID);
@@ -184,6 +195,7 @@ public class TestCacheInvalidationSender {
       resolveSemaphore.release();
       // wait until next call to resolveServiceNames() has been triggered
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
+      assertThat(updateResolvedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send another invalidation, compare addresses
       sender.evictObj("repo", EMPTY_OBJ_ID);
@@ -209,6 +221,7 @@ public class TestCacheInvalidationSender {
       resolveSemaphore.release();
       // wait until next call to resolveServiceNames() has been triggered
       assertThat(continueSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
+      assertThat(updateResolvedSemaphore.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
       // Send another invalidation, compare addresses
       sender.evictObj("repo", EMPTY_OBJ_ID);
