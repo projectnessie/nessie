@@ -23,8 +23,6 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -40,6 +38,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -84,10 +83,7 @@ public class S3ClientResourceBench {
               httpClient,
               s3config,
               s3options,
-              new SecretsProvider(
-                  (names) ->
-                      names.stream()
-                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
+              new SecretsProvider(new DummySecretsSupplier()),
               sessions);
     }
 

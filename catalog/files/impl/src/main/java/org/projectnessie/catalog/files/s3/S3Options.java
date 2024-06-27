@@ -101,7 +101,7 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> {
   List<SecretAttribute<S3BucketOptions, S3PerBucketOptions.Builder, ?>> SECRET_ATTRIBUTES =
       ImmutableList.of(
           secretAttribute(
-              "accessKey",
+              "access-key",
               SecretType.BASIC,
               S3BucketOptions::accessKey,
               S3PerBucketOptions.Builder::accessKey));
