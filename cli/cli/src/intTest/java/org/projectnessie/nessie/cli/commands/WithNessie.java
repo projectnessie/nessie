@@ -27,7 +27,6 @@ import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
@@ -42,6 +41,7 @@ import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -127,10 +127,7 @@ public abstract class WithNessie {
             httpClient,
             s3config,
             s3options,
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
+            new SecretsProvider(new DummySecretsSupplier()),
             sessions);
 
     ObjectIO objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());

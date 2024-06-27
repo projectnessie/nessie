@@ -68,6 +68,7 @@ dependencies {
   implementation(project(":nessie-catalog-service-impl"))
   implementation(project(":nessie-catalog-service-rest"))
   implementation(project(":nessie-catalog-secrets-api"))
+  implementation(project(":nessie-catalog-secrets-cache"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
@@ -150,6 +151,8 @@ dependencies {
 
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
+  testFixturesApi("org.testcontainers:localstack")
+  testFixturesApi("org.testcontainers:vault")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
@@ -157,6 +160,15 @@ dependencies {
   testFixturesApi(project(":nessie-object-storage-mock"))
   testFixturesApi(project(":nessie-catalog-format-iceberg"))
   testFixturesApi(project(":nessie-catalog-format-iceberg-fixturegen"))
+  testFixturesApi(project(":nessie-container-spec-helper"))
+  testFixturesApi(project(":nessie-catalog-secrets-api"))
+
+  testFixturesApi(platform(libs.awssdk.bom))
+  testFixturesApi("software.amazon.awssdk:secretsmanager")
+  testFixturesApi("io.quarkiverse.vault:quarkus-vault-deployment")
+
+  testFixturesApi(enforcedPlatform(libs.quarkus.azure.services.bom))
+  testFixturesApi("io.quarkiverse.azureservices:quarkus-azure-keyvault")
 
   testFixturesApi(platform("org.apache.iceberg:iceberg-bom:$versionIceberg"))
   testFixturesApi("org.apache.iceberg:iceberg-core")
@@ -170,12 +182,19 @@ dependencies {
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 
+  testFixturesCompileOnly(project(":nessie-immutables"))
+  intTestCompileOnly(project(":nessie-immutables"))
+  intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
+
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
+  intTestImplementation(libs.lowkey.vault.testcontainers)
 
   intTestImplementation(platform(libs.awssdk.bom))
   intTestImplementation("software.amazon.awssdk:s3")
   intTestImplementation("software.amazon.awssdk:sts")
+
+  intTestCompileOnly(libs.immutables.value.annotations)
 }
 
 val pullOpenApiSpec by tasks.registering(Sync::class)

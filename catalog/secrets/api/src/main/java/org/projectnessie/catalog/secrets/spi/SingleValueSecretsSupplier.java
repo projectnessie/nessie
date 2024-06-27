@@ -15,13 +15,12 @@
  */
 package org.projectnessie.catalog.secrets.spi;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.Secret;
+import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.TokenSecret;
 
 /**
@@ -29,34 +28,24 @@ import org.projectnessie.catalog.secrets.TokenSecret;
  * parse each secret from JSON as a map.
  */
 public abstract class SingleValueSecretsSupplier implements SecretsSupplier {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override
-  public final Map<String, Map<String, String>> resolveSecrets(Collection<String> names) {
-    Map<String, String> maps = resolveSingleValueSecrets(names);
+  public final Map<String, Secret> resolveSecrets(Map<String, SecretType> toResolve) {
+    Map<String, String> maps = resolveSingleValueSecrets(toResolve);
     return maps.entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> parseOrSingle(e.getValue())));
-  }
-
-  @SuppressWarnings("unchecked")
-  static Map<String, String> parseOrSingle(String s) {
-    if (!s.trim().startsWith("{")) {
-      return Map.of("value", s);
-    }
-    try {
-      return MAPPER.readValue(s, Map.class);
-    } catch (JsonProcessingException e) {
-      return Map.of("value", s);
-    }
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey, e -> toResolve.get(e.getKey()).parse(e.getValue())));
   }
 
   /**
    * Resolve secrets.
    *
-   * @param names names of the secrets to resolve
+   * @param toResolve names and types of the secrets to resolve
    * @return map of secret names to either the JSON representations of the secrets or, if not a JSON
    *     document, the single value for the secret. See {@link KeySecret#keySecret(Map)}, {@link
    *     BasicCredentials#basicCredentials(Map)}, {@link TokenSecret#tokenSecret(Map)}
    */
-  protected abstract Map<String, String> resolveSingleValueSecrets(Collection<String> names);
+  protected abstract Map<String, String> resolveSingleValueSecrets(
+      Map<String, SecretType> toResolve);
 }
