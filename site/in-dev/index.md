@@ -97,14 +97,14 @@ Nessie repository.
 
     They are available from the following repositories:
     
-    * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin-unstable)
+    * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin-unstable):
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-server-admin-unstable
     docker run ghcr.io/projectnessie/nessie-server-admin-unstable --help
     ```
 
-    * [Quay.io](https://quay.io/repository/projectnessie/nessie-server-admin-unstable?tab=tags)
+    * [Quay.io](https://quay.io/repository/projectnessie/nessie-server-admin-unstable?tab=tags):
 
     ```bash
     docker pull quay.io/projectnessie/nessie-server-admin-unstable
@@ -136,7 +136,7 @@ Snapshot repositories must be added to your build configuration. The following e
 add the repository to your build configuration:
 
 === "Maven"
-    In your Maven `pom.xml` add the SonaType repository:
+    In your Maven `pom.xml` add the Sonatype repository:
     ```xml
       <repositories>
         <repository>

@@ -142,14 +142,14 @@ Nessie repository.
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     They are available from the following repositories:
     
-    * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin)
+    * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin);
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }}
     docker run ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }} --help
     ```
 
-    * [Quay.io](https://quay.io/repository/projectnessie/nessie-server-admin?tab=tags)
+    * [Quay.io](https://quay.io/repository/projectnessie/nessie-server-admin?tab=tags);
 
     ```bash
     docker pull quay.io/projectnessie/nessie-server-admin:{{ versions.nessie }}
