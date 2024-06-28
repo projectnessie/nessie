@@ -1,4 +1,6 @@
 ---
+search:
+  exclude: true
 title: "Nessie 0.91.2"
 ---
 
