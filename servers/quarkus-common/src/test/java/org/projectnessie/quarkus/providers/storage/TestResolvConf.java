@@ -67,28 +67,37 @@ public class TestResolvConf {
   static Stream<Arguments> resolve() {
     return Stream.of(
         arguments(
-            "# See man:systemd-resolved.service(8) for details about the supported modes of\n"
-                + "# operation for /etc/resolv.conf.\n"
-                + "\n"
-                + "nameserver 127.0.0.1\n"
-                + "search search.domain\n",
+            """
+            # See man:systemd-resolved.service(8) for details about the supported modes of
+            # operation for /etc/resolv.conf.
+
+            nameserver 127.0.0.1
+            search search.domain
+            """,
             List.of(new InetSocketAddress("127.0.0.1", 53)),
             List.of("search.domain")),
         arguments(
-            "nameserver 127.0.0.1\n" + "nameserver 1.2.3.4\n",
+            """
+            nameserver 127.0.0.1
+            nameserver 1.2.3.4
+            """,
             List.of(new InetSocketAddress("127.0.0.1", 53), new InetSocketAddress("1.2.3.4", 53)),
             List.of()),
         arguments(
-            "nameserver 127.0.0.1\n"
-                + "nameserver 1.2.3.4\n"
-                + "search search.domain\n"
-                + "search anothersearch.anotherdomain\n",
+            """
+            nameserver 127.0.0.1
+            nameserver 1.2.3.4
+            search search.domain
+            search anothersearch.anotherdomain
+            """,
             List.of(new InetSocketAddress("127.0.0.1", 53), new InetSocketAddress("1.2.3.4", 53)),
             List.of("search.domain", "anothersearch.anotherdomain")),
         arguments(
-            "nameserver 127.0.0.1\n"
-                + "nameserver 1.2.3.4\n"
-                + "search search.domain anothersearch.anotherdomain\n",
+            """
+            nameserver 127.0.0.1
+            nameserver 1.2.3.4
+            search search.domain anothersearch.anotherdomain
+            """,
             List.of(new InetSocketAddress("127.0.0.1", 53), new InetSocketAddress("1.2.3.4", 53)),
             List.of("search.domain", "anothersearch.anotherdomain")),
         arguments("", List.of(), List.of()));

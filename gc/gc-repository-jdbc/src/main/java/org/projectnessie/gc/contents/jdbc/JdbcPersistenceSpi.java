@@ -450,6 +450,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
     }
   }
 
+  @SuppressWarnings("SqlSourceToSinkFlow")
   <R> R singleStatement(
       @Language("SQL") String sql, WithStatement<R> withStatement, boolean modifyingStatement) {
     try (Connection conn = connection()) {
@@ -480,7 +481,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
     return StreamSupport.stream(split, false)
         .onClose(
             () -> {
-              Exception ex = JdbcHelper.forClose(closeables, null);
+              Exception ex = JdbcHelper.forClose(closeables);
               if (ex instanceof RuntimeException) {
                 throw (RuntimeException) ex;
               }

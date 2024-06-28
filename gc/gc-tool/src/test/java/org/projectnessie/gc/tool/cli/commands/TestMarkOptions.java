@@ -150,6 +150,7 @@ public class TestMarkOptions {
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
   static <T extends BaseCommand> T parseCommand(String... args) {
+    @SuppressWarnings("InstantiationOfUtilityClass")
     ParseResult parsed = new CommandLine(new CLI(), CommandLine.defaultFactory()).parseArgs(args);
     List<CommandLine> commandLineList = parsed.asCommandLineList();
     CommandLine last = commandLineList.get(commandLineList.size() - 1);

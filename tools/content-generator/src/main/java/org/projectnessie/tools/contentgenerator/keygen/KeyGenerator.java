@@ -23,7 +23,7 @@ import org.immutables.value.Value;
 public class KeyGenerator {
 
   @Value.Immutable
-  interface Params {
+  public interface Params {
     @Value.Default
     default long seed() {
       return new Random().nextLong();
@@ -33,7 +33,7 @@ public class KeyGenerator {
   }
 
   @FunctionalInterface
-  interface Func {
+  public interface Func {
     void apply(Random random, StringBuilder target);
   }
 

@@ -30,7 +30,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 public abstract class MockManifestEntry implements IndexedRecord {
 
-  enum Status {
+  public enum Status {
     EXISTING,
     ADDED,
     DELETED

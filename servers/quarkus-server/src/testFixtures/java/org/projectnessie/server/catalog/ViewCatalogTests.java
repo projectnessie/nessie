@@ -162,7 +162,7 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     assertThat(catalog().viewExists(identifier)).as("View should not exist").isFalse();
 
     String location = temporaryLocation() + "/ns/view";
-    ;
+
     View view =
         catalog()
             .buildView(identifier)
@@ -1486,7 +1486,7 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     assertThat(catalog().viewExists(identifier)).as("View should not exist").isFalse();
 
     String location = temporaryLocation() + "/ns/view";
-    ;
+
     View view =
         catalog()
             .buildView(identifier)
@@ -1505,7 +1505,7 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     }
 
     String updatedLocation = temporaryLocation() + "/updated/ns/view";
-    ;
+
     view =
         catalog()
             .buildView(identifier)
@@ -1536,7 +1536,7 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     assertThat(catalog().viewExists(identifier)).as("View should not exist").isFalse();
 
     String location = temporaryLocation() + "/ns/view";
-    ;
+
     View view =
         catalog()
             .buildView(identifier)
@@ -1554,7 +1554,7 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     }
 
     String updatedLocation = temporaryLocation() + "/updated/ns/view";
-    ;
+
     view.updateLocation().setLocation(updatedLocation).commit();
 
     View updatedView = catalog().loadView(identifier);

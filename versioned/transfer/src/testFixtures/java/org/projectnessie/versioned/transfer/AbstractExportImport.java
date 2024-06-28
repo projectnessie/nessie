@@ -129,8 +129,8 @@ public abstract class AbstractExportImport {
     int numCommits = 100_000;
 
     PagedResult<Reference, String> exportReferences =
-        new PagedResult<Reference, String>() {
-          Iterator<Reference> base =
+        new PagedResult<>() {
+          final Iterator<Reference> base =
               IntStream.rangeClosed(1, numNamedRefs)
                   .mapToObj(
                       i ->
@@ -145,7 +145,7 @@ public abstract class AbstractExportImport {
           @Nonnull
           @Override
           public PagingToken tokenForKey(String key) {
-            return null;
+            throw new UnsupportedOperationException("Unexpected invocation");
           }
 
           @Override
@@ -161,7 +161,7 @@ public abstract class AbstractExportImport {
     when(referenceLogic.queryReferences(any())).thenReturn(exportReferences);
 
     CloseableIterator<Obj> exportScan =
-        new CloseableIterator<Obj>() {
+        new CloseableIterator<>() {
           final Iterator<CommitObj> base =
               IntStream.rangeClosed(1, numCommits)
                   .mapToObj(ExportImportTestUtil::toCommitObj)
@@ -470,24 +470,22 @@ public abstract class AbstractExportImport {
                 Thread.currentThread().getContextClassLoader(),
                 new Class[] {ReferenceLogic.class},
                 (proxy, method, args) -> {
-                  switch (method.getName()) {
-                    case "createReference":
-                      String name = (String) args[0];
-                      ObjId pointer = (ObjId) args[1];
-                      assertThat(name).startsWith("refs/heads/branch-");
-                      int refNum = parseInt(name.substring("refs/heads/branch-".length()));
-                      assertThat(pointer).isEqualTo(intToObjId(refNum));
-                      assertThat(createdReferences.get(refNum)).isFalse();
-                      createdReferences.set(refNum);
-                      return reference(
-                          name,
-                          pointer,
-                          false,
-                          TimeUnit.NANOSECONDS.toMicros(System.nanoTime()),
-                          null);
-                    default:
-                      throw new UnsupportedOperationException(method.toString());
+                  if (method.getName().equals("createReference")) {
+                    String name = (String) args[0];
+                    ObjId pointer = (ObjId) args[1];
+                    assertThat(name).startsWith("refs/heads/branch-");
+                    int refNum = parseInt(name.substring("refs/heads/branch-".length()));
+                    assertThat(pointer).isEqualTo(intToObjId(refNum));
+                    assertThat(createdReferences.get(refNum)).isFalse();
+                    createdReferences.set(refNum);
+                    return reference(
+                        name,
+                        pointer,
+                        false,
+                        TimeUnit.NANOSECONDS.toMicros(System.nanoTime()),
+                        null);
                   }
+                  throw new UnsupportedOperationException(method.toString());
                 });
 
     IndexesLogic impIndexesLogic = mock(IndexesLogic.class);

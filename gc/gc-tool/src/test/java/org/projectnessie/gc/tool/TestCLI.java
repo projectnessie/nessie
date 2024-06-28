@@ -23,7 +23,6 @@ import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -341,8 +340,7 @@ public class TestCLI {
     soft.assertThat(liveSetIdFile).isRegularFile();
     soft.assertAll();
 
-    UUID id =
-        UUID.fromString(new String(Files.readAllBytes(liveSetIdFile), StandardCharsets.UTF_8));
+    UUID id = UUID.fromString(Files.readString(liveSetIdFile));
 
     StorageUri dataLakeDir1 = StorageUri.of(dir.resolve("data-lake/dir1").toUri());
     StorageUri dataLakeDir2 = StorageUri.of(dir.resolve("data-lake/dir2").toUri());
@@ -416,8 +414,7 @@ public class TestCLI {
     soft.assertThat(liveSetIdFile).isRegularFile();
     soft.assertAll();
 
-    UUID id =
-        UUID.fromString(new String(Files.readAllBytes(liveSetIdFile), StandardCharsets.UTF_8));
+    UUID id = UUID.fromString(Files.readString(liveSetIdFile));
 
     StorageUri dataLakeDir1 = StorageUri.of(dir.resolve("data-lake/dir1").toUri());
     StorageUri dataLakeDir2 = StorageUri.of(dir.resolve("data-lake/dir2").toUri());

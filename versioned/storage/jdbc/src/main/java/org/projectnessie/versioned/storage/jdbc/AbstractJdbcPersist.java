@@ -655,6 +655,7 @@ abstract class AbstractJdbcPersist implements Persist {
     private final PreparedStatement ps;
     private final ResultSet rs;
 
+    @SuppressWarnings("SqlSourceToSinkFlow")
     ResultSetIterator(Connection conn, String sql, ThrowingConsumer<PreparedStatement> preparer) {
       this.conn = conn;
 

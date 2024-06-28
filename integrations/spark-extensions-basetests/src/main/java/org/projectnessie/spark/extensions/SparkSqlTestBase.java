@@ -271,7 +271,7 @@ public abstract class SparkSqlTestBase {
     return values;
   }
 
-  protected List<SparkCommitLogEntry> fetchLog(String branch) {
+  List<SparkCommitLogEntry> fetchLog(String branch) {
     return sql("SHOW LOG %s IN nessie", branch).stream()
         .map(SparkCommitLogEntry::fromShowLog)
         .collect(Collectors.toList());
@@ -291,13 +291,13 @@ public abstract class SparkSqlTestBase {
     assertThat(api.getReference().refName(tagName).get()).isEqualTo(Tag.of(tagName, defaultHash()));
   }
 
-  protected List<SparkCommitLogEntry> createBranchCommitAndReturnLog()
+  List<SparkCommitLogEntry> createBranchCommitAndReturnLog()
       throws NessieConflictException, NessieNotFoundException {
     createBranchForTest(refName);
     return commitAndReturnLog(refName, defaultHash());
   }
 
-  protected List<SparkCommitLogEntry> commitAndReturnLog(String branch, String initialHashOrBranch)
+  List<SparkCommitLogEntry> commitAndReturnLog(String branch, String initialHashOrBranch)
       throws NessieNotFoundException, NessieConflictException {
     ContentKey key = ContentKey.of("table", "name");
     CommitMeta cm1 =

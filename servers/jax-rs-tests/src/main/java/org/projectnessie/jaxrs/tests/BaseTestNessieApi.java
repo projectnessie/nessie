@@ -1802,16 +1802,15 @@ public abstract class BaseTestNessieApi {
 
         // Check get-entries
         soft.assertThatCode(
-                () -> {
-                  assertThat(
-                          api()
-                              .getEntries()
-                              .refName(branchName)
-                              .hashOnRef(relativeCommitSpec)
-                              .stream()
-                              .count())
-                      .isEqualTo(1 + numCommits - i2);
-                })
+                () ->
+                    assertThat(
+                            api()
+                                .getEntries()
+                                .refName(branchName)
+                                .hashOnRef(relativeCommitSpec)
+                                .stream()
+                                .count())
+                        .isEqualTo(1 + numCommits - i2))
             .describedAs(
                 "get-entries - %s - relative-commit-spec %s - ref-commit: %s %s",
                 i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime())

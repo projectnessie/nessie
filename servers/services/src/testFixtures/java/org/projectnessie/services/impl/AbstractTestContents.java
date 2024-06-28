@@ -207,10 +207,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 .collect(Collectors.toList()));
 
     // Verify that 'get contents' for the HEAD commit returns exactly the committed contents
-    List<ContentKey> allKeys =
+    ContentKey[] allKeys =
         contentAndOps.stream()
             .map(contentAndOperationType -> contentAndOperationType.operation.getKey())
-            .collect(Collectors.toList());
+            .toArray(ContentKey[]::new);
     Map<ContentKey, Content> expected =
         contentAndOps.stream()
             .map(
@@ -226,7 +226,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    soft.assertThat(contents(committed, allKeys.toArray(new ContentKey[0])))
+    soft.assertThat(contents(committed, allKeys))
         .containsOnlyKeys(expected.keySet())
         .allSatisfy(
             (key, content) -> assertThat(clearIdOnContent(content)).isEqualTo(expected.get(key)));

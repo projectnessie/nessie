@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.model.ops;
 
-import javax.annotation.Nonnull;
+import jakarta.validation.constraints.NotNull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.Content;
 
@@ -29,5 +29,5 @@ public interface CatalogOperationTypeResolver {
    * type, or {@code null} if this resolver does not support the content type.
    */
   @Nullable
-  Class<? extends CatalogOperation> forContentType(@Nonnull Content.Type type);
+  Class<? extends CatalogOperation> forContentType(@NotNull Content.Type type);
 }

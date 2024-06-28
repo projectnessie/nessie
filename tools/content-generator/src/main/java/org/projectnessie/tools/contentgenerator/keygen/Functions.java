@@ -76,7 +76,7 @@ public final class Functions {
   }
 
   @FunctionalInterface
-  interface FuncGenerator {
+  public interface FuncGenerator {
     Func generate(Queue<String> params);
 
     static double doubleParam(Queue<String> params) {
