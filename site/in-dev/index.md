@@ -33,6 +33,27 @@ Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     docker run -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie-unstable
     ```
 
+## Nessie CLI unstable/nightly
+
+### Docker image
+
+Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+
+**The image tags are updated twice per day during weekdays.**
+
+=== "GitHub Container Registry"
+    [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli-unstable)
+    ```bash
+    docker pull ghcr.io/projectnessie/nessie-cli-unstable
+    docker run -it ghcr.io/projectnessie/nessie-cli-unstable
+    ```
+=== "Quay.io"
+    [quay.io](https://quay.io/repository/projectnessie/nessie-cli-unstable?tab=tags)
+    ```bash
+    docker pull quay.io/projectnessie/nessie-cli-unstable
+    docker run -it quay.io/projectnessie/nessie-cli-unstable
+    ```
+
 ## GC Tool unstable/nightly
 
 [Nessie GC](/nessie-nightly/gc/) allows mark and sweep data files based on flexible

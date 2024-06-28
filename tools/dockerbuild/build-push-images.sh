@@ -59,6 +59,7 @@ function usage() {
   $0 --dockerfile Dockerfile-server --gradle-project :nessie-quarkus --project-dir servers/quarkus-server nessie-unstable
   $0 --dockerfile Dockerfile-gctool --gradle-project :nessie-gc-tool --project-dir gc/gc-tool nessie-gc-unstable
   $0 --dockerfile Dockerfile-admintool --gradle-project :nessie-server-admin-tool --project-dir tools/server-admin nessie-admin-unstable
+  $0 --dockerfile Dockerfile-cli --gradle-project :nessie-cli --project-dir cli/cli nessie-cli-unstable
 !
 }
 
@@ -127,8 +128,8 @@ cd "$BASE_DIR"
 #
 
 gh_group "Prepare Docker image name and tag base"
-IMAGE_TAG="$(cat version.txt)"
-IMAGE_TAG_BASE="${IMAGE_TAG%-SNAPSHOT}"
+VERSION="$(cat version.txt)"
+IMAGE_TAG_BASE="${VERSION%-SNAPSHOT}"
 echo "Image name: ${IMAGE_NAME}"
 echo "Tag base: ${IMAGE_TAG_BASE}"
 gh_endgroup
@@ -163,6 +164,7 @@ if [[ ${LOCAL} == 1 ]] ; then
     --file "${BASE_DIR}/tools/dockerbuild/docker/${DOCKERFILE}" \
     --tag "${IMAGE_NAME}:latest" \
     --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
+    --build-arg VERSION="${VERSION}" \
     "${BASE_DIR}/${PROJECT_DIR}"
   gh_endgroup
 else
@@ -176,6 +178,7 @@ else
     --tag "${IMAGE_NAME}:latest-java" \
     --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
     --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}-java" \
+    --build-arg VERSION="${VERSION}" \
     "${BASE_DIR}/${PROJECT_DIR}" \
     --push \
     --provenance=false --sbom=false \

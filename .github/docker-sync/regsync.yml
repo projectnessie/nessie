@@ -33,3 +33,10 @@ sync:
   - source: ghcr.io/projectnessie/nessie-server-admin
     target: quay.io/projectnessie/nessie-server-admin
     type: repository
+  # CLI
+  - source: ghcr.io/projectnessie/nessie-cli-unstable
+    target: quay.io/projectnessie/nessie-cli-unstable
+    type: repository
+  - source: ghcr.io/projectnessie/nessie-cli
+    target: quay.io/projectnessie/nessie-cli
+    type: repository

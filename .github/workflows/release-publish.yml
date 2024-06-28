@@ -212,6 +212,13 @@ jobs:
             -d "Dockerfile-admintool" \
             ghcr.io/projectnessie/nessie-server-admin
 
+      - name: Publish Nessie CLI
+        run: |
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-cli" \
+            -p "cli/cli" \
+            -d "Dockerfile-cli" \
+            ghcr.io/projectnessie/nessie-cli
 
   publish-helm:
     name: Publish Helm Chart

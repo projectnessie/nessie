@@ -84,6 +84,7 @@ NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD^1 | wc -l | xargs)
 
 git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ./release-log
 
+Q_CLI_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-cli-${RELEASE_VERSION}.jar"
 Q_GC_TOOL_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-gc-${RELEASE_VERSION}.jar"
 Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
 Q_SERVER_ADMIN_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar"
@@ -105,6 +106,8 @@ The attached [\`nessie-quarkus-${RELEASE_VERSION}-runner.jar\`](${Q_UBER_URL}) i
 wget ${Q_UBER_URL}
 java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
 \`\`\`
+
+Nessie CLI is attached as [\`nessie-cli-${RELEASE_VERSION}.jar\`](${Q_CLI_URL}), which is a standalone uber-jar file that runs on Java 11 or newer. Nessie CLI is also available as a Docker image: \`docker run --rm -it ghcr.io/projectnessie/nessie-cli:${RELEASE_VERSION}\`.
 
 Nessie GC tool is attached as [\`nessie-gc-${RELEASE_VERSION}.jar\`](${Q_GC_TOOL_URL}), which is a standalone uber-jar file that runs on Java 11 or newer. Shell completion can be generated from the tool, check its \`help\` command. Nessie GC tool is also available as a Docker image: \`docker run --rm ghcr.io/projectnessie/nessie-gc:${RELEASE_VERSION} --help\`.
 

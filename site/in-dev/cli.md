@@ -5,9 +5,7 @@ title: "Nessie CLI"
 # Nessie CLI
 
 The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
-and tag management capabilities. This is installed as a standalone uber jar from the 
-[Nessie download page](../downloads/index.md) or the
-[releases page on GitHub](https://github.com/projectnessie/nessie/releases/). 
+and tag management capabilities.
 
 Nessie CLI is designed to be usable as an interactive REPL supporting auto-completion,
 highlighting where appropriate and has built-in help. Long outputs, like a commit log,
@@ -17,23 +15,21 @@ are automatically paged like the Unix `less` command.
 
 ![Nessie CLI](../img/cli-intro.png)
 
+## Installation
+
+Nessie CLI is available as a standalone uber jar, or as a Docker image. See download options in
+the [Nessie download page](../downloads/index.md) or in the [releases page on
+GitHub](https://github.com/projectnessie/nessie/releases/).
+
 ## Usage
 
-Nessie CLI requires Java 11.
+Use `CONNECT TO http://127.0.0.1:19120/iceberg` to connect to a locally running Nessie instance with
+Iceberg REST. Use `CONNECT TO http://127.0.0.1:19120/api/v2` for Nessie's native REST API.
 
-```bash
-java -jar nessie-cli-<version>.jar
-```
+Use `CONNECT TO https://app.dremio.cloud/repositories/<project-id>/api/v2` to connect to your Dremio
+cloud instance using Nessie's native REST API.
 
-!!! tip
-    Use `CONNECT TO http://127.0.0.1:19120/iceberg` to connect to a locally running Nessie
-    instance with Iceberg REST. Use `CONNECT TO http://127.0.0.1:19120/api/v2` for Nessie's
-    native REST API.
-
-    Use `CONNECT TO https://app.dremio.cloud/repositories/<project-id>/api/v2` to
-    connect to your Dremio cloud instance using Nessie's native REST API.
-
-    See [`CONNECT` statement](#connect) below.
+See [`CONNECT` statement](#connect) below.
 
 ### Command line options
 

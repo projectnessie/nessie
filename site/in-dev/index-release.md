@@ -61,6 +61,23 @@ java -jar nessie-quarkus-::NESSIE_VERSION::-runner.jar
 
 [Nessie CLI](cli.md) is both a command-line interface but primarily a REPL.
 
+### Docker image
+
+Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+
+=== "GitHub Container Registry"
+    [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli)
+    ```bash
+    docker pull ghcr.io/projectnessie/nessie-cli:::NESSIE_VERSION::
+    docker run -it ghcr.io/projectnessie/nessie-cli:::NESSIE_VERSION:: 
+    ```
+=== "Quay.io"
+    [quay.io](https://quay.io/repository/projectnessie/nessie-cli?tab=tags)
+    ```bash
+    docker pull quay.io/projectnessie/nessie-cli:::NESSIE_VERSION::
+    docker run -it quay.io/projectnessie/nessie-cli:::NESSIE_VERSION::
+    ```
+
 ### Standalone uber jar
 
 Requires Java 11 or newer.
