@@ -411,7 +411,7 @@ If you need other JVM tools, such as `jfr` or `async-profiler`, a more complex s
 
 First, restart the Nessie pod with some extra JVM options. The most
 useful option to add is the `--XX:+StartAttachListener` JVM option; without it, the JVM will not
-allow attaching to it and tools like `jstack` will fail.
+allow attaching to it and tools like `jcmd` will fail.
 
 This can be done by modifying the pod template spec in the deployment spec, and adding/updating the
 `JAVA_OPTS_APPEND` environment variable:
@@ -423,7 +423,7 @@ kubectl set env -n <namespace> deployment <deployment> JAVA_OPTS_APPEND="$java_o
 
 !!! Warning
     The above command will restart all Nessie pods! Unfortunately that's inevitable, because 
-    environment variables cannot be changed in the pod spec directly.
+    environment variables cannot be changed in the pod spec directly, if it belongs to a deployment.
 
 Once the target pod is ready to be attached, you will need an image with the required tools. One
 example is the `lightrun-platform/koolkits/koolkit-jvm` image, which contains a JVM-based toolset
