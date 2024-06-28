@@ -149,16 +149,15 @@ listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-val copyUberJar by tasks.registering(Copy::class)
-
-copyUberJar.configure {
-  group = "build"
-  description = "Copies the uber-jar to build/executable"
-  dependsOn(shadowJar)
-  from(shadowJar.get().archiveFile)
-  into(project.layout.buildDirectory.dir("executable"))
-  rename { "nessie-gc.jar" }
-}
+val copyUberJar by
+  tasks.registering(Copy::class) {
+    group = "build"
+    description = "Copies the uber-jar to build/executable"
+    dependsOn(shadowJar)
+    from(shadowJar.get().archiveFile)
+    into(project.layout.buildDirectory.dir("executable"))
+    rename { "nessie-gc.jar" }
+  }
 
 shadowJar.configure {
   manifest { attributes["Main-Class"] = mainClassName }
