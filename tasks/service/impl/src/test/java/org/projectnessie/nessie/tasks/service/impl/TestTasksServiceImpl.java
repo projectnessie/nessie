@@ -928,14 +928,21 @@ public class TestTasksServiceImpl {
     reset(metrics);
 
     taskFuture = tasks.submit(taskRequest).toCompletableFuture();
-    soft.assertThat(async.doWork()).isEqualTo(1);
-    soft.assertThat(taskFuture).isDone();
-    soft.assertThat(taskFuture).isCompletedExceptionally();
-    verify(metrics).startNewTaskController();
-    verify(metrics).taskAttempt();
-    verify(metrics).taskAttemptFinalFailure();
+    if (persist.getImmediate(taskRequest.objId()) != null) {
+      // cached response
+      soft.assertThat(async.doWork()).isEqualTo(0);
+      verify(metrics).taskHasFinalFailure();
+    } else {
+      // response reloaded from storage
+      soft.assertThat(async.doWork()).isEqualTo(1);
+      verify(metrics).startNewTaskController();
+      verify(metrics).taskAttempt();
+      verify(metrics).taskAttemptFinalFailure();
+    }
     verifyNoMoreInteractions(metrics);
     reset(metrics);
+    soft.assertThat(taskFuture).isDone();
+    soft.assertThat(taskFuture).isCompletedExceptionally();
 
     // need a new CompletableFuture that can be used when the task's execution is re-triggered
     taskCompletionStage.set(new CompletableFuture<>());
