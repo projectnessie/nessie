@@ -282,13 +282,13 @@ public final class NessieConfigConstants {
    *   <li>The value {@value #CURRENT_ACCESS_TOKEN}, if the client should use its current access
    *       token;
    *   <li>The value {@value #CURRENT_REFRESH_TOKEN}, if the client should use its current refresh
-   *       token (if available);
+   *       token (a refresh token <em>must</em> be available in this case);
    *   <li>An arbitrary token: in this case, the client will always use the static token provided
    *       here.
    * </ul>
    *
    * The default is to use the current access token. Note: when using token exchange as the initial
-   * grant type, no current access token will eb available: in this case, a valid, static subject
+   * grant type, no current access token will be available: in this case, a valid, static subject
    * token to exchange must be provided via configuration.
    */
   @ConfigItem(section = "OAuth2 Authentication Token Exchange")
