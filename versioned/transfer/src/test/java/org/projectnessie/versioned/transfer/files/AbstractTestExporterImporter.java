@@ -126,17 +126,15 @@ public abstract class AbstractTestExporterImporter<
   @MethodSource
   public void filesAndContents(List<Map.Entry<String, List<byte[]>>> entries) throws Exception {
     EXP exporter = newExportFileSupplier("here");
-    try {
+    try (exporter) {
       exporter.preValidate();
-      for (Map.Entry<String, List<byte[]>> e : entries) {
+      for (Entry<String, List<byte[]>> e : entries) {
         try (OutputStream out = exporter.newFileOutput(e.getKey())) {
           for (byte[] bytes : e.getValue()) {
             out.write(bytes);
           }
         }
       }
-    } finally {
-      exporter.close();
     }
 
     try (IMP importer = newImportFileSupplier(exporter)) {

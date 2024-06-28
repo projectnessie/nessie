@@ -98,12 +98,9 @@ public class TestAwsChunkedInputStream {
 
   @ParameterizedTest
   @MethodSource
-  public void malformed(byte[] input, Class<? extends Exception> expected, String message)
-      throws Exception {
+  public void malformed(byte[] input, Class<? extends Exception> expected, String message) {
     soft.assertThatThrownBy(
-            () -> {
-              IoUtils.toByteArray(new AwsChunkedInputStream(new ByteArrayInputStream(input)));
-            })
+            () -> IoUtils.toByteArray(new AwsChunkedInputStream(new ByteArrayInputStream(input))))
         .isInstanceOf(expected)
         .hasMessageStartingWith(message);
   }

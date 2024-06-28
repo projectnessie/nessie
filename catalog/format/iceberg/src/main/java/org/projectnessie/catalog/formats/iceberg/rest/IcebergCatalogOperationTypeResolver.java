@@ -18,13 +18,14 @@ package org.projectnessie.catalog.formats.iceberg.rest;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.catalog.model.ops.CatalogOperation;
 import org.projectnessie.catalog.model.ops.CatalogOperationTypeResolver;
 import org.projectnessie.model.Content;
 
 public class IcebergCatalogOperationTypeResolver implements CatalogOperationTypeResolver {
   @Override
-  public Class<? extends CatalogOperation> forContentType(Content.Type type) {
+  public Class<? extends CatalogOperation> forContentType(@NotNull Content.Type type) {
     if (type == ICEBERG_TABLE || type == ICEBERG_VIEW) {
       return IcebergCatalogOperation.class;
     }

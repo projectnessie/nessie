@@ -409,13 +409,11 @@ public class AvroSerializeBench {
       throws Exception {
     ManifestWriter<DataFile> writer =
         ManifestFiles.write(param.specVersion, param.partitionSpec, outputFile, Long.MAX_VALUE);
-    ThreadLocalRandom random = ThreadLocalRandom.current();
-    try {
+    try (writer) {
+      ThreadLocalRandom random = ThreadLocalRandom.current();
       for (DataFile dataFile : param.dataFiles) {
         writer.add(dataFile, random.nextLong(1, Long.MAX_VALUE));
       }
-    } finally {
-      writer.close();
     }
     return writer.toManifestFile();
   }

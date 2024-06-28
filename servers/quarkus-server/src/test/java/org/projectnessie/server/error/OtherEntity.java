@@ -20,15 +20,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 
 /** Just a dummy entity. */
-public class OtherEntity {
-  private final String foo;
-
+public record OtherEntity(String foo) {
   @JsonCreator
   public OtherEntity(@NotNull @JsonProperty("foo") String foo) {
     this.foo = foo;
-  }
-
-  public String getFoo() {
-    return foo;
   }
 }
