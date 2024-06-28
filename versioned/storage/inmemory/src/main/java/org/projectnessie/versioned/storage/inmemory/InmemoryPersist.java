@@ -340,7 +340,7 @@ class InmemoryPersist implements ValidatingPersist {
 
     final String prefix = compositeKeyRepo();
 
-    Iterator<Map.Entry<String, Obj>> iter = inmemory.objects.entrySet().iterator();
+    final Iterator<Map.Entry<String, Obj>> iter = inmemory.objects.entrySet().iterator();
 
     @Override
     protected Obj computeNext() {

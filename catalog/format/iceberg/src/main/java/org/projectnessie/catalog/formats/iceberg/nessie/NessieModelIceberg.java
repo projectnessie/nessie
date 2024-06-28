@@ -1091,7 +1091,7 @@ public class NessieModelIceberg {
     String uuid = u.uuid();
     Preconditions.checkArgument(uuid != null, "Null entity UUID is not permitted.");
     Preconditions.checkArgument(
-        uuid.equals(Objects.requireNonNull(snapshot.entity().icebergUuid()).toString()),
+        uuid.equals(Objects.requireNonNull(snapshot.entity().icebergUuid())),
         "UUID mismatch: assigned: %s, new: %s",
         snapshot.entity().icebergUuid(),
         uuid);

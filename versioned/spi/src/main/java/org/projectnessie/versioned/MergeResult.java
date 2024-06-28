@@ -60,6 +60,7 @@ public interface MergeResult<COMMIT> extends Result {
   Hash getExpectedHash();
 
   /** List of commit-IDs to be merged or transplanted. */
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal and replaced with something else
   List<COMMIT> getSourceCommits();
 
@@ -68,6 +69,7 @@ public interface MergeResult<COMMIT> extends Result {
    * the expected hash was provided.
    */
   @Nullable
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal and replaced with something else
   List<COMMIT> getTargetCommits();
 
@@ -95,6 +97,7 @@ public interface MergeResult<COMMIT> extends Result {
     @Value.Parameter(order = 1)
     MergeBehavior getMergeBehavior();
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated // for removal, #getConflict() is a proper replacement
     @Value.Default
     @Value.Parameter(order = 2)
@@ -102,9 +105,11 @@ public interface MergeResult<COMMIT> extends Result {
       return ConflictType.NONE;
     }
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated // for removal and replaced with something else
     List<Hash> getSourceCommits();
 
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated // for removal and replaced with something else
     List<Hash> getTargetCommits();
 

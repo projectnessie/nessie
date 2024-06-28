@@ -180,7 +180,7 @@ class CachingPersistImpl implements Persist {
   }
 
   private <T extends Obj> ObjId[] fetchObjsPre(
-      ObjId[] ids, T[] r, ObjType type, @Nonnull Class<T> typeClass) {
+      ObjId[] ids, T[] r, ObjType type, @SuppressWarnings("unused") @Nonnull Class<T> typeClass) {
     ObjId[] backendIds = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];

@@ -50,17 +50,17 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @FunctionalInterface
   interface SQLRunnableException<R, E extends Exception> {
-    R run(Connection conn) throws SQLException, E;
+    R run(Connection conn) throws E;
   }
 
   @FunctionalInterface
   interface SQLRunnableExceptions<R, E1 extends Exception, E2 extends Exception> {
-    R run(Connection conn) throws SQLException, E1, E2;
+    R run(Connection conn) throws E1, E2;
   }
 
   @FunctionalInterface
   interface SQLRunnableVoid {
-    void run(Connection conn) throws SQLException;
+    void run(Connection conn);
   }
 
   private void withConnectionVoid(SQLRunnableVoid runnable) {

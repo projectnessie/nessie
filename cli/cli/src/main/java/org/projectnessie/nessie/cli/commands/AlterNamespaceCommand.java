@@ -47,6 +47,7 @@ public class AlterNamespaceCommand extends NessieCommittingCommand<AlterNamespac
       throws Exception {
     ContentKey contentKey = ContentKey.fromPathString(spec.getNamespace());
 
+    @SuppressWarnings("resource")
     Content content =
         applyReference(cli, spec, cli.mandatoryNessieApi().getContent())
             .getSingle(contentKey)

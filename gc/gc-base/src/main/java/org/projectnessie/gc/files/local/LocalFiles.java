@@ -51,6 +51,7 @@ public class LocalFiles implements FilesLister, FileDeleter {
     return Paths.get(URI.create(Objects.requireNonNull(uri.location())));
   }
 
+  @SuppressWarnings("resource")
   @Override
   @MustBeClosed
   public Stream<FileReference> listRecursively(StorageUri path) throws NessieFileIOException {

@@ -89,7 +89,7 @@ public abstract class AbstractPersistenceSpi {
     }
 
     Set<String> contentIds() {
-      return refs.stream().map(ContentReference::contentId).distinct().collect(Collectors.toSet());
+      return refs.stream().map(ContentReference::contentId).collect(Collectors.toSet());
     }
 
     List<ContentReference> refsForCid(String contentId) {

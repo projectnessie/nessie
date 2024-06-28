@@ -148,7 +148,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   private static RepositoryDescription deserialize(StringValue value) {
     try {
       return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryDescription.class);
-    } catch (ObjNotFoundException | IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -184,7 +184,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
       // can safely ignore the response from storeObj() - it's fine, if the obj already exists
       persist.storeObj(string);
       b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
-    } catch (ObjTooLargeException | ObjNotFoundException | IOException e) {
+    } catch (ObjTooLargeException | IOException e) {
       throw new RuntimeException(e);
     }
   }

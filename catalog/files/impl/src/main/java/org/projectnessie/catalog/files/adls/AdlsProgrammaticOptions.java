@@ -46,6 +46,7 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
     return ImmutableAdlsProgrammaticOptions.builder();
   }
 
+  @SuppressWarnings("unused")
   interface Builder {
     @CanIgnoreReturnValue
     Builder readBlockSize(int readBlockSize);
@@ -92,6 +93,7 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
 
     AdlsFileSystemOptions FALLBACK = AdlsPerFileSystemOptions.builder().build();
 
+    @SuppressWarnings("unused")
     interface Builder {
       @CanIgnoreReturnValue
       Builder from(AdlsFileSystemOptions instance);

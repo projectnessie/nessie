@@ -58,6 +58,7 @@ public interface AdlsConfig {
     return ImmutableAdlsConfig.builder();
   }
 
+  @SuppressWarnings("unused")
   interface Builder {
     @CanIgnoreReturnValue
     Builder maxHttpConnections(int maxHttpConnections);

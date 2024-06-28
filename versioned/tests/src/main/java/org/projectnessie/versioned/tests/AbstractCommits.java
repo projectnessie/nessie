@@ -931,8 +931,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       // do some operations here
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
-                        try (PaginationIterator<KeyEntry> ignore =
-                            store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {}
+                        store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS).close();
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }

@@ -24,7 +24,6 @@ import java.util.Set;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.RefObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -52,8 +51,10 @@ public class RefObjSerializer extends ObjSerializer<RefObj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      RefObj obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+      RefObj obj,
+      BoundStatementBuilder stmt,
+      int incrementalIndexLimit,
+      int maxSerializedIndexSize) {
     stmt.setString(COL_REF_NAME.name(), obj.name());
     stmt.setString(
         COL_REF_INITIAL_POINTER.name(), CassandraSerde.serializeObjId(obj.initialPointer()));

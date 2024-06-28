@@ -71,13 +71,8 @@ public class EventDeliveryFactory {
     return delivery;
   }
 
-  private static class MicrometerClockAdapter implements io.micrometer.core.instrument.Clock {
-
-    private final java.time.Clock clock;
-
-    MicrometerClockAdapter(java.time.Clock clock) {
-      this.clock = clock;
-    }
+  private record MicrometerClockAdapter(java.time.Clock clock)
+      implements io.micrometer.core.instrument.Clock {
 
     @Override
     public long wallTime() {

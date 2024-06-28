@@ -25,7 +25,6 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -52,8 +51,7 @@ public class ContentValueObjSerializer extends ObjSerializer<ContentValueObj> {
       ContentValueObj obj,
       BoundStatementBuilder stmt,
       int incrementalIndexLimit,
-      int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+      int maxSerializedIndexSize) {
     stmt.setString(COL_VALUE_CONTENT_ID.name(), obj.contentId());
     stmt.setInt(COL_VALUE_PAYLOAD.name(), obj.payload());
     stmt.setByteBuffer(COL_VALUE_DATA.name(), obj.data().asReadOnlyByteBuffer());

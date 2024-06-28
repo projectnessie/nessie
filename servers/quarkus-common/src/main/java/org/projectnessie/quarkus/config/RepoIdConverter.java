@@ -28,7 +28,7 @@ public class RepoIdConverter implements Converter<String> {
   @Override
   public String convert(String s) {
     if (s == null) {
-      return s;
+      return null;
     }
     return s.trim();
   }

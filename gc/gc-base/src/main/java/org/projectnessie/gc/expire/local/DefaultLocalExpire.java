@@ -67,6 +67,7 @@ public abstract class DefaultLocalExpire implements Expire {
     Instant started = clock().instant();
     expireParameters().liveContentSet().startExpireContents(started);
 
+    @SuppressWarnings("resource")
     ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism());
     try {
       DeleteSummary deleteSummary =

@@ -64,7 +64,7 @@ import org.projectnessie.model.Tag;
 public abstract class SparkSqlTestBase {
 
   protected static final String NON_NESSIE_CATALOG = "invalid_hive";
-  protected static SparkConf conf = new SparkConf();
+  protected static final SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;
 

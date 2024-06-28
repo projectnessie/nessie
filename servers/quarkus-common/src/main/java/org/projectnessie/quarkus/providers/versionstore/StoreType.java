@@ -40,7 +40,6 @@ public @interface StoreType {
   /** Supports inline instantiation of the {@link StoreType} qualifier. */
   final class Literal extends AnnotationLiteral<StoreType> implements StoreType {
 
-    private static final long serialVersionUID = 1L;
     private final VersionStoreType value;
 
     public Literal(VersionStoreType value) {

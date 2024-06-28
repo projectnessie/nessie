@@ -36,6 +36,7 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     return ImmutableGcsProgrammaticOptions.builder();
   }
 
+  @SuppressWarnings("unused")
   interface Builder {
     @CanIgnoreReturnValue
     Builder putBuckets(String bucket, GcsBucketOptions bucketOptions);

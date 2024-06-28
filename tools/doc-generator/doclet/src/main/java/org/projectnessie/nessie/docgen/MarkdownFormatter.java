@@ -205,7 +205,7 @@ public abstract class MarkdownFormatter {
   }
 
   abstract static class Target {
-    StringBuilder text = new StringBuilder();
+    final StringBuilder text = new StringBuilder();
     final String indent;
 
     Target(String indent) {

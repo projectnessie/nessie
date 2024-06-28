@@ -40,6 +40,7 @@ public final class CatalogUtils {
 
   public static CatalogBridge buildBridge(CatalogPlugin currentCatalog, String catalog) {
 
+    @SuppressWarnings("resource")
     SparkSession sparkSession = SparkSession.active();
     SparkContext sparkContext = sparkSession.sparkContext();
 

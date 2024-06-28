@@ -98,7 +98,7 @@ public class MinioExtension
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    if (!parameterContext.findAnnotation(Minio.class).isPresent()) {
+    if (parameterContext.findAnnotation(Minio.class).isEmpty()) {
       return false;
     }
     return parameterContext.getParameter().getType().isAssignableFrom(MinioAccess.class);

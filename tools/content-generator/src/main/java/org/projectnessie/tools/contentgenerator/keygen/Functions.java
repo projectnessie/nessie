@@ -37,7 +37,7 @@ public final class Functions {
     return generator;
   }
 
-  static Map<String, FuncGenerator> FUNCTIONS = new HashMap<>();
+  static final Map<String, FuncGenerator> FUNCTIONS = new HashMap<>();
 
   static {
     FUNCTIONS.put("uuid", params -> new UuidFunc());

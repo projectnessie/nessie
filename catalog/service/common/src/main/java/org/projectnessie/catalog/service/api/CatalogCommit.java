@@ -36,6 +36,7 @@ public interface CatalogCommit {
     return ImmutableCatalogCommit.builder();
   }
 
+  @SuppressWarnings("unused")
   interface Builder {
     @CanIgnoreReturnValue
     Builder from(CatalogCommit instance);

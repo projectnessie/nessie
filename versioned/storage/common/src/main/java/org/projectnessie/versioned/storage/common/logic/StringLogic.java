@@ -34,13 +34,11 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 public interface StringLogic {
   StringValue fetchString(ObjId stringObjId) throws ObjNotFoundException;
 
-  StringValue fetchString(StringObj stringObj) throws ObjNotFoundException;
+  StringValue fetchString(StringObj stringObj);
 
-  StringObj updateString(StringValue previousValue, String contentType, byte[] stringValueUtf8)
-      throws ObjNotFoundException;
+  StringObj updateString(StringValue previousValue, String contentType, byte[] stringValueUtf8);
 
-  StringObj updateString(StringValue previousValue, String contentType, String stringValue)
-      throws ObjNotFoundException;
+  StringObj updateString(StringValue previousValue, String contentType, String stringValue);
 
   /**
    * Updates a string value stored as a content on a reference.
@@ -72,7 +70,7 @@ public interface StringLogic {
   interface StringValue {
     String contentType();
 
-    String completeValue() throws ObjNotFoundException;
+    String completeValue();
 
     ObjId objId();
   }

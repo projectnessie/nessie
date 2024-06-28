@@ -34,7 +34,7 @@ public interface HttpClient extends AutoCloseable {
     GET,
     POST,
     PUT,
-    DELETE;
+    DELETE,
   }
 
   default HttpRequest newRequest() {

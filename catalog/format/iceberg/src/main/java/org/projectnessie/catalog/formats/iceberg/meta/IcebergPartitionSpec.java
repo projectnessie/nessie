@@ -123,7 +123,7 @@ public interface IcebergPartitionSpec {
       IcebergPartitionField thisField = fields().get(i);
       IcebergPartitionField thatField = other.fields().get(i);
       if (thisField.sourceId() != thatField.sourceId()
-          || !thisField.transform().toString().equals(thatField.transform().toString())
+          || !thisField.transform().equals(thatField.transform())
           || !thisField.name().equals(thatField.name())) {
         return false;
       }

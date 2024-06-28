@@ -19,5 +19,4 @@ public enum GetPropertiesAction {
   checkAccess,
   getAccessControl,
   getStatus,
-  ;
 }

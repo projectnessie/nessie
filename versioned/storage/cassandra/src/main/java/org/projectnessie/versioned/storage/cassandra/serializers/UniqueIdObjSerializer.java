@@ -24,7 +24,6 @@ import java.util.Set;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -49,8 +48,7 @@ public class UniqueIdObjSerializer extends ObjSerializer<UniqueIdObj> {
       UniqueIdObj obj,
       BoundStatementBuilder stmt,
       int incrementalIndexLimit,
-      int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+      int maxSerializedIndexSize) {
     stmt.setString(COL_UNIQUE_SPACE.name(), obj.space());
     stmt.setByteBuffer(COL_UNIQUE_VALUE.name(), obj.value().asReadOnlyByteBuffer());
   }
