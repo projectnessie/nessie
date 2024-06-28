@@ -156,6 +156,10 @@ public class CatalogServiceImpl implements CatalogService {
               try {
                 snapshotId = snapshotIdFromContent(c.getContent());
               } catch (Exception e) {
+                // This silently handles the case when `c` refers neither to an Iceberg table nor a
+                // view.`
+                LOGGER.debug(
+                    "Failed to retrieve snapshot ID for {}: {}", c.getContent(), e.toString());
                 return null;
               }
               return (Supplier<CompletionStage<SnapshotResponse>>)
@@ -519,12 +523,7 @@ public class CatalogServiceImpl implements CatalogService {
                   Content updated =
                       icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
 
-                  ObjId snapshotId;
-                  try {
-                    snapshotId = snapshotIdFromContent(updated);
-                  } catch (Exception e) {
-                    return null;
-                  }
+                  ObjId snapshotId = snapshotIdFromContent(updated);
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
@@ -591,12 +590,7 @@ public class CatalogServiceImpl implements CatalogService {
                       storeViewSnapshot(metadataJsonLocation, nessieSnapshot);
                   Content updated =
                       icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
-                  ObjId snapshotId;
-                  try {
-                    snapshotId = snapshotIdFromContent(updated);
-                  } catch (Exception e) {
-                    return null;
-                  }
+                  ObjId snapshotId = snapshotIdFromContent(updated);
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
