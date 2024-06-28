@@ -388,17 +388,42 @@ For example, once you get a shell in the debug container, you can:
 
 JVM issues such as memory leaks, high CPU usage, etc. can be debugged using JVM tools.
 
-This will likely require to restart the Nessie pod with some extra JVM options though. The most
+The Nessie container ships with few utilities, but it does have `jcmd`, a command-line utility for
+interacting with the JVM, installed.
+
+First, get a shell in the Nessie container:
+
+```bash
+kubectl exec -it -n <namespace> <pod> -c nessie -- /bin/bash
+```
+
+Then, you can use `jcmd` to capture a thread dump, heap dump, etc.:
+
+```bash
+jcmd 1 Thread.print
+jcmd 1 GC.heap_dump /tmp/heapdump.hprof
+```
+
+!!! Tip
+    Nessie server PID is usually 1. You can double-check with `ps aux` or `jps`.
+
+If you need other JVM tools, such as `jfr` or `async-profiler`, a more complex setup is required.
+
+First, restart the Nessie pod with some extra JVM options. The most
 useful option to add is the `--XX:+StartAttachListener` JVM option; without it, the JVM will not
 allow attaching to it and tools like `jstack` will fail.
 
-With the Helm chart, this can be done by setting the `JAVA_OPTS_APPEND` environment variable:
+This can be done by modifying the pod template spec in the deployment spec, and adding/updating the
+`JAVA_OPTS_APPEND` environment variable:
 
-```yaml
-extraEnv:
-- name: JAVA_OPTS_APPEND
-  value: "-XX:+StartAttachListener"
+```bash
+java_opts_append=$(kubectl get deployment -n <namespace> <deployment> -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="JAVA_OPTS_APPEND")].value}')
+kubectl set env -n <namespace> deployment <deployment> JAVA_OPTS_APPEND="$java_opts_append -XX:+StartAttachListener"
 ```
+
+!!! Warning
+    The above command will restart all Nessie pods! Unfortunately that's inevitable, because 
+    environment variables cannot be changed in the pod spec directly.
 
 Once the target pod is ready to be attached, we can use the `lightrun-platform/koolkits/koolkit-jvm`
 image, which contains a JVM-based toolset for debugging Java applications:
@@ -422,16 +447,13 @@ cp /root/.bashrc /home/debug/ && chown 185:0 /home/debug/.bashrc
 su - debug
 ```
 
-After running the above commands, you should be able to use `jps`, `jstack`, `jmap`, etc. as well as
+After running the above commands, you should be able to use `jps`, `jcmd`, `jmap`, etc. as well as
 other tools like `async-profiler`, `jfr` (Java Flight Recorder), etc. For example, you can check the
-Nessie server's JVM threads:
+Nessie server's JVM threads with `jcmd`, or run `async-profiler` to profile the Nessie server:
 
 ```bash
-jstack $(jps | grep 'quarkus-run.jar' | cut -d ' ' -f 1)
+async-profiler -d 30 -f profile.html 1
 ```
-
-!!! Tip
-    Nessie server PID is usually 1.
 
 ### Remote debugging
 
@@ -441,15 +463,11 @@ a remote debugger.
 Again, this will require restarting the Nessie pod with some extra JVM options. The most useful
 option to add is the `-agentlib:jdwp` JVM option, which enables the Java Debug Wire Protocol (JDWP).
 
-With the Helm chart however, this can be done more easily by simply setting the `JAVA_DEBUG` and
-`JAVA_DEBUG_PORT` environment variables:
+This can be done more easily done by simply setting the `JAVA_DEBUG` and `JAVA_DEBUG_PORT`
+environment variables in the deployment spec:
 
-```yaml
-extraEnv:
-- name: JAVA_DEBUG
-  value: "true"
-- name: JAVA_DEBUG_PORT
-  value: "*:5005"
+```bash
+kubectl set env -n <namespace> deployment <deployment> JAVA_DEBUG="true" JAVA_DEBUG_PORT="*:5005"
 ```
 
 Once the pod is ready to be debugged, you must forward the 5005 port to your local machine:
