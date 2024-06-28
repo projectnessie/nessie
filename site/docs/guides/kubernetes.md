@@ -425,8 +425,9 @@ kubectl set env -n <namespace> deployment <deployment> JAVA_OPTS_APPEND="$java_o
     The above command will restart all Nessie pods! Unfortunately that's inevitable, because 
     environment variables cannot be changed in the pod spec directly.
 
-Once the target pod is ready to be attached, we can use the `lightrun-platform/koolkits/koolkit-jvm`
-image, which contains a JVM-based toolset for debugging Java applications:
+Once the target pod is ready to be attached, you will need an image with the required tools. One
+example is the `lightrun-platform/koolkits/koolkit-jvm` image, which contains a JVM-based toolset
+for debugging Java applications:
 
 ```bash
 kubectl debug -it -n <namespace> <pod> --image=lightruncom/koolkits:jvm --target=nessie --share-processes
@@ -435,10 +436,12 @@ kubectl debug -it -n <namespace> <pod> --image=lightruncom/koolkits:jvm --target
 See the [JVM KoolKits page](https://github.com/lightrun-platform/koolkits/blob/main/jvm/README.md)
 for more information. Beware that the image is quite large, so it may take some time to download.
 
-A few preliminary commands must be executed prior to be able to use the tools, because the Nessie
-process is running as a non-root user (UID 185) while the debug container is running as root (UID
-0). You can do this by creating a new user with the same UID and GID as the Nessie process, copying
-a few files and then switching to that user:
+A few preliminary commands may need to be executed prior to be able to use the tools, for example if
+users don't match: the Nessie process runs as a non-root user (UID 185), while in many debug
+containers, the running user is root (UID 0). If that is the case, you won't be able to attach to
+Nessie JVM. You can solve the problem by creating a new user with the same UID and GID as the Nessie
+process. In the case of JVM KoolKits, you also need to copy a few files before switching to the new
+user; here is the whole snippet to run:
 
 ```bash
 adduser --home /home/debug --uid 185 --gid 0 --disabled-password --gecos "" debug
@@ -448,11 +451,18 @@ su - debug
 ```
 
 After running the above commands, you should be able to use `jps`, `jcmd`, `jmap`, etc. as well as
-other tools like `async-profiler`, `jfr` (Java Flight Recorder), etc. For example, you can check the
-Nessie server's JVM threads with `jcmd`, or run `async-profiler` to profile the Nessie server:
+other tools like `jfr` (Java Flight Recorder), etc. For example, you can use JFR to record a
+profile for 30 seconds:
 
 ```bash
-async-profiler -d 30 -f profile.html 1
+jcmd 1 JFR.start duration=30s filename=/tmp/profile.jfr
+```
+
+Note that the profile will be saved in the Nessie container, not the debug container. You can copy
+it to your local machine with `kubectl cp`:
+
+```bash
+kubectl cp -n <namespace> <pod>:/tmp/profile.jfr profile.jfr
 ```
 
 ### Remote debugging
