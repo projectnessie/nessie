@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,9 +56,9 @@ public class TestNamespace {
         .extracting(Namespace::name, Namespace::isEmpty)
         .containsExactly("", true);
 
-    assertThat(Namespace.of("")).isEqualTo(Namespace.EMPTY);
-    assertThat(Namespace.of(Collections.emptyList())).isEqualTo(Namespace.EMPTY);
-    assertThat(Namespace.of(singletonList(""))).isEqualTo(Namespace.EMPTY);
+    assertThat(Namespace.of("")).isEqualTo(EMPTY_NAMESPACE);
+    assertThat(Namespace.of(Collections.emptyList())).isEqualTo(EMPTY_NAMESPACE);
+    assertThat(Namespace.of(singletonList(""))).isEqualTo(EMPTY_NAMESPACE);
 
     assertThatThrownBy(() -> Namespace.of("", "something"))
         .isInstanceOf(IllegalArgumentException.class)
@@ -106,11 +107,11 @@ public class TestNamespace {
   public void testIsSameOrSubElementOf() {
     Namespace namespace = Namespace.of(asList("a", "b.c", "namespace"));
 
-    assertThatThrownBy(() -> Namespace.EMPTY.isSameOrSubElementOf(null))
+    assertThatThrownBy(() -> EMPTY_NAMESPACE.isSameOrSubElementOf(null))
         .hasMessage("namespace must be non-null");
 
-    assertThat(Namespace.EMPTY.isSameOrSubElementOf(Namespace.EMPTY)).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.EMPTY)).isTrue();
+    assertThat(EMPTY_NAMESPACE.isSameOrSubElementOf(EMPTY_NAMESPACE)).isTrue();
+    assertThat(namespace.isSameOrSubElementOf(EMPTY_NAMESPACE)).isTrue();
     assertThat(namespace.isSameOrSubElementOf(Namespace.of("a"))).isTrue();
     assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a"))).isTrue();
     assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b"))).isFalse();
@@ -124,7 +125,7 @@ public class TestNamespace {
 
     assertThat(Namespace.parse("a.b.c").isSameOrSubElementOf(Namespace.parse("a.b\u001Dc")))
         .isFalse();
-    assertThat(Namespace.EMPTY.isSameOrSubElementOf(Namespace.of("a"))).isFalse();
+    assertThat(EMPTY_NAMESPACE.isSameOrSubElementOf(Namespace.of("a"))).isFalse();
   }
 
   @Test
@@ -282,7 +283,7 @@ public class TestNamespace {
             Namespace.of(asList("a", "b", "namespace")),
             asList("a", "b", "namespace"),
             "a.b.namespace"),
-        arguments(Namespace.EMPTY, Collections.emptyList(), ""),
+        arguments(EMPTY_NAMESPACE, Collections.emptyList(), ""),
         arguments(
             Namespace.of(singletonList("namespace")), singletonList("namespace"), "namespace"),
         arguments(Namespace.fromPathString("namespace"), singletonList("namespace"), "namespace"));

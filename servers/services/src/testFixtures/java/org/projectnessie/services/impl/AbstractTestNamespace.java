@@ -23,6 +23,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.services.impl.AbstractTestContents.contentAndOperationTypes;
 
 import com.google.common.collect.ImmutableMap;
@@ -116,11 +117,11 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     }
 
     soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
+            namespaceApi().getNamespaces(branch.getName(), null, EMPTY_NAMESPACE).getNamespaces())
         .containsExactlyInAnyOrder(one, two, three, four, a, ab, x, xy, o);
 
     soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
+            namespaceApi().getNamespaces(branch.getName(), null, EMPTY_NAMESPACE).getNamespaces())
         .containsExactlyInAnyOrder(one, two, three, four, a, ab, x, xy, o);
 
     Namespace nsA = Namespace.of("a");
@@ -323,7 +324,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     // retrieval by prefix
     soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
+            namespaceApi().getNamespaces(branch.getName(), null, EMPTY_NAMESPACE).getNamespaces())
         .containsAll(namespaces);
 
     soft.assertThat(
@@ -357,7 +358,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     }
 
     soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
+            namespaceApi().getNamespaces(branch.getName(), null, EMPTY_NAMESPACE).getNamespaces())
         .extracting(Namespace::toContentKey)
         .containsExactlyInAnyOrder(
             Namespace.parse("a").toContentKey(),
@@ -370,18 +371,18 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
   public void testEmptyNamespace() throws BaseNessieClientServerException {
     Branch branch = createBranch("emptyNamespace");
     // can't create/fetch/delete an empty namespace due to empty REST path
-    soft.assertThatThrownBy(() -> namespaceApi().createNamespace(branch.getName(), Namespace.EMPTY))
+    soft.assertThatThrownBy(() -> namespaceApi().createNamespace(branch.getName(), EMPTY_NAMESPACE))
         .isInstanceOf(Exception.class);
 
     soft.assertThatThrownBy(
-            () -> namespaceApi().getNamespace(branch.getName(), null, Namespace.EMPTY))
+            () -> namespaceApi().getNamespace(branch.getName(), null, EMPTY_NAMESPACE))
         .isInstanceOf(Exception.class);
 
-    soft.assertThatThrownBy(() -> namespaceApi().deleteNamespace(branch.getName(), Namespace.EMPTY))
+    soft.assertThatThrownBy(() -> namespaceApi().deleteNamespace(branch.getName(), EMPTY_NAMESPACE))
         .isInstanceOf(Exception.class);
 
     soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
+            namespaceApi().getNamespaces(branch.getName(), null, EMPTY_NAMESPACE).getNamespaces())
         .isEmpty();
 
     ContentKey keyWithoutNamespace = ContentKey.of("icebergTable");
@@ -391,7 +392,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
         Put.of(keyWithoutNamespace, IcebergTable.of("icebergTable", 42, 42, 42, 42)));
 
     soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
+            namespaceApi().getNamespaces(branch.getName(), null, EMPTY_NAMESPACE).getNamespaces())
         .isEmpty();
   }
 

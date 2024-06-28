@@ -28,6 +28,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -1226,7 +1227,7 @@ public abstract class BaseTestNessieApi {
             api()
                 .getMultipleNamespaces()
                 .reference(main)
-                .namespace(Namespace.EMPTY)
+                .namespace(EMPTY_NAMESPACE)
                 .get()
                 .getNamespaces())
         .isEmpty();
@@ -1308,7 +1309,7 @@ public abstract class BaseTestNessieApi {
 
       for (Map.Entry<Namespace, List<Namespace>> c :
           ImmutableMap.<Namespace, List<Namespace>>of(
-                  Namespace.EMPTY,
+                  EMPTY_NAMESPACE,
                   singletonList(namespace1WithId),
                   namespace1,
                   asList(namespace2WithId, namespace3WithId),
@@ -1349,7 +1350,7 @@ public abstract class BaseTestNessieApi {
 
     for (Map.Entry<Namespace, List<Namespace>> c :
         ImmutableMap.of(
-                Namespace.EMPTY,
+                EMPTY_NAMESPACE,
                 asList(namespace1WithId, namespace2WithId, namespace3WithId, namespace4WithId),
                 namespace1,
                 asList(namespace1WithId, namespace2WithId, namespace3WithId, namespace4WithId),
@@ -1372,7 +1373,7 @@ public abstract class BaseTestNessieApi {
     }
 
     GetNamespacesResponse getMultiple =
-        api().getMultipleNamespaces().refName(mainName).namespace(Namespace.EMPTY).get();
+        api().getMultipleNamespaces().refName(mainName).namespace(EMPTY_NAMESPACE).get();
     if (isV2()) {
       main = (Branch) api().getReference().refName(mainName).get();
       soft.assertThat(getMultiple.getEffectiveReference()).isEqualTo(main);
@@ -1458,7 +1459,7 @@ public abstract class BaseTestNessieApi {
             api()
                 .getMultipleNamespaces()
                 .refName(mainName)
-                .namespace(Namespace.EMPTY)
+                .namespace(EMPTY_NAMESPACE)
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(
@@ -1497,7 +1498,7 @@ public abstract class BaseTestNessieApi {
             api()
                 .getMultipleNamespaces()
                 .refName(mainName)
-                .namespace(Namespace.EMPTY)
+                .namespace(EMPTY_NAMESPACE)
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(
@@ -1571,7 +1572,7 @@ public abstract class BaseTestNessieApi {
             api()
                 .getMultipleNamespaces()
                 .refName(mainName)
-                .namespace(Namespace.EMPTY)
+                .namespace(EMPTY_NAMESPACE)
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(namespace1WithId, namespace2update2, namespace3WithId);

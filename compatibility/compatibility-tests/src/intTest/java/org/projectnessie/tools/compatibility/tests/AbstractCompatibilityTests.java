@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.tools.compatibility.api.Version.MERGE_KEY_BEHAVIOR_FIX;
 
 import com.google.common.collect.ImmutableMap;
@@ -186,7 +187,7 @@ public abstract class AbstractCompatibilityTests {
         .isEqualTo(namespace);
     assertThat(
             api.getMultipleNamespaces()
-                .namespace(Namespace.EMPTY)
+                .namespace(EMPTY_NAMESPACE)
                 .reference(branch)
                 .get()
                 .getNamespaces())

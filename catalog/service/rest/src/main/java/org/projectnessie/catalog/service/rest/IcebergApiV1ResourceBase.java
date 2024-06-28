@@ -26,6 +26,7 @@ import static org.projectnessie.catalog.service.rest.DecodedPrefix.decodedPrefix
 import static org.projectnessie.catalog.service.rest.NamespaceRef.namespaceRef;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
 import com.google.common.base.Splitter;
@@ -227,7 +228,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
   public static Namespace decodeNamespace(String encodedNs) {
     if (encodedNs == null) {
-      return Namespace.EMPTY;
+      return EMPTY_NAMESPACE;
     }
 
     return Namespace.of(NAMESPACE_ESCAPED_SPLITTER.splitToList(encodedNs).toArray(new String[0]));
