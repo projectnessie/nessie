@@ -40,3 +40,5 @@ sync:
   - source: ghcr.io/projectnessie/nessie-cli
     target: quay.io/projectnessie/nessie-cli
     type: repository
+  # NOTE: When adding new images, make sure that the repository exist on quay.io!
+  # See also the note about ghcr.io in .github/workflows/*-publish.yml about ghcr.io.

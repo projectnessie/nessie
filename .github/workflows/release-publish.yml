@@ -220,6 +220,16 @@ jobs:
             -d "Dockerfile-cli" \
             ghcr.io/projectnessie/nessie-cli
 
+      # NOTE: GH container registry behaves a bit weird when new images are added.
+      # The first push/publication of a _new_ image (package) fails with a HTTP/403,
+      # but the next one works.
+      # See also the note in .github/docker-sync/regsync.yml about quay.io.
+      #
+      # Also make sure to add the new image to the site, currently in:
+      #   site/docs/downloads/index.md
+      #   site/in-dev/index.md
+      #   site/in-dev/index-release.md
+
   publish-helm:
     name: Publish Helm Chart
     runs-on: ubuntu-22.04
