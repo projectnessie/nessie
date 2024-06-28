@@ -31,7 +31,10 @@ img.bordered {
 
 .md-typeset .tabbed-labels>label {
   background-color: #efefef;
-  margin-right: 2px;
+  border-top-left-radius: .3em;
+  border-top-right-radius: .3em;
+  margin-left: 1px;
+  margin-right: 1px;
 }
 
 /* Highlights the current selected tab (matches the nth tab corresponding to the nth checked input). */
