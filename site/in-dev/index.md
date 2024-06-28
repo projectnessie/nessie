@@ -38,20 +38,23 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
 ## Nessie CLI unstable/nightly
 
-### Docker image
+=== "Docker Image"
 
-Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+    Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+    
+    **The image tags are updated twice per day during weekdays.**
 
-**The image tags are updated twice per day during weekdays.**
+    Images are available from the following repositories: 
+    
+    * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli-unstable):
 
-=== "GitHub Container Registry"
-    [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli-unstable)
     ```bash
     docker pull ghcr.io/projectnessie/nessie-cli-unstable
     docker run -it ghcr.io/projectnessie/nessie-cli-unstable
     ```
-=== "Quay.io"
-    [quay.io](https://quay.io/repository/projectnessie/nessie-cli-unstable?tab=tags)
+
+    * [Quay.io](https://quay.io/repository/projectnessie/nessie-cli-unstable?tab=tags):
+
     ```bash
     docker pull quay.io/projectnessie/nessie-cli-unstable
     docker run -it quay.io/projectnessie/nessie-cli-unstable
