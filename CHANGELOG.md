@@ -12,6 +12,20 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.91.3] Release (2024-06-28)
+
+### Breaking changes
+
 - The config properties for the object storage defaults for S3, GCS and ADLS have been moved under the
   `default-options` composite object. Inconsistent property names between the old defaults and the per-bucket
   property names have been resolved.
@@ -22,15 +36,9 @@ as necessary. Empty sections will not end in the release notes.
   ghcr.io/projectnessie/nessie-cli`. Read more about it
   [here](https://projectnessie.org/nessie-latest/cli/).
 
-### Changes
-
-### Deprecations
-
 ### Fixes
 
 - Fix console output during `CONNECT` in CLI/REPL (the bug was introduced in 0.91.1)
-
-### Commits
 
 ## [0.91.2] Release (2024-06-24)
 
@@ -560,7 +568,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.91.2...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.91.3...HEAD
+[0.91.3]: https://github.com/projectnessie/nessie/compare/nessie-0.91.2...nessie-0.91.3
 [0.91.2]: https://github.com/projectnessie/nessie/compare/nessie-0.91.1...nessie-0.91.2
 [0.91.1]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...nessie-0.91.1
 [0.90.4]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...nessie-0.90.4

@@ -2,6 +2,48 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.91.3 Release (June 28, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.3).
+
+### Breaking changes
+
+- The config properties for the object storage defaults for S3, GCS and ADLS have been moved under the
+  `default-options` composite object. Inconsistent property names between the old defaults and the per-bucket
+  property names have been resolved.
+
+### New Features
+
+- Nessie CLI now has its own Docker images. Running Nessie CLI is now as simple as: `docker run -it
+  ghcr.io/projectnessie/nessie-cli`. Read more about it
+  [here](https://projectnessie.org/nessie-latest/cli/).
+
+### Fixes
+
+- Fix console output during `CONNECT` in CLI/REPL (the bug was introduced in 0.91.1)
+
+### Commits
+* Fix a bunch of IntelliJ inspections, rather nits + cosmetic (#8955)
+* nit: fix typo in NessieConfigConstants (#8959)
+* Site: display download options for each artifact in tabs (#8946)
+* Just add comments when adding new images. (#8958)
+* Nessie CLI: publish Docker images (#8935)
+* Fix STDOUT in `ConnectCommand` (#8953)
+* Remove unused `Cloud` enum (#8951)
+* Fix flaky `TestCacheInvalidationSender.regularServiceNameLookups` (#8950)
+* Helm chart: remove build-time property quarkus.log.min-level (#8948)
+* Helm chart: fix catalogStorageEnv template (#8944)
+* Clarify OpenAPI doc for updateRepositoryConfig (#8945)
+* Migrate default bucket options to `default-options` composite property (#8933)
+* Site: new placeholders for nightly version, tag and unstable suffix (#8939)
+* Replace usage of `Project.extra` for `PublishingHelperPlugin` + explicitly disable Gradle config cache (#8942)
+* create-gh-release-notes.sh: don't include h1 title in release notes (#8938)
+* Site: nicer word-break for config references (#8936)
+* Site / downloads fixes + reorg (#8934)
+* Follow-up of stream-to-list refactor (#8931)
+* OAuth2: nit: clarify trust relationship required for impersonation (#8928)
+* GH WFs: Fix comment + job parameter description (#8924)
+
 ## 0.91.2 Release (June 24, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.2).
