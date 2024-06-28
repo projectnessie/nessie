@@ -178,14 +178,13 @@ dependencies {
   intTestImplementation("software.amazon.awssdk:sts")
 }
 
-val pullOpenApiSpec by tasks.registering(Sync::class)
-
 val openApiSpecDir = layout.buildDirectory.dir("openapi-extra")
 
-pullOpenApiSpec.configure {
-  destinationDir = openApiSpecDir.get().asFile
-  from(openapiSource) { include("openapi.yaml") }
-}
+val pullOpenApiSpec by
+  tasks.registering(Sync::class) {
+    destinationDir = openApiSpecDir.get().asFile
+    from(openapiSource) { include("openapi.yaml") }
+  }
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())

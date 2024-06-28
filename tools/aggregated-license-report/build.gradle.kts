@@ -33,35 +33,32 @@ dependencies {
     .forEach { p -> licenseReports(nessieProject(p.path.substring(1), "licenseReports")) }
 }
 
-val collectLicenseReportJars by tasks.registering(Sync::class)
+val collectLicenseReportJars by
+  tasks.registering(Sync::class) {
+    destinationDir = project.layout.buildDirectory.dir("tmp/license-report-jars").get().asFile
+    from(licenseReports)
+  }
 
-collectLicenseReportJars.configure {
-  destinationDir = project.layout.buildDirectory.dir("tmp/license-report-jars").get().asFile
-  from(licenseReports)
-}
-
-val aggregateLicenseReports by tasks.registering
-
-aggregateLicenseReports.configure {
-  val outputDir = project.layout.buildDirectory.dir("licenseReports")
-  outputs.dir(outputDir)
-  dependsOn(collectLicenseReportJars)
-  doLast {
-    delete(outputDir)
-    fileTree(collectLicenseReportJars.get().destinationDir).files.forEach { zip ->
-      val targetDirName = zip.name.replace("-license-report.zip", "")
-      unzipTo(outputDir.get().dir(targetDirName).asFile, zip)
+val aggregateLicenseReports by
+  tasks.registering {
+    val outputDir = project.layout.buildDirectory.dir("licenseReports")
+    outputs.dir(outputDir)
+    dependsOn(collectLicenseReportJars)
+    doLast {
+      delete(outputDir)
+      fileTree(collectLicenseReportJars.get().destinationDir).files.forEach { zip ->
+        val targetDirName = zip.name.replace("-license-report.zip", "")
+        unzipTo(outputDir.get().dir(targetDirName).asFile, zip)
+      }
     }
   }
-}
 
-val aggregatedLicenseReportsZip by tasks.registering(Zip::class)
-
-aggregatedLicenseReportsZip.configure {
-  from(aggregateLicenseReports)
-  from(provider { zipTree(notice.singleFile) }) {
-    include("META-INF/resources/NOTICE.txt")
-    eachFile { path = "NOTICE.txt" }
+val aggregatedLicenseReportsZip by
+  tasks.registering(Zip::class) {
+    from(aggregateLicenseReports)
+    from(provider { zipTree(notice.singleFile) }) {
+      include("META-INF/resources/NOTICE.txt")
+      eachFile { path = "NOTICE.txt" }
+    }
+    archiveExtension.set("zip")
   }
-  archiveExtension.set("zip")
-}
