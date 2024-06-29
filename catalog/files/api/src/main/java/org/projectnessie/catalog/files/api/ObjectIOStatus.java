@@ -26,7 +26,10 @@ public interface ObjectIOStatus {
 
   Instant reattemptAfter();
 
-  static ObjectIOStatus of(int httpCode, boolean retryable, Instant reattemptAfter) {
-    return ImmutableObjectIOStatus.of(httpCode, retryable, reattemptAfter);
+  Throwable cause();
+
+  static ObjectIOStatus of(
+      int httpCode, boolean retryable, Instant reattemptAfter, Throwable cause) {
+    return ImmutableObjectIOStatus.of(httpCode, retryable, reattemptAfter, cause);
   }
 }

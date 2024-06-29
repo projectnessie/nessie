@@ -45,7 +45,7 @@ public abstract class ObjectIOExceptionMapper {
       for (Analyzer analyzer : analyzers()) {
         OptionalInt statusCode = analyzer.httpStatusCode(th);
         if (statusCode.isPresent()) {
-          return Optional.of(toStatus(statusCode.getAsInt()));
+          return Optional.of(toStatus(statusCode.getAsInt(), th));
         }
       }
     }
@@ -53,37 +53,24 @@ public abstract class ObjectIOExceptionMapper {
     return Optional.empty();
   }
 
-  public OptionalInt httpStatusCode(Throwable ex) {
-    for (Throwable th = ex; th != null; th = th.getCause()) {
-      for (Analyzer analyzer : analyzers()) {
-        OptionalInt statusCode = analyzer.httpStatusCode(th);
-        if (statusCode.isPresent()) {
-          return statusCode;
-        }
-      }
-    }
-
-    return OptionalInt.empty();
-  }
-
   private Instant retryAfter(Duration delay) {
     return clock().instant().plus(delay);
   }
 
-  private ObjectIOStatus toStatus(int httpStatus) {
+  private ObjectIOStatus toStatus(int httpStatus, Throwable th) {
     switch (httpStatus) {
       case 408:
       case 425:
       case 429:
-        return ObjectIOStatus.of(httpStatus, true, retryAfter(retryAfterThrottled()));
+        return ObjectIOStatus.of(httpStatus, true, retryAfter(retryAfterThrottled()), th);
 
       case 502:
       case 503:
       case 504:
-        return ObjectIOStatus.of(httpStatus, true, retryAfter(retryAfterNetworkError()));
+        return ObjectIOStatus.of(httpStatus, true, retryAfter(retryAfterNetworkError()), th);
 
       default:
-        return ObjectIOStatus.of(httpStatus, false, retryAfter(reattemptAfterFetchError()));
+        return ObjectIOStatus.of(httpStatus, false, retryAfter(reattemptAfterFetchError()), th);
     }
   }
 

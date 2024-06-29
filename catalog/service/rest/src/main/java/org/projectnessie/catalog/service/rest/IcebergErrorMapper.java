@@ -28,9 +28,10 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.OptionalInt;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.ObjectIOExceptionMapper;
+import org.projectnessie.catalog.files.api.ObjectIOStatus;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergErrorResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
@@ -81,9 +82,9 @@ public class IcebergErrorMapper {
       }
     }
 
-    OptionalInt status = ioExceptionMapper.httpStatusCode(ex);
+    Optional<ObjectIOStatus> status = ioExceptionMapper.analyze(ex);
     if (status.isPresent()) {
-      body = mapStorageFailure(status.getAsInt(), ex);
+      body = mapStorageFailure(status.get(), ex);
     }
 
     if (body == null) {
@@ -95,19 +96,24 @@ public class IcebergErrorMapper {
     return Response.status(code == null ? 500 : code).entity(body).build();
   }
 
-  private IcebergErrorResponse mapStorageFailure(int httpStatusCode, Throwable ex) {
+  private static String message(ObjectIOStatus status, Throwable ex) {
+    return String.format("%s (due to: %s)", ex.getMessage(), status.cause().toString());
+  }
+
+  private IcebergErrorResponse mapStorageFailure(ObjectIOStatus status, Throwable ex) {
     // Log full stack trace on the server side for troubleshooting
     LOGGER.info("Propagating storage failure to client: {}", ex, ex);
 
+    int httpStatusCode = status.httpStatusCode();
     switch (httpStatusCode) {
       case 401:
-        return errorResponse(httpStatusCode, "NotAuthorizedException", ex.toString(), ex);
+        return errorResponse(httpStatusCode, "NotAuthorizedException", message(status, ex), ex);
       case 403:
-        return errorResponse(httpStatusCode, "ForbiddenException", ex.toString(), ex);
+        return errorResponse(httpStatusCode, "ForbiddenException", message(status, ex), ex);
       case 404:
         // Convert storage-side "not found" into `IllegalArgumentException`.
         // In most cases this results from bad locations in Iceberg metadata.
-        return errorResponse(400, "IllegalArgumentException", ex.toString(), ex);
+        return errorResponse(400, "IllegalArgumentException", message(status, ex), ex);
       default:
         return null;
     }
