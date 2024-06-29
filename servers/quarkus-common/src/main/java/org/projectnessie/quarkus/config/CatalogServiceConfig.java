@@ -19,10 +19,9 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.time.Duration;
-import org.projectnessie.catalog.files.api.ObjectIOConfig;
 
 @ConfigMapping(prefix = "nessie.catalog.service")
-public interface CatalogServiceConfig extends ObjectIOConfig {
+public interface CatalogServiceConfig {
   /**
    * Interval after which a request is retried when storage I/O responds with some "retry later"
    * response.
@@ -31,10 +30,18 @@ public interface CatalogServiceConfig extends ObjectIOConfig {
   @WithDefault("PT10S")
   Duration retryAfterThrottled();
 
+  /**
+   * Interval after which a request is retried in case of networks / routing errors (e.g. "Service
+   * Unavailable").
+   */
   @WithName("network-error-retry-after")
   @WithDefault("PT30S")
   Duration retryAfterNetworkError();
 
+  /**
+   * Interval after which new requests for data that previously failed to be retrieved from storage
+   * can be re-attempted.
+   */
   @WithName("reattempt-after-fetch-error")
   @WithDefault("PT60S")
   Duration reattemptAfterFetchError();
