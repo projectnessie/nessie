@@ -152,7 +152,13 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
 
               updateResolvedAddresses(all);
             })
-        .onFailure(t -> LOGGER.error("Failed to resolve service names: {}", t.toString()));
+        .onFailure(
+            t -> {
+              // refresh addresses regularly
+              scheduleServiceNameResolution();
+
+              LOGGER.warn("Failed to resolve service names: {}", t.toString());
+            });
   }
 
   @VisibleForTesting
@@ -160,21 +166,8 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
     resolvedAddresses = all;
   }
 
-  private void updateServiceNamesHandleFailure() {
-    updateServiceNames()
-        .onFailure(
-            failure -> {
-              // refresh addresses regularly
-              scheduleServiceNameResolution();
-
-              LOGGER.warn(
-                  "Failed to resolve service names {} for remote cache invalidations",
-                  serviceNames);
-            });
-  }
-
   private void scheduleServiceNameResolution() {
-    vertx.setTimer(serviceNameLookupIntervalMillis, x -> updateServiceNamesHandleFailure());
+    vertx.setTimer(serviceNameLookupIntervalMillis, x -> updateServiceNames());
   }
 
   @VisibleForTesting

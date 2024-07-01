@@ -19,6 +19,7 @@ import static java.util.Collections.singletonList;
 import static org.projectnessie.quarkus.providers.storage.AddressResolver.LOCAL_ADDRESSES;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.dns.DnsException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -77,9 +78,12 @@ public class TestAddressResolver {
   }
 
   @Test
-  @DisabledOnOs(value = OS.MAC, disabledReason = "Resolving 'localhost' doesn't work on macOS")
   public void resolveGoodName() throws Exception {
     addressResolver = new AddressResolver(vertx);
+
+    AddressResolver addressResolverWithSearch =
+        new AddressResolver(addressResolver.dnsClient(), List.of("org"));
+
     List<String> withoutSearchList =
         addressResolver
             .resolveAll(singletonList("projectnessie.org"))
@@ -88,15 +92,24 @@ public class TestAddressResolver {
             .get(1, TimeUnit.MINUTES);
     soft.assertThat(withoutSearchList).isNotEmpty();
 
-    AddressResolver addressResolverWithSearch =
-        new AddressResolver(AddressResolver.createDnsClient(vertx), List.of("org"));
-    List<String> withSearchList =
+    List<String> withSearchList1 =
+        addressResolverWithSearch
+            .resolveAll(singletonList("projectnessie.org"))
+            .toCompletionStage()
+            .toCompletableFuture()
+            .get(1, TimeUnit.MINUTES);
+    soft.assertThat(withoutSearchList).isNotEmpty();
+    soft.assertThat(withSearchList1).isNotEmpty().isNotEmpty();
+    soft.assertThat(withSearchList1).containsExactlyInAnyOrderElementsOf(withoutSearchList);
+
+    List<String> withSearchList2 =
         addressResolverWithSearch
             .resolveAll(singletonList("projectnessie"))
             .toCompletionStage()
             .toCompletableFuture()
             .get(1, TimeUnit.MINUTES);
-    soft.assertThat(withSearchList).isNotEmpty().isNotEmpty();
+    soft.assertThat(withSearchList2).isNotEmpty();
+    soft.assertThat(withSearchList2).containsExactlyInAnyOrderElementsOf(withoutSearchList);
 
     List<String> withSearchListQualified =
         addressResolverWithSearch
@@ -104,9 +117,8 @@ public class TestAddressResolver {
             .toCompletionStage()
             .toCompletableFuture()
             .get(1, TimeUnit.MINUTES);
-    soft.assertThat(withSearchListQualified).isNotEmpty().isNotEmpty();
+    soft.assertThat(withSearchListQualified).isNotEmpty();
 
-    soft.assertThat(withSearchList).containsExactlyInAnyOrderElementsOf(withoutSearchList);
     soft.assertThat(withSearchListQualified).containsExactlyInAnyOrderElementsOf(withoutSearchList);
   }
 
@@ -125,15 +137,16 @@ public class TestAddressResolver {
   }
 
   @Test
-  public void resolveBadName() throws Exception {
+  public void resolveBadName() {
     addressResolver = new AddressResolver(vertx);
     soft.assertThat(
             addressResolver
                 .resolveAll(singletonList("wepofkjeopiwkf.wepofkeowpkfpoew.weopfkewopfk.local"))
                 .toCompletionStage()
-                .toCompletableFuture()
-                .get(1, TimeUnit.MINUTES))
-        .isEmpty();
+                .toCompletableFuture())
+        .failsWithin(1, TimeUnit.MINUTES)
+        .withThrowableThat()
+        .withCauseInstanceOf(DnsException.class);
   }
 
   @Test
