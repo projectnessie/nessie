@@ -23,6 +23,7 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -50,6 +51,26 @@ public class LocalObjectIO implements ObjectIO {
     } catch (FileSystemNotFoundException e) {
       throw new UnsupportedOperationException(
           "Writing to " + uri.scheme() + " URIs is not supported", e);
+    }
+  }
+
+  @Override
+  public void deleteObjects(List<StorageUri> uris) throws IOException {
+    IOException ex = null;
+    for (StorageUri uri : uris) {
+      Path path = LocalObjectIO.filePath(uri);
+      try {
+        Files.deleteIfExists(path);
+      } catch (IOException e) {
+        if (ex == null) {
+          ex = e;
+        } else {
+          ex.addSuppressed(e);
+        }
+      }
+    }
+    if (ex != null) {
+      throw ex;
     }
   }
 

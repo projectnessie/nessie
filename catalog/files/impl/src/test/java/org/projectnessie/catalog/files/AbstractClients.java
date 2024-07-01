@@ -18,8 +18,10 @@ package org.projectnessie.catalog.files;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -38,8 +40,9 @@ public abstract class AbstractClients {
   public static final String BUCKET_1 = "bucket1";
   public static final String BUCKET_2 = "bucket2";
 
+  @SuppressWarnings("resource")
   @Test
-  public void writeRead() throws Exception {
+  public void writeReadDelete() throws Exception {
     try (ObjectStorageMock.MockServer server1 =
         ObjectStorageMock.builder()
             .putBuckets(BUCKET_1, newHeapStorageBucket().bucket())
@@ -58,6 +61,13 @@ public abstract class AbstractClients {
         response1 = new String(input.readAllBytes());
       }
       soft.assertThat(response1).isEqualTo("hello world");
+
+      objectIO.deleteObjects(List.of(uri));
+      // should not throw
+      objectIO.deleteObjects(List.of(uri));
+
+      soft.assertThatThrownBy(() -> objectIO.readObject(uri).readAllBytes())
+          .isInstanceOf(IOException.class);
     }
   }
 

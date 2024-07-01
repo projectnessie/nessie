@@ -30,11 +30,17 @@ import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.storage.uri.StorageUri;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GcsObjectIO implements ObjectIO {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GcsObjectIO.class);
+
   private final GcsStorageSupplier storageSupplier;
 
   public GcsObjectIO(GcsStorageSupplier storageSupplier) {
@@ -94,5 +100,32 @@ public class GcsObjectIO implements ObjectIO {
     WriteChannel channel = client.writer(blobInfo, writeOptions.toArray(new BlobWriteOption[0]));
     bucketOptions.writeChunkSize().ifPresent(channel::setChunkSize);
     return Channels.newOutputStream(channel);
+  }
+
+  @Override
+  public void deleteObjects(List<StorageUri> uris) {
+    Map<String, List<GcsLocation>> bucketToUris =
+        uris.stream()
+            .map(GcsLocation::gcsLocation)
+            .collect(Collectors.groupingBy(GcsLocation::bucket));
+
+    for (List<GcsLocation> locations : bucketToUris.values()) {
+      GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(locations.get(0));
+      @SuppressWarnings("resource")
+      Storage client = storageSupplier.forLocation(bucketOptions);
+
+      List<BlobId> blobIds =
+          locations.stream()
+              .map(location -> BlobId.of(location.bucket(), location.path()))
+              .collect(Collectors.toList());
+
+      // This is rather a hack to make the `AbstractClients` test pass, because our object storage
+      // mock doesn't implement GCS batch requests (yet).
+      if (blobIds.size() == 1) {
+        client.delete(blobIds.get(0));
+      } else {
+        client.delete(blobIds);
+      }
+    }
   }
 }
