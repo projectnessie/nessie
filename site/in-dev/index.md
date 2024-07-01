@@ -26,14 +26,14 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-unstable
-    docker run -p 19120:19120 -p 9000:9000 ghcr.io/projectnessie/nessie-unstable
+    docker run --rm -p 19120:19120 -p 9000:9000 ghcr.io/projectnessie/nessie-unstable
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-unstable?tab=tags):
     
     ```bash
     docker pull quay.io/projectnessie/nessie-unstable
-    docker run -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie-unstable
+    docker run --rm -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie-unstable
     ```
 
 ## Nessie CLI unstable/nightly
@@ -50,14 +50,14 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-cli-unstable
-    docker run -it ghcr.io/projectnessie/nessie-cli-unstable
+    docker run -it --rm ghcr.io/projectnessie/nessie-cli-unstable
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-cli-unstable?tab=tags):
 
     ```bash
     docker pull quay.io/projectnessie/nessie-cli-unstable
-    docker run -it quay.io/projectnessie/nessie-cli-unstable
+    docker run -it --rm quay.io/projectnessie/nessie-cli-unstable
     ```
 
 ## GC Tool unstable/nightly
@@ -77,14 +77,14 @@ expiration policies.
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-gc-unstable
-    docker run ghcr.io/projectnessie/nessie-gc-unstable --help
+    docker run --rm ghcr.io/projectnessie/nessie-gc-unstable --help
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-gc-unstable?tab=tags):
 
     ```bash
     docker pull quay.io/projectnessie/nessie-gc-unstable
-    docker run quay.io/projectnessie/nessie-gc-unstable --help
+    docker run --rm quay.io/projectnessie/nessie-gc-unstable --help
     ```
 
 ## Server Admin Tool unstable/nightly
@@ -104,14 +104,14 @@ Nessie repository.
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-server-admin-unstable
-    docker run ghcr.io/projectnessie/nessie-server-admin-unstable --help
+    docker run --rm ghcr.io/projectnessie/nessie-server-admin-unstable --help
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-server-admin-unstable?tab=tags):
 
     ```bash
     docker pull quay.io/projectnessie/nessie-server-admin-unstable
-    docker run quay.io/projectnessie/nessie-server-admin-unstable --help
+    docker run --rm quay.io/projectnessie/nessie-server-admin-unstable --help
     ```
 
 ## Build Nessie from source

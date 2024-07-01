@@ -79,14 +79,16 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-cli:::NESSIE_VERSION::
-    docker run -it ghcr.io/projectnessie/nessie-cli:::NESSIE_VERSION:: 
+    docker create -it --name nessie-cli --network=host -v $HOME/.nessie:/home/default/.nessie ghcr.io/projectnessie/nessie-cli:::NESSIE_VERSION::
+    docker start -i nessie-cli
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-cli?tab=tags):
 
     ```bash
     docker pull quay.io/projectnessie/nessie-cli:::NESSIE_VERSION::
-    docker run -it quay.io/projectnessie/nessie-cli:::NESSIE_VERSION::
+    docker create -it --name nessie-cli --network=host -v $HOME/.nessie:/home/default/.nessie quay.io/projectnessie/nessie-cli:::NESSIE_VERSION::
+    docker start -i nessie-cli
     ```
 
 === "Standalone Jar"
