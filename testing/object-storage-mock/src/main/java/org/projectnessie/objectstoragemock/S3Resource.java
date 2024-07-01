@@ -266,6 +266,10 @@ public class S3Resource {
         b -> {
           ImmutableBatchDeleteResponse.Builder response = ImmutableBatchDeleteResponse.builder();
           for (S3ObjectIdentifier s3ObjectIdentifier : body.objectsToDelete()) {
+            if (!mockServer.accessCheckHandler().accessAllowed(s3ObjectIdentifier.key())) {
+              return accessDenied();
+            }
+
             if (b.deleter().delete(s3ObjectIdentifier.key())) {
               response.addDeletedObjects(
                   ImmutableDeletedS3Object.builder()
@@ -308,6 +312,7 @@ public class S3Resource {
       @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
     return withBucket(
         bucketName,
+        objectName,
         b -> {
           b.deleter().delete(objectName);
           return noContent();
@@ -378,6 +383,7 @@ public class S3Resource {
       ) {
     return withBucket(
         bucketName,
+        objectName,
         bucket -> {
           try {
 
@@ -461,6 +467,13 @@ public class S3Resource {
         .build();
   }
 
+  private static Response accessDenied() {
+    return Response.status(Status.FORBIDDEN)
+        .type(MediaType.APPLICATION_XML_TYPE)
+        .entity(ErrorResponse.of("AccessDenied", "Access Denied."))
+        .build();
+  }
+
   private static Response notImplemented() {
     return Response.status(Status.NOT_IMPLEMENTED).build();
   }
@@ -473,10 +486,25 @@ public class S3Resource {
     return worker.apply(bucket);
   }
 
+  private Response withBucket(
+      String bucketName, String objectName, Function<Bucket, Response> worker) {
+    Bucket bucket = mockServer.buckets().get(bucketName);
+    if (bucket == null) {
+      return bucketNotFound();
+    }
+
+    if (!mockServer.accessCheckHandler().accessAllowed(objectName)) {
+      return accessDenied();
+    }
+
+    return worker.apply(bucket);
+  }
+
   private Response withBucketObject(
       String bucketName, String objectName, Function<MockObject, Response> worker) {
     return withBucket(
         bucketName,
+        objectName,
         bucket -> {
           MockObject o = bucket.object().retrieve(objectName);
           if (o == null) {

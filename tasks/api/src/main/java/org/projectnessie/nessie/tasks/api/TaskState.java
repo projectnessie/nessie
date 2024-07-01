@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Supplier;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
@@ -69,27 +70,52 @@ public interface TaskState {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String message();
 
-  TaskState SUCCESS = ImmutableTaskState.of(TaskStatus.SUCCESS, null, null, null);
+  /**
+   * Represents the deadline when a task will fail even if it gets a re-triable error. Note: passing
+   * the deadline may or may not forcibly cancel a running task.
+   */
+  @Value.Parameter(order = 5)
+  @Nullable
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonDeserialize(using = InstantAsLongDeserializer.class)
+  @JsonSerialize(using = InstantAsLongSerializer.class)
+  Instant deadline();
+
+  TaskState SUCCESS = ImmutableTaskState.builder().status(TaskStatus.SUCCESS).build();
 
   static TaskState successState() {
     return SUCCESS;
   }
 
-  static TaskState runningState(@Nonnull Instant retryNotBefore, @Nonnull Instant lostNotBefore) {
-    return ImmutableTaskState.of(TaskStatus.RUNNING, retryNotBefore, lostNotBefore, null);
+  private static Instant deadlineFor(@Nullable TaskState old, Supplier<Instant> deadline) {
+    if (old == null || old.deadline() == null) {
+      return deadline.get();
+    }
+
+    return old.deadline();
   }
 
-  static TaskState retryableErrorState(@Nonnull Instant retryNotBefore, @Nonnull String message) {
-    return ImmutableTaskState.of(TaskStatus.ERROR_RETRY, retryNotBefore, null, message);
+  static TaskState runningState(
+      @Nonnull Instant retryNotBefore,
+      @Nonnull Instant lostNotBefore,
+      @Nullable TaskState previous,
+      Supplier<Instant> deadline) {
+    return ImmutableTaskState.of(
+        TaskStatus.RUNNING, retryNotBefore, lostNotBefore, null, deadlineFor(previous, deadline));
   }
 
-  static TaskState failureState(@Nonnull String message) {
-    return ImmutableTaskState.of(TaskStatus.FAILURE, null, null, message);
+  static TaskState retryableErrorState(
+      @Nonnull Instant retryNotBefore,
+      @Nonnull String message,
+      @Nullable TaskState previous,
+      Supplier<Instant> deadline) {
+    return ImmutableTaskState.of(
+        TaskStatus.ERROR_RETRY, retryNotBefore, null, message, deadlineFor(previous, deadline));
   }
 
-  static TaskState taskState(
-      TaskStatus taskStatus, Instant retryNotBefore, Instant lostNotBefore, String message) {
-    return ImmutableTaskState.of(taskStatus, retryNotBefore, lostNotBefore, message);
+  static TaskState failureState(
+      @Nullable Instant attemptRecoverNotBefore, @Nonnull String message) {
+    return ImmutableTaskState.of(TaskStatus.FAILURE, attemptRecoverNotBefore, null, message, null);
   }
 
   @Value.Check
@@ -98,19 +124,22 @@ public interface TaskState {
       case SUCCESS:
         checkState(retryNotBefore() == null, "retryNotBefore must be null for SUCCESS");
         checkState(lostNotBefore() == null, "retryNotBefore must be null for SUCCESS");
+        checkState(deadline() == null, "deadline must be null for SUCCESS");
         break;
       case FAILURE:
-        checkState(retryNotBefore() == null, "retryNotBefore must be null for FAILURE");
         checkState(lostNotBefore() == null, "lostNotBefore must be null for FAILURE");
+        checkState(deadline() == null, "deadline must be null for FAILURE");
         checkState(message() != null, "message must not be null for FAILURE");
         break;
       case RUNNING:
         checkState(retryNotBefore() != null, "retryNotBefore must not be null for RUNNING");
         checkState(lostNotBefore() != null, "lostNotBefore must not be null for RUNNING");
+        checkState(deadline() != null, "deadline must not be null for RUNNING");
         break;
       case ERROR_RETRY:
         checkState(retryNotBefore() != null, "retryNotBefore must not be null for ERROR_RETRY");
         checkState(lostNotBefore() == null, "lostNotBefore must be null for ERROR_RETRY");
+        checkState(deadline() != null, "deadline must not be null for ERROR_RETRY");
         checkState(message() != null, "message must not be null for ERROR_RETRY");
         break;
       default:

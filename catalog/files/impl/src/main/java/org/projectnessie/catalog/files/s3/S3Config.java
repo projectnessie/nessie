@@ -55,11 +55,6 @@ public interface S3Config {
   @ConfigItem(section = "transport")
   Optional<Boolean> expectContinueEnabled();
 
-  /**
-   * Interval after which a request is retried when S3 response with some "retry later" response.
-   */
-  Optional<Duration> retryAfter();
-
   static Builder builder() {
     return ImmutableS3Config.builder();
   }
@@ -85,9 +80,6 @@ public interface S3Config {
 
     @CanIgnoreReturnValue
     Builder expectContinueEnabled(boolean expectContinueEnabled);
-
-    @CanIgnoreReturnValue
-    Builder retryAfter(Duration retryAfter);
 
     S3Config build();
   }

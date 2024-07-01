@@ -15,8 +15,6 @@
  */
 package org.projectnessie.nessie.tasks.api;
 
-import static org.projectnessie.nessie.tasks.api.TaskState.failureState;
-
 import java.time.Clock;
 import java.time.Instant;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -52,14 +50,14 @@ public interface TaskBehavior<T extends TaskObj, B extends TaskObj.Builder> {
    */
   TaskState runningTaskState(Clock clock, T running);
 
+  TaskState timedOutTaskState(Clock clock, T base, Throwable t);
+
   /**
    * Called when the task execution resulted in an exception, Build a new {@linkplain
    * TaskStatus#ERROR_RETRY error-retry}, with "fresh" {@linkplain TaskState#retryNotBefore()
    * retry-not-before} timestamp, or {@linkplain TaskStatus#FAILURE failure} task-state.
    */
-  default TaskState asErrorTaskState(Clock clock, T base, Throwable t) {
-    return failureState(t.toString());
-  }
+  TaskState asErrorTaskState(Clock clock, T base, Throwable t);
 
   /** Create a new, empty task-object builder. */
   B newObjBuilder();

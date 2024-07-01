@@ -62,10 +62,6 @@ public class S3ClientSupplier {
     this.sessions = sessions;
   }
 
-  public S3Config s3config() {
-    return s3config;
-  }
-
   public S3Options<?> s3options() {
     return s3options;
   }

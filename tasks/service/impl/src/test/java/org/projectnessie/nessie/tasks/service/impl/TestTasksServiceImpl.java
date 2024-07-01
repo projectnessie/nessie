@@ -26,7 +26,9 @@ import static org.projectnessie.nessie.tasks.service.TasksServiceConfig.DEFAULT_
 import static org.projectnessie.nessie.tasks.service.TasksServiceConfig.DEFAULT_RACE_WAIT_MILLIS_MIN;
 import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.FRESH_LOST_RETRY_NOT_BEFORE;
 import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.FRESH_RUNNING_RETRY_NOT_BEFORE;
+import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.RECOVER_NOT_BEFORE;
 import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.RETRYABLE_ERROR_NOT_BEFORE;
+import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskBehavior.RETRYABLE_ERROR_TOTAL_TIMEOUT;
 import static org.projectnessie.nessie.tasks.service.tasktypes.BasicTaskRequest.basicTaskRequest;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
 
@@ -755,6 +757,225 @@ public class TestTasksServiceImpl {
                 .taskParameter(taskRequest.taskParameter())
                 .taskResult(taskRequest.taskParameter() + " finished")
                 .taskState(TaskState.successState()));
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionResult();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(1, ChronoUnit.SECONDS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
+
+    soft.assertThat(taskFuture.get())
+        .asInstanceOf(type(BasicTaskObj.class))
+        .extracting(BasicTaskObj::taskResult)
+        .isEqualTo("hello finished");
+
+    clock.add(1, ChronoUnit.SECONDS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
+  }
+
+  @Test
+  public void singleServiceStopPerpetualRetry() throws Exception {
+    MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
+    TestingTasksAsync async = new TestingTasksAsync(clock);
+
+    AtomicReference<CompletableFuture<BasicTaskObj.Builder>> taskCompletionStage =
+        new AtomicReference<>(new CompletableFuture<>());
+
+    TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
+    TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
+    Tasks tasks = service.forPersist(persist);
+    BasicTaskRequest taskRequest = basicTaskRequest("hello", taskCompletionStage::get);
+
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    verify(metrics).startNewTaskController();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    taskCompletionStage.get().completeExceptionally(new RetryableException("retryable"));
+
+    clock.add(500, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskCreation();
+    verify(metrics).taskExecution();
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionRetryableError();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    Instant firstError = clock.instant();
+
+    clock.add(RETRYABLE_ERROR_TOTAL_TIMEOUT.dividedBy(4));
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionRetryableError();
+    reset(metrics);
+
+    clock.add(RETRYABLE_ERROR_TOTAL_TIMEOUT.dividedBy(4));
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionRetryableError();
+    reset(metrics);
+
+    clock.add(RETRYABLE_ERROR_TOTAL_TIMEOUT.dividedBy(4));
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isNotDone();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskExecutionRetryableError();
+    verify(metrics).taskExecutionFinished();
+    reset(metrics);
+
+    clock.set(firstError.plus(RETRYABLE_ERROR_TOTAL_TIMEOUT));
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isDone();
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskRetryStateChangeSucceeded();
+    verify(metrics).taskAttemptErrorRetry();
+    verify(metrics).taskExecution();
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionFailure();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    // need a new CompletableFuture that can be used when the task's execution is re-triggered
+    taskCompletionStage.set(new CompletableFuture<>());
+    // Re-submit to recover
+    clock.add(RECOVER_NOT_BEFORE);
+    taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    soft.assertThat(taskFuture).isNotDone();
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    verify(metrics).taskAttempt();
+    verify(metrics).startNewTaskController();
+    verify(metrics).taskAttemptRecover();
+    verify(metrics).taskExecution();
+    verify(metrics).taskRetryStateChangeSucceeded();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    verify(metrics).taskUpdateRunningState();
+    verify(metrics).taskRunningStateUpdated();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    taskCompletionStage
+        .get()
+        .complete(
+            BasicTaskObj.builder()
+                .id(taskRequest.objId())
+                .taskParameter(taskRequest.taskParameter())
+                .taskResult(taskRequest.taskParameter() + " finished")
+                .taskState(TaskState.successState()));
+    soft.assertThat(taskFuture).isCompleted();
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionResult();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(1, ChronoUnit.SECONDS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
+
+    soft.assertThat(taskFuture.get())
+        .asInstanceOf(type(BasicTaskObj.class))
+        .extracting(BasicTaskObj::taskResult)
+        .isEqualTo("hello finished");
+
+    clock.add(1, ChronoUnit.SECONDS);
+    soft.assertThat(async.doWork()).isEqualTo(0);
+    verifyNoMoreInteractions(metrics);
+  }
+
+  @Test
+  public void singleServiceRecoverFromError() throws Exception {
+    MutableClock clock = MutableClock.of(Instant.now(), ZoneId.of("UTC"));
+    TestingTasksAsync async = new TestingTasksAsync(clock);
+
+    AtomicReference<CompletableFuture<BasicTaskObj.Builder>> taskCompletionStage =
+        new AtomicReference<>(new CompletableFuture<>());
+
+    TaskServiceMetrics metrics = mock(TaskServiceMetrics.class);
+    TasksServiceImpl service = new TasksServiceImpl(async, metrics, tasksServiceConfig(1));
+    Tasks tasks = service.forPersist(persist);
+    BasicTaskRequest taskRequest = basicTaskRequest("hello", taskCompletionStage::get);
+
+    CompletableFuture<BasicTaskObj> taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    verify(metrics).startNewTaskController();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(500, ChronoUnit.MILLIS);
+    taskCompletionStage.get().completeExceptionally(new Exception("test auth failure"));
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    soft.assertThat(taskFuture).isDone();
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+    verify(metrics).taskAttempt();
+    verify(metrics).taskCreation();
+    verify(metrics).taskExecution();
+    verify(metrics).taskExecutionFinished();
+    verify(metrics).taskExecutionFailure();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    if (persist.getImmediate(taskRequest.objId()) != null) {
+      // cached response
+      soft.assertThat(async.doWork()).isEqualTo(0);
+      verify(metrics).taskHasFinalFailure();
+    } else {
+      // response reloaded from storage
+      soft.assertThat(async.doWork()).isEqualTo(1);
+      verify(metrics).startNewTaskController();
+      verify(metrics).taskAttempt();
+      verify(metrics).taskAttemptFinalFailure();
+    }
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+    soft.assertThat(taskFuture).isDone();
+    soft.assertThat(taskFuture).isCompletedExceptionally();
+
+    // need a new CompletableFuture that can be used when the task's execution is re-triggered
+    taskCompletionStage.set(new CompletableFuture<>());
+
+    clock.add(RECOVER_NOT_BEFORE);
+
+    taskFuture = tasks.submit(taskRequest).toCompletableFuture();
+    soft.assertThat(taskFuture).isNotDone();
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    verify(metrics).taskAttempt();
+    verify(metrics).startNewTaskController();
+    verify(metrics).taskAttemptRecover();
+    verify(metrics).taskExecution();
+    verify(metrics).taskRetryStateChangeSucceeded();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    clock.add(250, ChronoUnit.MILLIS);
+    soft.assertThat(async.doWork()).isEqualTo(1);
+    verify(metrics).taskUpdateRunningState();
+    verify(metrics).taskRunningStateUpdated();
+    verifyNoMoreInteractions(metrics);
+    reset(metrics);
+
+    taskCompletionStage
+        .get()
+        .complete(
+            BasicTaskObj.builder()
+                .id(taskRequest.objId())
+                .taskParameter(taskRequest.taskParameter())
+                .taskResult(taskRequest.taskParameter() + " finished")
+                .taskState(TaskState.successState()));
+    soft.assertThat(taskFuture).isCompleted();
     verify(metrics).taskExecutionFinished();
     verify(metrics).taskExecutionResult();
     verifyNoMoreInteractions(metrics);

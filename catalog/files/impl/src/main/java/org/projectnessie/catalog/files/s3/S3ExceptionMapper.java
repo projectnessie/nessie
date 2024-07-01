@@ -13,31 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.api;
+package org.projectnessie.catalog.files.s3;
 
-import java.time.Instant;
-import java.util.Optional;
+import java.util.OptionalInt;
+import org.projectnessie.catalog.files.api.ObjectIOExceptionMapper;
+import software.amazon.awssdk.core.exception.SdkServiceException;
 
-public class NonRetryableException extends ObjectIOException {
-  public NonRetryableException(Throwable cause) {
-    super(cause);
-  }
+public class S3ExceptionMapper implements ObjectIOExceptionMapper.Analyzer {
 
-  public NonRetryableException(String message) {
-    super(message);
-  }
+  public static final S3ExceptionMapper INSTANCE = new S3ExceptionMapper();
 
-  public NonRetryableException(String message, Throwable cause) {
-    super(message, cause);
-  }
+  private S3ExceptionMapper() {}
 
   @Override
-  public boolean isRetryable() {
-    return false;
-  }
-
-  @Override
-  public Optional<Instant> retryNotBefore() {
-    return Optional.empty();
+  public OptionalInt httpStatusCode(Throwable th) {
+    if (th instanceof SdkServiceException) {
+      return OptionalInt.of(((SdkServiceException) th).statusCode());
+    }
+    return OptionalInt.empty();
   }
 }

@@ -17,21 +17,29 @@ package org.projectnessie.catalog.service.impl;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.projectnessie.catalog.service.impl.Util.throwableAsErrorTaskState;
+import static org.projectnessie.nessie.tasks.api.TaskState.failureState;
+import static org.projectnessie.nessie.tasks.api.TaskState.retryableErrorState;
 import static org.projectnessie.nessie.tasks.api.TaskState.runningState;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import javax.annotation.Nullable;
+import org.projectnessie.catalog.files.api.ObjectIOExceptionMapper;
 import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-final class EntitySnapshotTaskBehavior
+public final class EntitySnapshotTaskBehavior
     implements TaskBehavior<EntitySnapshotObj, EntitySnapshotObj.Builder> {
-  static final EntitySnapshotTaskBehavior INSTANCE = new EntitySnapshotTaskBehavior();
+  private final ObjectIOExceptionMapper exceptionMapper;
+  private final Duration taskTimeout;
 
-  private EntitySnapshotTaskBehavior() {}
+  public EntitySnapshotTaskBehavior(ObjectIOExceptionMapper exceptionMapper, Duration taskTimeout) {
+    this.exceptionMapper = exceptionMapper;
+    this.taskTimeout = taskTimeout;
+  }
 
   @Override
   public Throwable stateAsException(EntitySnapshotObj obj) {
@@ -43,12 +51,17 @@ final class EntitySnapshotTaskBehavior
     return clock.instant().plus(2, SECONDS);
   }
 
+  private TaskState taskState(@Nullable EntitySnapshotObj obj) {
+    return obj == null ? null : obj.taskState();
+  }
+
   @Override
   public TaskState runningTaskState(Clock clock, EntitySnapshotObj running) {
     Instant now = clock.instant();
     Instant retryNotBefore = now.plus(2, SECONDS);
     Instant lostNotBefore = now.plus(1, MINUTES);
-    return runningState(retryNotBefore, lostNotBefore);
+    return runningState(
+        retryNotBefore, lostNotBefore, taskState(running), () -> now.plus(taskTimeout));
   }
 
   @Override
@@ -62,7 +75,30 @@ final class EntitySnapshotTaskBehavior
   }
 
   @Override
+  public TaskState timedOutTaskState(Clock clock, EntitySnapshotObj base, Throwable t) {
+    // Allow immediate retry for unexpected errors (usually requires re-submitting the task).
+    return failureState(clock.instant(), t.toString());
+  }
+
+  @Override
   public TaskState asErrorTaskState(Clock clock, EntitySnapshotObj base, Throwable t) {
-    return throwableAsErrorTaskState(t);
+    return exceptionMapper
+        .analyze(t)
+        .map(
+            status -> {
+              if (status.isRetryable()) {
+                return retryableErrorState(
+                    status.reattemptAfter(),
+                    t.toString(),
+                    base.taskState(),
+                    () -> clock.instant().plus(taskTimeout));
+              } else {
+                return failureState(status.reattemptAfter(), t.toString());
+              }
+            })
+        // Use the deadline as "retry not before" for unexpected errors. This is only to allow
+        // re-attempting those tasks in principle, while we cannot have a more reasonable reattempt
+        // timeout. Introducing a separate config for that looks like an overkill.
+        .orElseGet(() -> failureState(clock.instant().plus(taskTimeout), t.toString()));
   }
 }
