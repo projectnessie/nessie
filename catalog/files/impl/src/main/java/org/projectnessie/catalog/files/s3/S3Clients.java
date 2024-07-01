@@ -38,6 +38,8 @@ import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.TlsTrustManagersProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -119,29 +121,19 @@ public class S3Clients {
   }
 
   public static AwsCredentialsProvider basicCredentialsProvider(
-      Optional<String> accessKeyIdRef, Optional<String> secretAccessKeyIdRef) {
-    String key =
-        accessKeyIdRef.orElseThrow(
-            () -> new IllegalStateException("Secret reference to S3 access key ID is not defined"));
-
-    String secret =
-        secretAccessKeyIdRef.orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Secret reference to S3 secret access key is not defined"));
-
-    return () -> AwsBasicCredentials.create(key, secret);
+      Optional<BasicCredentials> accessKey) {
+    return accessKey
+        .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
+        .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
+        .orElse(DefaultCredentialsProvider.create());
   }
 
   public static AwsCredentialsProvider awsCredentialsProvider(
       S3BucketOptions bucketOptions, S3Sessions sessions) {
     Optional<String> role = bucketOptions.assumeRole();
     if (role.isEmpty()) {
-      return basicCredentialsProvider(
-          bucketOptions.accessKey().map(BasicCredentials::name),
-          bucketOptions.accessKey().map(BasicCredentials::secret));
+      return basicCredentialsProvider(bucketOptions.accessKey());
     }
-
     return sessions.assumeRoleForServer(bucketOptions);
   }
 

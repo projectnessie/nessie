@@ -199,9 +199,7 @@ public class S3SessionsManager {
         });
 
     request.overrideConfiguration(
-        builder ->
-            builder.credentialsProvider(
-                basicCredentialsProvider(sessionKey.accessKeyId(), sessionKey.secretAccessKey())));
+        builder -> builder.credentialsProvider(basicCredentialsProvider(sessionKey.accessKey())));
 
     AssumeRoleResponse response = client.assumeRole(request.build());
     return response.credentials();
@@ -235,8 +233,7 @@ public class S3SessionsManager {
             options
                 .assumeRole()
                 .orElseThrow(() -> new IllegalArgumentException("Role ARN must be configured")))
-        .accessKeyId(options.accessKey().map(BasicCredentials::name))
-        .secretAccessKey(options.accessKey().map(BasicCredentials::secret))
+        .accessKey(options.accessKey())
         .stsEndpoint(options.stsEndpoint())
         .iamPolicy(options.sessionIamPolicy())
         .roleSessionName(options.roleSessionName())
@@ -269,9 +266,7 @@ public class S3SessionsManager {
 
     Optional<URI> stsEndpoint();
 
-    Optional<String> accessKeyId();
-
-    Optional<String> secretAccessKey();
+    Optional<BasicCredentials> accessKey();
 
     Optional<String> iamPolicy();
 
