@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
+import static java.util.stream.Collectors.toList;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_REF;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_CONTENT_ID;
@@ -54,6 +55,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -414,6 +416,31 @@ public class CatalogServiceImpl implements CatalogService {
               } catch (Exception e) {
                 throw new RuntimeException(e);
               }
+            })
+        // Add a failure handler, that cover the commitWithResponse() above but also all write
+        // failure that can happen in the stages added by
+        // applyIcebergTable/ViewCommitOperation().
+        .exceptionally(
+            e -> {
+              if (e instanceof CompletionException) {
+                e = e.getCause();
+              }
+              if (e.getClass() == RuntimeException.class
+                  && e.getMessage().equals(e.getCause().toString())) {
+                e = e.getCause();
+              }
+              try {
+                objectIO.deleteObjects(
+                    multiTableUpdate.storedLocations().stream()
+                        .map(StorageUri::of)
+                        .collect(toList()));
+              } catch (Exception ed) {
+                e.addSuppressed(ed);
+              }
+              if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+              }
+              throw new RuntimeException(e);
             })
         // Persist the Nessie catalog/snapshot objects. Those cannot be stored earlier in the
         // applyIcebergTable/ViewCommitOperation(), because those might not have a Nessie content-ID

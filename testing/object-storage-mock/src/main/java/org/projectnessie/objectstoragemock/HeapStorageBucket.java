@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -37,6 +38,10 @@ public class HeapStorageBucket {
 
   public void clear() {
     objects.clear();
+  }
+
+  public Map<String, MockObject> objects() {
+    return objects;
   }
 
   public Bucket bucket() {
