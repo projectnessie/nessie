@@ -923,11 +923,11 @@ public class VersionStoreImpl implements VersionStore {
 
   private static ContentResult getValueNotFound(
       ContentKey key, boolean returnNotFound, StoreIndex<CommitOp> index) {
-    if (!returnNotFound) {
-      return null;
+    if (returnNotFound) {
+      IdentifiedContentKey identifiedKey = buildIdentifiedKey(key, index, null, null, x -> null);
+      return contentResult(identifiedKey, null, null);
     }
-    IdentifiedContentKey identifiedKey = buildIdentifiedKey(key, index, null, null, x -> null);
-    return contentResult(identifiedKey, null, null);
+    return null;
   }
 
   static IdentifiedContentKey buildIdentifiedKey(
