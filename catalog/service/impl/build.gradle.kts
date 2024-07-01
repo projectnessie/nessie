@@ -63,4 +63,13 @@ dependencies {
   testFixturesApi(project(":nessie-tasks-service-impl"))
   testFixturesApi(project(":nessie-catalog-files-impl"))
   testFixturesApi(project(":nessie-catalog-format-iceberg-fixturegen"))
+  testFixturesApi(project(":nessie-catalog-secrets-api"))
+  testFixturesApi(project(":nessie-object-storage-mock"))
+  testFixturesApi(project(":nessie-combined-cs"))
+
+  testImplementation(platform(libs.awssdk.bom))
+  testImplementation("software.amazon.awssdk:s3")
+  testImplementation("software.amazon.awssdk:url-connection-client")
+  testCompileOnly(project(":nessie-immutables"))
+  testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
 }

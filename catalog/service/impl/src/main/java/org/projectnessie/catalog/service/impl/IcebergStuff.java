@@ -66,6 +66,7 @@ public class IcebergStuff {
   }
 
   @SuppressWarnings("unchecked")
+  @Nonnull
   private <S extends NessieEntitySnapshot<?>> CompletionStage<S> triggerIcebergSnapshot(
       EntitySnapshotTaskRequest snapshotTaskRequest) {
     // TODO Handle hash-collision - when entity-snapshot refers to a different(!) snapshot
@@ -86,6 +87,7 @@ public class IcebergStuff {
             });
   }
 
+  @Nonnull
   public <S extends NessieEntitySnapshot<?>> CompletionStage<S> storeSnapshot(
       S snapshot, Content content) {
     EntitySnapshotTaskRequest snapshotTaskRequest =
