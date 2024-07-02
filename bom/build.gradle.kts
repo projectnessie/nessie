@@ -49,6 +49,7 @@ dependencies {
     api(project(":nessie-keycloak-testcontainer"))
     api(project(":nessie-minio-testcontainer"))
     api(project(":nessie-nessie-testcontainer"))
+    api(project(":nessie-network-tools"))
     api(project(":nessie-quarkus-auth"))
     api(project(":nessie-quarkus-common"))
     api(project(":nessie-server-admin-tool"))
