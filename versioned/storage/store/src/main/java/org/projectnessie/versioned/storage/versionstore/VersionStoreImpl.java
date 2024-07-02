@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
@@ -987,26 +988,22 @@ public class VersionStoreImpl implements VersionStore {
               : emptyImmutableIndex(COMMIT_OP_SERIALIZER);
 
       ContentMapping contentMapping = new ContentMapping(persist);
-      Map<ContentKey, ContentResult> result =
-          contentMapping.fetchContents(index, keys).entrySet().stream()
-              .collect(
-                  Collectors.toMap(
-                      Map.Entry::getKey,
-                      e ->
-                          contentResult(
-                              buildIdentifiedKey(e.getKey(), index, e.getValue(), x -> null),
-                              e.getValue(),
-                              null)));
-      if (returnNotFound) {
-        keys.stream()
-            .filter(k -> !result.containsKey(k))
-            .forEach(
-                key -> {
-                  IdentifiedContentKey identifiedKey =
-                      buildIdentifiedKey(key, index, null, null, x -> null);
-                  result.put(key, contentResult(identifiedKey, null, null));
-                });
+      Map<ContentKey, Content> fetched = contentMapping.fetchContents(index, keys);
+      Map<ContentKey, ContentResult> result = newHashMapWithExpectedSize(keys.size());
+
+      for (ContentKey key : keys) {
+        Content content = fetched.get(key);
+        if (content != null) {
+          result.put(
+              key,
+              contentResult(buildIdentifiedKey(key, index, content, x -> null), content, null));
+        } else if (returnNotFound) {
+          IdentifiedContentKey identifiedKey =
+              buildIdentifiedKey(key, index, null, null, x -> null);
+          result.put(key, contentResult(identifiedKey, null, null));
+        }
       }
+
       return result;
     } catch (ObjNotFoundException e) {
       throw objectNotFound(e);
