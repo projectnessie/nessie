@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -99,7 +100,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             .put("t3", V_3_1)
             .toBranch(MAIN_BRANCH);
 
-    Content t1 = store().getValue(MAIN_BRANCH, ContentKey.of("t1")).content();
+    Content t1 =
+        requireNonNull(store().getValue(MAIN_BRANCH, ContentKey.of("t1"), false).content());
 
     commit("Second Commit")
         .put("t1", V_1_2.withId(t1.getId()))
@@ -158,7 +160,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               mergeBehavior);
     }
 
-    Content c11 = store().getValue(firstCommit, ContentKey.of("t1")).content();
+    Content c11 = store().getValue(firstCommit, ContentKey.of("t1"), false).content();
 
     for (MergeBehavior mergeBehavior :
         new MergeBehavior[] {MergeBehavior.NORMAL, MergeBehavior.FORCE}) {
@@ -201,7 +203,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(sourceBranch, Optional.of(thirdCommit));
 
     ContentKey key2 = ContentKey.of("t2");
-    Content contentT2 = store().getValue(MAIN_BRANCH, key2).content();
+    Content contentT2 = requireNonNull(store().getValue(MAIN_BRANCH, key2, false).content());
 
     Hash targetHead =
         commit("on-target-commit")
@@ -211,7 +213,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         commit("on-source-commit")
             .put("t2", onRef("v2_2-source", contentT2.getId()))
             .toBranch(sourceBranch);
-    contentT2 = store().getValue(MAIN_BRANCH, key2).content();
+    contentT2 = requireNonNull(store().getValue(MAIN_BRANCH, key2, false).content());
 
     soft.assertThatThrownBy(
             () ->
@@ -292,7 +294,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeResult::getEffectiveTargetHash)
         .containsExactly(true, true, branch.getHash(), thirdCommit, targetHead);
 
-    Content mergedContent = store().getValue(MAIN_BRANCH, key2).content();
+    Content mergedContent = store().getValue(MAIN_BRANCH, key2, false).content();
     soft.assertThat(mergedContent).isEqualTo(resolvedContent);
   }
 

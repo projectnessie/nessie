@@ -382,20 +382,33 @@ public interface VersionStore {
    *
    * @param ref Any ref type allowed
    * @param key The key for the specific value
-   * @return The value.
+   * @param returnNotFound whether to return a non-{@code null} result object with a {@code null}
+   *     value in {@link ContentResult#content()} instead of a {@code null} return-value for
+   *     non-existing content
+   * @return The value or {@code null} if the key does not exist and {@code returnNotFound} is
+   *     {@code false}. If the content does not exist and {@code returnNotFound} is {@code true},
+   *     {@link ContentResult#content()} will be {@code null}.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  ContentResult getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException;
+  ContentResult getValue(Ref ref, ContentKey key, boolean returnNotFound)
+      throws ReferenceNotFoundException;
 
   /**
    * Get the values for a list of keys.
    *
    * @param ref The ref to use.
    * @param keys An ordered list of keys to retrieve within the provided ref.
-   * @return A parallel list of values.
+   * @param returnNotFound whether to return non-{@code null} values with a {@code null} value in
+   *     {@link ContentResult#content()} instead of omitting non-existing content in the returned
+   *     map
+   * @return Map of keys to content results. For keys that do not exist: if {@code returnNotFound}
+   *     is {@code false}, the map will not contain an entry for non-existing keys.If {@code
+   *     returnNotFound} is {@code true}, the map will return entries for all requested keys, but
+   *     {@link ContentResult#content()} will be {@code null} for non-existing keys.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Map<ContentKey, ContentResult> getValues(Ref ref, Collection<ContentKey> keys)
+  Map<ContentKey, ContentResult> getValues(
+      Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException;
 
   /**

@@ -207,9 +207,10 @@ public class ObservingVersionStore implements VersionStore {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
-  public ContentResult getValue(@SpanAttribute(TAG_REF) Ref ref, ContentKey key)
+  public ContentResult getValue(
+      @SpanAttribute(TAG_REF) Ref ref, ContentKey key, boolean returnNotFound)
       throws ReferenceNotFoundException {
-    return delegate.getValue(ref, key);
+    return delegate.getValue(ref, key, returnNotFound);
   }
 
   @WithSpan
@@ -217,9 +218,9 @@ public class ObservingVersionStore implements VersionStore {
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
   public Map<ContentKey, ContentResult> getValues(
-      @SpanAttribute(TAG_REF) Ref ref, Collection<ContentKey> keys)
+      @SpanAttribute(TAG_REF) Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException {
-    return delegate.getValues(ref, keys);
+    return delegate.getValues(ref, keys, returnNotFound);
   }
 
   @WithSpan

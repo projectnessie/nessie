@@ -80,7 +80,8 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
 
     store()
         .commit(branch1, Optional.empty(), CommitMeta.fromMessage("create table"), putForBranch1);
-    soft.assertThat(contentWithoutId(store().getValue(branch1, key))).isEqualTo(valuebranch1);
+    soft.assertThat(contentWithoutId(store().getValue(branch1, key, false)))
+        .isEqualTo(valuebranch1);
 
     ThrowingCallable createTableOnOtherBranch =
         () ->
@@ -92,6 +93,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                     putForBranch2);
 
     createTableOnOtherBranch.call();
-    soft.assertThat(contentWithoutId(store().getValue(branch2, key))).isEqualTo(valuebranch2);
+    soft.assertThat(contentWithoutId(store().getValue(branch2, key, false)))
+        .isEqualTo(valuebranch2);
   }
 }

@@ -246,7 +246,7 @@ public abstract class AbstractMergeKeyBehaviors extends AbstractNestedVersionSto
     soft.assertThat(mergeResult.getResultantTargetHash()).isNotEqualTo(target);
     target = mergeResult.getResultantTargetHash();
     Map<ContentKey, Content> contentsOnTargetAfter =
-        store().getValues(target, allKeys).entrySet().stream()
+        store().getValues(target, allKeys, false).entrySet().stream()
             .collect(
                 Collectors.toMap(
                     Map.Entry::getKey,

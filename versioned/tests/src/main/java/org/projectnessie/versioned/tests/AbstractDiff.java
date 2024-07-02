@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
@@ -72,11 +73,13 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     ContentKey k1 = ContentKey.of("k1");
     ContentKey k2 = ContentKey.of("k2");
 
-    Map<ContentKey, ContentResult> contents1 = store().getValues(branch1, newArrayList(k1, k2));
+    Map<ContentKey, ContentResult> contents1 =
+        store().getValues(branch1, newArrayList(k1, k2), false);
     IdentifiedContentKey ik11 = contents1.get(k1).identifiedKey();
     IdentifiedContentKey ik12 = contents1.get(k2).identifiedKey();
 
-    Map<ContentKey, ContentResult> contents2 = store().getValues(branch2, newArrayList(k1, k2));
+    Map<ContentKey, ContentResult> contents2 =
+        store().getValues(branch2, newArrayList(k1, k2), false);
     IdentifiedContentKey ik21 = contents2.get(k1).identifiedKey();
     IdentifiedContentKey ik22 = contents2.get(k2).identifiedKey();
 
@@ -97,14 +100,14 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     store().create(branch1, Optional.empty());
     Hash commit1 = commit("Commit1").put("k1", V_1).toBranch(branch1);
 
-    ContentResult contents1 = store().getValue(commit1, k1);
+    ContentResult contents1 = store().getValue(commit1, k1, false);
     IdentifiedContentKey ik1 = contents1.identifiedKey();
-    Content content = contents1.content();
+    Content content = requireNonNull(contents1.content());
 
     // Rename operation
     Hash commit2 = commit("Commit2").delete("k1").put("k2", content).toBranch(branch1);
 
-    ContentResult contents2 = store().getValue(commit2, k2);
+    ContentResult contents2 = store().getValue(commit2, k2, false);
     IdentifiedContentKey ik2 = contents2.identifiedKey();
 
     List<Diff> diff = diffAsList(commit1, commit2);
@@ -129,12 +132,12 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     // Rename operation
     Hash commit2 = commit("Commit2").delete("k1").put("k2", V_2).toBranch(branch1);
 
-    ContentResult contents1 = store().getValue(commit1, k1);
+    ContentResult contents1 = store().getValue(commit1, k1, false);
     IdentifiedContentKey ik1 = contents1.identifiedKey();
-    Content content1 = contents1.content();
-    ContentResult contents2 = store().getValue(commit2, k2);
+    Content content1 = requireNonNull(contents1.content());
+    ContentResult contents2 = store().getValue(commit2, k2, false);
     IdentifiedContentKey ik2 = contents2.identifiedKey();
-    Content content2 = contents2.content();
+    Content content2 = requireNonNull(contents2.content());
 
     soft.assertThat(ik1.lastElement().contentId())
         .isEqualTo(content1.getId())
@@ -158,16 +161,16 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
 
     store().create(branch1, Optional.empty());
     Hash commit1 = commit("Commit1").put("k", V_1).toBranch(branch1);
-    Content content1 = store().getValue(commit1, k).content();
+    Content content1 = requireNonNull(store().getValue(commit1, k, false).content());
 
     // Re-add operations (have to happen in 2 commits)
     commit("Commit2").delete("k").toBranch(branch1);
     Hash commit3 = commit("Commit3").put("k", V_2).toBranch(branch1);
-    Content content3 = store().getValue(commit3, k).content();
+    Content content3 = requireNonNull(store().getValue(commit3, k, false).content());
 
-    ContentResult contents1 = store().getValue(commit1, k);
+    ContentResult contents1 = store().getValue(commit1, k, false);
     IdentifiedContentKey ik1 = contents1.identifiedKey();
-    ContentResult contents2 = store().getValue(commit3, k);
+    ContentResult contents2 = store().getValue(commit3, k, false);
     IdentifiedContentKey ik2 = contents2.identifiedKey();
 
     soft.assertThat(ik1.lastElement().contentId())
@@ -195,7 +198,8 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     ContentKey k1a = ContentKey.of("k1a");
 
     Hash firstCommit = commit("First Commit").put("k1", V_1).put("k2", V_2).toBranch(branch);
-    Content k2content = store().getValue(branch, ContentKey.of("k2")).content();
+    Content k2content =
+        requireNonNull(store().getValue(branch, ContentKey.of("k2"), false).content());
     Hash secondCommit =
         commit("Second Commit")
             .put("k2", V_2_A.withId(k2content.getId()))
@@ -204,7 +208,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
             .toBranch(branch);
 
     Map<ContentKey, ContentResult> contents =
-        store().getValues(branch, newArrayList(k1, k2, k3, k1a));
+        store().getValues(branch, newArrayList(k1, k2, k3, k1a), false);
     IdentifiedContentKey ik1 = contents.get(k1).identifiedKey();
     IdentifiedContentKey ik2 = contents.get(k2).identifiedKey();
     IdentifiedContentKey ik3 = contents.get(k3).identifiedKey();

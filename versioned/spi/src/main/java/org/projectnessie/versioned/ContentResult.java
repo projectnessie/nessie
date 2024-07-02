@@ -34,6 +34,7 @@ public interface ContentResult extends Result {
   IdentifiedContentKey identifiedKey();
 
   @Value.Parameter(order = 2)
+  @Nullable
   Content content();
 
   @Value.Parameter(order = 3)

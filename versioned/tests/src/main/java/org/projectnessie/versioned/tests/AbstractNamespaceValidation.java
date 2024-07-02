@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tests;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -541,7 +542,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("create a table"),
             singletonList(Put.of(key1, newOnRef("value"))));
 
-    Content table = store().getValue(branch, key1).content();
+    Content table = requireNonNull(store().getValue(branch, key1, false).content());
 
     soft.assertThatThrownBy(
             () ->
