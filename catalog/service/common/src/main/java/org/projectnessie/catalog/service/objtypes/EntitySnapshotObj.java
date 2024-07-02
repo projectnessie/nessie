@@ -86,7 +86,11 @@ public interface EntitySnapshotObj extends TaskObj {
     if (content instanceof Namespace) {
       throw new IllegalArgumentException("No snapshots for Namespace: " + content);
     }
-    throw new UnsupportedOperationException("IMPLEMENT ME FOR " + content);
+    throw new UnsupportedOperationException(
+        "Support for content with type "
+            + content.getType()
+            + " not implemented, content = "
+            + content);
   }
 
   static Builder builder() {
