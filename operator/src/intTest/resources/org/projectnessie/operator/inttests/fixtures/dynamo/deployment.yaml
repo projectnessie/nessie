@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+      annotations:
+        projectnessie.org/config-checksum: sha256:placeholder
+    spec:
+      containers:
+        - name: nessie
+          # noinspection KubernetesUnknownValues
+          image: "projectnessie/nessie-test-server:@projectVersion@"
+          imagePullPolicy: Never
+          ports:
+            - name: nessie-server
+              containerPort: 19120
+              protocol: TCP
+            - name: nessie-mgmt
+              containerPort: 9000
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 800m
+              memory: 384Mi
+              ephemeral-storage: 10Mi
+            limits:
+              cpu: 800m
+              memory: 384Mi
+              ephemeral-storage: 10Mi
+          volumeMounts:
+            - name: nessie-config
+              mountPath: /deployments/config/application.properties
+              subPath: application.properties
+          env:
+            - name: JAVA_OPTS_APPEND
+              value: "-XX:InitialRAMPercentage=70.0 -XX:MaxRAMPercentage=70.0"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: nessie-dynamo-credentials
+                  key: accessKey
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nessie-dynamo-credentials
+                  key: secretKey
+          livenessProbe:
+            httpGet:
+              path: /q/health/live
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 20
+          readinessProbe:
+            httpGet:
+              path: /q/health/ready
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 20
+      # "injected" side-car
+      initContainers:
+        - name: sidecar
+          image: k8s.gcr.io/pause
+          imagePullPolicy: IfNotPresent
+      volumes:
+        - name: nessie-config
+          configMap:
+            name: nessie-test
+      serviceAccountName: nessie-test

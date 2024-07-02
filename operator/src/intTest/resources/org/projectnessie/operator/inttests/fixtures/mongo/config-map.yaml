@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.version.store.persist.cache-capacity-mb=0
+    nessie.version.store.type=MONGODB
+    quarkus.mongodb.connection-string=mongodb://placeholder.com:27017/nessie?ssl=false
+    quarkus.mongodb.credentials.username=nessie
+    quarkus.mongodb.database=nessie
+    quarkus.oidc.tenant-enabled=false
+    quarkus.otel.sdk.disabled=true

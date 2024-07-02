@@ -27,6 +27,7 @@ dependencies {
   licenseReports(nessieProject("nessie-gc-tool", "licenseReports"))
   licenseReports(nessieProject("nessie-content-generator", "licenseReports"))
   licenseReports(nessieProject("nessie-cli", "licenseReports"))
+  licenseReports(nessieProject("nessie-operator", "licenseReports"))
   notice(nessieProject("nessie-notice"))
   rootProject.subprojects
     .filter { p -> p.name.startsWith("nessie-spark-extensions-3") }
