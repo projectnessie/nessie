@@ -327,6 +327,8 @@ public interface TreeApi {
    * @param key the {@link ContentKey}s to retrieve
    * @param ref named-reference to retrieve the content for
    * @param withDocumentation whether to return the documentation, if it exists.
+   * @param forWrite If set to 'true', access control checks will check for write/create privilege
+   *     in addition to read.
    * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
@@ -341,11 +343,12 @@ public interface TreeApi {
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
           String ref,
-      boolean withDocumentation)
+      boolean withDocumentation,
+      boolean forWrite)
       throws NessieNotFoundException;
 
   /**
-   * Similar to {@link #getContent(ContentKey, String, boolean)}, but takes multiple {@link
+   * Similar to {@link #getContent(ContentKey, String, boolean, boolean)}, but takes multiple {@link
    * ContentKey}s and returns the {@link Content} for the one or more {@link ContentKey}s in a
    * named-reference (a {@link org.projectnessie.model.Branch} or {@link
    * org.projectnessie.model.Tag}).
@@ -358,6 +361,8 @@ public interface TreeApi {
    * @param ref named-reference to retrieve the content for
    * @param request the {@link ContentKey}s to retrieve
    * @param withDocumentation whether to return the documentation, if it exists.
+   * @param forWrite If set to 'true', access control checks will check for write/create privilege
+   *     in addition to read.
    * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
@@ -373,6 +378,7 @@ public interface TreeApi {
           String ref,
       @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
           GetMultipleContentsRequest request,
-      boolean withDocumentation)
+      boolean withDocumentation,
+      boolean forWrite)
       throws NessieNotFoundException;
 }

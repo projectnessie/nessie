@@ -39,6 +39,7 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   protected ContentKey prefixKey;
   protected String filter;
   protected boolean withContent;
+  protected boolean forWrite;
 
   protected BaseGetEntriesBuilder(BiFunction<PARAMS, String, PARAMS> paramsForPage) {
     this.paramsForPage = paramsForPage;

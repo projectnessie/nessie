@@ -54,7 +54,8 @@ abstract class AbstractCatalogResource {
       ContentKey key, SnapshotReqParams snapshotReqParams, Content.Type expectedType)
       throws NessieNotFoundException {
     return Uni.createFrom()
-        .completionStage(catalogService.retrieveSnapshot(snapshotReqParams, key, expectedType));
+        .completionStage(
+            catalogService.retrieveSnapshot(snapshotReqParams, key, expectedType, false));
   }
 
   private static Response snapshotToResponse(SnapshotResponse snapshot) {
