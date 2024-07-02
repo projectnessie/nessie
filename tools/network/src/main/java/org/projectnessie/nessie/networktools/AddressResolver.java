@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.nessie.networktools;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.net.NetworkInterface.networkInterfaces;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -38,13 +39,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @VisibleForTesting
-final class AddressResolver {
+public final class AddressResolver {
   private static final Logger LOGGER = LoggerFactory.getLogger(AddressResolver.class);
 
   private final DnsClient dnsClient;
   private final List<String> searchList;
 
-  static final Set<String> LOCAL_ADDRESSES;
+  public static final Set<String> LOCAL_ADDRESSES;
 
   private static final boolean IP_V4_ONLY;
 
@@ -78,7 +79,7 @@ final class AddressResolver {
     }
   }
 
-  AddressResolver(DnsClient dnsClient, List<String> searchList) {
+  public AddressResolver(DnsClient dnsClient, List<String> searchList) {
     this.dnsClient = dnsClient;
     this.searchList = searchList;
   }
@@ -87,7 +88,7 @@ final class AddressResolver {
    * Uses a "default" {@link DnsClient} using the first {@code nameserver} and the {@code search}
    * list configured in {@code /etc/resolv.conf}.
    */
-  AddressResolver(Vertx vertx) {
+  public AddressResolver(Vertx vertx) {
     this(createDnsClient(vertx), ResolvConf.system().getSearchList());
   }
 
@@ -95,7 +96,7 @@ final class AddressResolver {
    * Creates a "default" {@link DnsClient} using the first nameserver configured in {@code
    * /etc/resolv.conf}.
    */
-  static DnsClient createDnsClient(Vertx vertx) {
+  public static DnsClient createDnsClient(Vertx vertx) {
     List<InetSocketAddress> nameservers = ResolvConf.system().getNameservers();
     checkState(!nameservers.isEmpty(), "No nameserver configured in /etc/resolv.conf");
     InetSocketAddress nameserver = nameservers.get(0);
@@ -124,10 +125,10 @@ final class AddressResolver {
         a ->
             dnsClient
                 .resolveAAAA(name)
-                .map(aaaa -> Stream.concat(aaaa.stream(), a.stream()).toList()));
+                .map(aaaa -> Stream.concat(aaaa.stream(), a.stream()).collect(toList())));
   }
 
-  Future<List<String>> resolve(String name) {
+  public Future<List<String>> resolve(String name) {
     if (name.startsWith("=")) {
       return Future.succeededFuture(List.of(name.substring(1)));
     }
@@ -146,8 +147,8 @@ final class AddressResolver {
     return future;
   }
 
-  Future<List<String>> resolveAll(List<String> names) {
-    CompositeFuture composite = Future.all(names.stream().map(this::resolve).toList());
+  public Future<List<String>> resolveAll(List<String> names) {
+    CompositeFuture composite = Future.all(names.stream().map(this::resolve).collect(toList()));
     return composite.map(
         c ->
             IntStream.range(0, c.size())
@@ -159,7 +160,7 @@ final class AddressResolver {
                       return casted.stream();
                     })
                 .reduce(Stream::concat)
-                .map(Stream::toList)
+                .map(s -> s.collect(toList()))
                 .orElse(List.of()));
   }
 }

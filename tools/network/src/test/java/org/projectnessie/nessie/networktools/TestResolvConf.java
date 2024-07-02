@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.nessie.networktools;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -67,37 +67,28 @@ public class TestResolvConf {
   static Stream<Arguments> resolve() {
     return Stream.of(
         arguments(
-            """
-            # See man:systemd-resolved.service(8) for details about the supported modes of
-            # operation for /etc/resolv.conf.
-
-            nameserver 127.0.0.1
-            search search.domain
-            """,
+            "# See man:systemd-resolved.service(8) for details about the supported modes of\n"
+                + "# operation for /etc/resolv.conf.\n"
+                + "\n"
+                + "nameserver 127.0.0.1\n"
+                + "search search.domain\n",
             List.of(new InetSocketAddress("127.0.0.1", 53)),
             List.of("search.domain")),
         arguments(
-            """
-            nameserver 127.0.0.1
-            nameserver 1.2.3.4
-            """,
+            "nameserver 127.0.0.1\n" + "nameserver 1.2.3.4\n",
             List.of(new InetSocketAddress("127.0.0.1", 53), new InetSocketAddress("1.2.3.4", 53)),
             List.of()),
         arguments(
-            """
-            nameserver 127.0.0.1
-            nameserver 1.2.3.4
-            search search.domain
-            search anothersearch.anotherdomain
-            """,
+            "nameserver 127.0.0.1\n"
+                + "nameserver 1.2.3.4\n"
+                + "search search.domain\n"
+                + "search anothersearch.anotherdomain\n",
             List.of(new InetSocketAddress("127.0.0.1", 53), new InetSocketAddress("1.2.3.4", 53)),
             List.of("search.domain", "anothersearch.anotherdomain")),
         arguments(
-            """
-            nameserver 127.0.0.1
-            nameserver 1.2.3.4
-            search search.domain anothersearch.anotherdomain
-            """,
+            "nameserver 127.0.0.1\n"
+                + "nameserver 1.2.3.4\n"
+                + "search search.domain anothersearch.anotherdomain\n",
             List.of(new InetSocketAddress("127.0.0.1", 53), new InetSocketAddress("1.2.3.4", 53)),
             List.of("search.domain", "anothersearch.anotherdomain")),
         arguments("", List.of(), List.of()));
