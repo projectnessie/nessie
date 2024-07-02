@@ -73,20 +73,23 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 === "Docker Image"
 
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
+
     They are available from the following repositories:
-     
+    
     * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli):
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie-cli:{{ versions.nessie }}
-    docker run -it ghcr.io/projectnessie/nessie-cli:{{ versions.nessie }}
+    docker create -it --name nessie-cli --network=host -v $HOME/.nessie:/home/default/.nessie ghcr.io/projectnessie/nessie-cli:{{ versions.nessie }}
+    docker start -i nessie-cli
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-cli?tab=tags):
 
     ```bash
     docker pull quay.io/projectnessie/nessie-cli:{{ versions.nessie }}
-    docker run -it quay.io/projectnessie/nessie-cli:{{ versions.nessie }}
+    docker create -it --name nessie-cli --network=host -v $HOME/.nessie:/home/default/.nessie quay.io/projectnessie/nessie-cli:{{ versions.nessie }}
+    docker start -i nessie-cli
     ```
 
 === "Standalone Jar"
