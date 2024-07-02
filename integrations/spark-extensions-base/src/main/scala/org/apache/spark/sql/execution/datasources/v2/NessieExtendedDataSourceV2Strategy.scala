@@ -83,10 +83,11 @@ case class NessieExtendedDataSourceV2Strategy(spark: SparkSession)
         catalog
       ) :: Nil
 
-    case c @ ShowLogCommand(refName, catalog) =>
+    case c @ ShowLogCommand(refName, timestampOrHash, catalog) =>
       ShowLogExec(
         c.output,
         refName,
+        timestampOrHash,
         spark.sessionState.catalogManager.currentCatalog,
         catalog
       ) :: Nil

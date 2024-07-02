@@ -633,6 +633,19 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   }
 
   @Test
+  void showLogAt() throws NessieConflictException, NessieNotFoundException {
+    List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog();
+
+    // here we are skipping commit time as its variable
+    assertThat(
+            sql("SHOW LOG %s AT %s IN nessie", refName, resultList.get(1).getHash()).stream()
+                .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList.subList(1, resultList.size()));
+  }
+
+  @Test
   void testInvalidCatalog() {
     assertThatThrownBy(() -> sql("LIST REFERENCES IN %s", NON_NESSIE_CATALOG))
         .hasMessageContaining("The command works only when the catalog is a NessieCatalog")

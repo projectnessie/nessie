@@ -19,6 +19,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 
 case class ShowLogCommand(
     refName: Option[String],
+    timestampOrHash: Option[String],
     catalog: Option[String]
 ) extends LeafCommand {
   override lazy val output: Seq[Attribute] =

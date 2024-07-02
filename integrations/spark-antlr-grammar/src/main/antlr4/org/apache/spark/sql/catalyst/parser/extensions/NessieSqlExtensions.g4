@@ -70,7 +70,7 @@ statement
     | LIST REFERENCES (IN catalog=identifier)?                                                        #nessieListRef
     | SHOW REFERENCE (IN catalog=identifier)?                                                         #nessieShowRef
     | MERGE BRANCH (reference=identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?         #nessieMergeRef
-    | SHOW LOG (reference=identifier)? (IN catalog=identifier)?                                       #nessieShowLog
+    | SHOW LOG (reference=identifier)? (AT tsOrHash=identifier)? (IN catalog=identifier)?             #nessieShowLog
     | ASSIGN (BRANCH|TAG) (reference=identifier)? (TO toRef=identifier (AT toHash=identifier)?)? (IN catalog=identifier)?     #nessieAssignRef
     // add collect gc action
     // add purge gc action
