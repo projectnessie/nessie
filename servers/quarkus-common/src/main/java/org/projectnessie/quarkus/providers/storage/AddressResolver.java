@@ -16,7 +16,6 @@
 package org.projectnessie.quarkus.providers.storage;
 
 import static com.google.common.base.Preconditions.checkState;
-import static io.vertx.core.Future.succeededFuture;
 import static java.net.NetworkInterface.networkInterfaces;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -106,7 +105,8 @@ final class AddressResolver {
         ResolvConf.system().getSearchList());
     return vertx.createDnsClient(
         new DnsClientOptions()
-            .setQueryTimeout(250)
+            // 5 seconds should be enough to resolve
+            .setQueryTimeout(5000)
             .setHost(nameserver.getHostName())
             .setPort(nameserver.getPort()));
   }
@@ -143,11 +143,7 @@ final class AddressResolver {
       }
     }
 
-    return future.recover(
-        failure -> {
-          LOGGER.warn("Failed to resolve '{}' to A/AAAA records", name, failure);
-          return succeededFuture(List.of());
-        });
+    return future;
   }
 
   Future<List<String>> resolveAll(List<String> names) {
