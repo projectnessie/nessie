@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
@@ -53,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -325,9 +327,7 @@ public class CatalogServiceImpl implements CatalogService {
         effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
-  @Override
-  public CompletionStage<Stream<SnapshotResponse>> commit(
-      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
+  CompletionStage<MultiTableUpdate> commit(ParsedReference reference, CatalogCommit commit)
       throws BaseNessieClientServerException {
 
     GetContentBuilder contentRequest =
@@ -337,6 +337,12 @@ public class CatalogServiceImpl implements CatalogService {
             .hashOnRef(reference.hashWithRelativeSpec());
     commit.getOperations().forEach(op -> contentRequest.key(op.getKey()));
     GetMultipleContentsResponse contentsResponse = contentRequest.getWithResponse();
+
+    checkArgument(
+        requireNonNull(contentsResponse.getEffectiveReference()) instanceof Branch,
+        "Can only commit to a branch, but %s %s",
+        contentsResponse.getEffectiveReference().getType(),
+        reference.name());
 
     Branch target =
         Branch.of(
@@ -360,7 +366,7 @@ public class CatalogServiceImpl implements CatalogService {
         target.getName(),
         target.getHash());
 
-    CompletionStage<MultiTableUpdate> commitBuilderStage = completedStage(null);
+    CompletionStage<MultiTableUpdate> commitBuilderStage = completedStage(multiTableUpdate);
     StringBuilder message = new StringBuilder();
     if (commit.getOperations().size() > 1) {
       message.append("Catalog commit with ");
@@ -394,52 +400,62 @@ public class CatalogServiceImpl implements CatalogService {
 
     nessieCommit.commitMeta(CommitMeta.fromMessage(message.toString()));
 
-    CompletionStage<CommitResponse> committedStage =
-        commitBuilderStage.thenCompose(
-            updates -> {
-              try {
-                CommitResponse commitResponse = multiTableUpdate.nessieCommit.commitWithResponse();
-                Map<ContentKey, String> addedContentsMap =
-                    commitResponse.getAddedContents() != null
-                        ? commitResponse.toAddedContentsMap()
-                        : emptyMap();
-                CompletionStage<NessieEntitySnapshot<?>> current = null;
-                for (SingleTableUpdate tableUpdate : multiTableUpdate.tableUpdates) {
-                  Content content = tableUpdate.content;
-                  if (content.getId() == null) {
-                    content = content.withId(addedContentsMap.get(tableUpdate.key));
-                  }
-                  NessieId snapshotId = objIdToNessieId(snapshotIdFromContent(content));
-
-                  // Although the `TasksService` triggers the operation regardless of whether the
-                  // `CompletionStage` returned by `storeSnapshot()` is consumed, we have to "wait"
-                  // for those to complete so that we keep the "request scoped context" alive.
-                  CompletionStage<NessieEntitySnapshot<?>> stage =
-                      icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
-                  if (current == null) {
-                    current = stage;
-                  } else {
-                    current = current.thenCombine(stage, (snap1, snap2) -> snap1);
-                  }
-                }
-                return requireNonNull(current).thenApply(x -> commitResponse);
-              } catch (Exception e) {
-                // TODO cleanup files that were written but are now obsolete/unreferenced
-                throw new RuntimeException(e);
+    return commitBuilderStage.thenCompose(
+        updates -> {
+          try {
+            CommitResponse commitResponse = multiTableUpdate.nessieCommit.commitWithResponse();
+            multiTableUpdate.targetBranch = commitResponse.getTargetBranch();
+            Map<ContentKey, String> addedContentsMap =
+                commitResponse.getAddedContents() != null
+                    ? commitResponse.toAddedContentsMap()
+                    : emptyMap();
+            CompletionStage<NessieEntitySnapshot<?>> current = null;
+            for (SingleTableUpdate tableUpdate : multiTableUpdate.tableUpdates) {
+              Content content = tableUpdate.content;
+              if (content.getId() == null) {
+                content = content.withId(addedContentsMap.get(tableUpdate.key));
               }
-            });
+              NessieId snapshotId = objIdToNessieId(snapshotIdFromContent(content));
 
-    return committedStage.thenApply(
-        commitResponse ->
-            multiTableUpdate.tableUpdates.stream()
-                .map(
-                    singleTableUpdate ->
-                        snapshotResponse(
-                            singleTableUpdate.key,
-                            singleTableUpdate.content,
-                            reqParams,
-                            singleTableUpdate.snapshot,
-                            commitResponse.getTargetBranch())));
+              // Although the `TasksService` triggers the operation regardless of whether the
+              // `CompletionStage` returned by `storeSnapshot()` is consumed, we have to "wait"
+              // for those to complete so that we keep the "request scoped context" alive.
+              CompletionStage<NessieEntitySnapshot<?>> stage =
+                  icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
+              if (current == null) {
+                current = stage;
+              } else {
+                current = current.thenCombine(stage, (snap1, snap2) -> snap1);
+              }
+            }
+            if (current == null) {
+              return CompletableFuture.completedStage(multiTableUpdate);
+            }
+            return current.thenApply(x -> multiTableUpdate);
+          } catch (Exception e) {
+            // TODO cleanup files that were written but are now obsolete/unreferenced
+            throw new RuntimeException(e);
+          }
+        });
+  }
+
+  @Override
+  public CompletionStage<Stream<SnapshotResponse>> commit(
+      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
+      throws BaseNessieClientServerException {
+    return commit(reference, commit)
+        // Finally, transform each MultiTableUpdate.SingleTableUpdate to a SnapshotResponse
+        .thenApply(
+            updates ->
+                updates.tableUpdates.stream()
+                    .map(
+                        singleTableUpdate ->
+                            snapshotResponse(
+                                singleTableUpdate.key,
+                                singleTableUpdate.content,
+                                reqParams,
+                                singleTableUpdate.snapshot,
+                                updates.targetBranch)));
   }
 
   private static void verifyIcebergOperation(
@@ -475,8 +491,7 @@ public class CatalogServiceImpl implements CatalogService {
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
-      CompletionStage<MultiTableUpdate> commitBuilderStage)
-      throws NessieContentNotFoundException {
+      CompletionStage<MultiTableUpdate> commitBuilderStage) {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
@@ -543,8 +558,7 @@ public class CatalogServiceImpl implements CatalogService {
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
-      CompletionStage<MultiTableUpdate> commitBuilderStage)
-      throws NessieContentNotFoundException {
+      CompletionStage<MultiTableUpdate> commitBuilderStage) {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
@@ -635,6 +649,7 @@ public class CatalogServiceImpl implements CatalogService {
   static final class MultiTableUpdate {
     final CommitMultipleOperationsBuilder nessieCommit;
     final List<SingleTableUpdate> tableUpdates = new ArrayList<>();
+    Branch targetBranch;
 
     MultiTableUpdate(CommitMultipleOperationsBuilder nessieCommit) {
       this.nessieCommit = nessieCommit;
