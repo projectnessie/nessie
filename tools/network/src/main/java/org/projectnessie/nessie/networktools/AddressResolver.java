@@ -20,7 +20,6 @@ import static java.net.NetworkInterface.networkInterfaces;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -38,7 +37,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@VisibleForTesting
 public final class AddressResolver {
   private static final Logger LOGGER = LoggerFactory.getLogger(AddressResolver.class);
 
