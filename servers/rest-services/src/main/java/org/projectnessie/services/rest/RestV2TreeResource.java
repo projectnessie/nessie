@@ -336,26 +336,29 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
-  public ContentResponse getContent(ContentKey key, String ref, boolean withDocumentation)
+  public ContentResponse getContent(
+      ContentKey key, String ref, boolean withDocumentation, boolean forWrite)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(ref);
     return content()
-        .getContent(key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation);
+        .getContent(
+            key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation, forWrite);
   }
 
   @JsonView(Views.V2.class)
   @Override
   public GetMultipleContentsResponse getSeveralContents(
-      String ref, List<String> keys, boolean withDocumentation) throws NessieNotFoundException {
+      String ref, List<String> keys, boolean withDocumentation, boolean forWrite)
+      throws NessieNotFoundException {
     ImmutableGetMultipleContentsRequest.Builder request = GetMultipleContentsRequest.builder();
     keys.forEach(k -> request.addRequestedKeys(ContentKey.fromPathString(k)));
-    return getMultipleContents(ref, request.build(), withDocumentation);
+    return getMultipleContents(ref, request.build(), withDocumentation, forWrite);
   }
 
   @JsonView(Views.V2.class)
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String ref, GetMultipleContentsRequest request, boolean withDocumentation)
+      String ref, GetMultipleContentsRequest request, boolean withDocumentation, boolean forWrite)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(ref);
     return content()
@@ -363,7 +366,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             reference.name(),
             reference.hashWithRelativeSpec(),
             request.getRequestedKeys(),
-            withDocumentation);
+            withDocumentation,
+            forWrite);
   }
 
   @JsonView(Views.V2.class)

@@ -113,6 +113,9 @@ public interface ApiDoc {
   String WITH_DOC_PARAMETER_DESCRIPTION =
       "Whether to return the documentation, if it exists. Default is to not return the documentation.";
 
+  String FOR_WRITE_PARAMETER_DESCRIPTION =
+      "If set to 'true', access control checks will check for write/create privilege in addition to read privileges.";
+
   String CHECKED_REF_DESCRIPTION =
       "Specifies a named branch or tag reference with its expected HEAD 'hash' value.\n"
           + "\n"

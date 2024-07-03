@@ -49,6 +49,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse.Entry;
@@ -455,16 +456,38 @@ public abstract class BaseTestServiceImpl {
 
   protected Map<ContentKey, Content> contents(Reference reference, ContentKey... keys)
       throws NessieNotFoundException {
-    return contents(reference.getName(), reference.getHash(), keys);
+    return contents(reference, false, keys);
+  }
+
+  protected Map<ContentKey, Content> contents(
+      Reference reference, boolean forWrite, ContentKey... keys) throws NessieNotFoundException {
+    return contents(reference.getName(), reference.getHash(), forWrite, keys);
   }
 
   protected Map<ContentKey, Content> contents(String refName, String hashOnRef, ContentKey... keys)
       throws NessieNotFoundException {
+    return contents(refName, hashOnRef, false, keys);
+  }
+
+  protected Map<ContentKey, Content> contents(
+      String refName, String hashOnRef, boolean forWrite, ContentKey... keys)
+      throws NessieNotFoundException {
     return contentApi()
-        .getMultipleContents(refName, hashOnRef, Arrays.asList(keys), false)
+        .getMultipleContents(refName, hashOnRef, Arrays.asList(keys), false, forWrite)
         .getContents()
         .stream()
         .collect(Collectors.toMap(ContentWithKey::getKey, ContentWithKey::getContent));
+  }
+
+  protected ContentResponse content(Reference reference, boolean forWrite, ContentKey key)
+      throws NessieNotFoundException {
+    return content(reference.getName(), reference.getHash(), forWrite, key);
+  }
+
+  protected ContentResponse content(
+      String refName, String hashOnRef, boolean forWrite, ContentKey key)
+      throws NessieNotFoundException {
+    return contentApi().getContent(key, refName, hashOnRef, false, forWrite);
   }
 
   protected String createCommits(
@@ -478,7 +501,9 @@ public abstract class BaseTestServiceImpl {
         Put op;
         try {
           Content existing =
-              contentApi().getContent(key, branch.getName(), currentHash, false).getContent();
+              contentApi()
+                  .getContent(key, branch.getName(), currentHash, false, false)
+                  .getContent();
           op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()));
         } catch (NessieContentNotFoundException notFound) {
           op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));
