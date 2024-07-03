@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.nessie.networktools;
 
 import static java.util.Collections.singletonList;
-import static org.projectnessie.quarkus.providers.storage.AddressResolver.LOCAL_ADDRESSES;
+import static java.util.stream.Collectors.toList;
+import static org.projectnessie.nessie.networktools.AddressResolver.LOCAL_ADDRESSES;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.dns.DnsException;
@@ -155,7 +156,8 @@ public class TestAddressResolver {
     soft.assertThat(
             addressResolver
                 .resolveAll(singletonList("localhost"))
-                .map(s -> s.stream().filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
+                .map(
+                    s -> s.stream().filter(adr -> !LOCAL_ADDRESSES.contains(adr)).collect(toList()))
                 .toCompletionStage()
                 .toCompletableFuture()
                 .get(1, TimeUnit.MINUTES))

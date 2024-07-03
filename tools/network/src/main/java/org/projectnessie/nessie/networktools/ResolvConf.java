@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.nessie.networktools;
+
+import static java.util.Collections.unmodifiableList;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -21,7 +23,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 // Code mostly copied from io.netty.resolver.dns.ResolvConf, but with the addition to extract
@@ -31,7 +32,7 @@ import java.util.List;
  * Looks up the {@code nameserver}s and {@code search} domains from the {@code /etc/resolv.conf}
  * file, intended for Linux and macOS.
  */
-final class ResolvConf {
+public final class ResolvConf {
   private final List<InetSocketAddress> nameservers;
   private final List<String> searchList;
 
@@ -42,7 +43,7 @@ final class ResolvConf {
    * @param reader contents of {@code resolv.conf} are read from this {@link BufferedReader}, up to
    *     the caller to close it
    */
-  static ResolvConf fromReader(BufferedReader reader) throws IOException {
+  public static ResolvConf fromReader(BufferedReader reader) throws IOException {
     return new ResolvConf(reader);
   }
 
@@ -50,7 +51,7 @@ final class ResolvConf {
    * Reads the given file and extracts the {@code nameserver}s and {@code search} domains using the
    * syntax of the {@code /etc/resolv.conf} file, see {@code man resolv.conf}.
    */
-  static ResolvConf fromFile(String file) throws IOException {
+  public static ResolvConf fromFile(String file) throws IOException {
     try (FileReader fileReader = new FileReader(file);
         BufferedReader reader = new BufferedReader(fileReader)) {
       return fromReader(reader);
@@ -61,7 +62,7 @@ final class ResolvConf {
    * Returns the {@code nameserver}s and {@code search} domains from the {@code /etc/resolv.conf}
    * file. The file is only read once during the lifetime of this class.
    */
-  static ResolvConf system() {
+  public static ResolvConf system() {
     ResolvConf resolvConv = ResolvConf.ResolvConfLazy.machineResolvConf;
     if (resolvConv != null) {
       return resolvConv;
@@ -88,15 +89,15 @@ final class ResolvConf {
         searchList.addAll(Arrays.asList(ln.split(" ")));
       }
     }
-    this.nameservers = Collections.unmodifiableList(nameservers);
-    this.searchList = Collections.unmodifiableList(searchList);
+    this.nameservers = unmodifiableList(nameservers);
+    this.searchList = unmodifiableList(searchList);
   }
 
-  List<InetSocketAddress> getNameservers() {
+  public List<InetSocketAddress> getNameservers() {
     return nameservers;
   }
 
-  List<String> getSearchList() {
+  public List<String> getSearchList() {
     return searchList;
   }
 
