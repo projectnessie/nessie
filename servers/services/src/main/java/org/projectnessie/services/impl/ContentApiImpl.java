@@ -131,7 +131,6 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
                       if (forWrite) {
                         check.canUpdateEntity(r, identifiedKey);
                       }
-                      check.canReadEntityValue(r, identifiedKey);
                       return true;
                     } else {
                       if (forWrite) {

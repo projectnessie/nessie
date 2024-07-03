@@ -30,6 +30,7 @@ import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
@@ -335,8 +336,9 @@ public interface TreeApi {
    * @param forWrite If set to 'true', access control checks will check for write/create privilege
    *     in addition to read access checks.
    * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
-   * @throws NessieNotFoundException if the content object or if {@code ref} or {@code hashOnRef}
-   *     does not exist
+   * @throws NessieNotFoundException If the content object or if {@code ref} does not exist a {@link
+   *     NessieContentNotFoundException} or a {@link NessieReferenceNotFoundException} is being
+   *     thrown.
    */
   ContentResponse getContent(
       @Valid @jakarta.validation.Valid ContentKey key,
@@ -372,7 +374,8 @@ public interface TreeApi {
    * @param forWrite If set to 'true', access control checks will check for write/create privilege
    *     in addition to read access checks.
    * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
-   * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
+   * @throws NessieNotFoundException Throws a {@link NessieReferenceNotFoundException}, if {@code
+   *     ref} does not exist.
    */
   GetMultipleContentsResponse getMultipleContents(
       @Valid

@@ -38,7 +38,13 @@ public interface GetContentBuilder extends OnReferenceBuilder<GetContentBuilder>
    * Set to {@code true} to perform access checks for write/create access in addition to read access
    * checks.
    */
-  GetContentBuilder forWrite(boolean forWrite);
+  default GetContentBuilder forWrite(boolean forWrite) {
+    if (forWrite) {
+      throw new UnsupportedOperationException(
+          getClass().getName() + " needs to implement forWrite(boolean)");
+    }
+    return this;
+  }
 
   ContentResponse getSingle(@Valid @jakarta.validation.Valid ContentKey key)
       throws NessieNotFoundException;
