@@ -14,11 +14,17 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog/GCS: Support using the default application credentials
+
 ### Changes
+
+- Helm chat improvements
 
 ### Deprecations
 
 ### Fixes
+
+- Fix potential class-loader deadlock via `Namespace.EMPTY`
 
 ### Commits
 
