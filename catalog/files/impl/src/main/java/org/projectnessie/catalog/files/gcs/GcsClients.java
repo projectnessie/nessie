@@ -23,6 +23,7 @@ import com.google.api.gax.retrying.RetrySettings;
 import com.google.auth.Credentials;
 import com.google.auth.http.HttpTransportFactory;
 import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.auth.oauth2.UserCredentials;
@@ -148,7 +149,12 @@ public final class GcsClients {
                 oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
         return OAuth2Credentials.create(accessToken);
       default:
-        throw new IllegalArgumentException("Unsupported auth type " + authType);
+        try {
+          return GoogleCredentials.getApplicationDefault();
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Unsupported auth type " + authType
+            + " and didn't found valid credentials");
+        }
     }
   }
 }
