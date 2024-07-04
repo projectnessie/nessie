@@ -17,10 +17,23 @@ package org.projectnessie.catalog.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddPartitionSpec.addPartitionSpec;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSortOrder.addSortOrder;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID.assignUUID;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultPartitionSpec.setDefaultPartitionSpec;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import java.time.Clock;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +45,7 @@ import org.immutables.value.Value;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
@@ -40,10 +54,18 @@ import org.projectnessie.catalog.files.s3.S3ObjectIO;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
 import org.projectnessie.nessie.tasks.async.pool.JavaPoolTasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
@@ -74,6 +96,35 @@ public abstract class AbstractCatalogService {
   protected SdkHttpClient httpClient;
   protected CatalogServiceImpl catalogService;
   protected NessieApiV2 api;
+
+  protected ParsedReference commitSingle(Reference branch, ContentKey key)
+      throws InterruptedException, ExecutionException, BaseNessieClientServerException {
+    ParsedReference ref =
+        parsedReference(branch.getName(), branch.getHash(), Reference.ReferenceType.BRANCH);
+    CatalogCommit commit =
+        CatalogCommit.builder()
+            .addOperations(
+                IcebergCatalogOperation.builder()
+                    .key(key)
+                    .addUpdates(
+                        assignUUID(UUID.randomUUID().toString()),
+                        upgradeFormatVersion(2),
+                        addSchema(IcebergSchema.builder().build(), 0),
+                        setCurrentSchema(-1),
+                        addPartitionSpec(IcebergPartitionSpec.UNPARTITIONED_SPEC),
+                        setDefaultPartitionSpec(-1),
+                        addSortOrder(IcebergSortOrder.UNSORTED_ORDER),
+                        setDefaultSortOrder(-1))
+                    .addRequirement(assertTableDoesNotExist())
+                    .type(ICEBERG_TABLE)
+                    .build())
+            .build();
+
+    MultiTableUpdate update = catalogService.commit(ref, commit).toCompletableFuture().get();
+    branch = update.targetBranch();
+
+    return parsedReference(branch.getName(), branch.getHash(), Reference.ReferenceType.BRANCH);
+  }
 
   @BeforeEach
   public void createCatalogServiceInstance() {
