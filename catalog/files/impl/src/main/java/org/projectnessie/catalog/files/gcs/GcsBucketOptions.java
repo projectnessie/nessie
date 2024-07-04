@@ -93,5 +93,6 @@ public interface GcsBucketOptions {
     USER,
     SERVICE_ACCOUNT,
     ACCESS_TOKEN,
+    APPLICATION_DEFAULT
   }
 }
