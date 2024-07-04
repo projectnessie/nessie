@@ -71,7 +71,7 @@ public class SecretsProvider {
    *    .build();
    * }</pre>
    */
-  public <R, B, S> B applySecrets(
+  public <R, B> B applySecrets(
       @Nonnull B builder,
       @Nonnull String baseName,
       @Nonnull R base,

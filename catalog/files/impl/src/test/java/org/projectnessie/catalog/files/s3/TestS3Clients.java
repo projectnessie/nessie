@@ -17,12 +17,21 @@ package org.projectnessie.catalog.files.s3;
 
 import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -37,7 +46,7 @@ public class TestS3Clients extends AbstractClients {
   @BeforeAll
   static void createHttpClient() {
     S3Config s3Config = S3Config.builder().build();
-    sdkHttpClient = S3Clients.apacheHttpClient(s3Config);
+    sdkHttpClient = S3Clients.apacheHttpClient(s3Config, new SecretsProvider(names -> Map.of()));
   }
 
   @AfterAll
@@ -87,5 +96,125 @@ public class TestS3Clients extends AbstractClients {
   @Override
   protected StorageUri buildURI(String bucket, String key) {
     return StorageUri.of(String.format("s3://%s/%s", bucket, key));
+  }
+
+  @Test
+  public void invalidTrustStore(@TempDir Path tempDir) throws Exception {
+    Path file = tempDir.resolve("my.trust.store");
+
+    String password = "very_secret";
+    char[] passwordChars = password.toCharArray();
+
+    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    try (OutputStream out = Files.newOutputStream(file)) {
+      ks.load(null, null);
+      ks.store(out, passwordChars);
+    }
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder().trustStorePath(file).build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .withMessage("No trust store type");
+    soft.assertThatThrownBy(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder()
+                            .trustStorePath(tempDir.resolve("not.there"))
+                            .trustStoreType("jks")
+                            .trustStorePassword(keySecret(password))
+                            .build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .isInstanceOf(RuntimeException.class)
+        .cause()
+        .isInstanceOf(NoSuchFileException.class);
+    soft.assertThatThrownBy(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder()
+                            .trustStorePath(file)
+                            .trustStoreType("jks")
+                            .trustStorePassword(keySecret("wrong_password"))
+                            .build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .isInstanceOf(RuntimeException.class)
+        .cause()
+        .isInstanceOf(IOException.class);
+    soft.assertThatCode(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder()
+                            .trustStorePath(file)
+                            .trustStoreType("jks")
+                            .trustStorePassword(keySecret(password))
+                            .build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void invalidKeyStore(@TempDir Path tempDir) throws Exception {
+    Path file = tempDir.resolve("my.key.store");
+
+    String password = "very_secret";
+    char[] passwordChars = password.toCharArray();
+
+    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    try (OutputStream out = Files.newOutputStream(file)) {
+      ks.load(null, null);
+      ks.store(out, passwordChars);
+    }
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder().keyStorePath(file).build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .withMessage("No key store type");
+    soft.assertThatThrownBy(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder()
+                            .keyStorePath(tempDir.resolve("not.there"))
+                            .keyStoreType("jks")
+                            .keyStorePassword(keySecret(password))
+                            .build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .isInstanceOf(RuntimeException.class)
+        .cause()
+        .isInstanceOf(NoSuchFileException.class);
+    soft.assertThatThrownBy(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder()
+                            .keyStorePath(file)
+                            .keyStoreType("jks")
+                            .keyStorePassword(keySecret("wrong_password"))
+                            .build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .isInstanceOf(RuntimeException.class)
+        .cause()
+        .isInstanceOf(IOException.class);
+    soft.assertThatCode(
+            () ->
+                S3Clients.apacheHttpClient(
+                        S3Config.builder()
+                            .keyStorePath(file)
+                            .keyStoreType("jks")
+                            .keyStorePassword(keySecret(password))
+                            .build(),
+                        new SecretsProvider(names -> Map.of()))
+                    .close())
+        .doesNotThrowAnyException();
   }
 }

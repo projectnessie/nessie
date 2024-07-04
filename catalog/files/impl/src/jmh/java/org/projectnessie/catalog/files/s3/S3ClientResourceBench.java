@@ -64,7 +64,7 @@ public class S3ClientResourceBench {
       server = mockServer(mock -> {});
 
       S3Config s3config = S3Config.builder().build();
-      httpClient = S3Clients.apacheHttpClient(s3config);
+      httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
