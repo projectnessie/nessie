@@ -14,7 +14,7 @@ The follow config options are mentioned only for documentation purposes. Consult
 [Quarkus documentation](https://quarkus.io/guides/http-reference#reverse-proxy) for "Running behind a reverse proxy"
 and configure those depending on your actual needs.
 
-=== "Application properties"
+=== "Application Properties"
     ```properties
     quarkus.http.proxy.proxy-address-forwarding=true
     quarkus.http.proxy.allow-x-forwarded=true
@@ -22,7 +22,7 @@ and configure those depending on your actual needs.
     quarkus.http.proxy.enable-forwarded-prefix=true
     ```
 
-=== "Helm chart"
+=== "Helm Chart"
     ```yaml
     advancedConfig:
       quarkus:
