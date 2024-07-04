@@ -55,6 +55,10 @@ public abstract class AbstractClients {
 
       try (OutputStream output = objectIO.writeObject(uri)) {
         output.write("hello world".getBytes(UTF_8));
+        // Explicitly close the output stream more than once
+        output.close();
+        //noinspection RedundantExplicitClose
+        output.close();
       }
       String response1;
       try (InputStream input = objectIO.readObject(uri)) {

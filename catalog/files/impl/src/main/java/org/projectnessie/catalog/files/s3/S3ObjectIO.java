@@ -27,6 +27,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.BackendThrottledException;
 import org.projectnessie.catalog.files.api.NonRetryableException;
@@ -97,18 +98,22 @@ public class S3ObjectIO implements ObjectIO {
     checkArgument(isS3scheme(uri.scheme()), "Invalid S3 scheme: %s", uri);
 
     return new ByteArrayOutputStream() {
+      private final AtomicBoolean closed = new AtomicBoolean();
+
       @Override
       public void close() throws IOException {
-        super.close();
+        if (closed.compareAndSet(false, true)) {
+          super.close();
 
-        S3Client s3client = s3clientSupplier.getClient(uri);
+          S3Client s3client = s3clientSupplier.getClient(uri);
 
-        s3client.putObject(
-            PutObjectRequest.builder()
-                .bucket(uri.requiredAuthority())
-                .key(withoutLeadingSlash(uri))
-                .build(),
-            RequestBody.fromBytes(toByteArray()));
+          s3client.putObject(
+              PutObjectRequest.builder()
+                  .bucket(uri.requiredAuthority())
+                  .key(withoutLeadingSlash(uri))
+                  .build(),
+              RequestBody.fromBytes(toByteArray()));
+        }
       }
     };
   }
