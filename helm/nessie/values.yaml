@@ -494,11 +494,11 @@ advancedConfig:
 #  quarkus:
 #   http:
 #     proxy:
-#       proxy-address-forwarding=true
-#       allow-x-forwarded=true
-#       enable-forwarded-host=true
-#       enable-forwarded-prefix=true
-#       trusted-proxies=127.0.0.1
+#       proxy-address-forwarding: "true"
+#       allow-x-forwarded: "true"
+#       enable-forwarded-host: "true"
+#       enable-forwarded-prefix: "true"
+#       trusted-proxies: "127.0.0.1"
 
 # -- Advanced configuration via Environment Variables.
 # Extra environment variables to add to the Nessie server container.

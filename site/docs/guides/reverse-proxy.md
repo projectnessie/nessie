@@ -14,12 +14,25 @@ The follow config options are mentioned only for documentation purposes. Consult
 [Quarkus documentation](https://quarkus.io/guides/http-reference#reverse-proxy) for "Running behind a reverse proxy"
 and configure those depending on your actual needs.
 
-```properties
-quarkus.http.proxy.proxy-address-forwarding=true
-quarkus.http.proxy.allow-x-forwarded=true
-quarkus.http.proxy.enable-forwarded-host=true
-quarkus.http.proxy.enable-forwarded-prefix=true
-```
+=== "Application Properties"
+    ```properties
+    quarkus.http.proxy.proxy-address-forwarding=true
+    quarkus.http.proxy.allow-x-forwarded=true
+    quarkus.http.proxy.enable-forwarded-host=true
+    quarkus.http.proxy.enable-forwarded-prefix=true
+    ```
+
+=== "Helm Chart"
+    ```yaml
+    advancedConfig:
+      quarkus:
+        http:
+          proxy:
+            proxy-address-forwarding: "true"
+            allow-x-forwarded: "true"
+            enable-forwarded-host: "true"
+            enable-forwarded-prefix: "true"
+    ```
 
 !!! warn
     Do NOT enable the above options unless your reverse proxy (for example istio or nginx)
@@ -71,62 +84,60 @@ expected values. Differences _will_ result in Iceberg REST request failures.
 Consult the documentation of your ingress/reverse-proxy for details how to set those up to meet the
 requirements of your particular environment.
 
-## istio/envoy
+=== "Istio / Envoy"
+    Related istio/envoy documentation pages:
+    
+    * [Configuring X-Forwarded-For](https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/#configuring-x-forwarded-for-headers)
+    * [Header manipulation](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers)
 
-Related istio/envoy documentation pages:
-
-* [Configuring X-Forwarded-For](https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/#configuring-x-forwarded-for-headers)
-* [Header manipulation](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers)
-
-## nginx
-
-Related nginx documentation pages:
-
-* [Reverse Proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/#passing-a-request-to-a-proxied-server)
-* [Proxy module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html)
-* [Load Balancer](https://nginx.org/en/docs/http/load_balancing.html)
-
-See the [example configuration](https://github.com/projectnessie/nessie/tree/main/docker/catalog-nginx-https/nginx.conf) from the [Docker Compose example](#docker-compose-example) below:
-```apacheconf
-events {
-  worker_connections 1024;
-}
-
-http {
-  # Redirect non-HTTPS to HTTPS
-  server {
-    listen 8080;
-    server_name nessie-nginx.localhost.localdomain;
-    return 301 https://$host$request_uri;
-  }
-
-  server {
-    listen 8443 ssl;
-    server_name nessie-nginx.localhost.localdomain;
-
-    ssl_certificate /etc/nginx/certs/nessie-nginx.localhost.localdomain+3.pem;
-    ssl_certificate_key /etc/nginx/certs/nessie-nginx.localhost.localdomain+3-key.pem;
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-
-    # This example uses /nessie/ as the path-prefix. It is not mandatory to do this.
-    # To use no prefix and route all requests to Nessie, set '/' as the 'location' and
-    # remove the 'proxy_set_header X-Forwarded-Prefix' line.
-    location /nessie/ {
-      proxy_buffering off;
-      # The X-Forwarded-* headers needed by Quarkus
-      proxy_set_header X-Forwarded-Proto $scheme;
-      proxy_set_header X-Forwarded-Host $host;
-      proxy_set_header X-Forwarded-Port $server_port;
-      # X-Forwarded-Prefix is needed when the ingress shall use prefixes. Must set
-      # quarkus.http.proxy.enable-forwarded-prefix=true for Nessie/Quarkus in that case.
-      proxy_set_header X-Forwarded-Prefix /nessie/;
-
-      proxy_pass http://nessie:19120;
+=== "Nginx"
+    Related nginx documentation pages:
+    
+    * [Reverse Proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/#passing-a-request-to-a-proxied-server)
+    * [Proxy module](http://nginx.org/en/docs/http/ngx_http_proxy_module.html)
+    * [Load Balancer](https://nginx.org/en/docs/http/load_balancing.html)
+    
+    See the [example configuration](https://github.com/projectnessie/nessie/tree/main/docker/catalog-nginx-https/nginx.conf) from the [Docker Compose example](#docker-compose-example) below:
+    ```apacheconf
+    events {
+      worker_connections 1024;
     }
-  }
-}
-```
+    
+    http {
+      # Redirect non-HTTPS to HTTPS
+      server {
+        listen 8080;
+        server_name nessie-nginx.localhost.localdomain;
+        return 301 https://$host$request_uri;
+      }
+    
+      server {
+        listen 8443 ssl;
+        server_name nessie-nginx.localhost.localdomain;
+    
+        ssl_certificate /etc/nginx/certs/nessie-nginx.localhost.localdomain+3.pem;
+        ssl_certificate_key /etc/nginx/certs/nessie-nginx.localhost.localdomain+3-key.pem;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+    
+        # This example uses /nessie/ as the path-prefix. It is not mandatory to do this.
+        # To use no prefix and route all requests to Nessie, set '/' as the 'location' and
+        # remove the 'proxy_set_header X-Forwarded-Prefix' line.
+        location /nessie/ {
+          proxy_buffering off;
+          # The X-Forwarded-* headers needed by Quarkus
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Host $host;
+          proxy_set_header X-Forwarded-Port $server_port;
+          # X-Forwarded-Prefix is needed when the ingress shall use prefixes. Must set
+          # quarkus.http.proxy.enable-forwarded-prefix=true for Nessie/Quarkus in that case.
+          proxy_set_header X-Forwarded-Prefix /nessie/;
+    
+          proxy_pass http://nessie:19120;
+        }
+      }
+    }
+    ```
 
 ## Docker Compose example
 
