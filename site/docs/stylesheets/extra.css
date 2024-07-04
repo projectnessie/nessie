@@ -23,10 +23,14 @@ img.bordered {
 }
 
 .md-typeset .tabbed-set>.tabbed-content {
-  padding: 0 .5em 0 .5em;
+  padding: .5em;
   border: 1px solid #ababab;
   border-bottom-left-radius: .3em;
   border-bottom-right-radius: .3em;
+}
+
+.md-typeset .tabbed-set .tabbed-block > :first-child {
+  margin-top: 0;
 }
 
 .md-typeset .tabbed-labels>label {
