@@ -151,6 +151,7 @@ public class TestAddressResolver {
   }
 
   @Test
+  @DisabledOnOs(value = OS.MAC, disabledReason = "Resolving 'localhost' doesn't work on macOS")
   public void resolveFilterLocalAddresses() throws Exception {
     addressResolver = new AddressResolver(vertx);
     soft.assertThat(
