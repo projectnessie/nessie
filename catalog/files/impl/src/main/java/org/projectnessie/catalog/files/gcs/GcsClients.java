@@ -148,13 +148,14 @@ public final class GcsClients {
                 oauth2token.token(),
                 oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
         return OAuth2Credentials.create(accessToken);
-      default:
+      case APPLICATION_DEFAULT:
         try {
           return GoogleCredentials.getApplicationDefault();
         } catch (IOException e) {
-          throw new IllegalArgumentException("Unsupported auth type " + authType
-            + " and didn't found valid credentials");
+          throw new IllegalArgumentException("Unable to load default credentials", e);
         }
+      default:
+        throw new IllegalArgumentException("Unsupported auth type " + authType);
     }
   }
 }
