@@ -15,6 +15,7 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - Catalog/GCS: Support using the default application credentials
+- Catalog/S3: Allow custom key+trust stores
 
 ### Changes
 
