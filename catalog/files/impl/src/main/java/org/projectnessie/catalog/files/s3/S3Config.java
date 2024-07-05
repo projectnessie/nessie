@@ -100,7 +100,7 @@ public interface S3Config {
    * nessie.catalog.service.s3.key-store.password} must be supplied as well when providing a custom
    * key store.
    *
-   * <p>When running in k8s or Docker, the path is local withing the pod/container and must be
+   * <p>When running in k8s or Docker, the path is local within the pod/container and must be
    * explicitly mounted.
    */
   @ConfigItem(section = "transport")
