@@ -71,12 +71,10 @@ public class SmallryeConfigs {
 
       additionalPrefixes.forEach(
           (k, v) -> {
-            if (!v.isEmpty()) {
-              if (k.equals(mapping.prefix)) {
-                sections.add(new SmallRyeConfigSection(k, v, mapping.element, mapping.typeComment));
-              } else {
-                sections.add(new SmallRyeConfigSection(mapping.prefix + '.' + k, v, null, null));
-              }
+            if (k.equals(mapping.prefix)) {
+              sections.add(new SmallRyeConfigSection(k, v, mapping.element, mapping.typeComment));
+            } else {
+              sections.add(new SmallRyeConfigSection(mapping.prefix + '.' + k, v, null, null));
             }
           });
     }
