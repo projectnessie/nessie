@@ -31,7 +31,6 @@ import org.apache.iceberg.ManifestReaderUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
-import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
 import org.immutables.value.Value;
@@ -50,13 +49,19 @@ import org.slf4j.LoggerFactory;
 public abstract class IcebergContentToFiles implements ContentToFiles {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(IcebergContentToFiles.class);
-  public static final String S3_KEY_NOT_FOUND =
+
+  static final String ICEBERG_NOT_FOUND_EXCEPTION =
+      "org.apache.iceberg.exceptions.NotFoundException";
+  static final String S3_KEY_NOT_FOUND_EXCEPTION =
       "software.amazon.awssdk.services.s3.model.NoSuchKeyException";
-  public static final String GCS_STORAGE_EXCEPTION = "com.google.cloud.storage.StorageException";
-  public static final String ADLS_STORAGE_EXCEPTION =
+  static final String GCS_STORAGE_EXCEPTION = "com.google.cloud.storage.StorageException";
+  static final String ADLS_BLOB_STORAGE_EXCEPTION =
       "com.azure.storage.blob.models.BlobStorageException";
-  public static final String GCS_NOT_FOUND_START = "404 Not Found";
-  public static final String ADLS_NOT_FOUND_CODE = "PathNotFound";
+
+  static final String GCS_NOT_FOUND_START = "404 Not Found";
+
+  static final String ADLS_PATH_NOT_FOUND_CODE = "PathNotFound";
+  static final String ADLS_BLOB_NOT_FOUND_CODE = "BlobNotFound";
 
   public static Builder builder() {
     return ImmutableIcebergContentToFiles.builder();
@@ -86,29 +91,30 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
       tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
     } catch (Exception notFoundCandidate) {
       boolean notFound = false;
-      if (notFoundCandidate instanceof NotFoundException
-          // Iceberg does not map software.amazon.awssdk.services.s3.model.NoSuchKeyException to
-          // its native org.apache.iceberg.exceptions.NotFoundException,
-          || S3_KEY_NOT_FOUND.equals(notFoundCandidate.getClass().getName())) {
-        notFound = true;
-      } else {
-        for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
-          String exceptionClass = c.getClass().getName();
-          String message = c.getMessage();
-          if (GCS_STORAGE_EXCEPTION.equals(exceptionClass)
-              && message.startsWith(GCS_NOT_FOUND_START)) {
+      for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
+        switch (c.getClass().getName()) {
+          case ICEBERG_NOT_FOUND_EXCEPTION:
+          case S3_KEY_NOT_FOUND_EXCEPTION:
             notFound = true;
             break;
-          }
-          if (ADLS_STORAGE_EXCEPTION.equals(exceptionClass)
-              && message.contains(ADLS_NOT_FOUND_CODE)) {
-            notFound = true;
+          case GCS_STORAGE_EXCEPTION:
+            if (c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
+              notFound = true;
+            }
             break;
-          }
+          case ADLS_BLOB_STORAGE_EXCEPTION:
+            String message = c.getMessage();
+            if (message.contains(ADLS_PATH_NOT_FOUND_CODE)
+                || message.contains(ADLS_BLOB_NOT_FOUND_CODE)) {
+              notFound = true;
+            }
+            break;
+          default:
+            break;
+        }
 
-          if (c == c.getCause()) {
-            break;
-          }
+        if (notFound || c == c.getCause()) {
+          break;
         }
       }
 
