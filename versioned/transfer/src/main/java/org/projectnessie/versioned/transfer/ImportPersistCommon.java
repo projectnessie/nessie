@@ -41,6 +41,7 @@ import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.GenericObj;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 
@@ -111,6 +112,30 @@ abstract class ImportPersistCommon extends ImportCommon {
   }
 
   @Override
+  long importGeneric() throws IOException {
+    long genericCount = 0L;
+    try {
+      for (String fileName : exportMeta.getGenericObjFilesList()) {
+        try (InputStream input = importFiles.newFileInput(fileName)) {
+          while (true) {
+            GenericObj generic = GenericObj.parseDelimitedFrom(input);
+            if (generic == null) {
+              break;
+            }
+            processGeneric(generic);
+            genericCount++;
+          }
+        } catch (ObjTooLargeException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    } finally {
+      persist.flush();
+    }
+    return genericCount;
+  }
+
+  @Override
   void markRepositoryImported() {
     RepositoryDescription initialDescription =
         requireNonNull(importer.repositoryLogic().fetchRepositoryDescription());
@@ -127,6 +152,8 @@ abstract class ImportPersistCommon extends ImportCommon {
   }
 
   abstract void processCommit(Commit commit) throws IOException, ObjTooLargeException;
+
+  abstract void processGeneric(GenericObj genericObj) throws IOException, ObjTooLargeException;
 
   void processCommitOp(StoreIndex<CommitOp> index, Operation op, StoreKey storeKey) {
     byte payload = (byte) op.getPayload();

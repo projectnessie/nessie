@@ -33,6 +33,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.versionstore.RefMapping;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
@@ -123,4 +124,7 @@ final class ImportPersistV1 extends ImportPersistCommon {
 
     importer.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
   }
+
+  @Override
+  void processGeneric(TransferTypes.GenericObj genericObj) {}
 }

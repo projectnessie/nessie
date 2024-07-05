@@ -37,6 +37,9 @@ public interface ImportResult {
   /** Number of commits that have been imported. */
   long importedCommitCount();
 
+  /** Number of generic objects that have been imported. */
+  long importedGenericCount();
+
   /** Number of references that have been imported. */
   long importedReferenceCount();
 }

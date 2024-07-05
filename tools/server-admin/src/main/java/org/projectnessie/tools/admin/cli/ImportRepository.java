@@ -116,8 +116,10 @@ public class ImportRepository extends BaseCommand {
       ImportResult importResult = importer.importNessieRepository();
 
       out.printf(
-          "Imported Nessie repository, %d commits, %d named references.%n",
-          importResult.importedCommitCount(), importResult.importedReferenceCount());
+          "Imported Nessie repository, %d commits, %d named references, %d generic objects.%n",
+          importResult.importedCommitCount(),
+          importResult.importedReferenceCount(),
+          importResult.importedGenericCount());
 
       return 0;
     } finally {
@@ -171,14 +173,17 @@ public class ImportRepository extends BaseCommand {
             nessieVersion = "(unknown, before 0.46)";
           }
           out.printf(
-              "Export was created by Nessie version %s on %s, "
-                  + "containing %d named references (in %d files) and %d commits (in %d files).%n",
+              "Export using format %s was created by Nessie version %s on %s, "
+                  + "containing %d named references (in %d files), %d commits (in %d files), %d generic objects (in %d files).%n",
+              meta.getVersion(),
               nessieVersion,
               Instant.ofEpochMilli(meta.getCreatedMillisEpoch()),
               meta.getNamedReferencesCount(),
               meta.getNamedReferencesFilesCount(),
               meta.getCommitCount(),
-              meta.getCommitsFilesCount());
+              meta.getCommitsFilesCount(),
+              meta.getGenericObjCount(),
+              meta.getGenericObjFilesCount());
           break;
         case START_COMMITS:
           out.printf("Importing %d commits...%n", exportMeta.getCommitCount());
@@ -188,11 +193,21 @@ public class ImportRepository extends BaseCommand {
           endPhase();
           out.printf("%d commits imported, total duration: %s.%n%n", count, totalDuration());
           break;
+        case START_GENERIC:
+          out.printf("Importing %d generic objects...%n", exportMeta.getGenericObjCount());
+          startPhase();
+          break;
+        case END_GENERIC:
+          endPhase();
+          out.printf(
+              "%d generic objects imported, total duration: %s.%n%n", count, totalDuration());
+          break;
         case START_NAMED_REFERENCES:
           out.printf("Importing %d named references...%n", exportMeta.getNamedReferencesCount());
           startPhase();
           break;
         case COMMIT_WRITTEN:
+        case GENERIC_WRITTEN:
         case NAMED_REFERENCE_WRITTEN:
         case FINALIZE_PROGRESS:
           count++;

@@ -27,6 +27,8 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogi
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.UNIQUE;
+import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
@@ -63,6 +65,7 @@ import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
+import org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
@@ -143,9 +146,10 @@ public class ITExportImport {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
+        .containsPattern(
+            "Exporting from a " + VERSION_STORES + " version store using export version 3...")
         .contains(
-            "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files.");
+            "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files, 0 generic objects into 0 files.");
     soft.assertThat(zipFile).isRegularFile();
 
     // Importing into an "empty" repository passes the "empty-repository-check" during import
@@ -154,7 +158,7 @@ public class ITExportImport {
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
         .containsPattern("Importing into a " + VERSION_STORES + " version store...")
-        .contains("Imported Nessie repository, 0 commits, 1 named references.");
+        .contains("Imported Nessie repository, 0 commits, 1 named references, 0 generic objects.");
   }
 
   @Test
@@ -162,9 +166,10 @@ public class ITExportImport {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
+        .containsPattern(
+            "Exporting from a " + VERSION_STORES + " version store using export version 3...")
         .contains(
-            "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files.");
+            "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files, 0 generic objects into 0 files.");
     soft.assertThat(tempDir).isNotEmptyDirectory();
 
     // Importing into an "empty" repository passes the "empty-repository-check" during import
@@ -173,7 +178,7 @@ public class ITExportImport {
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
         .containsPattern("Importing into a " + VERSION_STORES + " version store...")
-        .contains("Imported Nessie repository, 0 commits, 1 named references.");
+        .contains("Imported Nessie repository, 0 commits, 1 named references, 0 generic objects.");
   }
 
   @Test
@@ -185,9 +190,10 @@ public class ITExportImport {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
+        .containsPattern(
+            "Exporting from a " + VERSION_STORES + " version store using export version 3...")
         .contains(
-            "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files.");
+            "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files, 1 generic objects into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
 
     // Importing into a "non-empty" repository does not pass the "empty-repository-check"
@@ -204,11 +210,14 @@ public class ITExportImport {
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .contains(
+            "Export using format V3 was created by Nessie version "
+                + NessieVersion.NESSIE_VERSION
+                + " on ")
         .containsPattern(
-            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+            "containing [0-9]+ named references \\(in [0-9]+ files\\), [0-9]+ commits \\(in [0-9]+ files\\), [0-9]+ generic objects \\(in [0-9]+ files\\)")
         .containsPattern("Importing into a " + VERSION_STORES + " version store...")
-        .contains("Imported Nessie repository, 2 commits, 2 named references.")
+        .contains("Imported Nessie repository, 2 commits, 2 named references, 1 generic objects.")
         .contains("Import finalization finished, total duration: ");
 
     checkValues(
@@ -231,9 +240,10 @@ public class ITExportImport {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
+        .containsPattern(
+            "Exporting from a " + VERSION_STORES + " version store using export version 3...")
         .contains(
-            "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files.");
+            "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files, 1 generic objects into 1 files.");
     soft.assertThat(tempDir).isNotEmptyDirectory();
 
     // Importing into a "non-empty" repository does not pass the "empty-repository-check"
@@ -250,11 +260,14 @@ public class ITExportImport {
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .contains(
+            "Export using format V3 was created by Nessie version "
+                + NessieVersion.NESSIE_VERSION
+                + " on ")
         .containsPattern(
-            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+            "containing [0-9]+ named references \\(in [0-9]+ files\\), [0-9]+ commits \\(in [0-9]+ files\\), [0-9]+ generic objects \\(in [0-9]+ files\\)")
         .containsPattern("Importing into a " + VERSION_STORES + " version store...")
-        .contains("Imported Nessie repository, 2 commits, 2 named references.")
+        .contains("Imported Nessie repository, 2 commits, 2 named references, 1 generic objects.")
         .contains("Import finalization finished, total duration: ");
 
     checkValues(
@@ -284,20 +297,24 @@ public class ITExportImport {
             zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
+        .containsPattern(
+            "Exporting from a " + VERSION_STORES + " version store using export version 3...")
         .contains(
-            "Exported Nessie repository, 1 commits into 1 files, 1 named references into 1 files.");
+            "Exported Nessie repository, 1 commits into 1 files, 1 named references into 1 files, 1 generic objects into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
 
     result =
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .contains(
+            "Export using format V3 was created by Nessie version "
+                + NessieVersion.NESSIE_VERSION
+                + " on ")
         .containsPattern(
-            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+            "containing [0-9]+ named references \\(in [0-9]+ files\\), [0-9]+ commits \\(in [0-9]+ files\\), [0-9]+ generic objects \\(in [0-9]+ files\\)")
         .containsPattern("Importing into a " + VERSION_STORES + " version store...")
-        .contains("Imported Nessie repository, 1 commits, 1 named references.")
+        .contains("Imported Nessie repository, 1 commits, 1 named references, 1 generic objects.")
         .contains("Import finalization finished, total duration: ");
 
     checkValues(
@@ -317,20 +334,24 @@ public class ITExportImport {
     LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .containsPattern("Exporting from a " + VERSION_STORES + " version store...")
+        .containsPattern(
+            "Exporting from a " + VERSION_STORES + " version store using export version 3...")
         .contains(
-            "Exported Nessie repository, 4 commits into 1 files, 2 named references into 1 files.");
+            "Exported Nessie repository, 4 commits into 1 files, 2 named references into 1 files, 1 generic objects into 1 files.");
     soft.assertThat(zipFile).isRegularFile();
 
     result =
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
-        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .contains(
+            "Export using format V3 was created by Nessie version "
+                + NessieVersion.NESSIE_VERSION
+                + " on ")
         .containsPattern(
-            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+            "containing [0-9]+ named references \\(in [0-9]+ files\\), [0-9]+ commits \\(in [0-9]+ files\\), [0-9]+ generic objects \\(in [0-9]+ files\\)")
         .containsPattern("Importing into a " + VERSION_STORES + " version store...")
-        .contains("Imported Nessie repository, 4 commits, 2 named references.")
+        .contains("Imported Nessie repository, 4 commits, 2 named references, 1 generic objects.")
         .contains("Import finalization finished, total duration: ");
 
     checkValues(
@@ -348,6 +369,15 @@ public class ITExportImport {
         .toIterable()
         .extracting(e -> e.getKey().contentKey(), KeyEntry::getContent)
         .containsExactly(tuple(key, value));
+
+    UniqueIdObj uniqueId = uniqueId("content-id", contentId);
+    soft.assertThatCode(
+            () ->
+                soft.assertThat(
+                        persist.fetchTypedObj(
+                            requireNonNull(uniqueId.id()), UNIQUE, UniqueIdObj.class))
+                    .isEqualTo(uniqueId))
+        .doesNotThrowAnyException();
   }
 
   private final UUID contentId = UUID.randomUUID();
@@ -381,6 +411,9 @@ public class ITExportImport {
                 .build(),
             emptyList());
     referenceLogic.assignReference(refMain, requireNonNull(main).id());
+
+    UniqueIdObj uniqueId = uniqueId("content-id", contentId);
+    soft.assertThat(persist.storeObj(uniqueId)).isTrue();
 
     Reference refFoo =
         referenceLogic.createReference("refs/heads/branch-foo", main.id(), randomObjId());

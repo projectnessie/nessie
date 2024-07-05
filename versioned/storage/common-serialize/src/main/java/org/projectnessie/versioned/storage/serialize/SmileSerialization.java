@@ -41,14 +41,26 @@ public final class SmileSerialization {
   private SmileSerialization() {}
 
   public static Obj deserializeObj(
-      ObjId id, String versionToken, byte[] data, ObjType type, String compression) {
+      ObjId id, String versionToken, byte[] data, ObjType type, Compression compression) {
     try {
       ObjectReader reader = readerWithObjIdAndVersionToken(SMILE_MAPPER, type, id, versionToken);
-      data = uncompress(Compression.fromValue(compression), data);
+      data = uncompress(compression, data);
       return reader.readValue(data, type.targetClass());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  public static Obj deserializeObj(
+      ObjId id, String versionToken, byte[] data, ObjType type, String compression) {
+    return deserializeObj(id, versionToken, data, type, Compression.fromValue(compression));
+  }
+
+  public static Obj deserializeObj(
+      ObjId id, String versionToken, ByteBuffer data, ObjType type, Compression compression) {
+    byte[] bytes = new byte[data.remaining()];
+    data.get(bytes);
+    return deserializeObj(id, versionToken, bytes, type, compression);
   }
 
   public static Obj deserializeObj(
