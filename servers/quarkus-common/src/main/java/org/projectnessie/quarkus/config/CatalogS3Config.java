@@ -18,12 +18,14 @@ package org.projectnessie.quarkus.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3Options;
+import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
@@ -81,6 +83,34 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
   @WithName("sts.clients-cache-max-size")
   @Override
   OptionalInt stsClientsCacheMaxEntries();
+
+  @WithName("trust-all-certificates")
+  @Override
+  Optional<Boolean> trustAllCertificates();
+
+  @WithName("trust-store.path")
+  @Override
+  Optional<Path> trustStorePath();
+
+  @WithName("trust-store.type")
+  @Override
+  Optional<String> trustStoreType();
+
+  @WithName("trust-store.password")
+  @Override
+  Optional<KeySecret> trustStorePassword();
+
+  @WithName("key-store.path")
+  @Override
+  Optional<Path> keyStorePath();
+
+  @WithName("key-store.type")
+  @Override
+  Optional<String> keyStoreType();
+
+  @WithName("key-store.password")
+  @Override
+  Optional<KeySecret> keyStorePassword();
 
   @WithName("buckets")
   @ConfigPropertyName("bucket-name")

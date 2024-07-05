@@ -95,8 +95,8 @@ public class CatalogProducers {
   @Produces
   @Singleton
   @CatalogS3Client
-  public SdkHttpClient sdkHttpClient(CatalogS3Config s3config) {
-    return S3Clients.apacheHttpClient(s3config);
+  public SdkHttpClient sdkHttpClient(CatalogS3Config s3config, SecretsProvider secretsProvider) {
+    return S3Clients.apacheHttpClient(s3config, secretsProvider);
   }
 
   public void closeSdkHttpClient(@Disposes @CatalogS3Client SdkHttpClient client) {
