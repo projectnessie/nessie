@@ -27,6 +27,7 @@ as necessary. Empty sections will not end in the release notes.
 
 - Fix potential class-loader deadlock via `Namespace.EMPTY`
 - Catalog: Fix double write of metadata objects to S3
+- GC/ADLS: Handle `BlobNotFound` as well
 
 ### Commits
 
