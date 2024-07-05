@@ -303,6 +303,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
             .refName(ref.name())
             .hashOnRef(ref.hashWithRelativeSpec())
             .key(tableRef.contentKey())
+            .forWrite(true)
             .getWithResponse();
     if (!contentResponse.getContents().isEmpty()) {
       Content existing = contentResponse.getContents().get(0).getContent();
@@ -313,7 +314,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   }
 
   ContentResponse fetchIcebergEntity(
-      TableRef tableRef, Content.Type expectedType, String expectedTypeName)
+      TableRef tableRef, Content.Type expectedType, String expectedTypeName, boolean forWrite)
       throws NessieNotFoundException {
     ParsedReference ref = requireNonNull(tableRef.reference());
     ContentResponse content =
@@ -321,6 +322,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
             .getContent()
             .refName(ref.name())
             .hashOnRef(ref.hashWithRelativeSpec())
+            .forWrite(forWrite)
             .getSingle(tableRef.contentKey());
     checkArgument(
         content.getContent().getType().equals(expectedType),

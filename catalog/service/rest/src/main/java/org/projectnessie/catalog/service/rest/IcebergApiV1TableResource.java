@@ -178,8 +178,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .build();
   }
 
-  private ContentResponse fetchIcebergTable(TableRef tableRef) throws NessieNotFoundException {
-    return fetchIcebergEntity(tableRef, ICEBERG_TABLE, "table");
+  private ContentResponse fetchIcebergTable(TableRef tableRef, boolean forWrite)
+      throws NessieNotFoundException {
+    return fetchIcebergEntity(tableRef, ICEBERG_TABLE, "table", forWrite);
   }
 
   @POST
@@ -275,7 +276,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     TableRef tableRef = decodeTableRef(prefix, namespace, registerTableRequest.name());
 
     try {
-      ContentResponse response = fetchIcebergTable(tableRef);
+      ContentResponse response = fetchIcebergTable(tableRef, false);
       throw new CatalogEntityAlreadyExistsException(
           false, ICEBERG_TABLE, tableRef.contentKey(), response.getContent().getType());
     } catch (NessieContentNotFoundException e) {
@@ -296,7 +297,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
       TableRef ctr = catalogTableRef.get();
 
-      ContentResponse contentResponse = fetchIcebergTable(ctr);
+      ContentResponse contentResponse = fetchIcebergTable(ctr, true);
       // It's technically a new table for Nessie, so need to clear the content-ID.
       Content newContent = contentResponse.getContent().withId(null);
 
@@ -379,7 +380,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    ContentResponse resp = fetchIcebergTable(tableRef);
+    ContentResponse resp = fetchIcebergTable(tableRef, false);
     Branch ref = checkBranch(resp.getEffectiveReference());
 
     nessieApi
@@ -435,7 +436,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    fetchIcebergTable(tableRef);
+    fetchIcebergTable(tableRef, false);
   }
 
   @POST

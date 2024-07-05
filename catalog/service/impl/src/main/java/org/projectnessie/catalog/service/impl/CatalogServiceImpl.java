@@ -183,7 +183,10 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   public CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams, ContentKey key, @Nullable Content.Type expectedType)
+      SnapshotReqParams reqParams,
+      ContentKey key,
+      @Nullable Content.Type expectedType,
+      boolean forWrite)
       throws NessieNotFoundException {
 
     ParsedReference reference = reqParams.ref();
@@ -199,6 +202,7 @@ public class CatalogServiceImpl implements CatalogService {
             .getContent()
             .refName(reference.name())
             .hashOnRef(reference.hashWithRelativeSpec())
+            .forWrite(forWrite)
             .getSingle(key);
     Content content = contentResponse.getContent();
     if (expectedType != null && !content.getType().equals(expectedType)) {
@@ -332,7 +336,8 @@ public class CatalogServiceImpl implements CatalogService {
         nessieApi
             .getContent()
             .refName(reference.name())
-            .hashOnRef(reference.hashWithRelativeSpec());
+            .hashOnRef(reference.hashWithRelativeSpec())
+            .forWrite(true);
     commit.getOperations().forEach(op -> contentRequest.key(op.getKey()));
     GetMultipleContentsResponse contentsResponse = contentRequest.getWithResponse();
 

@@ -145,7 +145,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
-    ContentResponse resp = fetchIcebergView(tableRef);
+    ContentResponse resp = fetchIcebergView(tableRef, false);
     Branch ref = checkBranch(resp.getEffectiveReference());
 
     nessieApi
@@ -156,8 +156,9 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
         .commitWithResponse();
   }
 
-  private ContentResponse fetchIcebergView(TableRef tableRef) throws NessieNotFoundException {
-    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view");
+  private ContentResponse fetchIcebergView(TableRef tableRef, boolean forWrite)
+      throws NessieNotFoundException {
+    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", forWrite);
   }
 
   @GET
@@ -229,7 +230,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
-    fetchIcebergView(tableRef);
+    fetchIcebergView(tableRef, false);
   }
 
   @POST
