@@ -15,14 +15,13 @@
  */
 package org.projectnessie.catalog.service.impl;
 
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergTableSnapshotToNessie;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergViewSnapshotToNessie;
 import static org.projectnessie.catalog.service.impl.Util.nessieIdToObjId;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
+import static org.projectnessie.catalog.service.objtypes.EntityObj.entityObjIdForContent;
 import static org.projectnessie.nessie.tasks.api.TaskState.successState;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
-import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,10 +98,7 @@ final class ImportSnapshotWorker {
         taskRequest.objId(),
         content.getMetadataLocation());
 
-    ObjId entityObjId =
-        objIdHasher("NessieEntity")
-            .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
-            .generate();
+    ObjId entityObjId = entityObjIdForContent(content);
 
     // snapshot!=null means that we already have the snapshot (via a committing operation - like a
     // table update) and do not need to import it but can just store it.
@@ -185,10 +181,7 @@ final class ImportSnapshotWorker {
         taskRequest.objId(),
         content.getMetadataLocation());
 
-    ObjId entityObjId =
-        objIdHasher("NessieEntity")
-            .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
-            .generate();
+    ObjId entityObjId = entityObjIdForContent(content);
 
     // snapshot!=null means that we already have the snapshot (via a committing operation - like a
     // table update) and do not need to import it but can just store it.

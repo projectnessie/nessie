@@ -34,7 +34,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.service.api.NessieSnapshotResponse.nessieSnapshotResponse;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
-import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.snapshotIdFromContent;
+import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.snapshotObjIdForContent;
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
@@ -154,7 +154,7 @@ public class CatalogServiceImpl implements CatalogService {
             c -> {
               ObjId snapshotId;
               try {
-                snapshotId = snapshotIdFromContent(c.getContent());
+                snapshotId = snapshotObjIdForContent(c.getContent());
               } catch (Exception e) {
                 // This silently handles the case when `c` refers neither to an Iceberg table nor a
                 // view.`
@@ -210,7 +210,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
     Reference effectiveReference = contentResponse.getEffectiveReference();
 
-    ObjId snapshotId = snapshotIdFromContent(content);
+    ObjId snapshotId = snapshotObjIdForContent(content);
 
     CompletionStage<NessieEntitySnapshot<?>> snapshotStage =
         new IcebergStuff(objectIO, persist, tasksService, executor)
@@ -430,7 +430,7 @@ public class CatalogServiceImpl implements CatalogService {
                   // `NessieEntitySnapshot`.
                   content = content.withId(addedContentsMap.get(tableUpdate.key));
                 }
-                NessieId snapshotId = objIdToNessieId(snapshotIdFromContent(content));
+                NessieId snapshotId = objIdToNessieId(snapshotObjIdForContent(content));
 
                 // Although the `TasksService` triggers the operation regardless of whether the
                 // `CompletionStage` returned by `storeSnapshot()` is consumed, we have to
@@ -547,7 +547,7 @@ public class CatalogServiceImpl implements CatalogService {
                   Content updated =
                       icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
 
-                  ObjId snapshotId = snapshotIdFromContent(updated);
+                  ObjId snapshotId = snapshotObjIdForContent(updated);
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
@@ -614,7 +614,7 @@ public class CatalogServiceImpl implements CatalogService {
                       storeViewSnapshot(metadataJsonLocation, nessieSnapshot, multiTableUpdate);
                   Content updated =
                       icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
-                  ObjId snapshotId = snapshotIdFromContent(updated);
+                  ObjId snapshotId = snapshotObjIdForContent(updated);
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
@@ -658,13 +658,13 @@ public class CatalogServiceImpl implements CatalogService {
   }
 
   private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content) {
-    ObjId snapshotId = snapshotIdFromContent(content);
+    ObjId snapshotId = snapshotObjIdForContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
         .retrieveIcebergSnapshot(snapshotId, content);
   }
 
   private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content) {
-    ObjId snapshotId = snapshotIdFromContent(content);
+    ObjId snapshotId = snapshotObjIdForContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
         .retrieveIcebergSnapshot(snapshotId, content);
   }

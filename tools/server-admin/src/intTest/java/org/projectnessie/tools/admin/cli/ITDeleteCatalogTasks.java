@@ -64,7 +64,7 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
   private ObjId storeNewEntry(TaskState state, ContentKey key, Content content) {
     try {
       commit(content, key, true);
-      ObjId id = EntitySnapshotObj.snapshotIdFromContent(content);
+      ObjId id = EntitySnapshotObj.snapshotObjIdForContent(content);
       persist()
           .storeObj(EntitySnapshotObj.builder().id(id).taskState(state).versionToken("v1").build());
       return id;

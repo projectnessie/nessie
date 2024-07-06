@@ -101,7 +101,7 @@ public class DeleteCatalogTasks extends BaseCommand {
                 ObjId[] ids =
                     values.values().stream()
                         .filter(c -> c instanceof IcebergTable || c instanceof IcebergView)
-                        .map(EntitySnapshotObj::snapshotIdFromContent)
+                        .map(EntitySnapshotObj::snapshotObjIdForContent)
                         .toArray(ObjId[]::new);
 
                 EntitySnapshotObj[] objs =
