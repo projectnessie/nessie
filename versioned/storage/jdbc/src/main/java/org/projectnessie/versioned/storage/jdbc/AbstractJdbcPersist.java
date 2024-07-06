@@ -515,8 +515,10 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
         serializeObjId(ps, storeObjSqlParams.get(COL_OBJ_ID), id, databaseSpecific);
         ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
-        if (obj instanceof UpdateableObj) {
-          ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), ((UpdateableObj) obj).versionToken());
+        String versionToken =
+            (obj instanceof UpdateableObj) ? ((UpdateableObj) obj).versionToken() : null;
+        if (versionToken != null) {
+          ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), versionToken);
         } else {
           ps.setNull(storeObjSqlParams.get(COL_OBJ_VERS), Types.VARCHAR);
         }

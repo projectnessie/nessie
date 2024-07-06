@@ -15,9 +15,18 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public interface ObjTypeBundle {
 
   void register(Consumer<ObjType> registrar);
+
+  default Optional<ObjTypeMapper> genericObjTypeMapper() {
+    return Optional.empty();
+  }
+
+  interface ObjTypeMapper {
+    ObjType mapGenericObjType(String nameOrShortName);
+  }
 }

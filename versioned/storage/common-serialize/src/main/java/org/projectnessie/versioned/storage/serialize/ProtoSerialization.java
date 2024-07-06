@@ -297,10 +297,8 @@ public final class ProtoSerialization {
       return deserializeUniqueId(id, obj.getUniqueId());
     }
     if (obj.hasCustom()) {
-      return deserializeCustom(
-          id,
-          obj.getCustom(),
-          versionToken != null ? versionToken : obj.getCustom().getVersionToken());
+      CustomProto custom = obj.getCustom();
+      return deserializeCustom(id, custom, versionToken);
     }
     throw new UnsupportedOperationException("Cannot deserialize " + obj);
   }
@@ -509,23 +507,22 @@ public final class ProtoSerialization {
 
   private static Obj deserializeCustom(ObjId id, CustomProto custom, String versionToken) {
     ObjType type = objTypeByName(custom.getObjType());
-    if (versionToken == null) {
+    if (versionToken == null && custom.hasVersionToken()) {
       // versionToken is set when reading objects from the database, but cache-deserialization has
       // the versionToken in the object
       versionToken = custom.getVersionToken();
     }
     return SmileSerialization.deserializeObj(
-        id,
-        versionToken,
-        custom.getData().toByteArray(),
-        type.targetClass(),
-        custom.getCompression().name());
+        id, versionToken, custom.getData().toByteArray(), type, custom.getCompression().name());
   }
 
   private static CustomProto.Builder serializeCustom(Obj obj, boolean includeVersionToken) {
     CustomProto.Builder builder = CustomProto.newBuilder().setObjType(obj.type().shortName());
     if (obj instanceof UpdateableObj && includeVersionToken) {
-      builder.setVersionToken(((UpdateableObj) obj).versionToken());
+      String versionToken = ((UpdateableObj) obj).versionToken();
+      if (versionToken != null) {
+        builder.setVersionToken(versionToken);
+      }
     }
     byte[] bytes =
         SmileSerialization.serializeObj(

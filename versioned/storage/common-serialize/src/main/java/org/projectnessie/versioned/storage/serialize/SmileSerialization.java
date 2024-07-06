@@ -15,6 +15,10 @@
  */
 package org.projectnessie.versioned.storage.serialize;
 
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.readerWithObjIdAndVersionToken;
+import static org.projectnessie.versioned.storage.common.util.Compressions.compressDefault;
+import static org.projectnessie.versioned.storage.common.util.Compressions.uncompress;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -24,11 +28,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
-import org.projectnessie.versioned.storage.common.json.ObjIdHelper;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.util.Compressions;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public final class SmileSerialization {
 
@@ -38,35 +41,26 @@ public final class SmileSerialization {
   private SmileSerialization() {}
 
   public static Obj deserializeObj(
-      ObjId id,
-      String versionToken,
-      byte[] data,
-      Class<? extends Obj> targetClass,
-      String compression) {
+      ObjId id, String versionToken, byte[] data, ObjType type, String compression) {
     try {
-      ObjectReader reader =
-          ObjIdHelper.readerWithObjIdAndVersionToken(SMILE_MAPPER, targetClass, id, versionToken);
-      data = Compressions.uncompress(Compression.fromValue(compression), data);
-      return reader.readValue(data, targetClass);
+      ObjectReader reader = readerWithObjIdAndVersionToken(SMILE_MAPPER, type, id, versionToken);
+      data = uncompress(Compression.fromValue(compression), data);
+      return reader.readValue(data, type.targetClass());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
   }
 
   public static Obj deserializeObj(
-      ObjId id,
-      String versionToken,
-      ByteBuffer data,
-      Class<? extends Obj> targetClass,
-      String compression) {
+      ObjId id, String versionToken, ByteBuffer data, ObjType type, String compression) {
     byte[] bytes = new byte[data.remaining()];
     data.get(bytes);
-    return deserializeObj(id, versionToken, bytes, targetClass, compression);
+    return deserializeObj(id, versionToken, bytes, type, compression);
   }
 
   public static byte[] serializeObj(Obj obj, Consumer<Compression> compression) {
     try {
-      return Compressions.compressDefault(SMILE_WRITER.writeValueAsBytes(obj), compression);
+      return compressDefault(SMILE_WRITER.writeValueAsBytes(obj), compression);
     } catch (JsonProcessingException e) {
       throw new UncheckedIOException(e);
     }

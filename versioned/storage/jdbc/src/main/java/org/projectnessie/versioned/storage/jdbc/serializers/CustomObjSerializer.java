@@ -80,10 +80,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   public Obj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
       throws SQLException {
     return SmileSerialization.deserializeObj(
-        id,
-        versionToken,
-        rs.getBytes(COL_CUSTOM_DATA),
-        type.targetClass(),
-        rs.getString(COL_CUSTOM_COMPRESSION));
+        id, versionToken, rs.getBytes(COL_CUSTOM_DATA), type, rs.getString(COL_CUSTOM_COMPRESSION));
   }
 }

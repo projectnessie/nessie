@@ -114,4 +114,9 @@ public abstract class CustomObjType<T extends Obj> implements ObjType {
   public int hashCode() {
     return name.hashCode();
   }
+
+  @Override
+  public String toString() {
+    return name;
+  }
 }

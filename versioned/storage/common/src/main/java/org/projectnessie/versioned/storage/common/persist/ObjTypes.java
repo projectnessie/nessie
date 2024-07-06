@@ -18,8 +18,10 @@ package org.projectnessie.versioned.storage.common.persist;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import jakarta.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -36,6 +38,9 @@ public final class ObjTypes {
   @Nonnull
   public static ObjType objTypeByName(@Nonnull String name) {
     ObjType type = Registry.BY_ANY_NAME.get(name);
+    if (type == null) {
+      type = Registry.maybeMapped(name);
+    }
     checkArgument(type != null, "Unknown object type name: %s", name);
     return type;
   }
@@ -55,11 +60,23 @@ public final class ObjTypes {
   private static final class Registry {
     private static final Map<String, ObjType> BY_ANY_NAME;
     private static final Set<ObjType> OBJ_TYPES;
+    private static final List<ObjTypeBundle.ObjTypeMapper> OBJ_TYPE_MAPPERS;
+
+    static ObjType maybeMapped(String name) {
+      for (ObjTypeBundle.ObjTypeMapper mapper : OBJ_TYPE_MAPPERS) {
+        ObjType type = mapper.mapGenericObjType(name);
+        if (type != null) {
+          return type;
+        }
+      }
+      return null;
+    }
 
     static {
       Map<String, ObjType> byAnyName = new TreeMap<>();
       Map<String, ObjType> byName = new TreeMap<>();
       Map<String, ObjType> byShortName = new HashMap<>();
+      List<ObjTypeBundle.ObjTypeMapper> objTypeMappers = new ArrayList<>();
       for (ObjTypeBundle bundle : ServiceLoader.load(ObjTypeBundle.class)) {
         bundle.register(
             objType -> {
@@ -81,9 +98,11 @@ public final class ObjTypes {
               byAnyName.put(objType.name(), objType);
               byAnyName.put(objType.shortName(), objType);
             });
+        bundle.genericObjTypeMapper().ifPresent(objTypeMappers::add);
       }
       BY_ANY_NAME = Collections.unmodifiableMap(byAnyName);
       OBJ_TYPES = Set.copyOf(byName.values());
+      OBJ_TYPE_MAPPERS = Collections.unmodifiableList(objTypeMappers);
     }
   }
 }
