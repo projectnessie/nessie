@@ -68,7 +68,7 @@ public interface EntitySnapshotObj extends TaskObj {
           TaskObj.taskDefaultCacheExpire(),
           c -> ObjType.NOT_CACHED);
 
-  static ObjId snapshotIdFromContent(Content content) {
+  static ObjId snapshotObjIdForContent(Content content) {
     if (content instanceof IcebergTable) {
       IcebergTable icebergTable = (IcebergTable) content;
       return objIdHasher("ContentSnapshot")
