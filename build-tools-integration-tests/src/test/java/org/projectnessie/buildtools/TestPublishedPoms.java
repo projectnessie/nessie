@@ -170,7 +170,13 @@ public class TestPublishedPoms {
       .forEach(
         (k, v) -> {
           String key = k.toString();
-          if (key.startsWith("java.")) {
+          if (key.startsWith("java.")
+              || key.startsWith("file.")
+              || key.startsWith("os.")
+              || key.endsWith(".separator")
+              || key.endsWith(".encoding")
+              || key.startsWith("sun.")
+              || key.startsWith("user.")) {
             session.setSystemProperty(key, v.toString());
           }
         });
