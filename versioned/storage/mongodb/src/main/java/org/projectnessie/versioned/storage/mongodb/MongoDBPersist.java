@@ -26,6 +26,7 @@ import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
+import static org.projectnessie.versioned.storage.common.persist.ObjTypes.objTypeByName;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_ID;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_OBJ_TYPE;
@@ -90,7 +91,6 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
@@ -384,7 +384,7 @@ public class MongoDBPersist implements Persist {
       throw new ObjNotFoundException(id);
     }
 
-    return ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
+    return objTypeByName(doc.getString(COL_OBJ_TYPE));
   }
 
   @Override
@@ -668,7 +668,7 @@ public class MongoDBPersist implements Persist {
     if (doc == null) {
       return null;
     }
-    ObjType type = ObjTypes.forShortName(doc.getString(COL_OBJ_TYPE));
+    ObjType type = objTypeByName(doc.getString(COL_OBJ_TYPE));
     if (t != null && !t.equals(type)) {
       return null;
     }

@@ -21,6 +21,7 @@ import static java.util.Collections.emptyListIterator;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static org.projectnessie.versioned.storage.common.persist.ObjTypes.objTypeByName;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.condition;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.keyPrefix;
@@ -73,7 +74,6 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
@@ -353,7 +353,7 @@ public class DynamoDBPersist implements Persist {
       throw new ObjNotFoundException(id);
     }
 
-    return ObjTypes.forShortName(item.item().get(COL_OBJ_TYPE).s());
+    return objTypeByName(item.item().get(COL_OBJ_TYPE).s());
   }
 
   @Nonnull
@@ -607,7 +607,7 @@ public class DynamoDBPersist implements Persist {
       Map<String, AttributeValue> item, ObjType t, @SuppressWarnings("unused") Class<T> typeClass) {
     ObjId id = objIdFromString(item.get(KEY_NAME).s().substring(keyPrefix.length()));
     AttributeValue attributeValue = item.get(COL_OBJ_TYPE);
-    ObjType type = ObjTypes.forShortName(attributeValue.s());
+    ObjType type = objTypeByName(attributeValue.s());
     if (t != null && !t.equals(type)) {
       return null;
     }
