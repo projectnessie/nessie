@@ -27,9 +27,11 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-transfer-proto"))
+  implementation(project(":nessie-versioned-transfer-related"))
   implementation(project(":nessie-versioned-storage-batching"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))
+  runtimeOnly(project(":nessie-catalog-service-transfer"))
 
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
