@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.jdbc;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
+import static org.projectnessie.versioned.storage.common.persist.ObjTypes.objTypeByName;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
 import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.deserializeObjId;
 import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.serializeObjId;
@@ -73,7 +74,6 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
@@ -341,7 +341,7 @@ abstract class AbstractJdbcPersist implements Persist {
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
           String objType = rs.getString(1);
-          return ObjTypes.forName(objType);
+          return objTypeByName(objType);
         }
       }
       throw new ObjNotFoundException(id);
@@ -408,7 +408,7 @@ abstract class AbstractJdbcPersist implements Persist {
     ObjId id = deserializeObjId(rs, COL_OBJ_ID);
     String objType = rs.getString(COL_OBJ_TYPE);
     String versionToken = rs.getString(COL_OBJ_VERS);
-    ObjType type = ObjTypes.forName(objType);
+    ObjType type = objTypeByName(objType);
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
     return serializer.deserialize(rs, type, id, versionToken);
   }

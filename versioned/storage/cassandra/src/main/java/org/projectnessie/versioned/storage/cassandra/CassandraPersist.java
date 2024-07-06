@@ -38,6 +38,7 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.S
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_REFERENCE_POINTER;
 import static org.projectnessie.versioned.storage.cassandra.CassandraSerde.deserializeObjId;
 import static org.projectnessie.versioned.storage.cassandra.CassandraSerde.serializeObjId;
+import static org.projectnessie.versioned.storage.common.persist.ObjTypes.objTypeByName;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
 import com.datastax.oss.driver.api.core.DriverException;
@@ -69,7 +70,6 @@ import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
@@ -254,7 +254,7 @@ public class CassandraPersist implements Persist {
     Row row = backend.execute(stmt).one();
     if (row != null) {
       String objType = requireNonNull(row.getString(0));
-      return ObjTypes.forName(objType);
+      return objTypeByName(objType);
     }
     throw new ObjNotFoundException(id);
   }
@@ -274,7 +274,7 @@ public class CassandraPersist implements Persist {
 
     Function<Row, T> rowMapper =
         row -> {
-          ObjType objType = ObjTypes.forName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
+          ObjType objType = objTypeByName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
           if (type != null && !type.equals(objType)) {
             return null;
           }
@@ -505,7 +505,7 @@ public class CassandraPersist implements Persist {
         }
 
         Row row = rs.next();
-        ObjType type = ObjTypes.forName(requireNonNull(row.getString(1)));
+        ObjType type = objTypeByName(requireNonNull(row.getString(1)));
         if (!returnedObjTypes.contains(type)) {
           continue;
         }
