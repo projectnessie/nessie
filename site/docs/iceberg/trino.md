@@ -8,8 +8,8 @@ Trino can be deployed for use with Nessie by any of the methods mentioned in the
 To access Iceberg tables, one needs to configure the Iceberg connector. Refer to the [Trino Iceberg Connector Documentation](https://trino.io/docs/current/connector/iceberg.html?highlight=iceberg+connector) for more information.
 Nessie catalog properties required for the Iceberg connector can be found at https://trino.io/docs/current/object-storage/metastores.html#nessie-catalog.
 
-Sample Nessie configuration for Iceberg connector in `etc/catalog/iceberg.properties`
-```
+Sample Nessie configuration for Iceberg connector in `etc/catalog/iceberg.properties`:
+```properties
 connector.name=iceberg
 iceberg.catalog.type=nessie
 iceberg.nessie-catalog.uri=http://localhost:19120/api/v2
@@ -29,11 +29,11 @@ s3.aws-secret-key=<aws_secret_key>
        b. To switch references (branch or tag), update the catalog property `iceberg.nessie-catalog.ref`.
 
 Nessie can also be accessed via REST catalog path.
-Sample Nessie-REST configuration for Iceberg connector in `etc/catalog/iceberg.properties`
-```
+Sample Nessie-REST configuration for Iceberg connector in `etc/catalog/iceberg.properties`:
+```properties
 connector.name=iceberg
 iceberg.catalog.type=rest
-iceberg.rest-catalog.uri=http://.../iceberg
+iceberg.rest-catalog.uri=http://localhost:19120/iceberg
 iceberg.rest-catalog.prefix=main
 ```
 
