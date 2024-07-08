@@ -151,7 +151,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap, B builder, String prefix, ContentKey contentKey) {
-    IcebergTableMetadata tableMetadata = (IcebergTableMetadata) snap.entityObject().orElseThrow();
+    IcebergTableMetadata tableMetadata =
+        (IcebergTableMetadata)
+            snap.entityObject()
+                .orElseThrow(() -> new IllegalStateException("entity object missing"));
     if (!tableMetadata.properties().containsKey(GC_ENABLED)) {
       tableMetadata =
           IcebergTableMetadata.builder()
@@ -476,7 +479,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .map(
             snap -> {
               IcebergTableMetadata tableMetadata =
-                  (IcebergTableMetadata) snap.entityObject().orElseThrow();
+                  (IcebergTableMetadata)
+                      snap.entityObject()
+                          .orElseThrow(() -> new IllegalStateException("entity object missing"));
               return IcebergCommitTableResponse.builder()
                   .metadata(tableMetadata)
                   .metadataLocation(snapshotMetadataLocation(snap))

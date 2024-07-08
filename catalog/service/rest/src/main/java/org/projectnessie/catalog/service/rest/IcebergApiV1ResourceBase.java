@@ -39,7 +39,6 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -353,6 +352,9 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     return Uni.createFrom()
         .completionStage(catalogService.commit(tableRef.reference(), commit, reqParams))
         .map(Stream::findFirst)
-        .map(Optional::orElseThrow);
+        .map(
+            o ->
+                o.orElseThrow(
+                    () -> new IllegalStateException("Catalog commit returned no response")));
   }
 }

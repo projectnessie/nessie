@@ -127,8 +127,12 @@ public final class AdlsClientSupplier {
                 case FIXED_DELAY:
                   FixedDelayOptions fixedDelayOptions =
                       new FixedDelayOptions(
-                          fileSystemOptions.maxRetries().orElseThrow(),
-                          fileSystemOptions.retryDelay().orElseThrow());
+                          fileSystemOptions
+                              .maxRetries()
+                              .orElseThrow(() -> new IllegalStateException("max-retries missing")),
+                          fileSystemOptions
+                              .retryDelay()
+                              .orElseThrow(() -> new IllegalStateException("max-relay missing")));
                   return Optional.of(new RetryOptions(fixedDelayOptions));
                 default:
                   throw new IllegalArgumentException("Invalid retry strategy: " + strategy);

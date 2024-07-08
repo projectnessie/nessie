@@ -87,7 +87,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
 
   protected void writeToOutputStream(RequestContext context, OutputStream outputStream)
       throws IOException {
-    Object body = context.getBody().orElseThrow(NullPointerException::new);
+    Object body = context.getBody().orElseThrow(() -> new IllegalStateException("No request body"));
     try (OutputStream out = wrapOutputStream(outputStream)) {
       if (context.isFormEncoded()) {
         writeFormData(out, body);
