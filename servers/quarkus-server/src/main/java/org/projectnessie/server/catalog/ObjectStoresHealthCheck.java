@@ -15,9 +15,12 @@
  */
 package org.projectnessie.server.catalog;
 
+import static com.google.common.base.Throwables.getStackTraceAsString;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Map;
+import java.util.UUID;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -25,15 +28,21 @@ import org.eclipse.microprofile.health.Readiness;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
 import org.projectnessie.quarkus.config.QuarkusWarehouseConfig;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Readiness
 @ApplicationScoped
 public class ObjectStoresHealthCheck implements HealthCheck {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ObjectStoresHealthCheck.class);
+
   public static final String NAME = "Warehouses Object Stores";
 
   @Inject QuarkusCatalogConfig catalogConfig;
   @Inject ObjectIO objectIO;
+  @Inject ServerConfig serverConfig;
 
   @Override
   public HealthCheckResponse call() {
@@ -50,8 +59,13 @@ public class ObjectStoresHealthCheck implements HealthCheck {
           objectIO.ping(StorageUri.of(warehouseLocation));
           healthCheckResponse.withData("warehouse." + name + ".status", "UP");
         } catch (Exception ex) {
+          String errorId = UUID.randomUUID().toString();
+          LOGGER.error("Failed to ping warehouse '{}', error ID {}", name, errorId, ex);
           healthCheckResponse.withData("warehouse." + name + ".status", "DOWN");
-          healthCheckResponse.withData("warehouse." + name + ".error", ex.toString());
+          healthCheckResponse.withData("warehouse." + name + ".error-id", errorId);
+          healthCheckResponse.withData(
+              "warehouse." + name + ".error",
+              serverConfig.sendStacktraceToClient() ? getStackTraceAsString(ex) : ex.toString());
           up = false;
         }
       }
