@@ -92,6 +92,7 @@ dependencies {
     api(project(":nessie-versioned-storage-testextension"))
     api(project(":nessie-versioned-tests"))
     api(project(":nessie-versioned-transfer-proto"))
+    api(project(":nessie-versioned-transfer-related"))
     api(project(":nessie-versioned-transfer"))
 
     // Nessie Data Catalog
@@ -103,6 +104,7 @@ dependencies {
     api(project(":nessie-catalog-service-common"))
     api(project(":nessie-catalog-service-rest"))
     api(project(":nessie-catalog-service-impl"))
+    api(project(":nessie-catalog-service-transfer"))
     api(project(":nessie-catalog-secrets-api"))
 
     if (!isIncludedInNesQuEIT()) {

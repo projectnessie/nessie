@@ -75,6 +75,7 @@ import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
 import org.projectnessie.nessie.tasks.service.impl.TaskServiceMetrics;
 import org.projectnessie.nessie.tasks.service.impl.TasksServiceImpl;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
+import org.projectnessie.objectstoragemock.InterceptingBucket;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
@@ -111,6 +112,7 @@ public abstract class AbstractCatalogService {
   protected ScheduledExecutorService executor;
   protected TasksServiceImpl tasksService;
   protected HeapStorageBucket heapStorageBucket;
+  protected InterceptingBucket interceptingBucket;
   protected ObjectStorageMock.MockServer objectStorageServer;
   protected SdkHttpClient httpClient;
   protected ObjectIO objectIO;
@@ -120,28 +122,38 @@ public abstract class AbstractCatalogService {
 
   protected ParsedReference commitSingle(Reference branch, ContentKey key)
       throws InterruptedException, ExecutionException, BaseNessieClientServerException {
+    return commitMultiple(branch, key);
+  }
+
+  protected ParsedReference commitMultiple(Reference branch, ContentKey... keys)
+      throws InterruptedException, ExecutionException, BaseNessieClientServerException {
     ParsedReference ref =
         parsedReference(branch.getName(), branch.getHash(), Reference.ReferenceType.BRANCH);
-    CatalogCommit commit =
-        CatalogCommit.builder()
-            .addOperations(
-                IcebergCatalogOperation.builder()
-                    .key(key)
-                    .addUpdates(
-                        assignUUID(UUID.randomUUID().toString()),
-                        upgradeFormatVersion(2),
-                        addSchema(IcebergSchema.builder().build(), 0),
-                        setCurrentSchema(-1),
-                        addPartitionSpec(IcebergPartitionSpec.UNPARTITIONED_SPEC),
-                        setDefaultPartitionSpec(-1),
-                        addSortOrder(IcebergSortOrder.UNSORTED_ORDER),
-                        setDefaultSortOrder(-1))
-                    .addRequirement(assertTableDoesNotExist())
-                    .type(ICEBERG_TABLE)
-                    .build())
-            .build();
+    CatalogCommit.Builder commit = CatalogCommit.builder();
 
-    MultiTableUpdate update = catalogService.commit(ref, commit).toCompletableFuture().get();
+    for (ContentKey key : keys) {
+
+      commit
+          .addOperations(
+              IcebergCatalogOperation.builder()
+                  .key(key)
+                  .addUpdates(
+                      assignUUID(UUID.randomUUID().toString()),
+                      upgradeFormatVersion(2),
+                      addSchema(IcebergSchema.builder().build(), 0),
+                      setCurrentSchema(-1),
+                      addPartitionSpec(IcebergPartitionSpec.UNPARTITIONED_SPEC),
+                      setDefaultPartitionSpec(-1),
+                      addSortOrder(IcebergSortOrder.UNSORTED_ORDER),
+                      setDefaultSortOrder(-1))
+                  .addRequirement(assertTableDoesNotExist())
+                  .type(ICEBERG_TABLE)
+                  .build())
+          .build();
+    }
+
+    MultiTableUpdate update =
+        catalogService.commit(ref, commit.build()).toCompletableFuture().get();
     branch = update.targetBranch();
 
     return parsedReference(branch.getName(), branch.getHash(), Reference.ReferenceType.BRANCH);
@@ -217,10 +229,11 @@ public abstract class AbstractCatalogService {
 
   private void setupObjectStorage() {
     heapStorageBucket = HeapStorageBucket.newHeapStorageBucket();
+    interceptingBucket = new InterceptingBucket(heapStorageBucket.bucket());
     objectStorageServer =
         ObjectStorageMock.builder()
             .initAddress("localhost")
-            .putBuckets(BUCKET, heapStorageBucket.bucket())
+            .putBuckets(BUCKET, interceptingBucket)
             .build()
             .start();
   }
