@@ -15,6 +15,7 @@
  */
 package org.projectnessie.gc.iceberg.files;
 
+import static java.util.Collections.synchronizedSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashSet;
@@ -42,7 +43,7 @@ public abstract class AbstractFiles {
   public void iceberg() throws Exception {
     StorageUri baseUri = storageUri("/path/");
 
-    Set<String> keys = new TreeSet<>();
+    Set<String> keys = synchronizedSet(new TreeSet<>());
     keys.add("path/file-1");
     keys.add("path/file-2");
     keys.add("path/file-3");
