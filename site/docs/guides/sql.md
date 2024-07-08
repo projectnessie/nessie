@@ -35,7 +35,7 @@ The current grammar is shown below:
 | LIST REFERENCES (IN catalog=identifier)?
 | SHOW REFERENCE (IN catalog=identifier)?
 | MERGE BRANCH (reference=identifier)? (INTO toRef=identifier)?  (IN catalog=identifier)?
-| SHOW LOG (reference=identifier)? (IN catalog=identifier)?
+| SHOW LOG (reference=identifier)? (AT tsOrHash=identifier)? (IN catalog=identifier)?
 | ASSIGN (BRANCH|TAG) (reference=identifier)? (TO toRef=identifier)? (IN catalog=identifier)?
 ```
 
@@ -99,6 +99,10 @@ One can see details about the current branch/tag in the `nessie` catalog via:
 It is possible to look at the commit log of a particular branch/tag in the `nessie` catalog via:
 
 * `SHOW LOG dev IN nessie`
+
+Additionally, one can show log of a specific hash on a given branch/tag:
+
+* `SHOW LOG dev AT dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9b IN nessie`
 
 ## Assigning Branches/Tags
 

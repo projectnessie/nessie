@@ -633,6 +633,44 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   }
 
   @Test
+  void showLogAtHash() throws NessieConflictException, NessieNotFoundException {
+    List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog();
+
+    assertThat(
+            sql("SHOW LOG %s AT %s IN nessie", refName, resultList.get(1).getHash()).stream()
+                .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList.subList(1, resultList.size()));
+  }
+
+  @Test
+  void showLogAtTimestamp() throws NessieConflictException, NessieNotFoundException {
+    List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog();
+
+    Instant commitTime =
+        api.getCommitLog()
+            .refName(refName)
+            .get()
+            .getLogEntries()
+            .get(1)
+            .getCommitMeta()
+            .getCommitTime();
+    assertThat(commitTime).isNotNull();
+    // query for the second time stamp. expecting two since there will be three commits in
+    // resultList.
+    String timeWithZone =
+        DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC")).format(commitTime);
+
+    assertThat(
+            sql("SHOW LOG %s AT `%s` IN nessie", refName, timeWithZone).stream()
+                .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
+                .collect(Collectors.toList()))
+        .containsExactlyElementsOf(resultList.subList(1, resultList.size()));
+  }
+
+  @Test
   void testInvalidCatalog() {
     assertThatThrownBy(() -> sql("LIST REFERENCES IN %s", NON_NESSIE_CATALOG))
         .hasMessageContaining("The command works only when the catalog is a NessieCatalog")
