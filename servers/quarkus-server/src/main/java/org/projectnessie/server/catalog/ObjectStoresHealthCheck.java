@@ -62,11 +62,10 @@ public class ObjectStoresHealthCheck implements HealthCheck {
           String errorId = UUID.randomUUID().toString();
           LOGGER.error("Failed to ping warehouse '{}', error ID {}", name, errorId, ex);
           healthCheckResponse.withData("warehouse." + name + ".status", "DOWN");
-          healthCheckResponse.withData("warehouse." + name + ".error", ex.toString());
           healthCheckResponse.withData("warehouse." + name + ".error-id", errorId);
-          if (serverConfig.sendStacktraceToClient()) {
-            healthCheckResponse.withData("warehouse." + name + ".error", getStackTraceAsString(ex));
-          }
+          healthCheckResponse.withData(
+              "warehouse." + name + ".error",
+              serverConfig.sendStacktraceToClient() ? getStackTraceAsString(ex) : ex.toString());
           up = false;
         }
       }
