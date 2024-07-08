@@ -15,9 +15,8 @@
  */
 package org.projectnessie.catalog.service.objtypes;
 
-import static java.util.Objects.requireNonNull;
+import static org.projectnessie.catalog.service.objtypes.transfer.CatalogObjIds.entityIdForContent;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.customObjType;
-import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -49,9 +48,7 @@ public interface EntityObj extends UpdateableObj {
   ObjType OBJ_TYPE = customObjType("catalog-entity", "c-e", EntityObj.class);
 
   static ObjId entityObjIdForContent(Content content) {
-    return objIdHasher("NessieEntity")
-        .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
-        .generate();
+    return entityIdForContent(content);
   }
 
   static Builder builder() {

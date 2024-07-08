@@ -15,8 +15,8 @@
  */
 package org.projectnessie.catalog.service.objtypes;
 
+import static org.projectnessie.catalog.service.objtypes.transfer.CatalogObjIds.snapshotIdForContent;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.dynamicCaching;
-import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -25,8 +25,6 @@ import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.nessie.tasks.api.TaskObj;
@@ -69,19 +67,9 @@ public interface EntitySnapshotObj extends TaskObj {
           c -> ObjType.NOT_CACHED);
 
   static ObjId snapshotObjIdForContent(Content content) {
-    if (content instanceof IcebergTable) {
-      IcebergTable icebergTable = (IcebergTable) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergTable.getMetadataLocation())
-          .hash(icebergTable.getSnapshotId())
-          .generate();
-    }
-    if (content instanceof IcebergView) {
-      IcebergView icebergView = (IcebergView) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergView.getMetadataLocation())
-          .hash(icebergView.getVersionId())
-          .generate();
+    ObjId id = snapshotIdForContent(content);
+    if (id != null) {
+      return id;
     }
     if (content instanceof Namespace) {
       throw new IllegalArgumentException("No snapshots for Namespace: " + content);

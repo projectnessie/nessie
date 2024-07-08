@@ -44,6 +44,8 @@ dependencies {
   implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-notice"))
 
+  implementation(project(":nessie-catalog-service-transfer"))
+
   implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-storage-bigtable"))
   implementation(project(":nessie-versioned-storage-cache"))
@@ -65,9 +67,6 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-picocli")
 
-  compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.microprofile.openapi)
-
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -75,6 +74,10 @@ dependencies {
   implementation(libs.agroal.pool)
   implementation(libs.h2)
   implementation(libs.postgresql)
+
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.microprofile.openapi)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)

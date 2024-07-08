@@ -27,6 +27,7 @@ dependencies {
   implementation(project(":nessie-catalog-model"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-tasks-api"))
+  implementation(project(":nessie-catalog-service-transfer"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 
