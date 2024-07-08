@@ -14,6 +14,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog: Improve indicated health check errors
 - Catalog/GCS: Support using the default application credentials
 - Catalog/S3: Allow custom key+trust stores
 - Catalog: Check privileges earlier
