@@ -139,20 +139,22 @@ public class DocGenDoclet implements Doclet {
         }
 
         List<SmallRyeConfigPropertyInfo> properties = configSection.properties();
-        SmallRyeConfigPropertyInfo first = properties.get(0);
-        if (first.firstIsSectionDoc()) {
+        SmallRyeConfigPropertyInfo first = properties.isEmpty() ? null : properties.get(0);
+        if (first != null && first.firstIsSectionDoc()) {
           MarkdownTypeFormatter typeFormatter =
               new MarkdownTypeFormatter(first.propertyElement(), first.doc());
           writer.println(typeFormatter.description().trim());
           writer.println();
         }
 
-        writer.println("| Property | Default Value | Type | Description |");
-        writer.println("|----------|---------------|------|-------------|");
-        properties.forEach(
-            prop ->
-                writeProperty(
-                    prop, writer, configSection.prefix() + '.', smallryeConfigs, environment));
+        if (!properties.isEmpty()) {
+          writer.println("| Property | Default Value | Type | Description |");
+          writer.println("|----------|---------------|------|-------------|");
+          properties.forEach(
+              prop ->
+                  writeProperty(
+                      prop, writer, configSection.prefix() + '.', smallryeConfigs, environment));
+        }
       } catch (IOException ex) {
         throw new RuntimeException(ex);
       }
