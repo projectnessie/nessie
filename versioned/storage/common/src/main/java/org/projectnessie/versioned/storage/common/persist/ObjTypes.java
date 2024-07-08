@@ -18,11 +18,10 @@ package org.projectnessie.versioned.storage.common.persist;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import jakarta.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
@@ -60,23 +59,17 @@ public final class ObjTypes {
   private static final class Registry {
     private static final Map<String, ObjType> BY_ANY_NAME;
     private static final Set<ObjType> OBJ_TYPES;
-    private static final List<ObjTypeBundle.ObjTypeMapper> OBJ_TYPE_MAPPERS;
+    private static final Optional<ObjTypeBundle.ObjTypeMapper> OBJ_TYPE_MAPPER;
 
     static ObjType maybeMapped(String name) {
-      for (ObjTypeBundle.ObjTypeMapper mapper : OBJ_TYPE_MAPPERS) {
-        ObjType type = mapper.mapGenericObjType(name);
-        if (type != null) {
-          return type;
-        }
-      }
-      return null;
+      return OBJ_TYPE_MAPPER.map(m -> m.mapGenericObjType(name)).orElse(null);
     }
 
     static {
       Map<String, ObjType> byAnyName = new TreeMap<>();
       Map<String, ObjType> byName = new TreeMap<>();
       Map<String, ObjType> byShortName = new HashMap<>();
-      List<ObjTypeBundle.ObjTypeMapper> objTypeMappers = new ArrayList<>();
+      ObjTypeBundle.ObjTypeMapper objTypeMapper = null;
       for (ObjTypeBundle bundle : ServiceLoader.load(ObjTypeBundle.class)) {
         bundle.register(
             objType -> {
@@ -98,11 +91,21 @@ public final class ObjTypes {
               byAnyName.put(objType.name(), objType);
               byAnyName.put(objType.shortName(), objType);
             });
-        bundle.genericObjTypeMapper().ifPresent(objTypeMappers::add);
+        if (bundle.genericObjTypeMapper().isPresent()) {
+          ObjTypeBundle.ObjTypeMapper mapper = bundle.genericObjTypeMapper().get();
+          if (objTypeMapper != null) {
+            throw new IllegalStateException(
+                "There is more than one generic object type mapper: "
+                    + objTypeMapper.getClass().getName()
+                    + " and "
+                    + mapper.getClass().getName());
+          }
+          objTypeMapper = mapper;
+        }
       }
       BY_ANY_NAME = Collections.unmodifiableMap(byAnyName);
       OBJ_TYPES = Set.copyOf(byName.values());
-      OBJ_TYPE_MAPPERS = Collections.unmodifiableList(objTypeMappers);
+      OBJ_TYPE_MAPPER = Optional.ofNullable(objTypeMapper);
     }
   }
 }

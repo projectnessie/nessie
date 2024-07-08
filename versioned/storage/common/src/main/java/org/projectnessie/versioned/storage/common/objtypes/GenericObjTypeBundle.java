@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.annotations.VisibleForTesting;
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -54,6 +55,7 @@ public class GenericObjTypeBundle implements ObjTypeBundle, ObjTypeBundle.ObjTyp
   }
 
   @Override
+  @Nonnull
   public ObjType mapGenericObjType(String nameOrShortName) {
     return genericTypes.computeIfAbsent(nameOrShortName, GenericObjTypeBundle::newGenericObjType);
   }

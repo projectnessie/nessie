@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import jakarta.annotation.Nonnull;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -27,6 +28,7 @@ public interface ObjTypeBundle {
   }
 
   interface ObjTypeMapper {
+    @Nonnull
     ObjType mapGenericObjType(String nameOrShortName);
   }
 }
